@@ -1,0 +1,33 @@
+name: Feilrapport
+description: Rapporter en feil i Kraftvakt
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Beskrivelse
+      description: Hva skjedde, og hva forventet du?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Fremgangsmåte for å gjenskape
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant-versjon
+    validations:
+      required: true
+  - type: input
+    id: kraftvakt_version
+    attributes:
+      label: Kraftvakt-versjon
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logger
+      description: Relevante linjer fra loggen (custom_components.kraftvakt)
+      render: text

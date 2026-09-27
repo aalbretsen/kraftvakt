@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    name: Sjekk at manifest-versjon matcher tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sammenlign versjoner
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          MANIFEST=$(jq -r .version custom_components/kraftvakt/manifest.json)
+          if [ "$TAG" != "$MANIFEST" ]; then
+            echo "::error::Tag $TAG matcher ikke manifest.json-versjon $MANIFEST"
+            exit 1
+          fi

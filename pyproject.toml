@@ -1,0 +1,49 @@
+[project]
+name = "kraftvakt"
+version = "0.1.0"
+description = "Home Assistant custom integration – prioritert effektstyring rettet mot kapasitetsleddet i nettleien"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.13"
+
+# Ingen runtime-avhengigheter – Home Assistant leverer alt.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "homeassistant",
+    "home-assistant-frontend",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-homeassistant-custom-component",
+    "ruff",
+    "mypy",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
+    "RUF",    # ruff-specific
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components.kraftvakt"]
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+follow_imports = "silent"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
