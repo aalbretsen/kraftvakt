@@ -1,0 +1,10 @@
+# Utviklingsavhengigheter. Lag et venv og installer:
+#   uv venv && uv pip install -r requirements_dev.txt
+
+homeassistant
+home-assistant-frontend
+pytest
+pytest-asyncio
+pytest-homeassistant-custom-component
+ruff
+mypy

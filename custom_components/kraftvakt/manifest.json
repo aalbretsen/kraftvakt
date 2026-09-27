@@ -1,0 +1,14 @@
+{
+  "domain": "kraftvakt",
+  "name": "Kraftvakt",
+  "codeowners": ["@aalbretsen"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http", "panel_custom"],
+  "documentation": "https://github.com/aalbretsen/kraftvakt",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/aalbretsen/kraftvakt/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}

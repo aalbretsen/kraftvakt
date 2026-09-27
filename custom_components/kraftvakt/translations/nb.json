@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sett opp Kraftvakt",
+        "description": "Kraftvakt holder timeforbruket like under et valgt kWh-mål ved å styre effektkrevende apparater i prioritert rekkefølge. Etter oppsett konfigurerer du mål og apparater fra Kraftvakt-panelet i sidemenyen."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Allerede konfigurert. Kun én konfigurasjon er mulig."
+    }
+  }
+}

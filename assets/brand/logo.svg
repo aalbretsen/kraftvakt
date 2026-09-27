@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 512" width="2200" height="512">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#2F6FEB"/>
+      <stop offset="1" stop-color="#123A8C"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD54A"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g>
+  
+  <!-- Skjold: «vakt» -->
+  <path d="M256 8 L474 84 Q486 88 486 101 V236 C486 370 392 460 256 504 C120 460 26 370 26 236 V101 Q26 88 38 84 Z" fill="url(#shield)"/>
+  <path d="M256 40 L452 108 V236 C452 350 372 430 256 470 C140 430 60 350 60 236 V108 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="6"/>
+  <!-- Effektgrense: stiplet linje -->
+  <line x1="92" y1="190" x2="420" y2="190" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 30"/>
+  <!-- Prioriterte laster: søyler under grensen -->
+  <rect x="112" y="238" width="44" height="150" rx="10" fill="#FFFFFF" fill-opacity="0.9"/>
+  <rect x="356" y="296" width="44" height="92" rx="10" fill="#FFFFFF" fill-opacity="0.45"/>
+  <!-- Lyn: «kraft» -->
+  <path d="M290 96 L178 300 H250 L222 440 L346 222 H272 Z" fill="url(#bolt)" stroke="#0E2E70" stroke-width="10" stroke-linejoin="round"/>
+</g>
+  <text x="552" y="340" fill="#0F1B3D"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-weight="700" font-size="250" letter-spacing="-4">Kraftvakt</text>
+</svg>

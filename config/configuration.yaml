@@ -1,0 +1,9 @@
+# Minimal konfigurasjon for lokal utvikling:
+#   hass -c config
+# custom_components lenkes inn med:  ln -s ../custom_components config/custom_components
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.kraftvakt: debug

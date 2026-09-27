@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Kraftvakt",
+        "description": "Kraftvakt keeps hourly consumption just below your chosen kWh target by switching power-hungry appliances in priority order. After setup, configure targets and appliances from the Kraftvakt panel in the sidebar."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]"
+    }
+  }
+}

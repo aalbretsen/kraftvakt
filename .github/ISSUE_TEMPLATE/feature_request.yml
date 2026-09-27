@@ -1,0 +1,15 @@
+name: Forslag
+description: Foreslå ny funksjonalitet
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Behov
+      description: Hvilket problem ønsker du løst?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Forslag til løsning
