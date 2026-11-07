@@ -400,6 +400,8 @@ Rekkefølgen under er viktig. Hvert steg kan avslutte avgjørelsen.
    - Pågår straff: ferdig. Ingenting slås på.
    - Er snittforbruket > grense + straffeterskel og overforbruket > 0: start
      straff, slå av alt samtidig. Ferdig.
+   - Gjeldende variant vurderes likevel ved hver avgjørelse under straff
+     (APP-007). Alt er av, så byttet gir ingen kommandoer.
 5. **Elbilladere (4.3):** hvem har lov til å lade, hvem er forbigått, gjeldende
    ladeprioritering, hvem er ventende.
 6. **Tvungne utkoblinger** (unntak fra REG-004), i denne rekkefølgen:
@@ -628,8 +630,8 @@ branch (CLAUDE.md).
 
 ### Fase 4 – Straff
 
-- [ ] `regulation/penalty.py` og kobling i `engine.py`.
-- [ ] Scenariotester, også innhenting og STR-009.
+- [x] `regulation/penalty.py` og kobling i `engine.py`.
+- [x] Scenariotester, også innhenting og STR-009.
 - Krav: STR-001–009.
 
 ### Fase 5 – Runtime, handlinger, start/stopp og sikker tilstand
