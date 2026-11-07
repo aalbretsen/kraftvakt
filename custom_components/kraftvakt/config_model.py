@@ -440,6 +440,20 @@ def charger_switches_from_dict(
     return switches
 
 
+def charger_switches_for(
+    config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]
+) -> dict[str, ChargerSwitches]:
+    """Return the switches for exactly the chargers in the configuration.
+
+    Chargers without stored switches get the default positions, and switches
+    for chargers that are no longer configured are left out.
+    """
+    return {
+        charger.id: switches.get(charger.id, ChargerSwitches())
+        for charger in config.charging.chargers
+    }
+
+
 def charger_switches_to_dict(
     switches: Mapping[str, ChargerSwitches],
 ) -> dict[str, dict[str, bool]]:
