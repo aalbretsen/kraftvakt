@@ -37,21 +37,23 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   if (!config.general.power_sensor) {
     missing.push({ code: "missing_power_sensor", section: "general", field: "power_sensor" });
   }
-  for (const appliance of config.appliances) {
-    missing.push(...missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS));
-  }
+  missing.push(...config.appliances.flatMap(missingInAppliance));
   if (config.charging.enabled) {
-    for (const charger of config.charging.chargers) {
-      missing.push(...missingEntityAndActions("chargers", charger, CHARGER_ACTIONS));
-      if (!charger.charge_power_sensor) {
-        missing.push({
-          code: "missing_charge_power_sensor",
-          section: "chargers",
-          target: charger.id,
-          field: "charge_power_sensor",
-        });
-      }
-    }
+    missing.push(...config.charging.chargers.flatMap(missingInCharger));
+  }
+  return missing;
+}
+
+/** Return what is missing in one appliance (REG-016). */
+export function missingInAppliance(appliance: Appliance): Issue[] {
+  return missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS);
+}
+
+/** Return what is missing in one EV charger (REG-016). */
+export function missingInCharger(charger: Charger): Issue[] {
+  const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
+  if (!charger.charge_power_sensor) {
+    missing.push({ code: "missing_charge_power_sensor", section: "chargers", target: charger.id, field: "charge_power_sensor" });
   }
   return missing;
 }
@@ -76,7 +78,8 @@ export function isMissingAction(action: ActionConfig | null): boolean {
   return action === null || (action.mode === "custom" && (action.action ?? []).length === 0);
 }
 
-function applianceErrors(appliance: Appliance, capabilities: Capabilities): Issue[] {
+/** Return the mistakes in one appliance and its variants. */
+export function applianceErrors(appliance: Appliance, capabilities: Capabilities): Issue[] {
   const labels = appliance.variants.map((variant) => variant.label.trim());
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
@@ -94,7 +97,8 @@ function applianceErrors(appliance: Appliance, capabilities: Capabilities): Issu
   ];
 }
 
-function chargerErrors(charger: Charger, capabilities: Capabilities): Issue[] {
+/** Return the mistakes in one EV charger. */
+export function chargerErrors(charger: Charger, capabilities: Capabilities): Issue[] {
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
   const issues = [
     ...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true),

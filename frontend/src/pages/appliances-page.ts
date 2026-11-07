@@ -1,12 +1,13 @@
-import { mdiEvStation } from "@mdi/js";
+import { mdiEvStation, mdiPlus } from "@mdi/js";
 import { css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
 import type { Appliance, Issue, PriorityEntry } from "../api";
+import "../components/appliance-dialog";
 import "../components/manual-control-warning";
 import "../components/sortable-list";
 import type { ListRow } from "../components/sortable-list";
-import { moveItem, priorityKey } from "../draft";
+import { moveItem, newId, priorityKey } from "../draft";
 import { entityName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
@@ -18,6 +19,9 @@ const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_kw"
 /** The appliances and the priority list (GUI-009), with the warning against manual control (GUI-011). */
 @customElement("kraftvakt-appliances-page")
 export class KraftvaktAppliancesPage extends ConfigPage {
+  /** The appliance in the dialog, and whether it is new. */
+  @state() private editing?: { appliance: Appliance; isNew: boolean };
+
   protected render() {
     const rows = this.config.priority.map((entry) => this.row(entry));
     return html`
@@ -32,6 +36,10 @@ export class KraftvaktAppliancesPage extends ConfigPage {
             <span>${this.localize("appliances.priority_title")}</span>
             <span class="sub">${this.localize("appliances.priority_sub")}</span>
           </div>
+          <ha-button .disabled=${this.locked} @click=${this.addAppliance}>
+            <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+            ${this.localize("appliances.add")}
+          </ha-button>
         </div>
         ${rows.length === 0
           ? html`<div class="empty">${this.localize("appliances.empty")}</div>`
@@ -41,9 +49,32 @@ export class KraftvaktAppliancesPage extends ConfigPage {
                 .rows=${rows}
                 .locked=${this.locked}
                 @item-moved=${this.entryMoved}
+                @open-row=${this.openRow}
               ></kraftvakt-sortable-list>
             `}
       </ha-card>
+      ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
+    `;
+  }
+
+  private renderDialog(appliance: Appliance, isNew: boolean) {
+    const usedEntities = [...this.config.appliances, ...this.config.charging.chargers]
+      .filter((item) => item.id !== appliance.id && item.entity_id)
+      .map((item) => item.entity_id as string);
+    return html`
+      <kraftvakt-appliance-dialog
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .capabilities=${this.capabilities}
+        .appliance=${appliance}
+        .isNew=${isNew}
+        .usedEntities=${usedEntities}
+        .saveErrors=${this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id)}
+        .locked=${this.locked}
+        @appliance-changed=${this.applianceChanged}
+        @appliance-deleted=${this.applianceDeleted}
+        @closed=${() => (this.editing = undefined)}
+      ></kraftvakt-appliance-dialog>
     `;
   }
 
@@ -76,7 +107,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       tag: variant?.label,
       details: appliance ? (variant ? [this.variantSource(variant.condition)] : this.applianceDetails(appliance)) : [],
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
-      openable: false,
+      openable: true,
     };
   }
 
@@ -118,6 +149,43 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   private entryMoved(event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
     const { oldIndex, newIndex } = event.detail;
     this.changeConfig({ ...this.config, priority: moveItem(this.config.priority, oldIndex, newIndex) });
+  }
+
+  private addAppliance(): void {
+    const appliance: Appliance = {
+      id: newId(),
+      entity_id: null,
+      turn_on: null,
+      turn_off: null,
+      power_reserve_kw: this.capabilities.defaults.appliances.power_reserve_kw,
+      variants: [],
+    };
+    this.editing = { appliance, isNew: true };
+  }
+
+  /** Open the appliance of the row. A variant opens its appliance. */
+  private openRow(event: CustomEvent<string>): void {
+    const entry = this.config.priority.find((item) => priorityKey(item) === event.detail);
+    const appliance =
+      entry?.type === "appliance" ? this.config.appliances.find((item) => item.id === entry.appliance_id) : undefined;
+    if (appliance) {
+      this.editing = { appliance, isNew: false };
+    }
+  }
+
+  /** Put the appliance in the draft. New variants end up at the bottom of the priority list (APP-008). */
+  private applianceChanged(event: CustomEvent<Appliance>): void {
+    const appliance = event.detail;
+    const exists = this.config.appliances.some((item) => item.id === appliance.id);
+    const appliances = exists
+      ? this.config.appliances.map((item) => (item.id === appliance.id ? appliance : item))
+      : [...this.config.appliances, appliance];
+    this.changeConfig({ ...this.config, appliances });
+  }
+
+  /** Take the appliance out of the draft, with its entries in the priority list. */
+  private applianceDeleted(event: CustomEvent<string>): void {
+    this.changeConfig({ ...this.config, appliances: this.config.appliances.filter((item) => item.id !== event.detail) });
   }
 
   private openChargingPage(event: Event): void {
