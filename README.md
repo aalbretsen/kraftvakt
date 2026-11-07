@@ -18,7 +18,7 @@ like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
 kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
 > **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
-> vanlige apparater, med straff og sikker tilstand. Elbillading og panelet for
+> vanlige apparater og elbilladere, med straff og sikker tilstand. Panelet for
 > konfigurasjon mangler ennå, så konfigurasjonen kan foreløpig ikke settes opp
 > fra brukergrensesnittet.
 
@@ -55,6 +55,8 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 | `sensor.kraftvakt_average_consumption` (Snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
 | `switch.kraftvakt_regulation` (Regulering) | Er på mens reguleringen kjører. Slå av for å stoppe reguleringen og på for å starte den igjen. |
 | `binary_sensor.kraftvakt_safe_state` (Sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
+| `switch.kraftvakt_<lader>_excluded_from_regulation` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
+| `switch.kraftvakt_<lader>_override_charging_window` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
 
 Entitets-ID-ene over gjelder når Home Assistant er satt opp på engelsk. Med
 norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`
@@ -70,10 +72,12 @@ i begge snittene.
 
 Reguleringen starter av seg selv når Home Assistant eller integrasjonen
 starter, forutsatt at konfigurasjonen er fullstendig: effektsensor er valgt, og
-hvert apparat har entitet og handlinger for å slå på og av. Ved hver start slås
-alle apparatene av med en gang. Deretter slår reguleringen dem på ett og ett i
-prioritert rekkefølge. Første avgjørelse tas når et helt reguleringsintervall
-har gått etter starten.
+hvert apparat har entitet og handlinger for å slå på og av. Når billadestyring
+er aktivert, må hver elbillader i tillegg ha entitet, handlinger for å aktivere,
+deaktivere og sette ladestrøm, og sensor for ladeeffekt. Ved hver start slås
+alle apparatene av og alle elbilladerne deaktiveres med en gang. Deretter slår
+reguleringen dem på ett og ett i prioritert rekkefølge. Første avgjørelse tas
+når et helt reguleringsintervall har gått etter starten.
 
 Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
 stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.
@@ -91,6 +95,35 @@ Handlingene for apparatene kan være standardhandlingen for entitetens domene
 handlinger. Egendefinerte handlinger og maler får variablene `entity_id` og
 `entity` (tilstanden til apparatets entitet). Mislykkes en handling, skrives
 feilen til loggen, og reguleringen fortsetter uten å prøve igjen.
+
+## Elbillading
+
+Når billadestyring er aktivert, styrer Kraftvakt ladestrømmen til hver
+elbillader trinnvis, ett ampere om gangen, etter hvor mye effekt som er ledig.
+Plasseringen av «Elbillading» i prioritetslisten bestemmer hvor i rekkefølgen
+elbilladerne ligger. En elbillader lader bare når Kraftvakt har aktivert den,
+så en bil som kobles til, begynner ikke å lade av seg selv. Før elbilladeren
+aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
+
+- Ladeeffekten leses ved hver avgjørelse. Over 100 W regnes elbilladeren som
+  aktivt ladende. Er sensoren utilgjengelig, regnes den også som ladende.
+- En elbillader som ikke trekker strøm, fordi bilen ikke er tilkoblet eller
+  ikke lader to reguleringsvinduer etter at den ble aktivert, blir forbigått.
+  Den begrenses til minste ladestrøm, beholdes aktivert og står ikke i veien
+  for andre elbilladere.
+- Kan bare én elbillader lade om gangen, får en elbillader som lader aktivt,
+  fortsette til den er ferdig. De andre venter.
+- Utenfor ladetidsrommet lader ikke elbilladeren. Ladetidsrommet kan gå over
+  midnatt og gjelder i Home Assistants tidssone.
+
+Bryterne **‹lader› utenfor regulering** og **‹lader› overstyr ladetidsrom**
+kan brukes mens reguleringen kjører, og endringen gjelder fra neste
+avgjørelse. Stillingen lagres med en gang og beholdes over omstart. Mens
+billadestyring er deaktivert, er bryterne utilgjengelige, men stillingen
+beholdes.
+
+Handlingen for ladestrøm får i tillegg variablene `current`, `min_current` og
+`max_current`. `current` ligger alltid mellom minste og største ladestrøm.
 
 ## Utvikling
 

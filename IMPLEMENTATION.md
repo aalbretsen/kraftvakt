@@ -644,9 +644,9 @@ branch (CLAUDE.md).
 
 ### Fase 6 – Elbillading
 
-- [ ] `regulation/charging.py` og fiktive apparater i `priority.py`.
-- [ ] Brytere for elbilladere (ENT-003, ENT-004) med lagring og dynamisk oppretting (B9).
-- [ ] Scenariotester og black box-tester.
+- [x] `regulation/charging.py` og fiktive apparater i `priority.py`.
+- [x] Brytere for elbilladere (ENT-003, ENT-004) med lagring og dynamisk oppretting (B9). Stillingene og tidspunktet overstyringen ble slått på, holdes av `ChargerSwitchBoard` i `charger_switches.py`, som også lagrer konfigurasjonen sammen med bryterne. `kraftvakt/config/save` i fase 7 skal lagre en ny konfigurasjon med `ChargerSwitchBoard.async_update_config()`. Da legges bryterne for nye elbilladere til, og bryterne for elbilladere som er tatt ut, fjernes fra entitetsregisteret (R5). Bryterne får navnet til elbilladerens entitet når de opprettes.
+- [x] Scenariotester og black box-tester.
 - Krav: LAD-011–030, ENT-003, ENT-004.
 
 ### Fase 7 – WebSocket-API
