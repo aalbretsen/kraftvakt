@@ -1,4 +1,4 @@
-"""Kraftvakt: prioritert effektstyring for Home Assistant."""
+"""Kraftvakt: prioritized power control for Home Assistant."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
@@ -19,35 +19,45 @@ from .const import (
     PANEL_URL_PATH,
     STATIC_URL,
 )
+from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
+from .storage import KraftvaktStorage
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-
-type KraftvaktConfigEntry = ConfigEntry[None]
+PLATFORMS: list[Platform] = []
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
-    """Sett opp Kraftvakt fra en config entry."""
+    """Set up Kraftvakt from a config entry."""
+    stored = await KraftvaktStorage(hass).async_load()
+    runtime = KraftvaktRuntime(hass, stored.config)
+    entry.runtime_data = runtime
+    entry.async_on_unload(runtime.async_shutdown)
+    runtime.async_start()
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await _async_register_panel(hass)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
-    """Last ut en config entry."""
-    frontend.async_remove_panel(hass, PANEL_URL_PATH)
-    return True
+    """Unload a config entry."""
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        frontend.async_remove_panel(hass, PANEL_URL_PATH)
+    return unloaded
 
 
 async def _async_register_panel(hass: HomeAssistant) -> None:
-    """Registrer sidepanelet i sidemenyen."""
-    # Statiske stier kan ikke avregistreres, så de registreres kun én gang
-    # per kjøring av Home Assistant (også ved reload av config entry).
+    """Register the panel in the sidebar."""
+    # Static paths cannot be unregistered, so they are registered only once
+    # per run of Home Assistant, also when the config entry is reloaded.
     if not hass.data.get(DOMAIN, {}).get("static_registered"):
         await hass.http.async_register_static_paths(
             [StaticPathConfig(STATIC_URL, str(FRONTEND_DIR), cache_headers=False)]
         )
         hass.data.setdefault(DOMAIN, {})["static_registered"] = True
 
-    # Versjonen i URL-en tvinger nettleseren til å hente ny JS etter oppdatering.
+    # The version in the URL makes the browser fetch new JS after an update.
     integration = await async_get_integration(hass, DOMAIN)
     await panel_custom.async_register_panel(
         hass,
