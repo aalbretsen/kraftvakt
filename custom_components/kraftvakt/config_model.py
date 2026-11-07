@@ -354,7 +354,11 @@ def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
 
 
 def validate_config(config: KraftvaktConfig) -> list[Issue]:
-    """Return every rule the configuration breaks, apart from action syntax."""
+    """Return every rule the configuration breaks.
+
+    The syntax of custom actions and templates is checked separately by
+    action_and_template_issues, since it needs the event loop.
+    """
     return [
         *_general_issues(config.general),
         *(
