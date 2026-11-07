@@ -1,19 +1,23 @@
+import { mdiDelete, mdiDragHorizontalVariant, mdiPlus } from "@mdi/js";
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 
-import type { ActionConfig, Appliance, Capabilities, Issue } from "../api";
+import type { ActionConfig, Appliance, Capabilities, Condition, Issue, Variant } from "../api";
+import { moveItem, newId } from "../draft";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 import { applianceErrors, hasDefaultAction, missingInAppliance } from "../validation";
 import "./action-field";
+import "./condition-field";
 
 const ACTION_FIELDS = ["turn_on", "turn_off"] as const;
 const ACTION_VARIABLES = ["entity_id", "entity"];
 
 /**
- * Adds or edits one appliance: its entity, its actions, and its power reserve
- * (APP-002 to APP-004, GEN-013).
+ * Adds or edits one appliance: its entity, its actions, its power reserve and
+ * its variants (APP-002 to APP-004, APP-006, GEN-013).
  *
  * «OK» fires `appliance-changed` with the appliance, and «Delete» fires
  * `appliance-deleted`. Both only change the draft (B7). `closed` is fired when
@@ -79,6 +83,7 @@ export class KraftvaktApplianceDialog extends LitElement {
             .computeHelper=${this.computeHelper}
             @value-changed=${this.reserveChanged}
           ></ha-form>
+          ${this.renderVariants(issues)}
         </div>
         <div slot="footer">${this.renderButtons(errors.length > 0)}</div>
       </ha-dialog>
@@ -102,6 +107,76 @@ export class KraftvaktApplianceDialog extends LitElement {
         @value-changed=${(event: CustomEvent<{ value: ActionConfig | null }>) =>
           this.changeDraft({ [field]: event.detail.value })}
       ></kraftvakt-action-field>
+    `;
+  }
+
+  /** The variants, sorted in the order their expressions are evaluated (APP-006, APP-007). */
+  private renderVariants(issues: Issue[]) {
+    return html`
+      <div class="section">${this.localize("appliance.variants")}</div>
+      <div class="info">${this.localize("appliance.variants_info")}</div>
+      <ha-sortable handle-selector=".handle" .disabled=${this.locked} @item-moved=${this.variantMoved}>
+        <div class="variants">
+          ${repeat(
+            this.draft.variants,
+            (variant) => variant.id,
+            (variant, index) => this.renderVariant(variant, index, issues),
+          )}
+        </div>
+      </ha-sortable>
+      ${this.locked
+        ? nothing
+        : html`
+            <div>
+              <ha-button appearance="outlined" @click=${this.addVariant}>
+                <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+                ${this.localize("appliance.add_variant")}
+              </ha-button>
+            </div>
+          `}
+    `;
+  }
+
+  private renderVariant(variant: Variant, index: number, issues: Issue[]) {
+    const prefix = `variants.${variant.id}.`;
+    const conditionIssue = issues.find((issue) => issue.field === `${prefix}condition`);
+    return html`
+      <div class="variant">
+        <div class="variant-header">
+          ${this.locked ? nothing : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant}></ha-svg-icon>`}
+          <b>${index + 1}.</b>
+          <span class="spacer"></span>
+          ${this.locked
+            ? nothing
+            : html`
+                <ha-icon-button
+                  .path=${mdiDelete}
+                  .label=${this.localize("appliance.remove_variant")}
+                  @click=${() => this.removeVariant(variant.id)}
+                ></ha-icon-button>
+              `}
+        </div>
+        <ha-form
+          .hass=${this.hass}
+          .data=${variant}
+          .schema=${LABEL_SCHEMA}
+          .error=${this.formErrors(issues, `${prefix}label`, prefix)}
+          .disabled=${this.locked}
+          .computeLabel=${this.computeLabel}
+          @value-changed=${(event: CustomEvent<{ value: { label?: string } }>) =>
+            this.changeVariant(variant.id, { label: event.detail.value.label ?? "" })}
+        ></ha-form>
+        <kraftvakt-condition-field
+          .hass=${this.hass}
+          .localize=${this.localize}
+          .value=${variant.condition}
+          .entityId=${this.draft.entity_id}
+          .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
+          .disabled=${this.locked}
+          @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
+            event.detail.value && this.changeVariant(variant.id, { condition: event.detail.value })}
+        ></kraftvakt-condition-field>
+      </div>
     `;
   }
 
@@ -173,6 +248,26 @@ export class KraftvaktApplianceDialog extends LitElement {
     this.changeDraft({ power_reserve_kw: event.detail.value.power_reserve_kw ?? null });
   }
 
+  private addVariant(): void {
+    const variant: Variant = { id: newId(), label: "", condition: { type: "template", value: "" } };
+    this.changeDraft({ variants: [...this.draft.variants, variant] });
+  }
+
+  private removeVariant(id: string): void {
+    this.changeDraft({ variants: this.draft.variants.filter((variant) => variant.id !== id) });
+  }
+
+  private changeVariant(id: string, changes: Partial<Variant>): void {
+    this.changeDraft({
+      variants: this.draft.variants.map((variant) => (variant.id === id ? { ...variant, ...changes } : variant)),
+    });
+  }
+
+  private variantMoved(event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
+    event.stopPropagation();
+    this.changeDraft({ variants: moveItem(this.draft.variants, event.detail.oldIndex, event.detail.newIndex) });
+  }
+
   private changeDraft(changes: Partial<Appliance>): void {
     this.draft = { ...this.draft, ...changes };
   }
@@ -208,7 +303,7 @@ export class KraftvaktApplianceDialog extends LitElement {
     fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
   private computeLabel = (field: { name: string }): string =>
-    this.localize(`appliance.fields.${field.name as "entity_id" | "power_reserve_kw"}.label`);
+    this.localize(`appliance.fields.${field.name as "entity_id" | "power_reserve_kw" | "label"}.label`);
 
   private computeHelper = (field: { name: string }): string =>
     field.name === "entity_id" || field.name === "power_reserve_kw"
@@ -225,6 +320,33 @@ export class KraftvaktApplianceDialog extends LitElement {
       font-size: var(--ha-font-size-l, 16px);
       font-weight: 500;
     }
+    .info {
+      margin-top: -8px;
+      font-size: var(--ha-font-size-s, 12px);
+      color: var(--secondary-text-color);
+    }
+    .variants {
+      display: grid;
+      gap: 12px;
+    }
+    .variant {
+      display: grid;
+      gap: 8px;
+      padding: 8px 12px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: var(--ha-border-radius-md, 8px);
+      background: var(--card-background-color);
+    }
+    .variant-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+    }
+    .handle {
+      cursor: grab;
+      color: var(--secondary-text-color);
+    }
     .spacer {
       flex: 1;
     }
@@ -234,6 +356,8 @@ export class KraftvaktApplianceDialog extends LitElement {
     }
   `;
 }
+
+const LABEL_SCHEMA = [{ name: "label", required: true, selector: { text: {} } }];
 
 declare global {
   interface HTMLElementTagNameMap {
