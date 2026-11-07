@@ -23,10 +23,11 @@ import "./components/save-bar";
 import { DRAFT_CHANGED, sameConfig, withCompletePriority } from "./draft";
 import { localizer, type Localize } from "./localize";
 import { navigateToPage, pageForPath, type Page } from "./navigation";
+import "./pages/general-page";
 import "./pages/placeholder-page";
 import "./pages/status-page";
 import type { HomeAssistant, Route } from "./types";
-import { draftErrors } from "./validation";
+import { draftErrors, missingItems } from "./validation";
 
 const TAB_ICONS: Record<Page, string> = {
   status: mdiPulse,
@@ -174,18 +175,19 @@ export class KraftvaktPanel extends LitElement {
       case "general":
       case "appliances":
       case "charging":
-        return this.renderConfigPage();
+        return this.renderConfigPage(page);
     }
   }
 
   /** A configuration page, locked while the regulation runs (GUI-012), with the save bar (B7). */
-  private renderConfigPage() {
+  private renderConfigPage(page: Exclude<Page, "status">) {
     if (!this.status || !this.config || !this.draft || !this.capabilities) {
       return "";
     }
     const locked = this.status.running;
     const errors = locked ? [] : draftErrors(this.draft, this.capabilities);
     const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
+    const issues = locked ? [] : this.pageIssues(errors);
     return html`
       ${locked
         ? html`<kraftvakt-locked-banner
@@ -194,7 +196,7 @@ export class KraftvaktPanel extends LitElement {
             .narrow=${this.narrow}
           ></kraftvakt-locked-banner>`
         : ""}
-      <kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>
+      ${this.renderConfigPageContent(page, locked ? this.config.config : this.draft, issues, locked)}
       ${showSaveBar
         ? html`
             <kraftvakt-save-bar
@@ -208,6 +210,36 @@ export class KraftvaktPanel extends LitElement {
           `
         : ""}
     `;
+  }
+
+  private renderConfigPageContent(
+    page: Exclude<Page, "status">,
+    config: KraftvaktConfig,
+    issues: Issue[],
+    locked: boolean,
+  ) {
+    switch (page) {
+      case "general":
+        return html`
+          <kraftvakt-general-page
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .narrow=${this.narrow}
+            .config=${config}
+            .entityNames=${this.config?.entity_names ?? {}}
+            .capabilities=${this.capabilities}
+            .issues=${issues}
+            .locked=${locked}
+          ></kraftvakt-general-page>
+        `;
+      default:
+        return html`<kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>`;
+    }
+  }
+
+  /** The mistakes, the errors from the last save and what is missing in the draft (3.4). */
+  private pageIssues(errors: Issue[]): Issue[] {
+    return this.draft ? [...errors, ...this.saveErrors, ...missingItems(this.draft)] : [];
   }
 
   /** Whether the draft has changes that are not saved. */

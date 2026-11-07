@@ -76,7 +76,7 @@
     "save": "Lagre",
     "discard": "Forkast",
     "unsaved": "Ulagrede endringer",
-    "fix_before_saving": "Rett {count} merkede innstillinger før du lagrer.",
+    "fix_before_saving": "Rett de merkede innstillingene før du lagrer.",
     "not_saved": "Konfigurasjonen ble ikke lagret. Rett de merkede innstillingene.",
     "save_refused_running": "Konfigurasjonen kan ikke lagres mens reguleringen kjører.",
     "leave_title": "Forkaste ulagrede endringer?",

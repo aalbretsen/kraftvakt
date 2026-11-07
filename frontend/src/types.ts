@@ -12,9 +12,16 @@ export interface HassEntity {
   attributes: { friendly_name?: string; [key: string]: unknown };
 }
 
+/** An entry of the entity registry, as the frontend has it. */
+export interface EntityRegistryEntry {
+  entity_id: string;
+  platform?: string;
+}
+
 export interface HomeAssistant {
   language: string;
   states: Record<string, HassEntity>;
+  entities: Record<string, EntityRegistryEntry>;
   locale: { language: string };
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;

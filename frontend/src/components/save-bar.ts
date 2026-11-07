@@ -22,8 +22,7 @@ export class KraftvaktSaveBar extends LitElement {
   @property() message?: string;
 
   protected render() {
-    const text =
-      this.errorCount > 0 ? this.localize("config.fix_before_saving", { count: this.errorCount }) : this.message;
+    const text = this.errorCount > 0 ? this.localize("config.fix_before_saving") : this.message;
     return html`
       <div class="bar" role="region" aria-label=${this.localize("config.unsaved")}>
         <div class="text">

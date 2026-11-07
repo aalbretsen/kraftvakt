@@ -76,7 +76,7 @@
     "save": "Save",
     "discard": "Discard",
     "unsaved": "Unsaved changes",
-    "fix_before_saving": "Fix {count} marked settings before saving.",
+    "fix_before_saving": "Fix the marked settings before saving.",
     "not_saved": "The configuration was not saved. Fix the marked settings.",
     "save_refused_running": "The configuration cannot be saved while the regulation runs.",
     "leave_title": "Discard unsaved changes?",
