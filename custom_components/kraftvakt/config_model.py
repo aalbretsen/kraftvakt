@@ -14,7 +14,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import time
 from enum import StrEnum
-from typing import Any
+from typing import Any, Final
 
 import voluptuous as vol
 from homeassistant.core import valid_entity_id
@@ -38,6 +38,10 @@ class Range:
         steps = value / self.step
         return abs(steps - round(steps)) < 1e-6
 
+    def to_dict(self) -> dict[str, float | None]:
+        """Return the range as JSON-friendly data for the panel."""
+        return {"min": self.minimum, "max": self.maximum, "step": self.step}
+
 
 POWER_LIMIT_KW = Range(1, 50, 0.01)
 REGULATION_WINDOW_S = Range(10, 600, 1)
@@ -47,6 +51,24 @@ PENALTY_THRESHOLD_KW = Range(0, 10, 0.01)
 APPLIANCE_POWER_RESERVE_KW = Range(0, None, 0.01)
 CHARGER_POWER_RESERVE_KW = Range(0, 5, 0.01)
 CHARGING_CURRENT_A = Range(1, None, 1)
+
+# The ranges of the settings, by section and field, used both to validate the
+# configuration and to tell the panel the limits.
+SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
+    "general": {
+        "power_limit_kw": POWER_LIMIT_KW,
+        "regulation_window_s": REGULATION_WINDOW_S,
+        "regulation_interval": REGULATION_INTERVAL,
+        "wait_at_limit_min": WAIT_AT_LIMIT_MIN,
+        "penalty_threshold_kw": PENALTY_THRESHOLD_KW,
+    },
+    "appliances": {"power_reserve_kw": APPLIANCE_POWER_RESERVE_KW},
+    "chargers": {
+        "min_current_a": CHARGING_CURRENT_A,
+        "max_current_a": CHARGING_CURRENT_A,
+        "power_reserve_kw": CHARGER_POWER_RESERVE_KW,
+    },
+}
 
 
 class ActionMode(StrEnum):
@@ -766,29 +788,18 @@ class _Reader:
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:
     location = _Location("general")
-    issues = _entity_format_issues(location, "power_sensor", general.power_sensor)
-    for field_name, value_range in (
-        ("power_limit_kw", POWER_LIMIT_KW),
-        ("regulation_window_s", REGULATION_WINDOW_S),
-        ("regulation_interval", REGULATION_INTERVAL),
-        ("wait_at_limit_min", WAIT_AT_LIMIT_MIN),
-        ("penalty_threshold_kw", PENALTY_THRESHOLD_KW),
-    ):
-        value = getattr(general, field_name)
-        issues += _range_issues(location, field_name, value, value_range)
-    return issues
+    return [
+        *_entity_format_issues(location, "power_sensor", general.power_sensor),
+        *_ranges_issues(location, general),
+    ]
 
 
 def _appliance_issues(appliance: Appliance) -> list[Issue]:
     location = _Location("appliances", appliance.id)
-    issues = _entity_format_issues(location, "entity_id", appliance.entity_id)
-    if appliance.power_reserve_kw is not None:
-        issues += _range_issues(
-            location,
-            "power_reserve_kw",
-            appliance.power_reserve_kw,
-            APPLIANCE_POWER_RESERVE_KW,
-        )
+    issues = [
+        *_entity_format_issues(location, "entity_id", appliance.entity_id),
+        *_ranges_issues(location, appliance),
+    ]
     issues += [
         location.issue("duplicate_id", f"variants.{variant_id}")
         for variant_id in _duplicate_ids(appliance.variants)
@@ -812,18 +823,7 @@ def _charger_issues(charger: Charger) -> list[Issue]:
         *_entity_format_issues(
             location, "charge_power_sensor", charger.charge_power_sensor
         ),
-        *_range_issues(
-            location, "min_current_a", charger.min_current_a, CHARGING_CURRENT_A
-        ),
-        *_range_issues(
-            location, "max_current_a", charger.max_current_a, CHARGING_CURRENT_A
-        ),
-        *_range_issues(
-            location,
-            "power_reserve_kw",
-            charger.power_reserve_kw,
-            CHARGER_POWER_RESERVE_KW,
-        ),
+        *_ranges_issues(location, charger),
     ]
     if charger.min_current_a > charger.max_current_a:
         issues.append(location.issue("min_current_above_max", "min_current_a"))
@@ -854,6 +854,21 @@ def _entity_format_issues(
     if entity_id is None or valid_entity_id(entity_id):
         return []
     return [location.issue("invalid_entity_id", field_name)]
+
+
+def _ranges_issues(
+    location: _Location, item: GeneralConfig | Appliance | Charger
+) -> list[Issue]:
+    """Check the settings of the item that have a range in SETTING_RANGES.
+
+    Optional settings that are not given are not checked.
+    """
+    return [
+        issue
+        for field_name, value_range in SETTING_RANGES[location.section].items()
+        if (value := getattr(item, field_name)) is not None
+        for issue in _range_issues(location, field_name, value, value_range)
+    ]
 
 
 def _range_issues(
