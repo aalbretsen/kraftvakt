@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
@@ -59,6 +60,14 @@ class ConfigIncompleteError(HomeAssistantError):
         self.missing = list(missing)
 
 
+class RegulationRunningError(HomeAssistantError):
+    """Raised when the configuration is changed while the regulation runs."""
+
+    def __init__(self) -> None:
+        """Create the error (REG-010)."""
+        super().__init__("The regulation must be stopped to change the configuration")
+
+
 class KraftvaktRuntime:
     """Measures the power sensor and runs the regulation.
 
@@ -84,7 +93,8 @@ class KraftvaktRuntime:
         self._charger_switches = charger_switches
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
-        self._actions = ActionRunner(hass, config)
+        self._action_lock = asyncio.Lock()
+        self._actions = ActionRunner(hass, config, self._action_lock)
         self._created_at = dt_util.utcnow()
         self._averager = PowerAverager(
             timedelta(seconds=config.general.regulation_window_s), self._created_at
@@ -96,7 +106,7 @@ class KraftvaktRuntime:
         self._windows_since_decision: list[WindowAverages] = []
         self._window_listeners: list[WindowListener] = []
         self._status_listeners: list[StatusListener] = []
-        self._unsubscribers: list[CALLBACK_TYPE] = []
+        self._cancel_power_listener: CALLBACK_TYPE | None = None
         self._cancel_window_timer: CALLBACK_TYPE | None = None
 
     @property
@@ -141,14 +151,7 @@ class KraftvaktRuntime:
         The regulation starts at the same moment as the first window, so the
         first decision comes after one whole regulation interval.
         """
-        power_sensor = self._config.general.power_sensor
-        if power_sensor:
-            self._record_power(self._created_at, self._hass.states.get(power_sensor))
-            self._unsubscribers.append(
-                async_track_state_change_event(
-                    self._hass, power_sensor, self._async_power_changed
-                )
-            )
+        self._follow_power_sensor(self._created_at)
         self._schedule_window_close()
         if not self._missing:
             self._start_regulation(self._created_at)
@@ -159,8 +162,9 @@ class KraftvaktRuntime:
         if self._cancel_window_timer:
             self._cancel_window_timer()
             self._cancel_window_timer = None
-        while self._unsubscribers:
-            self._unsubscribers.pop()()
+        if self._cancel_power_listener:
+            self._cancel_power_listener()
+            self._cancel_power_listener = None
 
     @callback
     def async_start_regulation(self) -> None:
@@ -184,6 +188,30 @@ class KraftvaktRuntime:
         self._execute(self._engine.stop())
         self._notify_status()
 
+    async def async_save_config(self, config: KraftvaktConfig) -> None:
+        """Save a new configuration and use it from the next start (REG-010, B9).
+
+        Only while the regulation is stopped, so nothing is on and nothing is
+        lost from the state of the regulation. The averages go on (GEN-007): a
+        new power sensor is followed from now, and a new regulation window
+        applies from the next window. Raises RegulationRunningError while the
+        regulation runs.
+        """
+        if self._engine.running:
+            raise RegulationRunningError
+        previous = self._config
+        self._config = config
+        self._missing = missing_items(config)
+        self._engine = RegulationEngine(config)
+        self._actions = ActionRunner(self._hass, config, self._action_lock)
+        self._averager.change_window_length(
+            timedelta(seconds=config.general.regulation_window_s)
+        )
+        if config.general.power_sensor != previous.general.power_sensor:
+            self._follow_power_sensor(dt_util.utcnow())
+        self._notify_status()
+        await self._charger_switches.async_update_config(config)
+
     @callback
     def async_add_window_listener(self, listener: WindowListener) -> CALLBACK_TYPE:
         """Call `listener` with the averages each time a window closes."""
@@ -200,6 +228,20 @@ class KraftvaktRuntime:
         self._windows_since_decision.clear()
         self._execute(self._engine.start(now))
         self._notify_status()
+
+    def _follow_power_sensor(self, now: datetime) -> None:
+        """Measure the configured power sensor from `now` on (GEN-003)."""
+        if self._cancel_power_listener:
+            self._cancel_power_listener()
+            self._cancel_power_listener = None
+        power_sensor = self._config.general.power_sensor
+        self._record_power(
+            now, self._hass.states.get(power_sensor) if power_sensor else None
+        )
+        if power_sensor:
+            self._cancel_power_listener = async_track_state_change_event(
+                self._hass, power_sensor, self._async_power_changed
+            )
 
     @callback
     def _async_power_changed(self, event: Event[EventStateChangedData]) -> None:

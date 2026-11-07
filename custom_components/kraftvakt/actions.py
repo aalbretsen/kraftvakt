@@ -152,12 +152,21 @@ class ActionRunner:
     resetting the window override, are left to the caller.
     """
 
-    def __init__(self, hass: HomeAssistant, config: KraftvaktConfig) -> None:
-        """Create the runner for the appliances and chargers in the configuration."""
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: KraftvaktConfig,
+        lock: asyncio.Lock | None = None,
+    ) -> None:
+        """Create the runner for the appliances and chargers in the configuration.
+
+        Runners that share `lock` run their commands one at a time, so a runner
+        for a new configuration waits for the commands of the previous one.
+        """
         self._hass = hass
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
         self._chargers = {charger.id: charger for charger in config.charging.chargers}
-        self._lock = asyncio.Lock()
+        self._lock = lock or asyncio.Lock()
         self._scripts: dict[tuple[str, ActionKind], Script] = {}
 
     async def async_execute(self, commands: Sequence[Command]) -> None:

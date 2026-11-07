@@ -78,6 +78,22 @@ def test_window_end_follows_the_window_length() -> None:
     assert averager.window_end == at(180)
 
 
+def test_new_window_length_applies_from_the_next_window() -> None:
+    """A new regulation window keeps the current window and the history."""
+    averager = PowerAverager(WINDOW, START)
+    averager.add_measurement(at(0), 2.0)
+
+    averager.change_window_length(timedelta(seconds=30))
+    first = averager.close_window()
+    averager.add_measurement(at(70), 5.0)
+    second = averager.close_window()
+
+    assert (first.start, first.end) == (at(0), at(60))
+    assert (second.start, second.end) == (at(60), at(90))
+    assert second.regulation_average_kw == pytest.approx((10 * 2.0 + 20 * 5.0) / 30)
+    assert second.capacity_average_kw == pytest.approx((3580 * 2.0 + 20 * 5.0) / 3600)
+
+
 def test_first_measurement_fills_both_windows_backwards() -> None:
     """At startup the first measurement replaces the missing ones (MAL-005)."""
     averager = PowerAverager(WINDOW, START)

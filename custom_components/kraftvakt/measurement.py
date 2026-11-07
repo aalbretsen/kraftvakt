@@ -73,6 +73,7 @@ class PowerAverager:
     def __init__(self, window_length: timedelta, start: datetime) -> None:
         """Start the first regulation window at `start` (T20)."""
         self._window_length = window_length
+        self._next_window_length = window_length
         self._window_start = start
         self._latest = start
         self._steps: list[_Step] = []
@@ -83,6 +84,13 @@ class PowerAverager:
     def window_end(self) -> datetime:
         """Return when the current regulation window closes."""
         return self._window_start + self._window_length
+
+    def change_window_length(self, window_length: timedelta) -> None:
+        """Use a new length of the regulation window from the next window on.
+
+        The current window keeps its end, and the history is kept.
+        """
+        self._next_window_length = window_length
 
     def add_measurement(self, when: datetime, power: float | None) -> None:
         """Record the power in kW measured at `when`, or None if it is invalid.
@@ -109,6 +117,7 @@ class PowerAverager:
         """
         start, end = self._window_start, self.window_end
         self._window_start = end
+        self._window_length = self._next_window_length
         self._latest = max(self._latest, end)
         self._consecutive_invalid_closes = (
             0 if self._sensor_valid else self._consecutive_invalid_closes + 1
