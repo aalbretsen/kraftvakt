@@ -26,8 +26,8 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.kraftvakt.config_model import Charger, KraftvaktConfig
 from custom_components.kraftvakt.const import DOMAIN
+from custom_components.kraftvakt.entity import item_name
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
-from custom_components.kraftvakt.switch import charger_name
 
 POWER_SENSOR = "sensor.han_power"
 CHARGER = "input_boolean.charger"
@@ -396,6 +396,6 @@ async def test_charger_name_when_the_entity_has_no_state(hass: HomeAssistant) ->
         "switch", "test", "garage", original_name="Garage charger"
     )
 
-    assert charger_name(hass, Charger("c1", entry.entity_id)) == "Garage charger"
-    assert charger_name(hass, Charger("c1", "switch.unknown")) == "switch.unknown"
-    assert charger_name(hass, Charger("c1")) == "c1"
+    assert item_name(hass, Charger("c1", entry.entity_id)) == "Garage charger"
+    assert item_name(hass, Charger("c1", "switch.unknown")) == "switch.unknown"
+    assert item_name(hass, Charger("c1")) == "c1"

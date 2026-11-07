@@ -24,7 +24,7 @@ from .const import (
 )
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 from .storage import KraftvaktStorage
-from .websocket_api import async_register_commands
+from .websocket_api import async_forward_status, async_register_commands
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
@@ -47,6 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
     entry.runtime_data = runtime
     entry.async_on_unload(runtime.async_shutdown)
     runtime.async_start()
+    entry.async_on_unload(async_forward_status(hass, runtime))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await _async_register_panel(hass)

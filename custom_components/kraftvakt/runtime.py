@@ -41,7 +41,8 @@ from .measurement import (
 )
 from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput, ResetWindowOverride
+from .regulation.model import Command, DecisionInput, ResetWindowOverride, Waiting
+from .regulation.penalty import PenaltyState
 
 type KraftvaktConfigEntry = ConfigEntry[KraftvaktRuntime]
 type WindowListener = Callable[[WindowAverages], None]
@@ -133,6 +134,42 @@ class KraftvaktRuntime:
     def safe_state(self) -> bool:
         """Return whether the regulation is in the safe state (REG-011)."""
         return self._engine.safe_state
+
+    @property
+    def penalty(self) -> PenaltyState:
+        """Return the overconsumption state and the penalty period (STR)."""
+        return self._engine.penalty
+
+    @property
+    def appliances_on(self) -> frozenset[str]:
+        """Return the ids of the appliances the regulation has turned on (GEN-006)."""
+        return self._engine.appliances_on
+
+    @property
+    def current_variants(self) -> Mapping[str, str | None]:
+        """Return the current variant id of each appliance, None for none (APP-007)."""
+        return self._engine.current_variants
+
+    @property
+    def waiting(self) -> Waiting | None:
+        """Return the waiting time that runs for the next slot, if any (REG-012)."""
+        return self._engine.waiting
+
+    @property
+    def next_decision_at(self) -> datetime | None:
+        """Return when the next decision is made, or None while stopped (T1)."""
+        started_at = self._engine.started_at
+        if started_at is None:
+            return None
+        current_window_counts = self._averager.window_start >= started_at
+        windows_left = (
+            self._config.general.regulation_interval
+            - self._windows_counted_since_decision()
+            - current_window_counts
+        )
+        return self._averager.window_end + windows_left * timedelta(
+            seconds=self._config.general.regulation_window_s
+        )
 
     @property
     def charger_switches(self) -> ChargerSwitchBoard:
@@ -283,13 +320,18 @@ class KraftvaktRuntime:
         the safe state or a penalty. It then starts at the end of the last
         window, so the windows after it count from the next one.
         """
+        return (
+            self._windows_counted_since_decision()
+            >= self._config.general.regulation_interval
+        )
+
+    def _windows_counted_since_decision(self) -> int:
         started_at = self._engine.started_at
-        counted = sum(
+        return sum(
             1
             for window in self._windows_since_decision
             if started_at is not None and window.start >= started_at
         )
-        return counted >= self._config.general.regulation_interval
 
     def _decide(self, averages: WindowAverages) -> None:
         """Make a decision based on the windows closed since the previous one."""

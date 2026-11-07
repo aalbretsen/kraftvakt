@@ -11,9 +11,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .charger_switches import ChargerSwitchBoard
-from .config_model import Charger
 from .const import DOMAIN
-from .entity import KraftvaktEntity, entity_name
+from .entity import KraftvaktEntity, item_name
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ async def async_setup_entry(
         new_entities: list[ChargerSwitch] = []
         for charger_id, charger in configured.items():
             if charger_id not in added:
-                name = charger_name(hass, charger)
+                name = item_name(hass, charger)
                 added[charger_id] = [
                     ChargerSwitch(entry, board, charger_id, name, setting)
                     for setting in CHARGER_SETTINGS
@@ -84,13 +83,6 @@ def _remove_orphaned_charger_switches(
 def charger_switch_key(charger_id: str, setting: str) -> str:
     """Return the unique id of a charger switch."""
     return f"charger_{charger_id}_{setting}"
-
-
-def charger_name(hass: HomeAssistant, charger: Charger) -> str:
-    """Return the name of the charger's entity in Home Assistant (GEN-013)."""
-    if charger.entity_id is None:
-        return charger.id
-    return entity_name(hass, charger.entity_id)
 
 
 class RegulationSwitch(KraftvaktEntity, SwitchEntity):

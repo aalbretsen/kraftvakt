@@ -8,6 +8,7 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -113,6 +114,7 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
         {"type": "kraftvakt/config/get"},
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": False},
+        {"type": "kraftvakt/status/subscribe"},
     ],
 )
 async def test_commands_require_an_administrator(
@@ -215,6 +217,7 @@ async def test_config_get_gives_configuration_names_and_missing(
         {"type": "kraftvakt/config/get"},
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": True},
+        {"type": "kraftvakt/status/subscribe"},
     ],
 )
 async def test_commands_need_kraftvakt_to_be_loaded(
@@ -509,3 +512,215 @@ async def test_start_is_refused_while_the_configuration_is_incomplete(
     assert response["error"]["code"] == "config_incomplete"
     assert "missing_power_sensor" in response["error"]["message"]
     assert regulation_switch(hass) == "off"
+
+
+async def setup_entry(hass: HomeAssistant) -> MockConfigEntry:
+    config_entry = MockConfigEntry(domain=DOMAIN)
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    return config_entry
+
+
+async def subscribe_status(client) -> dict[str, Any]:
+    """Subscribe to the status and return the first snapshot."""
+    response = await send(client, "kraftvakt/status/subscribe")
+    assert response["success"]
+    return await next_status(client)
+
+
+async def next_status(client) -> dict[str, Any]:
+    message = await client.receive_json()
+    assert message["type"] == "event"
+    return message["event"]
+
+
+def local(moment) -> str:
+    return dt_util.as_local(moment).isoformat()
+
+
+async def test_status_is_sent_at_once_and_at_each_window(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """GUI-005, GUI-006, T11: the status now, and after each window and decision."""
+    started = dt_util.utcnow()
+    hass.states.async_set("light.a", "off", {"friendly_name": "Varmtvannsbereder"})
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+
+    status = await subscribe_status(client)
+
+    assert status == {
+        "running": True,
+        "missing": [],
+        "safe_state": False,
+        "penalty": {
+            "active": False,
+            "overconsumption_kwh": 0.0,
+            "recovery_started": False,
+        },
+        "regulation_average_kw": None,
+        "capacity_average_kw": None,
+        "power_limit_kw": 10.0,
+        "next_decision_at": local(started + WINDOW),
+        "appliances": [
+            {
+                "id": "a",
+                "name": "Varmtvannsbereder",
+                "on": False,
+                "variant": None,
+                "waiting_until": None,
+            },
+            {
+                "id": "b",
+                "name": "light.b",
+                "on": False,
+                "variant": None,
+                "waiting_until": None,
+            },
+        ],
+        "chargers": [],
+    }
+
+    set_power(hass, "2000")
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert status["regulation_average_kw"] == pytest.approx(2.0)
+    assert status["capacity_average_kw"] == pytest.approx(2.0)
+    assert status["next_decision_at"] == local(started + 2 * WINDOW)
+    assert [item["on"] for item in status["appliances"]] == [True, False]
+
+
+async def test_status_shows_the_variant_and_the_waiting_time(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """APP-007, REG-012, T11: the current variant and when the waiting ends."""
+    started = dt_util.utcnow()
+    config["general"]["wait_at_limit_min"] = 5
+    config["appliances"][0]["variants"] = [
+        {
+            "id": "v1",
+            "label": "Morgen",
+            "condition": {"type": "template", "value": "{{ true }}"},
+        }
+    ]
+    config["priority"].insert(
+        0, {"type": "appliance", "appliance_id": "a", "variant_id": "v1"}
+    )
+    set_power(hass, "1000")
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+    await subscribe_status(client)
+
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert status["appliances"][0]["variant"] == "Morgen"
+    assert status["appliances"][0]["waiting_until"] == local(
+        started + WINDOW + timedelta(seconds=30)
+    )
+    assert status["appliances"][1]["waiting_until"] is None
+
+
+async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(
+    hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
+) -> None:
+    """REG-016, GUI-007, ENT-006: the status, the panel and the switch agree."""
+    subscriber = await hass_ws_client(hass)
+    commander = await hass_ws_client(hass)
+    assert (await subscribe_status(subscriber))["running"]
+
+    await set_running(commander, False)
+    status = await next_status(subscriber)
+    assert not status["running"]
+    assert status["next_decision_at"] is None
+    assert regulation_switch(hass) == "off"
+
+    await switch_regulation(hass, "turn_on")
+    assert (await next_status(subscriber))["running"]
+
+    await switch_regulation(hass, "turn_off")
+    assert not (await next_status(subscriber))["running"]
+    response = await set_running(commander, True)
+    assert response["result"] == {"running": True}
+    assert (await next_status(subscriber))["running"]
+    assert regulation_switch(hass) == "on"
+
+
+async def test_status_follows_a_saved_configuration_and_a_reload(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """B9: the new configuration shows at once, and the status survives a reload."""
+    subscriber = await hass_ws_client(hass)
+    commander = await hass_ws_client(hass)
+    await subscribe_status(subscriber)
+    await set_running(commander, False)
+    await next_status(subscriber)
+    changed = config_data()
+    changed["general"].update(power_sensor=None, power_limit_kw=8.0)
+
+    await send(commander, "kraftvakt/config/save", config=changed)
+    status = await next_status(subscriber)
+
+    assert status["power_limit_kw"] == 8.0
+    assert [issue["code"] for issue in status["missing"]] == ["missing_power_sensor"]
+
+    changed["general"]["power_sensor"] = POWER_SENSOR
+    await send(commander, "kraftvakt/config/save", config=changed)
+    await next_status(subscriber)
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    status = await next_status(subscriber)
+    while not status["running"]:
+        status = await next_status(subscriber)
+    assert status["power_limit_kw"] == 8.0
+
+
+async def test_status_shows_the_chargers(
+    hass: HomeAssistant,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """GUI-006, T11: whether each charger is activated, with its details."""
+    config["charging"] = {
+        "enabled": True,
+        "chargers": [
+            {
+                "id": "c1",
+                "entity_id": "input_boolean.charger",
+                "activate": DEFAULT,
+                "deactivate": DEFAULT,
+                "set_current": {
+                    "mode": "custom",
+                    "action": [{"action": "number.set_value"}],
+                },
+                "charge_power_sensor": "sensor.charger_power",
+            }
+        ],
+    }
+    config["priority"].append({"type": "ev_charging"})
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+
+    status = await subscribe_status(client)
+
+    assert status["chargers"] == [
+        {
+            "id": "c1",
+            "name": "input_boolean.charger",
+            "activated": False,
+            "current_a": None,
+            "bypassed": False,
+            "waiting": False,
+            "allowed": False,
+            "waiting_until": None,
+        }
+    ]

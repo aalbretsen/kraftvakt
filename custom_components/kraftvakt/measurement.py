@@ -81,6 +81,11 @@ class PowerAverager:
         self._consecutive_invalid_closes = 0
 
     @property
+    def window_start(self) -> datetime:
+        """Return when the current regulation window started."""
+        return self._window_start
+
+    @property
     def window_end(self) -> datetime:
         """Return when the current regulation window closes."""
         return self._window_start + self._window_length

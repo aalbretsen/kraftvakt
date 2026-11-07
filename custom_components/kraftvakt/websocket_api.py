@@ -5,11 +5,17 @@ Every command requires an administrator (GUI-001).
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Final
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
+from homeassistant.util import dt as dt_util
 
 from .actions import default_action_domains, default_action_issues
 from .config_model import (
@@ -23,12 +29,14 @@ from .config_model import (
     parse_config,
 )
 from .const import DOMAIN
-from .entity import entity_name
+from .entity import entity_name, item_name
+from .regulation.model import ApplianceSlotKey, ChargerSlotKey
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
 
 ERR_NOT_LOADED: Final = "not_loaded"
 ERR_REGULATION_RUNNING: Final = "regulation_running"
 ERR_CONFIG_INCOMPLETE: Final = "config_incomplete"
+SIGNAL_STATUS: Final = f"{DOMAIN}_status"
 
 
 @callback
@@ -38,6 +46,23 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_get_config)
     websocket_api.async_register_command(hass, websocket_save_config)
     websocket_api.async_register_command(hass, websocket_set_running)
+    websocket_api.async_register_command(hass, websocket_subscribe_status)
+
+
+@callback
+def async_forward_status(
+    hass: HomeAssistant, runtime: KraftvaktRuntime
+) -> CALLBACK_TYPE:
+    """Send the status to the subscribers now and each time it may change.
+
+    The subscribers follow the runtime that sends, so they keep getting the
+    status when the config entry is reloaded.
+    """
+    remove = runtime.async_add_status_listener(
+        lambda: async_dispatcher_send(hass, SIGNAL_STATUS, runtime)
+    )
+    async_dispatcher_send(hass, SIGNAL_STATUS, runtime)
+    return remove
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/capabilities"})
@@ -150,6 +175,109 @@ def websocket_set_running(
     connection.send_result(msg["id"], {"running": runtime.running})
 
 
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/status/subscribe"})
+@websocket_api.require_admin
+@callback
+def websocket_subscribe_status(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Send the status now and then at each new average, decision, start and stop.
+
+    The status is what the status page shows (GUI-005, GUI-006, T11).
+    """
+    if (runtime := _loaded_runtime(hass, connection, msg)) is None:
+        return
+
+    @callback
+    def send_status(runtime: KraftvaktRuntime) -> None:
+        connection.send_message(
+            websocket_api.event_message(msg["id"], status_snapshot(hass, runtime))
+        )
+
+    connection.subscriptions[msg["id"]] = async_dispatcher_connect(
+        hass, SIGNAL_STATUS, send_status
+    )
+    connection.send_result(msg["id"])
+    send_status(runtime)
+
+
+def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:
+    """Return how the regulation stands now (GUI-005, GUI-006, T11).
+
+    `waiting_until` is set for the appliance or charger whose slot is next and
+    waits (REG-012). The averages are None until the first window has closed.
+    """
+    config = runtime.config
+    averages = runtime.latest_averages
+    penalty = runtime.penalty
+    waiting = runtime.waiting
+    waiting_key = None if waiting is None else waiting.key
+    waiting_until = None if waiting is None else _local_time(waiting.until)
+    variant_labels = {
+        variant.id: variant.label
+        for appliance in config.appliances
+        for variant in appliance.variants
+    }
+    current_variant_labels = {
+        appliance_id: variant_labels[variant_id]
+        for appliance_id, variant_id in runtime.current_variants.items()
+        if variant_id is not None
+    }
+    return {
+        "running": runtime.running,
+        "missing": [issue.to_dict() for issue in runtime.missing],
+        "safe_state": runtime.safe_state,
+        "penalty": {
+            "active": penalty.active,
+            "overconsumption_kwh": penalty.overconsumption_kwh,
+            "recovery_started": penalty.recovery_started,
+        },
+        "regulation_average_kw": (
+            None if averages is None else averages.regulation_average_kw
+        ),
+        "capacity_average_kw": (
+            None if averages is None else averages.capacity_average_kw
+        ),
+        "power_limit_kw": config.general.power_limit_kw,
+        "next_decision_at": _local_time(runtime.next_decision_at),
+        "appliances": [
+            {
+                "id": appliance.id,
+                "name": item_name(hass, appliance),
+                "on": appliance.id in runtime.appliances_on,
+                "variant": current_variant_labels.get(appliance.id),
+                "waiting_until": (
+                    waiting_until
+                    if waiting_key == ApplianceSlotKey(appliance.id)
+                    else None
+                ),
+            }
+            for appliance in config.appliances
+        ],
+        "chargers": [
+            {
+                "id": charger.id,
+                "name": item_name(hass, charger),
+                "activated": status.fictive_on > 0,
+                "current_a": status.current_a,
+                "bypassed": status.bypassed,
+                "waiting": status.waiting,
+                "allowed": status.allowed,
+                "waiting_until": (
+                    waiting_until
+                    if isinstance(waiting_key, ChargerSlotKey)
+                    and waiting_key.charger_id == charger.id
+                    else None
+                ),
+            }
+            for charger in config.charging.chargers
+            if (status := runtime.chargers.get(charger.id)) is not None
+        ],
+    }
+
+
 def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
@@ -201,6 +329,10 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
         for item in items
         if item.entity_id is not None
     }
+
+
+def _local_time(moment: datetime | None) -> str | None:
+    return None if moment is None else dt_util.as_local(moment).isoformat()
 
 
 def _send_regulation_running(
