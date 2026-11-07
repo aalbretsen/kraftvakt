@@ -12,5 +12,31 @@
   },
   "placeholder": {
     "not_ready": "Denne siden er ikke klar ennå. Den kommer i en senere versjon av Kraftvakt."
+  },
+  "status": {
+    "regulation": "Regulering",
+    "running": "Kjører",
+    "stopped": "Stoppet",
+    "start": "Start regulering",
+    "stop": "Stopp regulering",
+    "stopped_info": "Reguleringen er stoppet, og alle regulerte apparater og elbilladere er slått av. Konfigurasjonen kan endres. Når reguleringen startes, slås apparatene på igjen ett og ett.",
+    "incomplete_title": "Konfigurasjonen er ikke fullstendig",
+    "start_refused": "Reguleringen kan ikke startes før konfigurasjonen er fullstendig."
+  },
+  "missing": {
+    "missing_power_sensor": "Effektsensor er ikke valgt.",
+    "missing_entity": "{item}: entitet er ikke valgt.",
+    "missing_action": "{item}: handling for å {action} mangler.",
+    "missing_charge_power_sensor": "{item}: sensor for ladeeffekt mangler.",
+    "unknown": "{item}: {code}",
+    "appliance_without_entity": "Et apparat uten entitet",
+    "charger_without_entity": "En elbillader uten entitet",
+    "actions": {
+      "turn_on": "slå på",
+      "turn_off": "slå av",
+      "activate": "aktivere",
+      "deactivate": "deaktivere",
+      "set_current": "sette ladestrøm"
+    }
   }
 }

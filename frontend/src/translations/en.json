@@ -12,5 +12,31 @@
   },
   "placeholder": {
     "not_ready": "This page is not ready yet. It comes in a later version of Kraftvakt."
+  },
+  "status": {
+    "regulation": "Regulation",
+    "running": "Running",
+    "stopped": "Stopped",
+    "start": "Start regulation",
+    "stop": "Stop regulation",
+    "stopped_info": "The regulation is stopped, and all regulated appliances and EV chargers are turned off. The configuration can be changed. When the regulation starts, the appliances are turned on again one by one.",
+    "incomplete_title": "The configuration is not complete",
+    "start_refused": "The regulation cannot start before the configuration is complete."
+  },
+  "missing": {
+    "missing_power_sensor": "The power sensor is not chosen.",
+    "missing_entity": "{item}: the entity is not chosen.",
+    "missing_action": "{item}: the action to {action} is missing.",
+    "missing_charge_power_sensor": "{item}: the sensor for charging power is missing.",
+    "unknown": "{item}: {code}",
+    "appliance_without_entity": "An appliance without an entity",
+    "charger_without_entity": "An EV charger without an entity",
+    "actions": {
+      "turn_on": "turn it on",
+      "turn_off": "turn it off",
+      "activate": "activate it",
+      "deactivate": "deactivate it",
+      "set_current": "set the charging current"
+    }
   }
 }
