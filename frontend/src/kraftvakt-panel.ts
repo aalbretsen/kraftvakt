@@ -18,6 +18,7 @@ import {
   type StatusSnapshot,
 } from "./api";
 import "./components/confirm-dialog";
+import "./components/locked-banner";
 import "./components/save-bar";
 import { DRAFT_CHANGED, sameConfig, withCompletePriority } from "./draft";
 import { localizer, type Localize } from "./localize";
@@ -186,6 +187,13 @@ export class KraftvaktPanel extends LitElement {
     const errors = locked ? [] : draftErrors(this.draft, this.capabilities);
     const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
     return html`
+      ${locked
+        ? html`<kraftvakt-locked-banner
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .narrow=${this.narrow}
+          ></kraftvakt-locked-banner>`
+        : ""}
       <kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>
       ${showSaveBar
         ? html`
