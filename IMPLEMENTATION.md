@@ -71,6 +71,7 @@ forslag i kapittel 10.
 | T19 | MAL-007 | Hva gjelder når effektsensoren mangler enhet eller oppgir en annen effektenhet enn W og kW? | W og kW regnes om. En sensor uten enhet leses som watt. Alle andre enheter gir ugyldig måleverdi. Avklart 2026-11-07. |
 | T20 | MAL-001, T1 | Hvor er takten til reguleringsvinduene forankret? | Første vindu starter når integrasjonen starter, og hvert vindu slutter ett reguleringsvindu etter forrige, planlagt mot absolutte tidspunkter (R4). Alle vinduer er hele vinduer. Avklart 2026-11-07. |
 | T21 | MAL-005, MAL-006, REG-011 | Hva viser snittsensorene mens effektsensoren er borte over lengre tid, også når reguleringen er stoppet og ingen sikker tilstand kan inntre? | Målingen forkaster historikken når effektsensoren var uten gyldig måleverdi da to vinduer på rad ble lukket, uansett om reguleringen kjører. Snittsensorene er da utilgjengelige til en gyldig verdi kommer, og den fylles bakover etter MAL-005. Sikker tilstand (fase 5) bruker samme vilkår. Avklart 2026-11-07. |
+| T22 | APP-009 | Flere apparater kan bytte variant ved samme avgjørelse, for eksempel to varianter «Morgen» som begge starter klokken 05. I hvilken rekkefølge håndteres byttene? | Bytte av variant følger APP-009: apparatet er avslått etter byttet og slås på igjen på vanlig måte, etter ventetid. Bytter flere apparater samtidig, håndteres de ett og ett i rekkefølgen til den nye plassen, høyest prioritet først. Et apparat som var på før byttet, slås av hvis det fortsatt er på. Et apparat som var av, slår av det laveste prioriterte apparatet som er på, hvis den nye plassen er over det. Et apparat som uansett må av, kan dermed regnes som det som gir plass. Avklart 2026-11-07. |
 
 ---
 
@@ -813,3 +814,5 @@ Planen endrer ikke REQUIREMENTS.md. Disse endringene foreslås, og eier avgjør:
 19. **MAL-005/MAL-006/GEN-007:** Presiser at snittene også begynner på nytt når
     effektsensoren var uten gyldig verdi da to vinduer på rad ble lukket, selv
     om reguleringen er stoppet, og at snittsensorene da er utilgjengelige (T21).
+20. **APP-009:** Presiser hvordan flere apparater som bytter variant ved samme
+    avgjørelse, håndteres (T22).

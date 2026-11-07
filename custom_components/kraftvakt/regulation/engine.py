@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Hashable, Iterator, Mapping
 from datetime import datetime, timedelta
 from itertools import islice
 from typing import Final
@@ -86,32 +86,67 @@ class RegulationEngine:
         average = decision.regulation_average_kw
         if not self._running or average is None:
             return []
-        self._update_variants(decision.variant_conditions)
+        commands = self._switch_variants(decision.variant_conditions)
         if average > self._config.general.power_limit_kw:
-            return self._switch_off_above_limit()
-        return self._turn_on_next(decision.now, average)
+            return commands + self._switch_off_above_limit()
+        return commands + self._turn_on_next(decision.now, average)
 
     def _turn_off_everything(self) -> list[Command]:
         return [TurnOffAppliance(appliance.id) for appliance in self._config.appliances]
 
-    def _update_variants(self, variant_conditions: Mapping[str, bool]) -> None:
+    def _switch_variants(self, variant_conditions: Mapping[str, bool]) -> list[Command]:
+        """Find the current variants and handle the appliances that switch (APP-009).
+
+        An appliance that switches is off afterwards, in the place of its new
+        variant. If it was off and its new place is above the lowest slot that
+        is on, that slot is switched off to make room. Several appliances that
+        switch at once are handled one by one from the highest new place (T22).
+        These switch-offs are exceptions from one slot per decision (REG-004).
+        """
+        previous = self._state.current_variants
         self._state.current_variants = {
             appliance.id: current_variant(appliance, variant_conditions)
             for appliance in self._config.appliances
         }
+        switching = [
+            appliance_id
+            for appliance_id, variant in self._state.current_variants.items()
+            if appliance_id in previous and previous[appliance_id] != variant
+        ]
+        was_on = self._state.appliances_on & set(switching)
+        places = {slot.key: place for place, slot in enumerate(self._slots())}
+        commands: list[Command] = []
+        for key in sorted(
+            map(ApplianceSlotKey, switching), key=lambda key: places[key]
+        ):
+            if key.appliance_id in was_on:
+                if key.appliance_id in self._state.appliances_on:
+                    commands += self._switch(key, turn_on=False)
+            else:
+                lowest_on = next(self._slots_on_lowest_first(), None)
+                if lowest_on is not None and places[key] < places[lowest_on.key]:
+                    commands += self._switch(lowest_on.key, turn_on=False)
+            self._forget_waiting(key)
+            self._state.cycling.reset(key)
+        return commands
 
     def _slots(self) -> list[Slot]:
         return build_slots(
             self._config, self._state.current_variants, self._state.appliances_on
         )
 
+    def _slots_on_lowest_first(self) -> Iterator[Slot]:
+        """Return the slots the regulation may switch off, lowest priority first."""
+        return (
+            slot for slot in reversed(self._slots()) if slot.is_on and slot.can_turn_off
+        )
+
     def _switch_off_above_limit(self) -> list[Command]:
         """Switch off the lowest priority slots that are on (REG-008)."""
         self._state.waiting = None
-        slots_on = [slot for slot in self._slots() if slot.is_on and slot.can_turn_off]
         commands: list[Command] = []
-        for slot in islice(reversed(slots_on), SLOTS_PER_DECISION):
-            commands += self._switch(slot, turn_on=False)
+        for slot in list(islice(self._slots_on_lowest_first(), SLOTS_PER_DECISION)):
+            commands += self._switch(slot.key, turn_on=False)
         return commands
 
     def _turn_on_next(self, now: datetime, average_kw: float) -> list[Command]:
@@ -132,7 +167,7 @@ class RegulationEngine:
                 break
             if not self._has_waited(candidate, now, average_kw):
                 break
-            commands += self._switch(candidate, turn_on=True)
+            commands += self._switch(candidate.key, turn_on=True)
         return commands
 
     def _may_turn_on(self, slot: Slot, average_kw: float) -> bool:
@@ -162,11 +197,13 @@ class RegulationEngine:
         )
         return now - waiting.started_at >= required
 
-    def _switch(self, slot: Slot, turn_on: bool) -> list[Command]:
-        """Return the commands that switch the slot and record it as switched."""
-        key = slot.key
+    def _forget_waiting(self, key: Hashable) -> None:
         if self._state.waiting is not None and self._state.waiting.key == key:
             self._state.waiting = None
+
+    def _switch(self, key: Hashable, turn_on: bool) -> list[Command]:
+        """Return the commands that switch the slot and record it as switched."""
+        self._forget_waiting(key)
         self._state.cycling.record(key, turn_on)
         if not isinstance(key, ApplianceSlotKey):
             raise TypeError(f"Unknown slot {key!r}")

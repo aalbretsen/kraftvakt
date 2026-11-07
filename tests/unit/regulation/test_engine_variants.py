@@ -1,7 +1,7 @@
 """Scenario tests for variants of appliances (APP-007, APP-009)."""
 
 from .configs import appliance, make_config
-from .scenario import Scenario, on
+from .scenario import Scenario, off, on
 
 
 def morning_heater_config(**settings):
@@ -49,3 +49,126 @@ def test_restart_forgets_the_current_variant() -> None:
     scenario.engine.start(scenario.now)
 
     assert scenario.engine.current_variants == {}
+
+
+def test_switch_above_the_lowest_on_makes_room() -> None:
+    """APP-009 example: C is switched off to give room for D, which comes back on."""
+    scenario = Scenario(
+        make_config(
+            "a",
+            "b",
+            "c",
+            appliance("d", variants=("up",)),
+            priority=("a", "b", "d:up", "c", "d"),
+            wait_at_limit_min=0,
+        )
+    )
+    scenario.turn_on("a", "b", "c")
+
+    assert scenario.decide(9.0, true=("up",)) == off("c") + on("d")
+    assert scenario.decide(9.0, true=("up",)) == on("c")
+
+
+def test_switch_happens_at_the_same_decision_as_switching_off() -> None:
+    """APP-009 is an exception from one appliance per decision (REG-004)."""
+    scenario = Scenario(
+        make_config(
+            "a",
+            "b",
+            appliance("d", variants=("up",)),
+            priority=("a", "d:up", "b", "d"),
+        )
+    )
+    scenario.turn_on("a", "b")
+
+    assert scenario.decide(10.5, true=("up",)) == off("b", "a")
+
+
+def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
+    """APP-009: off after the switch, then on in the normal way after waiting."""
+    scenario = Scenario(morning_heater_config())
+    scenario.turn_on("b", "heater")
+
+    assert scenario.decide(5.0, true=("morning",)) == off("heater")
+    assert scenario.engine.appliances_on == {"b"}
+    assert scenario.decide_many(5.0, 3, true=("morning",)) == [[], [], on("heater")]
+
+
+def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
+    scenario = Scenario(
+        make_config(
+            "a",
+            "b",
+            appliance("d", variants=("down",)),
+            priority=("a", "d", "b", "d:down"),
+            wait_at_limit_min=0,
+        )
+    )
+    scenario.turn_on("a")
+
+    assert scenario.decide(9.0, true=("down",)) == on("b")
+
+
+def heater_moving_down_config():
+    """The heater is below b, and lower still with its variant."""
+    return make_config(
+        appliance("heater", variants=("low",)),
+        "b",
+        priority=("b", "heater", "heater:low"),
+    )
+
+
+def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
+    """APP-009: the waiting time for the appliance starts again."""
+    scenario = Scenario(heater_moving_down_config())
+    scenario.turn_on("b")
+    assert scenario.decide_many(5.0, 2) == [[], []]
+
+    assert scenario.decide(5.0, true=("low",)) == []
+    assert scenario.decide_many(5.0, 3, true=("low",)) == [[], [], on("heater")]
+
+
+def test_switch_resets_the_increasing_waiting_time() -> None:
+    """APP-009: the counter for increasing waiting time is reset (REG-015)."""
+    scenario = Scenario(heater_moving_down_config())
+    scenario.turn_on("b", "heater")
+    assert scenario.decide(10.5) == off("heater")
+    assert scenario.decide(0.0) == on("heater")
+    assert scenario.decide(10.5) == off("heater")
+
+    assert scenario.decide(0.0, true=("low",)) == on("heater")
+
+
+def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
+    """T22: E makes room by switching off D, which has to go off anyway."""
+    scenario = Scenario(
+        make_config(
+            "a",
+            "b",
+            appliance("d", variants=("down",)),
+            appliance("e", variants=("up",)),
+            priority=("a", "e:up", "b", "d", "e", "d:down"),
+            wait_at_limit_min=0,
+        )
+    )
+    scenario.turn_on("a", "b", "d")
+
+    assert scenario.decide(10.0, true=("down", "up")) == off("d")
+    assert scenario.engine.appliances_on == {"a", "b"}
+
+
+def test_several_appliances_switching_up_switch_off_one_each() -> None:
+    scenario = Scenario(
+        make_config(
+            "a",
+            "b",
+            "c",
+            appliance("d", variants=("up",)),
+            appliance("e", variants=("up_too",)),
+            priority=("d:up", "e:up_too", "a", "b", "c", "d", "e"),
+            wait_at_limit_min=0,
+        )
+    )
+    scenario.turn_on("a", "b", "c")
+
+    assert scenario.decide(10.0, true=("up", "up_too")) == off("c", "b")
