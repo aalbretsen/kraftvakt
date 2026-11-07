@@ -64,6 +64,10 @@ forslag i kapittel 10.
 | T12 | GUI-012 | Skal den låste konfigurasjonssiden ha en snarvei for å stoppe reguleringen? | Ja, en knapp «Stopp regulering» i låsebanneret. |
 | T13 | LAD-027 | Hvilket tidspunkt regnes «neste ladetidsrom» fra? | Fra tidspunktet bryteren for overstyring (ENT-004) ble slått på, eller fra siste start av reguleringen hvis den er senere. Bryteren registrerer tidspunktet. Overstyringen opphører ved første avgjørelse der et ladetidsrom har startet etter dette tidspunktet. Selve vurderingen skjer fortsatt ved avgjørelsene (REG-005). Etter omstart av HA eller integrasjonen er tidspunktet ukjent, og starten av reguleringen brukes (LAD-027). |
 | T14 | GEN-013 | Hvilke variabler er tilgjengelige i maler og handlinger? | `entity_id` og `entity` (entitetens tilstandsobjekt, med f.eks. `entity.state` og `entity.attributes`) i alle maler og handlinger. I tillegg `current`, `min_current` og `max_current` i handlingen for ladestrøm (LAD-006). |
+| T15 | GEN-013, T9 | Hvilke felt gjelder kravet om unike entiteter? | Bare entiteten som identifiserer et apparat eller en elbillader (`entity_id`). Effektsensor, sensorer for ladeeffekt, betingelser og handlinger kan bruke samme entitet flere steder. Avklart 2026-11-07. |
+| T16 | LAD-007 | Nedre grense og standardverdier for ladestrøm? | Hele ampere, minste ≥ 1 A og minste ≤ største. Standard er 6 A og 16 A, så feltene kan ikke mangle. Avklart 2026-11-07. |
+| T17 | APP-001, APP-005, APP-008 | Hva skjer med overflødige oppføringer i prioritetslisten? | Manglende oppføringer legges nederst. Duplikater, oppføringer for apparater eller varianter som ikke finnes, og `ev_charging` mens billadestyring er deaktivert, avvises som ugyldig konfigurasjon. Panelet fjerner dem selv. Avklart 2026-11-07. |
+| T18 | GEN-013 | Hvor grundig valideres handlinger og maler? | Egendefinerte handlinger valideres med HAs skjema for skript, og maler sjekkes for syntaksfeil, i fase 1. Om «Standard» finnes for entitetens domene, valideres i fase 5, der tabellen i `actions.py` ligger. Avklart 2026-11-07. |
 
 ---
 
@@ -212,19 +216,26 @@ Regler som valideres i `config_model.py`:
 - Prioritetslisten har nøyaktig én oppføring for hvert apparat og hver variant,
   og `ev_charging` nøyaktig én gang når billadestyring er aktivert (APP-001,
   APP-005, APP-008). Mangler oppføringer, legges de nederst (APP-008).
+  Overflødige oppføringer avvises (T17).
 - Merkelapper er ikke tomme og er unike per apparat (APP-006).
-- Entiteter er unike i hele konfigurasjonen (GEN-013, T9).
-- `min_current_a ≤ max_current_a`, hele ampere (LAD-007).
+- Entiteter for apparater og elbilladere er unike i hele konfigurasjonen (GEN-013, T9, T15).
+- `1 ≤ min_current_a ≤ max_current_a`, hele ampere, standard 6 og 16 (LAD-007, T16).
 - Ladetidsrom: start ≠ slutt, hele minutter (LAD-025).
 - Områder og standardverdier: REG-001, MAL-002, REG-002, REG-014, STR-002, LAD-009, med oppløsning etter T8.
+- Egendefinerte handlinger og maler har gyldig syntaks etter HAs egne skjemaer (T18).
+  HA validerer maler bare i event-loopen, så denne sjekken er en egen funksjon
+  (`action_and_template_issues`), og `parse_config` må kalles fra event-loopen.
 
 Ugyldig konfigurasjon kan ikke lagres. Ufullstendig konfigurasjon kan lagres,
 men reguleringen kan ikke startes før den er fullstendig.
 
 Fullstendig konfigurasjon (REG-016) gir en liste over mangler med kode og mål,
-for eksempel `{"code": "missing_power_sensor"}` eller
-`{"code": "missing_action", "target": "a1", "field": "turn_on"}`. Statussiden
-oversetter kodene (GUI-005).
+for eksempel `{"code": "missing_power_sensor", "section": "general", "field": "power_sensor"}`
+eller `{"code": "missing_action", "section": "appliances", "target": "a1", "field": "turn_on"}`.
+Valideringsfeil har samme form. `section` sier om `target` er et apparat
+(`appliances`) eller en elbillader (`chargers`), og felt for en variant har
+formen `variants.<id>.label`. Statussiden og konfigurasjonssidene oversetter
+kodene (GUI-005).
 
 ### 3.5 Reguleringens tilstand
 
@@ -590,9 +601,9 @@ branch (CLAUDE.md).
 ### Fase 1 – Konfigurasjonsmodell og lagring
 
 - [x] Forutsetning: oppgrader utviklingsmiljøet og CI til Python 3.14 (9.1), og lås utviklingsavhengighetene til versjonene HA foretrekker. Gjort 2026-11-07.
-- [ ] `config_model.py` med dataklasser, standardverdier, grenser, validering og `missing_items()`.
-- [ ] `storage.py` med Store og versjon.
-- [ ] Enhetstester.
+- [x] `config_model.py` med dataklasser, standardverdier, grenser, validering og `missing_items()`.
+- [x] `storage.py` med Store og versjon.
+- [x] Enhetstester.
 - Krav: GEN-011, GEN-013, REG-001, REG-002, REG-014, REG-016 (fullstendighet), MAL-002, STR-002, APP-001, APP-004–006, APP-008, LAD-001–010, LAD-025.
 
 ### Fase 2 – Måling og snittsensorer
@@ -789,3 +800,6 @@ Planen endrer ikke REQUIREMENTS.md. Disse endringene foreslås, og eier avgjør:
 13. **GUI-012:** Ta inn knappen «Stopp regulering» i låsebanneret (T12).
 14. **README.md og oversettelsene:** Bruker «kWh-mål» og «effektmål». Bør bruke
     «effektgrense» som i kravene (fase 10).
+15. **GEN-013:** Presiser at kravet om unike entiteter gjelder entiteten som
+    identifiserer et apparat eller en elbillader, ikke sensorer og betingelser (T15).
+16. **LAD-007:** Angi minste ladestrøm ≥ 1 A og standardverdiene 6 A og 16 A (T16).
