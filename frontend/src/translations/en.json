@@ -161,9 +161,9 @@
     "add": "Add appliance",
     "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
     "ev_charging": "EV charging",
-    "ev_charging_sub": "{count} EV chargers · configured under",
+    "ev_charging_sub": "EV chargers: {count} · configured under",
     "power_reserve": "power reserve {power} kW",
-    "variant_count": "{count} variants",
+    "variant_count": "variants: {count}",
     "variant_entity": "Variant · entity {entity}",
     "variant_template": "Variant · template"
   },

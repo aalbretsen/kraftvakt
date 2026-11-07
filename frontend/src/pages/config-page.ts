@@ -29,6 +29,9 @@ export class ConfigPage extends LitElement {
 
   @property({ attribute: false }) issues: Issue[] = [];
 
+  /** The errors the backend gave when the draft was last saved, also included in `issues`. */
+  @property({ attribute: false }) saveErrors: Issue[] = [];
+
   @property({ type: Boolean, reflect: true }) locked = false;
 
   /** Replace the draft with a changed configuration (B7). */

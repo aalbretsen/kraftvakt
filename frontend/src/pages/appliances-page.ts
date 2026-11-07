@@ -1,0 +1,166 @@
+import { mdiEvStation } from "@mdi/js";
+import { css, html } from "lit";
+import { customElement } from "lit/decorators.js";
+
+import type { Appliance, Issue, PriorityEntry } from "../api";
+import "../components/manual-control-warning";
+import "../components/sortable-list";
+import type { ListRow } from "../components/sortable-list";
+import { moveItem, priorityKey } from "../draft";
+import { entityName } from "../entities";
+import { formatNumber } from "../format";
+import type { TranslationKey } from "../localize";
+import { navigateToPage, PANEL_PATH } from "../navigation";
+import { ConfigPage } from "./config-page";
+
+const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_kw", "label", "condition"] as const;
+
+/** The appliances and the priority list (GUI-009), with the warning against manual control (GUI-011). */
+@customElement("kraftvakt-appliances-page")
+export class KraftvaktAppliancesPage extends ConfigPage {
+  protected render() {
+    const rows = this.config.priority.map((entry) => this.row(entry));
+    return html`
+      <kraftvakt-manual-control-warning
+        .localize=${this.localize}
+        .narrow=${this.narrow}
+        kind="appliances"
+      ></kraftvakt-manual-control-warning>
+      <ha-card>
+        <div class="card-header">
+          <div class="heading">
+            <span>${this.localize("appliances.priority_title")}</span>
+            <span class="sub">${this.localize("appliances.priority_sub")}</span>
+          </div>
+        </div>
+        ${rows.length === 0
+          ? html`<div class="empty">${this.localize("appliances.empty")}</div>`
+          : html`
+              <kraftvakt-sortable-list
+                .localize=${this.localize}
+                .rows=${rows}
+                .locked=${this.locked}
+                @item-moved=${this.entryMoved}
+              ></kraftvakt-sortable-list>
+            `}
+      </ha-card>
+    `;
+  }
+
+  /** A row for an appliance, one of its variants, or «EV charging» (APP-001, APP-005, APP-008). */
+  private row(entry: PriorityEntry): ListRow {
+    if (entry.type === "ev_charging") {
+      return {
+        key: priorityKey(entry),
+        title: this.localize("appliances.ev_charging"),
+        iconPath: mdiEvStation,
+        details: [
+          html`${this.localize("appliances.ev_charging_sub", { count: this.config.charging.chargers.length })}
+            <a href="${PANEL_PATH}/charging" @click=${this.openChargingPage}>${this.localize("tabs.charging")}</a>`,
+        ],
+        errors: [],
+        openable: false,
+      };
+    }
+    const appliance = this.config.appliances.find((item) => item.id === entry.appliance_id);
+    const variant = appliance?.variants.find((item) => item.id === entry.variant_id);
+    const issues = this.issues.filter(
+      (issue) =>
+        issue.section === "appliances" &&
+        issue.target === entry.appliance_id &&
+        (variant ? issue.field?.startsWith(`variants.${variant.id}.`) : !issue.field?.startsWith("variants.")),
+    );
+    return {
+      key: priorityKey(entry),
+      title: appliance ? this.applianceName(appliance) : "",
+      tag: variant?.label,
+      details: appliance ? (variant ? [this.variantSource(variant.condition)] : this.applianceDetails(appliance)) : [],
+      errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
+      openable: false,
+    };
+  }
+
+  private applianceName(appliance: Appliance): string {
+    return appliance.entity_id
+      ? entityName(this.hass, this.entityNames, appliance.entity_id)
+      : this.localize("missing.appliance_without_entity");
+  }
+
+  private applianceDetails(appliance: Appliance): string[] {
+    const details = appliance.entity_id ? [appliance.entity_id] : [];
+    if (appliance.power_reserve_kw !== null) {
+      details.push(
+        this.localize("appliances.power_reserve", {
+          power: formatNumber(this.hass.language, appliance.power_reserve_kw, 2),
+        }),
+      );
+    }
+    if (appliance.variants.length > 0) {
+      details.push(this.localize("appliances.variant_count", { count: appliance.variants.length }));
+    }
+    return details;
+  }
+
+  private variantSource(condition: Appliance["variants"][number]["condition"]): string {
+    return condition.type === "entity"
+      ? this.localize("appliances.variant_entity", { entity: condition.value })
+      : this.localize("appliances.variant_template");
+  }
+
+  /** The name of the field the issue is about, as the appliance dialog shows it. */
+  private fieldLabel(issue: Issue): string {
+    const field = issue.field?.split(".").at(-1) ?? "";
+    return (APPLIANCE_FIELDS as readonly string[]).includes(field)
+      ? this.localize(`appliance.fields.${field}.label` as TranslationKey)
+      : field;
+  }
+
+  private entryMoved(event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
+    const { oldIndex, newIndex } = event.detail;
+    this.changeConfig({ ...this.config, priority: moveItem(this.config.priority, oldIndex, newIndex) });
+  }
+
+  private openChargingPage(event: Event): void {
+    event.preventDefault();
+    navigateToPage("charging");
+  }
+
+  static styles = css`
+    :host {
+      display: grid;
+      gap: 16px;
+    }
+    :host([narrow]) {
+      gap: 8px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    .heading {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 12px;
+      font-size: var(--ha-font-size-xl, 20px);
+    }
+    .sub {
+      font-size: var(--ha-font-size-m, 14px);
+      color: var(--secondary-text-color);
+    }
+    .empty {
+      padding: 0 16px 16px;
+      color: var(--secondary-text-color);
+    }
+  `;
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "kraftvakt-appliances-page": KraftvaktAppliancesPage;
+  }
+}

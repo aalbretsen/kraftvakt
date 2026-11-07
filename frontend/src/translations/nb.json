@@ -161,9 +161,9 @@
     "add": "Legg til apparat",
     "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
     "ev_charging": "Elbillading",
-    "ev_charging_sub": "{count} elbilladere · konfigureres under",
+    "ev_charging_sub": "elbilladere: {count} · konfigureres under",
     "power_reserve": "effektreserve {power} kW",
-    "variant_count": "{count} varianter",
+    "variant_count": "varianter: {count}",
     "variant_entity": "Variant · entitet {entity}",
     "variant_template": "Variant · mal"
   },
