@@ -10,9 +10,6 @@
     "appliances": "Apparater",
     "charging": "Billading"
   },
-  "placeholder": {
-    "not_ready": "Denne siden er ikke klar ennå. Den kommer i en senere versjon av Kraftvakt."
-  },
   "status": {
     "regulation": "Regulering",
     "running": "Kjører",

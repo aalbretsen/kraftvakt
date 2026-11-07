@@ -24,8 +24,8 @@ import { DRAFT_CHANGED, sameConfig, withCompletePriority } from "./draft";
 import { localizer, type Localize } from "./localize";
 import { navigateToPage, pageForPath, type Page } from "./navigation";
 import "./pages/appliances-page";
+import "./pages/charging-page";
 import "./pages/general-page";
-import "./pages/placeholder-page";
 import "./pages/status-page";
 import type { HomeAssistant, Route } from "./types";
 import { draftErrors, missingItems } from "./validation";
@@ -250,8 +250,20 @@ export class KraftvaktPanel extends LitElement {
             .locked=${locked}
           ></kraftvakt-appliances-page>
         `;
-      default:
-        return html`<kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>`;
+      case "charging":
+        return html`
+          <kraftvakt-charging-page
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .narrow=${this.narrow}
+            .config=${config}
+            .entityNames=${this.config?.entity_names ?? {}}
+            .capabilities=${this.capabilities}
+            .issues=${issues}
+            .saveErrors=${this.saveErrors}
+            .locked=${locked}
+          ></kraftvakt-charging-page>
+        `;
     }
   }
 

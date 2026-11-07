@@ -10,9 +10,6 @@
     "appliances": "Appliances",
     "charging": "EV charging"
   },
-  "placeholder": {
-    "not_ready": "This page is not ready yet. It comes in a later version of Kraftvakt."
-  },
   "status": {
     "regulation": "Regulation",
     "running": "Running",
