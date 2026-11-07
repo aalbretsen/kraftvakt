@@ -311,11 +311,40 @@ Alle kommandoer krever administrator.
 
 | Kommando | Inn | Ut | Merknad |
 |---|---|---|---|
-| `kraftvakt/config/get` | – | konfigurasjon, navn på entiteter, mangler | |
-| `kraftvakt/config/save` | hele konfigurasjonen | ok eller valideringsfeil per felt | Avvises med `regulation_running` mens reguleringen kjører (REG-010). Oppdaterer entitetene for elbilladerne (B9). |
-| `kraftvakt/regulation/set_running` | `running: bool` | ok | REG-016, GUI-007. Avvises ved start når konfigurasjonen ikke er fullstendig. |
-| `kraftvakt/status/subscribe` | – | strøm av statusbilder | Sendes ved hvert nytt snitt, hver avgjørelse og ved start/stopp. |
-| `kraftvakt/capabilities` | – | standardhandlinger per domene, grenser og standardverdier | Én kilde for grenser i både backend og panel. |
+| `kraftvakt/config/get` | – | `{config, entity_names, missing}` | `entity_names` gir navnet i HA for entiteten til hvert apparat og hver elbillader (GEN-013). |
+| `kraftvakt/config/save` | `config`: hele konfigurasjonen | `{saved: true, config, missing}` eller `{saved: false, errors}` | Avvises med feilkoden `regulation_running` mens reguleringen kjører (REG-010). `errors` og `missing` har formen i 3.4. Lagret `config` har prioritetslisten fullført (APP-008). Oppdaterer entitetene for elbilladerne (B9). |
+| `kraftvakt/regulation/set_running` | `running: bool` | `{running}` | REG-016, GUI-007. Avvises ved start med feilkoden `config_incomplete` når konfigurasjonen ikke er fullstendig. |
+| `kraftvakt/status/subscribe` | – | tomt resultat, deretter hendelser med statusbildet | Første statusbilde sendes straks. Deretter ved hvert nytt snitt, hver avgjørelse, start/stopp og lagring av konfigurasjonen. Abonnementet virker også etter reload av config entry. |
+| `kraftvakt/capabilities` | – | `{default_actions, limits, defaults}` | Én kilde for grenser i både backend og panel. |
+
+Kommandoene som trenger runtime, avvises med feilkoden `not_loaded` når
+integrasjonen ikke er lastet. Brukere som ikke er administratorer, får HAs
+feilkode `unauthorized`.
+
+Svaret fra `kraftvakt/capabilities`, forkortet:
+
+```json
+{
+  "default_actions": {
+    "appliances": { "turn_on": ["switch", "input_boolean", "light", "fan", "climate", "water_heater"], "turn_off": ["…"] },
+    "chargers": { "activate": ["…"], "deactivate": ["…"], "set_current": ["number", "input_number"] }
+  },
+  "limits": {
+    "general": { "power_limit_kw": { "min": 1, "max": 50, "step": 0.01 }, "regulation_window_s": { "min": 10, "max": 600, "step": 1 }, "…": {} },
+    "appliances": { "power_reserve_kw": { "min": 0, "max": null, "step": 0.01 } },
+    "chargers": { "min_current_a": { "min": 1, "max": null, "step": 1 }, "max_current_a": { "…": 0 }, "power_reserve_kw": { "min": 0, "max": 5, "step": 0.01 } }
+  },
+  "defaults": {
+    "general": { "power_sensor": null, "power_limit_kw": 10.0, "regulation_window_s": 60, "regulation_interval": 1, "wait_at_limit_min": 5, "penalty_threshold_kw": 1.0 },
+    "appliances": { "power_reserve_kw": null },
+    "charging": { "enabled": false, "one_at_a_time": true },
+    "chargers": { "min_current_a": 6, "max_current_a": 16, "power_reserve_kw": 4.0 }
+  }
+}
+```
+
+`default_actions` gir domenene som har standardhandling, per seksjon og felt.
+Panelet tilbyr «Standard» bare når domenet til entiteten står i listen (3.6).
 
 Forhåndsvisning av maler i panelet («Nå: sann») bruker HAs egen
 `render_template`-abonnement og oppdateres mens brukeren skriver. Godkjent av
@@ -334,9 +363,18 @@ Statusbildet:
   "power_limit_kw": 10.0,
   "next_decision_at": "2026-11-07T12:01:00+01:00",
   "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_until": null } ],
-  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true } ]
+  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "waiting_until": null } ]
 }
 ```
+
+Tidspunkter er ISO 8601 i HAs tidssone. Snittene er `null` til første vindu er
+lukket. `next_decision_at` er `null` mens reguleringen er stoppet.
+`waiting_until` er satt for apparatet eller elbilladeren som står for tur og
+venter (REG-012), og regnes ut på nytt ved hver avgjørelse (REG-013). For en
+elbillader gjelder den neste fiktive apparat. `variant` er merkelappen til
+gjeldende variant, eller `null` når apparatet selv gjelder. Detaljene for
+elbilladerne gjelder etter siste avgjørelse, og `allowed` er usann før første
+avgjørelse etter start.
 
 Feltene `waiting_until`, `current_a`, `bypassed`, `waiting`, `allowed`,
 `overconsumption_kwh`, `recovery_started` og `next_decision_at` går ut over
@@ -651,7 +689,7 @@ branch (CLAUDE.md).
 
 ### Fase 7 – WebSocket-API
 
-- [ ] Kommandoene i 3.8 med tester.
+- [x] Kommandoene i 3.8 med tester, i `websocket_api.py`. Kommandoene registreres i `async_setup`. `kraftvakt/config/save` validerer med `parse_config()` og `default_action_issues()` og lagrer med `KraftvaktRuntime.async_save_config()`. Den lager ny motor og ny `ActionRunner` (med felles lås, så kommandoer fra forrige konfigurasjon blir ferdige først), følger ny effektsensor fra nå og nytt reguleringsvindu fra neste vindu, og lagrer gjennom `ChargerSwitchBoard.async_update_config()`. Snittene går videre (GEN-007). Grensene ligger i `SETTING_RANGES` i `config_model.py` og brukes både til validering og i `kraftvakt/capabilities`.
 - Krav: REG-010, REG-016, GUI-001.
 
 ### Fase 8 – Panel: grunnmur og statusside

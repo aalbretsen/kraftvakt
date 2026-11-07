@@ -156,6 +156,23 @@ ln -s ../custom_components config/custom_components
 uv run hass -c config
 ```
 
+### WebSocket-API
+
+Panelet snakker med integrasjonen over egne WebSocket-kommandoer. Alle krever
+administrator.
+
+| Kommando | Gjør |
+|---|---|
+| `kraftvakt/capabilities` | Gir standardhandlinger per felt, grenser og standardverdier. |
+| `kraftvakt/config/get` | Gir konfigurasjonen, navnene på entitetene og hva som mangler. |
+| `kraftvakt/config/save` | Lagrer hele konfigurasjonen. Avvises mens reguleringen kjører. Ugyldig konfigurasjon lagres ikke, og svaret gir feilene per felt. |
+| `kraftvakt/regulation/set_running` | Starter eller stopper reguleringen, som bryteren **Regulering**. |
+| `kraftvakt/status/subscribe` | Sender status straks og deretter for hvert reguleringsvindu, hver avgjørelse og ved start og stopp. |
+
+Formatene står i kapittel 3.8 i `IMPLEMENTATION.md`. En lagret konfigurasjon
+tas i bruk neste gang reguleringen startes, uten at integrasjonen lastes på
+nytt.
+
 ### Logo og ikon
 
 Kildene ligger i `assets/brand/`. PNG-filene i
