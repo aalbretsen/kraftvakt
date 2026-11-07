@@ -15,10 +15,12 @@ class KraftvaktEntity(Entity):
     _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, entry: ConfigEntry, key: str) -> None:
-        """Identify the entity by `key`, which is also its translation key."""
+    def __init__(
+        self, entry: ConfigEntry, key: str, translation_key: str | None = None
+    ) -> None:
+        """Identify the entity by `key`, also its translation key unless given."""
         self._attr_unique_id = key
-        self._attr_translation_key = key
+        self._attr_translation_key = translation_key or key
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=NAME,

@@ -27,6 +27,12 @@
     "switch": {
       "regulation": {
         "name": "Regulering"
+      },
+      "charger_excluded": {
+        "name": "{charger} utenfor regulering"
+      },
+      "charger_window_override": {
+        "name": "{charger} overstyr ladetidsrom"
       }
     }
   }

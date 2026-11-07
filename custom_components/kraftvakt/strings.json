@@ -27,6 +27,12 @@
     "switch": {
       "regulation": {
         "name": "Regulation"
+      },
+      "charger_excluded": {
+        "name": "{charger} excluded from regulation"
+      },
+      "charger_window_override": {
+        "name": "{charger} override charging window"
       }
     }
   }
