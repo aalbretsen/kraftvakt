@@ -11,12 +11,22 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "safe_state": {
+        "name": "Safe state"
+      }
+    },
     "sensor": {
       "regulation_average": {
         "name": "Regulation average"
       },
       "capacity_average": {
         "name": "Average consumption"
+      }
+    },
+    "switch": {
+      "regulation": {
+        "name": "Regulation"
       }
     }
   }

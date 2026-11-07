@@ -11,12 +11,22 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "safe_state": {
+        "name": "Sikker tilstand"
+      }
+    },
     "sensor": {
       "regulation_average": {
         "name": "Reguleringssnitt"
       },
       "capacity_average": {
         "name": "Snittforbruk"
+      }
+    },
+    "switch": {
+      "regulation": {
+        "name": "Regulering"
       }
     }
   }
