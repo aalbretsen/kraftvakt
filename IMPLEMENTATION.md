@@ -72,6 +72,8 @@ forslag i kapittel 10.
 | T20 | MAL-001, T1 | Hvor er takten til reguleringsvinduene forankret? | Første vindu starter når integrasjonen starter, og hvert vindu slutter ett reguleringsvindu etter forrige, planlagt mot absolutte tidspunkter (R4). Alle vinduer er hele vinduer. Avklart 2026-11-07. |
 | T21 | MAL-005, MAL-006, REG-011 | Hva viser snittsensorene mens effektsensoren er borte over lengre tid, også når reguleringen er stoppet og ingen sikker tilstand kan inntre? | Målingen forkaster historikken når effektsensoren var uten gyldig måleverdi da to vinduer på rad ble lukket, uansett om reguleringen kjører. Snittsensorene er da utilgjengelige til en gyldig verdi kommer, og den fylles bakover etter MAL-005. Sikker tilstand (fase 5) bruker samme vilkår. Avklart 2026-11-07. |
 | T22 | APP-009 | Flere apparater kan bytte variant ved samme avgjørelse, for eksempel to varianter «Morgen» som begge starter klokken 05. I hvilken rekkefølge håndteres byttene? | Bytte av variant følger APP-009: apparatet er avslått etter byttet og slås på igjen på vanlig måte, etter ventetid. Bytter flere apparater samtidig, håndteres de ett og ett i rekkefølgen til den nye plassen, høyest prioritet først. Et apparat som var på før byttet, slås av hvis det fortsatt er på. Et apparat som var av, slår av det laveste prioriterte apparatet som er på, hvis den nye plassen er over det. Et apparat som uansett må av, kan dermed regnes som det som gir plass. Avklart 2026-11-07. |
+| T23 | GUI-006, T11 | Statussiden viser apparatene i gjeldende prioritetsrekkefølge og elbilladerne i gjeldende ladeprioritering. Hvor kommer rekkefølgen fra? | Backend sorterer listene i statusbildet (3.8): apparatene etter oppføringen for gjeldende variant i prioritetslisten (apparatet selv før første avgjørelse), og elbilladerne etter gjeldende ladeprioritering (LAD-016). Avklart 2026-11-07. |
+| T24 | GUI-006, T11, ENT-003, LAD-025 | Hvordan vet statussiden hvorfor en elbillader ikke har lov til å lade? | Statusbildet får feltet `excluded` per elbillader: om elbilladeren var tatt ut av reguleringen (ENT-003) ved siste avgjørelse, og `null` før første avgjørelse etter start. Panelet viser «Utenfor regulering» når den er sann, ellers «Utenfor ladetidsrom (start–slutt)» når elbilladeren ikke har lov til å lade og har ladetidsrom. Før første avgjørelse vises ingen grunn. Avklart 2026-11-07. |
 
 ---
 
@@ -363,7 +365,7 @@ Statusbildet:
   "power_limit_kw": 10.0,
   "next_decision_at": "2026-11-07T12:01:00+01:00",
   "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_until": null } ],
-  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "waiting_until": null } ]
+  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "waiting_until": null } ]
 }
 ```
 
@@ -374,11 +376,13 @@ venter (REG-012), og regnes ut på nytt ved hver avgjørelse (REG-013). For en
 elbillader gjelder den neste fiktive apparat. `variant` er merkelappen til
 gjeldende variant, eller `null` når apparatet selv gjelder. Detaljene for
 elbilladerne gjelder etter siste avgjørelse, og `allowed` er usann før første
-avgjørelse etter start.
+avgjørelse etter start. `excluded` er `null` før første avgjørelse etter start
+(T24). Apparatene står i rekkefølgen til gjeldende variant i prioritetslisten,
+og elbilladerne i gjeldende ladeprioritering (T23).
 
 Feltene `waiting_until`, `current_a`, `bypassed`, `waiting`, `allowed`,
-`overconsumption_kwh`, `recovery_started` og `next_decision_at` går ut over
-GUI-006 og er godkjent av eier (T11).
+`excluded`, `overconsumption_kwh`, `recovery_started` og `next_decision_at` går
+ut over GUI-006 og er godkjent av eier (T11, T24).
 
 ---
 

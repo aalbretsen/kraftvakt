@@ -5,6 +5,7 @@ Every command requires an administrator (GUI-001).
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Final
 
@@ -26,6 +27,7 @@ from .config_model import (
     ConfigValidationError,
     GeneralConfig,
     KraftvaktConfig,
+    PriorityEntryType,
     parse_config,
 )
 from .const import DOMAIN
@@ -208,6 +210,8 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
 
     `waiting_until` is set for the appliance or charger whose slot is next and
     waits (REG-012). The averages are None until the first window has closed.
+    The appliances are in the order of their current variant in the priority
+    list, and the chargers in the current charging priority.
     """
     config = runtime.config
     averages = runtime.latest_averages
@@ -254,7 +258,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                     else None
                 ),
             }
-            for appliance in config.appliances
+            for appliance in _in_current_priority(config, runtime.current_variants)
         ],
         "chargers": [
             {
@@ -265,6 +269,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                 "bypassed": status.bypassed,
                 "waiting": status.waiting,
                 "allowed": status.allowed,
+                "excluded": status.excluded,
                 "waiting_until": (
                     waiting_until
                     if isinstance(waiting_key, ChargerSlotKey)
@@ -272,10 +277,42 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                     else None
                 ),
             }
-            for charger in config.charging.chargers
+            for charger in _in_order(
+                config.charging.chargers, runtime.charging_priority
+            )
             if (status := runtime.chargers.get(charger.id)) is not None
         ],
     }
+
+
+def _in_current_priority(
+    config: KraftvaktConfig, current_variants: Mapping[str, str | None]
+) -> list[Appliance]:
+    """Return the appliances in the order of the entries for their current variant.
+
+    The appliance itself counts as the current variant until the first decision.
+    """
+    entries = [
+        (entry.appliance_id, entry.variant_id)
+        for entry in config.priority
+        if entry.type is PriorityEntryType.APPLIANCE
+    ]
+    return sorted(
+        config.appliances,
+        key=lambda appliance: _position(
+            entries, (appliance.id, current_variants.get(appliance.id))
+        ),
+    )
+
+
+def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:
+    """Return the chargers in the current charging priority (LAD-016)."""
+    return sorted(chargers, key=lambda charger: _position(priority, charger.id))
+
+
+def _position[T](items: Sequence[T], item: T) -> int:
+    """Return the position of the item, or a place after every item if missing."""
+    return items.index(item) if item in items else len(items)
 
 
 def validated_config(data: dict[str, Any]) -> KraftvaktConfig:

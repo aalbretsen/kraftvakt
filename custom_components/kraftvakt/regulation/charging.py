@@ -40,7 +40,9 @@ class ChargerReading:
 class ChargerStatus:
     """How a charger stands after the last decision (GUI-006, T11).
 
-    `current_a` is None while the charger is deactivated.
+    `current_a` is None while the charger is deactivated. `excluded` tells
+    whether the charger was excluded from the regulation (ENT-003), and is None
+    until the first decision.
     """
 
     fictive_on: int
@@ -48,6 +50,7 @@ class ChargerStatus:
     allowed: bool
     bypassed: bool
     waiting: bool
+    excluded: bool | None = None
 
 
 def fictive_appliance_count(charger: Charger) -> int:
@@ -146,14 +149,16 @@ class ChargingState:
     `priority` is the current charging priority, highest first (LAD-016).
     `fictive_on` counts the fictive appliances that are on per charger, and
     `activated_at` tells when the first one was turned on. The rest is the
-    result of the last evaluation: the chargers that are allowed to charge,
-    bypassed (LAD-017), may get more fictive appliances turned on, and are
-    waiting (LAD-023).
+    result of the last evaluation: the chargers that are excluded from the
+    regulation (None before the first evaluation), allowed to charge, bypassed
+    (LAD-017), may get more fictive appliances turned on, and are waiting
+    (LAD-023).
     """
 
     priority: list[str] = field(default_factory=list)
     fictive_on: dict[str, int] = field(default_factory=dict)
     activated_at: dict[str, datetime] = field(default_factory=dict)
+    excluded: set[str] | None = None
     allowed: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
@@ -200,6 +205,11 @@ class ChargingState:
         `chargers` are in the configured charging priority, and `allowed` are
         the chargers allowed to charge.
         """
+        self.excluded = {
+            charger.id
+            for charger in chargers
+            if readings.get(charger.id, ChargerReading()).excluded
+        }
         self.allowed = set(allowed)
         newly_bypassed = self._update_bypassed(chargers, readings, now, window)
         self._update_priority(chargers, newly_bypassed)
@@ -219,6 +229,7 @@ class ChargingState:
                 allowed=charger.id in self.allowed,
                 bypassed=charger.id in self.bypassed,
                 waiting=charger.id in self.waiting,
+                excluded=None if self.excluded is None else charger.id in self.excluded,
             )
             for charger in chargers
         }

@@ -181,6 +181,11 @@ class KraftvaktRuntime:
         """Return how each charger stands after the last decision."""
         return self._engine.chargers
 
+    @property
+    def charging_priority(self) -> list[str]:
+        """Return the current charging priority, highest first (LAD-016)."""
+        return self._engine.charging_priority
+
     @callback
     def async_start(self) -> None:
         """Start measuring, and start the regulation if it can (REG-009, REG-016).

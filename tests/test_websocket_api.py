@@ -601,10 +601,10 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """APP-007, REG-012, T11: the current variant and when the waiting ends."""
+    """APP-007, REG-012, T11: the current variant, its place and the waiting."""
     started = dt_util.utcnow()
     config["general"]["wait_at_limit_min"] = 5
-    config["appliances"][0]["variants"] = [
+    config["appliances"][1]["variants"] = [
         {
             "id": "v1",
             "label": "Morgen",
@@ -612,16 +612,18 @@ async def test_status_shows_the_variant_and_the_waiting_time(
         }
     ]
     config["priority"].insert(
-        0, {"type": "appliance", "appliance_id": "a", "variant_id": "v1"}
+        0, {"type": "appliance", "appliance_id": "b", "variant_id": "v1"}
     )
     set_power(hass, "1000")
     await setup_entry(hass)
     client = await hass_ws_client(hass)
-    await subscribe_status(client)
+    status = await subscribe_status(client)
+    assert [item["id"] for item in status["appliances"]] == ["a", "b"]
 
     await advance(hass, freezer)
     status = await next_status(client)
 
+    assert [item["id"] for item in status["appliances"]] == ["b", "a"]
     assert status["appliances"][0]["variant"] == "Morgen"
     assert status["appliances"][0]["waiting_until"] == local(
         started + WINDOW + timedelta(seconds=30)
@@ -721,6 +723,55 @@ async def test_status_shows_the_chargers(
             "bypassed": False,
             "waiting": False,
             "allowed": False,
+            "excluded": None,
             "waiting_until": None,
         }
     ]
+
+
+def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
+    return {
+        "id": charger_id,
+        "entity_id": f"input_boolean.{charger_id}",
+        "activate": DEFAULT,
+        "deactivate": DEFAULT,
+        "set_current": {"mode": "custom", "action": [{"action": "number.set_value"}]},
+        "charge_power_sensor": f"sensor.{charger_id}_power",
+        **settings,
+    }
+
+
+async def test_status_shows_the_chargers_in_the_current_priority(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """LAD-016, LAD-018, ENT-003, T11: a bypassed charger is shown last."""
+    car = {"type": "entity", "value": "binary_sensor.c1_car"}
+    config["charging"] = {
+        "enabled": True,
+        "chargers": [charger("c1", car_connected=car), charger("c2")],
+    }
+    config["priority"].append({"type": "ev_charging"})
+    hass.states.async_set("binary_sensor.c1_car", "off")
+    for charger_id in ("c1", "c2"):
+        hass.states.async_set(f"sensor.{charger_id}_power", "0")
+    set_power(hass, "1000")
+    await setup_entry(hass)
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": entity_id(hass, "switch", "charger_c2_excluded")},
+        blocking=True,
+    )
+    client = await hass_ws_client(hass)
+    await subscribe_status(client)
+
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert [
+        (item["id"], item["bypassed"], item["allowed"], item["excluded"])
+        for item in status["chargers"]
+    ] == [("c2", False, False, True), ("c1", True, True, False)]

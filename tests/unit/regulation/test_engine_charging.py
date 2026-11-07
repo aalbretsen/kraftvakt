@@ -72,7 +72,12 @@ def test_current_increases_one_ampere_per_fictive_appliance() -> None:
         [],
     ]
     assert scenario.engine.chargers["c"] == ChargerStatus(
-        fictive_on=3, current_a=8, allowed=True, bypassed=False, waiting=False
+        fictive_on=3,
+        current_a=8,
+        allowed=True,
+        bypassed=False,
+        waiting=False,
+        excluded=False,
     )
 
 
