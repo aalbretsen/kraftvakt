@@ -9,5 +9,15 @@
     "abort": {
       "single_instance_allowed": "Already configured. Only a single configuration possible."
     }
+  },
+  "entity": {
+    "sensor": {
+      "regulation_average": {
+        "name": "Regulation average"
+      },
+      "capacity_average": {
+        "name": "Average consumption"
+      }
+    }
   }
 }

@@ -9,5 +9,15 @@
     "abort": {
       "single_instance_allowed": "Allerede konfigurert. Kun én konfigurasjon er mulig."
     }
+  },
+  "entity": {
+    "sensor": {
+      "regulation_average": {
+        "name": "Reguleringssnitt"
+      },
+      "capacity_average": {
+        "name": "Snittforbruk"
+      }
+    }
   }
 }

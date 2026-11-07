@@ -23,7 +23,7 @@ from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 from .storage import KraftvaktStorage
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-PLATFORMS: list[Platform] = []
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:

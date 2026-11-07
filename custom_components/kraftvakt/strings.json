@@ -9,5 +9,15 @@
     "abort": {
       "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]"
     }
+  },
+  "entity": {
+    "sensor": {
+      "regulation_average": {
+        "name": "Regulation average"
+      },
+      "capacity_average": {
+        "name": "Average consumption"
+      }
+    }
   }
 }
