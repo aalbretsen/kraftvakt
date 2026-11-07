@@ -25,6 +25,7 @@ export interface HomeAssistant {
   locale: { language: string };
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;
+  loadFragmentTranslation(fragment: string): Promise<unknown>;
 }
 
 /** The part of the address that belongs to the panel, like `/status`. */

@@ -100,6 +100,8 @@ export class KraftvaktPanel extends LitElement {
   protected willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("hass") && this.hass?.language !== changed.get("hass")?.language) {
       this.localize = localizer(this.hass?.language ?? "en");
+      // Home Assistant's action editor uses texts that only its own configuration panel loads.
+      this.hass?.loadFragmentTranslation("config");
     }
     if (changed.has("hass") && this.hass && !this.unsubscribeStatus) {
       this.subscribe();
