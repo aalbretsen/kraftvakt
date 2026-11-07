@@ -23,7 +23,7 @@ export class KraftvaktConfirmDialog extends LitElement {
 
   protected render() {
     return html`
-      <ha-dialog .open=${this.open} .headerTitle=${this.heading} width="small" @closed=${this.closed}>
+      <ha-dialog .open=${this.open} .headerTitle=${this.heading} @closed=${this.closed}>
         <p>${this.text}</p>
         <div slot="footer">
           <ha-button appearance="plain" @click=${this.cancel}>${this.cancelText}</ha-button>
@@ -42,7 +42,8 @@ export class KraftvaktConfirmDialog extends LitElement {
     this.open = false;
   }
 
-  private closed(): void {
+  private closed(event: Event): void {
+    event.stopPropagation();
     const type = this.confirmed ? "confirm" : "cancel";
     this.confirmed = false;
     this.open = false;
