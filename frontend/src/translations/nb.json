@@ -1,0 +1,16 @@
+{
+  "panel": {
+    "title": "Kraftvakt",
+    "not_loaded": "Kraftvakt er ikke lastet. Sjekk integrasjonen under Innstillinger → Enheter og tjenester.",
+    "error": "Noe gikk galt: {message}"
+  },
+  "tabs": {
+    "status": "Status",
+    "general": "Generelt",
+    "appliances": "Apparater",
+    "charging": "Billading"
+  },
+  "placeholder": {
+    "not_ready": "Denne siden er ikke klar ennå. Den kommer i en senere versjon av Kraftvakt."
+  }
+}
