@@ -68,6 +68,9 @@ forslag i kapittel 10.
 | T16 | LAD-007 | Nedre grense og standardverdier for ladestrøm? | Hele ampere, minste ≥ 1 A og minste ≤ største. Standard er 6 A og 16 A, så feltene kan ikke mangle. Avklart 2026-11-07. |
 | T17 | APP-001, APP-005, APP-008 | Hva skjer med overflødige oppføringer i prioritetslisten? | Manglende oppføringer legges nederst. Duplikater, oppføringer for apparater eller varianter som ikke finnes, og `ev_charging` mens billadestyring er deaktivert, avvises som ugyldig konfigurasjon. Panelet fjerner dem selv. Avklart 2026-11-07. |
 | T18 | GEN-013 | Hvor grundig valideres handlinger og maler? | Egendefinerte handlinger valideres med HAs skjema for skript, og maler sjekkes for syntaksfeil, i fase 1. Om «Standard» finnes for entitetens domene, valideres i fase 5, der tabellen i `actions.py` ligger. Avklart 2026-11-07. |
+| T19 | MAL-007 | Hva gjelder når effektsensoren mangler enhet eller oppgir en annen effektenhet enn W og kW? | W og kW regnes om. En sensor uten enhet leses som watt. Alle andre enheter gir ugyldig måleverdi. Avklart 2026-11-07. |
+| T20 | MAL-001, T1 | Hvor er takten til reguleringsvinduene forankret? | Første vindu starter når integrasjonen starter, og hvert vindu slutter ett reguleringsvindu etter forrige, planlagt mot absolutte tidspunkter (R4). Alle vinduer er hele vinduer. Avklart 2026-11-07. |
+| T21 | MAL-005, MAL-006, REG-011 | Hva viser snittsensorene mens effektsensoren er borte over lengre tid, også når reguleringen er stoppet og ingen sikker tilstand kan inntre? | Målingen forkaster historikken når effektsensoren var uten gyldig måleverdi da to vinduer på rad ble lukket, uansett om reguleringen kjører. Snittsensorene er da utilgjengelige til en gyldig verdi kommer, og den fylles bakover etter MAL-005. Sikker tilstand (fase 5) bruker samme vilkår. Avklart 2026-11-07. |
 
 ---
 
