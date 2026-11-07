@@ -77,6 +77,11 @@ function t(t,e,s,i){var r,a=arguments.length,n=a<3?e:null===i?i=Object.getOwnPro
       </div>
     `}renderMeter(t){const e=t.regulation_average_kw,s=t.capacity_average_kw;if(null===e||null===s)return K;const i=Math.max(1.2*t.power_limit_kw,e,s),r=t=>100*t/i+"%",a=this.hass.language;return I`
       <div class="meter">
+        <div class="limit-label">
+          <span style="left: ${r(t.power_limit_kw)}">
+            ${this.localize("status.scale_limit",{power:xt(a,t.power_limit_kw,1)})}
+          </span>
+        </div>
         <div class="bar">
           <div class="fill regulation-average" style="width: ${r(e)}"></div>
           <div class="fill capacity-average" style="width: ${r(s)}"></div>
@@ -84,9 +89,6 @@ function t(t,e,s,i){var r,a=arguments.length,n=a<3?e:null===i?i=Object.getOwnPro
         </div>
         <div class="scale">
           <span>0 kW</span>
-          <span class="scale-limit" style="left: ${r(t.power_limit_kw)}">
-            ${this.localize("status.scale_limit",{power:xt(a,t.power_limit_kw,1)})}
-          </span>
           <span>${xt(a,i,1)} kW</span>
         </div>
       </div>
@@ -240,6 +242,16 @@ function t(t,e,s,i){var r,a=arguments.length,n=a<3?e:null===i?i=Object.getOwnPro
       font-size: var(--ha-font-size-m, 14px);
       color: var(--secondary-text-color);
     }
+    :host([narrow]) .stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    :host([narrow]) .stat {
+      padding: 8px;
+    }
+    :host([narrow]) .stat-value {
+      font-size: 20px;
+    }
     .stat-value.alarm {
       color: var(--error-color);
     }
@@ -281,16 +293,23 @@ function t(t,e,s,i){var r,a=arguments.length,n=a<3?e:null===i?i=Object.getOwnPro
       background: var(--error-color);
     }
     .meter .scale {
-      position: relative;
       display: flex;
       justify-content: space-between;
       margin-top: 4px;
       font-size: var(--ha-font-size-s, 12px);
       color: var(--secondary-text-color);
     }
-    .meter .scale-limit {
+    .meter .limit-label {
+      position: relative;
+      height: 18px;
+      margin-bottom: 4px;
+      font-size: var(--ha-font-size-s, 12px);
+      color: var(--secondary-text-color);
+    }
+    .meter .limit-label span {
       position: absolute;
-      transform: translateX(-50%);
+      transform: translateX(-100%);
+      padding-inline-end: 6px;
       white-space: nowrap;
     }
     .facts {

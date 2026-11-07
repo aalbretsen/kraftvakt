@@ -171,6 +171,11 @@ export class KraftvaktStatusPage extends LitElement {
     const language = this.hass.language;
     return html`
       <div class="meter">
+        <div class="limit-label">
+          <span style="left: ${percent(status.power_limit_kw)}">
+            ${this.localize("status.scale_limit", { power: formatNumber(language, status.power_limit_kw, 1) })}
+          </span>
+        </div>
         <div class="bar">
           <div class="fill regulation-average" style="width: ${percent(regulation)}"></div>
           <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
@@ -178,9 +183,6 @@ export class KraftvaktStatusPage extends LitElement {
         </div>
         <div class="scale">
           <span>0 kW</span>
-          <span class="scale-limit" style="left: ${percent(status.power_limit_kw)}">
-            ${this.localize("status.scale_limit", { power: formatNumber(language, status.power_limit_kw, 1) })}
-          </span>
           <span>${formatNumber(language, scale, 1)} kW</span>
         </div>
       </div>
@@ -429,6 +431,16 @@ export class KraftvaktStatusPage extends LitElement {
       font-size: var(--ha-font-size-m, 14px);
       color: var(--secondary-text-color);
     }
+    :host([narrow]) .stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    :host([narrow]) .stat {
+      padding: 8px;
+    }
+    :host([narrow]) .stat-value {
+      font-size: 20px;
+    }
     .stat-value.alarm {
       color: var(--error-color);
     }
@@ -470,16 +482,23 @@ export class KraftvaktStatusPage extends LitElement {
       background: var(--error-color);
     }
     .meter .scale {
-      position: relative;
       display: flex;
       justify-content: space-between;
       margin-top: 4px;
       font-size: var(--ha-font-size-s, 12px);
       color: var(--secondary-text-color);
     }
-    .meter .scale-limit {
+    .meter .limit-label {
+      position: relative;
+      height: 18px;
+      margin-bottom: 4px;
+      font-size: var(--ha-font-size-s, 12px);
+      color: var(--secondary-text-color);
+    }
+    .meter .limit-label span {
       position: absolute;
-      transform: translateX(-50%);
+      transform: translateX(-100%);
+      padding-inline-end: 6px;
       white-space: nowrap;
     }
     .facts {
