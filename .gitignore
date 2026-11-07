@@ -22,7 +22,7 @@ coverage.xml
 config/*
 !config/configuration.yaml
 
-# ─── Node (hvis panelet får byggesteg senere) ────────────────────────────────
+# ─── Node (bygging av panelet i frontend/) ───────────────────────────────────
 node_modules/
 
 # ─── IntelliJ / PyCharm ──────────────────────────────────────────────────────

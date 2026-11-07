@@ -3,3 +3,6 @@
 *.png binary
 *.jpg binary
 *.ico binary
+
+custom_components/kraftvakt/frontend/kraftvakt-panel.js linguist-generated=true -diff
+frontend/package-lock.json linguist-generated=true
