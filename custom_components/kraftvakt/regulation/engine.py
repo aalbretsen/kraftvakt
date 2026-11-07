@@ -8,19 +8,32 @@ from datetime import datetime, timedelta
 from itertools import islice
 from typing import Final
 
-from ..config_model import KraftvaktConfig
+from ..config_model import Charger, KraftvaktConfig
+from .charging import (
+    ChargerReading,
+    ChargerStatus,
+    ChargingState,
+    allowed_to_charge,
+    charging_current,
+    override_expired,
+)
 from .model import (
+    ActivateCharger,
     ApplianceSlotKey,
+    ChargerSlotKey,
     Command,
+    DeactivateCharger,
     DecisionInput,
     RegulationState,
+    ResetWindowOverride,
+    SetChargingCurrent,
     Slot,
     TurnOffAppliance,
     TurnOnAppliance,
     Waiting,
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
-from .priority import build_slots, current_variant
+from .priority import build_slots, current_variant, fictive_slots
 from .waiting import waiting_time
 
 # Kept apart so it can change without changing the rest of the regulation (REG-004).
@@ -28,16 +41,22 @@ SLOTS_PER_DECISION: Final = 1
 
 
 class RegulationEngine:
-    """Decides which appliances are on, in priority order (REG, STR, APP-007, APP-009).
+    """Decides which appliances are on, in priority order (REG, STR, APP, LAD).
 
     The engine only knows what it has told the appliances to do (GEN-006) and
     keeps its state only while it runs (GEN-007). The configuration cannot
-    change while the regulation runs (REG-010), so it is given once.
+    change while the regulation runs (REG-010), so it is given once. The
+    chargers are part of the regulation only while charging is enabled (T10).
     """
 
     def __init__(self, config: KraftvaktConfig) -> None:
         """Create a stopped engine for the configuration."""
         self._config = config
+        self._chargers: dict[str, Charger] = (
+            {charger.id: charger for charger in config.charging.chargers}
+            if config.charging.enabled
+            else {}
+        )
         self._running = False
         self._state = RegulationState()
 
@@ -76,26 +95,35 @@ class RegulationEngine:
         """Return a copy of the overconsumption state and the penalty period."""
         return replace(self._state.penalty)
 
+    @property
+    def chargers(self) -> Mapping[str, ChargerStatus]:
+        """Return how each charger stands after the last decision."""
+        return self._state.charging.status(list(self._chargers.values()))
+
+    @property
+    def charging_priority(self) -> list[str]:
+        """Return the current charging priority, highest first (LAD-016)."""
+        return list(self._state.charging.priority)
+
     def start(self, now: datetime) -> list[Command]:
         """Start the regulation with a new state and everything off (REG-009)."""
         self._running = True
-        self._state = RegulationState(started_at=now)
+        self._state = RegulationState(started_at=now, charging=self._new_charging())
         return self._turn_off_everything()
 
     def stop(self) -> list[Command]:
         """Stop the regulation and turn everything off (REG-016)."""
         self._running = False
-        self._state = RegulationState()
+        self._state = RegulationState(charging=self._new_charging())
         return self._turn_off_everything()
 
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out (REG-003).
 
-        The steps follow 4.2. The charging window override and the chargers
-        (steps 2, 5 and 6) belong to phase 6. The regulation starts again when
-        the power sensor is back after the safe state (REG-011) and when a
-        penalty ends (STR-008). While a penalty lasts, the current variants are
-        still found (APP-007), but nothing is turned on (STR-003).
+        The steps follow 4.2. The regulation starts again when the power sensor
+        is back after the safe state (REG-011) and when a penalty ends
+        (STR-008). While a penalty lasts, the current variants are still found
+        (APP-007), but nothing is turned on (STR-003).
         """
         if not self._running:
             return []
@@ -107,21 +135,96 @@ class RegulationEngine:
         average = decision.regulation_average_kw
         if average is None:
             return []
+        overrides_ended = self._overrides_ended(decision)
+        commands: list[Command] = [
+            ResetWindowOverride(charger_id) for charger_id in overrides_ended
+        ]
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
-            return self.start(decision.now)
-        commands = (
-            self._hold_everything_off() if penalty is PenaltyOutcome.STARTED else []
-        )
-        commands += self._switch_variants(decision.variant_conditions)
+            return commands + self.start(decision.now)
+        if penalty is PenaltyOutcome.STARTED:
+            commands += self._hold_everything_off()
         if self._state.penalty.active:
-            return commands
+            return commands + self._switch_variants(decision.variant_conditions)
+        commands += self._decide_chargers(decision, overrides_ended)
+        commands += self._switch_variants(decision.variant_conditions)
         if average > self._config.general.power_limit_kw:
             return commands + self._switch_off_above_limit()
         return commands + self._turn_on_next(decision.now, average)
 
+    def _new_charging(self) -> ChargingState:
+        return ChargingState.for_chargers(list(self._chargers.values()))
+
     def _turn_off_everything(self) -> list[Command]:
-        return [TurnOffAppliance(appliance.id) for appliance in self._config.appliances]
+        """Turn off every appliance and deactivate every charger (REG-009, LAD-004)."""
+        commands: list[Command] = [
+            TurnOffAppliance(appliance.id) for appliance in self._config.appliances
+        ]
+        for charger in self._chargers.values():
+            commands += self._charger_commands(charger, 0)
+        return commands
+
+    def _overrides_ended(self, decision: DecisionInput) -> list[str]:
+        """Return the chargers whose override of the charging window ends (LAD-027)."""
+        started_at = self._state.started_at
+        assert started_at is not None
+        return [
+            charger.id
+            for charger in self._chargers.values()
+            if override_expired(
+                charger,
+                decision.chargers.get(charger.id, ChargerReading()),
+                started_at,
+                decision.now,
+                decision.time_zone,
+            )
+        ]
+
+    def _decide_chargers(
+        self, decision: DecisionInput, overrides_ended: list[str]
+    ) -> list[Command]:
+        """Evaluate the chargers and switch off what they must (4.3, 4.2 step 6).
+
+        Chargers that are not allowed to charge get all their fictive
+        appliances switched off (LAD-024, LAD-025, LAD-027), and chargers that
+        become bypassed are limited to the first one (LAD-030). These are
+        exceptions from one slot per decision (REG-004).
+        """
+        if not self._chargers:
+            return []
+        charging = self._state.charging
+        local_time = decision.now.astimezone(decision.time_zone).time()
+        readings = {
+            charger_id: decision.chargers.get(charger_id, ChargerReading())
+            for charger_id in self._chargers
+        }
+        allowed = [
+            charger.id
+            for charger in self._chargers.values()
+            if allowed_to_charge(
+                charger,
+                readings[charger.id],
+                readings[charger.id].window_override
+                and charger.id not in overrides_ended,
+                local_time,
+            )
+        ]
+        newly_bypassed = charging.evaluate(
+            list(self._chargers.values()),
+            readings,
+            allowed,
+            decision.now,
+            timedelta(seconds=self._config.general.regulation_window_s),
+            self._config.charging.one_at_a_time,
+        )
+        commands: list[Command] = []
+        for charger_id in charging.activated():
+            if charger_id not in charging.allowed:
+                commands += self._set_fictive_on(charger_id, 0)
+        for charger_id in newly_bypassed:
+            if charging.fictive_on[charger_id] > 1:
+                commands += self._set_fictive_on(charger_id, 1)
+        return commands
 
     def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
         """Count the overconsumption and decide on the penalty (STR-001 to STR-009)."""
@@ -145,6 +248,8 @@ class RegulationEngine:
         """
         self._state.appliances_on.clear()
         self._state.waiting = None
+        for charger_id in self._chargers:
+            self._state.charging.set_fictive_on(charger_id, 0)
         return self._turn_off_everything()
 
     def _switch_variants(self, variant_conditions: Mapping[str, bool]) -> list[Command]:
@@ -184,8 +289,17 @@ class RegulationEngine:
         return commands
 
     def _slots(self) -> list[Slot]:
+        charging = self._state.charging
         return build_slots(
-            self._config, self._state.current_variants, self._state.appliances_on
+            self._config,
+            self._state.current_variants,
+            self._state.appliances_on,
+            fictive_slots(
+                [self._chargers[charger_id] for charger_id in charging.priority],
+                charging.fictive_on,
+                charging.may_charge,
+                charging.bypassed,
+            ),
         )
 
     def _slots_on_lowest_first(self) -> Iterator[Slot]:
@@ -220,7 +334,7 @@ class RegulationEngine:
                 break
             if not self._has_waited(candidate, now, average_kw):
                 break
-            commands += self._switch(candidate.key, turn_on=True)
+            commands += self._switch(candidate.key, turn_on=True, now=now)
         return commands
 
     def _may_turn_on(self, slot: Slot, average_kw: float) -> bool:
@@ -254,14 +368,78 @@ class RegulationEngine:
         if self._state.waiting is not None and self._state.waiting.key == key:
             self._state.waiting = None
 
-    def _switch(self, key: Hashable, turn_on: bool) -> list[Command]:
-        """Return the commands that switch the slot and record it as switched."""
+    def _switch(
+        self, key: Hashable, turn_on: bool, now: datetime | None = None
+    ) -> list[Command]:
+        """Return the commands that switch the slot and record it as switched.
+
+        `now` is needed only to turn on the first fictive appliance of a charger.
+        """
+        match key:
+            case ApplianceSlotKey(appliance_id):
+                self._record_switch(key, turn_on)
+                if turn_on:
+                    self._state.appliances_on.add(appliance_id)
+                    return [TurnOnAppliance(appliance_id)]
+                self._state.appliances_on.discard(appliance_id)
+                return [TurnOffAppliance(appliance_id)]
+            case ChargerSlotKey(charger_id, index):
+                commands = (
+                    self._deactivate_others(charger_id)
+                    if turn_on and index == 0
+                    else []
+                )
+                count = index + 1 if turn_on else index
+                return commands + self._set_fictive_on(charger_id, count, now)
+        raise TypeError(f"Unknown slot {key!r}")
+
+    def _deactivate_others(self, charger_id: str) -> list[Command]:
+        """Deactivate the other chargers before one is activated (LAD-029).
+
+        Only when one charger at a time may charge. This is an exception from
+        one slot per decision (REG-004).
+        """
+        if not self._config.charging.one_at_a_time:
+            return []
+        commands: list[Command] = []
+        for other_id in self._state.charging.activated():
+            if other_id != charger_id:
+                commands += self._set_fictive_on(other_id, 0)
+        return commands
+
+    def _set_fictive_on(
+        self, charger_id: str, count: int, now: datetime | None = None
+    ) -> list[Command]:
+        """Switch the fictive appliances of the charger so `count` are on.
+
+        Each fictive appliance that changes counts as switched (REG-015, T6).
+        `now` is needed only when the charger is activated.
+        """
+        charging = self._state.charging
+        before = charging.fictive_on[charger_id]
+        turn_on = count > before
+        for index in range(min(before, count), max(before, count)):
+            self._record_switch(ChargerSlotKey(charger_id, index), turn_on)
+        charging.set_fictive_on(charger_id, count, now)
+        commands = self._charger_commands(self._chargers[charger_id], count)
+        if before == 0 and count > 0:
+            commands.append(ActivateCharger(charger_id))
+        return commands
+
+    def _charger_commands(self, charger: Charger, count: int) -> list[Command]:
+        """Return the commands that give the charger `count` fictive appliances on.
+
+        The current is always set first. A charger with none on is set to the
+        minimum current and then deactivated (LAD-004, LAD-013). Activating it
+        is added by the caller after the current (LAD-012).
+        """
+        commands: list[Command] = [
+            SetChargingCurrent(charger.id, charging_current(charger, count))
+        ]
+        if count == 0:
+            commands.append(DeactivateCharger(charger.id))
+        return commands
+
+    def _record_switch(self, key: Hashable, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.cycling.record(key, turn_on)
-        if not isinstance(key, ApplianceSlotKey):
-            raise TypeError(f"Unknown slot {key!r}")
-        if turn_on:
-            self._state.appliances_on.add(key.appliance_id)
-            return [TurnOnAppliance(key.appliance_id)]
-        self._state.appliances_on.discard(key.appliance_id)
-        return [TurnOffAppliance(key.appliance_id)]

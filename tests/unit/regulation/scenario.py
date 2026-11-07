@@ -7,13 +7,20 @@ interval apart::
     assert scenario.decide(5.0) == on("a")
 """
 
-from datetime import UTC, datetime, timedelta
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta, tzinfo
+from typing import Any
 
 from custom_components.kraftvakt.config_model import KraftvaktConfig
+from custom_components.kraftvakt.regulation.charging import ChargerReading
 from custom_components.kraftvakt.regulation.engine import RegulationEngine
 from custom_components.kraftvakt.regulation.model import (
+    ActivateCharger,
     Command,
+    DeactivateCharger,
     DecisionInput,
+    ResetWindowOverride,
+    SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
 )
@@ -32,14 +39,54 @@ def off(*appliance_ids: str) -> list[Command]:
     return [TurnOffAppliance(appliance_id) for appliance_id in appliance_ids]
 
 
-class Scenario:
-    """Drives a started engine through decisions."""
+def activate(charger_id: str, min_a: int = 6) -> list[Command]:
+    """Return the commands that activate the charger (LAD-012)."""
+    return [SetChargingCurrent(charger_id, min_a), ActivateCharger(charger_id)]
 
-    def __init__(self, config: KraftvaktConfig) -> None:
-        """Create the engine and start it at START."""
+
+def deactivate(charger_id: str, min_a: int = 6) -> list[Command]:
+    """Return the commands that deactivate the charger (LAD-004)."""
+    return [SetChargingCurrent(charger_id, min_a), DeactivateCharger(charger_id)]
+
+
+def current(charger_id: str, current_a: int) -> list[Command]:
+    """Return the command that sets the charging current."""
+    return [SetChargingCurrent(charger_id, current_a)]
+
+
+def reset_override(charger_id: str) -> list[Command]:
+    """Return the command that switches off the window override (LAD-027)."""
+    return [ResetWindowOverride(charger_id)]
+
+
+IDLE_CHARGER = ChargerReading(charge_power_kw=0.0)
+
+
+class Scenario:
+    """Drives a started engine through decisions.
+
+    Every charger reads as idle with a valid charging power until the test
+    changes it with `set_charger`.
+    """
+
+    def __init__(
+        self,
+        config: KraftvaktConfig,
+        start: datetime = START,
+        time_zone: tzinfo = UTC,
+    ) -> None:
+        """Create the engine and start it at `start`."""
         self.engine = RegulationEngine(config)
-        self.now = START
+        self.now = start
+        self.time_zone = time_zone
+        self.chargers = {
+            charger.id: IDLE_CHARGER for charger in config.charging.chargers
+        }
         self.start_commands = self.engine.start(self.now)
+
+    def set_charger(self, charger_id: str, **reading: Any) -> None:
+        """Change what is read for the charger from now on."""
+        self.chargers[charger_id] = replace(self.chargers[charger_id], **reading)
 
     def decide(
         self,
@@ -73,6 +120,8 @@ class Scenario:
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
+                chargers=dict(self.chargers),
+                time_zone=self.time_zone,
             )
         )
 
@@ -102,3 +151,16 @@ class Scenario:
             if commands:
                 assert commands == on(expected.pop(0))
         raise AssertionError(f"{expected} were never turned on")
+
+    def charge(self, charger_id: str, amperes: int, *, average_kw: float = 0.0) -> None:
+        """Decide until the charger has its current set to `amperes`.
+
+        Waits as long as needed, so it also works with waiting times. Other
+        commands are allowed on the way.
+        """
+        for _ in range(200):
+            status = self.engine.chargers[charger_id]
+            if status.current_a == amperes:
+                return
+            self.decide(average_kw)
+        raise AssertionError(f"{charger_id} never got {amperes} A")

@@ -2,12 +2,18 @@
 
 Priority entries are written as ``"a"`` for appliance ``a`` itself and
 ``"a:morning"`` for its variant ``morning``. ``"ev"`` is the EV charging entry.
+Charging windows are written as ``"22:00-06:00"``.
 """
+
+from datetime import time
 
 from custom_components.kraftvakt.config_model import (
     ActionConfig,
     ActionMode,
     Appliance,
+    Charger,
+    ChargingConfig,
+    ChargingWindow,
     Condition,
     ConditionType,
     GeneralConfig,
@@ -45,6 +51,33 @@ def appliance(
     )
 
 
+def charger(
+    charger_id: str,
+    *,
+    min_a: int = 6,
+    max_a: int = 16,
+    reserve: float = 4.0,
+    window: str | None = None,
+) -> Charger:
+    """Return a charger with default actions and the given charging window."""
+    charging_window = None
+    if window is not None:
+        start, end = (time.fromisoformat(text) for text in window.split("-"))
+        charging_window = ChargingWindow(start, end)
+    return Charger(
+        id=charger_id,
+        entity_id=f"switch.{charger_id}",
+        activate=DEFAULT_ACTION,
+        deactivate=DEFAULT_ACTION,
+        set_current=DEFAULT_ACTION,
+        min_current_a=min_a,
+        max_current_a=max_a,
+        charge_power_sensor=f"sensor.{charger_id}_power",
+        power_reserve_kw=reserve,
+        charging_window=charging_window,
+    )
+
+
 def priority_entry(text: str) -> PriorityEntry:
     """Return the priority entry written as ``"a"``, ``"a:variant"`` or ``"ev"``."""
     if text == "ev":
@@ -59,19 +92,25 @@ def make_config(
     limit_kw: float = 10.0,
     wait_at_limit_min: int = 5,
     threshold_kw: float = 1.0,
+    chargers: tuple[Charger, ...] = (),
+    one_at_a_time: bool = True,
+    charging_enabled: bool | None = None,
 ) -> KraftvaktConfig:
     """Return a configuration with the appliances in the given priority order.
 
     An appliance given as a string has no reserve and no variants. Without an
-    explicit priority, the appliances come first in the given order and their
-    variants last.
+    explicit priority, the appliances come first in the given order, then EV
+    charging when there are chargers, and the variants last. Charging is
+    enabled when there are chargers, unless `charging_enabled` says otherwise.
     """
     built = tuple(
         appliance(item) if isinstance(item, str) else item for item in appliances
     )
+    enabled = bool(chargers) if charging_enabled is None else charging_enabled
     if priority is None:
         priority = (
             *(item.id for item in built),
+            *(("ev",) if enabled else ()),
             *(f"{item.id}:{variant.id}" for item in built for variant in item.variants),
         )
     return KraftvaktConfig(
@@ -83,4 +122,7 @@ def make_config(
         ),
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),
+        charging=ChargingConfig(
+            enabled=enabled, one_at_a_time=one_at_a_time, chargers=chargers
+        ),
     )
