@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .charger_switches import ChargerSwitchBoard
 from .config_model import Charger
 from .const import DOMAIN
-from .entity import KraftvaktEntity
+from .entity import KraftvaktEntity, entity_name
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,15 +88,9 @@ def charger_switch_key(charger_id: str, setting: str) -> str:
 
 def charger_name(hass: HomeAssistant, charger: Charger) -> str:
     """Return the name of the charger's entity in Home Assistant (GEN-013)."""
-    entity_id = charger.entity_id
-    if entity_id is None:
+    if charger.entity_id is None:
         return charger.id
-    if state := hass.states.get(entity_id):
-        return state.name
-    registry_entry = er.async_get(hass).async_get(entity_id)
-    if registry_entry is None:
-        return entity_id
-    return registry_entry.name or registry_entry.original_name or entity_id
+    return entity_name(hass, charger.entity_id)
 
 
 class RegulationSwitch(KraftvaktEntity, SwitchEntity):

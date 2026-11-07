@@ -8,6 +8,8 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from .charger_switches import ChargerSwitchBoard
@@ -22,9 +24,17 @@ from .const import (
 )
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 from .storage import KraftvaktStorage
+from .websocket_api import async_register_commands
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the WebSocket commands for the panel (B6)."""
+    async_register_commands(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:

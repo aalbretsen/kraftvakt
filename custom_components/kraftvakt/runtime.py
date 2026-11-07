@@ -105,6 +105,11 @@ class KraftvaktRuntime:
         return self._latest_averages
 
     @property
+    def config(self) -> KraftvaktConfig:
+        """Return the configuration the regulation uses."""
+        return self._config
+
+    @property
     def missing(self) -> list[Issue]:
         """Return what is missing before the regulation can start (REG-016)."""
         return list(self._missing)

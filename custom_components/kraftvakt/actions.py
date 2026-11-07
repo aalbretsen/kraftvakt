@@ -114,6 +114,23 @@ def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
     ]
 
 
+def default_action_domains() -> dict[str, dict[str, list[str]]]:
+    """Return the domains that have a default action, by section and field.
+
+    The panel offers the default action only for these domains (GEN-013).
+    """
+    return {
+        section: {
+            field_name: list(DEFAULT_ACTIONS[kind].domains)
+            for field_name, kind in fields.items()
+        }
+        for section, fields in (
+            ("appliances", APPLIANCE_ACTIONS),
+            ("chargers", CHARGER_ACTIONS),
+        )
+    }
+
+
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
     """Return the variables of the action that sets the charging current (T14).
 
