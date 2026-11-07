@@ -66,13 +66,13 @@ export class KraftvaktAppliancesPage extends ConfigPage {
         .hass=${this.hass}
         .localize=${this.localize}
         .capabilities=${this.capabilities}
-        .appliance=${appliance}
+        .item=${appliance}
         .isNew=${isNew}
         .usedEntities=${usedEntities}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id)}
         .locked=${this.locked}
-        @appliance-changed=${this.applianceChanged}
-        @appliance-deleted=${this.applianceDeleted}
+        @item-changed=${this.applianceChanged}
+        @item-deleted=${this.applianceDeleted}
         @closed=${() => (this.editing = undefined)}
       ></kraftvakt-appliance-dialog>
     `;
