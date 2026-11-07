@@ -78,3 +78,16 @@ class Waiting:
 
     key: Hashable
     started_at: datetime
+
+
+@dataclass(slots=True)
+class RegulationState:
+    """What the regulation keeps track of while it runs (3.5, GEN-007).
+
+    A new state with default values is created at each start (REG-009).
+    `current_variants` is empty until the first decision.
+    """
+
+    started_at: datetime | None = None
+    appliances_on: set[str] = field(default_factory=set)
+    current_variants: dict[str, str | None] = field(default_factory=dict)
