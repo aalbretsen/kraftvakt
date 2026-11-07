@@ -25,6 +25,9 @@ from custom_components.kraftvakt.config_model import (
     KraftvaktConfig,
 )
 from custom_components.kraftvakt.regulation.model import (
+    ActivateCharger,
+    DeactivateCharger,
+    SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
 )
@@ -257,3 +260,39 @@ async def test_commands_run_one_at_a_time_in_order(hass: HomeAssistant) -> None:
     await asyncio.gather(first, second)
 
     assert order == ["start switch.a", "end switch.a", "off switch.b"]
+
+
+async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) -> None:
+    """LAD-004 to LAD-006, T14: the current is kept between the minimum and max."""
+    activated = async_mock_service(hass, "switch", "turn_on")
+    deactivated = async_mock_service(hass, "switch", "turn_off")
+    currents = async_mock_service(hass, "test", "current")
+    set_current = custom(
+        {
+            "action": "test.current",
+            "data": {
+                "entity": "{{ entity_id }}",
+                "value": "{{ current }}",
+                "range": "{{ min_current }}-{{ max_current }}",
+            },
+        }
+    )
+    config = KraftvaktConfig(
+        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+    )
+
+    await ActionRunner(hass, config).async_execute(
+        [
+            SetChargingCurrent("c1", 6),
+            ActivateCharger("c1"),
+            SetChargingCurrent("c1", 20),
+            DeactivateCharger("c1"),
+        ]
+    )
+
+    assert [call.data for call in currents] == [
+        {"entity": "switch.lader", "value": 6, "range": "6-16"},
+        {"entity": "switch.lader", "value": 16, "range": "6-16"},
+    ]
+    assert [call.data["entity_id"] for call in activated] == [["switch.lader"]]
+    assert [call.data["entity_id"] for call in deactivated] == [["switch.lader"]]

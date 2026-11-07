@@ -28,7 +28,14 @@ from .config_model import (
     KraftvaktConfig,
 )
 from .const import DOMAIN
-from .regulation.model import Command, TurnOffAppliance, TurnOnAppliance
+from .regulation.model import (
+    ActivateCharger,
+    Command,
+    DeactivateCharger,
+    SetChargingCurrent,
+    TurnOffAppliance,
+    TurnOnAppliance,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,13 +131,15 @@ class ActionRunner:
 
     The commands run one at a time in the order they are given, also across
     decisions. A failed action is logged and not retried, and the rest of the
-    commands still run (GEN-012).
+    commands still run (GEN-012). Commands that are not actions, such as
+    resetting the window override, are left to the caller.
     """
 
     def __init__(self, hass: HomeAssistant, config: KraftvaktConfig) -> None:
         """Create the runner for the appliances and chargers in the configuration."""
         self._hass = hass
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
+        self._chargers = {charger.id: charger for charger in config.charging.chargers}
         self._lock = asyncio.Lock()
         self._scripts: dict[tuple[str, ActionKind], Script] = {}
 
@@ -150,18 +159,34 @@ class ActionRunner:
                 await self._async_run(
                     appliance, appliance.turn_off, ActionKind.TURN_OFF
                 )
+            case ActivateCharger(charger_id):
+                charger = self._chargers[charger_id]
+                await self._async_run(charger, charger.activate, ActionKind.TURN_ON)
+            case DeactivateCharger(charger_id):
+                charger = self._chargers[charger_id]
+                await self._async_run(charger, charger.deactivate, ActionKind.TURN_OFF)
+            case SetChargingCurrent(charger_id, current):
+                charger = self._chargers[charger_id]
+                await self._async_run(
+                    charger,
+                    charger.set_current,
+                    ActionKind.SET_CURRENT,
+                    set_current_variables(charger, current),
+                )
 
     async def _async_run(
         self,
         item: Appliance | Charger,
         action: ActionConfig | None,
         kind: ActionKind,
+        variables: Mapping[str, Any] | None = None,
     ) -> None:
         """Run the action with the variables from T14 and log any error (GEN-012)."""
         try:
             script = await self._async_script(item.entity_id, action, kind)
             await script.async_run(
-                context_variables(self._hass, item.entity_id), Context()
+                {**context_variables(self._hass, item.entity_id), **(variables or {})},
+                Context(),
             )
         except Exception as err:  # The regulation goes on regardless (GEN-012).
             _LOGGER.error("Could not %s %s: %s", kind, item.entity_id, err)
