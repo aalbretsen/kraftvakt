@@ -397,6 +397,35 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
     return issues
 
 
+def missing_items(config: KraftvaktConfig) -> list[Issue]:
+    """Return what is missing before the regulation can start (REG-016).
+
+    Chargers count only while charging is enabled (T10).
+    """
+    missing = []
+    if config.general.power_sensor is None:
+        missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
+    for appliance in config.appliances:
+        missing += _missing_entity_and_actions(
+            "appliances", appliance, ("turn_on", "turn_off")
+        )
+    if config.charging.enabled:
+        for charger in config.charging.chargers:
+            missing += _missing_entity_and_actions(
+                "chargers", charger, ("activate", "deactivate", "set_current")
+            )
+            if charger.charge_power_sensor is None:
+                missing.append(
+                    Issue(
+                        "missing_charge_power_sensor",
+                        "chargers",
+                        charger.id,
+                        "charge_power_sensor",
+                    )
+                )
+    return missing
+
+
 def charger_switches_from_dict(
     data: Mapping[str, Any],
 ) -> dict[str, ChargerSwitches]:
@@ -925,3 +954,16 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
     for charger in config.charging.chargers:
         if charger.car_connected is not None:
             yield "chargers", charger.id, "car_connected", charger.car_connected
+
+
+def _missing_entity_and_actions(
+    section: str, item: Appliance | Charger, action_fields: tuple[str, ...]
+) -> list[Issue]:
+    missing = []
+    if item.entity_id is None:
+        missing.append(Issue("missing_entity", section, item.id, "entity_id"))
+    for field_name in action_fields:
+        action = getattr(item, field_name)
+        if action is None or (action.mode is ActionMode.CUSTOM and not action.steps):
+            missing.append(Issue("missing_action", section, item.id, field_name))
+    return missing
