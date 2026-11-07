@@ -636,10 +636,10 @@ branch (CLAUDE.md).
 
 ### Fase 5 – Runtime, handlinger, start/stopp og sikker tilstand
 
-- [ ] `conditions.py`, `actions.py`.
-- [ ] `runtime.py`: avgjørelsestakt (T1), start ved oppstart, start/stopp, sikker tilstand, statuslyttere.
-- [ ] `binary_sensor.py` (ENT-005) og reguleringsbryter i `switch.py` (ENT-006).
-- [ ] Black box-tester ende til ende.
+- [x] `conditions.py`, `actions.py`. Valideringen av standardhandlinger (T18) er `default_action_issues()` i `actions.py`. Den kan ikke kalles fra `parse_config()` uten sirkulær import, så `kraftvakt/config/save` i fase 7 må kalle begge.
+- [x] `runtime.py`: avgjørelsestakt (T1), start ved oppstart, start/stopp, sikker tilstand, statuslyttere.
+- [x] `binary_sensor.py` (ENT-005) og reguleringsbryter i `switch.py` (ENT-006).
+- [x] Black box-tester ende til ende.
 - Krav: GEN-004–010, GEN-012, REG-009–011, REG-016, ENT-005, ENT-006.
 
 ### Fase 6 – Elbillading

@@ -17,8 +17,10 @@ elbillader. Den er rettet mot det norske strømmarkedet og holder forbruket
 like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
 kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
-> **Status:** Tidlig utvikling. Integrasjonen måler foreløpig bare effekten og
-> viser snittene. Den styrer ingen apparater ennå.
+> **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
+> vanlige apparater, med straff og sikker tilstand. Elbillading og panelet for
+> konfigurasjon mangler ennå, så konfigurasjonen kan foreløpig ikke settes opp
+> fra brukergrensesnittet.
 
 ## Krav
 
@@ -51,15 +53,44 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 |---|---|
 | `sensor.kraftvakt_regulation_average` (Reguleringssnitt) | Gjennomsnittlig effekt i kW over siste reguleringsvindu. Oppdateres hver gang et vindu lukkes. |
 | `sensor.kraftvakt_average_consumption` (Snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
+| `switch.kraftvakt_regulation` (Regulering) | Er på mens reguleringen kjører. Slå av for å stoppe reguleringen og på for å starte den igjen. |
+| `binary_sensor.kraftvakt_safe_state` (Sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
 
 Entitets-ID-ene over gjelder når Home Assistant er satt opp på engelsk. Med
-norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`.
+norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`
+og `switch.kraftvakt_regulering`.
 
 Effektsensoren kan oppgi effekt i W eller kW. En sensor uten enhet leses som W.
 Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
 effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
 Når effektsensoren gir en gyldig verdi igjen, brukes den verdien bakover i tid
 i begge snittene.
+
+## Start og stopp
+
+Reguleringen starter av seg selv når Home Assistant eller integrasjonen
+starter, forutsatt at konfigurasjonen er fullstendig: effektsensor er valgt, og
+hvert apparat har entitet og handlinger for å slå på og av. Ved hver start slås
+alle apparatene av med en gang. Deretter slår reguleringen dem på ett og ett i
+prioritert rekkefølge. Første avgjørelse tas når et helt reguleringsintervall
+har gått etter starten.
+
+Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
+stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.
+Er konfigurasjonen ikke fullstendig, blir bryteren stående av, og forsøket
+skrives til loggen. Bryteren har ingen lagret stilling. Etter en omstart kjører
+reguleringen igjen.
+
+Har effektsensoren vært uten gyldig verdi da to reguleringsvinduer på rad ble
+lukket, går reguleringen i sikker tilstand. Da slås alle apparatene av, og
+sensoren **Sikker tilstand** blir på. Når effektsensoren gir en gyldig verdi
+igjen, starter reguleringen på nytt med alle apparater avslått.
+
+Handlingene for apparatene kan være standardhandlingen for entitetens domene
+(for eksempel `switch.turn_on` og `switch.turn_off`) eller egendefinerte
+handlinger. Egendefinerte handlinger og maler får variablene `entity_id` og
+`entity` (tilstanden til apparatets entitet). Mislykkes en handling, skrives
+feilen til loggen, og reguleringen fortsetter uten å prøve igjen.
 
 ## Utvikling
 
