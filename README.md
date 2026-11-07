@@ -17,7 +17,8 @@ elbillader. Den er rettet mot det norske strømmarkedet og holder forbruket
 like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
 kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
-> **Status:** Tidlig utvikling. Integrasjonen er foreløpig et skall.
+> **Status:** Tidlig utvikling. Integrasjonen måler foreløpig bare effekten og
+> viser snittene. Den styrer ingen apparater ennå.
 
 ## Krav
 
@@ -41,6 +42,24 @@ Home Assistant og start på nytt.
 1. Gå til **Innstillinger → Enheter og tjenester → Legg til integrasjon**.
 2. Søk etter **Kraftvakt** og fullfør oppsettet.
 3. Åpne **Kraftvakt** i sidemenyen for å sette effektmål og apparater.
+
+## Entiteter
+
+Alle entitetene hører til tjenesteenheten **Kraftvakt**.
+
+| Entitet | Beskrivelse |
+|---|---|
+| `sensor.kraftvakt_regulation_average` (Reguleringssnitt) | Gjennomsnittlig effekt i kW over siste reguleringsvindu. Oppdateres hver gang et vindu lukkes. |
+| `sensor.kraftvakt_average_consumption` (Snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
+
+Entitets-ID-ene over gjelder når Home Assistant er satt opp på engelsk. Med
+norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`.
+
+Effektsensoren kan oppgi effekt i W eller kW. En sensor uten enhet leses som W.
+Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
+effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
+Når effektsensoren gir en gyldig verdi igjen, brukes den verdien bakover i tid
+i begge snittene.
 
 ## Utvikling
 

@@ -148,7 +148,7 @@ skisser/                 GUI-skisser
 |---|---|---|
 | `config_model.py` | Dataklasser for konfigurasjonen, standardverdier, gyldige områder, validering, unike entiteter og merkelapper, og `missing_items()` som sier hva som mangler for at konfigurasjonen er fullstendig. | GEN-011, GEN-013, REG-001, REG-002, REG-014, REG-016, MAL-002, STR-002, APP-001–008, LAD-001–010, LAD-025 |
 | `storage.py` | Laster og lagrer konfigurasjonen og bryterstillingene. Versjonert for senere migrering. | GEN-011, ENT-003, ENT-004 |
-| `measurement.py` | Tidsvektet integrasjon av effekten (stykkevis konstant: siste verdi gjelder til neste). Lukker vinduer, holder glidende timesvindu, enhetsomregning W/kW, negative verdier til 0, fylling ved oppstart og etter sikker tilstand. | MAL-001, MAL-003–007 |
+| `measurement.py` | Tidsvektet integrasjon av effekten (stykkevis konstant: siste verdi gjelder til neste). Lukker vinduer, holder glidende timesvindu, enhetsomregning W/kW (T19), negative verdier til 0, fylling ved oppstart og etter to lukkede vinduer uten gyldig måling (T21), og om sensoren var gyldig da vinduet ble lukket (T3). | MAL-001, MAL-003–007 |
 | `conditions.py` | Evaluerer en betingelse `{type: entity|template, value}` til sann/usann etter GEN-009, med `entity_id` og `entity` som variabler (T14). | GEN-009, GEN-010, APP-006, LAD-010 |
 | `actions.py` | Utfører kommandoer fra motoren. Tabell over standardhandlinger per domene. Kjører egendefinerte handlinger med variabler. Logger feil uten å gjenta. | GEN-012, GEN-013, APP-002, APP-003, LAD-004–006 |
 | `regulation/` | All logikk for avgjørelsene. Ingen HA-import. | REG, STR, APP-007, APP-009, LAD-011–030 |
@@ -611,10 +611,10 @@ branch (CLAUDE.md).
 
 ### Fase 2 – Måling og snittsensorer
 
-- [ ] `measurement.py` (ren logikk) med enhetstester.
-- [ ] Lytting på effektsensoren og vindustimer i `runtime.py` (bare måling).
-- [ ] `sensor.py` med ENT-001 og ENT-002.
-- [ ] Black box-test av sensorene.
+- [x] `measurement.py` (ren logikk) med enhetstester.
+- [x] Lytting på effektsensoren og vindustimer i `runtime.py` (bare måling).
+- [x] `sensor.py` med ENT-001 og ENT-002.
+- [x] Black box-test av sensorene.
 - Krav: GEN-003, MAL-001, MAL-003–007, ENT-001, ENT-002.
 
 ### Fase 3 – Reguleringsmotor for vanlige apparater
@@ -806,3 +806,10 @@ Planen endrer ikke REQUIREMENTS.md. Disse endringene foreslås, og eier avgjør:
 15. **GEN-013:** Presiser at kravet om unike entiteter gjelder entiteten som
     identifiserer et apparat eller en elbillader, ikke sensorer og betingelser (T15).
 16. **LAD-007:** Angi minste ladestrøm ≥ 1 A og standardverdiene 6 A og 16 A (T16).
+17. **MAL-007:** Presiser at en effektsensor uten enhet leses som watt, og at
+    andre enheter enn W og kW gir ugyldig måleverdi (T19).
+18. **MAL-001:** Presiser at første reguleringsvindu starter når integrasjonen
+    starter (T20).
+19. **MAL-005/MAL-006/GEN-007:** Presiser at snittene også begynner på nytt når
+    effektsensoren var uten gyldig verdi da to vinduer på rad ble lukket, selv
+    om reguleringen er stoppet, og at snittsensorene da er utilgjengelige (T21).
