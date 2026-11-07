@@ -10,6 +10,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .charger_switches import ChargerSwitchBoard
 from .const import (
     DOMAIN,
     PANEL_COMPONENT_NAME,
@@ -28,8 +29,11 @@ PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.S
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
     """Set up Kraftvakt from a config entry."""
-    stored = await KraftvaktStorage(hass).async_load()
-    runtime = KraftvaktRuntime(hass, stored.config)
+    storage = KraftvaktStorage(hass)
+    stored = await storage.async_load()
+    runtime = KraftvaktRuntime(
+        hass, stored.config, ChargerSwitchBoard(hass, storage, stored)
+    )
     entry.runtime_data = runtime
     entry.async_on_unload(runtime.async_shutdown)
     runtime.async_start()

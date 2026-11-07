@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -24,16 +24,23 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 
 from .actions import ActionRunner
+from .charger_switches import ChargerSwitchBoard
 from .conditions import evaluate_condition
-from .config_model import Issue, KraftvaktConfig, missing_items
+from .config_model import (
+    Charger,
+    Issue,
+    KraftvaktConfig,
+    missing_items,
+)
 from .measurement import (
     CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET,
     PowerAverager,
     WindowAverages,
     power_kw,
 )
+from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput
+from .regulation.model import Command, DecisionInput, ResetWindowOverride
 
 type KraftvaktConfigEntry = ConfigEntry[KraftvaktRuntime]
 type WindowListener = Callable[[WindowAverages], None]
@@ -60,14 +67,21 @@ class KraftvaktRuntime:
     passed to the window listeners. While the regulation runs, a decision is
     made each time the N-th window that started after the start or the last
     decision has closed, where N is the regulation interval (REG-002, T1).
-    Decisions are made only then (REG-005). The status listeners are called
+    Decisions are made only then (REG-005), also for the charging power, the
+    car connected and the charger switches. The status listeners are called
     after every window, decision, start and stop.
     """
 
-    def __init__(self, hass: HomeAssistant, config: KraftvaktConfig) -> None:
-        """Create the runtime for the given configuration."""
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: KraftvaktConfig,
+        charger_switches: ChargerSwitchBoard,
+    ) -> None:
+        """Create the runtime for the configuration and the charger switches."""
         self._hass = hass
         self._config = config
+        self._charger_switches = charger_switches
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
         self._actions = ActionRunner(hass, config)
@@ -104,6 +118,16 @@ class KraftvaktRuntime:
     def safe_state(self) -> bool:
         """Return whether the regulation is in the safe state (REG-011)."""
         return self._engine.safe_state
+
+    @property
+    def charger_switches(self) -> ChargerSwitchBoard:
+        """Return the user's switches for the chargers (ENT-003, ENT-004)."""
+        return self._charger_switches
+
+    @property
+    def chargers(self) -> Mapping[str, ChargerStatus]:
+        """Return how each charger stands after the last decision."""
+        return self._engine.chargers
 
     @callback
     def async_start(self) -> None:
@@ -234,6 +258,8 @@ class KraftvaktRuntime:
             power_sensor_valid=averages.sensor_valid,
             power_sensor_lost=self._power_sensor_lost(),
             variant_conditions=self._variant_conditions(),
+            chargers=self._charger_readings(),
+            time_zone=dt_util.get_default_time_zone(),
         )
         self._windows_since_decision.clear()
         self._execute(self._engine.decide(decision))
@@ -253,11 +279,59 @@ class KraftvaktRuntime:
             for variant in appliance.variants
         }
 
+    def _charger_readings(self) -> dict[str, ChargerReading]:
+        """Read the chargers at a decision (LAD-008, LAD-010, ENT-003, ENT-004)."""
+        if not self._config.charging.enabled:
+            return {}
+        return {
+            charger.id: self._charger_reading(charger)
+            for charger in self._config.charging.chargers
+        }
+
+    def _charger_reading(self, charger: Charger) -> ChargerReading:
+        switches = self._charger_switches.switches(charger.id)
+        power_state = (
+            self._hass.states.get(charger.charge_power_sensor)
+            if charger.charge_power_sensor
+            else None
+        )
+        return ChargerReading(
+            charge_power_kw=(
+                None
+                if power_state is None
+                else power_kw(
+                    power_state.state,
+                    power_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT),
+                )
+            ),
+            car_connected=(
+                None
+                if charger.car_connected is None
+                else evaluate_condition(
+                    self._hass, charger.car_connected, charger.entity_id
+                )
+            ),
+            excluded=switches.excluded,
+            window_override=switches.window_override,
+            override_switched_on_at=self._charger_switches.override_switched_on_at(
+                charger.id
+            ),
+        )
+
     def _execute(self, commands: Sequence[Command]) -> None:
-        """Carry out the commands in the background, after any earlier ones."""
-        if commands:
+        """Carry out the commands, the actions in the background after earlier ones.
+
+        A window override that has ended is switched off at once (LAD-027).
+        """
+        actions = []
+        for command in commands:
+            if isinstance(command, ResetWindowOverride):
+                self._charger_switches.async_reset_window_override(command.charger_id)
+            else:
+                actions.append(command)
+        if actions:
             self._hass.async_create_background_task(
-                self._actions.async_execute(commands), "kraftvakt actions"
+                self._actions.async_execute(actions), "kraftvakt actions"
             )
 
     def _notify_status(self) -> None:
