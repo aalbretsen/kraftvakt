@@ -246,7 +246,8 @@ kodene (GUI-005).
 Holdes i `RegulationEngine` og nullstilles ved hver start (GEN-007, REG-009):
 
 - hvilke apparater som er på, og antall fiktive apparater som er på per elbillader,
-- ventetid per plass: starttidspunkt for ventetiden,
+- ventetid: plassen som venter, og når ventetiden startet. Bare plassen som står
+  for tur, kan vente (4.2, steg 9),
 - telleren for økende ventetid: sist styrte plass og antall ganger den er slått på igjen,
 - overforbrukstilstand, overforbruk (kWh), straffeperiode, om innhentingen har startet,
 - gjeldende ladeprioritering, forbigått per elbillader, når første fiktive apparat ble slått på,
@@ -620,9 +621,9 @@ branch (CLAUDE.md).
 
 ### Fase 3 – Reguleringsmotor for vanlige apparater
 
-- [ ] `regulation/model.py`, `priority.py`, `waiting.py`, `engine.py` uten straff og elbilladere.
-- [ ] Varianter og bytte av variant.
-- [ ] Scenariotester.
+- [x] `regulation/model.py`, `priority.py`, `waiting.py`, `engine.py` uten straff og elbilladere.
+- [x] Varianter og bytte av variant (T22).
+- [x] Scenariotester.
 - Krav: REG-003–008, REG-012–015, APP-007, APP-009.
 
 ### Fase 4 – Straff
