@@ -15,6 +15,9 @@ class DecisionInput:
     """Snapshot of what a decision is based on (REG-003).
 
     The averages are None until the first regulation window has closed (T2).
+    `power_sensor_valid` tells whether the power sensor had a valid measurement
+    when the last regulation window closed, and `power_sensor_lost` whether it
+    had none when each of the last two windows closed (MAL-006, REG-011, T3).
     `regulation_averages_kw` holds every regulation average computed since the
     previous decision, oldest first (STR-005). `variant_conditions` holds the
     evaluated condition of each variant, keyed by variant id (GEN-009). A
@@ -25,6 +28,8 @@ class DecisionInput:
     regulation_average_kw: float | None
     capacity_average_kw: float | None
     regulation_averages_kw: Sequence[float]
+    power_sensor_valid: bool
+    power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
 
 
@@ -91,3 +96,4 @@ class RegulationState:
     waiting: Waiting | None = None
     cycling: CyclingCounter = field(default_factory=CyclingCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
+    safe_state: bool = False

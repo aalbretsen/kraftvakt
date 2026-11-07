@@ -67,6 +67,11 @@ class RegulationEngine:
         return self._state.waiting
 
     @property
+    def safe_state(self) -> bool:
+        """Return whether the regulation is in the safe state (REG-011)."""
+        return self._state.safe_state
+
+    @property
     def penalty(self) -> PenaltyState:
         """Return a copy of the overconsumption state and the penalty period."""
         return replace(self._state.penalty)
@@ -86,14 +91,21 @@ class RegulationEngine:
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out (REG-003).
 
-        The steps follow 4.2. Safe state (step 1) belongs to phase 5, and the
-        charging window override and the chargers (steps 2, 5 and 6) to phase 6.
-        The regulation starts again when a penalty ends (STR-008). While a
-        penalty lasts, the current variants are still found (APP-007), but
-        nothing is turned on (STR-003).
+        The steps follow 4.2. The charging window override and the chargers
+        (steps 2, 5 and 6) belong to phase 6. The regulation starts again when
+        the power sensor is back after the safe state (REG-011) and when a
+        penalty ends (STR-008). While a penalty lasts, the current variants are
+        still found (APP-007), but nothing is turned on (STR-003).
         """
+        if not self._running:
+            return []
+        if self._state.safe_state:
+            return self.start(decision.now) if decision.power_sensor_valid else []
+        if decision.power_sensor_lost:
+            self._state.safe_state = True
+            return self._hold_everything_off()
         average = decision.regulation_average_kw
-        if not self._running or average is None:
+        if average is None:
             return []
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
@@ -126,9 +138,10 @@ class RegulationEngine:
         )
 
     def _hold_everything_off(self) -> list[Command]:
-        """Turn everything off at once when a penalty starts (STR-003).
+        """Turn everything off at once in a penalty or the safe state.
 
-        This is an exception from one slot per decision (REG-004).
+        This is an exception from one slot per decision (REG-004, STR-003,
+        REG-011).
         """
         self._state.appliances_on.clear()
         self._state.waiting = None

@@ -49,9 +49,13 @@ class Scenario:
         averages: tuple[float, ...] | None = None,
         after: timedelta = DECISION_INTERVAL,
         true: tuple[str, ...] = (),
+        sensor_valid: bool = True,
+        sensor_lost: bool = False,
     ) -> list[Command]:
         """Make a decision `after` the previous one.
 
+        `sensor_valid` and `sensor_lost` tell how the power sensor was when the
+        last windows closed, by default valid.
         `capacity` is the capacity average, well under the limit unless given.
         `averages` are the regulation averages since the previous decision, by
         default only `average_kw`. `true` lists the variants whose conditions
@@ -66,6 +70,8 @@ class Scenario:
                 regulation_average_kw=average_kw,
                 capacity_average_kw=None if average_kw is None else capacity,
                 regulation_averages_kw=averages,
+                power_sensor_valid=sensor_valid,
+                power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
             )
         )

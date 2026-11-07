@@ -178,7 +178,7 @@ def test_no_penalty_without_a_capacity_average() -> None:
     engine.start(START)
 
     commands = engine.decide(
-        DecisionInput(START + timedelta(minutes=1), 5.0, None, (5.0,))
+        DecisionInput(START + timedelta(minutes=1), 5.0, None, (5.0,), True, False)
     )
 
     assert commands == on("a")
