@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Iterator, Mapping
+from dataclasses import replace
 from datetime import datetime, timedelta
 from itertools import islice
 from typing import Final
@@ -18,6 +19,7 @@ from .model import (
     TurnOnAppliance,
     Waiting,
 )
+from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import build_slots, current_variant
 from .waiting import waiting_time
 
@@ -26,7 +28,7 @@ SLOTS_PER_DECISION: Final = 1
 
 
 class RegulationEngine:
-    """Decides which appliances are on, in priority order (REG, APP-007, APP-009).
+    """Decides which appliances are on, in priority order (REG, STR, APP-007, APP-009).
 
     The engine only knows what it has told the appliances to do (GEN-006) and
     keeps its state only while it runs (GEN-007). The configuration cannot
@@ -64,6 +66,11 @@ class RegulationEngine:
         """Return the waiting time that runs for the next slot, if any."""
         return self._state.waiting
 
+    @property
+    def penalty(self) -> PenaltyState:
+        """Return a copy of the overconsumption state and the penalty period."""
+        return replace(self._state.penalty)
+
     def start(self, now: datetime) -> list[Command]:
         """Start the regulation with a new state and everything off (REG-009)."""
         self._running = True
@@ -79,20 +86,53 @@ class RegulationEngine:
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out (REG-003).
 
-        The steps follow 4.2. Safe state (step 1) belongs to phase 5, the
-        charging window override and the chargers (steps 2, 5 and 6) to phase 6,
-        and overconsumption and penalty (steps 3 and 4) to phase 4.
+        The steps follow 4.2. Safe state (step 1) belongs to phase 5, and the
+        charging window override and the chargers (steps 2, 5 and 6) to phase 6.
+        The regulation starts again when a penalty ends (STR-008). While a
+        penalty lasts, the current variants are still found (APP-007), but
+        nothing is turned on (STR-003).
         """
         average = decision.regulation_average_kw
         if not self._running or average is None:
             return []
-        commands = self._switch_variants(decision.variant_conditions)
+        penalty = self._decide_penalty(decision)
+        if penalty is PenaltyOutcome.ENDED:
+            return self.start(decision.now)
+        commands = (
+            self._hold_everything_off() if penalty is PenaltyOutcome.STARTED else []
+        )
+        commands += self._switch_variants(decision.variant_conditions)
+        if self._state.penalty.active:
+            return commands
         if average > self._config.general.power_limit_kw:
             return commands + self._switch_off_above_limit()
         return commands + self._turn_on_next(decision.now, average)
 
     def _turn_off_everything(self) -> list[Command]:
         return [TurnOffAppliance(appliance.id) for appliance in self._config.appliances]
+
+    def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
+        """Count the overconsumption and decide on the penalty (STR-001 to STR-009)."""
+        if decision.capacity_average_kw is None:
+            return PenaltyOutcome.NONE
+        general = self._config.general
+        limits = PenaltyLimits(
+            power_limit_kw=general.power_limit_kw,
+            threshold_kw=general.penalty_threshold_kw,
+            window=timedelta(seconds=general.regulation_window_s),
+        )
+        return self._state.penalty.decide(
+            limits, decision.capacity_average_kw, decision.regulation_averages_kw
+        )
+
+    def _hold_everything_off(self) -> list[Command]:
+        """Turn everything off at once when a penalty starts (STR-003).
+
+        This is an exception from one slot per decision (REG-004).
+        """
+        self._state.appliances_on.clear()
+        self._state.waiting = None
+        return self._turn_off_everything()
 
     def _switch_variants(self, variant_conditions: Mapping[str, bool]) -> list[Command]:
         """Find the current variants and handle the appliances that switch (APP-009).

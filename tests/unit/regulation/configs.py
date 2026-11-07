@@ -58,6 +58,7 @@ def make_config(
     priority: tuple[str, ...] | None = None,
     limit_kw: float = 10.0,
     wait_at_limit_min: int = 5,
+    threshold_kw: float = 1.0,
 ) -> KraftvaktConfig:
     """Return a configuration with the appliances in the given priority order.
 
@@ -78,6 +79,7 @@ def make_config(
             power_sensor="sensor.power",
             power_limit_kw=limit_kw,
             wait_at_limit_min=wait_at_limit_min,
+            penalty_threshold_kw=threshold_kw,
         ),
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),

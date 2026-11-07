@@ -45,27 +45,43 @@ class Scenario:
         self,
         average_kw: float | None,
         *,
+        capacity: float = 0.0,
+        averages: tuple[float, ...] | None = None,
         after: timedelta = DECISION_INTERVAL,
         true: tuple[str, ...] = (),
     ) -> list[Command]:
         """Make a decision `after` the previous one.
 
-        `true` lists the variants whose conditions are true.
+        `capacity` is the capacity average, well under the limit unless given.
+        `averages` are the regulation averages since the previous decision, by
+        default only `average_kw`. `true` lists the variants whose conditions
+        are true.
         """
         self.now += after
+        if averages is None:
+            averages = () if average_kw is None else (average_kw,)
         return self.engine.decide(
             DecisionInput(
                 now=self.now,
                 regulation_average_kw=average_kw,
+                capacity_average_kw=None if average_kw is None else capacity,
+                regulation_averages_kw=averages,
                 variant_conditions=dict.fromkeys(true, True),
             )
         )
 
     def decide_many(
-        self, average_kw: float, count: int, *, true: tuple[str, ...] = ()
+        self,
+        average_kw: float,
+        count: int,
+        *,
+        capacity: float = 0.0,
+        true: tuple[str, ...] = (),
     ) -> list[list[Command]]:
-        """Make `count` decisions with the same average and return their commands."""
-        return [self.decide(average_kw, true=true) for _ in range(count)]
+        """Make `count` decisions with the same averages and return their commands."""
+        return [
+            self.decide(average_kw, capacity=capacity, true=true) for _ in range(count)
+        ]
 
     def turn_on(self, *appliance_ids: str, true: tuple[str, ...] = ()) -> None:
         """Turn on the appliances with a low average, in priority order.

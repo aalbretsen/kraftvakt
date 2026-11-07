@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from .penalty import PenaltyState
 from .waiting import CyclingCounter, CyclingSteps
 
 
@@ -13,12 +14,17 @@ from .waiting import CyclingCounter, CyclingSteps
 class DecisionInput:
     """Snapshot of what a decision is based on (REG-003).
 
-    `variant_conditions` holds the evaluated condition of each variant, keyed
-    by variant id (GEN-009). A variant that is missing counts as false.
+    The averages are None until the first regulation window has closed (T2).
+    `regulation_averages_kw` holds every regulation average computed since the
+    previous decision, oldest first (STR-005). `variant_conditions` holds the
+    evaluated condition of each variant, keyed by variant id (GEN-009). A
+    variant that is missing counts as false.
     """
 
     now: datetime
     regulation_average_kw: float | None
+    capacity_average_kw: float | None
+    regulation_averages_kw: Sequence[float]
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
 
 
@@ -84,3 +90,4 @@ class RegulationState:
     current_variants: dict[str, str | None] = field(default_factory=dict)
     waiting: Waiting | None = None
     cycling: CyclingCounter = field(default_factory=CyclingCounter)
+    penalty: PenaltyState = field(default_factory=PenaltyState)
