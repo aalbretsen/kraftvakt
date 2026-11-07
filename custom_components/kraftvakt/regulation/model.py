@@ -91,3 +91,4 @@ class RegulationState:
     started_at: datetime | None = None
     appliances_on: set[str] = field(default_factory=set)
     current_variants: dict[str, str | None] = field(default_factory=dict)
+    waiting: Waiting | None = None

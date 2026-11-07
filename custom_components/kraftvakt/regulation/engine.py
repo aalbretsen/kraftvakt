@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import islice
 from typing import Final
 
@@ -16,8 +16,10 @@ from .model import (
     Slot,
     TurnOffAppliance,
     TurnOnAppliance,
+    Waiting,
 )
 from .priority import build_slots, current_variant
+from .waiting import linear_waiting_time
 
 # Kept apart so it can change without changing the rest of the regulation (REG-004).
 SLOTS_PER_DECISION: Final = 1
@@ -57,6 +59,11 @@ class RegulationEngine:
         """Return the current variant of each appliance, None for the appliance."""
         return dict(self._state.current_variants)
 
+    @property
+    def waiting(self) -> Waiting | None:
+        """Return the waiting time that runs for the next slot, if any."""
+        return self._state.waiting
+
     def start(self, now: datetime) -> list[Command]:
         """Start the regulation with a new state and everything off (REG-009)."""
         self._running = True
@@ -82,7 +89,7 @@ class RegulationEngine:
         self._update_variants(decision.variant_conditions)
         if average > self._config.general.power_limit_kw:
             return self._switch_off_above_limit()
-        return self._turn_on_next(average)
+        return self._turn_on_next(decision.now, average)
 
     def _turn_off_everything(self) -> list[Command]:
         return [TurnOffAppliance(appliance.id) for appliance in self._config.appliances]
@@ -100,14 +107,20 @@ class RegulationEngine:
 
     def _switch_off_above_limit(self) -> list[Command]:
         """Switch off the lowest priority slots that are on (REG-008)."""
+        self._state.waiting = None
         slots_on = [slot for slot in self._slots() if slot.is_on and slot.can_turn_off]
         commands: list[Command] = []
         for slot in islice(reversed(slots_on), SLOTS_PER_DECISION):
             commands += self._switch(slot, turn_on=False)
         return commands
 
-    def _turn_on_next(self, average_kw: float) -> list[Command]:
-        """Turn on the next slots in fixed priority order (REG-006, REG-007)."""
+    def _turn_on_next(self, now: datetime, average_kw: float) -> list[Command]:
+        """Turn on the next slots in fixed priority order after waiting.
+
+        Only the first slot that is off can be turned on (REG-007), and only
+        when there is room for it (REG-006) and its waiting time has passed
+        (REG-012). A waiting time for any other slot is cancelled.
+        """
         commands: list[Command] = []
         for _ in range(SLOTS_PER_DECISION):
             candidate = next(
@@ -115,6 +128,9 @@ class RegulationEngine:
                 None,
             )
             if candidate is None or not self._may_turn_on(candidate, average_kw):
+                self._state.waiting = None
+                break
+            if not self._has_waited(candidate, now, average_kw):
                 break
             commands += self._switch(candidate, turn_on=True)
         return commands
@@ -127,9 +143,28 @@ class RegulationEngine:
         reserve_kw = slot.power_reserve_kw
         return reserve_kw is None or average_kw + reserve_kw <= limit_kw
 
+    def _has_waited(self, slot: Slot, now: datetime, average_kw: float) -> bool:
+        """Start or continue the waiting time for the slot (REG-012, REG-013).
+
+        The waiting time is calculated again at each decision from the
+        average at that decision.
+        """
+        waiting = self._state.waiting
+        if waiting is None or waiting.key != slot.key:
+            waiting = self._state.waiting = Waiting(slot.key, now)
+        general = self._config.general
+        required = linear_waiting_time(
+            average_kw,
+            general.power_limit_kw,
+            timedelta(minutes=general.wait_at_limit_min),
+        )
+        return now - waiting.started_at >= required
+
     def _switch(self, slot: Slot, turn_on: bool) -> list[Command]:
         """Return the commands that switch the slot and record it as switched."""
         key = slot.key
+        if self._state.waiting is not None and self._state.waiting.key == key:
+            self._state.waiting = None
         if not isinstance(key, ApplianceSlotKey):
             raise TypeError(f"Unknown slot {key!r}")
         if turn_on:
