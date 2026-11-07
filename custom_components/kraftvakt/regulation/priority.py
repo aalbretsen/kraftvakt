@@ -5,7 +5,8 @@ from __future__ import annotations
 from collections.abc import Collection, Mapping, Sequence
 
 from ..config_model import Appliance, KraftvaktConfig, PriorityEntryType
-from .model import APPLIANCE_CYCLING, ApplianceSlotKey, Slot
+from .model import ApplianceSlotKey, Slot
+from .waiting import APPLIANCE_CYCLING
 
 
 def current_variant(

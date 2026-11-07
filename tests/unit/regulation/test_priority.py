@@ -1,14 +1,11 @@
 """Unit tests for the slots built from the priority list (4.1, APP-007)."""
 
-from custom_components.kraftvakt.regulation.model import (
-    APPLIANCE_CYCLING,
-    ApplianceSlotKey,
-    Slot,
-)
+from custom_components.kraftvakt.regulation.model import ApplianceSlotKey, Slot
 from custom_components.kraftvakt.regulation.priority import (
     build_slots,
     current_variant,
 )
+from custom_components.kraftvakt.regulation.waiting import APPLIANCE_CYCLING
 
 from .configs import appliance, make_config
 

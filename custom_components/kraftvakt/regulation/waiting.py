@@ -3,12 +3,24 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Final
 
-from .model import CyclingSteps
-
 PERSISTENT_CYCLING_FROM: Final = 2
+
+
+@dataclass(frozen=True, slots=True)
+class CyclingSteps:
+    """How the waiting time grows on persistent cycling (REG-015, LAD-014)."""
+
+    step: timedelta
+    cap: timedelta
+
+
+APPLIANCE_CYCLING: Final = CyclingSteps(
+    step=timedelta(minutes=2), cap=timedelta(minutes=15)
+)
 
 
 def linear_waiting_time(

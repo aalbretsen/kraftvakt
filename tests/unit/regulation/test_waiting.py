@@ -4,12 +4,10 @@ from datetime import timedelta
 
 import pytest
 
-from custom_components.kraftvakt.regulation.model import (
-    APPLIANCE_CYCLING,
-    CyclingSteps,
-)
 from custom_components.kraftvakt.regulation.waiting import (
+    APPLIANCE_CYCLING,
     CyclingCounter,
+    CyclingSteps,
     linear_waiting_time,
     waiting_time,
 )

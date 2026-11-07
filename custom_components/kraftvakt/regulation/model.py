@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from .waiting import CyclingCounter, CyclingSteps
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,17 +47,6 @@ class ApplianceSlotKey:
 
 
 @dataclass(frozen=True, slots=True)
-class CyclingSteps:
-    """How the waiting time grows on persistent cycling (REG-015, LAD-014)."""
-
-    step: timedelta
-    cap: timedelta
-
-
-APPLIANCE_CYCLING = CyclingSteps(step=timedelta(minutes=2), cap=timedelta(minutes=15))
-
-
-@dataclass(frozen=True, slots=True)
 class Slot:
     """A place in the order the regulation turns things on and off (4.1).
 
@@ -92,3 +83,4 @@ class RegulationState:
     appliances_on: set[str] = field(default_factory=set)
     current_variants: dict[str, str | None] = field(default_factory=dict)
     waiting: Waiting | None = None
+    cycling: CyclingCounter = field(default_factory=CyclingCounter)

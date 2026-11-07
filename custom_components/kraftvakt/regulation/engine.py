@@ -19,7 +19,7 @@ from .model import (
     Waiting,
 )
 from .priority import build_slots, current_variant
-from .waiting import linear_waiting_time
+from .waiting import waiting_time
 
 # Kept apart so it can change without changing the rest of the regulation (REG-004).
 SLOTS_PER_DECISION: Final = 1
@@ -144,19 +144,21 @@ class RegulationEngine:
         return reserve_kw is None or average_kw + reserve_kw <= limit_kw
 
     def _has_waited(self, slot: Slot, now: datetime, average_kw: float) -> bool:
-        """Start or continue the waiting time for the slot (REG-012, REG-013).
+        """Start or continue the waiting time for the slot (REG-012 to REG-015).
 
         The waiting time is calculated again at each decision from the
-        average at that decision.
+        average at that decision, unless the slot cycles persistently.
         """
         waiting = self._state.waiting
         if waiting is None or waiting.key != slot.key:
             waiting = self._state.waiting = Waiting(slot.key, now)
         general = self._config.general
-        required = linear_waiting_time(
+        required = waiting_time(
             average_kw,
             general.power_limit_kw,
             timedelta(minutes=general.wait_at_limit_min),
+            self._state.cycling.upcoming_reon_number(slot.key),
+            slot.cycling,
         )
         return now - waiting.started_at >= required
 
@@ -165,6 +167,7 @@ class RegulationEngine:
         key = slot.key
         if self._state.waiting is not None and self._state.waiting.key == key:
             self._state.waiting = None
+        self._state.cycling.record(key, turn_on)
         if not isinstance(key, ApplianceSlotKey):
             raise TypeError(f"Unknown slot {key!r}")
         if turn_on:
