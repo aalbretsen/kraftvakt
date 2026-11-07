@@ -111,6 +111,8 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
     [
         {"type": "kraftvakt/capabilities"},
         {"type": "kraftvakt/config/get"},
+        {"type": "kraftvakt/config/save", "config": {}},
+        {"type": "kraftvakt/regulation/set_running", "running": False},
     ],
 )
 async def test_commands_require_an_administrator(
@@ -212,6 +214,7 @@ async def test_config_get_gives_configuration_names_and_missing(
     [
         {"type": "kraftvakt/config/get"},
         {"type": "kraftvakt/config/save", "config": {}},
+        {"type": "kraftvakt/regulation/set_running", "running": True},
     ],
 )
 async def test_commands_need_kraftvakt_to_be_loaded(
@@ -447,3 +450,62 @@ async def test_saved_chargers_get_their_switches(
     assert response["result"]["missing"] == []
     assert entity_id(hass, "switch", "charger_c1_excluded") is not None
     assert entity_id(hass, "switch", "charger_c1_window_override") is not None
+
+
+def regulation_switch(hass: HomeAssistant) -> str:
+    state = hass.states.get(entity_id(hass, "switch", "regulation"))
+    assert state is not None
+    return state.state
+
+
+async def set_running(client, running: bool) -> dict[str, Any]:
+    return await send(client, "kraftvakt/regulation/set_running", running=running)
+
+
+async def test_set_running_stops_and_starts_like_the_switch(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+    lights: list[str],
+) -> None:
+    """REG-016, GUI-007, ENT-006: the panel and the switch are the same function."""
+    client = await hass_ws_client(hass)
+
+    response = await set_running(client, False)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert response["result"] == {"running": False}
+    assert regulation_switch(hass) == "off"
+    assert lights == ["off light.a", "off light.b"]
+
+    response = await set_running(client, True)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert response["result"] == {"running": True}
+    assert regulation_switch(hass) == "on"
+    assert lights == ["off light.a", "off light.b"] * 2
+
+    await switch_regulation(hass, "turn_off")
+    response = await set_running(client, False)
+    assert response["result"] == {"running": False}
+    await switch_regulation(hass, "turn_on")
+    response = await set_running(client, True)
+    assert response["result"] == {"running": True}
+
+
+async def test_start_is_refused_while_the_configuration_is_incomplete(
+    hass: HomeAssistant,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """REG-016: the regulation cannot start before the configuration is complete."""
+    config["general"]["power_sensor"] = None
+    config_entry = MockConfigEntry(domain=DOMAIN)
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    client = await hass_ws_client(hass)
+
+    response = await set_running(client, True)
+
+    assert not response["success"]
+    assert response["error"]["code"] == "config_incomplete"
+    assert "missing_power_sensor" in response["error"]["message"]
+    assert regulation_switch(hass) == "off"

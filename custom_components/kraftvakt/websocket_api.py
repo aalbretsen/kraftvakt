@@ -24,10 +24,11 @@ from .config_model import (
 )
 from .const import DOMAIN
 from .entity import entity_name
-from .runtime import KraftvaktRuntime
+from .runtime import ConfigIncompleteError, KraftvaktRuntime
 
 ERR_NOT_LOADED: Final = "not_loaded"
 ERR_REGULATION_RUNNING: Final = "regulation_running"
+ERR_CONFIG_INCOMPLETE: Final = "config_incomplete"
 
 
 @callback
@@ -36,6 +37,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_capabilities)
     websocket_api.async_register_command(hass, websocket_get_config)
     websocket_api.async_register_command(hass, websocket_save_config)
+    websocket_api.async_register_command(hass, websocket_set_running)
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/capabilities"})
@@ -115,6 +117,37 @@ async def websocket_save_config(
             "missing": [issue.to_dict() for issue in runtime.missing],
         },
     )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/regulation/set_running",
+        vol.Required("running"): bool,
+    }
+)
+@websocket_api.require_admin
+@callback
+def websocket_set_running(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Start or stop the regulation, the same as the regulation switch (GUI-007).
+
+    Starting is refused with `config_incomplete` until the configuration is
+    complete (REG-016).
+    """
+    if (runtime := _loaded_runtime(hass, connection, msg)) is None:
+        return
+    if not msg["running"]:
+        runtime.async_stop_regulation()
+    else:
+        try:
+            runtime.async_start_regulation()
+        except ConfigIncompleteError as err:
+            connection.send_error(msg["id"], ERR_CONFIG_INCOMPLETE, str(err))
+            return
+    connection.send_result(msg["id"], {"running": runtime.running})
 
 
 def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
