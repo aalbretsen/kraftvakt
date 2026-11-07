@@ -71,5 +71,228 @@
       "deactivate": "deactivate it",
       "set_current": "set the charging current"
     }
+  },
+  "config": {
+    "save": "Save",
+    "discard": "Discard",
+    "unsaved": "Unsaved changes",
+    "fix_before_saving": "Fix {count} marked settings before saving.",
+    "not_saved": "The configuration was not saved. Fix the marked settings.",
+    "save_refused_running": "The configuration cannot be saved while the regulation runs.",
+    "leave_title": "Discard unsaved changes?",
+    "leave_text": "The changes on the configuration pages are not saved. They are lost if you leave.",
+    "stay": "Keep editing",
+    "leave": "Discard changes"
+  },
+  "locked": {
+    "title": "The configuration is locked",
+    "text": "The regulation runs. Stop the regulation to change the configuration. When the regulation stops, all regulated appliances and EV chargers are turned off.",
+    "stop": "Stop regulation"
+  },
+  "warning": {
+    "appliances_title": "Do not turn regulated appliances on or off outside Kraftvakt",
+    "chargers_title": "Do not turn EV chargers on or off outside Kraftvakt",
+    "text": "Manual control and automations can disturb the regulation, affect appliances with higher priority and trigger a penalty."
+  },
+  "errors": {
+    "required": "Required.",
+    "out_of_range": "Must be between {min} and {max}.",
+    "at_least": "Must be at least {min}.",
+    "invalid_resolution": "Must be in steps of {step}.",
+    "not_integer": "Must be a whole number.",
+    "invalid_entity_id": "Not a valid entity ID.",
+    "empty_label": "The label cannot be empty.",
+    "duplicate_label": "The label must be unique for the appliance.",
+    "min_current_above_max": "The minimum current cannot be above the maximum current.",
+    "invalid_time": "Give both start and end.",
+    "window_start_equals_end": "Start and end cannot be the same.",
+    "duplicate_entity": "The entity is already used by another appliance or EV charger.",
+    "invalid_action": "Home Assistant cannot read the action.",
+    "invalid_template": "The template has a syntax error.",
+    "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
+    "unknown": "Invalid value ({code})."
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "general": {
+    "measurement": "Measurement",
+    "regulation": "Regulation",
+    "penalty": "Penalty",
+    "capacity_window_info": "The capacity window is fixed at one hour and cannot be changed.",
+    "interval_option": "{count} × the regulation window",
+    "fields": {
+      "power_sensor": {
+        "label": "Power sensor",
+        "helper": "The sensor that measures the total power of the house, in W or kW."
+      },
+      "regulation_window_s": {
+        "label": "Regulation window",
+        "helper": "The period the regulation average is calculated over. {min}–{max} s, default {default} s."
+      },
+      "power_limit_kw": {
+        "label": "Power limit",
+        "helper": "The highest allowed average consumption per hour. {min}–{max} kW, default {default} kW."
+      },
+      "regulation_interval": {
+        "label": "Regulation interval",
+        "helper": "A decision every {seconds} seconds. Default {default} ×."
+      },
+      "wait_at_limit_min": {
+        "label": "Waiting time at the power limit",
+        "helper": "How long an appliance waits before it is turned on when the regulation average is at the power limit. Shorter when the average is lower. {min}–{max} min, default {default} min."
+      },
+      "penalty_threshold_kw": {
+        "label": "Penalty threshold",
+        "helper": "How much the average consumption may exceed the power limit before a penalty starts. {min}–{max} kW, default {default} kW."
+      }
+    }
+  },
+  "list": {
+    "drag": "Drag to change the order",
+    "edit": "Edit",
+    "view": "Show"
+  },
+  "appliances": {
+    "priority_title": "Priority list",
+    "priority_sub": "Top = highest priority, turned off last",
+    "add": "Add appliance",
+    "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
+    "ev_charging": "EV charging",
+    "ev_charging_sub": "{count} EV chargers · configured under",
+    "power_reserve": "power reserve {power} kW",
+    "variant_count": "{count} variants",
+    "variant_entity": "Variant · entity {entity}",
+    "variant_template": "Variant · template"
+  },
+  "appliance": {
+    "add_title": "Add appliance",
+    "edit_title": "Edit appliance",
+    "view_title": "Appliance",
+    "actions": "Actions",
+    "variants": "Variants",
+    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list.",
+    "add_variant": "Add variant",
+    "remove_variant": "Remove variant",
+    "variant": "Variant {label}",
+    "delete": "Delete appliance",
+    "fields": {
+      "entity_id": {
+        "label": "Entity",
+        "helper": "The name in Home Assistant becomes the name of the appliance. The entity is available as entity_id and entity (the state object) in templates and actions."
+      },
+      "turn_on": {
+        "label": "Turn on"
+      },
+      "turn_off": {
+        "label": "Turn off"
+      },
+      "power_reserve_kw": {
+        "label": "Power reserve (optional)",
+        "helper": "Free power that must be available before the appliance is turned on. Use it for appliances that draw a lot as soon as they are turned on."
+      },
+      "label": {
+        "label": "Label"
+      },
+      "condition": {
+        "label": "Expression"
+      }
+    }
+  },
+  "action": {
+    "default": "Standard",
+    "custom": "Custom",
+    "default_runs": "Runs {service} for the entity.",
+    "no_default": "The entity type has no standard action, so the action must be custom.",
+    "choose_entity": "Choose the entity to use the standard action.",
+    "variables": "Variables: {variables}."
+  },
+  "condition": {
+    "none": "Not set",
+    "entity": "Entity",
+    "template": "Template",
+    "entity_label": "Boolean entity",
+    "template_label": "Template",
+    "entity_helper": "True only when the entity is on. Unavailable counts as false.",
+    "template_helper": "True only when the template gives the boolean value true. Variables: entity_id, entity.",
+    "now": "Now: {value}",
+    "true": "true",
+    "false": "false",
+    "error": "Error: {message}"
+  },
+  "charging": {
+    "shared": "Shared settings",
+    "enabled": "EV charging control",
+    "enabled_sub": "When it is off, the EV chargers are left to themselves and «EV charging» is removed from the priority list.",
+    "one_at_a_time": "One EV charger at a time",
+    "one_at_a_time_sub": "An EV charger that charges may continue until the car is full or disconnected. The others wait.",
+    "disabled_info": "EV charging control is off. The EV chargers below are kept, but Kraftvakt sends no commands to them.",
+    "chargers": "EV chargers",
+    "chargers_sub": "Charging priority, highest at the top",
+    "add": "Add EV charger",
+    "empty": "No EV chargers yet.",
+    "switches_info": "For each EV charger Kraftvakt makes two switches that can also be used while the regulation runs: «‹charger› excluded from regulation» and «‹charger› override charging window».",
+    "currents": "{min}–{max} A",
+    "reserve": "reserve {power} kW",
+    "window": "charging window {start}–{end}",
+    "always_allowed": "always allowed to charge",
+    "car_from": "car connected from {source}",
+    "car_template": "car connected from a template"
+  },
+  "charger": {
+    "add_title": "Add EV charger",
+    "edit_title": "Edit EV charger",
+    "view_title": "EV charger",
+    "allowed_charging": "Allowed charging",
+    "charging_current": "Charging current",
+    "measurement": "Measurement",
+    "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
+    "delete": "Delete EV charger",
+    "fields": {
+      "entity_id": {
+        "label": "Entity for allowed charging",
+        "helper": "Normally the charger's switch for allowing charging. The name in Home Assistant becomes the name of the EV charger. The entity is available as entity_id and entity in templates and actions."
+      },
+      "activate": {
+        "label": "Activate"
+      },
+      "deactivate": {
+        "label": "Deactivate"
+      },
+      "min_current_a": {
+        "label": "Minimum charging current"
+      },
+      "max_current_a": {
+        "label": "Maximum charging current",
+        "helper": "Whole amperes. The minimum cannot be above the maximum."
+      },
+      "set_current": {
+        "label": "Set charging current"
+      },
+      "charge_power_sensor": {
+        "label": "Sensor for charging power",
+        "helper": "Above 100 W counts as charging. Unavailable counts as charging."
+      },
+      "power_reserve_kw": {
+        "label": "Power reserve",
+        "helper": "The power the EV charger draws when charging starts at the minimum current. {min}–{max} kW, default {default} kW (about 6 A on three phases, 400 V)."
+      },
+      "car_connected": {
+        "label": "Car connected (optional)",
+        "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
+      },
+      "charging_window": {
+        "label": "Charging window (optional)",
+        "helper": "Can span midnight. Start and end cannot be the same. Without a charging window, the EV charger is always allowed to charge."
+      },
+      "start": {
+        "label": "Start"
+      },
+      "end": {
+        "label": "End"
+      }
+    }
   }
 }

@@ -1,0 +1,47 @@
+import { LitElement } from "lit";
+import { property } from "lit/decorators.js";
+
+import type { Capabilities, Issue, KraftvaktConfig } from "../api";
+import { fireDraftChanged } from "../draft";
+import { errorsByField, fieldErrorText } from "../issues";
+import type { Localize } from "../localize";
+import type { HomeAssistant } from "../types";
+
+/**
+ * What every configuration page gets from the panel (GUI-008 to GUI-010).
+ *
+ * `config` is the draft while the regulation is stopped, and the saved
+ * configuration while it runs and the configuration is locked (GUI-012).
+ * `issues` are the mistakes and what is missing in the draft (3.4).
+ */
+export class ConfigPage extends LitElement {
+  @property({ attribute: false }) hass!: HomeAssistant;
+
+  @property({ attribute: false }) localize!: Localize;
+
+  @property({ type: Boolean, reflect: true }) narrow = false;
+
+  @property({ attribute: false }) config!: KraftvaktConfig;
+
+  @property({ attribute: false }) entityNames: Record<string, string> = {};
+
+  @property({ attribute: false }) capabilities!: Capabilities;
+
+  @property({ attribute: false }) issues: Issue[] = [];
+
+  @property({ type: Boolean, reflect: true }) locked = false;
+
+  /** Replace the draft with a changed configuration (B7). */
+  protected changeConfig(config: KraftvaktConfig): void {
+    fireDraftChanged(this, config);
+  }
+
+  protected describeIssue = (issue: Issue): string =>
+    fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
+
+  /** The error text per field for `ha-form`, of the issues in a section. */
+  protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
+    const issues = this.issues.filter((issue) => issue.section === section && issue.target === target);
+    return errorsByField(issues, prefix, this.describeIssue);
+  }
+}

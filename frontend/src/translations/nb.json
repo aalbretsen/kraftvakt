@@ -71,5 +71,228 @@
       "deactivate": "deaktivere",
       "set_current": "sette ladestrøm"
     }
+  },
+  "config": {
+    "save": "Lagre",
+    "discard": "Forkast",
+    "unsaved": "Ulagrede endringer",
+    "fix_before_saving": "Rett {count} merkede innstillinger før du lagrer.",
+    "not_saved": "Konfigurasjonen ble ikke lagret. Rett de merkede innstillingene.",
+    "save_refused_running": "Konfigurasjonen kan ikke lagres mens reguleringen kjører.",
+    "leave_title": "Forkaste ulagrede endringer?",
+    "leave_text": "Endringene på konfigurasjonssidene er ikke lagret. De går tapt hvis du går videre.",
+    "stay": "Fortsett å redigere",
+    "leave": "Forkast endringer"
+  },
+  "locked": {
+    "title": "Konfigurasjonen er låst",
+    "text": "Reguleringen kjører. Stopp reguleringen for å endre konfigurasjonen. Når reguleringen stoppes, slås alle regulerte apparater og elbilladere av.",
+    "stop": "Stopp regulering"
+  },
+  "warning": {
+    "appliances_title": "Ikke slå regulerte apparater av eller på utenom Kraftvakt",
+    "chargers_title": "Ikke slå elbilladere av eller på utenom Kraftvakt",
+    "text": "Manuell styring og automasjoner kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff."
+  },
+  "errors": {
+    "required": "Påkrevd.",
+    "out_of_range": "Må være mellom {min} og {max}.",
+    "at_least": "Må være minst {min}.",
+    "invalid_resolution": "Må være i steg på {step}.",
+    "not_integer": "Må være et helt tall.",
+    "invalid_entity_id": "Ikke en gyldig entitets-ID.",
+    "empty_label": "Merkelappen kan ikke være tom.",
+    "duplicate_label": "Merkelappen må være unik for apparatet.",
+    "min_current_above_max": "Minste ladestrøm kan ikke være større enn største.",
+    "invalid_time": "Angi både start og slutt.",
+    "window_start_equals_end": "Start og slutt kan ikke være like.",
+    "duplicate_entity": "Entiteten brukes allerede av et annet apparat eller en elbillader.",
+    "invalid_action": "Home Assistant kan ikke lese handlingen.",
+    "invalid_template": "Malen har en syntaksfeil.",
+    "default_action_unavailable": "Entiteten har ingen standardhandling. Velg egendefinert handling.",
+    "unknown": "Ugyldig verdi ({code})."
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "Avbryt",
+    "close": "Lukk"
+  },
+  "general": {
+    "measurement": "Måling",
+    "regulation": "Regulering",
+    "penalty": "Straff",
+    "capacity_window_info": "Kapasitetsvinduet er fast én time og kan ikke endres.",
+    "interval_option": "{count} × reguleringsvinduet",
+    "fields": {
+      "power_sensor": {
+        "label": "Effektsensor",
+        "helper": "Sensoren som måler husets totale momentane effekt, i W eller kW."
+      },
+      "regulation_window_s": {
+        "label": "Reguleringsvindu",
+        "helper": "Tidsrommet reguleringssnittet beregnes over. {min}–{max} s, standard {default} s."
+      },
+      "power_limit_kw": {
+        "label": "Effektgrense",
+        "helper": "Høyeste tillatte snittforbruk per time. {min}–{max} kW, standard {default} kW."
+      },
+      "regulation_interval": {
+        "label": "Reguleringsintervall",
+        "helper": "Avgjørelse hvert {seconds}. sekund. Standard {default} ×."
+      },
+      "wait_at_limit_min": {
+        "label": "Ventetid ved effektgrensen",
+        "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er ved effektgrensen. Kortere når snittet er lavere. {min}–{max} min, standard {default} min."
+      },
+      "penalty_threshold_kw": {
+        "label": "Straffeterskel",
+        "helper": "Hvor mye snittforbruket kan overstige effektgrensen før straff starter. {min}–{max} kW, standard {default} kW."
+      }
+    }
+  },
+  "list": {
+    "drag": "Dra for å endre rekkefølgen",
+    "edit": "Rediger",
+    "view": "Vis"
+  },
+  "appliances": {
+    "priority_title": "Prioritetsliste",
+    "priority_sub": "Øverst = høyest prioritet, slås av sist",
+    "add": "Legg til apparat",
+    "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
+    "ev_charging": "Elbillading",
+    "ev_charging_sub": "{count} elbilladere · konfigureres under",
+    "power_reserve": "effektreserve {power} kW",
+    "variant_count": "{count} varianter",
+    "variant_entity": "Variant · entitet {entity}",
+    "variant_template": "Variant · mal"
+  },
+  "appliance": {
+    "add_title": "Legg til apparat",
+    "edit_title": "Rediger apparat",
+    "view_title": "Apparat",
+    "actions": "Handlinger",
+    "variants": "Varianter",
+    "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten.",
+    "add_variant": "Legg til variant",
+    "remove_variant": "Fjern variant",
+    "variant": "Variant {label}",
+    "delete": "Slett apparat",
+    "fields": {
+      "entity_id": {
+        "label": "Entitet",
+        "helper": "Navnet i Home Assistant blir apparatets navn. Entiteten er tilgjengelig som entity_id og entity (tilstandsobjektet) i maler og handlinger."
+      },
+      "turn_on": {
+        "label": "Slå på"
+      },
+      "turn_off": {
+        "label": "Slå av"
+      },
+      "power_reserve_kw": {
+        "label": "Effektreserve (valgfri)",
+        "helper": "Ledig effekt som må finnes før apparatet slås på. Bruk den for apparater som trekker mye straks de slås på."
+      },
+      "label": {
+        "label": "Merkelapp"
+      },
+      "condition": {
+        "label": "Uttrykk"
+      }
+    }
+  },
+  "action": {
+    "default": "Standard",
+    "custom": "Egendefinert",
+    "default_runs": "Kjører {service} for entiteten.",
+    "no_default": "Entitetstypen har ingen standardhandling, så handlingen må være egendefinert.",
+    "choose_entity": "Velg entitet for å bruke standardhandlingen.",
+    "variables": "Variabler: {variables}."
+  },
+  "condition": {
+    "none": "Ikke angitt",
+    "entity": "Entitet",
+    "template": "Mal",
+    "entity_label": "Boolsk entitet",
+    "template_label": "Mal",
+    "entity_helper": "Sann bare når entiteten er på. Utilgjengelig regnes som usann.",
+    "template_helper": "Sann bare når malen gir den boolske verdien sann. Variabler: entity_id, entity.",
+    "now": "Nå: {value}",
+    "true": "sann",
+    "false": "usann",
+    "error": "Feil: {message}"
+  },
+  "charging": {
+    "shared": "Felles innstillinger",
+    "enabled": "Billadestyring",
+    "enabled_sub": "Når den er av, overlates elbilladerne til seg selv og «Elbillading» fjernes fra prioritetslisten.",
+    "one_at_a_time": "Én elbillader om gangen",
+    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. Andre venter.",
+    "disabled_info": "Billadestyring er av. Elbilladerne nedenfor beholdes, men Kraftvakt sender ingen kommandoer til dem.",
+    "chargers": "Elbilladere",
+    "chargers_sub": "Ladeprioritering, høyest øverst",
+    "add": "Legg til elbillader",
+    "empty": "Ingen elbilladere ennå.",
+    "switches_info": "For hver elbillader lager Kraftvakt to brytere som kan brukes også mens reguleringen kjører: «‹lader› utenfor regulering» og «‹lader› overstyr ladetidsrom».",
+    "currents": "{min}–{max} A",
+    "reserve": "reserve {power} kW",
+    "window": "ladetidsrom {start}–{end}",
+    "always_allowed": "alltid lov til å lade",
+    "car_from": "bil tilkoblet fra {source}",
+    "car_template": "bil tilkoblet fra mal"
+  },
+  "charger": {
+    "add_title": "Legg til elbillader",
+    "edit_title": "Rediger elbillader",
+    "view_title": "Elbillader",
+    "allowed_charging": "Tillatt lading",
+    "charging_current": "Ladestrøm",
+    "measurement": "Måling",
+    "minimum_first": "Ladestrømmen settes alltid til minste ladestrøm før elbilladeren aktiveres eller deaktiveres.",
+    "delete": "Slett elbillader",
+    "fields": {
+      "entity_id": {
+        "label": "Entitet for tillatt lading",
+        "helper": "Normalt laderens bryter for å tillate lading. Navnet i Home Assistant blir elbilladerens navn. Entiteten er tilgjengelig som entity_id og entity i maler og handlinger."
+      },
+      "activate": {
+        "label": "Aktiver"
+      },
+      "deactivate": {
+        "label": "Deaktiver"
+      },
+      "min_current_a": {
+        "label": "Minste ladestrøm"
+      },
+      "max_current_a": {
+        "label": "Største ladestrøm",
+        "helper": "Hele ampere. Minste kan ikke være større enn største."
+      },
+      "set_current": {
+        "label": "Sett ladestrøm"
+      },
+      "charge_power_sensor": {
+        "label": "Sensor for ladeeffekt",
+        "helper": "Over 100 W regnes som lading. Utilgjengelig regnes som lading."
+      },
+      "power_reserve_kw": {
+        "label": "Effektreserve",
+        "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} kW, standard {default} kW (ca. 6 A på tre faser, 400 V)."
+      },
+      "car_connected": {
+        "label": "Bil tilkoblet (valgfri)",
+        "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
+      },
+      "charging_window": {
+        "label": "Ladetidsrom (valgfritt)",
+        "helper": "Kan gå over midnatt. Start og slutt kan ikke være like. Uten ladetidsrom har elbilladeren alltid lov til å lade."
+      },
+      "start": {
+        "label": "Start"
+      },
+      "end": {
+        "label": "Slutt"
+      }
+    }
   }
 }

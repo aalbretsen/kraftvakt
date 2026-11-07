@@ -1,20 +1,31 @@
 import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse } from "@mdi/js";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { live } from "lit/directives/live.js";
 
 import {
   ERROR_NOT_LOADED,
+  ERROR_REGULATION_RUNNING,
+  fetchCapabilities,
   fetchConfig,
   isCommandError,
+  saveConfig,
   subscribeStatus,
+  type Capabilities,
   type ConfigResponse,
+  type Issue,
+  type KraftvaktConfig,
   type StatusSnapshot,
 } from "./api";
+import "./components/confirm-dialog";
+import "./components/save-bar";
+import { DRAFT_CHANGED, sameConfig, withCompletePriority } from "./draft";
 import { localizer, type Localize } from "./localize";
 import { navigateToPage, pageForPath, type Page } from "./navigation";
 import "./pages/placeholder-page";
 import "./pages/status-page";
 import type { HomeAssistant, Route } from "./types";
+import { draftErrors } from "./validation";
 
 const TAB_ICONS: Record<Page, string> = {
   status: mdiPulse,
@@ -47,12 +58,28 @@ export class KraftvaktPanel extends LitElement {
 
   @state() private loadError?: unknown;
 
+  @state() private capabilities?: Capabilities;
+
+  /** The configuration the configuration pages edit until it is saved (B7). */
+  @state() private draft?: KraftvaktConfig;
+
+  /** The errors the backend gave when the draft was last saved (3.4). */
+  @state() private saveErrors: Issue[] = [];
+
+  @state() private saveMessage?: string;
+
+  @state() private saving = false;
+
+  /** The page the user wants to go to, while the panel asks to discard the changes. */
+  @state() private leavingTo?: Page;
+
   private localize: Localize = localizer("en");
 
   private unsubscribeStatus?: Promise<() => Promise<void>>;
 
   connectedCallback(): void {
     super.connectedCallback();
+    window.addEventListener("beforeunload", this.warnBeforeUnload);
     customElements.whenDefined("ha-form").then(() => {
       this.haElementsReady = true;
     });
@@ -63,6 +90,7 @@ export class KraftvaktPanel extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    window.removeEventListener("beforeunload", this.warnBeforeUnload);
     this.unsubscribe();
   }
 
@@ -93,7 +121,12 @@ export class KraftvaktPanel extends LitElement {
         <ha-tab-group @wa-tab-show=${this.tabShown}>
           ${Object.entries(TAB_ICONS).map(
             ([tab, icon]) => html`
-              <ha-tab-group-tab slot="nav" panel=${tab} .active=${tab === page} title=${this.tabLabel(tab as Page)}>
+              <ha-tab-group-tab
+                slot="nav"
+                panel=${tab}
+                .active=${live(tab === page)}
+                title=${this.tabLabel(tab as Page)}
+              >
                 <ha-svg-icon .path=${icon}></ha-svg-icon>
                 <span class="tab-label">${this.tabLabel(tab as Page)}</span>
               </ha-tab-group-tab>
@@ -101,7 +134,16 @@ export class KraftvaktPanel extends LitElement {
           )}
         </ha-tab-group>
       </div>
-      <div class="content">${this.renderLoadError()} ${this.renderPage(page)}</div>
+      <div class="content" @draft-changed=${this.draftChanged}>${this.renderLoadError()} ${this.renderPage(page)}</div>
+      <kraftvakt-confirm-dialog
+        .open=${this.leavingTo !== undefined}
+        .heading=${this.localize("config.leave_title")}
+        .text=${this.localize("config.leave_text")}
+        .confirmText=${this.localize("config.leave")}
+        .cancelText=${this.localize("config.stay")}
+        @confirm=${this.leaveConfirmed}
+        @cancel=${this.leaveCancelled}
+      ></kraftvakt-confirm-dialog>
     `;
   }
 
@@ -131,9 +173,104 @@ export class KraftvaktPanel extends LitElement {
       case "general":
       case "appliances":
       case "charging":
-        return html`<kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>`;
+        return this.renderConfigPage();
     }
   }
+
+  /** A configuration page, locked while the regulation runs (GUI-012), with the save bar (B7). */
+  private renderConfigPage() {
+    if (!this.status || !this.config || !this.draft || !this.capabilities) {
+      return "";
+    }
+    const locked = this.status.running;
+    const errors = locked ? [] : draftErrors(this.draft, this.capabilities);
+    const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
+    return html`
+      <kraftvakt-placeholder-page .localize=${this.localize}></kraftvakt-placeholder-page>
+      ${showSaveBar
+        ? html`
+            <kraftvakt-save-bar
+              .localize=${this.localize}
+              .errorCount=${errors.length}
+              .saving=${this.saving}
+              .message=${this.saveMessage}
+              @save=${this.save}
+              @discard=${this.discard}
+            ></kraftvakt-save-bar>
+          `
+        : ""}
+    `;
+  }
+
+  /** Whether the draft has changes that are not saved. */
+  private get dirty(): boolean {
+    return this.draft !== undefined && !sameConfig(this.draft, this.savedConfig);
+  }
+
+  private get savedConfig(): KraftvaktConfig | undefined {
+    return this.config && withCompletePriority(this.config.config);
+  }
+
+  private draftChanged(event: CustomEvent<KraftvaktConfig>): void {
+    if (event.type === DRAFT_CHANGED && !this.status?.running) {
+      this.draft = withCompletePriority(event.detail);
+    }
+  }
+
+  private async save(): Promise<void> {
+    if (!this.hass || !this.draft) {
+      return;
+    }
+    this.saving = true;
+    this.saveMessage = undefined;
+    try {
+      const result = await saveConfig(this.hass, this.draft);
+      if (result.saved) {
+        this.saveErrors = [];
+        await this.loadConfig({ resetDraft: true });
+      } else {
+        this.saveErrors = result.errors;
+        this.saveMessage = this.localize("config.not_saved");
+      }
+    } catch (error) {
+      this.saveMessage =
+        isCommandError(error) && error.code === ERROR_REGULATION_RUNNING
+          ? this.localize("config.save_refused_running")
+          : this.localize("panel.error", { message: errorMessage(error) });
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  private discard(): void {
+    this.resetDraft();
+  }
+
+  private resetDraft(): void {
+    this.draft = this.savedConfig;
+    this.saveErrors = [];
+    this.saveMessage = undefined;
+  }
+
+  private leaveConfirmed(): void {
+    const page = this.leavingTo;
+    this.leavingTo = undefined;
+    this.resetDraft();
+    if (page) {
+      navigateToPage(page);
+    }
+  }
+
+  private leaveCancelled(): void {
+    this.leavingTo = undefined;
+  }
+
+  /** Let the browser ask before the panel is closed or reloaded with unsaved changes. */
+  private warnBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (this.dirty) {
+      event.preventDefault();
+    }
+  };
 
   private get currentPage(): Page {
     return pageForPath(this.route?.path ?? "");
@@ -143,10 +280,20 @@ export class KraftvaktPanel extends LitElement {
     return this.localize(`tabs.${page}`);
   }
 
+  /**
+   * Go to the page of the tab. The draft is shared by the configuration pages,
+   * so the panel asks to discard unsaved changes only when going to the status page.
+   */
   private tabShown(event: CustomEvent<{ name: Page }>): void {
-    if (event.detail.name !== this.currentPage) {
-      navigateToPage(event.detail.name);
+    const page = event.detail.name;
+    if (page === this.currentPage) {
+      return;
     }
+    if (page === "status" && this.dirty) {
+      this.leavingTo = page;
+      return;
+    }
+    navigateToPage(page);
   }
 
   private subscribe(): void {
@@ -158,6 +305,9 @@ export class KraftvaktPanel extends LitElement {
       this.loadError = error;
       this.unsubscribeStatus = undefined;
     });
+    fetchCapabilities(this.hass)
+      .then((capabilities) => (this.capabilities = capabilities))
+      .catch((error: unknown) => (this.loadError = error));
   }
 
   private unsubscribe(): void {
@@ -185,12 +335,22 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  private async loadConfig(): Promise<void> {
+  /**
+   * Get the configuration. The draft follows it unless it has unsaved changes.
+   *
+   * While the regulation runs, the configuration cannot be saved (REG-010), so
+   * the draft is then discarded.
+   */
+  private async loadConfig(options: { resetDraft?: boolean } = {}): Promise<void> {
     if (!this.hass) {
       return;
     }
     try {
+      const keepDraft = this.dirty && !options.resetDraft && !this.status?.running;
       this.config = await fetchConfig(this.hass);
+      if (!keepDraft) {
+        this.resetDraft();
+      }
     } catch (error) {
       this.loadError = error;
     }
