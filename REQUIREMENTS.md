@@ -2,8 +2,6 @@
 
 Prioritert effektstyring for Home Assistant.
 
-Dokumentstatus: Utkast til første versjon. Kravene kan endres, flyttes og omnummereres fritt til første versjon er godkjent.
-
 ## 1. Innledning
 
 ### 1.1 Formål med dokumentet
@@ -18,8 +16,6 @@ Dokumentet beskriver kravene til Kraftvakt. Det skal gi utvikleren nok forståel
 - Kravene er ordnet i kravgrupper. Hver gruppe starter med en kort beskrivelse av sammenhengen.
 - **Begrunnelse** forklarer hvorfor kravet finnes, der det er kjent.
 - **Relatert** lister krav som påvirker eller påvirkes av kravet.
-- `[AVKLARES: ÅS-nn]` betyr at kravet avhenger av et åpent spørsmål i kapittel 5. Et krav kan nevne flere spørsmål. Kravteksten er skrevet slik forslaget i spørsmålet foreslår.
-- Navn på entiteter og parametere er arbeidsnavn.
 - Begrepene i kapittel 3 beskriver konseptene generelt og skal kunne stå for seg selv.
 
 ### 1.3 Kategorier
@@ -728,7 +724,3 @@ Relatert: GEN-006, GUI-009, GUI-010.
 **GUI-012 Låst konfigurasjon**
 Mens reguleringen kjører, skal konfigurasjonen være låst (REG-010). Alle konfigurasjonssider skal da vise at konfigurasjonen er låst, og at reguleringen må stoppes før den kan endres.
 Relatert: REG-010, REG-016, GUI-007, GUI-008, GUI-009, GUI-010.
-
-## 5. Åpne spørsmål
-
-Det er ingen åpne spørsmål.
