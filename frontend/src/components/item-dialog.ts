@@ -10,6 +10,12 @@ import "./action-field";
 
 type Item = Appliance | Charger;
 
+/** A field in the schema of `ha-form`. */
+interface FormField {
+  name: string;
+  [option: string]: unknown;
+}
+
 /**
  * What the dialogs for an appliance and an EV charger have in common: the
  * entity (GEN-013), the actions, the fields with limits, and the buttons.
@@ -103,7 +109,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
 
   /** An `ha-form` for fields of the item, whose changes are given to `changed`. */
   protected renderForm(
-    schema: { name: string }[],
+    schema: FormField[],
     issues: Issue[],
     changed: (value: Record<string, unknown>) => void,
     data: object = this.draft,
@@ -131,7 +137,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   }
 
   /** A number field with the limits from `kraftvakt/capabilities`. */
-  protected numberField(name: string, unit: string, required: boolean) {
+  protected numberField(name: string, unit: string, required: boolean): FormField {
     const range = this.capabilities.limits[this.section][name];
     return {
       name,

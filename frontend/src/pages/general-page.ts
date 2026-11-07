@@ -2,6 +2,7 @@ import { css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import type { GeneralConfig, Range } from "../api";
+import { ownEntities } from "../entities";
 import { ConfigPage } from "./config-page";
 
 type GeneralField = keyof GeneralConfig;
@@ -69,14 +70,11 @@ export class KraftvaktGeneralPage extends ConfigPage {
    * in W or kW (GEN-003, MAL-007), so Kraftvakt's own averages are left out.
    */
   private entityField(name: GeneralField): FormField {
-    const ownEntities = Object.values(this.hass.entities ?? {})
-      .filter((entry) => entry.platform === "kraftvakt")
-      .map((entry) => entry.entity_id);
     return {
       name,
       required: true,
       selector: {
-        entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities },
+        entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities(this.hass) },
       },
     };
   }

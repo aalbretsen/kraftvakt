@@ -1,12 +1,13 @@
-import { mdiEvStation } from "@mdi/js";
+import { mdiEvStation, mdiPlus } from "@mdi/js";
 import { css, html, nothing } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
 import type { Charger, Issue } from "../api";
+import "../components/charger-dialog";
 import "../components/manual-control-warning";
 import "../components/sortable-list";
 import type { ListRow } from "../components/sortable-list";
-import { moveItem } from "../draft";
+import { moveItem, newId } from "../draft";
 import { entityName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
@@ -35,6 +36,9 @@ const CHARGER_FIELDS = [
  */
 @customElement("kraftvakt-charging-page")
 export class KraftvaktChargingPage extends ConfigPage {
+  /** The charger in the dialog, and whether it is new. */
+  @state() private editing?: { charger: Charger; isNew: boolean };
+
   protected render() {
     const charging = this.config.charging;
     return html`
@@ -57,7 +61,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         </div>
       </ha-card>
       ${charging.enabled ? nothing : html`<ha-alert alert-type="info">${this.localize("charging.disabled_info")}</ha-alert>`}
-      ${this.renderChargers()}
+      ${this.renderChargers()} ${this.editing ? this.renderDialog(this.editing.charger, this.editing.isNew) : nothing}
     `;
   }
 
@@ -71,6 +75,14 @@ export class KraftvaktChargingPage extends ConfigPage {
             <span>${this.localize("charging.chargers")}</span>
             <span class="sub">${this.localize("charging.chargers_sub")}</span>
           </div>
+          ${locked
+            ? nothing
+            : html`
+                <ha-button @click=${this.addCharger}>
+                  <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+                  ${this.localize("charging.add")}
+                </ha-button>
+              `}
         </div>
         ${charging.chargers.length === 0
           ? html`<div class="empty">${this.localize("charging.empty")}</div>`
@@ -80,10 +92,32 @@ export class KraftvaktChargingPage extends ConfigPage {
                 .rows=${charging.chargers.map((charger) => this.row(charger))}
                 .locked=${locked}
                 @item-moved=${this.chargerMoved}
+                @open-row=${this.openRow}
               ></kraftvakt-sortable-list>
             `}
         <div class="switches-info">${this.localize("charging.switches_info")}</div>
       </ha-card>
+    `;
+  }
+
+  private renderDialog(charger: Charger, isNew: boolean) {
+    const usedEntities = [...this.config.appliances, ...this.config.charging.chargers]
+      .filter((item) => item.id !== charger.id && item.entity_id)
+      .map((item) => item.entity_id as string);
+    return html`
+      <kraftvakt-charger-dialog
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .capabilities=${this.capabilities}
+        .item=${charger}
+        .isNew=${isNew}
+        .usedEntities=${usedEntities}
+        .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
+        .locked=${this.locked || !this.config.charging.enabled}
+        @item-changed=${this.chargerChanged}
+        @item-deleted=${this.chargerDeleted}
+        @closed=${() => (this.editing = undefined)}
+      ></kraftvakt-charger-dialog>
     `;
   }
 
@@ -120,7 +154,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       iconPath: mdiEvStation,
       details,
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
-      openable: false,
+      openable: true,
     };
   }
 
@@ -150,6 +184,48 @@ export class KraftvaktChargingPage extends ConfigPage {
     const { oldIndex, newIndex } = event.detail;
     const charging = this.config.charging;
     this.changeConfig({ ...this.config, charging: { ...charging, chargers: moveItem(charging.chargers, oldIndex, newIndex) } });
+  }
+
+  private addCharger(): void {
+    const defaults = this.capabilities.defaults.chargers;
+    const charger: Charger = {
+      id: newId(),
+      entity_id: null,
+      activate: null,
+      deactivate: null,
+      set_current: null,
+      min_current_a: defaults.min_current_a,
+      max_current_a: defaults.max_current_a,
+      charge_power_sensor: null,
+      power_reserve_kw: defaults.power_reserve_kw,
+      car_connected: null,
+      charging_window: null,
+    };
+    this.editing = { charger, isNew: true };
+  }
+
+  private openRow(event: CustomEvent<string>): void {
+    const charger = this.config.charging.chargers.find((item) => item.id === event.detail);
+    if (charger) {
+      this.editing = { charger, isNew: false };
+    }
+  }
+
+  private chargerChanged(event: CustomEvent<Charger>): void {
+    const charger = event.detail;
+    const chargers = this.config.charging.chargers;
+    const exists = chargers.some((item) => item.id === charger.id);
+    this.changeChargers(
+      exists ? chargers.map((item) => (item.id === charger.id ? charger : item)) : [...chargers, charger],
+    );
+  }
+
+  private chargerDeleted(event: CustomEvent<string>): void {
+    this.changeChargers(this.config.charging.chargers.filter((item) => item.id !== event.detail));
+  }
+
+  private changeChargers(chargers: Charger[]): void {
+    this.changeConfig({ ...this.config, charging: { ...this.config.charging, chargers } });
   }
 
   static styles = css`
