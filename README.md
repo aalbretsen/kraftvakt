@@ -18,9 +18,8 @@ like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
 kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
 > **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
-> vanlige apparater og elbilladere, med straff og sikker tilstand. Panelet har
-> en statusside, men konfigurasjonssidene mangler ennå, så konfigurasjonen kan
-> foreløpig ikke settes opp fra brukergrensesnittet.
+> vanlige apparater og elbilladere, med straff og sikker tilstand. Alt settes
+> opp i panelet, som har en statusside og sider for konfigurasjonen.
 
 ## Krav
 
@@ -42,8 +41,44 @@ Home Assistant og start på nytt.
 ## Oppsett
 
 1. Gå til **Innstillinger → Enheter og tjenester → Legg til integrasjon**.
-2. Søk etter **Kraftvakt** og fullfør oppsettet.
-3. Åpne **Kraftvakt** i sidemenyen for å sette effektmål og apparater.
+2. Søk etter **Kraftvakt** og fullfør oppsettet. Det er ingen innstillinger her.
+3. Åpne **Kraftvakt** i sidemenyen, eller trykk på tannhjulet for integrasjonen,
+   og sett opp effektsensor, effektgrense, apparater og eventuelt elbilladere.
+
+## Konfigurasjon i panelet
+
+Panelet har en meny øverst med statussiden og tre konfigurasjonssider. Bare
+administratorer har tilgang.
+
+- **Generelt:** effektsensor, effektgrense, reguleringsvindu,
+  reguleringsintervall, ventetid ved effektgrensen og straffeterskel.
+  Hjelpeteksten under hvert felt viser gyldig område og standardverdi.
+- **Apparater:** prioritetslisten, med det viktigste apparatet øverst. Dra i
+  håndtaket for å endre rekkefølgen. **Legg til apparat** og blyanten åpner en
+  dialog med entitet, handlinger for å slå på og av, valgfri effektreserve og
+  varianter. En variant har en merkelapp og et uttrykk, enten en boolsk entitet
+  eller en mal. Varianten står som en egen oppføring i prioritetslisten, og det
+  øverste sanne uttrykket gjelder. Under malen vises hva den gir nå.
+  Når billadestyring er på, står **Elbillading** i listen og kan flyttes som et
+  apparat.
+- **Billading:** billadestyring av og på, én elbillader om gangen, og
+  elbilladerne i ladeprioritering. Dialogen for en elbillader har entitet,
+  handlinger for å aktivere, deaktivere og sette ladestrøm, minste og største
+  ladestrøm, sensor for ladeeffekt, effektreserve, bil tilkoblet og ladetidsrom.
+  Når billadestyring er av, beholdes elbilladerne, men de kan bare vises.
+
+For handlingene kan du velge **Standard** når entitetens domene har en
+standardhandling, ellers lager du en egendefinert handling med HAs
+handlingsredigerer. Entiteter som allerede brukes av et annet apparat eller en
+elbillader, kan ikke velges.
+
+Endringene samles i et utkast. **Lagre** lagrer alt på én gang, og **Forkast**
+går tilbake til det som er lagret. Feil vises ved feltet, og panelet lagrer
+ikke før de er rettet. Panelet spør før ulagrede endringer forkastes.
+
+Konfigurasjonen kan bare endres mens reguleringen er stoppet. Mens den kjører,
+er konfigurasjonssidene låst og viser knappen **Stopp regulering**. En lagret
+konfigurasjon tas i bruk neste gang reguleringen startes.
 
 ## Entiteter
 

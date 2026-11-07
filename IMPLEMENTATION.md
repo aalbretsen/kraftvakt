@@ -523,26 +523,33 @@ Vurderes i steg 5, bare når billadestyring er aktivert.
 ```
 frontend/src/
   kraftvakt-panel.ts       routing på hass.route, toppmeny (GUI-002),
-                           ?config_entry= sendes videre til /kraftvakt/appliances (GUI-003)
+                           ?config_entry= sendes videre til /kraftvakt/appliances (GUI-003),
+                           utkastet, lagringslinjen og låsen for konfigurasjonssidene (B7, GUI-012)
   api.ts                   typer og WebSocket-kall
   localize.ts              oppslag i translations/{en,nb}.json (B8)
   navigation.ts            sidene og navigering mellom dem
   issues.ts                tekst og side for mangler og valideringsfeil (3.4)
+  draft.ts                 hjelpere for utkastet: ID-er, flytting, fullført prioritetsliste (T17)
+  validation.ts            sjekk av utkastet mot grensene fra capabilities, og mangler (3.4)
+  entities.ts              navn på entiteter, og Kraftvakts egne entiteter
   types.ts, format.ts, clock.ts  HA-typer, tallformat og nedtelling
   pages/
     status-page.ts         GUI-005, GUI-006, GUI-007
+    config-page.ts         felles egenskaper for konfigurasjonssidene
     general-page.ts        GUI-008
     appliances-page.ts     GUI-009, GUI-011
     charging-page.ts       GUI-010, GUI-011, infotekst om bryterne ENT-003/ENT-004
   components/
-    locked-banner.ts       GUI-012
+    locked-banner.ts       GUI-012, med «Stopp regulering» (T12)
     manual-control-warning.ts  GUI-011
-    priority-list.ts       sorterbar liste (ha-sortable)
+    sortable-list.ts       sorterbar liste (ha-sortable) for prioritetslisten og elbilladerne
+    item-dialog.ts         felles for dialogene: entitet, handlinger, felt med grenser, knapper
     appliance-dialog.ts    APP-002–004, APP-006, GEN-013
     charger-dialog.ts      LAD-004–010, LAD-025
     action-field.ts        «Standard» eller egendefinert handling
     condition-field.ts     entitet eller mal, med forhåndsvisning av verdien (GEN-009)
     save-bar.ts            «Lagre» og «Forkast» når utkastet er endret (B7)
+    confirm-dialog.ts      spør før ulagrede endringer forkastes
 ```
 
 ### 5.2 Ruter
@@ -593,6 +600,14 @@ Hvilke komponenter HA har lastet, endret seg mellom 2026.3 og 2026.10
 (`ha-textfield`, `ha-radio` og `ha-md-list` forsvant). Derfor:
 
 - Panelet venter på `customElements.whenDefined("ha-form")` før første tegning.
+- Handlingsredigereren og dialogen for å legge til en handling henter tekstene
+  sine fra HAs oversettelsesfragment `config`, som bare HAs egen
+  konfigurasjonsside laster. Panelet laster det med
+  `hass.loadFragmentTranslation("config")`. Uten det er etikettene og menyene
+  i handlingsredigereren tomme (funnet i fase 9).
+- `ha-dialog` er i 2026.10 bygd på `wa-dialog`: `open`, `header-title`, sporet
+  `footer` for knappene og hendelsen `closed`. Lukkes dialogen fra innsiden,
+  blir `open` stående, så panelet setter den selv ved `closed`.
 - Alle felt lages med `ha-form` eller `ha-selector`. Selektorene laster sine
   egne underkomponenter (`ha-selector-action`, `ha-selector-template` osv.).
 - Ved oppgradering av HA-versjonen i `requirements_dev.txt` testes panelet
@@ -710,10 +725,11 @@ branch (CLAUDE.md).
 
 ### Fase 9 – Panel: konfigurasjonssider
 
-- [ ] Generelle parametere.
-- [ ] Apparater og prioritetsliste med dialog og varianter.
-- [ ] Billading med dialog.
-- [ ] Låst konfigurasjon, advarsel om manuell styring, lagringslinje.
+- [x] Generelle parametere. Grensene og standardverdiene i hjelpetekstene kommer fra `kraftvakt/capabilities`. Kraftvakts egne sensorer er tatt ut av velgeren for effektsensor og sensor for ladeeffekt.
+- [x] Apparater og prioritetsliste med dialog og varianter. Prioritetslisten og elbilladerlisten bruker `sortable-list.ts`. Dialogene for apparat og elbillader bygger på `item-dialog.ts`. «Standard» tilbys bare for domenene i `default_actions`, og velges når det velges en entitet som har standardhandling. En egendefinert handling starter som standardhandlingen. Maler forhåndsvises med `render_template`, der `entity` er tilstandsobjektet slik frontenden har det.
+- [x] Billading med dialog.
+- [x] Låst konfigurasjon, advarsel om manuell styring, lagringslinje. Konfigurasjonssidene deler ett utkast i `kraftvakt-panel.ts`. Panelet sjekker utkastet mot grensene og regner ut mangler selv (`validation.ts`), slik at feil vises før lagring. «Lagre» er deaktivert så lenge utkastet har slike feil. Feilene fra `kraftvakt/config/save` vises ved feltene til neste lagring. Panelet spør før ulagrede endringer forkastes når brukeren går til statussiden, og nettleseren spør når siden lukkes eller lastes på nytt. Navigering i HAs sidemeny kan ikke stoppes. Utkastet forkastes når reguleringen startes, siden det ikke kan lagres da.
+- Testet i nettleser mot lokal HA 2026.10.4: konfigurasjon fra bunnen til reguleringen kunne startes, endring mens den er stoppet, låsen og «Stopp regulering» mens den kjører, engelsk og norsk og smal visning.
 - Krav: GUI-008–012, GEN-013.
 
 ### Fase 10 – Ferdigstilling
