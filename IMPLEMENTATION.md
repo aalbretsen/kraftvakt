@@ -104,7 +104,7 @@ Flyt for hvert reguleringsvindu:
 custom_components/kraftvakt/
   __init__.py            oppsett, panelregistrering, plattformer
   const.py
-  config_flow.py         tom flyt (GUI-004), options flow for GUI-003
+  config_flow.py         tom flyt (GUI-004)
   config_model.py        dataklasser, (de)serialisering, validering, fullstendighet
   storage.py             Store med versjon og migrering
   measurement.py         PowerAverager: reguleringssnitt og snittforbruk
@@ -462,10 +462,10 @@ Vurderes i steg 5, bare når billadestyring er aktivert.
 
 ```
 frontend/src/
-  kraftvakt-panel.ts       routing på hass.route, toppmeny (GUI-002)
+  kraftvakt-panel.ts       routing på hass.route, toppmeny (GUI-002),
+                           ?config_entry= sendes videre til /kraftvakt/appliances (GUI-003)
   api.ts                   typer og WebSocket-kall
   localize.ts              oppslag i translations/{en,nb}.json (B8)
-  load-ha-elements.ts      sikrer at ha-form/ha-selector m.fl. er lastet (R2)
   pages/
     status-page.ts         GUI-005, GUI-006, GUI-007
     general-page.ts        GUI-008
@@ -489,6 +489,7 @@ frontend/src/
 | `/kraftvakt` og `/kraftvakt/status` | Statusside |
 | `/kraftvakt/general` | Generelle parametere |
 | `/kraftvakt/appliances` | Apparater og prioritetsliste (mål for GUI-003) |
+| `/kraftvakt?config_entry=<id>` | Konfigureringsknappen i HA (R1). Panelet erstatter adressen med `/kraftvakt/appliances`. |
 | `/kraftvakt/charging` | Billading |
 
 ### 5.3 Bygg
@@ -497,6 +498,43 @@ frontend/src/
 - CI får en jobb som bygger panelet og feiler hvis den innsjekkede bundlen er
   utdatert.
 - Bundlen lastes med versjon i URL-en, slik boilerplate gjør i dag.
+- Node-versjonen står i `.nvmrc` og hentes med nvm (`nvm install` / `nvm use`).
+  CI bruker `actions/setup-node` med `node-version-file: .nvmrc`.
+
+### 5.4 HA-komponenter i panelet
+
+Resultat fra R2 (9.1), bekreftet mot HA 2026.10.4. Komponentene under er
+definert når panelet tegnes og kan brukes direkte. Ingen hack for lasting
+trengs.
+
+| Bruk | Komponent |
+|---|---|
+| Alle felt: tekst, tall, valg, entitet, mal, handling, klokkeslett, av/på | `ha-form` med selektorer: `text`, `number`, `select`, `entity`, `template`, `action`, `time`, `boolean` |
+| Enkeltfelt utenfor skjema | `ha-selector` |
+| Sorterbare lister | `ha-sortable` med `handle-selector`. Lytt på `item-moved` og tegn listen på nytt. Komponenten flytter ikke elementene selv. |
+| Dialoger | `ha-dialog` |
+| Kort, varsler, knapper | `ha-card`, `ha-alert`, `ha-button`, `ha-icon-button`, `ha-svg-icon` |
+| Brytere og rader | `ha-switch`, `ha-formfield`, `ha-settings-row`, `ha-expansion-panel` |
+| Listerader | `ha-md-list-item` i egen beholder |
+| Kode | `ha-code-editor`, `ha-yaml-editor` |
+| Toppmeny | `ha-menu-button`, `ha-top-app-bar-fixed` eller egen verktøylinje, og `ha-tab-group` for fanene |
+
+Ikke tilgjengelig når panelet tegnes, og skal ikke brukes direkte:
+`ha-textfield`, `ha-radio`, `ha-md-list`, `ha-list-item`, `ha-wa-dialog`,
+`ha-md-dialog`, `ha-segmented-button` og `window.loadCardHelpers`. Tekstfelt,
+radioknapper og valget «Standard / Egendefinert» i skissene lages derfor med
+selektorer i `ha-form` (`text`, og `select` med `mode: list` eller
+`mode: dropdown`).
+
+Hvilke komponenter HA har lastet, endret seg mellom 2026.3 og 2026.10
+(`ha-textfield`, `ha-radio` og `ha-md-list` forsvant). Derfor:
+
+- Panelet venter på `customElements.whenDefined("ha-form")` før første tegning.
+- Alle felt lages med `ha-form` eller `ha-selector`. Selektorene laster sine
+  egne underkomponenter (`ha-selector-action`, `ha-selector-template` osv.).
+- Ved oppgradering av HA-versjonen i `requirements_dev.txt` testes panelet
+  manuelt mot listen over, og `.nvmrc` oppdateres til Node-versjonen
+  HA-frontenden bruker.
 
 ---
 
@@ -520,7 +558,7 @@ enhetstester for kompleks logikk og feilhåndtering.
 
 **Black box-tester (`tests/`)**
 
-- Oppsett, panel, ingen innstillinger i config flow (GUI-004), options flow (GUI-003).
+- Oppsett, panel, ingen innstillinger i config flow (GUI-004), panelet er konfigurasjonspanel for integrasjonen (GUI-003).
 - Ende-til-ende-regulering: sett tilstand på effektsensoren, frem tiden med
   `async_fire_time_changed`, og sjekk tjenestekall med `async_mock_service`.
 - Entiteter: verdier, oppdatering, brytere, lagring over reload (GEN-011).
@@ -544,13 +582,14 @@ branch (CLAUDE.md).
 
 ### Fase 0 – Tekniske avklaringer
 
-- [ ] R1: Finn ut hvordan konfigureringsknappen kan åpne panelet (GUI-003). Lag en liten prototype.
-- [ ] R2: Bekreft hvordan `ha-form`, `ha-selector` (entitet, mal, handling) og `ha-sortable` lastes i et eget panel i HA 2026.3.
+- [x] R1: Finn ut hvordan konfigureringsknappen kan åpne panelet (GUI-003). Løst med `config_panel_domain`, se 9.1. Lagt inn i `__init__.py` med test.
+- [x] R2: Bekreft hvordan `ha-form`, `ha-selector` (entitet, mal, handling) og `ha-sortable` lastes i et eget panel. Bekreftet i HA 2026.3.4 og 2026.10.4, se 9.1 og 5.4.
 - [x] Eier bekrefter tolkningene T1–T14 (2026-11-07).
-- [ ] Oppdater planen med resultatet.
+- [x] Oppdater planen med resultatet.
 
 ### Fase 1 – Konfigurasjonsmodell og lagring
 
+- [x] Forutsetning: oppgrader utviklingsmiljøet og CI til Python 3.14 (9.1), og lås utviklingsavhengighetene til versjonene HA foretrekker. Gjort 2026-11-07.
 - [ ] `config_model.py` med dataklasser, standardverdier, grenser, validering og `missing_items()`.
 - [ ] `storage.py` med Store og versjon.
 - [ ] Enhetstester.
@@ -582,9 +621,8 @@ branch (CLAUDE.md).
 - [ ] `conditions.py`, `actions.py`.
 - [ ] `runtime.py`: avgjørelsestakt (T1), start ved oppstart, start/stopp, sikker tilstand, statuslyttere.
 - [ ] `binary_sensor.py` (ENT-005) og reguleringsbryter i `switch.py` (ENT-006).
-- [ ] Options flow for GUI-003 etter resultatet av R1.
 - [ ] Black box-tester ende til ende.
-- Krav: GEN-004–010, GEN-012, REG-009–011, REG-016, ENT-005, ENT-006, GUI-003.
+- Krav: GEN-004–010, GEN-012, REG-009–011, REG-016, ENT-005, ENT-006.
 
 ### Fase 6 – Elbillading
 
@@ -600,10 +638,12 @@ branch (CLAUDE.md).
 
 ### Fase 8 – Panel: grunnmur og statusside
 
+- [x] Forutsetning: Node.js via nvm og `.nvmrc` (9.1). Gjort 2026-11-07.
 - [ ] Oppsett av `frontend/` (Lit, TypeScript, Rollup) og CI-jobb.
-- [ ] Panelskall med toppmeny og ruter, oversettelser, lasting av HA-komponenter.
+- [ ] Panelskall med toppmeny og ruter, oversettelser, venting på HA-komponenter (5.4).
+- [ ] Videresending fra `?config_entry=` til apparatsiden (GUI-003, 5.2).
 - [ ] Statusside.
-- Krav: GUI-001, GUI-002, GUI-005–007, SPR-001, SPR-002.
+- Krav: GUI-001, GUI-002, GUI-003, GUI-005–007, SPR-001, SPR-002.
 
 ### Fase 9 – Panel: konfigurasjonssider
 
@@ -657,11 +697,65 @@ verifiserer kravet.
 
 | # | Risiko | Tiltak |
 |---|---|---|
-| R1 | GUI-003: HA har ingen dokumentert måte å la konfigureringsknappen åpne et panel på. Kandidater: options flow som returnerer `async_external_step` med panelets URL, en options flow med lenke i beskrivelsen, eller `configuration_url` med `homeassistant://kraftvakt/appliances` på tjenesteenheten. | Prototype i fase 0. Går det ikke som kravet sier, foreslås en kravendring (kapittel 10). |
-| R2 | HA laster komponenter som `ha-form`, `ha-selector` og handlingsredigereren dovent. I et eget panel er de ikke alltid definert. | Prototype i fase 0. Kjent løsning er å utløse lasting via et innebygd panel eller kortredigerer før panelet tegnes. |
+| R1 | GUI-003: Hvordan kan konfigureringsknappen åpne panelet? | **Løst** (9.1). |
+| R2 | HA laster komponenter dovent. Er `ha-form`, `ha-selector` og handlingsredigereren tilgjengelige i et eget panel? | **Løst** (9.1, 5.4). Gjenværende risiko: HA kan endre hvilke komponenter som er lastet. Panelet venter på `ha-form` og bruker bare komponentene i 5.4. |
 | R3 | Handlingsredigereren (`ha-selector` med `action`) er stor og kan endre seg mellom HA-versjoner. | Kapsles inn i `action-field.ts`, så en endring bare treffer ett sted. Reserve: YAML-redigering med `ha-yaml-editor`. |
 | R4 | Tidtakere kan drive over tid. | Vinduene planlegges mot absolutte tidspunkter med `async_track_point_in_utc_time`, ikke med fast intervall. |
 | R5 | Dynamiske entiteter for elbilladere (B9) kan gi foreldreløse entiteter i entitetsregisteret. | Fjern registeroppføringer for elbilladere som er tatt ut av konfigurasjonen ved lagring. |
+
+### 9.1 Resultater fra fase 0
+
+Testet 2026-11-07 med en prototype av et eget panel mot lokale Home
+Assistant-instanser i egne venv-er: først 2026.3.4 (frontend 20260312.1), og
+etter at minimumsversjonen ble løftet, på nytt mot 2026.10.4 (frontend
+20260930.5). Prototypen og test-HA lå i en midlertidig mappe og er ikke sjekket
+inn. Resultatene under gjelder 2026.10.4 der ikke annet står.
+
+**R1 – Konfigureringsknappen (GUI-003).** `panel_custom.async_register_panel`
+tar parameteren `config_panel_domain`. Er den satt til integrasjonens domene,
+viser integrasjonssiden et tannhjul som lenker til
+`/<panel>?config_entry=<entry_id>`, i samme fane og uten options flow.
+Parameteren er lagt inn i `__init__.py`, med testen
+`test_panel_is_config_panel_for_integration`, og bekreftet i nettleseren i
+begge versjonene. Tannhjulet åpner panelets rot, så panelet må selv sende
+`?config_entry=` videre til `/kraftvakt/appliances` (fase 8). Tannhjulet vises
+ikke når config entry-en har en feiltilstand. Da må panelet åpnes fra
+sidemenyen.
+
+**R2 – HA-komponenter i panelet.** Ved direkte innlasting av panelet var
+komponentene i tabellen i 5.4 allerede definert. Et `ha-form` med selektorene
+`entity`, `number` (to desimaler), `template`, `action` og `time` ble tegnet
+riktig og lastet sine egne underkomponenter, og `value-changed` ga riktige
+verdier. `ha-sortable` sendte `item-moved` med gammel og ny plass ved
+dra-og-slipp. Handlingsredigereren la til `data: {}` i handlingen, så lagret
+konfigurasjon må tåle normalisering. I 2026.3.4 var også `ha-textfield`,
+`ha-radio` og `ha-md-list` definert, men ikke i 2026.10.4.
+`window.loadCardHelpers` finnes ikke i et eget panel. Det kjente hacket med
+`partial-panel-resolver` virket, men trengs ikke, og skal ikke brukes fordi det
+bygger på private API-er.
+
+**Utviklingsmiljø.**
+
+- Home Assistant 2026.3 krever Python 3.14. Prosjektets venv og CI bruker
+  Python 3.13 og har HA 2026.2.3, som er eldre enn minimumsversjonen 2026.3 i
+  `hacs.json`. **Løst 2026-11-07:** venv, `pyproject.toml`, CI og README bruker
+  nå Python 3.14.
+- Utviklingsavhengighetene er låst i `requirements_dev.txt` og `pyproject.toml`
+  til versjonene HA foretrekker: `homeassistant` og pytest-pakkene slik
+  `pytest-homeassistant-custom-component` krever (HA 2026.10.4),
+  `home-assistant-frontend` slik HAs frontend-manifest krever, og `ruff` og
+  `mypy` slik HA core sine testkrav angir. CI bruker samme ruff-versjon
+  (`uvx -c requirements_dev.txt`). GitHub Actions er løftet til
+  `actions/checkout@v7` og `astral-sh/setup-uv@v10.3.3`. `hassfest@master` og
+  `hacs/action@main` følger anbefalingen fra HA og HACS. Dependabot foreslår
+  nye versjoner hver uke.
+- Minimumsversjonen er løftet fra 2026.3 til 2026.10 i `hacs.json` og README,
+  slik at den er lik versjonen testene kjører mot (2026.10.4).
+- Node.js styres med nvm. `.nvmrc` angir 24.21.0, samme versjon som
+  HA-frontenden for HA 2026.10 (20260930.5) bruker. Løftes HA-versjonen, følger
+  `.nvmrc` frontendens `.nvmrc` for samme versjon. Lokalt er nvm.fish installert,
+  og Node 24.21.0 er installert med den. `/opt/homebrew/bin/npm` er en rest etter en
+  gammel Homebrew-installasjon av Node, og den virker ikke uten `node`.
 
 ---
 
@@ -693,6 +787,5 @@ Planen endrer ikke REQUIREMENTS.md. Disse endringene foreslås, og eier avgjør:
     `entity`, og for ladestrøm `current`, `min_current` og `max_current` (T14).
 12. **GUI-006:** Ta inn opplysningene som er godkjent utover minimumskravet (T11).
 13. **GUI-012:** Ta inn knappen «Stopp regulering» i låsebanneret (T12).
-14. **GUI-003:** Kan måtte omformuleres etter R1.
-15. **README.md og oversettelsene:** Bruker «kWh-mål» og «effektmål». Bør bruke
+14. **README.md og oversettelsene:** Bruker «kWh-mål» og «effektmål». Bør bruke
     «effektgrense» som i kravene (fase 10).

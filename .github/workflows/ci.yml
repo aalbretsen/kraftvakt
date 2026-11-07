@@ -13,18 +13,18 @@ jobs:
     name: Ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - run: uvx ruff check .
-      - run: uvx ruff format --check .
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uvx -c requirements_dev.txt ruff check .
+      - run: uvx -c requirements_dev.txt ruff format --check .
 
   test:
     name: Pytest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - run: uv venv && uv pip install -r requirements_dev.txt
       - run: uv run pytest

@@ -25,3 +25,16 @@ async def test_setup_and_unload_registers_panel(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_panel_is_config_panel_for_integration(hass: HomeAssistant) -> None:
+    """The configure button for the integration opens the panel (GUI-003)."""
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    panel = hass.data["frontend_panels"][PANEL_URL_PATH]
+    assert panel.config_panel_domain == DOMAIN
+    assert panel.require_admin

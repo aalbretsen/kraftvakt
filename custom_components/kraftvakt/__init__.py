@@ -58,4 +58,5 @@ async def _async_register_panel(hass: HomeAssistant) -> None:
         sidebar_icon=PANEL_ICON,
         require_admin=True,
         config={},
+        config_panel_domain=DOMAIN,
     )

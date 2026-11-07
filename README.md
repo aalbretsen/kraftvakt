@@ -21,7 +21,7 @@ kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
 ## Krav
 
-- Home Assistant 2026.3 eller nyere
+- Home Assistant 2026.10 eller nyere
 
 ## Installasjon
 
@@ -44,11 +44,26 @@ Home Assistant og start på nytt.
 
 ## Utvikling
 
+Krever Python 3.14, som Home Assistant 2026.3 og nyere bruker.
+
 ```bash
-uv venv
+uv venv --python 3.14
 uv pip install -r requirements_dev.txt
 uv run pytest
 uv run ruff check .
+```
+
+Panelet skal bygges med Node.js. Versjonen står i `.nvmrc`, og den samme
+versjonen brukes av Home Assistant-frontenden. Installer og aktiver den med
+[nvm](https://github.com/nvm-sh/nvm) eller
+[nvm.fish](https://github.com/jorgebucaran/nvm.fish):
+
+```bash
+nvm install
+```
+
+```bash
+nvm use
 ```
 
 Kjør en lokal Home Assistant mot repoet:
