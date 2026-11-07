@@ -526,6 +526,9 @@ frontend/src/
                            ?config_entry= sendes videre til /kraftvakt/appliances (GUI-003)
   api.ts                   typer og WebSocket-kall
   localize.ts              oppslag i translations/{en,nb}.json (B8)
+  navigation.ts            sidene og navigering mellom dem
+  issues.ts                tekst og side for mangler og valideringsfeil (3.4)
+  types.ts, format.ts, clock.ts  HA-typer, tallformat og nedtelling
   pages/
     status-page.ts         GUI-005, GUI-006, GUI-007
     general-page.ts        GUI-008
@@ -699,10 +702,10 @@ branch (CLAUDE.md).
 ### Fase 8 – Panel: grunnmur og statusside
 
 - [x] Forutsetning: Node.js via nvm og `.nvmrc` (9.1). Gjort 2026-11-07.
-- [ ] Oppsett av `frontend/` (Lit, TypeScript, Rollup) og CI-jobb.
-- [ ] Panelskall med toppmeny og ruter, oversettelser, venting på HA-komponenter (5.4).
-- [ ] Videresending fra `?config_entry=` til apparatsiden (GUI-003, 5.2).
-- [ ] Statusside.
+- [x] Oppsett av `frontend/` (Lit, TypeScript, Rollup) og CI-jobb. Lit 3.3.3 og TypeScript 6.0.3 som HA-frontenden for 2026.10 bruker, `@mdi/js` 7.4.47 for ikoner, og ellers siste stabile versjoner, låst i `package.json`. Bundlen er minifisert og merket som generert i `.gitattributes`. CI-jobben «Panel» kjører `npm ci`, typesjekk og bygg, og feiler hvis bundlen avviker fra den innsjekkede.
+- [x] Panelskall med toppmeny og ruter, oversettelser, venting på HA-komponenter (5.4). Fanene er `ha-tab-group` med `ha-tab-group-tab` og hendelsen `wa-tab-show`. Navigering skjer med `navigateToPage()` i `navigation.ts`. Oversettelsesnøklene typesjekkes, også at `nb.json` har alle nøklene i `en.json`. Panelet abonnerer på status og henter konfigurasjonen når reguleringen startes eller stoppes, eller når mangellisten endres. Status og konfigurasjon sendes ned til sidene, slik at fase 9 kan bruke `status.running` til låsen (GUI-012).
+- [x] Videresending fra `?config_entry=` til apparatsiden (GUI-003, 5.2).
+- [x] Statusside. Mangler beskrives i `issues.ts`, som fase 9 kan bruke for valideringsfeil. Backend sorterer listene i statusbildet (T23) og gir `excluded` per elbillader (T24). Konfigurasjonssidene er plassholdere til fase 9. Testet i nettleser mot lokal HA 2026.10.4, på engelsk og norsk og i smal visning.
 - Krav: GUI-001, GUI-002, GUI-003, GUI-005–007, SPR-001, SPR-002.
 
 ### Fase 9 – Panel: konfigurasjonssider

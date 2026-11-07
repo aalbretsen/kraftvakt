@@ -18,9 +18,9 @@ like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
 kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
 > **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
-> vanlige apparater og elbilladere, med straff og sikker tilstand. Panelet for
-> konfigurasjon mangler ennå, så konfigurasjonen kan foreløpig ikke settes opp
-> fra brukergrensesnittet.
+> vanlige apparater og elbilladere, med straff og sikker tilstand. Panelet har
+> en statusside, men konfigurasjonssidene mangler ennå, så konfigurasjonen kan
+> foreløpig ikke settes opp fra brukergrensesnittet.
 
 ## Krav
 
@@ -148,6 +148,25 @@ nvm install
 ```bash
 nvm use
 ```
+
+### Panelet
+
+Panelet er skrevet i Lit og TypeScript og ligger i `frontend/`. Den ferdige
+bundlen, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`, sjekkes
+inn, fordi HACS installerer rett fra repoet. Bygg den på nytt etter hver
+endring i `frontend/`, og sjekk inn kilden og bundlen sammen. CI feiler hvis
+den innsjekkede bundlen ikke stemmer med kilden.
+
+```bash
+cd frontend
+npm ci
+npm run typecheck
+npm run build
+```
+
+`npm run watch` bygger på nytt ved hver endring. Tekstene i panelet ligger i
+`frontend/src/translations/` (engelsk og norsk) og velges ut fra språket til
+brukeren i Home Assistant.
 
 Kjør en lokal Home Assistant mot repoet:
 
