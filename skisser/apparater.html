@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apparater og prioritetsliste</title>
+  <link rel="stylesheet" href="felles.css">
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Apparater og prioritetsliste <span class="req">GUI-009</span></h1>
+  <p>Brukeren legger til og konfigurerer apparater med varianter, og sorterer prioritetslisten. Konfigureringsknappen for integrasjonen i HA åpner denne siden <span class="req">GUI-003</span>.</p>
+  <nav class="doc-nav">
+    <a href="index.html">Oversikt</a>
+    <a href="status.html">Status</a>
+    <a href="generelt.html">Generelt</a>
+    <a href="apparater.html" aria-current="page">Apparater</a>
+    <a href="billading.html">Billading</a>
+  </nav>
+</header>
+
+<!-- ============ 1. Prioritetsliste ============ -->
+<section class="scene">
+  <h2>1. Prioritetslisten</h2>
+  <p class="lead">Reguleringen er stoppet. Brukeren drar «Panelovn stue · Borte» oppover i listen. Varianter står som egne oppføringer <span class="req">APP-008</span>, og «Elbillading» kan sorteres, men ikke konfigureres <span class="req">APP-005</span>.</p>
+
+  <div class="ha" data-tab="appliances" style="min-height:820px">
+    <div class="content">
+
+      <div class="alert warning">
+        <span class="a-ico">⚠</span>
+        <div class="a-body">
+          <div class="a-title">Ikke slå regulerte apparater av eller på utenom Kraftvakt</div>
+          Manuell styring og automasjoner kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff. <span class="req">GUI-011</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          Prioritetsliste
+          <span class="sub">Øverst = høyest prioritet, slås av sist</span>
+          <span class="spacer"></span>
+          <button class="btn filled">＋ Legg til apparat</button>
+        </div>
+        <div class="list">
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">1</span>
+            <span class="avatar">♨</span>
+            <div class="li-main">
+              <div class="li-title">Varmtvannsbereder <span class="variant-tag">Morgen</span></div>
+              <div class="li-sub">Variant · mal · switch.varmtvannsbereder</div>
+            </div>
+            <span class="icon-btn" title="Rediger apparat">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">2</span>
+            <span class="avatar">≋</span>
+            <div class="li-main">
+              <div class="li-title">Varmekabel bad</div>
+              <div class="li-sub">climate.bad · effektreserve 0,8 kW</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li dragging">
+            <span class="handle">⋮⋮</span><span class="rank">3</span>
+            <span class="avatar">▥</span>
+            <div class="li-main">
+              <div class="li-title">Panelovn stue <span class="variant-tag">Borte</span></div>
+              <div class="li-sub">Variant · entitet input_boolean.borte · switch.panelovn_stue</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li special">
+            <span class="handle">⋮⋮</span><span class="rank">4</span>
+            <span class="avatar">⚡</span>
+            <div class="li-main">
+              <div class="li-title">Elbillading</div>
+              <div class="li-sub">3 elbilladere · konfigureres under <a href="billading.html">Billading</a></div>
+            </div>
+            <span class="icon-btn" style="opacity:.3" title="Kan ikke konfigureres her">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">5</span>
+            <span class="avatar">♨</span>
+            <div class="li-main">
+              <div class="li-title">Varmtvannsbereder</div>
+              <div class="li-sub">switch.varmtvannsbereder · 1 variant</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">6</span>
+            <span class="avatar">▥</span>
+            <div class="li-main">
+              <div class="li-title">Panelovn stue</div>
+              <div class="li-sub">switch.panelovn_stue · 1 variant</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">7</span>
+            <span class="avatar">◌</span>
+            <div class="li-main">
+              <div class="li-title">Bassengvarmer</div>
+              <div class="li-sub">switch.basseng · effektreserve 4,0 kW</div>
+              <div class="li-sub" style="color:var(--error)">Handling for å slå av mangler</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="fab">💾 Lagre</div>
+  </div>
+
+  <ul class="notes">
+    <li>Hele listen sorteres med dra-og-slipp (HAs <code>ha-sortable</code>). Hver oppføring kan flyttes uavhengig av de andre for samme apparat <span class="req">APP-008</span>.</li>
+    <li>Blyanten åpner apparatdialogen (scene 2). For en variant åpnes dialogen for apparatet med varianten markert.</li>
+    <li>Navnet er entitetens navn i HA <span class="req">GEN-013</span> <span class="req">APP-001</span>. Ikonet er entitetens ikon.</li>
+    <li>Ufullstendige apparater markeres i listen. Det samme vises på statussiden <span class="req">GUI-005</span>.</li>
+    <li>Elbillading står bare i listen når billadestyring er aktivert.</li>
+    <li>Ingen endring lagres før brukeren trykker «Lagre» (B7).</li>
+  </ul>
+</section>
+
+<!-- ============ 2. Apparatdialog ============ -->
+<section class="scene">
+  <h2>2. Rediger apparat</h2>
+  <p class="lead">Dialogen for et apparat: entitet, handlinger, effektreserve og varianter. Handlingen for å slå på bruker standardhandlingen, handlingen for å slå av er egendefinert.</p>
+
+  <div class="ha tall-xl" data-tab="appliances">
+    <div class="content">
+      <div class="card"><div class="card-header">Prioritetsliste</div><div class="card-body muted">…</div></div>
+    </div>
+
+    <div class="backdrop">
+      <div class="dialog">
+        <div class="dialog-head">Rediger apparat <span class="spacer"></span><span class="icon-btn">✕</span></div>
+        <div class="dialog-body">
+
+          <div class="field">
+            <div class="control">
+              <span class="label">Entitet *</span>
+              <span class="entity-ico">♨</span>
+              <span class="value">Varmtvannsbereder<span class="entity-id">switch.varmtvannsbereder</span></span>
+              <span class="trail">▾</span>
+            </div>
+            <div class="helper">Navnet i HA blir apparatets navn. Entiteten er tilgjengelig som <code>entity_id</code> og <code>entity</code> (tilstandsobjektet) i maler og handlinger <span class="req">T14</span>. <span class="req">GEN-013</span></div>
+          </div>
+
+          <div class="section-title">Handlinger</div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Slå på</b> <span class="req">APP-002</span></div>
+            <div class="seg"><span class="sel">Standard</span><span>Egendefinert</span></div>
+            <div class="small muted">Kjører <code>switch.turn_on</code> for entiteten.</div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Slå av</b> <span class="req">APP-003</span></div>
+            <div class="seg"><span>Standard</span><span class="sel">Egendefinert</span></div>
+            <div class="code">action: switch.turn_off
+target:
+  entity_id: "{{ entity_id }}"
+---
+action: notify.mobile_app
+data:
+  message: "Varmtvannsbereder slått av av Kraftvakt"</div>
+            <div class="small muted">HAs handlingsredigerer, som i automasjoner. Variabler: <code>entity_id</code>, <code>entity</code>.</div>
+          </div>
+
+          <div class="field">
+            <div class="control">
+              <span class="label">Effektreserve (valgfri)</span>
+              <span class="value placeholder">Ingen</span><span class="suffix">kW</span>
+            </div>
+            <div class="helper">Ledig effekt som må finnes før apparatet slås på. Bruk for apparater som trekker mye straks de slås på. <span class="req">APP-004</span> <span class="req">REG-006</span></div>
+          </div>
+
+          <div class="section-title">Varianter <span class="req">APP-006</span></div>
+          <div class="small muted" style="margin-top:-8px">Gir apparatet en annen plass i prioritetslisten når et uttrykk er sant. Det øverste sanne uttrykket gjelder <span class="req">APP-007</span>.</div>
+
+          <div class="sub-card">
+            <div class="sc-head">
+              <span class="handle muted">⋮⋮</span>
+              <b>1.</b>
+              <span class="spacer"></span>
+              <span class="icon-btn" title="Fjern variant">🗑</span>
+            </div>
+            <div class="field">
+              <div class="control"><span class="label">Merkelapp *</span><span class="value">Morgen</span></div>
+            </div>
+            <div class="seg"><span>Entitet</span><span class="sel">Mal</span></div>
+            <div class="code">{{ today_at("05:00") &lt;= now() &lt; today_at("08:00") }}</div>
+            <div class="preview">Nå: <b>sann</b></div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head">
+              <span class="handle muted">⋮⋮</span>
+              <b>2.</b>
+              <span class="spacer"></span>
+              <span class="icon-btn">🗑</span>
+            </div>
+            <div class="field error">
+              <div class="control"><span class="label">Merkelapp *</span><span class="value">Morgen</span></div>
+              <div class="helper">Merkelappen må være unik for apparatet.</div>
+            </div>
+            <div class="seg"><span class="sel">Entitet</span><span>Mal</span></div>
+            <div class="field">
+              <div class="control">
+                <span class="label">Boolsk entitet</span>
+                <span class="entity-ico">⌂</span>
+                <span class="value">Gjester<span class="entity-id">input_boolean.gjester · av</span></span>
+                <span class="trail">▾</span>
+              </div>
+              <div class="helper">Sann bare når entiteten er på. Utilgjengelig regnes som usann. <span class="req">GEN-009</span></div>
+            </div>
+          </div>
+
+          <div><button class="btn outlined">＋ Legg til variant</button></div>
+
+        </div>
+        <div class="dialog-actions">
+          <button class="btn danger">Slett apparat</button>
+          <span class="spacer"></span>
+          <button class="btn">Avbryt</button>
+          <button class="btn filled" disabled>OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li>«Standard» tilbys bare når entitetens domene har en entydig standardhandling (tabell i IMPLEMENTATION.md 3.6). Ellers må handlingen være egendefinert.</li>
+    <li>Entitetsvelgeren skjuler entiteter som allerede brukes av et annet apparat eller en elbillader (tolkning T9).</li>
+    <li>Variantene sorteres med dra-og-slipp. Rekkefølgen her er rekkefølgen uttrykkene vurderes i, ikke plassen i prioritetslisten.</li>
+    <li>En ny variant legges nederst i prioritetslisten. En slettet variant fjernes fra listen <span class="req">APP-008</span>.</li>
+    <li>«OK» oppdaterer utkastet og er deaktivert mens noe er ugyldig. Lagring skjer med «Lagre» på siden (B7).</li>
+    <li>Forhåndsvisningen av malen bruker HAs <code>render_template</code> og oppdateres mens brukeren skriver.</li>
+    <li>Varianter kan ikke legges til for elbilladere eller «Elbillading».</li>
+  </ul>
+</section>
+
+<!-- ============ 3. Låst ============ -->
+<section class="scene">
+  <h2>3. Reguleringen kjører – låst</h2>
+  <p class="lead">Listen vises, men kan ikke sorteres eller endres <span class="req">GUI-012</span>.</p>
+
+  <div class="ha" data-tab="appliances" style="min-height:400px">
+    <div class="content">
+      <div class="alert warning">
+        <span class="a-ico">🔒</span>
+        <div class="a-body"><div class="a-title">Konfigurasjonen er låst</div>Reguleringen kjører. Stopp reguleringen for å endre konfigurasjonen.</div>
+        <span class="a-action"><button class="btn outlined">■ Stopp regulering</button></span>
+      </div>
+      <div class="alert warning">
+        <span class="a-ico">⚠</span>
+        <div class="a-body small">Ikke slå regulerte apparater av eller på utenom Kraftvakt. Manuell styring kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff.</div>
+      </div>
+      <div class="card">
+        <div class="card-header">Prioritetsliste <span class="spacer"></span><button class="btn filled" disabled>＋ Legg til apparat</button></div>
+        <div class="list">
+          <div class="li disabled"><span class="rank">1</span><div class="li-main"><div class="li-title">Varmtvannsbereder <span class="variant-tag">Morgen</span></div></div><span class="icon-btn" title="Vis">👁</span></div>
+          <div class="li disabled"><span class="rank">2</span><div class="li-main"><div class="li-title">Varmekabel bad</div></div><span class="icon-btn">👁</span></div>
+          <div class="li disabled special"><span class="rank">3</span><div class="li-main"><div class="li-title">Elbillading</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li>Dra-håndtakene skjules. Blyanten erstattes av et øye som åpner dialogen skrivebeskyttet.</li>
+  </ul>
+</section>
+
+<script src="felles.js"></script>
+</body>
+</html>

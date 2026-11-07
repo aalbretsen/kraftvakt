@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generelle parametere</title>
+  <link rel="stylesheet" href="felles.css">
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Generelle parametere <span class="req">GUI-008</span></h1>
+  <p>Effektsensor og innstillingene for regulering og straff. Kan bare endres mens reguleringen er stoppet <span class="req">REG-010</span>.</p>
+  <nav class="doc-nav">
+    <a href="index.html">Oversikt</a>
+    <a href="status.html">Status</a>
+    <a href="generelt.html" aria-current="page">Generelt</a>
+    <a href="apparater.html">Apparater</a>
+    <a href="billading.html">Billading</a>
+  </nav>
+</header>
+
+<!-- ============ 1. Redigerbar ============ -->
+<section class="scene">
+  <h2>1. Reguleringen er stoppet – siden kan redigeres</h2>
+  <p class="lead">Brukeren har endret effektgrensen. Lagringsknappen vises når utkastet er endret (beslutning B7). Ett felt har ugyldig verdi.</p>
+
+  <div class="ha tall-sm" data-tab="general" style="min-height:900px">
+    <div class="content">
+
+      <div class="card">
+        <div class="card-header">Måling</div>
+        <div class="card-body form">
+          <div class="field">
+            <div class="control">
+              <span class="label">Effektsensor *</span>
+              <span class="entity-ico">⚡</span>
+              <span class="value">HAN effekt<span class="entity-id">sensor.han_power · 7 412 W</span></span>
+              <span class="trail">▾</span>
+            </div>
+            <div class="helper">Sensor som måler husets totale momentane effekt, i W eller kW. <span class="req">GEN-003</span> <span class="req">MAL-007</span></div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <span class="label">Reguleringsvindu</span>
+              <span class="value">60</span><span class="suffix">s</span>
+            </div>
+            <div class="helper">Tidsrommet reguleringssnittet beregnes over. 10–600 s, standard 60 s. <span class="req">MAL-002</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Regulering</div>
+        <div class="card-body form cols">
+          <div class="field">
+            <div class="control">
+              <span class="label">Effektgrense</span>
+              <span class="value">9,5</span><span class="suffix">kW</span>
+            </div>
+            <div class="helper">Høyeste tillatte snittforbruk per time. 1–50 kW, standard 10 kW. <span class="req">REG-001</span></div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <span class="label">Reguleringsintervall</span>
+              <span class="value">2 × reguleringsvinduet</span><span class="trail">▾</span>
+            </div>
+            <div class="helper">Avgjørelse hvert 120. sekund. Valg: 1×, 2×, 3×, 4×. Standard 1×. <span class="req">REG-002</span></div>
+          </div>
+          <div class="field error">
+            <div class="control">
+              <span class="label">Ventetid ved effektgrensen</span>
+              <span class="value">12</span><span class="suffix">min</span>
+            </div>
+            <div class="helper">Må være mellom 0 og 10 minutter. Standard 5 min. <span class="req">REG-014</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Straff</div>
+        <div class="card-body form cols">
+          <div class="field">
+            <div class="control">
+              <span class="label">Straffeterskel</span>
+              <span class="value">1,0</span><span class="suffix">kW</span>
+            </div>
+            <div class="helper">Hvor mye snittforbruket kan overstige effektgrensen før straff. 0–10 kW, standard 1 kW. <span class="req">STR-002</span></div>
+          </div>
+          <div class="alert info" style="align-self:start">
+            <span class="a-ico">ℹ</span>
+            <div class="a-body small">Kapasitetsvinduet er fast én time og kan ikke endres <span class="req">MAL-003</span>.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="fab" style="opacity:.45" title="Deaktivert: ett felt er ugyldig">💾 Lagre</div>
+  </div>
+
+  <ul class="notes">
+    <li>Effektsensoren velges med HAs entitetsvelger, filtrert på sensorer med enhetsklasse effekt. Gjeldende verdi vises som hjelp.</li>
+    <li>Gyldige områder og standardverdier hentes fra backend (<code>kraftvakt/capabilities</code>), slik at de bare står ett sted.</li>
+    <li>Hjelpeteksten for reguleringsintervall regner ut sekunder ut fra reguleringsvinduet.</li>
+    <li>«Lagre» er deaktivert så lenge et felt er ugyldig. Navigerer brukeren bort med ulagrede endringer, spør panelet om de skal forkastes.</li>
+  </ul>
+</section>
+
+<!-- ============ 2. Låst ============ -->
+<section class="scene">
+  <h2>2. Reguleringen kjører – konfigurasjonen er låst</h2>
+  <p class="lead">Samme banner vises øverst på alle konfigurasjonssidene <span class="req">GUI-012</span>. Feltene er deaktivert.</p>
+
+  <div class="ha" data-tab="general" style="min-height:520px">
+    <div class="content">
+      <div class="alert warning">
+        <span class="a-ico">🔒</span>
+        <div class="a-body">
+          <div class="a-title">Konfigurasjonen er låst</div>
+          Reguleringen kjører. Stopp reguleringen for å endre konfigurasjonen. Når reguleringen stoppes, slås alle regulerte apparater og elbilladere av.
+        </div>
+        <span class="a-action"><button class="btn outlined">■ Stopp regulering</button></span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Måling</div>
+        <div class="card-body form">
+          <div class="field disabled">
+            <div class="control">
+              <span class="label">Effektsensor *</span>
+              <span class="entity-ico">⚡</span>
+              <span class="value">HAN effekt<span class="entity-id">sensor.han_power</span></span>
+            </div>
+          </div>
+          <div class="field disabled">
+            <div class="control"><span class="label">Reguleringsvindu</span><span class="value">60</span><span class="suffix">s</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Regulering</div>
+        <div class="card-body form cols">
+          <div class="field disabled"><div class="control"><span class="label">Effektgrense</span><span class="value">10,0</span><span class="suffix">kW</span></div></div>
+          <div class="field disabled"><div class="control"><span class="label">Reguleringsintervall</span><span class="value">1 × reguleringsvinduet</span></div></div>
+          <div class="field disabled"><div class="control"><span class="label">Ventetid ved effektgrensen</span><span class="value">5</span><span class="suffix">min</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li>Knappen «Stopp regulering» i banneret er en snarvei, godkjent av eier <span class="req">T12</span>. Den stopper reguleringen på samme måte som på statussiden.</li>
+    <li>Backend avviser uansett lagring mens reguleringen kjører <span class="req">REG-010</span>.</li>
+  </ul>
+</section>
+
+<script src="felles.js"></script>
+</body>
+</html>

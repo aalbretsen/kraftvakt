@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Billading</title>
+  <link rel="stylesheet" href="felles.css">
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Billading <span class="req">GUI-010</span></h1>
+  <p>Felles innstillinger for billading og listen over elbilladere, der rekkefølgen er den konfigurerte ladeprioriteringen <span class="req">LAD-003</span>. Hver elbillader konfigureres i en dialog.</p>
+  <nav class="doc-nav">
+    <a href="index.html">Oversikt</a>
+    <a href="status.html">Status</a>
+    <a href="generelt.html">Generelt</a>
+    <a href="apparater.html">Apparater</a>
+    <a href="billading.html" aria-current="page">Billading</a>
+  </nav>
+</header>
+
+<!-- ============ 1. Oversikt ============ -->
+<section class="scene">
+  <h2>1. Billadestyring aktivert</h2>
+  <p class="lead">Reguleringen er stoppet. Tre elbilladere er lagt inn, én mangler påkrevde innstillinger.</p>
+
+  <div class="ha" data-tab="charging" style="min-height:860px">
+    <div class="content">
+
+      <div class="alert warning">
+        <span class="a-ico">⚠</span>
+        <div class="a-body">
+          <div class="a-title">Ikke slå elbilladere av eller på utenom Kraftvakt</div>
+          Manuell styring og automasjoner kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff. <span class="req">GUI-011</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Felles innstillinger</div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="tr-main">
+              <div class="tr-title">Billadestyring <span class="req">LAD-001</span></div>
+              <div class="tr-sub">Når den er av, overlates elbilladerne til seg selv og «Elbillading» fjernes fra prioritetslisten.</div>
+            </div>
+            <span class="switch on"></span>
+          </div>
+          <div class="toggle-row" style="border-top:1px solid var(--divider)">
+            <div class="tr-main">
+              <div class="tr-title">Én elbillader om gangen <span class="req">LAD-002</span></div>
+              <div class="tr-sub">En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. Andre venter.</div>
+            </div>
+            <span class="switch on"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          Elbilladere
+          <span class="sub">Ladeprioritering, høyest øverst</span>
+          <span class="spacer"></span>
+          <button class="btn filled">＋ Legg til elbillader</button>
+        </div>
+        <div class="list">
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">1</span>
+            <span class="avatar">⚡</span>
+            <div class="li-main">
+              <div class="li-title">Lader garasje</div>
+              <div class="li-sub">6–16 A · reserve 4,0 kW · ladetidsrom 22:00–06:00 · bil tilkoblet fra binary_sensor.garasje_bil</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">2</span>
+            <span class="avatar">⚡</span>
+            <div class="li-main">
+              <div class="li-title">Lader carport</div>
+              <div class="li-sub">6–32 A · reserve 4,0 kW · alltid lov til å lade</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+          <div class="li">
+            <span class="handle">⋮⋮</span><span class="rank">3</span>
+            <span class="avatar">⚡</span>
+            <div class="li-main">
+              <div class="li-title">Lader gjest</div>
+              <div class="li-sub">6–16 A · reserve 3,0 kW</div>
+              <div class="li-sub" style="color:var(--error)">Sensor for ladeeffekt og handling for ladestrøm mangler</div>
+            </div>
+            <span class="icon-btn">✎</span>
+          </div>
+        </div>
+        <div class="card-body small muted" style="margin:0 12px 12px; padding:10px; border-top:1px solid var(--divider)">
+          For hver elbillader lager Kraftvakt to brytere som kan brukes også mens reguleringen kjører:
+          «‹lader› utenfor regulering» <span class="req">ENT-003</span> og «‹lader› overstyr ladetidsrom» <span class="req">ENT-004</span>.
+        </div>
+      </div>
+
+    </div>
+    <div class="fab">💾 Lagre</div>
+  </div>
+
+  <ul class="notes">
+    <li>Plassen til alle elbilladerne i prioritetslisten bestemmes av elementet «Elbillading» på siden <a href="apparater.html">Apparater</a> <span class="req">APP-005</span>.</li>
+    <li>Rekkefølgen her er den konfigurerte ladeprioriteringen. Statussiden viser den gjeldende, som kan avvike <span class="req">LAD-016</span>.</li>
+    <li>Bryterne for elbilladerne vises ikke i panelet utover informasjonsteksten. De brukes fra dashbord og automasjoner.</li>
+  </ul>
+</section>
+
+<!-- ============ 2. Elbilladerdialog ============ -->
+<section class="scene">
+  <h2>2. Rediger elbillader</h2>
+  <p class="lead">Alle innstillinger for én elbillader <span class="req">LAD-004</span>–<span class="req">LAD-010</span> <span class="req">LAD-025</span>.</p>
+
+  <div class="ha tall-xl" data-tab="charging" style="min-height:1720px">
+    <div class="content">
+      <div class="card"><div class="card-header">Elbilladere</div><div class="card-body muted">…</div></div>
+    </div>
+
+    <div class="backdrop">
+      <div class="dialog">
+        <div class="dialog-head">Rediger elbillader <span class="spacer"></span><span class="icon-btn">✕</span></div>
+        <div class="dialog-body">
+
+          <div class="field">
+            <div class="control">
+              <span class="label">Entitet for tillatt lading *</span>
+              <span class="entity-ico">⚡</span>
+              <span class="value">Lader garasje<span class="entity-id">switch.lader_garasje</span></span>
+              <span class="trail">▾</span>
+            </div>
+            <div class="helper">Normalt laderens bryter for å tillate lading. Navnet blir elbilladerens navn. Tilgjengelig som <code>entity_id</code> og <code>entity</code>. <span class="req">GEN-013</span> <span class="req">T14</span></div>
+          </div>
+
+          <div class="section-title">Tillatt lading</div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Aktiver</b> <span class="req">LAD-005</span></div>
+            <div class="seg"><span class="sel">Standard</span><span>Egendefinert</span></div>
+            <div class="small muted">Kjører <code>switch.turn_on</code> for entiteten.</div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Deaktiver</b> <span class="req">LAD-004</span></div>
+            <div class="seg"><span class="sel">Standard</span><span>Egendefinert</span></div>
+            <div class="small muted">Kjører <code>switch.turn_off</code>. Ladestrømmen settes alltid til minste ladestrøm før elbilladeren deaktiveres.</div>
+          </div>
+
+          <div class="section-title">Ladestrøm</div>
+
+          <div class="form cols">
+            <div class="field">
+              <div class="control"><span class="label">Minste ladestrøm *</span><span class="value">6</span><span class="suffix">A</span></div>
+            </div>
+            <div class="field">
+              <div class="control"><span class="label">Største ladestrøm *</span><span class="value">16</span><span class="suffix">A</span></div>
+              <div class="helper">Hele ampere. Minste ≤ største. <span class="req">LAD-007</span></div>
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Sett ladestrøm *</b> <span class="req">LAD-006</span></div>
+            <div class="seg"><span>Standard</span><span class="sel">Egendefinert</span></div>
+            <div class="code">action: number.set_value
+target:
+  entity_id: number.lader_garasje_maks_strom
+data:
+  value: "{{ current }}"</div>
+            <div class="small muted">Variabler: <code>current</code> (alltid mellom minste og største), <code>min_current</code>, <code>max_current</code>, <code>entity_id</code>, <code>entity</code>.</div>
+          </div>
+
+          <div class="section-title">Måling</div>
+
+          <div class="field">
+            <div class="control">
+              <span class="label">Sensor for ladeeffekt *</span>
+              <span class="entity-ico">⚡</span>
+              <span class="value">Lader garasje effekt<span class="entity-id">sensor.lader_garasje_effekt · 0 W</span></span>
+              <span class="trail">▾</span>
+            </div>
+            <div class="helper">Over 100 W regnes som aktiv lading. Utilgjengelig regnes som lading. <span class="req">LAD-008</span></div>
+          </div>
+
+          <div class="field">
+            <div class="control"><span class="label">Effektreserve</span><span class="value">4,0</span><span class="suffix">kW</span></div>
+            <div class="helper">Effekten elbilladeren trekker når lading starter på minste ladestrøm. 0–5 kW, standard 4 kW (ca. 6 A, tre faser, 400 V). <span class="req">LAD-009</span></div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head"><b>Bil tilkoblet (valgfri)</b> <span class="req">LAD-010</span></div>
+            <div class="seg"><span>Ikke angitt</span><span class="sel">Entitet</span><span>Mal</span></div>
+            <div class="field">
+              <div class="control">
+                <span class="label">Boolsk entitet</span>
+                <span class="entity-ico">🚗</span>
+                <span class="value">Garasje bil tilkoblet<span class="entity-id">binary_sensor.garasje_bil · på</span></span>
+                <span class="trail">▾</span>
+              </div>
+              <div class="helper">Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet. <span class="req">GEN-009</span> <span class="req">GEN-010</span></div>
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sc-head">
+              <b>Ladetidsrom (valgfritt)</b> <span class="req">LAD-025</span>
+              <span class="spacer"></span><span class="switch on"></span>
+            </div>
+            <div class="form cols">
+              <div class="field"><div class="control"><span class="label">Start</span><span class="value">22:00</span><span class="trail">🕑</span></div></div>
+              <div class="field"><div class="control"><span class="label">Slutt</span><span class="value">06:00</span><span class="trail">🕑</span></div></div>
+            </div>
+            <div class="small muted">Kan gå over midnatt. Start og slutt kan ikke være like. Uten ladetidsrom har elbilladeren alltid lov til å lade <span class="req">LAD-026</span>.</div>
+          </div>
+
+        </div>
+        <div class="dialog-actions">
+          <button class="btn danger">Slett elbillader</button>
+          <span class="spacer"></span>
+          <button class="btn">Avbryt</button>
+          <button class="btn filled">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li>«Standard» for ladestrøm tilbys bare hvis en egen <code>number</code>-entitet for ladestrøm er valgt. I skissen er handlingen egendefinert (IMPLEMENTATION.md 3.6).</li>
+    <li>Påkrevde felt er merket *. Elbilladeren er ufullstendig til de er fylt ut <span class="req">REG-016</span>.</li>
+    <li>Gjeldende verdi vises under valgte sensorer og entiteter som hjelp.</li>
+  </ul>
+</section>
+
+<!-- ============ 3. Deaktivert ============ -->
+<section class="scene">
+  <h2>3. Billadestyring deaktivert</h2>
+  <p class="lead">Elbilladerne beholdes i konfigurasjonen, men styres ikke. Bryterne deres (ENT-003, ENT-004) er utilgjengelige så lenge billadestyring er av <span class="req">T10</span>.</p>
+
+  <div class="ha" data-tab="charging" style="min-height:440px">
+    <div class="content">
+      <div class="card">
+        <div class="card-header">Felles innstillinger</div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="tr-main">
+              <div class="tr-title">Billadestyring</div>
+              <div class="tr-sub">Når den er av, overlates elbilladerne til seg selv og «Elbillading» fjernes fra prioritetslisten.</div>
+            </div>
+            <span class="switch"></span>
+          </div>
+        </div>
+      </div>
+      <div class="alert info">
+        <span class="a-ico">ℹ</span>
+        <div class="a-body">Billadestyring er av. Elbilladerne nedenfor beholdes, men Kraftvakt sender ingen kommandoer til dem <span class="req">GEN-008</span>.</div>
+      </div>
+      <div class="card">
+        <div class="card-header">Elbilladere</div>
+        <div class="list">
+          <div class="li disabled"><span class="rank">1</span><span class="avatar">⚡</span><div class="li-main"><div class="li-title">Lader garasje</div></div></div>
+          <div class="li disabled"><span class="rank">2</span><span class="avatar">⚡</span><div class="li-main"><div class="li-title">Lader carport</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li>Bryteren «Én elbillader om gangen» og listen er skjult eller nedtonet når billadestyring er av.</li>
+    <li>Den låste visningen (reguleringen kjører) følger samme mønster som på <a href="apparater.html">Apparater</a> <span class="req">GUI-012</span>.</li>
+  </ul>
+</section>
+
+<script src="felles.js"></script>
+</body>
+</html>

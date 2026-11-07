@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kraftvakt GUI-skisser</title>
+  <link rel="stylesheet" href="felles.css">
+  <style>
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .cards a { text-decoration: none; color: inherit; }
+    .cards .card { padding: 16px; height: 100%; }
+    .cards h3 { margin: 0 0 4px; font-size: 16px; }
+    .legend { display: grid; gap: 8px; max-width: 820px; }
+  </style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Kraftvakt – GUI-skisser</h1>
+  <p>Statiske skisser av panelet i sidemenyen i Home Assistant <span class="req">GUI-001</span>. De viser layout, felter og tilstander, ikke endelig utseende. Ferdig panel bygges med HAs egne komponenter og følger brukerens tema (lyst eller mørkt).</p>
+  <p>Skissene bruker norsk tekst. Engelsk er standardspråk i løsningen <span class="req">SPR-001</span> <span class="req">SPR-002</span>.</p>
+  <nav class="doc-nav">
+    <a href="index.html" aria-current="page">Oversikt</a>
+    <a href="status.html">Status</a>
+    <a href="generelt.html">Generelt</a>
+    <a href="apparater.html">Apparater</a>
+    <a href="billading.html">Billading</a>
+  </nav>
+</header>
+
+<section class="scene">
+  <h2>Sider</h2>
+  <p class="lead">Toppmenyen <span class="req">GUI-002</span> har fire faner og er synlig på alle sider.</p>
+  <div class="cards">
+    <a href="status.html"><div class="card">
+      <h3>◉ Status</h3>
+      <p class="muted">Kjører/stoppet, start og stopp, snitt mot effektgrense, sikker tilstand, straff, apparater og elbilladere.</p>
+      <span class="req">GUI-005</span> <span class="req">GUI-006</span> <span class="req">GUI-007</span>
+    </div></a>
+    <a href="generelt.html"><div class="card">
+      <h3>⚙ Generelt</h3>
+      <p class="muted">Effektsensor, effektgrense, reguleringsvindu og -intervall, ventetid og straffeterskel.</p>
+      <span class="req">GUI-008</span> <span class="req">GUI-012</span>
+    </div></a>
+    <a href="apparater.html"><div class="card">
+      <h3>☰ Apparater</h3>
+      <p class="muted">Prioritetsliste med varianter og «Elbillading», og dialog for hvert apparat.</p>
+      <span class="req">GUI-009</span> <span class="req">GUI-011</span> <span class="req">GUI-003</span>
+    </div></a>
+    <a href="billading.html"><div class="card">
+      <h3>⚡ Billading</h3>
+      <p class="muted">Felles innstillinger, ladeprioritering og dialog for hver elbillader.</p>
+      <span class="req">GUI-010</span> <span class="req">GUI-011</span>
+    </div></a>
+  </div>
+</section>
+
+<section class="scene">
+  <h2>Tegnforklaring</h2>
+  <div class="legend">
+    <div><span class="req">GUI-006</span> Kravet elementet oppfyller. <span class="req">T11</span> viser til en avklart tolkning i <a href="../IMPLEMENTATION.md">IMPLEMENTATION.md</a>, kapittel 2.</div>
+    <div><span class="chip on"><span class="dot"></span>På</span> <span class="chip off"><span class="dot"></span>Av</span> Status for apparat eller elbillader.</div>
+  </div>
+</section>
+
+<section class="scene">
+  <h2>Felles mønstre</h2>
+  <ul class="notes">
+    <li><b>Låst konfigurasjon.</b> Mens reguleringen kjører, viser alle konfigurasjonssidene et banner og deaktiverte felt <span class="req">GUI-012</span> <span class="req">REG-010</span>.</li>
+    <li><b>Lagring.</b> Konfigurasjonssidene redigerer et utkast. «Lagre» vises når noe er endret og lagrer alt samlet (beslutning B7).</li>
+    <li><b>Handlinger.</b> «Standard» eller «Egendefinert». Standard finnes bare der entitetens type har en entydig handling <span class="req">GEN-013</span>.</li>
+    <li><b>Sann/usann-verdier.</b> «Entitet» eller «Mal» <span class="req">GEN-009</span>.</li>
+    <li><b>Advarsel om manuell styring</b> øverst på Apparater og Billading <span class="req">GUI-011</span>.</li>
+    <li><b>Smal skjerm.</b> Fanene viser bare ikoner, kortene legges under hverandre (se <a href="status.html">Status</a>, scene 6).</li>
+  </ul>
+</section>
+
+</body>
+</html>
