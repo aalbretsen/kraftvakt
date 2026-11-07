@@ -1,8 +1,16 @@
-import { mdiPlay, mdiStop } from "@mdi/js";
+import { mdiEvStation, mdiPlay, mdiStop } from "@mdi/js";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { ERROR_CONFIG_INCOMPLETE, isCommandError, setRunning, type ConfigResponse, type StatusSnapshot } from "../api";
+import {
+  ERROR_CONFIG_INCOMPLETE,
+  isCommandError,
+  setRunning,
+  type ApplianceStatus,
+  type ChargerStatus,
+  type ConfigResponse,
+  type StatusSnapshot,
+} from "../api";
 import { ClockController } from "../clock";
 import { formatNumber, formatPower, formatTimeLeft } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -33,7 +41,13 @@ export class KraftvaktStatusPage extends LitElement {
     if (!this.status) {
       return nothing;
     }
-    return html`<div class="cards">${this.renderRegulationCard(this.status)}</div>`;
+    const status = this.status;
+    return html`
+      <div class="cards">
+        ${this.renderRegulationCard(status)} ${status.running ? this.renderAppliancesCard(status.appliances) : nothing}
+        ${status.running && status.chargers.length > 0 ? this.renderChargersCard(status.chargers) : nothing}
+      </div>
+    `;
   }
 
   private renderRegulationCard(status: StatusSnapshot) {
@@ -171,6 +185,106 @@ export class KraftvaktStatusPage extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  /** Each appliance with on or off, its current variant and its waiting time (GUI-006, T11). */
+  private renderAppliancesCard(appliances: ApplianceStatus[]) {
+    return html`
+      <ha-card>
+        <div class="card-header">
+          <span>${this.localize("status.appliances")}</span>
+          <span class="sub">${this.localize("status.appliances_order")}</span>
+        </div>
+        ${appliances.length === 0
+          ? html`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`
+          : html`<div class="list">
+              ${appliances.map(
+                (appliance, index) => html`
+                  <div class="row">
+                    <span class="rank">${index + 1}</span>
+                    <div class="row-main">
+                      <div class="row-title">
+                        ${appliance.name}
+                        ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
+                      </div>
+                      ${appliance.waiting_until
+                        ? html`<div class="row-sub">
+                            ${this.localize("status.waiting_to_turn_on", {
+                              time: formatTimeLeft(appliance.waiting_until, this.clock.now),
+                            })}
+                          </div>`
+                        : nothing}
+                    </div>
+                    ${this.renderOnOff(appliance.on, "status.on", "status.off")}
+                  </div>
+                `,
+              )}
+            </div>`}
+      </ha-card>
+    `;
+  }
+
+  /** Each EV charger with whether it is activated, and why it charges or not (GUI-006, T11). */
+  private renderChargersCard(chargers: ChargerStatus[]) {
+    return html`
+      <ha-card>
+        <div class="card-header">
+          <span>${this.localize("status.chargers")}</span>
+          <span class="sub">${this.localize("status.chargers_order")}</span>
+        </div>
+        <div class="list">
+          ${chargers.map((charger) => {
+            const details = this.chargerDetails(charger);
+            return html`
+              <div class="row">
+                <ha-svg-icon class="rank" .path=${mdiEvStation}></ha-svg-icon>
+                <div class="row-main">
+                  <div class="row-title">${charger.name}</div>
+                  ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
+                </div>
+                ${this.renderOnOff(charger.activated, "status.activated", "status.deactivated")}
+              </div>
+            `;
+          })}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  private chargerDetails(charger: ChargerStatus): string[] {
+    const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
+    const details: string[] = [];
+    if (charger.current_a !== null && config) {
+      details.push(
+        this.localize("status.charging_current", {
+          current: charger.current_a,
+          min: config.min_current_a,
+          max: config.max_current_a,
+        }),
+      );
+    }
+    if (charger.bypassed) {
+      details.push(this.localize("status.bypassed"));
+    }
+    if (charger.waiting) {
+      details.push(this.localize("status.waiting_charger"));
+    }
+    if (!charger.allowed && charger.excluded) {
+      details.push(this.localize("status.excluded"));
+    } else if (!charger.allowed && charger.excluded === false && config?.charging_window) {
+      details.push(this.localize("status.outside_window", { ...config.charging_window }));
+    }
+    if (charger.waiting_until) {
+      const time = formatTimeLeft(charger.waiting_until, this.clock.now);
+      details.push(
+        this.localize(charger.activated ? "status.waiting_to_increase" : "status.waiting_to_activate", { time }),
+      );
+    }
+    return details;
+  }
+
+  private renderOnOff(on: boolean, onText: Parameters<Localize>[0], offText: Parameters<Localize>[0]) {
+    return html`<span class="chip ${on ? "on" : "off"}"><span class="dot"></span>${this.localize(on ? onText : offText)}</span>`;
   }
 
   private yesNo(value: boolean): string {
@@ -377,6 +491,48 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .penalty-details {
       margin-top: 8px;
+    }
+    .card-header .sub {
+      font-size: var(--ha-font-size-m, 14px);
+      color: var(--secondary-text-color);
+    }
+    .empty {
+      color: var(--secondary-text-color);
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+      padding: 6px 16px;
+      border-top: 1px solid var(--divider-color);
+      box-sizing: border-box;
+    }
+    .rank {
+      flex: none;
+      width: 24px;
+      text-align: center;
+      color: var(--secondary-text-color);
+    }
+    .row-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .row-title {
+      overflow-wrap: anywhere;
+    }
+    .row-sub {
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+    }
+    .variant {
+      display: inline-block;
+      margin-inline-start: 6px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: var(--ha-font-size-s, 12px);
+      background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.16);
+      color: var(--primary-color);
     }
     ul.missing {
       margin: 6px 0 0;
