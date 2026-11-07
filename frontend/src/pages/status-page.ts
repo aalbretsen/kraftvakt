@@ -3,6 +3,8 @@ import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { ERROR_CONFIG_INCOMPLETE, isCommandError, setRunning, type ConfigResponse, type StatusSnapshot } from "../api";
+import { ClockController } from "../clock";
+import { formatNumber, formatPower, formatTimeLeft } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
 import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -25,6 +27,8 @@ export class KraftvaktStatusPage extends LitElement {
 
   @state() private runningError?: string;
 
+  private clock = new ClockController(this);
+
   protected render() {
     if (!this.status) {
       return nothing;
@@ -46,7 +50,7 @@ export class KraftvaktStatusPage extends LitElement {
         </div>
         <div class="card-content">
           ${this.runningError ? html`<ha-alert alert-type="error">${this.runningError}</ha-alert>` : nothing}
-          ${status.running ? nothing : this.renderStopped(status)}
+          ${status.running ? this.renderRunning(status) : this.renderStopped(status)}
         </div>
         ${this.narrow ? html`<div class="card-actions">${this.renderStartStop(status)}</div>` : nothing}
       </ha-card>
@@ -76,6 +80,101 @@ export class KraftvaktStatusPage extends LitElement {
         ${this.localize("status.start")}
       </ha-button>
     `;
+  }
+
+  /** What the status page shows in addition while the regulation runs (GUI-006, T11). */
+  private renderRunning(status: StatusSnapshot) {
+    const language = this.hass.language;
+    const overLimit = (value: number | null) => value !== null && value > status.power_limit_kw;
+    return html`
+      ${status.safe_state ? this.renderSafeState() : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
+      <div class="stats">
+        ${this.renderStat("regulation-average", "status.regulation_average", formatPower(language, status.regulation_average_kw))}
+        ${this.renderStat(
+          "capacity-average",
+          "status.capacity_average",
+          formatPower(language, status.capacity_average_kw),
+          overLimit(status.capacity_average_kw),
+        )}
+        ${this.renderStat("", "status.power_limit", formatPower(language, status.power_limit_kw))}
+      </div>
+      ${this.renderMeter(status)}
+      <div class="facts">
+        <span class="chip ${status.safe_state ? "alarm" : "off"}">
+          ${this.localize("status.safe_state_chip", { value: this.yesNo(status.safe_state) })}
+        </span>
+        <span class="chip ${status.penalty.active ? "alarm" : "off"}">
+          ${this.localize("status.penalty_chip", { value: this.yesNo(status.penalty.active) })}
+        </span>
+        ${status.next_decision_at
+          ? html`<span>
+              ${this.localize("status.next_decision", { time: formatTimeLeft(status.next_decision_at, this.clock.now) })}
+            </span>`
+          : nothing}
+      </div>
+    `;
+  }
+
+  private renderSafeState() {
+    const sensor = this.config?.config.general.power_sensor ?? "";
+    const name = this.hass.states[sensor]?.attributes.friendly_name ?? sensor;
+    return html`
+      <ha-alert alert-type="error" .title=${this.localize("status.safe_state_title")}>
+        ${this.localize("status.safe_state_text", { sensor: name })}
+      </ha-alert>
+    `;
+  }
+
+  private renderPenalty(status: StatusSnapshot) {
+    const energy = formatNumber(this.hass.language, Math.max(0, status.penalty.overconsumption_kwh), 2);
+    const recovery = status.penalty.recovery_started ? "status.recovery_started" : "status.recovery_not_started";
+    return html`
+      <ha-alert alert-type="warning" .title=${this.localize("status.penalty_title")}>
+        ${this.localize("status.penalty_text")}
+        <div class="penalty-details">${this.localize("status.overconsumption_left", { energy })} · ${this.localize(recovery)}</div>
+      </ha-alert>
+    `;
+  }
+
+  private renderStat(swatch: string, label: Parameters<Localize>[0], value: string, alarm = false) {
+    return html`
+      <div class="stat">
+        <div class="stat-label">${swatch ? html`<span class="swatch ${swatch}"></span>` : nothing}${this.localize(label)}</div>
+        <div class="stat-value ${alarm ? "alarm" : ""}">${value} <small>kW</small></div>
+      </div>
+    `;
+  }
+
+  /** The averages as bars against the power limit (T11). */
+  private renderMeter(status: StatusSnapshot) {
+    const regulation = status.regulation_average_kw;
+    const capacity = status.capacity_average_kw;
+    if (regulation === null || capacity === null) {
+      return nothing;
+    }
+    const scale = Math.max(status.power_limit_kw * 1.2, regulation, capacity);
+    const percent = (value: number) => `${(100 * value) / scale}%`;
+    const language = this.hass.language;
+    return html`
+      <div class="meter">
+        <div class="bar">
+          <div class="fill regulation-average" style="width: ${percent(regulation)}"></div>
+          <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
+          <div class="limit" style="left: ${percent(status.power_limit_kw)}"></div>
+        </div>
+        <div class="scale">
+          <span>0 kW</span>
+          <span class="scale-limit" style="left: ${percent(status.power_limit_kw)}">
+            ${this.localize("status.scale_limit", { power: formatNumber(language, status.power_limit_kw, 1) })}
+          </span>
+          <span>${formatNumber(language, scale, 1)} kW</span>
+        </div>
+      </div>
+    `;
+  }
+
+  private yesNo(value: boolean): string {
+    return this.localize(value ? "status.yes" : "status.no");
   }
 
   private renderStopped(status: StatusSnapshot) {
@@ -187,6 +286,97 @@ export class KraftvaktStatusPage extends LitElement {
     .chip.on {
       background: rgba(var(--rgb-success-color, 67, 160, 71), 0.16);
       color: var(--success-color, #43a047);
+    }
+    .chip.alarm {
+      background: rgba(var(--rgb-error-color, 219, 68, 55), 0.16);
+      color: var(--error-color, #db4437);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 10px 12px;
+      border-radius: var(--ha-border-radius-lg, 12px);
+      background: var(--secondary-background-color);
+    }
+    .stat-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+    }
+    .stat-value {
+      font-size: 26px;
+    }
+    .stat-value small {
+      font-size: var(--ha-font-size-m, 14px);
+      color: var(--secondary-text-color);
+    }
+    .stat-value.alarm {
+      color: var(--error-color);
+    }
+    .swatch {
+      display: inline-block;
+      width: 12px;
+      height: 8px;
+      border-radius: 4px;
+    }
+    .regulation-average {
+      background: var(--primary-color);
+    }
+    .capacity-average {
+      background: color-mix(in srgb, var(--primary-text-color) 55%, transparent);
+    }
+    .meter .bar {
+      position: relative;
+      height: 12px;
+      border-radius: 6px;
+      background: var(--secondary-background-color);
+    }
+    .meter .fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 6px;
+    }
+    .meter .fill.capacity-average {
+      top: 4px;
+      bottom: 4px;
+    }
+    .meter .limit {
+      position: absolute;
+      top: -4px;
+      bottom: -4px;
+      width: 2px;
+      margin-left: -1px;
+      background: var(--error-color);
+    }
+    .meter .scale {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: var(--ha-font-size-s, 12px);
+      color: var(--secondary-text-color);
+    }
+    .meter .scale-limit {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .facts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      color: var(--secondary-text-color);
+    }
+    .penalty-details {
+      margin-top: 8px;
     }
     ul.missing {
       margin: 6px 0 0;

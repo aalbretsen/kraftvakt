@@ -7,8 +7,14 @@ export interface Connection {
   ): Promise<() => Promise<void>>;
 }
 
+export interface HassEntity {
+  state: string;
+  attributes: { friendly_name?: string; [key: string]: unknown };
+}
+
 export interface HomeAssistant {
   language: string;
+  states: Record<string, HassEntity>;
   locale: { language: string };
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;
