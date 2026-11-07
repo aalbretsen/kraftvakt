@@ -126,10 +126,15 @@ class Slot:
 
 @dataclass(frozen=True, slots=True)
 class Waiting:
-    """A waiting time that runs before the slot may be turned on (REG-012)."""
+    """A waiting time that runs before the slot may be turned on (REG-012).
+
+    `until` is when the waiting time ends, as calculated at the last decision
+    (REG-013). The slot is turned on at the first decision from then on.
+    """
 
     key: Hashable
     started_at: datetime
+    until: datetime
 
 
 @dataclass(slots=True)

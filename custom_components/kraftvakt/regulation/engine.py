@@ -352,8 +352,11 @@ class RegulationEngine:
         average at that decision, unless the slot cycles persistently.
         """
         waiting = self._state.waiting
-        if waiting is None or waiting.key != slot.key:
-            waiting = self._state.waiting = Waiting(slot.key, now)
+        started_at = (
+            waiting.started_at
+            if waiting is not None and waiting.key == slot.key
+            else now
+        )
         general = self._config.general
         required = waiting_time(
             average_kw,
@@ -362,7 +365,8 @@ class RegulationEngine:
             self._state.cycling.upcoming_reon_number(slot.key),
             slot.cycling,
         )
-        return now - waiting.started_at >= required
+        self._state.waiting = Waiting(slot.key, started_at, started_at + required)
+        return now - started_at >= required
 
     def _forget_waiting(self, key: Hashable) -> None:
         if self._state.waiting is not None and self._state.waiting.key == key:

@@ -14,10 +14,25 @@ def test_appliance_is_turned_on_after_the_waiting_time() -> None:
 
     assert scenario.decide(5.0) == []
     started = scenario.now
-    assert scenario.engine.waiting == Waiting(ApplianceSlotKey("a"), started)
+    assert scenario.engine.waiting == Waiting(
+        ApplianceSlotKey("a"), started, started + timedelta(minutes=2.5)
+    )
     assert scenario.decide_many(5.0, 3) == [[], [], on("a")]
     assert scenario.now - started == timedelta(minutes=3)
     assert scenario.engine.waiting is None
+
+
+def test_end_of_the_waiting_time_follows_the_average() -> None:
+    """REG-013: the end is calculated again at each decision while it runs."""
+    scenario = Scenario(make_config("a"))
+    scenario.decide(5.0)
+    started = scenario.now
+
+    scenario.decide(8.0)
+
+    assert scenario.engine.waiting == Waiting(
+        ApplianceSlotKey("a"), started, started + timedelta(minutes=4)
+    )
 
 
 def test_no_waiting_time_turns_on_at_the_same_decision() -> None:
