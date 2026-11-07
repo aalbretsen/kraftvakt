@@ -220,6 +220,10 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             },
             Issue("invalid_type", "appliances", "a1", "variants.v1.condition"),
         ),
+        (
+            {"charging": {"chargers": [{"id": "c1", "car_connected": "sensor.x"}]}},
+            Issue("invalid_type", "chargers", "c1", "car_connected"),
+        ),
         ({"priority": [{"type": "appliance"}]}, Issue("invalid_type", "priority")),
         ({"priority": [{"type": "other"}]}, Issue("invalid_type", "priority")),
         (
