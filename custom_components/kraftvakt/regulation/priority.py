@@ -1,12 +1,13 @@
-"""The order of slots built from the priority list (4.1, APP-007)."""
+"""The order of slots built from the priority list (4.1, APP-007, LAD-011)."""
 
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
 
-from ..config_model import Appliance, KraftvaktConfig, PriorityEntryType
-from .model import ApplianceSlotKey, Slot
-from .waiting import APPLIANCE_CYCLING
+from ..config_model import Appliance, Charger, KraftvaktConfig, PriorityEntryType
+from .charging import fictive_appliance_count
+from .model import ApplianceSlotKey, ChargerSlotKey, Slot
+from .waiting import APPLIANCE_CYCLING, FICTIVE_APPLIANCE_CYCLING
 
 
 def current_variant(
@@ -58,3 +59,33 @@ def build_slots(
             )
         )
     return slots
+
+
+def fictive_slots(
+    chargers: Sequence[Charger],
+    fictive_on: Mapping[str, int],
+    may_charge: Collection[str],
+    bypassed: Collection[str],
+) -> list[Slot]:
+    """Return the fictive appliances of the chargers, interleaved (LAD-011, LAD-015).
+
+    `chargers` are in the current charging priority. Each charger gets its
+    first fictive appliance in that order, then its second, and so on. Only the
+    first one has the power reserve of the charger (LAD-012). Only chargers in
+    `may_charge` can get more turned on, and the fictive appliances of bypassed
+    chargers are not switched off above the limit (LAD-017, REG-008).
+    """
+    rounds = max(map(fictive_appliance_count, chargers), default=0)
+    return [
+        Slot(
+            key=ChargerSlotKey(charger.id, index),
+            is_on=index < fictive_on.get(charger.id, 0),
+            power_reserve_kw=charger.power_reserve_kw if index == 0 else None,
+            cycling=FICTIVE_APPLIANCE_CYCLING,
+            can_turn_on=charger.id in may_charge,
+            can_turn_off=charger.id not in bypassed,
+        )
+        for index in range(rounds)
+        for charger in chargers
+        if index < fictive_appliance_count(charger)
+    ]

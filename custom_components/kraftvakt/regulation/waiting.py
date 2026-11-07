@@ -21,6 +21,9 @@ class CyclingSteps:
 APPLIANCE_CYCLING: Final = CyclingSteps(
     step=timedelta(minutes=2), cap=timedelta(minutes=15)
 )
+FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
+    step=timedelta(minutes=5), cap=timedelta(minutes=30)
+)
 
 
 def linear_waiting_time(

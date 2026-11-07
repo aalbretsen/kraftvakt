@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime, tzinfo
 
+from .charging import ChargerReading, ChargingState
 from .penalty import PenaltyState
 from .waiting import CyclingCounter, CyclingSteps
 
@@ -31,6 +32,8 @@ class DecisionInput:
     power_sensor_valid: bool
     power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
+    chargers: Mapping[str, ChargerReading] = field(default_factory=dict)
+    time_zone: tzinfo = UTC
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +50,43 @@ class TurnOffAppliance:
     appliance_id: str
 
 
-type Command = TurnOnAppliance | TurnOffAppliance
+@dataclass(frozen=True, slots=True)
+class ActivateCharger:
+    """Run the action that allows the charger to charge (LAD-005)."""
+
+    charger_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class DeactivateCharger:
+    """Run the action that does not allow the charger to charge (LAD-004)."""
+
+    charger_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class SetChargingCurrent:
+    """Run the action that sets the charging current in amperes (LAD-006)."""
+
+    charger_id: str
+    current_a: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResetWindowOverride:
+    """Switch off the override of the charging window (LAD-027, ENT-004)."""
+
+    charger_id: str
+
+
+type Command = (
+    TurnOnAppliance
+    | TurnOffAppliance
+    | ActivateCharger
+    | DeactivateCharger
+    | SetChargingCurrent
+    | ResetWindowOverride
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +94,17 @@ class ApplianceSlotKey:
     """Identifies the slot of an appliance, whichever variant is current."""
 
     appliance_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ChargerSlotKey:
+    """Identifies a fictive appliance of a charger (LAD-011).
+
+    `index` counts from 0 for the first fictive appliance.
+    """
+
+    charger_id: str
+    index: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,3 +147,4 @@ class RegulationState:
     cycling: CyclingCounter = field(default_factory=CyclingCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False
+    charging: ChargingState = field(default_factory=ChargingState)

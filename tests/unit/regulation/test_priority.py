@@ -1,11 +1,22 @@
-"""Unit tests for the slots built from the priority list (4.1, APP-007)."""
+"""Unit tests for the slots built from the priority list (4.1, APP-007, LAD-011)."""
 
-from custom_components.kraftvakt.regulation.model import ApplianceSlotKey, Slot
+from datetime import timedelta
+
+from custom_components.kraftvakt.config_model import Charger
+from custom_components.kraftvakt.regulation.model import (
+    ApplianceSlotKey,
+    ChargerSlotKey,
+    Slot,
+)
 from custom_components.kraftvakt.regulation.priority import (
     build_slots,
     current_variant,
+    fictive_slots,
 )
-from custom_components.kraftvakt.regulation.waiting import APPLIANCE_CYCLING
+from custom_components.kraftvakt.regulation.waiting import (
+    APPLIANCE_CYCLING,
+    FICTIVE_APPLIANCE_CYCLING,
+)
 
 from .configs import appliance, make_config
 
@@ -62,4 +73,54 @@ def test_ev_charging_entry_is_replaced_by_charger_slots() -> None:
         "a",
         "charger",
         "b",
+    ]
+
+
+def charger(charger_id: str, min_a: int, max_a: int, reserve: float = 4.0) -> Charger:
+    return Charger(
+        charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_kw=reserve
+    )
+
+
+def test_fictive_appliances_are_interleaved_between_chargers() -> None:
+    """LAD-011, LAD-015: one per ampere, first of each charger, then second."""
+    chargers = [charger("a", 6, 8), charger("b", 10, 11), charger("c", 6, 6)]
+
+    slots = fictive_slots(chargers, {}, may_charge={"a", "b", "c"}, bypassed=())
+
+    assert [(slot.key.charger_id, slot.key.index) for slot in slots] == [
+        ("a", 0),
+        ("b", 0),
+        ("c", 0),
+        ("a", 1),
+        ("b", 1),
+        ("a", 2),
+    ]
+
+
+def test_only_the_first_fictive_appliance_has_the_power_reserve() -> None:
+    """LAD-012, LAD-014: fictive appliances cycle with 5 and 30 minutes."""
+    slots = fictive_slots([charger("a", 6, 8, reserve=3.5)], {"a": 2}, {"a"}, ())
+
+    assert slots == [
+        Slot(ChargerSlotKey("a", 0), True, 3.5, FICTIVE_APPLIANCE_CYCLING),
+        Slot(ChargerSlotKey("a", 1), True, None, FICTIVE_APPLIANCE_CYCLING),
+        Slot(ChargerSlotKey("a", 2), False, None, FICTIVE_APPLIANCE_CYCLING),
+    ]
+    assert FICTIVE_APPLIANCE_CYCLING.step == timedelta(minutes=5)
+    assert FICTIVE_APPLIANCE_CYCLING.cap == timedelta(minutes=30)
+
+
+def test_fictive_appliances_of_chargers_that_may_not_charge_or_are_bypassed() -> None:
+    """REG-007, REG-008, LAD-017."""
+    slots = fictive_slots(
+        [charger("a", 6, 6), charger("b", 6, 6)],
+        {"a": 1},
+        may_charge={"b"},
+        bypassed={"a"},
+    )
+
+    assert [(slot.can_turn_on, slot.can_turn_off) for slot in slots] == [
+        (False, False),
+        (True, True),
     ]
