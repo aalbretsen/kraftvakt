@@ -936,8 +936,8 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     }
     .meter .bar {
       position: relative;
-      height: 12px;
-      border-radius: 6px;
+      height: 20px;
+      border-radius: 10px;
       background: var(--secondary-background-color);
     }
     .meter .fill {
@@ -945,11 +945,11 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       left: 0;
       top: 0;
       bottom: 0;
-      border-radius: 6px;
+      border-radius: 10px;
     }
     .meter .fill.regulation-average {
-      top: 4px;
-      bottom: 4px;
+      top: 8px;
+      bottom: 8px;
     }
     .meter .limit {
       position: absolute;
