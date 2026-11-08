@@ -221,7 +221,8 @@
     "now": "Nå: {value}",
     "true": "sann",
     "false": "usann",
-    "error": "Feil: {message}"
+    "error": "Feil: {message}",
+    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som usann."
   },
   "charging": {
     "shared": "Felles innstillinger",

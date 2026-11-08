@@ -221,7 +221,8 @@
     "now": "Now: {value}",
     "true": "true",
     "false": "false",
-    "error": "Error: {message}"
+    "error": "Error: {message}",
+    "not_boolean": "The template gives {value}, which is not true or false, so it counts as false."
   },
   "charging": {
     "shared": "Shared settings",

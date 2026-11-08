@@ -100,7 +100,16 @@ export class KraftvaktConditionField extends LitElement {
     if (this.preview?.error !== undefined) {
       return html`<div class="preview error">${this.localize("condition.error", { message: this.preview.error })}</div>`;
     }
-    return this.preview ? this.renderNow(this.preview.result === true) : nothing;
+    if (!this.preview) {
+      return nothing;
+    }
+    const result = this.preview.result;
+    return html`
+      ${this.renderNow(result === true)}
+      ${typeof result === "boolean"
+        ? nothing
+        : html`<div class="warning">${this.localize("condition.not_boolean", { value: JSON.stringify(result) })}</div>`}
+    `;
   }
 
   private renderNow(value: boolean) {
@@ -168,6 +177,11 @@ export class KraftvaktConditionField extends LitElement {
       margin-top: 4px;
       font-size: var(--ha-font-size-s, 12px);
       color: var(--error-color);
+    }
+    .warning {
+      margin-top: 4px;
+      font-size: var(--ha-font-size-s, 12px);
+      color: var(--warning-color);
     }
   `;
 }

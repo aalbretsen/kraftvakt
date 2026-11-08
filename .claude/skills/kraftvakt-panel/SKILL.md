@@ -67,7 +67,9 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   default action.
 - The boolean entity picker shows `binary_sensor`, `input_boolean`, `switch`
   and `schedule`. Templates are previewed with HA's `render_template`
-  subscription, with `entity` as the frontend's state object.
+  subscription, with `entity` as the frontend's state object. A result that is not
+  a boolean gets a warning that it counts as false (settled after the
+  exploratory test).
 - Missing items are not marked in a dialog until a new item has been added. A
   new variant starts as a template. «Car connected» is shown as required when
   only one charger may charge at a time.
