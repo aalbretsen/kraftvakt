@@ -188,8 +188,9 @@ export class KraftvaktStatusPage extends LitElement {
 
   /** The averages as bars against the power limit. */
   /**
-   * The consumption now as a bar, with a marker for each average and the power
-   * limit, and a scale in whole kW.
+   * The consumption now as a bar, with a triangle for each average and the
+   * power limit, and a scale in whole kW with a value at every second tick
+   * (every third on a narrow screen).
    */
   private renderMeter(status: StatusSnapshot, powerNow: number | null) {
     const limit = status.power_limit_kw;
@@ -198,6 +199,8 @@ export class KraftvaktStatusPage extends LitElement {
     const percent = (value: number) => `${(100 * Math.min(value, end)) / end}%`;
     const language = this.hass.language;
     const ticks = Array.from({ length: end / step + 1 }, (_, index) => index * step);
+    const labelEvery = this.narrow ? 3 : 2;
+    const labelled = ticks.filter((_, index) => index % labelEvery === 0);
     const marker = (kind: string, label: Parameters<Localize>[0], value: number | null) =>
       value === null
         ? nothing
@@ -208,21 +211,22 @@ export class KraftvaktStatusPage extends LitElement {
           ></span>`;
     return html`
       <div class="meter">
-        <div class="bar">
-          <div class="track">
-            ${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}
-          </div>
+        <div class="markers">
           ${marker("power-limit", "status.power_limit", limit)}
           ${marker("capacity-average", "status.capacity_average", status.capacity_average_kw)}
           ${marker("regulation-average", "status.regulation_average", status.regulation_average_kw)}
         </div>
+        <div class="bar">
+          ${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}
+        </div>
         <div class="ticks">${ticks.map((tick) => html`<span style="left: ${percent(tick)}"></span>`)}</div>
         <div class="scale">
-          <span class="start">0 kW</span>
-          <span class="limit-value" style="left: ${percent(limit)}">
-            ${this.localize("status.scale_limit", { power: formatNumber(language, limit, 1) })}
-          </span>
-          <span class="end">${formatNumber(language, end, 0)} kW</span>
+          ${labelled.map(
+            (tick, index) =>
+              html`<span class=${tick === 0 ? "start" : tick === end ? "end" : ""} style="left: ${percent(tick)}"
+                >${formatNumber(language, tick, 0)}${index === labelled.length - 1 ? " kW" : ""}</span
+              >`,
+          )}
         </div>
       </div>
     `;
@@ -533,37 +537,42 @@ export class KraftvaktStatusPage extends LitElement {
     .swatch {
       display: inline-block;
       flex: none;
-      width: 4px;
-      height: 12px;
-      border-radius: 1px;
     }
     .swatch.power-now {
       width: 12px;
       height: 8px;
       border-radius: 4px;
-    }
-    .power-now {
       background: var(--kraftvakt-now-color);
     }
+    .swatch:not(.power-now),
+    .meter .marker {
+      width: 0;
+      height: 0;
+      border-inline: 5px solid transparent;
+      border-top: 7px solid var(--marker-color);
+    }
     .capacity-average {
-      background: var(--kraftvakt-grid-color);
+      --marker-color: var(--kraftvakt-grid-color);
     }
     .regulation-average {
-      background: var(--primary-text-color);
+      --marker-color: var(--primary-text-color);
     }
     .power-limit {
-      background: var(--error-color);
+      --marker-color: var(--error-color);
     }
-    .meter {
-      padding-top: 4px;
+    .meter .markers {
+      position: relative;
+      height: 9px;
+    }
+    .meter .marker {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%);
+      transition: left 0.6s ease;
     }
     .meter .bar {
       position: relative;
       height: 12px;
-    }
-    .meter .track {
-      position: absolute;
-      inset: 0;
       overflow: hidden;
       border-radius: 6px;
       background: var(--secondary-background-color);
@@ -574,17 +583,8 @@ export class KraftvaktStatusPage extends LitElement {
       top: 0;
       bottom: 0;
       border-radius: 6px;
+      background: var(--kraftvakt-now-color);
       transition: width 0.6s ease;
-    }
-    .meter .marker {
-      position: absolute;
-      top: -5px;
-      bottom: -5px;
-      width: 4px;
-      margin-left: -2px;
-      border-radius: 1px;
-      box-shadow: 0 0 0 1px var(--card-background-color, var(--ha-card-background, #fff));
-      transition: left 0.6s ease;
     }
     .meter .ticks {
       position: relative;
@@ -609,18 +609,14 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .meter .scale span {
       position: absolute;
+      transform: translateX(-50%);
       white-space: nowrap;
     }
     .meter .scale .start {
-      left: 0;
+      transform: none;
     }
     .meter .scale .end {
-      right: 0;
-    }
-    .meter .scale .limit-value {
       transform: translateX(-100%);
-      padding-inline-end: 6px;
-      color: var(--error-color);
     }
     .facts {
       display: flex;

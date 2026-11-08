@@ -95,16 +95,17 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   backend), so it updates live. Under each average value is the time it covers
   («over 1 hour», «over 60 s» from `regulation_window_s`).
 - The meter is a 12 px bar for «Consumption now» in grey
-  (`--kraftvakt-now-color`, the secondary text colour). Each other value is a standing 4 px
-  rectangle that reaches 5 px above and below the bar, outlined in the card
-  colour: blue (grid colour) for the average consumption, white (text colour)
-  for the regulation average and red for the power limit. Each tile has the
-  same rectangle as swatch, and «Consumption now» a small grey bar. There is
-  no limit line or penalty zone (the owner removed them). Under the bar are
-  ticks every 1, 2, 5, 10, 20 or 50 kW (the smallest step that gives at most
-  15), and the labels «0 kW», «Limit 10.0 kW» in red ending at the limit, and
-  the end of the scale, rounded up to a whole step and reaching at least 1.2 ×
-  the limit and every value.
+  (`--kraftvakt-now-color`, the secondary text colour). Each other value is a
+  triangle above the bar pointing down at it: blue (grid colour) for the
+  average consumption, white (text colour) for the regulation average and red
+  for the power limit. Each tile has the same triangle as swatch, and
+  «Consumption now» a small grey bar. There is no limit line, limit text or
+  penalty zone (the owner removed them). Under the bar are ticks every 1, 2,
+  5, 10, 20 or 50 kW (the smallest step that gives at most 15), with the value
+  at every second tick (every third on a narrow screen) and «kW» after the
+  last value. The scale is rounded up to a whole step and reaches at least 1.2
+  × the limit and every value. Standing rectangles were tried for the markers
+  and turned down.
 - Appliances and chargers share one full-width card, «Priority list». An «EV
   charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their

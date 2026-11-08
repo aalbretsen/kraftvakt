@@ -131,7 +131,7 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 
 - snittforbruket og reguleringssnittet mot effektgrensen, med tiden hvert snitt
   dekker, og forbruket nå, slik effektsensoren måler det. Stolpen viser
-  forbruket nå, med en markør for hvert snitt og for effektgrensen,
+  forbruket nå, med en trekant for hvert snitt og for effektgrensen,
 - en ring som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
   holder musen over,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med

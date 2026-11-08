@@ -33,7 +33,6 @@
     "power_now": "Consumption now",
     "momentary": "momentary value",
     "power_limit": "Power limit",
-    "scale_limit": "Limit {power} kW",
     "safe_state_chip": "Safe state",
     "penalty_chip": "Penalty period",
     "next_decision": "Next decision",
