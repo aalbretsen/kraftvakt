@@ -314,8 +314,8 @@ export class KraftvaktStatusPage extends LitElement {
       <span class="amperes">
         <span class="indicator-label">
           ${charger.current_a === null
-            ? this.localize("status.charging_level_off")
-            : this.localize("status.charging_level", { current: charger.current_a })}
+            ? this.localize("status.not_charging")
+            : this.localize("status.charging_at", { current: charger.current_a })}
         </span>
         <span class="ampere-steps ${steps > 16 ? "small" : ""}">
           ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? "on" : ""}"></span>`)}
