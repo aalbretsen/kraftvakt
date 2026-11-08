@@ -213,6 +213,10 @@ aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
   etter tur.
 - Utenfor ladetidsrommet lader ikke elbilladeren. Ladetidsrommet kan gå over
   midnatt og gjelder i Home Assistants tidssone.
+- Overstyringen av ladetidsrommet gjelder til neste ladetidsrom har startet
+  etter at bryteren ble slått på, også om reguleringen har vært stoppet eller i
+  sikker tilstand imens. Etter en omstart av Home Assistant regnes det fra
+  første start av reguleringen.
 
 Bryterne **‹lader› utenfor regulering** og **‹lader› overstyr ladetidsrom**
 kan brukes mens reguleringen kjører, og endringen gjelder fra neste

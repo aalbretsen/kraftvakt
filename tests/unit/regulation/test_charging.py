@@ -108,15 +108,21 @@ def test_override_ends_when_the_next_window_has_started() -> None:
     assert override_expired(night, switched_on, oslo(8), oslo(22, 0), OSLO)
 
 
-def test_override_counts_from_the_start_when_that_is_later() -> None:
-    """T13: also when the time it was switched on is not known after a restart."""
+def test_override_counts_from_the_switch_also_over_a_later_start() -> None:
+    """T13: a window that started while the regulation was stopped counts."""
     night = charger(charging_window=NIGHT)
     long_ago = ChargerReading(
         window_override=True, override_switched_on_at=oslo(8, day=5)
     )
+
+    assert override_expired(night, long_ago, oslo(12), oslo(12, 10), OSLO)
+
+
+def test_override_counts_from_the_start_when_switched_on_is_unknown() -> None:
+    """T13: the start of the regulation counts when the switch time is not known."""
+    night = charger(charging_window=NIGHT)
     unknown = ChargerReading(window_override=True)
 
-    assert not override_expired(night, long_ago, oslo(12), oslo(21, 0), OSLO)
     assert not override_expired(night, unknown, oslo(12), oslo(21, 0), OSLO)
     assert override_expired(night, unknown, oslo(12), oslo(22, 1), OSLO)
 

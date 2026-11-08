@@ -114,16 +114,16 @@ def override_expired(
 ) -> bool:
     """Return whether the override of the charging window has ended (LAD-027, T13).
 
-    It ends when a charging window has started after it was switched on, or
-    after the last start of the regulation if that is later or the time it was
-    switched on is not known. An override has no effect, and does not end,
-    for a charger without a charging window (LAD-026).
+    It ends when a charging window has started after it was switched on, also
+    when the regulation was stopped or in the safe state meanwhile. The start
+    of the regulation counts only when the time it was switched on is not
+    known. An override has no effect, and does not end, for a charger without
+    a charging window (LAD-026).
     """
     window = charger.charging_window
     if window is None or not reading.window_override:
         return False
-    switched_on_at = reading.override_switched_on_at
-    since = started_at if switched_on_at is None else max(switched_on_at, started_at)
+    since = reading.override_switched_on_at or started_at
     return charging_window_started(window, since, now, time_zone)
 
 

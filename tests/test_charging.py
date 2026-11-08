@@ -285,6 +285,45 @@ async def test_window_override_lets_the_charger_charge_until_the_window(
     assert actions[-2:] == ["current 6", f"off {CHARGER}"]
 
 
+async def test_window_override_counts_from_the_switch_over_a_stop(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """LAD-027, T13: a window that started while stopped ends the override."""
+    await hass.config.async_set_time_zone("Europe/Oslo")
+    freezer.move_to("2026-11-07T11:00:00+00:00")
+    config["general"]["regulation_window_s"] = 600
+    config["charging"]["chargers"][0]["charging_window"] = {
+        "start": "13:00",
+        "end": "14:00",
+    }
+    set_power(hass, CHARGER_POWER, "4100")
+    await setup_kraftvakt()
+    await use_switch(hass, "c1", "window_override", "turn_on")
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.kraftvakt_regulation"},
+        blocking=True,
+    )
+
+    for _ in range(7):
+        await advance(hass, freezer, timedelta(minutes=10))
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.kraftvakt_regulation"},
+        blocking=True,
+    )
+    for _ in range(2):
+        await advance(hass, freezer, timedelta(minutes=10))
+
+    assert switch_state(hass, "c1", "window_override") == STATE_OFF
+
+
 async def test_charger_switches_are_kept_over_a_reload(
     hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
 ) -> None:

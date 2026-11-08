@@ -20,9 +20,10 @@ class ChargerSwitchBoard:
 
     The positions are configuration and are kept over any restart, together
     with the rest of the configuration (GEN-011, B3). When the override of the
-    charging window was switched on is kept only in memory, so it is not known
-    after a restart (T13). The switches can be used while the regulation runs,
-    and the regulation reads them at its next decision (REG-005, REG-010).
+    charging window was switched on is kept only in memory. After a restart of
+    Home Assistant or the integration, the first start of the regulation counts
+    instead (T13). The switches can be used while the regulation runs, and the
+    regulation reads them at its next decision (REG-005, REG-010).
     """
 
     def __init__(
@@ -48,6 +49,16 @@ class ChargerSwitchBoard:
     def override_switched_on_at(self, charger_id: str) -> datetime | None:
         """Return when the override was switched on, if it is on and known (T13)."""
         return self._override_switched_on_at.get(charger_id)
+
+    @callback
+    def async_regulation_started(self, now: datetime) -> None:
+        """Count overrides switched on before a restart from `now` (LAD-027, T13).
+
+        Overrides whose switch-on time is known keep it.
+        """
+        for charger_id, switches in self._switches.items():
+            if switches.window_override:
+                self._override_switched_on_at.setdefault(charger_id, now)
 
     async def async_set(
         self,

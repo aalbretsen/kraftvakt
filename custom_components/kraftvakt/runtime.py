@@ -305,6 +305,7 @@ class KraftvaktRuntime:
 
     def _start_regulation(self, now: datetime) -> None:
         self._windows_since_decision.clear()
+        self._charger_switches.async_regulation_started(now)
         self._execute(self._engine.start(now))
         self._notify_status()
 
