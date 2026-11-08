@@ -2,6 +2,7 @@
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
@@ -56,3 +57,11 @@ async def test_panel_module_is_served(
 
     assert response.status == 200
     assert '"kraftvakt-panel"' in await response.text()
+
+
+async def test_integration_runs_locally(hass: HomeAssistant) -> None:
+    """GEN-002: no cloud services and no packages beyond Home Assistant."""
+    integration = await async_get_integration(hass, DOMAIN)
+
+    assert integration.requirements == []
+    assert integration.manifest["iot_class"] == "calculated"

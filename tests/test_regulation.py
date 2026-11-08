@@ -488,6 +488,29 @@ async def test_failed_action_does_not_stop_the_regulation(
     assert "Could not turn_on light.a: no answer" in caplog.text
 
 
+async def test_appliance_states_are_not_taken_into_account(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
+) -> None:
+    """GEN-005, GEN-006: the regulation counts on what it last decided itself.
+
+    Appliances switched outside Kraftvakt are not noticed, and no appliance is
+    assumed to use power just because it was turned on.
+    """
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    await advance(hass, freezer)
+    actions.clear()
+
+    hass.states.async_set("light.a", STATE_OFF)
+    hass.states.async_set("light.b", STATE_ON)
+    await advance(hass, freezer)
+    assert actions == ["on light.b"]
+
+    set_power(hass, "12000")
+    await advance(hass, freezer)
+    assert actions == ["on light.b", "off light.b"]
+
+
 async def test_reload_starts_the_regulation_again(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
@@ -506,18 +529,34 @@ async def test_reload_starts_the_regulation_again(
     assert actions == ["off light.a", "off light.b", "on light.a"]
 
 
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        (
+            "en",
+            {
+                "regulation": "Kraftvakt Regulation",
+                "safe_state": "Kraftvakt Safe state",
+            },
+        ),
+        (
+            "nb",
+            {
+                "regulation": "Kraftvakt Regulering",
+                "safe_state": "Kraftvakt Sikker tilstand",
+            },
+        ),
+    ],
+)
 async def test_entity_names_are_translated(
-    hass: HomeAssistant, setup_kraftvakt
+    hass: HomeAssistant, setup_kraftvakt, language: str, expected: dict[str, str]
 ) -> None:
-    """SPR-002."""
-    hass.config.language = "nb"
+    """SPR-001, SPR-002: English is the default, and Norwegian is translated."""
+    hass.config.language = language
     await setup_kraftvakt()
 
     names = {
         key: hass.states.get(entity_id(hass, platform, key)).attributes["friendly_name"]
         for platform, key in (("switch", "regulation"), ("binary_sensor", "safe_state"))
     }
-    assert names == {
-        "regulation": "Kraftvakt Regulering",
-        "safe_state": "Kraftvakt Sikker tilstand",
-    }
+    assert names == expected

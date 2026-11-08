@@ -11,11 +11,13 @@ from custom_components.kraftvakt.const import DOMAIN
 
 
 async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
+    """GUI-004: adding the integration asks for no settings."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
+    assert result["data_schema"] is None
 
     with patch(
         "custom_components.kraftvakt.async_setup_entry", return_value=True
