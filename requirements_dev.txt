@@ -9,7 +9,7 @@
 
 homeassistant==2026.10.4
 home-assistant-frontend==20260930.5
-pytest==9.0.3
+pytest==9.2.0
 pytest-asyncio==1.4.0
 pytest-homeassistant-custom-component==0.13.375
 ruff==0.16.9
