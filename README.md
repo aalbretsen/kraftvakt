@@ -13,9 +13,9 @@
 
 Kraftvakt styrer hvilke effektkrevende apparater som får bruke strøm, i
 prioritert rekkefølge. Eksempler er varmtvannsbereder, varmekabler og
-elbillader. Den er rettet mot det norske strømmarkedet og holder forbruket
-like under et valgt kWh-mål per time, slik at du unngår et dyrere trinn i
-kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
+elbillader. Den er rettet mot det norske strømmarkedet og holder
+snittforbruket siste time rett under en valgt effektgrense, slik at du unngår
+et dyrere trinn i kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
 
 > **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
 > vanlige apparater og elbilladere, med straff og sikker tilstand. Alt settes

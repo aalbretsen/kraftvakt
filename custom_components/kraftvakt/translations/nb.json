@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Sett opp Kraftvakt",
-        "description": "Kraftvakt holder timeforbruket like under et valgt kWh-mål ved å styre effektkrevende apparater i prioritert rekkefølge. Etter oppsett konfigurerer du mål og apparater fra Kraftvakt-panelet i sidemenyen."
+        "description": "Kraftvakt holder snittforbruket siste time rett under en valgt effektgrense ved å slå effektkrevende apparater av og på i prioritert rekkefølge. Etter oppsett konfigurerer du effektgrensen og apparatene i Kraftvakt-panelet i sidemenyen."
       }
     },
     "abort": {

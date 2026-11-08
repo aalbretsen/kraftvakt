@@ -10,10 +10,10 @@ from .const import DOMAIN, NAME
 
 
 class KraftvaktConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Oppsett av Kraftvakt.
+    """Set up Kraftvakt without any settings (GUI-004).
 
-    Selve konfigurasjonen (effektmål, apparater og prioritet) gjøres i
-    Kraftvakt-panelet i sidemenyen. Denne flyten oppretter bare integrasjonen.
+    The configuration (power limit, appliances and priority) is done in the
+    Kraftvakt panel in the sidebar. This flow only creates the integration.
     """
 
     VERSION = 1
@@ -21,7 +21,7 @@ class KraftvaktConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Bekreft oppsett."""
+        """Confirm the setup."""
         if user_input is not None:
             return self.async_create_entry(title=NAME, data={})
         return self.async_show_form(step_id="user")
