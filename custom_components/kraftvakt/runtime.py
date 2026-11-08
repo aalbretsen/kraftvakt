@@ -89,14 +89,19 @@ class KraftvaktRuntime:
         hass: HomeAssistant,
         config: KraftvaktConfig,
         charger_switches: ChargerSwitchBoard,
+        action_lock: asyncio.Lock | None = None,
     ) -> None:
-        """Create the runtime for the configuration and the charger switches."""
+        """Create the runtime for the configuration and the charger switches.
+
+        Runtimes that share `action_lock` carry out their actions one at a
+        time, so a new runtime after a reload waits for the actions of the old.
+        """
         self._hass = hass
         self._config = config
         self._charger_switches = charger_switches
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
-        self._action_lock = asyncio.Lock()
+        self._action_lock = action_lock or asyncio.Lock()
         self._actions = ActionRunner(hass, config, self._action_lock)
         self._created_at = dt_util.utcnow()
         self._averager = PowerAverager(

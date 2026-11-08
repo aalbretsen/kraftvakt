@@ -5,6 +5,7 @@ reach the appliances (REG-002, REG-005, REG-009 to REG-011, REG-016, GEN-009,
 GEN-012, GEN-013, STR-001 to STR-008).
 """
 
+import asyncio
 from datetime import timedelta
 from typing import Any
 
@@ -97,6 +98,12 @@ async def setup_kraftvakt(hass: HomeAssistant, config: dict[str, Any]):
         return entry
 
     return setup
+
+
+async def run_pending_tasks() -> None:
+    """Let started tasks run without waiting for blocked ones to finish."""
+    for _ in range(20):
+        await asyncio.sleep(0)
 
 
 def set_power(hass: HomeAssistant, watt: str) -> None:
@@ -567,6 +574,40 @@ async def test_reload_starts_the_regulation_again(
 
     await advance(hass, freezer)
     assert actions == ["off light.a", "off light.b", "on light.a"]
+
+
+async def test_reload_waits_for_the_actions_of_the_old_regulation(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, config, setup_kraftvakt
+) -> None:
+    """REG-009: the appliances are turned off after the old actions have run."""
+    recorded: list[str] = []
+    release = asyncio.Event()
+
+    async def slow_turn_on(call: ServiceCall) -> None:
+        await release.wait()
+        recorded.append("on")
+
+    def turn_off(call: ServiceCall) -> None:
+        recorded.append("off")
+
+    hass.services.async_register("light", "turn_on", slow_turn_on)
+    hass.services.async_register("light", "turn_off", turn_off)
+    config["appliances"] = [appliance("a")]
+    config["priority"] = config["priority"][:1]
+    set_power(hass, "2000")
+    entry = await setup_kraftvakt()
+    freezer.tick(WINDOW)
+    async_fire_time_changed(hass)
+    await run_pending_tasks()
+    recorded.clear()
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await run_pending_tasks()
+    assert recorded == []
+
+    release.set()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert recorded == ["on", "off"]
 
 
 @pytest.mark.parametrize(

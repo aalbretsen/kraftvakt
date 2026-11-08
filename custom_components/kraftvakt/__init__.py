@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from homeassistant.components import frontend, panel_custom
@@ -55,7 +56,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
             translation_placeholders={"issues": str(error)},
         ) from error
     runtime = KraftvaktRuntime(
-        hass, stored.config, ChargerSwitchBoard(hass, storage, stored)
+        hass,
+        stored.config,
+        ChargerSwitchBoard(hass, storage, stored),
+        _action_lock(hass),
     )
     entry.runtime_data = runtime
     entry.async_on_unload(runtime.async_shutdown)
@@ -73,6 +77,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -
     if unloaded:
         frontend.async_remove_panel(hass, PANEL_URL_PATH)
     return unloaded
+
+
+def _action_lock(hass: HomeAssistant) -> asyncio.Lock:
+    """Return the lock for the actions, shared over reloads of the config entry."""
+    return hass.data.setdefault(DOMAIN, {}).setdefault("action_lock", asyncio.Lock())
 
 
 async def _async_register_panel(hass: HomeAssistant) -> None:
