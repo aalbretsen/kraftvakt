@@ -82,10 +82,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   decision interval (`regulation_window_s` × `regulation_interval`), animated
   with the Web Animations API, so it needs no clock. The time is a tooltip.
 - The waiting column shows one block per regulation window left until
-  `waiting_ends_at`, the decision that turns the slot on. Blocks are squares
-  (8 px, text colour) with a 3 px gap, aligned right; with many windows they
-  shrink to standing rectangles and at most to bars as wide as the gap. When
-  more windows are left than fit (15 blocks, 8 on a narrow screen), each block
+  `waiting_ends_at`, the decision that turns the slot on. All blocks have the
+  same whole-pixel size (`blockSize()`): 8 px squares in the text colour with
+  a 2 px gap, aligned right; with many windows they get thinner and taller, at
+  most 3 × 12 px bars like the ampere bars. When more windows are left than
+  fit (18 bars in 88 px, 10 in 48 px on a narrow screen), each block
   stands for several windows, so the whole wait fits (owner's choice over
   clipping or a count). The status comes at every window, so the blocks are
   recalculated each time. The time is a tooltip. A bar and a ring were tried here and turned down by the owner.

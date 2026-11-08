@@ -1,5 +1,5 @@
 import { mdiEvStation, mdiPlay, mdiStop } from "@mdi/js";
-import { LitElement, css, html, nothing } from "lit";
+import { LitElement, css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import {
@@ -19,9 +19,29 @@ import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 
-/** How many waiting blocks fit at their narrowest in the waiting column. */
-const MAX_BLOCKS = 15;
-const MAX_BLOCKS_NARROW = 8;
+/** The width of the waiting column, and the blocks in it, in pixels. */
+const WAITING_WIDTH = 88;
+const WAITING_WIDTH_NARROW = 48;
+const BLOCK_GAP = 2;
+const SQUARE_SIZE = 8;
+const BAR_WIDTH = 3;
+const BAR_HEIGHT = 12;
+
+/**
+ * Return the size of `count` equal blocks that fill at most `available` pixels:
+ * squares when they fit, otherwise thinner and taller, down to ampere-like bars.
+ */
+function blockSize(count: number, available: number): { width: number; height: number } {
+  const room = Math.floor((available - (count - 1) * BLOCK_GAP) / count);
+  const width = Math.max(BAR_WIDTH, Math.min(SQUARE_SIZE, room));
+  const thinning = (SQUARE_SIZE - width) / (SQUARE_SIZE - BAR_WIDTH);
+  return { width, height: Math.round(SQUARE_SIZE + thinning * (BAR_HEIGHT - SQUARE_SIZE)) };
+}
+
+/** Return how many blocks fit at their thinnest in `available` pixels. */
+function maxBlocks(available: number): number {
+  return Math.floor((available + BLOCK_GAP) / (BAR_WIDTH + BLOCK_GAP));
+}
 
 /** Shows how the regulation stands now, and starts and stops it. */
 @customElement("kraftvakt-status-page")
@@ -294,11 +314,17 @@ export class KraftvaktStatusPage extends LitElement {
     }
     const left = Date.parse(item.waiting_ends_at) - Date.now();
     const windows = Math.max(1, Math.ceil(left / (this.status.regulation_window_s * 1000)));
-    const windowsPerBlock = Math.ceil(windows / (this.narrow ? MAX_BLOCKS_NARROW : MAX_BLOCKS));
+    const available = this.narrow ? WAITING_WIDTH_NARROW : WAITING_WIDTH;
+    const windowsPerBlock = Math.ceil(windows / maxBlocks(available));
     const blocks = Math.ceil(windows / windowsPerBlock);
+    const size = blockSize(blocks, available);
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
-      <span class="windows-left" title=${this.localize("status.waiting_ends_at", { time })}>
+      <span
+        class="windows-left"
+        style="--block-width: ${size.width}px; --block-height: ${size.height}px"
+        title=${this.localize("status.waiting_ends_at", { time })}
+      >
         ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
       </span>
     `;
@@ -575,7 +601,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) 88px 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) ${unsafeCSS(WAITING_WIDTH)}px 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -601,13 +627,14 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .windows-left {
       display: flex;
+      align-items: center;
       justify-content: flex-end;
-      gap: 3px;
+      gap: ${unsafeCSS(BLOCK_GAP)}px;
     }
     .window-left {
-      flex: 0 1 8px;
-      min-width: 3px;
-      height: 8px;
+      flex: none;
+      width: var(--block-width);
+      height: var(--block-height);
       border-radius: 1px;
       background: var(--primary-text-color);
     }
@@ -641,7 +668,7 @@ export class KraftvaktStatusPage extends LitElement {
       white-space: nowrap;
     }
     :host([narrow]) .row {
-      grid-template-columns: 20px minmax(0, 1fr) 48px auto;
+      grid-template-columns: 20px minmax(0, 1fr) ${unsafeCSS(WAITING_WIDTH_NARROW)}px auto;
       gap: 8px;
       padding: 6px 12px;
     }
