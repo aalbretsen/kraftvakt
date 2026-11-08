@@ -168,6 +168,11 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   15 min (5, 7, 9 … 15). Fictive appliances: step 5 min, cap 30 min. The first
   time again uses the linear time. Any command for another slot, also forced
   ones, resets the counter. Not configurable.
+- Kept as is after the exploratory test (finding F2), to revisit if it shows
+  up in real use: two slots that alternate (A on, B on, B off, A off, A on …)
+  reset each other's counter, so their waiting time never grows. In the test
+  it came from the stale window after a decision with waiting time 0, which
+  the turn-on margin now prevents.
 
 ## Penalty
 
@@ -189,6 +194,11 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   regulation starts again with everything off at that decision) or by a restart
   (stop, safe state, HA start). The current variants are still evaluated during
   a penalty; they give no commands since everything is off.
+- The start after a penalty resets the cycling counters like every other
+  start. Kept as is after the exploratory test (finding F4): while the average
+  consumption stays above limit plus threshold, an appliance that pushes the
+  average over the limit goes on and off with the linear waiting time only.
+  The penalty should never be needed.
 
 ## Safe state
 
