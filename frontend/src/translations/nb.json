@@ -49,6 +49,7 @@
     "delayed_turn_on": "Forsinket innkobling",
     "charging_at": "Lader med {current}A",
     "not_charging": "Lader ikke",
+    "first_decision": "Venter på første avgjørelse",
     "bypassed": "Forbigått: trekker ikke strøm",
     "waiting_charger": "Ventende: en annen elbillader lader",
     "excluded": "Utenfor regulering",

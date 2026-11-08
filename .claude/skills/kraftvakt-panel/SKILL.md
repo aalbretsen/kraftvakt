@@ -75,7 +75,9 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - The status page shows everything in the status snapshot: averages against
   the limit, next decision, safe state and penalty with what is left, appliances
   with variant and waiting, chargers with current, bypassed, waiting, excluded
-  or outside the charging window.
+  or outside the charging window. Before the first decision after a start
+  (`excluded` is null) a charger shows «Waiting for the first decision»
+  instead (settled after the exploratory test).
 - Countdowns are never ticking text. «Next decision» is a label and
   `kraftvakt-countdown-ring` at the right end of the chips row: a 20 px ring
   that empties counterclockwise towards the top over one decision interval

@@ -49,6 +49,7 @@
     "delayed_turn_on": "Delayed turn-on",
     "charging_at": "Charging at {current}A",
     "not_charging": "Not charging",
+    "first_decision": "Waiting for the first decision",
     "bypassed": "Bypassed: draws no power",
     "waiting_charger": "Waiting: another EV charger is charging",
     "excluded": "Excluded from the regulation",

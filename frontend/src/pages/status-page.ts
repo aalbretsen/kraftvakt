@@ -362,6 +362,9 @@ export class KraftvaktStatusPage extends LitElement {
   private chargerDetails(charger: ChargerStatus): string[] {
     const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
     const details: string[] = [];
+    if (charger.excluded === null) {
+      return [this.localize("status.first_decision")];
+    }
     if (charger.bypassed) {
       details.push(this.localize("status.bypassed"));
     }
