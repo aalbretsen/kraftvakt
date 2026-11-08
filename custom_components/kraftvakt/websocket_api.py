@@ -32,7 +32,7 @@ from .config_model import (
     parse_config,
 )
 from .const import DOMAIN
-from .entity import entity_name, item_name
+from .entity import item_name
 from .regulation.model import ApplianceSlotKey, ChargerSlotKey, Waiting
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
 
@@ -377,13 +377,13 @@ def capabilities() -> dict[str, Any]:
 
 
 def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]:
-    """Return the names of the entities of the appliances and chargers."""
+    """Return the names of the appliances and chargers by their entities."""
     items: list[Appliance | Charger] = [
         *config.appliances,
         *config.charging.chargers,
     ]
     return {
-        item.entity_id: entity_name(hass, item.entity_id)
+        item.entity_id: item_name(hass, item)
         for item in items
         if item.entity_id is not None
     }

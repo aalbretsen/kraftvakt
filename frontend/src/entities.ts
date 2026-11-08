@@ -11,6 +11,16 @@ export function entityName(hass: HomeAssistant, names: Record<string, string>, e
 }
 
 /**
+ * Return the name of a charger, as the backend names it: its device's name, or
+ * else its entity's. The backend gives the names of the saved chargers.
+ */
+export function chargerName(hass: HomeAssistant, names: Record<string, string>, entityId: string): string {
+  const deviceId = hass.entities?.[entityId]?.device_id;
+  const device = deviceId ? hass.devices?.[deviceId] : undefined;
+  return names[entityId] ?? device?.name_by_user ?? device?.name ?? entityName(hass, names, entityId);
+}
+
+/**
  * Return Kraftvakt's own entities. They are left out where a sensor from
  * another integration is chosen, like the power sensor.
  */

@@ -18,6 +18,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -437,3 +438,27 @@ async def test_charger_name_when_the_entity_has_no_state(hass: HomeAssistant) ->
     assert item_name(hass, Charger("c1", entry.entity_id)) == "Garage charger"
     assert item_name(hass, Charger("c1", "switch.unknown")) == "switch.unknown"
     assert item_name(hass, Charger("c1")) == "c1"
+
+
+async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
+    """Found in the exploratory test: the charger was named «Lader A Charging
+    allowed» after the entity that allows charging. A name the user gave the
+    device wins, and an entity without a device keeps its own name."""
+    entry = MockConfigEntry(domain="test")
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Lader A"
+    )
+    allowed = er.async_get(hass).async_get_or_create(
+        "switch",
+        "test",
+        "a_allowed",
+        device_id=device.id,
+        original_name="Lader A Charging allowed",
+    )
+
+    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Lader A"
+
+    dr.async_get(hass).async_update_device(device.id, name_by_user="Garasje")
+
+    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Garasje"

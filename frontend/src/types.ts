@@ -16,12 +16,20 @@ export interface HassEntity {
 export interface EntityRegistryEntry {
   entity_id: string;
   platform?: string;
+  device_id?: string | null;
+}
+
+/** An entry of the device registry, as the frontend has it. */
+export interface DeviceRegistryEntry {
+  name: string | null;
+  name_by_user: string | null;
 }
 
 export interface HomeAssistant {
   language: string;
   states: Record<string, HassEntity>;
   entities: Record<string, EntityRegistryEntry>;
+  devices: Record<string, DeviceRegistryEntry>;
   locale: { language: string };
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;

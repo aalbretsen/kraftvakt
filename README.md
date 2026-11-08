@@ -165,7 +165,9 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 | `switch.kraftvakt_<lader>_excluded_from_regulation` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
 | `switch.kraftvakt_<lader>_override_charging_window` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
 
-Entitets-ID-ene over gjelder når Home Assistant er satt opp på engelsk. Med
+‹lader› er navnet på enheten som entiteten til elbilladeren hører til, eller
+navnet på entiteten når den ikke hører til en enhet. Entitets-ID-ene over
+gjelder når Home Assistant er satt opp på engelsk. Med
 norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`
 og `switch.kraftvakt_regulering`.
 

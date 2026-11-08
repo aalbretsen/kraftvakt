@@ -23,6 +23,13 @@ integrations.
 - Charger switches are added and removed when the configuration is saved,
   without reloading the config entry (a reload would start the regulation).
   Registry entries of removed chargers are removed.
+- A charger is named after the device of its entity (the user's name for the
+  device first), and after the entity when it has no device; an appliance is
+  named after its entity. The status, `entity_names` and the charger switches
+  use the same names (`item_name()` in `entity.py`), and the panel mirrors it
+  for a charger that is not saved yet. Settled with the owner after the
+  exploratory test (finding F8): the entity that allows charging often has a
+  name like «Garage Charging allowed».
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
   `config_panel_domain` in `panel_custom.async_register_panel`. The panel turns

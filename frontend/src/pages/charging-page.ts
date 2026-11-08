@@ -8,7 +8,7 @@ import "../components/manual-control-warning";
 import "../components/sortable-list";
 import type { ListRow } from "../components/sortable-list";
 import { moveItem, newId } from "../draft";
-import { entityName } from "../entities";
+import { chargerName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { ConfigPage } from "./config-page";
@@ -150,7 +150,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     return {
       key: charger.id,
       title: charger.entity_id
-        ? entityName(this.hass, this.entityNames, charger.entity_id)
+        ? chargerName(this.hass, this.entityNames, charger.entity_id)
         : this.localize("missing.charger_without_entity"),
       iconPath: mdiEvStation,
       details,
