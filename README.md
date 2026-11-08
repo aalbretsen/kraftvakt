@@ -130,15 +130,18 @@ den. Er konfigurasjonen ikke fullstendig, står det hva som mangler, med lenke
 til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 
 - snittforbruket og reguleringssnittet mot effektgrensen, med tiden hvert snitt
-  dekker, og tid til neste avgjørelse,
+  dekker, og forbruket nå, slik effektsensoren måler det,
+- en stolpe som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
+  holder musen over,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
   gjenstående overforbruk,
 - prioritetslisten med apparatene i prioritert rekkefølge, om de er på eller
   av, og gjeldende variant. Der «Elbillading» står i listen, står
   elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
-  aktivert, ladestrømmen, og om de er forbigått, ventende, utenfor regulering
-  eller utenfor ladetidsrommet. En egen kolonne viser hvor lenge apparatet
-  eller elbilladeren som står for tur, venter.
+  aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
+  ladetidsrommet. Ladestrømmen vises som én prikk per ampere fra minste til
+  største ladestrøm. Apparatet eller elbilladeren som står for tur, har en
+  stolpe som tømmes frem mot avgjørelsen der det slås på.
 
 ## Entiteter
 

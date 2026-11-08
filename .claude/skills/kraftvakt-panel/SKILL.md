@@ -37,9 +37,9 @@ frontend/src/
   draft.ts             ids, moving, completed priority list
   validation.ts        checks the draft against the limits, and what is missing
   entities.ts          entity names, and Kraftvakt's own entities
-  types.ts, format.ts, clock.ts
+  types.ts, format.ts
   pages/               status, general, appliances, charging, config-page (shared)
-  components/          locked-banner, manual-control-warning, sortable-list,
+  components/          countdown-bar, locked-banner, manual-control-warning, sortable-list,
                        item-dialog (shared), appliance-dialog, charger-dialog,
                        action-field, condition-field, save-bar, confirm-dialog
 ```
@@ -75,7 +75,19 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - The status page shows everything in the status snapshot: averages against
   the limit, next decision, safe state and penalty with what is left, appliances
   with variant and waiting, chargers with current, bypassed, waiting, excluded
-  or outside the charging window. Countdowns read the clock when they render.
+  or outside the charging window.
+- Countdowns are bars, never ticking text: `kraftvakt-countdown-bar` empties
+  from `start` to `end` with the Web Animations API, so it needs no clock,
+  flows smoothly and restarts only when `start` or `end` changes. The exact
+  time is a tooltip (clock time). «Next decision» sits at the right end of the
+  chips row and empties over one decision interval (`regulation_window_s` ×
+  `regulation_interval`). A waiting bar empties from `waiting_since` to
+  `waiting_ends_at`, the decision that turns the slot on, so it never stops
+  and waits.
+- The tiles are average consumption, regulation average, «Consumption now» and
+  the power limit. «Consumption now» is the power sensor's state read in the
+  panel (`measuredPowerKw()`, same units as the backend), so it updates live;
+  the meter does not show it.
 - The average consumption comes first: its tile is to the left and it is the
   thick bar in the primary (blue) colour. The regulation average is the second
   tile and a thin line in the text colour on top, so it shows against the blue
@@ -84,8 +96,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - Appliances and chargers share one full-width card, «Priority list». An
   «EV charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their
-  current and reasons under the name. Columns: rank, name, waiting (the
-  countdown of the appliance or charger that is next) and state.
+  reasons under the name. Columns: rank, name, variant, current, waiting and
+  state. The current is one dot per ampere from min to max, filled up to the
+  current, with «9 A» after it (smaller dots above 16 steps). On a narrow
+  screen the variant goes after the name and the dots under it.
 
 ## Home Assistant components
 

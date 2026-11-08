@@ -183,17 +183,20 @@ Status snapshot:
   "capacity_average_kw": 8.10,
   "power_limit_kw": 10.0,
   "regulation_window_s": 60,
+  "regulation_interval": 1,
   "next_decision_at": "2026-11-07T12:01:00+01:00",
-  "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_until": null } ],
+  "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ],
   "ev_charging_position": 1,
-  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "waiting_until": null } ]
+  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ]
 }
 ```
 
 Times are ISO 8601 in HA's time zone. Averages are `null` until the first
-window. `next_decision_at` is `null` while stopped. `waiting_until` is set for
-the appliance or charger that is next and waiting (for a charger: its next
-fictive appliance). `variant` is the label of the current variant or `null`.
+window. `next_decision_at` is `null` while stopped. The waiting fields are set
+for the appliance or charger that is next and waiting (for a charger: its next
+fictive appliance): `waiting_since` when it started, `waiting_until` when the
+waiting time ends, and `waiting_ends_at` the decision that turns it on, the
+first at or after `waiting_until` (`first_decision_from()`). `variant` is the label of the current variant or `null`.
 Charger details are from the last decision; `allowed` is false and `excluded`
 is `null` before the first decision after a start. Appliances are sorted by the
 entry of their current variant, chargers by the current charging priority.

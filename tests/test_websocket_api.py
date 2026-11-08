@@ -567,6 +567,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "capacity_average_kw": None,
         "power_limit_kw": 10.0,
         "regulation_window_s": 60,
+        "regulation_interval": 1,
         "next_decision_at": local(started + WINDOW),
         "appliances": [
             {
@@ -574,14 +575,18 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "name": "Varmtvannsbereder",
                 "on": False,
                 "variant": None,
+                "waiting_since": None,
                 "waiting_until": None,
+                "waiting_ends_at": None,
             },
             {
                 "id": "b",
                 "name": "light.b",
                 "on": False,
                 "variant": None,
+                "waiting_since": None,
                 "waiting_until": None,
+                "waiting_ends_at": None,
             },
         ],
         "ev_charging_position": None,
@@ -628,9 +633,11 @@ async def test_status_shows_the_variant_and_the_waiting_time(
 
     assert [item["id"] for item in status["appliances"]] == ["b", "a"]
     assert status["appliances"][0]["variant"] == "Morgen"
+    assert status["appliances"][0]["waiting_since"] == local(started + WINDOW)
     assert status["appliances"][0]["waiting_until"] == local(
         started + WINDOW + timedelta(seconds=30)
     )
+    assert status["appliances"][0]["waiting_ends_at"] == local(started + 2 * WINDOW)
     assert status["appliances"][1]["waiting_until"] is None
 
 
@@ -727,7 +734,9 @@ async def test_status_shows_the_chargers(
             "waiting": False,
             "allowed": False,
             "excluded": None,
+            "waiting_since": None,
             "waiting_until": None,
+            "waiting_ends_at": None,
         }
     ]
     assert status["ev_charging_position"] == 2

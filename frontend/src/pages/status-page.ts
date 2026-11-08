@@ -11,8 +11,9 @@ import {
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
-import { ClockController } from "../clock";
-import { formatNumber, formatPower, formatTimeLeft } from "../format";
+import "../components/countdown-bar";
+import { measuredPowerKw } from "../entities";
+import { formatClockTime, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
 import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -34,8 +35,6 @@ export class KraftvaktStatusPage extends LitElement {
   @state() private changingRunning = false;
 
   @state() private runningError?: string;
-
-  private clock = new ClockController(this);
 
   protected render() {
     if (!this.status) {
@@ -115,6 +114,12 @@ export class KraftvaktStatusPage extends LitElement {
           formatPower(language, status.regulation_average_kw),
           this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
+        ${this.renderStat(
+          "",
+          "status.power_now",
+          formatPower(language, measuredPowerKw(this.hass, this.config?.config.general.power_sensor ?? "")),
+          this.localize("status.momentary"),
+        )}
         ${this.renderStat("", "status.power_limit", formatPower(language, status.power_limit_kw))}
       </div>
       ${this.renderMeter(status)}
@@ -125,12 +130,22 @@ export class KraftvaktStatusPage extends LitElement {
         <span class="chip ${status.penalty.active ? "alarm" : "off"}">
           ${this.localize("status.penalty_chip", { value: this.yesNo(status.penalty.active) })}
         </span>
-        ${status.next_decision_at
-          ? html`<span>
-              ${this.localize("status.next_decision", { time: formatTimeLeft(status.next_decision_at, this.clock.now) })}
-            </span>`
-          : nothing}
+        <span class="spacer"></span>
+        ${status.next_decision_at ? this.renderNextDecision(status, status.next_decision_at) : nothing}
       </div>
+    `;
+  }
+
+  /** A bar that empties until the next decision, with the time as a tooltip. */
+  private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
+    const end = Date.parse(nextDecisionAt);
+    const interval = status.regulation_window_s * status.regulation_interval * 1000;
+    const time = formatClockTime(this.hass.language, nextDecisionAt);
+    return html`
+      <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
+        ${this.localize("status.next_decision")}
+        <kraftvakt-countdown-bar .start=${end - interval} .end=${end}></kraftvakt-countdown-bar>
+      </span>
     `;
   }
 
@@ -213,8 +228,12 @@ export class KraftvaktStatusPage extends LitElement {
               <div class="row heading">
                 <span class="rank">#</span>
                 <span>${this.localize("status.name")}</span>
-                <span class="waiting">${this.localize("status.waiting")}</span>
-                <span class="state">${this.localize("status.state")}</span>
+                ${this.narrow
+                  ? nothing
+                  : html`<span>${this.localize("status.variant")}</span>
+                      <span>${this.localize("status.current")}</span>`}
+                <span>${this.localize("status.waiting")}</span>
+                <span>${this.localize("status.state")}</span>
               </div>
               ${before.map((appliance, index) => this.renderApplianceRow(appliance, index + 1))}
               ${position === null ? nothing : this.renderEvCharging(status.chargers, position + 1)}
@@ -225,15 +244,15 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
+    const variant = appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing;
     return html`
       <div class="row">
         <span class="rank">${rank}</span>
         <div class="row-main">
-          <div class="row-title">
-            ${appliance.name} ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
-          </div>
+          <div class="row-title">${appliance.name} ${this.narrow ? variant : nothing}</div>
         </div>
-        ${this.renderWaiting(appliance.waiting_until)} ${this.renderOnOff(appliance.on, "status.on", "status.off")}
+        ${this.narrow ? nothing : html`<span>${variant}</span><span></span>`} ${this.renderWaiting(appliance)}
+        ${this.renderOnOff(appliance.on, "status.on", "status.off")}
       </div>
     `;
   }
@@ -250,14 +269,18 @@ export class KraftvaktStatusPage extends LitElement {
       </div>
       ${chargers.map((charger) => {
         const details = this.chargerDetails(charger);
+        const amperes = this.renderAmperes(charger);
         return html`
           <div class="row charger">
             <span class="rank"></span>
             <div class="row-main">
-              <div class="row-title"><ha-svg-icon .path=${mdiEvStation}></ha-svg-icon>${charger.name}</div>
+              <div class="row-title">
+                <ha-svg-icon .path=${mdiEvStation}></ha-svg-icon><span class="charger-name">${charger.name}</span>
+              </div>
+              ${this.narrow ? html`<div class="row-sub">${amperes}</div>` : nothing}
               ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
             </div>
-            ${this.renderWaiting(charger.waiting_until)}
+            ${this.narrow ? nothing : html`<span></span>${amperes}`} ${this.renderWaiting(charger)}
             ${this.renderOnOff(charger.activated, "status.activated", "status.deactivated")}
           </div>
         `;
@@ -265,22 +288,45 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  private renderWaiting(until: string | null) {
-    return html`<span class="waiting">${until ? formatTimeLeft(until, this.clock.now) : nothing}</span>`;
+  /** A bar that empties from when the waiting started until the decision that ends it. */
+  private renderWaiting(item: ApplianceStatus | ChargerStatus) {
+    if (!item.waiting_since || !item.waiting_ends_at) {
+      return html`<span></span>`;
+    }
+    const time = formatClockTime(this.hass.language, item.waiting_ends_at);
+    return html`
+      <kraftvakt-countdown-bar
+        class="waiting"
+        title=${this.localize("status.waiting_ends_at", { time })}
+        .start=${Date.parse(item.waiting_since)}
+        .end=${Date.parse(item.waiting_ends_at)}
+      ></kraftvakt-countdown-bar>
+    `;
+  }
+
+  /** One dot per ampere from the minimum to the maximum current, filled up to the current. */
+  private renderAmperes(charger: ChargerStatus) {
+    const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
+    if (!config) {
+      return html`<span></span>`;
+    }
+    const steps = config.max_current_a - config.min_current_a + 1;
+    const on = charger.current_a === null ? 0 : charger.current_a - config.min_current_a + 1;
+    return html`
+      <span class="amperes">
+        <span class="dots ${steps > 16 ? "small" : ""}">
+          ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? "on" : ""}"></span>`)}
+        </span>
+        ${charger.current_a === null
+          ? nothing
+          : html`<span class="ampere-value">${this.localize("status.amperes", { current: charger.current_a })}</span>`}
+      </span>
+    `;
   }
 
   private chargerDetails(charger: ChargerStatus): string[] {
     const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
     const details: string[] = [];
-    if (charger.current_a !== null && config) {
-      details.push(
-        this.localize("status.charging_current", {
-          current: charger.current_a,
-          min: config.min_current_a,
-          max: config.max_current_a,
-        }),
-      );
-    }
     if (charger.bypassed) {
       details.push(this.localize("status.bypassed"));
     }
@@ -441,7 +487,7 @@ export class KraftvaktStatusPage extends LitElement {
       color: var(--secondary-text-color);
     }
     :host([narrow]) .stats {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
     :host([narrow]) .stat {
@@ -525,7 +571,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row {
       display: grid;
-      grid-template-columns: 24px minmax(0, 1fr) 64px 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(48px, 1fr) 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -551,13 +597,45 @@ export class KraftvaktStatusPage extends LitElement {
       text-align: center;
       color: var(--secondary-text-color);
     }
-    .waiting {
-      text-align: end;
-      font-variant-numeric: tabular-nums;
-      color: var(--secondary-text-color);
-    }
-    .state {
+    .row > .chip {
       justify-self: start;
+    }
+    .next-decision {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .next-decision kraftvakt-countdown-bar {
+      width: 96px;
+    }
+    .amperes {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .dots {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+    .ampere {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(127, 127, 127, 0.32);
+    }
+    .dots.small .ampere {
+      width: 5px;
+      height: 5px;
+    }
+    .ampere.on {
+      background: var(--primary-color);
+    }
+    .ampere-value {
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+      white-space: nowrap;
     }
     :host([narrow]) .row {
       grid-template-columns: 20px minmax(0, 1fr) 48px auto;
@@ -571,7 +649,12 @@ export class KraftvaktStatusPage extends LitElement {
       gap: 6px;
       overflow-wrap: anywhere;
     }
+    .charger-name {
+      flex: 1;
+      min-width: 0;
+    }
     .row-title ha-svg-icon {
+      flex: none;
       --mdc-icon-size: 20px;
       color: var(--secondary-text-color);
     }

@@ -5,8 +5,9 @@ Every command requires an administrator.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 import voluptuous as vol
@@ -32,7 +33,7 @@ from .config_model import (
 )
 from .const import DOMAIN
 from .entity import entity_name, item_name
-from .regulation.model import ApplianceSlotKey, ChargerSlotKey
+from .regulation.model import ApplianceSlotKey, ChargerSlotKey, Waiting
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
 
 ERR_NOT_LOADED: Final = "not_loaded"
@@ -208,8 +209,10 @@ def websocket_subscribe_status(
 def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:
     """Return how the regulation stands now.
 
-    `waiting_until` is set for the appliance or charger whose slot is next and
-    waits. The averages are None until the first window has closed.
+    The waiting fields are set for the appliance or charger whose slot is next
+    and waits: when it started, when the waiting time ends, and the decision
+    that will turn it on, the first at or after the end. The averages are None
+    until the first window has closed.
     The appliances are in the order of their current variant in the priority
     list, and the chargers in the current charging priority.
     `ev_charging_position` is the number of appliances before «EV charging»,
@@ -220,7 +223,10 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     penalty = runtime.penalty
     waiting = runtime.waiting
     waiting_key = None if waiting is None else waiting.key
-    waiting_until = None if waiting is None else _local_time(waiting.until)
+    no_waiting = _waiting_fields(None, None, timedelta())
+    waiting_fields = _waiting_fields(
+        waiting, runtime.next_decision_at, _decision_interval(config)
+    )
     variant_labels = {
         variant.id: variant.label
         for appliance in config.appliances
@@ -249,6 +255,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         ),
         "power_limit_kw": config.general.power_limit_kw,
         "regulation_window_s": config.general.regulation_window_s,
+        "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
         "appliances": [
             {
@@ -256,10 +263,10 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                 "name": item_name(hass, appliance),
                 "on": appliance.id in runtime.appliances_on,
                 "variant": current_variant_labels.get(appliance.id),
-                "waiting_until": (
-                    waiting_until
+                **(
+                    waiting_fields
                     if waiting_key == ApplianceSlotKey(appliance.id)
-                    else None
+                    else no_waiting
                 ),
             }
             for appliance in sorted(
@@ -277,11 +284,11 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                 "waiting": status.waiting,
                 "allowed": status.allowed,
                 "excluded": status.excluded,
-                "waiting_until": (
-                    waiting_until
+                **(
+                    waiting_fields
                     if isinstance(waiting_key, ChargerSlotKey)
                     and waiting_key.charger_id == charger.id
-                    else None
+                    else no_waiting
                 ),
             }
             for charger in _in_order(
@@ -380,6 +387,41 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
         for item in items
         if item.entity_id is not None
     }
+
+
+def _decision_interval(config: KraftvaktConfig) -> timedelta:
+    """Return the time between two decisions."""
+    general = config.general
+    return timedelta(seconds=general.regulation_window_s * general.regulation_interval)
+
+
+def _waiting_fields(
+    waiting: Waiting | None, next_decision_at: datetime | None, interval: timedelta
+) -> dict[str, str | None]:
+    """Return when the waiting started and ends, and the decision that ends it."""
+    if waiting is None or next_decision_at is None:
+        return {"waiting_since": None, "waiting_until": None, "waiting_ends_at": None}
+    return {
+        "waiting_since": _local_time(waiting.started_at),
+        "waiting_until": _local_time(waiting.until),
+        "waiting_ends_at": _local_time(
+            first_decision_from(waiting.until, next_decision_at, interval)
+        ),
+    }
+
+
+def first_decision_from(
+    moment: datetime, next_decision_at: datetime, interval: timedelta
+) -> datetime:
+    """Return the first decision at or after `moment`.
+
+    Decisions are `interval` apart from the next decision on.
+    """
+    if moment <= next_decision_at:
+        return next_decision_at
+    return next_decision_at + interval * math.ceil(
+        (moment - next_decision_at) / interval
+    )
 
 
 def _local_time(moment: datetime | None) -> str | None:

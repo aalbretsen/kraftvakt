@@ -118,7 +118,10 @@ export interface ApplianceStatus {
   name: string;
   on: boolean;
   variant: string | null;
+  waiting_since: string | null;
   waiting_until: string | null;
+  /** The decision that ends the waiting: the first at or after `waiting_until`. */
+  waiting_ends_at: string | null;
 }
 
 export interface ChargerStatus {
@@ -130,7 +133,10 @@ export interface ChargerStatus {
   waiting: boolean;
   allowed: boolean;
   excluded: boolean | null;
+  waiting_since: string | null;
   waiting_until: string | null;
+  /** The decision that ends the waiting: the first at or after `waiting_until`. */
+  waiting_ends_at: string | null;
 }
 
 /** How the regulation stands now. Times are ISO 8601. */
@@ -147,6 +153,7 @@ export interface StatusSnapshot {
   capacity_average_kw: number | null;
   power_limit_kw: number;
   regulation_window_s: number;
+  regulation_interval: number;
   next_decision_at: string | null;
   appliances: ApplianceStatus[];
   /** How many appliances come before «EV charging», null while EV charging is disabled. */

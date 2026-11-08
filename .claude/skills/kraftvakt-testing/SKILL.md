@@ -12,7 +12,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 - Complex logic (`regulation/`, `measurement.py`, `config_model.py`) is also
   proven by itself with unit tests. Error handling that is hard to reach from
   the outside is unit tested.
-- Aim for coverage, not every permutation. Today: 508 tests, 99 % line
+- Aim for coverage, not every permutation. Today: 513 tests, 99 % line
   coverage of Kraftvakt and 100 % of the simulator. The only uncovered line is
   the `TypeError` for an unknown slot in `engine.py`.
 - The panel has no automatic tests. The type check and the build run in CI, and

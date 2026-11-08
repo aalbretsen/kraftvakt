@@ -19,3 +19,18 @@ export function ownEntities(hass: HomeAssistant): string[] {
     .filter((entry) => entry.platform === "kraftvakt")
     .map((entry) => entry.entity_id);
 }
+
+/**
+ * Return the power a power sensor measures now in kW, read as the backend reads
+ * it: W or kW, W without a unit, negative as 0, and null for anything else.
+ */
+export function measuredPowerKw(hass: HomeAssistant, entityId: string): number | null {
+  const entity = hass.states[entityId];
+  const value = Number(entity?.state);
+  if (!entity || entity.state.trim() === "" || !Number.isFinite(value)) {
+    return null;
+  }
+  const unit = entity.attributes.unit_of_measurement;
+  const divisor = unit === "kW" ? 1 : !unit || unit === "W" ? 1000 : null;
+  return divisor === null ? null : Math.max(0, value) / divisor;
+}
