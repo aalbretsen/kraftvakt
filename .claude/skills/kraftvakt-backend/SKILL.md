@@ -47,7 +47,7 @@ integrations.
 | `conditions.py` | True/false from an entity or a template, with `entity_id` and `entity`. |
 | `actions.py` | Default action table, custom actions, `ActionRunner` (one command at a time under a lock, errors logged and not retried), `default_action_issues()`. |
 | `regulation/` | `engine.py` (`RegulationEngine`: `start`, `stop`, `decide`), `model.py`, `priority.py` (slots and fictive appliances), `waiting.py`, `penalty.py`, `charging.py`. |
-| `runtime.py` | `KraftvaktRuntime`: follows the power sensor, fills the hour before the start from the recorder's history in a background task (`recorder` is an `after_dependency`; skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, runs commands in a background task, start/stop, starts when HA has started, safe state, status listeners, `async_save_config()`. |
+| `runtime.py` | `KraftvaktRuntime`: follows the power sensor, fills the hour before the start from the recorder's history in a background task (`recorder` is an `after_dependency`; skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG (averages, safe state, penalty, waiting, commands), runs commands in a background task, start/stop, starts when HA has started, safe state, status listeners, `async_save_config()`. |
 | `charger_switches.py` | `ChargerSwitchBoard`: switch positions, saving with the configuration, when the override was switched on (memory only). |
 | `websocket_api.py` | The commands below. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `switch.py` | The entities. |

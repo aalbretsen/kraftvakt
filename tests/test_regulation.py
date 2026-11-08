@@ -5,6 +5,7 @@ reach the appliances.
 """
 
 import asyncio
+import logging
 from datetime import timedelta
 from typing import Any
 
@@ -334,6 +335,27 @@ async def test_incomplete_configuration_does_not_start(
     assert regulation_switch(hass) == STATE_OFF
     assert actions == []
     assert "The configuration is not complete: missing_action" in caplog.text
+
+
+async def test_each_decision_is_logged_for_debugging(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    setup_kraftvakt,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Found in the exploratory test: only the commands were logged, not why."""
+    caplog.set_level(logging.DEBUG, logger="custom_components.kraftvakt.runtime")
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+
+    await advance(hass, freezer)
+
+    assert (
+        "regulation average 2.0 kW, average consumption 2.0 kW, sensor valid True, "
+        "safe state False, penalty False (0.0000 kWh), waiting None, "
+        "commands [TurnOnAppliance(appliance_id='a')]"
+    ) in caplog.text
 
 
 async def test_safe_state_when_the_power_sensor_is_lost(

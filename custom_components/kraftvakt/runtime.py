@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
@@ -48,6 +49,8 @@ from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
 from .regulation.model import Command, DecisionInput, ResetWindowOverride, Waiting
 from .regulation.penalty import PenaltyState
+
+_LOGGER = logging.getLogger(__name__)
 
 type KraftvaktConfigEntry = ConfigEntry[KraftvaktRuntime]
 type WindowListener = Callable[[WindowAverages], None]
@@ -424,7 +427,32 @@ class KraftvaktRuntime:
             time_zone=dt_util.get_default_time_zone(),
         )
         self._windows_since_decision.clear()
-        self._execute(self._engine.decide(decision))
+        commands = self._engine.decide(decision)
+        self._log_decision(decision, commands)
+        self._execute(commands)
+
+    def _log_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
+        """Log what a decision was based on and what it decided, for debugging."""
+        if not _LOGGER.isEnabledFor(logging.DEBUG):
+            return
+        penalty = self._engine.penalty
+        waiting = self._engine.waiting
+        _LOGGER.debug(
+            "Decision at %s: regulation average %s kW, average consumption %s kW, "
+            "sensor valid %s, safe state %s, penalty %s (%.4f kWh), waiting %s, "
+            "commands %s",
+            decision.now.isoformat(timespec="seconds"),
+            _rounded(decision.regulation_average_kw),
+            _rounded(decision.capacity_average_kw),
+            decision.power_sensor_valid,
+            self._engine.safe_state,
+            penalty.active,
+            penalty.overconsumption_kwh,
+            None
+            if waiting is None
+            else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
+            commands or "none",
+        )
 
     def _power_sensor_lost(self) -> bool:
         """Return whether the sensor was invalid at the last two closes."""
@@ -499,6 +527,11 @@ class KraftvaktRuntime:
     def _notify_status(self) -> None:
         for listener in list(self._status_listeners):
             listener()
+
+
+def _rounded(power_kw: float | None) -> float | None:
+    """Return a power rounded to watts for the log."""
+    return None if power_kw is None else round(power_kw, 3)
 
 
 def _power_of(state: State) -> float | None:
