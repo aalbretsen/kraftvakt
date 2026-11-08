@@ -77,7 +77,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   with variant and waiting, chargers with current, bypassed, waiting, excluded
   or outside the charging window.
 - Countdowns are bars, never ticking text: `kraftvakt-countdown-bar` empties
-  from `start` to `end` with the Web Animations API, so it needs no clock,
+  towards the right (what is left sits at the right end) from `start` to `end` with the Web Animations API, so it needs no clock,
   flows smoothly and restarts only when `start` or `end` changes. The exact
   time is a tooltip (clock time). «Next decision» sits at the right end of the
   chips row and empties over one decision interval (`regulation_window_s` ×
@@ -96,8 +96,8 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - Appliances and chargers share one full-width card, «Priority list». An
   «EV charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their
-  reasons under the name. Columns: rank, name, variant, current, waiting and
-  state. The current is one dot per ampere from min to max, filled up to the
+  reasons under the name. Columns, without headings: rank, name, variant,
+  current, waiting and state. The current is one dot per ampere from min to max, filled up to the
   current, with «9 A» after it (smaller dots above 16 steps). On a narrow
   screen the variant goes after the name and the dots under it.
 

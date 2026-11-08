@@ -225,16 +225,6 @@ export class KraftvaktStatusPage extends LitElement {
         ${empty
           ? html`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`
           : html`<div class="list">
-              <div class="row heading">
-                <span class="rank">#</span>
-                <span>${this.localize("status.name")}</span>
-                ${this.narrow
-                  ? nothing
-                  : html`<span>${this.localize("status.variant")}</span>
-                      <span>${this.localize("status.current")}</span>`}
-                <span>${this.localize("status.waiting")}</span>
-                <span>${this.localize("status.state")}</span>
-              </div>
               ${before.map((appliance, index) => this.renderApplianceRow(appliance, index + 1))}
               ${position === null ? nothing : this.renderEvCharging(status.chargers, position + 1)}
               ${after.map((appliance, index) => this.renderApplianceRow(appliance, before.length + index + 2))}
@@ -578,11 +568,6 @@ export class KraftvaktStatusPage extends LitElement {
       padding: 6px 16px;
       border-top: 1px solid var(--divider-color);
       box-sizing: border-box;
-    }
-    .row.heading {
-      min-height: 0;
-      color: var(--secondary-text-color);
-      font-size: var(--ha-font-size-s, 12px);
     }
     .row.group {
       min-height: 40px;

@@ -2,7 +2,8 @@ import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * A bar that empties smoothly from `start` to `end` (milliseconds since the epoch).
+ * A bar that empties smoothly towards the end side from `start` to `end`
+ * (milliseconds since the epoch).
  *
  * The browser animates it, so it needs no clock and never stops before `end`.
  * It starts again when `start` or `end` changes.
@@ -63,7 +64,7 @@ export class KraftvaktCountdownBar extends LitElement {
     .fill {
       height: 100%;
       background: var(--primary-color);
-      transform-origin: left;
+      transform-origin: right;
     }
   `;
 }
