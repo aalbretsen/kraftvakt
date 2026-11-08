@@ -441,7 +441,7 @@ class KraftvaktRuntime:
             "Decision at %s: regulation average %s kW, average consumption %s kW, "
             "sensor valid %s, safe state %s, penalty %s (%.4f kWh), waiting %s, "
             "commands %s",
-            decision.now.isoformat(timespec="seconds"),
+            dt_util.as_local(decision.now).isoformat(timespec="seconds"),
             _rounded(decision.regulation_average_kw),
             _rounded(decision.capacity_average_kw),
             decision.power_sensor_valid,

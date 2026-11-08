@@ -20,6 +20,7 @@ from homeassistant.const import (
 from homeassistant.core import CoreState, HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -351,6 +352,7 @@ async def test_each_decision_is_logged_for_debugging(
 
     await advance(hass, freezer)
 
+    assert f"Decision at {dt_util.now().isoformat(timespec='seconds')}:" in caplog.text
     assert (
         "regulation average 2.0 kW, average consumption 2.0 kW, sensor valid True, "
         "safe state False, penalty False (0.0000 kWh), waiting None, "
