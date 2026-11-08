@@ -141,8 +141,9 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
   ladetidsrommet. Under «Ladenivå» og gjeldende ladestrøm står én strek per
   ampere fra minste til største ladestrøm, fylt opp til gjeldende ladestrøm.
-  Apparatet eller elbilladeren som står for tur, har «Slås på» over en stolpe
-  som tømmes jevnt frem til avgjørelsen der det slås på.
+  Apparatet eller elbilladeren som står for tur, har «Forsinkelse før
+  påslag» over en stolpe som tømmes jevnt frem til avgjørelsen der det slås
+  på.
 
 ## Entiteter
 

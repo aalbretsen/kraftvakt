@@ -81,7 +81,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.
-- The waiting column shows the label «Turning on» above a
+- The waiting column shows the label «Turn-on delay» above a
   `kraftvakt-countdown-bar` (6 px, the text colour on a grey track) that empties towards
   the right from `waiting_since` to `waiting_ends_at`, the decision that turns
   the slot on, animated by the browser like the ring. The label is the same
@@ -108,7 +108,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   with no text beside the bars. On a narrow screen the variant goes after the
   name, and the label and the ampere bars (always the narrow 2 px bars) go on
   one line under it, wrapping only when they do not fit. The waiting label
-  may wrap to two lines there, since the column is 48 px.
+  may wrap to two lines, always so on a narrow screen (48 px column).
 
 ## Home Assistant components
 

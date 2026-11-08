@@ -290,7 +290,7 @@ export class KraftvaktStatusPage extends LitElement {
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
-        <span class="indicator-label">${this.localize("status.turning_on")}</span>
+        <span class="indicator-label">${this.localize("status.turn_on_delay")}</span>
         <kraftvakt-countdown-bar
           .start=${Date.parse(item.waiting_since)}
           .end=${Date.parse(item.waiting_ends_at)}
@@ -606,6 +606,9 @@ export class KraftvaktStatusPage extends LitElement {
       gap: 4px;
       text-align: end;
     }
+    .waiting .indicator-label {
+      white-space: normal;
+    }
     .amperes {
       display: flex;
       flex-direction: column;
@@ -647,10 +650,6 @@ export class KraftvaktStatusPage extends LitElement {
     }
     :host([narrow]) .ampere {
       width: 2px;
-    }
-    :host([narrow]) .waiting .indicator-label {
-      white-space: normal;
-      text-align: end;
     }
     :host([narrow]) .row {
       grid-template-columns: 20px minmax(0, 1fr) ${unsafeCSS(WAITING_WIDTH_NARROW)}px auto;
