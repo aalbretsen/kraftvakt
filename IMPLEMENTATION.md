@@ -735,10 +735,10 @@ branch (CLAUDE.md).
 
 ### Fase 10 – Ferdigstilling
 
-- [ ] Gjennomgang av sporbarheten i kapittel 8 mot testene.
-- [ ] README: oppsett, konfigurasjon, entiteter, eksempler på maler og handlinger.
-- [ ] Oppdater tekstene i `strings.json`/oversettelsene (i dag står det «kWh-mål», kravene bruker «effektgrense»).
-- [ ] Manuell test mot lokal HA med simulert effektsensor.
+- [x] Gjennomgang av sporbarheten i kapittel 8 mot testene. Kapittel 8 har nå én rad per krav. Krav uten egen test fikk test: GEN-002 (manifestet), GEN-005 og GEN-006 (tilstanden til apparatene leses ikke), SPR-001 (engelske navn som standard) og GUI-004 (ingen felt i config flow). GUI-002 og GUI-011 ligger bare i panelet og er testet manuelt.
+- [x] README: oppsett, slik virker det, konfigurasjon, statussiden, entiteter, eksempler på maler og handlinger, simulert effektsensor for utvikling og ny statuslinje.
+- [x] Oppdater tekstene i `strings.json`/oversettelsene og README til «effektgrense». Panelets tekster brukte allerede kravenes begreper.
+- [x] Manuell test mot lokal HA 2026.10.4 med simulert effektsensor (`input_number` og mal-sensor), `input_boolean` som apparater og elbillader, reguleringsvindu 10 s og ventetid 1 min. Testet 2026-11-08: integrasjonen legges til uten felt, effektsensor og vindu settes i panelet, start slår av alt (også apparater som var slått på for hånd) og setter ladestrømmen til minste før deaktivering, apparatene slås på ett og ett med ventetid, elbilladeren uten ladeeffekt blir forbigått på 6 A og får mer strøm når bilen trekker strøm, bytte til varianten «Morgen» slår apparatet av og på igjen, 12 kW slår av det lavest prioriterte først (bassengvarmeren, så ett ampere), sensoren utilgjengelig gir sikker tilstand etter to vinduer, gyldig verdi fyller snittene og starter på nytt, reload med 20 kW gir straff med overforbruk på statussiden, og straffen slutter når overforbruket er hentet inn. Bryteren stopper reguleringen. «Rediger i YAML» i handlingsredigereren er bekreftet. Funn som ikke er rettet: nedtellingen til neste avgjørelse kan vise ett sekund for mye (0:11 med vindu 10 s) rett etter en avgjørelse, fordi panelet regner med klokka fra forrige sekund. Nettleseren brukte en gammel bundle fra en tidligere test på samme port, fordi URL-en bare har versjonen (står i README).
 - [ ] Versjon 1.0.0 i `manifest.json` og `pyproject.toml`.
 
 ---
