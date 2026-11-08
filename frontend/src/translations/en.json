@@ -38,6 +38,7 @@
     "penalty_chip": "Penalty period: {value}",
     "yes": "yes",
     "no": "no",
+    "next_decision": "Next decision",
     "next_decision_at": "Next decision at {time}",
     "priority_list": "Priority list",
     "ev_charging": "EV charging",

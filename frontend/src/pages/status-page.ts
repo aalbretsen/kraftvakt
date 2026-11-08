@@ -160,17 +160,16 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** A ring that empties until the next decision, with the time as a tooltip. */
+  /** «Next decision» and a ring that empties until it, with the time as a tooltip. */
   private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
     const end = Date.parse(nextDecisionAt);
     const interval = status.regulation_window_s * status.regulation_interval * 1000;
     const time = formatClockTime(this.hass.language, nextDecisionAt);
     return html`
-      <kraftvakt-countdown-ring
-        title=${this.localize("status.next_decision_at", { time })}
-        .start=${end - interval}
-        .end=${end}
-      ></kraftvakt-countdown-ring>
+      <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
+        ${this.localize("status.next_decision")}
+        <kraftvakt-countdown-ring .start=${end - interval} .end=${end}></kraftvakt-countdown-ring>
+      </span>
     `;
   }
 
@@ -624,6 +623,11 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row > .chip {
       justify-self: start;
+    }
+    .next-decision {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
     .windows-left {
       display: flex;
