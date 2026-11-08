@@ -76,6 +76,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   the limit, next decision, safe state and penalty with what is left, appliances
   with variant and waiting, chargers with current, bypassed, waiting, excluded
   or outside the charging window. Countdowns read the clock when they render.
+- The average consumption comes first: its tile is to the left and it is the
+  thick bar in the primary (blue) colour. The regulation average is the second
+  tile and a thin line in the text colour on top, so it shows against the blue
+  bar and the empty track. Under each average value is the time it covers
+  («over 1 hour», «over 60 s» from `regulation_window_s`).
 
 ## Home Assistant components
 

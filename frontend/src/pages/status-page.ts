@@ -103,12 +103,18 @@ export class KraftvaktStatusPage extends LitElement {
     return html`
       ${status.safe_state ? this.renderSafeState() : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <div class="stats">
-        ${this.renderStat("regulation-average", "status.regulation_average", formatPower(language, status.regulation_average_kw))}
         ${this.renderStat(
           "capacity-average",
           "status.capacity_average",
           formatPower(language, status.capacity_average_kw),
+          this.localize("status.average_over_hour"),
           overLimit(status.capacity_average_kw),
+        )}
+        ${this.renderStat(
+          "regulation-average",
+          "status.regulation_average",
+          formatPower(language, status.regulation_average_kw),
+          this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
         ${this.renderStat("", "status.power_limit", formatPower(language, status.power_limit_kw))}
       </div>
@@ -150,11 +156,12 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  private renderStat(swatch: string, label: Parameters<Localize>[0], value: string, alarm = false) {
+  private renderStat(swatch: string, label: Parameters<Localize>[0], value: string, period?: string, alarm = false) {
     return html`
       <div class="stat">
         <div class="stat-label">${swatch ? html`<span class="swatch ${swatch}"></span>` : nothing}${this.localize(label)}</div>
         <div class="stat-value ${alarm ? "alarm" : ""}">${value} <small>kW</small></div>
+        ${period ? html`<div class="stat-period">${period}</div>` : nothing}
       </div>
     `;
   }
@@ -177,8 +184,8 @@ export class KraftvaktStatusPage extends LitElement {
           </span>
         </div>
         <div class="bar">
-          <div class="fill regulation-average" style="width: ${percent(regulation)}"></div>
           <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
+          <div class="fill regulation-average" style="width: ${percent(regulation)}"></div>
           <div class="limit" style="left: ${percent(status.power_limit_kw)}"></div>
         </div>
         <div class="scale">
@@ -427,6 +434,10 @@ export class KraftvaktStatusPage extends LitElement {
     .stat-value {
       font-size: 26px;
     }
+    .stat-period {
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+    }
     .stat-value small {
       font-size: var(--ha-font-size-m, 14px);
       color: var(--secondary-text-color);
@@ -450,11 +461,11 @@ export class KraftvaktStatusPage extends LitElement {
       height: 8px;
       border-radius: 4px;
     }
-    .regulation-average {
+    .capacity-average {
       background: var(--primary-color);
     }
-    .capacity-average {
-      background: color-mix(in srgb, var(--primary-text-color) 55%, transparent);
+    .regulation-average {
+      background: var(--primary-text-color);
     }
     .meter .bar {
       position: relative;
@@ -469,7 +480,7 @@ export class KraftvaktStatusPage extends LitElement {
       bottom: 0;
       border-radius: 6px;
     }
-    .meter .fill.capacity-average {
+    .meter .fill.regulation-average {
       top: 4px;
       bottom: 4px;
     }

@@ -182,6 +182,7 @@ Status snapshot:
   "regulation_average_kw": 7.42,
   "capacity_average_kw": 8.10,
   "power_limit_kw": 10.0,
+  "regulation_window_s": 60,
   "next_decision_at": "2026-11-07T12:01:00+01:00",
   "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_until": null } ],
   "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "waiting_until": null } ]

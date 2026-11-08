@@ -129,8 +129,8 @@ Statussiden viser om reguleringen kjører, og har knappen for å starte og stopp
 den. Er konfigurasjonen ikke fullstendig, står det hva som mangler, med lenke
 til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 
-- reguleringssnittet og snittforbruket mot effektgrensen, og tid til neste
-  avgjørelse,
+- snittforbruket og reguleringssnittet mot effektgrensen, med tiden hvert snitt
+  dekker, og tid til neste avgjørelse,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
   gjenstående overforbruk,
 - apparatene i prioritert rekkefølge, om de er på eller av, gjeldende variant
