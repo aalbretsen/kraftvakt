@@ -7,7 +7,7 @@
 # - ruff: versjonen i HA core sine testkrav for samme HA-versjon
 # Dependabot foreslår oppdateringer hver uke.
 
-homeassistant==2026.10.4
+homeassistant==2026.11.0
 home-assistant-frontend==20260930.5
 pytest==9.0.3
 pytest-asyncio==1.4.0
