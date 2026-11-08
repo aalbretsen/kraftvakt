@@ -94,7 +94,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   panel (`measuredPowerKw()`, same units as the backend), so it updates live;
   the meter does not show it.
 - The average consumption comes first: its tile is to the left and it is the
-  thick bar in the primary (blue) colour. The regulation average is the second
+  thick bar in the grid colour. The regulation average is the second
   tile and a thin line in the text colour on top, so it shows against the blue
   bar and the empty track. Under each average value is the time it covers
   («over 1 hour», «over 60 s» from `regulation_window_s`).
@@ -109,6 +109,18 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   name, and the label and the ampere bars (always the narrow 2 px bars) go on
   one line under it, wrapping only when they do not fit. The waiting label
   may wrap to two lines, always so on a narrow screen (48 px column).
+- Colours come from Home Assistant's theme variables, set once on `:host`:
+  `--kraftvakt-grid-color` (the Energy dashboard's `--energy-grid-consumption-
+  color`) for the average consumption, `--kraftvakt-ev-color` (`--teal-color`)
+  for the ampere bars, the «EV charging» icon and a faint tint (`color-mix`, 7
+  %) behind the «EV charging» row and its chargers, and `--kraftvakt-on-color`
+  (`--state-active-color`) for the icon of an appliance that is on. Each
+  appliance shows its entity's icon with `ha-state-icon` (a flash icon when
+  the entity is missing), and each charger the EV station icon in the EV
+  colour while activated; icons of what is off are in `--state-inactive-color`
+  and the name is dimmed. «Safe state» and «Penalty period» chips show only
+  while active, in the alarm colour. The owner chose these over warning
+  colours near the limit.
 
 ## Home Assistant components
 
@@ -117,7 +129,7 @@ to use: `ha-form` with selectors (`text`, `number`, `select`, `entity`,
 `template`, `action`, `time`, `boolean`), `ha-selector`, `ha-sortable` (listen
 to `item-moved` and re-render; it does not move elements), `ha-dialog`,
 `ha-card`, `ha-alert`, `ha-button`, `ha-icon-button`, `ha-svg-icon`,
-`ha-switch`, `ha-formfield`, `ha-settings-row`, `ha-expansion-panel`,
+`ha-state-icon` (`.hass`, `.stateObj`), `ha-switch`, `ha-formfield`, `ha-settings-row`, `ha-expansion-panel`,
 `ha-md-list-item`, `ha-code-editor`, `ha-yaml-editor`, `ha-menu-button`,
 `ha-tab-group` with `ha-tab-group-tab` (event `wa-tab-show`).
 

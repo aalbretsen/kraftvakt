@@ -134,9 +134,10 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 - en ring som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
   holder musen over,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
-  gjenstående overforbruk,
+  gjenstående overforbruk. Dette vises bare når det inntreffer,
 - prioritetslisten med apparatene i prioritert rekkefølge, om de er på eller
-  av, og gjeldende variant. Der «Elbillading» står i listen, står
+  av, og gjeldende variant. Ikonet til et apparat som er på, er gult, som i
+  Home Assistant. Der «Elbillading» står i listen, står
   elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
   aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
   ladetidsrommet. Under «Lader med» og gjeldende ladestrøm står én strek per

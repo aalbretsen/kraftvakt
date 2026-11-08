@@ -1,4 +1,4 @@
-import { mdiEvStation, mdiPlay, mdiStop } from "@mdi/js";
+import { mdiCarElectric, mdiEvStation, mdiFlash, mdiPlay, mdiStop } from "@mdi/js";
 import { LitElement, css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
@@ -128,12 +128,8 @@ export class KraftvaktStatusPage extends LitElement {
       </div>
       ${this.renderMeter(status)}
       <div class="facts">
-        <span class="chip ${status.safe_state ? "alarm" : "off"}">
-          ${this.localize("status.safe_state_chip", { value: this.yesNo(status.safe_state) })}
-        </span>
-        <span class="chip ${status.penalty.active ? "alarm" : "off"}">
-          ${this.localize("status.penalty_chip", { value: this.yesNo(status.penalty.active) })}
-        </span>
+        ${status.safe_state ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>` : nothing}
+        ${status.penalty.active ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>` : nothing}
         <span class="spacer"></span>
         ${status.next_decision_at ? this.renderNextDecision(status, status.next_decision_at) : nothing}
       </div>
@@ -240,15 +236,28 @@ export class KraftvaktStatusPage extends LitElement {
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     const variant = appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing;
     return html`
-      <div class="row">
+      <div class="row ${appliance.on ? "" : "off"}">
         <span class="rank">${rank}</span>
         <div class="row-main">
-          <div class="row-title">${appliance.name} ${this.narrow ? variant : nothing}</div>
+          <div class="row-title">
+            ${this.renderApplianceIcon(appliance)}<span class="name">${appliance.name}</span>
+            ${this.narrow ? variant : nothing}
+          </div>
         </div>
         ${this.narrow ? nothing : html`<span>${variant}</span><span></span>`} ${this.renderWaiting(appliance)}
         ${this.renderOnOff(appliance.on, "status.on", "status.off")}
       </div>
     `;
+  }
+
+  /** The icon of the appliance's entity, coloured like Home Assistant colours a switch that is on. */
+  private renderApplianceIcon(appliance: ApplianceStatus) {
+    const entityId = this.config?.config.appliances.find((item) => item.id === appliance.id)?.entity_id;
+    const stateObj = entityId ? this.hass.states[entityId] : undefined;
+    const on = appliance.on ? "on" : "";
+    return stateObj
+      ? html`<ha-state-icon class="device-icon ${on}" .hass=${this.hass} .stateObj=${stateObj}></ha-state-icon>`
+      : html`<ha-svg-icon class="device-icon ${on}" .path=${mdiFlash}></ha-svg-icon>`;
   }
 
   /** The «EV charging» entry, with each EV charger in the current charging priority under it. */
@@ -257,7 +266,10 @@ export class KraftvaktStatusPage extends LitElement {
       <div class="row group">
         <span class="rank">${rank}</span>
         <div class="row-main">
-          <div class="row-title">${this.localize("status.ev_charging")}</div>
+          <div class="row-title">
+            <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
+            <span class="name">${this.localize("status.ev_charging")}</span>
+          </div>
           ${chargers.length === 0 ? html`<div class="row-sub">${this.localize("status.no_chargers")}</div>` : nothing}
         </div>
       </div>
@@ -265,11 +277,12 @@ export class KraftvaktStatusPage extends LitElement {
         const details = this.chargerDetails(charger);
         const amperes = this.renderAmperes(charger);
         return html`
-          <div class="row charger">
+          <div class="row charger ${charger.activated ? "" : "off"}">
             <span class="rank"></span>
             <div class="row-main">
               <div class="row-title">
-                <ha-svg-icon .path=${mdiEvStation}></ha-svg-icon><span class="charger-name">${charger.name}</span>
+                <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
+                <span class="name charger-name">${charger.name}</span>
               </div>
               ${this.narrow ? html`<div class="row-sub">${amperes}</div>` : nothing}
               ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
@@ -345,10 +358,6 @@ export class KraftvaktStatusPage extends LitElement {
     return html`<span class="state chip ${on ? "on" : "off"}"><span class="dot"></span>${this.localize(on ? onText : offText)}</span>`;
   }
 
-  private yesNo(value: boolean): string {
-    return this.localize(value ? "status.yes" : "status.no");
-  }
-
   private renderStopped(status: StatusSnapshot) {
     if (status.missing.length === 0) {
       return html`<ha-alert alert-type="info">${this.localize("status.stopped_info")}</ha-alert>`;
@@ -396,6 +405,9 @@ export class KraftvaktStatusPage extends LitElement {
   static styles = css`
     :host {
       display: block;
+      --kraftvakt-grid-color: var(--energy-grid-consumption-color, #488fc2);
+      --kraftvakt-ev-color: var(--teal-color, #009688);
+      --kraftvakt-on-color: var(--state-active-color, var(--amber-color, #ffc107));
     }
     .cards {
       display: grid;
@@ -418,7 +430,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .card-content {
       display: grid;
-      gap: 12px;
+      gap: 16px;
       padding: 0 16px 16px;
     }
     .card-content:empty {
@@ -506,7 +518,7 @@ export class KraftvaktStatusPage extends LitElement {
       border-radius: 4px;
     }
     .capacity-average {
-      background: var(--primary-color);
+      background: var(--kraftvakt-grid-color);
     }
     .regulation-average {
       background: var(--primary-text-color);
@@ -582,8 +594,15 @@ export class KraftvaktStatusPage extends LitElement {
     .row.group {
       min-height: 40px;
     }
+    .row.group,
+    .row.charger {
+      background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
+    }
     .row.charger {
       border-top-style: dashed;
+    }
+    .row.off .name {
+      color: var(--secondary-text-color);
     }
     .row.charger .row-main {
       padding-inline-start: 16px;
@@ -632,7 +651,7 @@ export class KraftvaktStatusPage extends LitElement {
       width: 2px;
     }
     .ampere.on {
-      background: var(--primary-color);
+      background: var(--kraftvakt-ev-color);
     }
     .indicator-label {
       color: var(--secondary-text-color);
@@ -667,10 +686,18 @@ export class KraftvaktStatusPage extends LitElement {
       flex: 1;
       min-width: 0;
     }
-    .row-title ha-svg-icon {
+    .row-title ha-svg-icon,
+    .row-title ha-state-icon {
       flex: none;
       --mdc-icon-size: 20px;
-      color: var(--secondary-text-color);
+      color: var(--state-inactive-color, var(--secondary-text-color));
+    }
+    .row-title .device-icon.on {
+      color: var(--kraftvakt-on-color);
+    }
+    .row-title .device-icon.ev.on,
+    .row-title .ev-icon {
+      color: var(--kraftvakt-ev-color);
     }
     .row-sub {
       color: var(--secondary-text-color);
