@@ -318,7 +318,9 @@ uv run ruff format --check .
 
 Koden ligger i `custom_components/kraftvakt/`. Reguleringen er ren Python uten
 Home Assistant i `regulation/`, og `runtime.py` kobler den til Home Assistant.
-Testene ligger i `tests/`, med enhetstester i `tests/unit/`.
+Testene ligger i `tests/`, med enhetstester i `tests/unit/`. Simulatoren
+ligger i `simulator/`, og testene for den i `tests/simulator/` og
+`tests/unit/simulator/`.
 
 Instruksjoner til Claude Code står i `CLAUDE.md` og i skill-filene i
 `.claude/skills/`. Der står også hvordan reguleringen skal virke, i detalj.
@@ -359,39 +361,59 @@ brukeren i Home Assistant.
 
 ### Lokal Home Assistant
 
-Kjør en lokal Home Assistant mot repoet:
+Kjør en lokal Home Assistant mot repoet. `config/custom_components/` er en
+vanlig mappe med én lenke til Kraftvakt og én til simulatoren:
 
 ```bash
-ln -s ../custom_components config/custom_components
+mkdir -p config/custom_components
+ln -s ../../custom_components/kraftvakt config/custom_components/kraftvakt
+ln -s ../../simulator/custom_components/kraftvakt_simulator config/custom_components/kraftvakt_simulator
 uv run hass -c config
 ```
 
-For å teste uten HAN-port kan effektsensoren simuleres med en `input_number`
-og en mal-sensor i `config/configuration.yaml`. Bruk `input_boolean` som
-apparater, og endre effekten for å se reguleringen slå apparatene av og på:
+### Simulator
 
-```yaml
-input_number:
-  husets_effekt:
-    name: Husets effekt
-    min: 0
-    max: 20000
-    step: 100
-    unit_of_measurement: W
-    mode: box
+Simulatoren gjør det mulig å teste Kraftvakt uten HAN-port og ekte apparater.
+Den er en egen integrasjon, **Kraftvakt simulator**, i
+`simulator/custom_components/kraftvakt_simulator/`. Den ligger utenfor
+`custom_components/` og blir derfor ikke installert av HACS, og den brukes bare
+med en lokal Home Assistant.
 
-input_boolean:
-  varmtvannsbereder:
-    name: Varmtvannsbereder
+Legg til integrasjonen under **Innstillinger → Enheter og tjenester**, og legg
+til én enhet om gangen med **Legg til enhet**:
 
-template:
-  - sensor:
-      - name: HAN effekt
-        unit_of_measurement: W
-        device_class: power
-        state_class: measurement
-        state: "{{ states('input_number.husets_effekt') }}"
-```
+- **HAN:** husets effekt (`sensor.han_effekt`, eller `sensor.han_power` på
+  engelsk, når enheten heter «HAN»). Den er bakgrunnsforbruket pluss effekten
+  til alle de simulerte enhetene. Bakgrunnsforbruket er en `number`-entitet som
+  kan endres mens Home Assistant kjører. Det kan bare finnes én HAN.
+- **Varmeapparat:** varmekabler, varmtvannsbereder eller panelovn, med effekt
+  (W), driftsandel (0–100 %) og periode (minutter). Apparatet har en bryter og
+  en effektsensor. Mens bryteren er på, varmer det i en fast syklus som starter
+  med den avslåtte delen: 750 W, 25 % og 60 minutter gir 45 minutter av og 15
+  minutter på, om igjen og om igjen. Syklusen starter på nytt hver gang
+  bryteren slås på. Med bryteren av bruker apparatet ingenting.
+- **Elbillader:** trefaset 400 V med minste og største ladestrøm. Den har
+  bryterne **Lading tillatt**, **Bil tilkoblet** og **Bil fulladet**,
+  **Ladestrøm** (A) og sensoren **Ladeeffekt**. Laderen trekker
+  √3 × 400 V × ladestrømmen (6 A gir 4,16 kW) når lading er tillatt, en bil er
+  tilkoblet og bilen ikke er fulladet.
+
+Innstillingene kan endres med **Konfigurer på nytt**. Bryterne og ladestrømmen
+beholder stillingen over en omstart.
+
+Sett så opp Kraftvakt mot simulatoren: HAN-ens effektsensor som effektsensor,
+bryterne til varmeapparatene som apparater, og for hver elbillader:
+
+| Felt i Kraftvakt | Verdi |
+|---|---|
+| Entitet | `switch.<lader>_lading_tillatt` |
+| Aktiver og deaktiver | Standard |
+| Sett ladestrøm | Egendefinert handling med `number.set_value` mot `number.<lader>_ladestrom` og `value: "{{ current }}"` |
+| Sensor for ladeeffekt | `sensor.<lader>_ladeeffekt` |
+| Bil tilkoblet | `switch.<lader>_bil_tilkoblet` |
+
+Endre bakgrunnsforbruket og bryterne for bilen, og se reguleringen på
+statussiden.
 
 ### WebSocket-API
 

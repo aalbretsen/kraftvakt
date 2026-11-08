@@ -1,9 +1,13 @@
 # Minimal konfigurasjon for lokal utvikling:
 #   hass -c config
-# custom_components lenkes inn med:  ln -s ../custom_components config/custom_components
+# Kraftvakt og simulatoren lenkes inn med:
+#   mkdir -p config/custom_components
+#   ln -s ../../custom_components/kraftvakt config/custom_components/kraftvakt
+#   ln -s ../../simulator/custom_components/kraftvakt_simulator config/custom_components/kraftvakt_simulator
 default_config:
 
 logger:
   default: info
   logs:
     custom_components.kraftvakt: debug
+    custom_components.kraftvakt_simulator: debug
