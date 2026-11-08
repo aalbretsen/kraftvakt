@@ -15,11 +15,13 @@ Kraftvakt styrer hvilke effektkrevende apparater som får bruke strøm, i
 prioritert rekkefølge. Eksempler er varmtvannsbereder, varmekabler og
 elbillader. Den er rettet mot det norske strømmarkedet og holder
 snittforbruket siste time rett under en valgt effektgrense, slik at du unngår
-et dyrere trinn i kapasitetsleddet i nettleien. Konfigureres fra et eget panel i sidemenyen.
+et dyrere trinn i kapasitetsleddet i nettleien. Alt settes opp i et eget panel
+i sidemenyen. Kraftvakt kjører helt lokalt, uten skytjenester.
 
-> **Status:** Tidlig utvikling. Integrasjonen måler effekten og regulerer
-> vanlige apparater og elbilladere, med straff og sikker tilstand. Alt settes
-> opp i panelet, som har en statusside og sider for konfigurasjonen.
+> **Status:** Alle kravene i [kravspesifikasjonen](REQUIREMENTS.md) er
+> implementert: måling, regulering av apparater med varianter, elbillading,
+> straff, sikker tilstand og panelet. Kraftvakt er testet automatisk og manuelt
+> mot Home Assistant 2026.10.4, men har ennå lite erfaring fra virkelig drift.
 
 ## Krav
 
@@ -44,6 +46,41 @@ Home Assistant og start på nytt.
 2. Søk etter **Kraftvakt** og fullfør oppsettet. Det er ingen innstillinger her.
 3. Åpne **Kraftvakt** i sidemenyen, eller trykk på tannhjulet for integrasjonen,
    og sett opp effektsensor, effektgrense, apparater og eventuelt elbilladere.
+4. Trykk **Lagre**, gå til **Status** og trykk **Start regulering**.
+
+Effektsensoren er en sensor fra en annen integrasjon som måler husets totale
+effekt, typisk fra HAN-porten på strømmåleren.
+
+## Slik virker det
+
+- **Effektgrense:** høyeste tillatte gjennomsnittseffekt, for eksempel 10 kW.
+  Den tilsvarer trinnet i kapasitetsleddet du vil holde deg under.
+- **Reguleringssnitt:** gjennomsnittet av effektsensoren over et kort
+  reguleringsvindu, standard 60 sekunder. Det styrer reguleringen.
+- **Snittforbruk:** glidende gjennomsnitt over siste time. Det er dette
+  nettselskapet måler, og det som skal holdes under effektgrensen.
+- **Avgjørelser:** Ved hvert reguleringsintervall avgjør reguleringen om et
+  apparat skal slås på eller av. Er reguleringssnittet over effektgrensen,
+  slås det lavest prioriterte apparatet som er på, av. Er det ledig effekt,
+  slås det neste apparatet i prioritetslisten på, ett om gangen og etter en
+  ventetid. Ventetiden er kortere jo lavere reguleringssnittet er, og den øker
+  når det samme apparatet slås av og på gang på gang.
+- **Effektreserve:** valgfri ledig effekt som må finnes før et apparat slås på,
+  for eksempel 4 kW for en bassengvarmer som trekker mye straks den slås på.
+- **Varianter:** Et apparat kan ha varianter med en annen plass i
+  prioritetslisten, for eksempel høyere prioritet om morgenen.
+- **Straff:** Går snittforbruket over effektgrensen pluss straffeterskelen,
+  slås alle apparater av til overforbruket er hentet inn. Straffen er en
+  sikkerhetsventil og skal normalt aldri inntre.
+- **Sikker tilstand:** Mangler effektsensoren gyldig verdi, slås alle
+  apparater av til den kommer tilbake.
+
+Kraftvakt vet ikke hva et apparat faktisk bruker, og leser ikke om det står på.
+Den regner med at apparatene står slik Kraftvakt sist bestemte. Ikke slå
+regulerte apparater av eller på utenom Kraftvakt, for det kan forstyrre
+reguleringen, gå ut over apparater med høyere prioritet og utløse straff.
+Unntaket er elbilladere, der Kraftvakt leser ladeeffekt og om en bil er
+tilkoblet.
 
 ## Konfigurasjon i panelet
 
@@ -79,6 +116,22 @@ ikke før de er rettet. Panelet spør før ulagrede endringer forkastes.
 Konfigurasjonen kan bare endres mens reguleringen er stoppet. Mens den kjører,
 er konfigurasjonssidene låst og viser knappen **Stopp regulering**. En lagret
 konfigurasjon tas i bruk neste gang reguleringen startes.
+
+## Statussiden
+
+Statussiden viser om reguleringen kjører, og har knappen for å starte og stoppe
+den. Er konfigurasjonen ikke fullstendig, står det hva som mangler, med lenke
+til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
+
+- reguleringssnittet og snittforbruket mot effektgrensen, og tid til neste
+  avgjørelse,
+- om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
+  gjenstående overforbruk,
+- apparatene i prioritert rekkefølge, om de er på eller av, gjeldende variant
+  og hvor lenge apparatet som står for tur, venter,
+- elbilladerne i gjeldende ladeprioritering, om de er aktivert, ladestrømmen,
+  og om de er forbigått, ventende, utenfor regulering eller utenfor
+  ladetidsrommet.
 
 ## Entiteter
 
@@ -160,6 +213,83 @@ beholdes.
 Handlingen for ladestrøm får i tillegg variablene `current`, `min_current` og
 `max_current`. `current` ligger alltid mellom minste og største ladestrøm.
 
+## Eksempler på maler og handlinger
+
+Maler skrives med Home Assistants malspråk (Jinja2), og handlinger er de samme
+som i automasjoner og skript. I handlingsredigereren kan du bytte til YAML via
+menyen ⋮ og lime inn eksemplene. Alle maler og handlinger får variablene
+`entity_id` (apparatets eller elbilladerens entitet) og `entity` (tilstanden
+til entiteten, for eksempel `entity.state` og `entity.attributes`). Byttes
+entiteten ut, virker malene fortsatt.
+
+En mal er sann bare når den gir den boolske verdien sann. Alt annet, også en
+feil i malen, regnes som usann. En entitet er sann bare når den er `on`.
+
+**Variant «Morgen»** som gir varmtvannsberederen høyere prioritet mellom
+klokken 05 og 08:
+
+```jinja
+{{ 5 <= now().hour < 8 }}
+```
+
+**Variant «Kaldt»** for en varmepumpe når det er under 18 grader inne. `entity`
+er apparatets egen entitet:
+
+```jinja
+{{ entity.attributes.current_temperature | float(99) < 18 }}
+```
+
+**Bil tilkoblet** ut fra statussensoren til laderen:
+
+```jinja
+{{ states('sensor.lader_garasje_status') in ['connected', 'charging', 'awaiting_start'] }}
+```
+
+**Slå på** et apparat ved å sette en temperatur i stedet for å slå det på:
+
+```yaml
+- action: climate.set_temperature
+  target:
+    entity_id: "{{ entity_id }}"
+  data:
+    temperature: 22
+```
+
+**Slå av** det samme apparatet ved å sette det til frostsikring:
+
+```yaml
+- action: climate.set_temperature
+  target:
+    entity_id: "{{ entity_id }}"
+  data:
+    temperature: 8
+```
+
+**Sett ladestrøm** når laderen har en egen `number`-entitet for ladestrøm:
+
+```yaml
+- action: number.set_value
+  target:
+    entity_id: number.lader_garasje_ladestrom
+  data:
+    value: "{{ current }}"
+```
+
+**Sett ladestrøm** med en tjeneste fra laderens integrasjon, som tar
+strømmen per fase:
+
+```yaml
+- action: min_lader.set_current
+  data:
+    charger_id: garasje
+    phase1: "{{ current }}"
+    phase2: "{{ current }}"
+    phase3: "{{ current }}"
+```
+
+`min_lader.set_current` er et eksempel. Bruk tjenesten og feltene laderens
+integrasjon har.
+
 ## Utvikling
 
 Krever Python 3.14.2 eller nyere, som Home Assistant 2026.10.4 krever.
@@ -199,7 +329,9 @@ npm run typecheck
 npm run build
 ```
 
-`npm run watch` bygger på nytt ved hver endring. Tekstene i panelet ligger i
+`npm run watch` bygger på nytt ved hver endring. Bundlen lastes med versjonen
+fra `manifest.json` i URL-en, så nettleseren kan bruke en gammel bundle etter
+et nytt bygg. Last da siden på nytt uten hurtigbuffer. Tekstene i panelet ligger i
 `frontend/src/translations/` (engelsk og norsk) og velges ut fra språket til
 brukeren i Home Assistant.
 
@@ -208,6 +340,33 @@ Kjør en lokal Home Assistant mot repoet:
 ```bash
 ln -s ../custom_components config/custom_components
 uv run hass -c config
+```
+
+For å teste uten HAN-port kan effektsensoren simuleres med en `input_number`
+og en mal-sensor i `config/configuration.yaml`. Bruk `input_boolean` som
+apparater, og endre effekten for å se reguleringen slå apparatene av og på:
+
+```yaml
+input_number:
+  husets_effekt:
+    name: Husets effekt
+    min: 0
+    max: 20000
+    step: 100
+    unit_of_measurement: W
+    mode: box
+
+input_boolean:
+  varmtvannsbereder:
+    name: Varmtvannsbereder
+
+template:
+  - sensor:
+      - name: HAN effekt
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{{ states('input_number.husets_effekt') }}"
 ```
 
 ### WebSocket-API
