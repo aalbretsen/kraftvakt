@@ -89,8 +89,8 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   tooltip. The owner settled on the smooth bar, because a wait can span very
   many regulation windows; one block per window and a ring were tried and
   turned down.
-- The tiles are, from the left, «Consumption now», average consumption,
-  regulation average and the power limit. «Consumption now» is the power
+- The tiles are, from the left, «Consumption now», regulation average,
+  average consumption and the power limit. «Consumption now» is the power
   sensor's state read in the panel (`measuredPowerKw()`, same units as the
   backend), so it updates live. Under each average value is the time it covers
   («over 1 hour», «over 60 s» from `regulation_window_s`).

@@ -118,17 +118,17 @@ export class KraftvaktStatusPage extends LitElement {
       <div class="stats">
         ${this.renderStat("power-now", "status.power_now", formatPower(language, powerNow), this.localize("status.momentary"))}
         ${this.renderStat(
+          "regulation-average",
+          "status.regulation_average",
+          formatPower(language, status.regulation_average_kw),
+          this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
+        )}
+        ${this.renderStat(
           "capacity-average",
           "status.capacity_average",
           formatPower(language, status.capacity_average_kw),
           this.localize("status.average_over_hour"),
           overLimit(status.capacity_average_kw),
-        )}
-        ${this.renderStat(
-          "regulation-average",
-          "status.regulation_average",
-          formatPower(language, status.regulation_average_kw),
-          this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
         ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_kw))}
       </div>

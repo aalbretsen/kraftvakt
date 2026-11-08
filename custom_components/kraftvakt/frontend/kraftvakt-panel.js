@@ -686,8 +686,8 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       ${e.safe_state?this.renderSafeState():Y} ${e.penalty.active?this.renderPenalty(e):Y}
       <div class="stats">
         ${this.renderStat("power-now","status.power_now",Nt(t,i),this.localize("status.momentary"))}
-        ${this.renderStat("capacity-average","status.capacity_average",Nt(t,e.capacity_average_kw),this.localize("status.average_over_hour"),(a=e.capacity_average_kw,null!==a&&a>e.power_limit_kw))}
         ${this.renderStat("regulation-average","status.regulation_average",Nt(t,e.regulation_average_kw),this.localize("status.average_over_seconds",{seconds:e.regulation_window_s}))}
+        ${this.renderStat("capacity-average","status.capacity_average",Nt(t,e.capacity_average_kw),this.localize("status.average_over_hour"),(a=e.capacity_average_kw,null!==a&&a>e.power_limit_kw))}
         ${this.renderStat("power-limit","status.power_limit",Nt(t,e.power_limit_kw))}
       </div>
       ${this.renderMeter(e,i)}
