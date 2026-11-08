@@ -1,4 +1,4 @@
-import { LitElement, css, html, svg } from "lit";
+import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
@@ -74,61 +74,8 @@ export class KraftvaktCountdownBar extends KraftvaktCountdown {
   `;
 }
 
-const RING_RADIUS = 7;
-const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
-
-/** A ring that empties counterclockwise towards the top. */
-@customElement("kraftvakt-countdown-ring")
-export class KraftvaktCountdownRing extends KraftvaktCountdown {
-  protected render() {
-    return html`
-      <svg viewBox="0 0 18 18" aria-hidden="true">
-        ${svg`
-          <circle class="track" cx="9" cy="9" r=${RING_RADIUS}></circle>
-          <circle
-            class="fill"
-            cx="9"
-            cy="9"
-            r=${RING_RADIUS}
-            stroke-dasharray=${RING_LENGTH}
-            transform="rotate(-90 9 9)"
-          ></circle>
-        `}
-      </svg>
-    `;
-  }
-
-  protected keyframes(share: number): Keyframe[] {
-    return [{ strokeDashoffset: `${RING_LENGTH * (1 - share)}` }, { strokeDashoffset: `${RING_LENGTH}` }];
-  }
-
-  static styles = css`
-    :host {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-    }
-    svg {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    circle {
-      fill: none;
-      stroke-width: 3;
-    }
-    .track {
-      stroke: rgba(127, 127, 127, 0.24);
-    }
-    .fill {
-      stroke: var(--primary-color);
-    }
-  `;
-}
-
 declare global {
   interface HTMLElementTagNameMap {
     "kraftvakt-countdown-bar": KraftvaktCountdownBar;
-    "kraftvakt-countdown-ring": KraftvaktCountdownRing;
   }
 }

@@ -141,7 +141,7 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
   ladetidsrommet. Ladestrømmen vises som én prikk per ampere fra minste til
   største ladestrøm. Apparatet eller elbilladeren som står for tur, har en
-  ring som tømmes frem mot avgjørelsen der det slås på.
+  stolpe som tømmes frem mot avgjørelsen der det slås på.
 
 ## Entiteter
 
