@@ -11,7 +11,7 @@ import {
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
-import "../components/countdown-ring";
+import "../components/countdown";
 import { measuredPowerKw } from "../entities";
 import { formatClockTime, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -19,29 +19,9 @@ import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 
-/** The width of the waiting column, and the blocks in it, in pixels. */
+/** The width of the waiting column in pixels. */
 const WAITING_WIDTH = 88;
 const WAITING_WIDTH_NARROW = 48;
-const BLOCK_GAP = 2;
-const SQUARE_SIZE = 8;
-const BAR_WIDTH = 3;
-const BAR_HEIGHT = 12;
-
-/**
- * Return the size of `count` equal blocks that fill at most `available` pixels:
- * squares when they fit, otherwise thinner and taller, down to ampere-like bars.
- */
-function blockSize(count: number, available: number): { width: number; height: number } {
-  const room = Math.floor((available - (count - 1) * BLOCK_GAP) / count);
-  const width = Math.max(BAR_WIDTH, Math.min(SQUARE_SIZE, room));
-  const thinning = (SQUARE_SIZE - width) / (SQUARE_SIZE - BAR_WIDTH);
-  return { width, height: Math.round(SQUARE_SIZE + thinning * (BAR_HEIGHT - SQUARE_SIZE)) };
-}
-
-/** Return how many blocks fit at their thinnest in `available` pixels. */
-function maxBlocks(available: number): number {
-  return Math.floor((available + BLOCK_GAP) / (BAR_WIDTH + BLOCK_GAP));
-}
 
 /** Shows how the regulation stands now, and starts and stops it. */
 @customElement("kraftvakt-status-page")
@@ -302,28 +282,19 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /**
-   * One block per regulation window left until the decision that ends the
-   * waiting. The status comes at every window, so one block goes each time.
-   * When more windows are left than blocks fit, each block stands for several.
-   */
+  /** A bar that empties from when the waiting started until the decision that ends it. */
   private renderWaiting(item: ApplianceStatus | ChargerStatus) {
-    if (!item.waiting_ends_at || !this.status) {
+    if (!item.waiting_since || !item.waiting_ends_at) {
       return html`<span></span>`;
     }
-    const left = Date.parse(item.waiting_ends_at) - Date.now();
-    const windows = Math.max(1, Math.ceil(left / (this.status.regulation_window_s * 1000)));
-    const available = this.narrow ? WAITING_WIDTH_NARROW : WAITING_WIDTH;
-    const windowsPerBlock = Math.ceil(windows / maxBlocks(available));
-    const blocks = Math.ceil(windows / windowsPerBlock);
-    const size = blockSize(blocks, available);
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
         <span class="indicator-label">${this.localize("status.turning_on")}</span>
-        <span class="windows-left" style="--block-width: ${size.width}px; --block-height: ${size.height}px">
-          ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
-        </span>
+        <kraftvakt-countdown-bar
+          .start=${Date.parse(item.waiting_since)}
+          .end=${Date.parse(item.waiting_ends_at)}
+        ></kraftvakt-countdown-bar>
       </span>
     `;
   }
@@ -632,21 +603,8 @@ export class KraftvaktStatusPage extends LitElement {
     .waiting {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
       gap: 4px;
-    }
-    .windows-left {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: ${unsafeCSS(BLOCK_GAP)}px;
-    }
-    .window-left {
-      flex: none;
-      width: var(--block-width);
-      height: var(--block-height);
-      border-radius: 1px;
-      background: var(--primary-text-color);
+      text-align: end;
     }
     .amperes {
       display: flex;

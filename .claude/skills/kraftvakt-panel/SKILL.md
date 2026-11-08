@@ -39,7 +39,7 @@ frontend/src/
   entities.ts          entity names, and Kraftvakt's own entities
   types.ts, format.ts
   pages/               status, general, appliances, charging, config-page (shared)
-  components/          countdown-ring, locked-banner, manual-control-warning, sortable-list,
+  components/          countdown (ring and bar), locked-banner, manual-control-warning, sortable-list,
                        item-dialog (shared), appliance-dialog, charger-dialog,
                        action-field, condition-field, save-bar, confirm-dialog
 ```
@@ -81,17 +81,14 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.
-- The waiting column shows the label «Turning on» above one block per
-  regulation window left until `waiting_ends_at`, the decision that turns the
-  slot on. The label is the same for an activated EV charger waiting for one
-  more ampere. All blocks have the same whole-pixel size (`blockSize()`): 8 px
-  squares in the text colour with a 2 px gap, aligned right; with many windows
-  they get thinner and taller, at most 3 × 12 px bars like the ampere bars.
-  When more windows are left than fit (18 bars in 88 px, 10 in 48 px on a
-  narrow screen), each block stands for several windows, so the whole wait
-  fits (owner's choice over clipping or a count). The status comes at every
-  window, so the blocks are recalculated each time. The time is a tooltip. A
-  bar and a ring were tried here and turned down by the owner.
+- The waiting column shows the label «Turning on» above a
+  `kraftvakt-countdown-bar` (6 px, the text colour on a grey track) that empties towards
+  the right from `waiting_since` to `waiting_ends_at`, the decision that turns
+  the slot on, animated by the browser like the ring. The label is the same
+  for an activated EV charger waiting for one more ampere. The time is a
+  tooltip. The owner settled on the smooth bar, because a wait can span very
+  many regulation windows; one block per window and a ring were tried and
+  turned down.
 - The tiles are average consumption, regulation average, «Consumption now» and
   the power limit. «Consumption now» is the power sensor's state read in the
   panel (`measuredPowerKw()`, same units as the backend), so it updates live;
