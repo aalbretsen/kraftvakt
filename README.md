@@ -133,11 +133,12 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   dekker, og tid til neste avgjørelse,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
   gjenstående overforbruk,
-- apparatene i prioritert rekkefølge, om de er på eller av, gjeldende variant
-  og hvor lenge apparatet som står for tur, venter,
-- elbilladerne i gjeldende ladeprioritering, om de er aktivert, ladestrømmen,
-  og om de er forbigått, ventende, utenfor regulering eller utenfor
-  ladetidsrommet.
+- prioritetslisten med apparatene i prioritert rekkefølge, om de er på eller
+  av, og gjeldende variant. Der «Elbillading» står i listen, står
+  elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
+  aktivert, ladestrømmen, og om de er forbigått, ventende, utenfor regulering
+  eller utenfor ladetidsrommet. En egen kolonne viser hvor lenge apparatet
+  eller elbilladeren som står for tur, venter.
 
 ## Entiteter
 

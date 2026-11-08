@@ -212,6 +212,8 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     waits. The averages are None until the first window has closed.
     The appliances are in the order of their current variant in the priority
     list, and the chargers in the current charging priority.
+    `ev_charging_position` is the number of appliances before «EV charging»,
+    None while EV charging is disabled.
     """
     config = runtime.config
     averages = runtime.latest_averages
@@ -229,6 +231,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         for appliance_id, variant_id in runtime.current_variants.items()
         if variant_id is not None
     }
+    positions = _current_positions(config, runtime.current_variants)
     return {
         "running": runtime.running,
         "missing": [issue.to_dict() for issue in runtime.missing],
@@ -259,8 +262,11 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                     else None
                 ),
             }
-            for appliance in _in_current_priority(config, runtime.current_variants)
+            for appliance in sorted(
+                config.appliances, key=lambda appliance: positions[appliance.id]
+            )
         ],
+        "ev_charging_position": _ev_charging_position(config, positions),
         "chargers": [
             {
                 "id": charger.id,
@@ -286,24 +292,31 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     }
 
 
-def _in_current_priority(
+def _current_positions(
     config: KraftvaktConfig, current_variants: Mapping[str, str | None]
-) -> list[Appliance]:
-    """Return the appliances in the order of the entries for their current variant.
+) -> dict[str, int]:
+    """Return the place in the priority list of each appliance's current variant.
 
     The appliance itself counts as the current variant until the first decision.
     """
-    entries = [
-        (entry.appliance_id, entry.variant_id)
-        for entry in config.priority
-        if entry.type is PriorityEntryType.APPLIANCE
-    ]
-    return sorted(
-        config.appliances,
-        key=lambda appliance: _position(
+    entries = [(entry.appliance_id, entry.variant_id) for entry in config.priority]
+    return {
+        appliance.id: _position(
             entries, (appliance.id, current_variants.get(appliance.id))
-        ),
-    )
+        )
+        for appliance in config.appliances
+    }
+
+
+def _ev_charging_position(
+    config: KraftvaktConfig, positions: Mapping[str, int]
+) -> int | None:
+    """Return how many appliances are placed before «EV charging»."""
+    types = [entry.type for entry in config.priority]
+    if PriorityEntryType.EV_CHARGING not in types:
+        return None
+    ev_charging = types.index(PriorityEntryType.EV_CHARGING)
+    return sum(1 for position in positions.values() if position < ev_charging)
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:

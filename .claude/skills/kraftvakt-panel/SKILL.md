@@ -81,6 +81,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   tile and a thin line in the text colour on top, so it shows against the blue
   bar and the empty track. Under each average value is the time it covers
   («over 1 hour», «over 60 s» from `regulation_window_s`).
+- Appliances and chargers share one full-width card, «Priority list». An
+  «EV charging» row with its own rank sits at `ev_charging_position`, and the
+  chargers are indented under it in the current charging priority, with their
+  current and reasons under the name. Columns: rank, name, waiting (the
+  countdown of the appliance or charger that is next) and state.
 
 ## Home Assistant components
 

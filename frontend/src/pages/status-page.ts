@@ -44,8 +44,7 @@ export class KraftvaktStatusPage extends LitElement {
     const status = this.status;
     return html`
       <div class="cards">
-        ${this.renderRegulationCard(status)} ${status.running ? this.renderAppliancesCard(status.appliances) : nothing}
-        ${status.running && status.chargers.length > 0 ? this.renderChargersCard(status.chargers) : nothing}
+        ${this.renderRegulationCard(status)} ${status.running ? this.renderPriorityCard(status) : nothing}
       </div>
     `;
   }
@@ -196,68 +195,78 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** Each appliance with on or off, its current variant and its waiting time. */
-  private renderAppliancesCard(appliances: ApplianceStatus[]) {
+  /** The appliances in order of priority, with the EV chargers grouped at the place of «EV charging». */
+  private renderPriorityCard(status: StatusSnapshot) {
+    const position = status.ev_charging_position;
+    const appliances = status.appliances;
+    const before = position === null ? appliances : appliances.slice(0, position);
+    const after = position === null ? [] : appliances.slice(position);
+    const empty = appliances.length === 0 && position === null;
     return html`
       <ha-card>
         <div class="card-header">
-          <span>${this.localize("status.appliances")}</span>
-          <span class="sub">${this.localize("status.appliances_order")}</span>
+          <span>${this.localize("status.priority_list")}</span>
         </div>
-        ${appliances.length === 0
+        ${empty
           ? html`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`
           : html`<div class="list">
-              ${appliances.map(
-                (appliance, index) => html`
-                  <div class="row">
-                    <span class="rank">${index + 1}</span>
-                    <div class="row-main">
-                      <div class="row-title">
-                        ${appliance.name}
-                        ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
-                      </div>
-                      ${appliance.waiting_until
-                        ? html`<div class="row-sub">
-                            ${this.localize("status.waiting_to_turn_on", {
-                              time: formatTimeLeft(appliance.waiting_until, this.clock.now),
-                            })}
-                          </div>`
-                        : nothing}
-                    </div>
-                    ${this.renderOnOff(appliance.on, "status.on", "status.off")}
-                  </div>
-                `,
-              )}
+              <div class="row heading">
+                <span class="rank">#</span>
+                <span>${this.localize("status.name")}</span>
+                <span class="waiting">${this.localize("status.waiting")}</span>
+                <span class="state">${this.localize("status.state")}</span>
+              </div>
+              ${before.map((appliance, index) => this.renderApplianceRow(appliance, index + 1))}
+              ${position === null ? nothing : this.renderEvCharging(status.chargers, position + 1)}
+              ${after.map((appliance, index) => this.renderApplianceRow(appliance, before.length + index + 2))}
             </div>`}
       </ha-card>
     `;
   }
 
-  /** Each EV charger with whether it is activated, and why it charges or not. */
-  private renderChargersCard(chargers: ChargerStatus[]) {
+  private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     return html`
-      <ha-card>
-        <div class="card-header">
-          <span>${this.localize("status.chargers")}</span>
-          <span class="sub">${this.localize("status.chargers_order")}</span>
+      <div class="row">
+        <span class="rank">${rank}</span>
+        <div class="row-main">
+          <div class="row-title">
+            ${appliance.name} ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
+          </div>
         </div>
-        <div class="list">
-          ${chargers.map((charger) => {
-            const details = this.chargerDetails(charger);
-            return html`
-              <div class="row">
-                <ha-svg-icon class="rank" .path=${mdiEvStation}></ha-svg-icon>
-                <div class="row-main">
-                  <div class="row-title">${charger.name}</div>
-                  ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
-                </div>
-                ${this.renderOnOff(charger.activated, "status.activated", "status.deactivated")}
-              </div>
-            `;
-          })}
-        </div>
-      </ha-card>
+        ${this.renderWaiting(appliance.waiting_until)} ${this.renderOnOff(appliance.on, "status.on", "status.off")}
+      </div>
     `;
+  }
+
+  /** The «EV charging» entry, with each EV charger in the current charging priority under it. */
+  private renderEvCharging(chargers: ChargerStatus[], rank: number) {
+    return html`
+      <div class="row group">
+        <span class="rank">${rank}</span>
+        <div class="row-main">
+          <div class="row-title">${this.localize("status.ev_charging")}</div>
+          ${chargers.length === 0 ? html`<div class="row-sub">${this.localize("status.no_chargers")}</div>` : nothing}
+        </div>
+      </div>
+      ${chargers.map((charger) => {
+        const details = this.chargerDetails(charger);
+        return html`
+          <div class="row charger">
+            <span class="rank"></span>
+            <div class="row-main">
+              <div class="row-title"><ha-svg-icon .path=${mdiEvStation}></ha-svg-icon>${charger.name}</div>
+              ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
+            </div>
+            ${this.renderWaiting(charger.waiting_until)}
+            ${this.renderOnOff(charger.activated, "status.activated", "status.deactivated")}
+          </div>
+        `;
+      })}
+    `;
+  }
+
+  private renderWaiting(until: string | null) {
+    return html`<span class="waiting">${until ? formatTimeLeft(until, this.clock.now) : nothing}</span>`;
   }
 
   private chargerDetails(charger: ChargerStatus): string[] {
@@ -283,17 +292,11 @@ export class KraftvaktStatusPage extends LitElement {
     } else if (!charger.allowed && charger.excluded === false && config?.charging_window) {
       details.push(this.localize("status.outside_window", { ...config.charging_window }));
     }
-    if (charger.waiting_until) {
-      const time = formatTimeLeft(charger.waiting_until, this.clock.now);
-      details.push(
-        this.localize(charger.activated ? "status.waiting_to_increase" : "status.waiting_to_activate", { time }),
-      );
-    }
     return details;
   }
 
   private renderOnOff(on: boolean, onText: Parameters<Localize>[0], offText: Parameters<Localize>[0]) {
-    return html`<span class="chip ${on ? "on" : "off"}"><span class="dot"></span>${this.localize(on ? onText : offText)}</span>`;
+    return html`<span class="state chip ${on ? "on" : "off"}"><span class="dot"></span>${this.localize(on ? onText : offText)}</span>`;
   }
 
   private yesNo(value: boolean): string {
@@ -350,16 +353,11 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .cards {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
-      align-items: start;
     }
     :host([narrow]) .cards {
-      grid-template-columns: minmax(0, 1fr);
       gap: 8px;
-    }
-    .regulation {
-      grid-column: 1 / -1;
     }
     .card-header {
       display: flex;
@@ -522,15 +520,12 @@ export class KraftvaktStatusPage extends LitElement {
     .penalty-details {
       margin-top: 8px;
     }
-    .card-header .sub {
-      font-size: var(--ha-font-size-m, 14px);
-      color: var(--secondary-text-color);
-    }
     .empty {
       color: var(--secondary-text-color);
     }
     .row {
-      display: flex;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) 64px 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -538,18 +533,47 @@ export class KraftvaktStatusPage extends LitElement {
       border-top: 1px solid var(--divider-color);
       box-sizing: border-box;
     }
+    .row.heading {
+      min-height: 0;
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+    }
+    .row.group {
+      min-height: 40px;
+    }
+    .row.charger {
+      border-top-style: dashed;
+    }
+    .row.charger .row-main {
+      padding-inline-start: 16px;
+    }
     .rank {
-      flex: none;
-      width: 24px;
       text-align: center;
       color: var(--secondary-text-color);
     }
-    .row-main {
-      flex: 1;
-      min-width: 0;
+    .waiting {
+      text-align: end;
+      font-variant-numeric: tabular-nums;
+      color: var(--secondary-text-color);
+    }
+    .state {
+      justify-self: start;
+    }
+    :host([narrow]) .row {
+      grid-template-columns: 20px minmax(0, 1fr) 48px auto;
+      gap: 8px;
+      padding: 6px 12px;
     }
     .row-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       overflow-wrap: anywhere;
+    }
+    .row-title ha-svg-icon {
+      --mdc-icon-size: 20px;
+      color: var(--secondary-text-color);
     }
     .row-sub {
       color: var(--secondary-text-color);
@@ -557,7 +581,6 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .variant {
       display: inline-block;
-      margin-inline-start: 6px;
       padding: 0 8px;
       border-radius: 999px;
       font-size: var(--ha-font-size-s, 12px);

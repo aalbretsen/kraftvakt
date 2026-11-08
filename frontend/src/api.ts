@@ -149,6 +149,8 @@ export interface StatusSnapshot {
   regulation_window_s: number;
   next_decision_at: string | null;
   appliances: ApplianceStatus[];
+  /** How many appliances come before «EV charging», null while EV charging is disabled. */
+  ev_charging_position: number | null;
   chargers: ChargerStatus[];
 }
 

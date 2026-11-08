@@ -584,6 +584,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_until": None,
             },
         ],
+        "ev_charging_position": None,
         "chargers": [],
     }
 
@@ -729,6 +730,7 @@ async def test_status_shows_the_chargers(
             "waiting_until": None,
         }
     ]
+    assert status["ev_charging_position"] == 2
 
 
 def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
@@ -784,3 +786,43 @@ async def test_status_shows_the_chargers_in_the_current_priority(
         (item["id"], item["bypassed"], item["allowed"], item["excluded"])
         for item in status["chargers"]
     ] == [("c2", False, False, True), ("c1", True, True, False)]
+
+
+async def test_status_places_ev_charging_among_the_current_variants(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """«EV charging» moves when a variant moves an appliance above it."""
+    config["charging"] = {
+        "enabled": True,
+        "one_at_a_time": False,
+        "chargers": [charger("c1")],
+    }
+    config["appliances"][1]["variants"] = [
+        {
+            "id": "v1",
+            "label": "Morgen",
+            "condition": {"type": "template", "value": "{{ true }}"},
+        }
+    ]
+    config["priority"] = [
+        {"type": "appliance", "appliance_id": "b", "variant_id": "v1"},
+        {"type": "appliance", "appliance_id": "a", "variant_id": None},
+        {"type": "ev_charging"},
+        {"type": "appliance", "appliance_id": "b", "variant_id": None},
+    ]
+    hass.states.async_set("sensor.c1_power", "0")
+    set_power(hass, "1000")
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+    status = await subscribe_status(client)
+    assert [item["id"] for item in status["appliances"]] == ["a", "b"]
+    assert status["ev_charging_position"] == 1
+
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert [item["id"] for item in status["appliances"]] == ["b", "a"]
+    assert status["ev_charging_position"] == 2
