@@ -163,7 +163,7 @@ async def test_cycle_can_be_changed_and_restarts_in_its_off_part(
     assert entry.data["power_w"] == 2000
     assert entry.data["duty_cycle_pct"] == 50
     assert entry.data["period_min"] == 10
-    assert float(state(hass, "number.heating_cable_period")) == 10
+    assert state(hass, "number.heating_cable_period") == "10"
 
 
 async def test_unchanged_cycle_keeps_running(

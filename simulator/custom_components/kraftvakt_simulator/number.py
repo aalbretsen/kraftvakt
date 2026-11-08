@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Final
 
 from homeassistant.components.number import (
@@ -83,7 +84,7 @@ HEATER_NUMBERS: Final[tuple[SimulatorNumberDescription[SimulatedHeater], ...]] =
         native_min_value=1,
         native_max_value=MAX_PERIOD_MIN,
         native_step=1,
-        value_fn=lambda heater: heater.cycle.period.total_seconds() / 60,
+        value_fn=lambda heater: heater.cycle.period // timedelta(minutes=1),
         set_fn=lambda heater, value: heater.async_set_period(value),
     ),
 )
