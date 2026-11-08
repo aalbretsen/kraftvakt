@@ -18,10 +18,10 @@ snittforbruket siste time rett under en valgt effektgrense, slik at du unngår
 et dyrere trinn i kapasitetsleddet i nettleien. Alt settes opp i et eget panel
 i sidemenyen. Kraftvakt kjører helt lokalt, uten skytjenester.
 
-> **Status:** Alle kravene i [kravspesifikasjonen](REQUIREMENTS.md) er
-> implementert: måling, regulering av apparater med varianter, elbillading,
-> straff, sikker tilstand og panelet. Kraftvakt er testet automatisk og manuelt
-> mot Home Assistant 2026.10.4, men har ennå lite erfaring fra virkelig drift.
+> **Status:** Første versjon under utprøving. Måling, regulering av apparater
+> med varianter, elbillading, straff, sikker tilstand og panelet er på plass og
+> testet automatisk og manuelt mot Home Assistant 2026.10.4, men Kraftvakt har
+> ennå lite erfaring fra virkelig drift.
 
 ## Krav
 
@@ -72,8 +72,11 @@ effekt, typisk fra HAN-porten på strømmåleren.
 - **Straff:** Går snittforbruket over effektgrensen pluss straffeterskelen,
   slås alle apparater av til overforbruket er hentet inn. Straffen er en
   sikkerhetsventil og skal normalt aldri inntre.
-- **Sikker tilstand:** Mangler effektsensoren gyldig verdi, slås alle
-  apparater av til den kommer tilbake.
+- **Sikker tilstand:** Har effektsensoren vært uten gyldig verdi da to
+  reguleringsvinduer på rad ble lukket, slås alle apparater av til den kommer
+  tilbake. Én manglende verdi tåles.
+
+Effektsensoren kan oppgi effekt i W eller kW. En sensor uten enhet leses som W.
 
 Kraftvakt vet ikke hva et apparat faktisk bruker, og leser ikke om det står på.
 Den regner med at apparatene står slik Kraftvakt sist bestemte. Ikke slå
@@ -106,9 +109,11 @@ administratorer har tilgang.
   Når billadestyring er av, beholdes elbilladerne, men de kan bare vises.
 
 For handlingene kan du velge **Standard** når entitetens domene har en
-standardhandling, ellers lager du en egendefinert handling med HAs
-handlingsredigerer. Entiteter som allerede brukes av et annet apparat eller en
-elbillader, kan ikke velges.
+standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers
+lager du en egendefinert handling med HAs handlingsredigerer, se eksemplene
+lenger ned. Mislykkes en handling, skrives feilen til loggen, og reguleringen
+fortsetter uten å prøve igjen. Entiteter som allerede brukes av et annet apparat
+eller en elbillader, kan ikke velges.
 
 Endringene samles i et utkast. **Lagre** lagrer alt på én gang, og **Forkast**
 går tilbake til det som er lagret. Feil vises ved feltet, og panelet lagrer
@@ -151,7 +156,6 @@ Entitets-ID-ene over gjelder når Home Assistant er satt opp på engelsk. Med
 norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`
 og `switch.kraftvakt_regulering`.
 
-Effektsensoren kan oppgi effekt i W eller kW. En sensor uten enhet leses som W.
 Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
 effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
 Når effektsensoren gir en gyldig verdi igjen, brukes den verdien bakover i tid
@@ -164,15 +168,15 @@ starter, forutsatt at konfigurasjonen er fullstendig: effektsensor er valgt, og
 hvert apparat har entitet og handlinger for å slå på og av. Når billadestyring
 er aktivert, må hver elbillader i tillegg ha entitet, handlinger for å aktivere,
 deaktivere og sette ladestrøm, og sensor for ladeeffekt. Kan bare én
-elbillader lade om gangen, må hver elbillader også ha bil tilkoblet. Ved hver
-start slås
-alle apparatene av og alle elbilladerne deaktiveres med en gang. Deretter slår
-reguleringen dem på ett og ett i prioritert rekkefølge. Første avgjørelse tas
-når et helt reguleringsintervall har gått etter starten. Når Home Assistant
-starter, venter reguleringen til Home Assistant har startet ferdig, slik at
-integrasjonene til apparatene er lastet før de slås av. Kan ikke den lagrede
-konfigurasjonen (`.storage/kraftvakt.config`) leses, starter ikke Kraftvakt.
-Integrasjonen viser da en feilmelding, og filen endres ikke.
+elbillader lade om gangen, må hver elbillader også ha bil tilkoblet.
+
+Ved hver start slås alle apparatene av og alle elbilladerne deaktiveres med en
+gang. Deretter slår reguleringen dem på ett og ett i prioritert rekkefølge.
+Første avgjørelse tas når et helt reguleringsintervall har gått etter starten.
+Når Home Assistant starter, venter reguleringen til Home Assistant har startet
+ferdig, slik at integrasjonene til apparatene er lastet før de slås av. Kan ikke
+den lagrede konfigurasjonen (`.storage/kraftvakt.config`) leses, starter ikke
+Kraftvakt. Integrasjonen viser da en feilmelding, og filen endres ikke.
 
 Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
 stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.
@@ -180,16 +184,11 @@ Er konfigurasjonen ikke fullstendig, blir bryteren stående av, og forsøket
 skrives til loggen. Bryteren har ingen lagret stilling. Etter en omstart kjører
 reguleringen igjen.
 
-Har effektsensoren vært uten gyldig verdi da to reguleringsvinduer på rad ble
-lukket, går reguleringen i sikker tilstand. Da slås alle apparatene av, og
-sensoren **Sikker tilstand** blir på. Når effektsensoren gir en gyldig verdi
-igjen, starter reguleringen på nytt med alle apparater avslått.
-
-Handlingene for apparatene kan være standardhandlingen for entitetens domene
-(for eksempel `switch.turn_on` og `switch.turn_off`) eller egendefinerte
-handlinger. Egendefinerte handlinger og maler får variablene `entity_id` og
-`entity` (tilstanden til apparatets entitet). Mislykkes en handling, skrives
-feilen til loggen, og reguleringen fortsetter uten å prøve igjen.
+I sikker tilstand blir sensoren **Sikker tilstand** på. Når effektsensoren gir
+en gyldig verdi igjen, starter reguleringen på nytt med alle apparater avslått.
+Går snittforbruket over effektgrensen pluss straffeterskelen, holdes alle
+apparater av til overforbruket er hentet inn, og så starter reguleringen på
+nytt på samme måte.
 
 ## Elbillading
 
@@ -224,9 +223,6 @@ avgjørelse. Stillingen lagres med en gang og beholdes over omstart. Mens
 billadestyring er deaktivert, er bryterne utilgjengelige, men stillingen
 beholdes.
 
-Handlingen for ladestrøm får i tillegg variablene `current`, `min_current` og
-`max_current`. `current` ligger alltid mellom minste og største ladestrøm.
-
 ## Eksempler på maler og handlinger
 
 Maler skrives med Home Assistants malspråk (Jinja2), og handlinger er de samme
@@ -234,7 +230,9 @@ som i automasjoner og skript. I handlingsredigereren kan du bytte til YAML via
 menyen ⋮ og lime inn eksemplene. Alle maler og handlinger får variablene
 `entity_id` (apparatets eller elbilladerens entitet) og `entity` (tilstanden
 til entiteten, for eksempel `entity.state` og `entity.attributes`). Byttes
-entiteten ut, virker malene fortsatt.
+entiteten ut, virker malene fortsatt. Handlingen for ladestrøm får i tillegg
+variablene `current`, `min_current` og `max_current`. `current` ligger alltid
+mellom minste og største ladestrøm.
 
 En mal er sann bare når den gir den boolske verdien sann. Alt annet, også en
 feil i malen, regnes som usann. En entitet er sann bare når den er `on`.
@@ -306,17 +304,30 @@ integrasjon har.
 
 ## Utvikling
 
-Krever Python 3.14.2 eller nyere, som Home Assistant 2026.10.4 krever.
+Krever Python 3.14.2 eller nyere, som Home Assistant 2026.10.4 krever, og
+[uv](https://docs.astral.sh/uv/). Utviklingsavhengighetene står i
+`requirements_dev.txt`.
 
 ```bash
 uv venv --python 3.14
 uv pip install -r requirements_dev.txt
 uv run pytest
 uv run ruff check .
+uv run ruff format --check .
 ```
 
-Panelet skal bygges med Node.js. Versjonen står i `.nvmrc`, og den samme
-versjonen brukes av Home Assistant-frontenden. Installer og aktiver den med
+Koden ligger i `custom_components/kraftvakt/`. Reguleringen er ren Python uten
+Home Assistant i `regulation/`, og `runtime.py` kobler den til Home Assistant.
+Testene ligger i `tests/`, med enhetstester i `tests/unit/`.
+
+Instruksjoner til Claude Code står i `CLAUDE.md` og i skill-filene i
+`.claude/skills/`. Der står også hvordan reguleringen skal virke, i detalj.
+
+### Panelet
+
+Panelet er skrevet i Lit og TypeScript og ligger i `frontend/`. Det bygges med
+Node.js. Versjonen står i `.nvmrc`, og den samme versjonen brukes av Home
+Assistant-frontenden. Installer og aktiver den med
 [nvm](https://github.com/nvm-sh/nvm) eller
 [nvm.fish](https://github.com/jorgebucaran/nvm.fish):
 
@@ -328,13 +339,10 @@ nvm install
 nvm use
 ```
 
-### Panelet
-
-Panelet er skrevet i Lit og TypeScript og ligger i `frontend/`. Den ferdige
-bundlen, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`, sjekkes
-inn, fordi HACS installerer rett fra repoet. Bygg den på nytt etter hver
-endring i `frontend/`, og sjekk inn kilden og bundlen sammen. CI feiler hvis
-den innsjekkede bundlen ikke stemmer med kilden.
+Den ferdige bundlen, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`,
+sjekkes inn, fordi HACS installerer rett fra repoet. Bygg den på nytt etter
+hver endring i `frontend/`, og sjekk inn kilden og bundlen sammen. CI feiler
+hvis den innsjekkede bundlen ikke stemmer med kilden.
 
 ```bash
 cd frontend
@@ -345,9 +353,11 @@ npm run build
 
 `npm run watch` bygger på nytt ved hver endring. Bundlen lastes med versjonen
 fra `manifest.json` i URL-en, så nettleseren kan bruke en gammel bundle etter
-et nytt bygg. Last da siden på nytt uten hurtigbuffer. Tekstene i panelet ligger i
-`frontend/src/translations/` (engelsk og norsk) og velges ut fra språket til
+et nytt bygg. Last da siden på nytt uten hurtigbuffer. Tekstene i panelet ligger
+i `frontend/src/translations/` (engelsk og norsk) og velges ut fra språket til
 brukeren i Home Assistant.
+
+### Lokal Home Assistant
 
 Kjør en lokal Home Assistant mot repoet:
 
@@ -394,11 +404,11 @@ administrator.
 | `kraftvakt/config/get` | Gir konfigurasjonen, navnene på entitetene og hva som mangler. |
 | `kraftvakt/config/save` | Lagrer hele konfigurasjonen. Avvises mens reguleringen kjører. Ugyldig konfigurasjon lagres ikke, og svaret gir feilene per felt. |
 | `kraftvakt/regulation/set_running` | Starter eller stopper reguleringen, som bryteren **Regulering**. |
-| `kraftvakt/status/subscribe` | Sender status straks og deretter for hvert reguleringsvindu, hver avgjørelse og ved start og stopp. |
+| `kraftvakt/status/subscribe` | Sender status straks og deretter for hvert reguleringsvindu, hver avgjørelse og ved start, stopp og lagring. |
 
-Formatene står i kapittel 3.8 i `IMPLEMENTATION.md`. En lagret konfigurasjon
-tas i bruk neste gang reguleringen startes, uten at integrasjonen lastes på
-nytt.
+Formatene for konfigurasjonen, feilene og statusen står i
+`.claude/skills/kraftvakt-backend/SKILL.md`. En lagret konfigurasjon tas i bruk
+neste gang reguleringen startes, uten at integrasjonen lastes på nytt.
 
 ### Logo og ikon
 
