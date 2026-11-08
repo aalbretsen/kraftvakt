@@ -566,7 +566,6 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "regulation_average_kw": None,
         "capacity_average_kw": None,
         "power_limit_kw": 10.0,
-        "penalty_threshold_kw": 1.0,
         "regulation_window_s": 60,
         "regulation_interval": 1,
         "next_decision_at": local(started + WINDOW),

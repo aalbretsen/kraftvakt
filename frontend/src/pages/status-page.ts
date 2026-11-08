@@ -112,9 +112,11 @@ export class KraftvaktStatusPage extends LitElement {
   private renderRunning(status: StatusSnapshot) {
     const language = this.hass.language;
     const overLimit = (value: number | null) => value !== null && value > status.power_limit_kw;
+    const powerNow = measuredPowerKw(this.hass, this.config?.config.general.power_sensor ?? "");
     return html`
       ${status.safe_state ? this.renderSafeState() : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <div class="stats">
+        ${this.renderStat("power-now", "status.power_now", formatPower(language, powerNow), this.localize("status.momentary"))}
         ${this.renderStat(
           "capacity-average",
           "status.capacity_average",
@@ -128,15 +130,9 @@ export class KraftvaktStatusPage extends LitElement {
           formatPower(language, status.regulation_average_kw),
           this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
-        ${this.renderStat(
-          "",
-          "status.power_now",
-          formatPower(language, measuredPowerKw(this.hass, this.config?.config.general.power_sensor ?? "")),
-          this.localize("status.momentary"),
-        )}
-        ${this.renderStat("", "status.power_limit", formatPower(language, status.power_limit_kw))}
+        ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_kw))}
       </div>
-      ${this.renderMeter(status)}
+      ${this.renderMeter(status, powerNow)}
       <div class="facts">
         ${status.safe_state ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>` : nothing}
         ${status.penalty.active ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>` : nothing}
@@ -192,36 +188,33 @@ export class KraftvaktStatusPage extends LitElement {
 
   /** The averages as bars against the power limit. */
   /**
-   * The average consumption as a bar, the regulation average as a marker above
-   * it, the power limit with the penalty zone after it, and a scale in whole kW.
+   * The consumption now as a bar, with a marker for each average and the power
+   * limit, and a scale in whole kW.
    */
-  private renderMeter(status: StatusSnapshot) {
-    const regulation = status.regulation_average_kw;
-    const capacity = status.capacity_average_kw;
-    if (regulation === null || capacity === null) {
-      return nothing;
-    }
+  private renderMeter(status: StatusSnapshot, powerNow: number | null) {
     const limit = status.power_limit_kw;
-    const penaltyAt = limit + status.penalty_threshold_kw;
-    const { step, end } = meterScale(Math.max(limit * 1.2, penaltyAt, regulation, capacity));
+    const values = [powerNow, status.capacity_average_kw, status.regulation_average_kw];
+    const { step, end } = meterScale(Math.max(limit * 1.2, ...values.map((value) => value ?? 0)));
     const percent = (value: number) => `${(100 * Math.min(value, end)) / end}%`;
     const language = this.hass.language;
     const ticks = Array.from({ length: end / step + 1 }, (_, index) => index * step);
+    const marker = (kind: string, label: Parameters<Localize>[0], value: number | null) =>
+      value === null
+        ? nothing
+        : html`<span
+            class="marker ${kind}"
+            style="left: ${percent(value)}"
+            title="${this.localize(label)} ${formatPower(language, value)} kW"
+          ></span>`;
     return html`
       <div class="meter">
-        <div class="markers">
-          <span
-            class="marker regulation-average"
-            style="left: ${percent(regulation)}"
-            title="${this.localize("status.regulation_average")} ${formatPower(language, regulation)} kW"
-          ></span>
-        </div>
         <div class="bar">
           <div class="track">
-            <div class="penalty-zone" style="left: ${percent(limit)}; right: calc(100% - ${percent(penaltyAt)})"></div>
-            <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
+            ${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}
           </div>
-          <div class="limit" style="left: ${percent(limit)}"></div>
+          ${marker("power-limit", "status.power_limit", limit)}
+          ${marker("capacity-average", "status.capacity_average", status.capacity_average_kw)}
+          ${marker("regulation-average", "status.regulation_average", status.regulation_average_kw)}
         </div>
         <div class="ticks">${ticks.map((tick) => html`<span style="left: ${percent(tick)}"></span>`)}</div>
         <div class="scale">
@@ -431,6 +424,7 @@ export class KraftvaktStatusPage extends LitElement {
     :host {
       display: block;
       --kraftvakt-grid-color: var(--energy-grid-consumption-color, #488fc2);
+      --kraftvakt-now-color: var(--secondary-text-color);
       --kraftvakt-ev-color: var(--teal-color, #009688);
       --kraftvakt-on-color: var(--state-active-color, var(--amber-color, #ffc107));
     }
@@ -538,40 +532,40 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .swatch {
       display: inline-block;
+      flex: none;
+      width: 4px;
+      height: 12px;
+      border-radius: 1px;
+    }
+    .swatch.power-now {
       width: 12px;
       height: 8px;
       border-radius: 4px;
     }
-    .swatch.capacity-average {
+    .power-now {
+      background: var(--kraftvakt-now-color);
+    }
+    .capacity-average {
       background: var(--kraftvakt-grid-color);
     }
-    .swatch.regulation-average,
-    .marker {
-      width: 0;
-      height: 0;
-      border-radius: 0;
-      border-inline: 5px solid transparent;
-      border-top: 7px solid var(--primary-text-color);
+    .regulation-average {
+      background: var(--primary-text-color);
     }
-    .meter .markers {
-      position: relative;
-      height: 9px;
+    .power-limit {
+      background: var(--error-color);
     }
-    .meter .marker {
-      position: absolute;
-      top: 0;
-      transform: translateX(-50%);
-      transition: left 0.6s ease;
+    .meter {
+      padding-top: 4px;
     }
     .meter .bar {
       position: relative;
-      height: 20px;
+      height: 12px;
     }
     .meter .track {
       position: absolute;
       inset: 0;
       overflow: hidden;
-      border-radius: 10px;
+      border-radius: 6px;
       background: var(--secondary-background-color);
     }
     .meter .fill {
@@ -579,23 +573,18 @@ export class KraftvaktStatusPage extends LitElement {
       left: 0;
       top: 0;
       bottom: 0;
-      border-radius: 10px;
-      background: var(--kraftvakt-grid-color);
+      border-radius: 6px;
       transition: width 0.6s ease;
     }
-    .meter .penalty-zone {
+    .meter .marker {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      background: rgba(var(--rgb-error-color, 219, 68, 55), 0.28);
-    }
-    .meter .limit {
-      position: absolute;
-      top: -4px;
-      bottom: -4px;
-      width: 2px;
-      margin-left: -1px;
-      background: var(--error-color);
+      top: -5px;
+      bottom: -5px;
+      width: 4px;
+      margin-left: -2px;
+      border-radius: 1px;
+      box-shadow: 0 0 0 1px var(--card-background-color, var(--ha-card-background, #fff));
+      transition: left 0.6s ease;
     }
     .meter .ticks {
       position: relative;

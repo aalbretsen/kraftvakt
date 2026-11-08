@@ -89,22 +89,22 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   tooltip. The owner settled on the smooth bar, because a wait can span very
   many regulation windows; one block per window and a ring were tried and
   turned down.
-- The tiles are average consumption, regulation average, «Consumption now» and
-  the power limit. «Consumption now» is the power sensor's state read in the
-  panel (`measuredPowerKw()`, same units as the backend), so it updates live;
-  the meter does not show it.
-- The average consumption comes first: its tile is to the left and it is the
-  20 px bar in the grid colour. The regulation average is the second tile and
-  a small triangle in the text colour above the bar (the owner chose a marker
-  over a line inside the bar), with the same triangle as swatch in its tile.
-  The power limit is a red line, and the penalty zone from the limit to the
-  limit plus `penalty_threshold_kw` is tinted red. Under the bar are ticks
-  every 1, 2, 5, 10, 20 or 50 kW (the smallest step that gives at most 15),
-  and the labels «0 kW», «Limit 10.0 kW» in red ending at the limit, and the
-  end of the scale, which is rounded up to a whole step and reaches at least
-  1.2 × the limit, the penalty zone and both averages. Under each average
-  value in the tiles is the time it covers («over 1 hour», «over 60 s» from
-  `regulation_window_s`).
+- The tiles are, from the left, «Consumption now», average consumption,
+  regulation average and the power limit. «Consumption now» is the power
+  sensor's state read in the panel (`measuredPowerKw()`, same units as the
+  backend), so it updates live. Under each average value is the time it covers
+  («over 1 hour», «over 60 s» from `regulation_window_s`).
+- The meter is a 12 px bar for «Consumption now» in grey
+  (`--kraftvakt-now-color`, the secondary text colour). Each other value is a standing 4 px
+  rectangle that reaches 5 px above and below the bar, outlined in the card
+  colour: blue (grid colour) for the average consumption, white (text colour)
+  for the regulation average and red for the power limit. Each tile has the
+  same rectangle as swatch, and «Consumption now» a small grey bar. There is
+  no limit line or penalty zone (the owner removed them). Under the bar are
+  ticks every 1, 2, 5, 10, 20 or 50 kW (the smallest step that gives at most
+  15), and the labels «0 kW», «Limit 10.0 kW» in red ending at the limit, and
+  the end of the scale, rounded up to a whole step and reaching at least 1.2 ×
+  the limit and every value.
 - Appliances and chargers share one full-width card, «Priority list». An «EV
   charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their
