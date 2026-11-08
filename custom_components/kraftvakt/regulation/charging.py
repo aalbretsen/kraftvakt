@@ -16,6 +16,11 @@ from ..config_model import Charger, ChargingWindow
 
 ACTIVELY_CHARGING_ABOVE_KW: Final = 0.1
 BYPASSED_AFTER_WINDOWS: Final = 2
+RETRY_PAUSES: Final = (
+    timedelta(minutes=15),
+    timedelta(minutes=30),
+    timedelta(minutes=60),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +81,25 @@ def actively_charging(reading: ChargerReading) -> bool:
     """
     power_kw = reading.charge_power_kw
     return power_kw is None or power_kw > ACTIVELY_CHARGING_ABOVE_KW
+
+
+@dataclass(frozen=True, slots=True)
+class Rest:
+    """A charger that did not charge, and when it may be tried again.
+
+    `count` tells how many rests in a row the charger has had without
+    charging, starting at 0.
+    """
+
+    until: datetime
+    count: int
+
+    @classmethod
+    def after(cls, previous: Rest | None, now: datetime) -> Rest:
+        """Return the rest that starts at `now`, longer than the previous one."""
+        count = 0 if previous is None else previous.count + 1
+        pause = RETRY_PAUSES[min(count, len(RETRY_PAUSES) - 1)]
+        return cls(until=now + pause, count=count)
 
 
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
@@ -151,7 +175,8 @@ class ChargingState:
     `activated_at` tells when the first one was turned on. The rest is the
     result of the last evaluation: the chargers that are excluded from the
     regulation (None before the first evaluation), allowed to charge, bypassed, may get
-    more fictive appliances turned on, and are waiting.
+    more fictive appliances turned on, and are waiting. `rests` holds the
+    chargers that did not charge and when they may be tried again.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -162,6 +187,7 @@ class ChargingState:
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
     waiting: set[str] = field(default_factory=set)
+    rests: dict[str, Rest] = field(default_factory=dict)
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -244,17 +270,13 @@ class ChargingState:
 
         A charger is bypassed when no car is connected, or when it does not
         charge although its first fictive appliance has been on for at least
-        two regulation windows.
+        two regulation windows. A charger that did not charge rests: it stays
+        bypassed, also after it is deactivated, until it may be tried again.
         """
         bypassed = set()
         for charger in chargers:
             reading = readings.get(charger.id, ChargerReading())
-            activated_at = self.activated_at.get(charger.id)
-            if reading.car_connected is False or (
-                not actively_charging(reading)
-                and activated_at is not None
-                and now - activated_at >= BYPASSED_AFTER_WINDOWS * window
-            ):
+            if self._update_rest(charger.id, reading, now, window):
                 bypassed.add(charger.id)
         newly_bypassed = [
             charger_id
@@ -263,6 +285,36 @@ class ChargingState:
         ]
         self.bypassed = bypassed
         return newly_bypassed
+
+    def _update_rest(
+        self,
+        charger_id: str,
+        reading: ChargerReading,
+        now: datetime,
+        window: timedelta,
+    ) -> bool:
+        """Update the rest of the charger and return whether it is bypassed.
+
+        Settled with the owner: without a rest, two chargers with full cars
+        took turns being activated forever when only one may charge at a time.
+        A rest ends early when the car is disconnected, so a car that is
+        connected again is tried at once, and when the charger charges.
+        """
+        activated_at = self.activated_at.get(charger_id)
+        charges = activated_at is not None and actively_charging(reading)
+        if reading.car_connected is False or charges:
+            self.rests.pop(charger_id, None)
+        if reading.car_connected is False:
+            return True
+        rest = self.rests.get(charger_id)
+        not_charging = (
+            activated_at is not None
+            and not charges
+            and now - activated_at >= BYPASSED_AFTER_WINDOWS * window
+        )
+        if not_charging and (rest is None or rest.until <= now):
+            rest = self.rests[charger_id] = Rest.after(rest, now)
+        return not_charging or (rest is not None and now < rest.until)
 
     def _update_priority(
         self, chargers: Sequence[Charger], newly_bypassed: Sequence[str]

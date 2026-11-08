@@ -217,6 +217,11 @@ aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
   ikke lader to reguleringsvinduer etter at den ble aktivert, blir forbigått.
   Den begrenses til minste ladestrøm, beholdes aktivert og står ikke i veien
   for andre elbilladere.
+- En elbillader som ikke lader, hviler før den prøves igjen: 15 minutter
+  første gang, så 30 og deretter 60 minutter hver gang bilen fortsatt ikke
+  lader. Den forblir forbigått mens den hviler, også om en annen elbillader
+  aktiveres i mellomtiden. Kobles bilen fra og til igjen, eller begynner den å
+  lade, prøves den med en gang neste gang.
 - Kan bare én elbillader lade om gangen, får en elbillader som lader aktivt,
   fortsette til den er ferdig. De andre venter. Da må bil tilkoblet være satt
   for hver elbillader. Uten den kan Kraftvakt bare se at en bil er koblet til

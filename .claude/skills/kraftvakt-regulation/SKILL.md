@@ -238,6 +238,17 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   first fictive appliance and stays activated, gets no more, is not switched
   off above the limit and does not stand in the way of others. When it becomes
   bypassed, all fictive appliances but the first are switched off at once.
+- Rest (settled with the owner after the exploratory test, finding F5): a
+  charger that becomes bypassed because it does not charge rests. It stays
+  bypassed while it rests, also after it is deactivated, and may be tried
+  again when the rest is over: 15 min the first time, then 30 min, then 60 min
+  each time it is tried and still does not charge. The rest ends at once, and
+  the next one is 15 min again, when «car connected» is false at a decision
+  (a car that is connected again is tried at once) or when the charger
+  charges actively while activated. Every start begins without rests. Without
+  it, two chargers with full cars took turns being activated forever when only
+  one may charge at a time, and the appliances below «EV charging» were never
+  turned on.
 - Current charging priority: equal to the configured one at each start.
   Newly bypassed chargers move to the back, keeping their order, and stay there
   even after they stop being bypassed, until it is corrected: when a charger has

@@ -222,6 +222,45 @@ def test_charger_without_valid_charging_power_is_bypassed_only_without_car() -> 
     ) == ["a"]
 
 
+def test_charger_that_did_not_charge_rests_also_when_deactivated() -> None:
+    """It may be tried again after 15 minutes."""
+    configured = chargers("a")
+    state = ChargingState.for_chargers(configured)
+    state.set_fictive_on("a", 1, NOW)
+    bypassed_at = NOW + 2 * WINDOW
+    evaluate(state, configured, {"a": IDLE}, now=bypassed_at)
+    state.set_fictive_on("a", 0)
+
+    evaluate(state, configured, {"a": IDLE}, now=bypassed_at + timedelta(minutes=14))
+    assert state.bypassed == {"a"}
+    evaluate(state, configured, {"a": IDLE}, now=bypassed_at + timedelta(minutes=15))
+    assert state.bypassed == set()
+
+
+def test_rest_ends_when_the_charger_charges_or_the_car_is_disconnected() -> None:
+    """The next rest is the first again."""
+    configured = chargers("a")
+    state = ChargingState.for_chargers(configured)
+    state.set_fictive_on("a", 1, NOW)
+    later = NOW + 2 * WINDOW
+    evaluate(state, configured, {"a": IDLE}, now=later)
+    evaluate(state, configured, {"a": IDLE}, now=later + timedelta(minutes=15))
+    assert state.rests["a"].count == 1
+
+    evaluate(state, configured, {"a": CHARGING}, now=later + timedelta(minutes=16))
+    assert state.rests == {}
+    evaluate(state, configured, {"a": IDLE}, now=later + timedelta(minutes=17))
+    assert state.rests["a"].count == 0
+
+    evaluate(
+        state,
+        configured,
+        {"a": ChargerReading(car_connected=False)},
+        now=later + timedelta(minutes=18),
+    )
+    assert state.rests == {}
+
+
 def test_bypassed_charger_is_no_longer_bypassed_when_a_car_connects() -> None:
     """It stays at the back until the priority is corrected."""
     configured = chargers("a", "b")

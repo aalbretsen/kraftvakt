@@ -3,6 +3,7 @@
 from datetime import UTC, datetime, timedelta
 
 from custom_components.kraftvakt.regulation.charging import ChargerStatus
+from custom_components.kraftvakt.regulation.model import ActivateCharger
 
 from .configs import appliance, charger, make_config
 from .scenario import (
@@ -199,6 +200,62 @@ def test_bypassed_charger_does_not_stand_in_the_way_one_at_a_time() -> None:
         current("a", 6) + deactivate("a") + activate("b"),
     ]
     assert scenario.engine.charging_priority == ["b", "a"]
+
+
+def full_cars_after_both_were_tried() -> Scenario:
+    """Return two chargers with full cars, one at a time: a rests, b is tried."""
+    scenario = Scenario(
+        make_config(
+            "x",
+            chargers=(charger("a", max_a=7), charger("b", max_a=7)),
+            priority=("ev", "x"),
+            wait_at_limit_min=0,
+        )
+    )
+    assert scenario.decide_many(0.0, 5) == [
+        activate("a"),
+        current("a", 7),
+        current("a", 6) + deactivate("a") + activate("b"),
+        current("b", 7),
+        current("b", 6) + on("x"),
+    ]
+    return scenario
+
+
+def test_chargers_with_full_cars_do_not_take_turns_forever() -> None:
+    """A charger that did not charge rests 15 minutes before it is tried again.
+
+    a did not charge at minute 3 and b at minute 5.
+    """
+    scenario = full_cars_after_both_were_tried()
+
+    assert scenario.decide_many(0.0, 12) == [[]] * 12
+    assert scenario.engine.chargers["a"].bypassed
+    assert scenario.engine.chargers["b"].bypassed
+    assert scenario.decide(0.0) == deactivate("b") + activate("a")
+
+
+def test_rest_grows_while_the_car_does_not_charge() -> None:
+    """15, 30 and then 60 minutes after the charger did not charge."""
+    scenario = full_cars_after_both_were_tried()
+
+    activated = {"a": [], "b": []}
+    for minute in range(6, 130):
+        for command in scenario.decide(0.0):
+            if isinstance(command, ActivateCharger):
+                activated[command.charger_id].append(minute)
+
+    assert activated == {"a": [18, 50, 112], "b": [20, 52, 114]}
+
+
+def test_car_connected_again_is_tried_at_once() -> None:
+    scenario = full_cars_after_both_were_tried()
+    scenario.set_charger("a", car_connected=False)
+    assert scenario.decide(0.0) == []
+
+    scenario.set_charger("a", car_connected=True)
+
+    assert scenario.decide(0.0) == deactivate("b") + activate("a")
 
 
 def test_current_priority_starts_as_configured_at_each_start() -> None:
