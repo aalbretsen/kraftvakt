@@ -768,13 +768,14 @@ function e(e,t,i,a){var r,s=arguments.length,n=s<3?t:null===a?a=Object.getOwnPro
             ${this.renderOnOff(e.activated,"status.activated","status.deactivated")}
           </div>
         `})}
-    `}renderWaiting(e){if(!e.waiting_ends_at||!this.status)return Z`<span></span>`;const t=Date.parse(e.waiting_ends_at)-Date.now(),i=Math.max(1,Math.ceil(t/(1e3*this.status.regulation_window_s))),a=Lt(this.hass.language,e.waiting_ends_at);return Z`
-      <span class="windows-left" title=${this.localize("status.waiting_ends_at",{time:a})}>
-        ${Array.from({length:i},()=>Z`<span class="window-left"></span>`)}
+    `}renderWaiting(e){if(!e.waiting_ends_at||!this.status)return Z`<span></span>`;const t=Date.parse(e.waiting_ends_at)-Date.now(),i=Math.max(1,Math.ceil(t/(1e3*this.status.regulation_window_s))),a=Math.ceil(i/(this.narrow?8:15)),r=Math.ceil(i/a),s=Lt(this.hass.language,e.waiting_ends_at);return Z`
+      <span class="windows-left" title=${this.localize("status.waiting_ends_at",{time:s})}>
+        ${Array.from({length:r},()=>Z`<span class="window-left"></span>`)}
       </span>
     `}renderAmperes(e){const t=this.config?.config.charging.chargers.find(t=>t.id===e.id);if(!t)return Z`<span></span>`;const i=t.max_current_a-t.min_current_a+1,a=null===e.current_a?0:e.current_a-t.min_current_a+1;return Z`
       <span class="amperes">
-        <span class="dots ${i>16?"small":""}">
+        <span class="ampere-value">${this.localize("status.amperes",{current:t.min_current_a})}</span>
+        <span class="ampere-steps ${i>16?"small":""}">
           ${Array.from({length:i},(e,t)=>Z`<span class="ampere ${t<a?"on":""}"></span>`)}
         </span>
         ${null===e.current_a?Q:Z`<span class="ampere-value">${this.localize("status.amperes",{current:e.current_a})}</span>`}
@@ -970,7 +971,7 @@ function e(e,t,i,a){var r,s=arguments.length,n=s<3?t:null===a?a=Object.getOwnPro
     }
     .row {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(48px, 1fr) 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) 88px 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -998,7 +999,6 @@ function e(e,t,i,a){var r,s=arguments.length,n=s<3?t:null===a?a=Object.getOwnPro
       display: flex;
       justify-content: flex-end;
       gap: 3px;
-      overflow: hidden;
     }
     .window-left {
       flex: 0 1 8px;
@@ -1010,23 +1010,23 @@ function e(e,t,i,a){var r,s=arguments.length,n=s<3?t:null===a?a=Object.getOwnPro
     .amperes {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 6px;
     }
-    .dots {
+    .ampere-steps {
       display: inline-flex;
-      flex-wrap: wrap;
-      gap: 3px;
+      gap: 2px;
     }
     .ampere {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+      width: 3px;
+      height: 12px;
+      border-radius: 1px;
       background: rgba(127, 127, 127, 0.32);
     }
-    .dots.small .ampere {
-      width: 5px;
-      height: 5px;
+    .ampere-steps.small {
+      gap: 1px;
+    }
+    .ampere-steps.small .ampere {
+      width: 2px;
     }
     .ampere.on {
       background: var(--primary-color);

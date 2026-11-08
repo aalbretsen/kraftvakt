@@ -19,6 +19,10 @@ import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 
+/** How many waiting blocks fit at their narrowest in the waiting column. */
+const MAX_BLOCKS = 15;
+const MAX_BLOCKS_NARROW = 8;
+
 /** Shows how the regulation stands now, and starts and stops it. */
 @customElement("kraftvakt-status-page")
 export class KraftvaktStatusPage extends LitElement {
@@ -282,6 +286,7 @@ export class KraftvaktStatusPage extends LitElement {
   /**
    * One block per regulation window left until the decision that ends the
    * waiting. The status comes at every window, so one block goes each time.
+   * When more windows are left than blocks fit, each block stands for several.
    */
   private renderWaiting(item: ApplianceStatus | ChargerStatus) {
     if (!item.waiting_ends_at || !this.status) {
@@ -289,15 +294,20 @@ export class KraftvaktStatusPage extends LitElement {
     }
     const left = Date.parse(item.waiting_ends_at) - Date.now();
     const windows = Math.max(1, Math.ceil(left / (this.status.regulation_window_s * 1000)));
+    const windowsPerBlock = Math.ceil(windows / (this.narrow ? MAX_BLOCKS_NARROW : MAX_BLOCKS));
+    const blocks = Math.ceil(windows / windowsPerBlock);
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="windows-left" title=${this.localize("status.waiting_ends_at", { time })}>
-        ${Array.from({ length: windows }, () => html`<span class="window-left"></span>`)}
+        ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
       </span>
     `;
   }
 
-  /** One dot per ampere from the minimum to the maximum current, filled up to the current. */
+  /**
+   * The minimum current, one bar per ampere from the minimum to the maximum
+   * filled up to the current, and the current.
+   */
   private renderAmperes(charger: ChargerStatus) {
     const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
     if (!config) {
@@ -307,7 +317,8 @@ export class KraftvaktStatusPage extends LitElement {
     const on = charger.current_a === null ? 0 : charger.current_a - config.min_current_a + 1;
     return html`
       <span class="amperes">
-        <span class="dots ${steps > 16 ? "small" : ""}">
+        <span class="ampere-value">${this.localize("status.amperes", { current: config.min_current_a })}</span>
+        <span class="ampere-steps ${steps > 16 ? "small" : ""}">
           ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? "on" : ""}"></span>`)}
         </span>
         ${charger.current_a === null
@@ -564,7 +575,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(48px, 1fr) 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) 88px 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -592,7 +603,6 @@ export class KraftvaktStatusPage extends LitElement {
       display: flex;
       justify-content: flex-end;
       gap: 3px;
-      overflow: hidden;
     }
     .window-left {
       flex: 0 1 8px;
@@ -604,23 +614,23 @@ export class KraftvaktStatusPage extends LitElement {
     .amperes {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 6px;
     }
-    .dots {
+    .ampere-steps {
       display: inline-flex;
-      flex-wrap: wrap;
-      gap: 3px;
+      gap: 2px;
     }
     .ampere {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+      width: 3px;
+      height: 12px;
+      border-radius: 1px;
       background: rgba(127, 127, 127, 0.32);
     }
-    .dots.small .ampere {
-      width: 5px;
-      height: 5px;
+    .ampere-steps.small {
+      gap: 1px;
+    }
+    .ampere-steps.small .ampere {
+      width: 2px;
     }
     .ampere.on {
       background: var(--primary-color);

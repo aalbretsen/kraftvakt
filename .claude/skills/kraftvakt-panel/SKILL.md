@@ -84,9 +84,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - The waiting column shows one block per regulation window left until
   `waiting_ends_at`, the decision that turns the slot on. Blocks are squares
   (8 px, text colour) with a 3 px gap, aligned right; with many windows they
-  shrink to standing rectangles and at most to bars as wide as the gap. The
-  status comes at every window, so one block goes each time. The time is a
-  tooltip. A bar and a ring were tried here and turned down by the owner.
+  shrink to standing rectangles and at most to bars as wide as the gap. When
+  more windows are left than fit (15 blocks, 8 on a narrow screen), each block
+  stands for several windows, so the whole wait fits (owner's choice over
+  clipping or a count). The status comes at every window, so the blocks are
+  recalculated each time. The time is a tooltip. A bar and a ring were tried here and turned down by the owner.
 - The tiles are average consumption, regulation average, «Consumption now» and
   the power limit. «Consumption now» is the power sensor's state read in the
   panel (`measuredPowerKw()`, same units as the backend), so it updates live;
@@ -100,9 +102,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   «EV charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their
   reasons under the name. Columns, without headings: rank, name, variant,
-  current, waiting and state. The current is one dot per ampere from min to max, filled up to the
-  current, with «9 A» after it (smaller dots above 16 steps). On a narrow
-  screen the variant goes after the name and the dots under it.
+  current, waiting and state. The current column reads «6 A ▮▮▮▮▯▯▯ 9 A»: the minimum current, one
+  vertical bar per ampere from min to max filled up to the current (narrower
+  above 16 steps), and the current. On a narrow
+  screen the variant goes after the name and the ampere bars under it.
 
 ## Home Assistant components
 
