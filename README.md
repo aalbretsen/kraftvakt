@@ -162,7 +162,7 @@ Handlingen for ladestrøm får i tillegg variablene `current`, `min_current` og
 
 ## Utvikling
 
-Krever Python 3.14, som Home Assistant 2026.3 og nyere bruker.
+Krever Python 3.14.2 eller nyere, som Home Assistant 2026.10.4 krever.
 
 ```bash
 uv venv --python 3.14
