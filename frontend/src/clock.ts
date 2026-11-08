@@ -1,9 +1,11 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
-/** Updates its host every second while the host is connected, for countdowns. */
+/**
+ * Updates its host every second while the host is connected, for countdowns.
+ * `now` is read when the host renders, so a countdown is right also when the
+ * host renders between the ticks, for example for a new status.
+ */
 export class ClockController implements ReactiveController {
-  now = Date.now();
-
   private timer?: number;
 
   constructor(private readonly host: ReactiveControllerHost) {
@@ -11,10 +13,11 @@ export class ClockController implements ReactiveController {
   }
 
   hostConnected(): void {
-    this.timer = window.setInterval(() => {
-      this.now = Date.now();
-      this.host.requestUpdate();
-    }, 1000);
+    this.timer = window.setInterval(() => this.host.requestUpdate(), 1000);
+  }
+
+  get now(): number {
+    return Date.now();
   }
 
   hostDisconnected(): void {

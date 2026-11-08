@@ -602,7 +602,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       gap: 16px;
       padding: 0 16px 16px;
     }
-  `}};Bt=e([ge("kraftvakt-general-page")],Bt);class Ft{constructor(e){this.host=e,this.now=Date.now(),e.addController(this)}hostConnected(){this.timer=window.setInterval(()=>{this.now=Date.now(),this.host.requestUpdate()},1e3)}hostDisconnected(){window.clearInterval(this.timer)}}let qt=class extends he{constructor(){super(...arguments),this.narrow=!1,this.changingRunning=!1,this.clock=new Ft(this)}render(){if(!this.status)return J;const e=this.status;return K`
+  `}};Bt=e([ge("kraftvakt-general-page")],Bt);class Ft{constructor(e){this.host=e,e.addController(this)}hostConnected(){this.timer=window.setInterval(()=>this.host.requestUpdate(),1e3)}get now(){return Date.now()}hostDisconnected(){window.clearInterval(this.timer)}}let qt=class extends he{constructor(){super(...arguments),this.narrow=!1,this.changingRunning=!1,this.clock=new Ft(this)}render(){if(!this.status)return J;const e=this.status;return K`
       <div class="cards">
         ${this.renderRegulationCard(e)} ${e.running?this.renderAppliancesCard(e.appliances):J}
         ${e.running&&e.chargers.length>0?this.renderChargersCard(e.chargers):J}
