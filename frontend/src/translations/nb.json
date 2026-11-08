@@ -38,7 +38,6 @@
     "penalty_chip": "Straffeperiode: {value}",
     "yes": "ja",
     "no": "nei",
-    "next_decision": "Neste avgjørelse",
     "next_decision_at": "Neste avgjørelse kl. {time}",
     "priority_list": "Prioritetsliste",
     "ev_charging": "Elbillading",

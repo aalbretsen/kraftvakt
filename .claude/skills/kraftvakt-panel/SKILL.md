@@ -39,7 +39,7 @@ frontend/src/
   entities.ts          entity names, and Kraftvakt's own entities
   types.ts, format.ts
   pages/               status, general, appliances, charging, config-page (shared)
-  components/          countdown, locked-banner, manual-control-warning, sortable-list,
+  components/          countdown-ring, locked-banner, manual-control-warning, sortable-list,
                        item-dialog (shared), appliance-dialog, charger-dialog,
                        action-field, condition-field, save-bar, confirm-dialog
 ```
@@ -76,16 +76,17 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   the limit, next decision, safe state and penalty with what is left, appliances
   with variant and waiting, chargers with current, bypassed, waiting, excluded
   or outside the charging window.
-- Countdowns are never ticking text. `components/countdown.ts` has a shared
-  base that animates from `start` to `end` with the Web Animations API, so it
-  needs no clock, flows smoothly and restarts only when `start` or `end`
-  changes. The exact time is a tooltip (clock time). «Next decision» sits at
-  the right end of the chips row and empties over one decision interval
-  (`regulation_window_s` × `regulation_interval`). The waiting column has the
-  same bar, from `waiting_since` to `waiting_ends_at`, the decision that turns
-  the slot on, so it never stops and waits. Both are `kraftvakt-countdown-bar`
-  and empty towards the right (what is left sits at the right end). A ring in
-  the waiting column was tried and turned down by the owner.
+- Countdowns are never ticking text. «Next decision» is
+  `kraftvakt-countdown-ring` alone at the right end of the chips row, without
+  a label: a 20 px ring that empties counterclockwise towards the top over one
+  decision interval (`regulation_window_s` × `regulation_interval`), animated
+  with the Web Animations API, so it needs no clock. The time is a tooltip.
+- The waiting column shows one block per regulation window left until
+  `waiting_ends_at`, the decision that turns the slot on. Blocks are squares
+  (8 px, text colour) with a 3 px gap, aligned right; with many windows they
+  shrink to standing rectangles and at most to bars as wide as the gap. The
+  status comes at every window, so one block goes each time. The time is a
+  tooltip. A bar and a ring were tried here and turned down by the owner.
 - The tiles are average consumption, regulation average, «Consumption now» and
   the power limit. «Consumption now» is the power sensor's state read in the
   panel (`measuredPowerKw()`, same units as the backend), so it updates live;

@@ -11,7 +11,7 @@ import {
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
-import "../components/countdown";
+import "../components/countdown-ring";
 import { measuredPowerKw } from "../entities";
 import { formatClockTime, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -136,16 +136,17 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** A bar that empties until the next decision, with the time as a tooltip. */
+  /** A ring that empties until the next decision, with the time as a tooltip. */
   private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
     const end = Date.parse(nextDecisionAt);
     const interval = status.regulation_window_s * status.regulation_interval * 1000;
     const time = formatClockTime(this.hass.language, nextDecisionAt);
     return html`
-      <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
-        ${this.localize("status.next_decision")}
-        <kraftvakt-countdown-bar .start=${end - interval} .end=${end}></kraftvakt-countdown-bar>
-      </span>
+      <kraftvakt-countdown-ring
+        title=${this.localize("status.next_decision_at", { time })}
+        .start=${end - interval}
+        .end=${end}
+      ></kraftvakt-countdown-ring>
     `;
   }
 
@@ -278,18 +279,21 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** A bar that empties from when the waiting started until the decision that ends it. */
+  /**
+   * One block per regulation window left until the decision that ends the
+   * waiting. The status comes at every window, so one block goes each time.
+   */
   private renderWaiting(item: ApplianceStatus | ChargerStatus) {
-    if (!item.waiting_since || !item.waiting_ends_at) {
+    if (!item.waiting_ends_at || !this.status) {
       return html`<span></span>`;
     }
+    const left = Date.parse(item.waiting_ends_at) - Date.now();
+    const windows = Math.max(1, Math.ceil(left / (this.status.regulation_window_s * 1000)));
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
-      <kraftvakt-countdown-bar
-        title=${this.localize("status.waiting_ends_at", { time })}
-        .start=${Date.parse(item.waiting_since)}
-        .end=${Date.parse(item.waiting_ends_at)}
-      ></kraftvakt-countdown-bar>
+      <span class="windows-left" title=${this.localize("status.waiting_ends_at", { time })}>
+        ${Array.from({ length: windows }, () => html`<span class="window-left"></span>`)}
+      </span>
     `;
   }
 
@@ -584,13 +588,18 @@ export class KraftvaktStatusPage extends LitElement {
     .row > .chip {
       justify-self: start;
     }
-    .next-decision {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+    .windows-left {
+      display: flex;
+      justify-content: flex-end;
+      gap: 3px;
+      overflow: hidden;
     }
-    .next-decision kraftvakt-countdown-bar {
-      width: 96px;
+    .window-left {
+      flex: 0 1 8px;
+      min-width: 3px;
+      height: 8px;
+      border-radius: 1px;
+      background: var(--primary-text-color);
     }
     .amperes {
       display: flex;

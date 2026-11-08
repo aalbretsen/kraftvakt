@@ -131,7 +131,7 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 
 - snittforbruket og reguleringssnittet mot effektgrensen, med tiden hvert snitt
   dekker, og forbruket nå, slik effektsensoren måler det,
-- en stolpe som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
+- en ring som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
   holder musen over,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
   gjenstående overforbruk,
@@ -140,8 +140,8 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
   aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
   ladetidsrommet. Ladestrømmen vises som én prikk per ampere fra minste til
-  største ladestrøm. Apparatet eller elbilladeren som står for tur, har en
-  stolpe som tømmes frem mot avgjørelsen der det slås på.
+  største ladestrøm. Apparatet eller elbilladeren som står for tur, har én
+  blokk per reguleringsvindu som er igjen til avgjørelsen der det slås på.
 
 ## Entiteter
 
