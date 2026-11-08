@@ -58,6 +58,7 @@
     "missing_entity": "{item}: entitet er ikke valgt.",
     "missing_action": "{item}: handling for å {action} mangler.",
     "missing_charge_power_sensor": "{item}: sensor for ladeeffekt mangler.",
+    "missing_car_connected": "{item}: «bil tilkoblet» mangler. Den er påkrevd når bare én elbillader kan lade om gangen.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
     "charger_without_entity": "En elbillader uten entitet",
@@ -93,6 +94,7 @@
   },
   "errors": {
     "required": "Påkrevd.",
+    "car_connected_required": "Påkrevd når bare én elbillader kan lade om gangen.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
     "invalid_resolution": "Må være i steg på {step}.",
@@ -246,6 +248,8 @@
     "charging_current": "Ladestrøm",
     "measurement": "Måling",
     "minimum_first": "Ladestrømmen settes alltid til minste ladestrøm før elbilladeren aktiveres eller deaktiveres.",
+    "car_connected_required": "Bil tilkoblet",
+    "car_connected_optional": "Bil tilkoblet (valgfri)",
     "delete": "Slett elbillader",
     "fields": {
       "entity_id": {
@@ -277,7 +281,7 @@
         "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} kW, standard {default} kW (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
-        "label": "Bil tilkoblet (valgfri)",
+        "label": "Bil tilkoblet",
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
       },
       "charging_window": {

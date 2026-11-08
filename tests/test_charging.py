@@ -75,7 +75,7 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
         "priority": [{"type": "ev_charging"}],
         "charging": {
             "enabled": True,
-            "one_at_a_time": True,
+            "one_at_a_time": False,
             "chargers": [charger_data()],
         },
     }

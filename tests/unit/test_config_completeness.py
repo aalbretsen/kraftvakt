@@ -68,3 +68,14 @@ def test_optional_settings_are_not_required() -> None:
     del charger["power_reserve_kw"]
 
     assert _missing(data) == []
+
+
+def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
+    """LAD-002, LAD-010, T25: otherwise chargers without a car take turns."""
+    data = full_config_data()
+    data["charging"]["one_at_a_time"] = True
+    data["charging"]["chargers"][0]["car_connected"] = None
+
+    assert _missing(data) == [
+        Issue("missing_car_connected", "chargers", "c1", "car_connected")
+    ]

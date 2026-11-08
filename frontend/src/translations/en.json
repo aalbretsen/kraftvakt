@@ -58,6 +58,7 @@
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
     "missing_charge_power_sensor": "{item}: the sensor for charging power is missing.",
+    "missing_car_connected": "{item}: «car connected» is missing. It is required when only one EV charger may charge at a time.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
     "charger_without_entity": "An EV charger without an entity",
@@ -93,6 +94,7 @@
   },
   "errors": {
     "required": "Required.",
+    "car_connected_required": "Required when only one EV charger may charge at a time.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
     "invalid_resolution": "Must be in steps of {step}.",
@@ -246,6 +248,8 @@
     "charging_current": "Charging current",
     "measurement": "Measurement",
     "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
+    "car_connected_required": "Car connected",
+    "car_connected_optional": "Car connected (optional)",
     "delete": "Delete EV charger",
     "fields": {
       "entity_id": {
@@ -277,7 +281,7 @@
         "helper": "The power the EV charger draws when charging starts at the minimum current. {min}–{max} kW, default {default} kW (about 6 A on three phases, 400 V)."
       },
       "car_connected": {
-        "label": "Car connected (optional)",
+        "label": "Car connected",
         "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
       },
       "charging_window": {

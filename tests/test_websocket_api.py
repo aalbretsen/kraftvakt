@@ -432,6 +432,7 @@ async def test_saved_chargers_get_their_switches(
     changed = config_data()
     changed["charging"] = {
         "enabled": True,
+        "one_at_a_time": False,
         "chargers": [
             {
                 "id": "c1",
@@ -748,13 +749,20 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     hass_ws_client: WebSocketGenerator,
 ) -> None:
     """LAD-016, LAD-018, ENT-003, T11: a bypassed charger is shown last."""
-    car = {"type": "entity", "value": "binary_sensor.c1_car"}
     config["charging"] = {
         "enabled": True,
-        "chargers": [charger("c1", car_connected=car), charger("c2")],
+        "chargers": [
+            charger(
+                "c1", car_connected={"type": "entity", "value": "binary_sensor.c1_car"}
+            ),
+            charger(
+                "c2", car_connected={"type": "entity", "value": "binary_sensor.c2_car"}
+            ),
+        ],
     }
     config["priority"].append({"type": "ev_charging"})
     hass.states.async_set("binary_sensor.c1_car", "off")
+    hass.states.async_set("binary_sensor.c2_car", "on")
     for charger_id in ("c1", "c2"):
         hass.states.async_set(f"sensor.{charger_id}_power", "0")
     set_power(hass, "1000")

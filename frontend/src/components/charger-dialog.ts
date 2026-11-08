@@ -1,5 +1,5 @@
 import { css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 import type { Charger, Condition, Issue } from "../api";
 import { ownEntities } from "../entities";
@@ -24,12 +24,15 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected readonly actionFields = ["activate", "deactivate", "set_current"] as const;
 
+  /** Whether only one EV charger may charge at a time, which requires «car connected» (T25). */
+  @property({ type: Boolean }) oneAtATime = false;
+
   protected errors(): Issue[] {
     return chargerErrors(this.draft, this.capabilities);
   }
 
   protected missing(): Issue[] {
-    return missingInCharger(this.draft);
+    return missingInCharger(this.draft, this.oneAtATime);
   }
 
   protected renderFields(issues: Issue[]) {
@@ -71,12 +74,16 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /** «Car connected» is optional, and true means that a car is connected (LAD-010, GEN-010). */
+  /**
+   * «Car connected», where true means that a car is connected (LAD-010, GEN-010).
+   * Optional unless only one EV charger may charge at a time (T25).
+   */
   private renderCarConnected(issues: Issue[]) {
     const issue = issues.find((item) => item.field === "car_connected");
+    const label = this.oneAtATime ? "charger.car_connected_required" : "charger.car_connected_optional";
     return html`
       <div class="group">
-        <div class="group-title">${this.label("car_connected")}</div>
+        <div class="group-title">${this.localize(label)}</div>
         <div class="info">${this.helper("car_connected")}</div>
         <kraftvakt-condition-field
           .hass=${this.hass}

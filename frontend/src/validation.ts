@@ -39,7 +39,7 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   }
   missing.push(...config.appliances.flatMap(missingInAppliance));
   if (config.charging.enabled) {
-    missing.push(...config.charging.chargers.flatMap(missingInCharger));
+    missing.push(...config.charging.chargers.flatMap((charger) => missingInCharger(charger, config.charging.one_at_a_time)));
   }
   return missing;
 }
@@ -49,11 +49,17 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   return missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS);
 }
 
-/** Return what is missing in one EV charger (REG-016). */
-export function missingInCharger(charger: Charger): Issue[] {
+/**
+ * Return what is missing in one EV charger (REG-016). «Car connected» is
+ * required when only one EV charger may charge at a time (T25).
+ */
+export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
   if (!charger.charge_power_sensor) {
     missing.push({ code: "missing_charge_power_sensor", section: "chargers", target: charger.id, field: "charge_power_sensor" });
+  }
+  if (oneAtATime && !charger.car_connected) {
+    missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
   }
   return missing;
 }

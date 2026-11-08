@@ -111,6 +111,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         .capabilities=${this.capabilities}
         .item=${charger}
         .isNew=${isNew}
+        .oneAtATime=${this.config.charging.one_at_a_time}
         .usedEntities=${usedEntities}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
         .locked=${this.locked || !this.config.charging.enabled}

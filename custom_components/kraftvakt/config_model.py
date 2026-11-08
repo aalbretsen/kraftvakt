@@ -426,7 +426,9 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
 def missing_items(config: KraftvaktConfig) -> list[Issue]:
     """Return what is missing before the regulation can start (REG-016).
 
-    Chargers count only while charging is enabled (T10).
+    Chargers count only while charging is enabled (T10). When only one charger
+    may charge at a time, each charger needs «car connected». Without it,
+    chargers without a car would take turns being activated (T25).
     """
     missing = []
     if config.general.power_sensor is None:
@@ -447,6 +449,12 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                         "chargers",
                         charger.id,
                         "charge_power_sensor",
+                    )
+                )
+            if config.charging.one_at_a_time and charger.car_connected is None:
+                missing.append(
+                    Issue(
+                        "missing_car_connected", "chargers", charger.id, "car_connected"
                     )
                 )
     return missing

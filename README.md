@@ -102,6 +102,7 @@ administratorer har tilgang.
   elbilladerne i ladeprioritering. Dialogen for en elbillader har entitet,
   handlinger for å aktivere, deaktivere og sette ladestrøm, minste og største
   ladestrøm, sensor for ladeeffekt, effektreserve, bil tilkoblet og ladetidsrom.
+  Bil tilkoblet er påkrevd når bare én elbillader kan lade om gangen.
   Når billadestyring er av, beholdes elbilladerne, men de kan bare vises.
 
 For handlingene kan du velge **Standard** når entitetens domene har en
@@ -162,7 +163,9 @@ Reguleringen starter av seg selv når Home Assistant eller integrasjonen
 starter, forutsatt at konfigurasjonen er fullstendig: effektsensor er valgt, og
 hvert apparat har entitet og handlinger for å slå på og av. Når billadestyring
 er aktivert, må hver elbillader i tillegg ha entitet, handlinger for å aktivere,
-deaktivere og sette ladestrøm, og sensor for ladeeffekt. Ved hver start slås
+deaktivere og sette ladestrøm, og sensor for ladeeffekt. Kan bare én
+elbillader lade om gangen, må hver elbillader også ha bil tilkoblet. Ved hver
+start slås
 alle apparatene av og alle elbilladerne deaktiveres med en gang. Deretter slår
 reguleringen dem på ett og ett i prioritert rekkefølge. Første avgjørelse tas
 når et helt reguleringsintervall har gått etter starten. Når Home Assistant
@@ -204,7 +207,10 @@ aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
   Den begrenses til minste ladestrøm, beholdes aktivert og står ikke i veien
   for andre elbilladere.
 - Kan bare én elbillader lade om gangen, får en elbillader som lader aktivt,
-  fortsette til den er ferdig. De andre venter.
+  fortsette til den er ferdig. De andre venter. Da må bil tilkoblet være satt
+  for hver elbillader. Uten den kan Kraftvakt bare se at en bil er koblet til
+  ved å aktivere elbilladeren, og elbilladere uten bil ville blitt aktivert
+  etter tur.
 - Utenfor ladetidsrommet lader ikke elbilladeren. Ladetidsrommet kan gå over
   midnatt og gjelder i Home Assistants tidssone.
 
