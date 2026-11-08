@@ -678,6 +678,22 @@ export class KraftvaktStatusPage extends LitElement {
       font-size: var(--ha-font-size-s, 12px);
       white-space: nowrap;
     }
+    :host([narrow]) .amperes {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 6px;
+    }
+    :host([narrow]) .ampere-steps {
+      gap: 1px;
+    }
+    :host([narrow]) .ampere {
+      width: 2px;
+    }
+    :host([narrow]) .waiting .indicator-label {
+      white-space: normal;
+      text-align: end;
+    }
     :host([narrow]) .row {
       grid-template-columns: 20px minmax(0, 1fr) ${unsafeCSS(WAITING_WIDTH_NARROW)}px auto;
       gap: 8px;

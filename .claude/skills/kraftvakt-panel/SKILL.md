@@ -109,7 +109,9 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   9A» (just «Charging level» while deactivated) above one vertical bar per
   ampere from min to max, filled up to the current (narrower above 16 steps),
   with no text beside the bars. On a narrow screen the variant goes after the
-  name and the ampere bars under it.
+  name, and the label and the ampere bars (always the narrow 2 px bars) go on
+  one line under it, wrapping only when they do not fit. The waiting label
+  may wrap to two lines there, since the column is 48 px.
 
 ## Home Assistant components
 
