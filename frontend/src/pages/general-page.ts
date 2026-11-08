@@ -153,6 +153,10 @@ export class KraftvaktGeneralPage extends ConfigPage {
     :host([narrow]) {
       gap: 8px;
     }
+    /* HA's number field keeps its full text colour when disabled. */
+    :host([locked]) ha-form {
+      opacity: 0.6;
+    }
     .card-content {
       display: grid;
       gap: 16px;

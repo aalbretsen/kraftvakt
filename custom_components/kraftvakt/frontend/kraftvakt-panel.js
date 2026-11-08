@@ -597,6 +597,10 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     :host([narrow]) {
       gap: 8px;
     }
+    /* HA's number field keeps its full text colour when disabled. */
+    :host([locked]) ha-form {
+      opacity: 0.6;
+    }
     .card-content {
       display: grid;
       gap: 16px;
