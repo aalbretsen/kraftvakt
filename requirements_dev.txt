@@ -4,7 +4,7 @@
 # Versjonene følger det Home Assistant foretrekker:
 # - homeassistant og pytest-pakkene: det pytest-homeassistant-custom-component krever
 # - home-assistant-frontend: kravet i HAs frontend-manifest for samme HA-versjon
-# - ruff og mypy: versjonene i HA core sine testkrav for samme HA-versjon
+# - ruff: versjonen i HA core sine testkrav for samme HA-versjon
 # Dependabot foreslår oppdateringer hver uke.
 
 homeassistant==2026.10.4
@@ -13,4 +13,3 @@ pytest==9.0.3
 pytest-asyncio==1.4.0
 pytest-homeassistant-custom-component==0.13.375
 ruff==0.16.9
-mypy==2.3.1

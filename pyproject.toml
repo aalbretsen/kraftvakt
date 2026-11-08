@@ -9,18 +9,6 @@ requires-python = ">=3.14.2"
 # Ingen runtime-avhengigheter – Home Assistant leverer alt.
 dependencies = []
 
-[project.optional-dependencies]
-# Samme versjoner som i requirements_dev.txt.
-dev = [
-    "homeassistant==2026.10.4",
-    "home-assistant-frontend==20260930.5",
-    "pytest==9.0.3",
-    "pytest-asyncio==1.4.0",
-    "pytest-homeassistant-custom-component==0.13.375",
-    "ruff==0.16.9",
-    "mypy==2.3.1",
-]
-
 [tool.ruff]
 target-version = "py314"
 line-length = 88
@@ -39,11 +27,6 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components.kraftvakt"]
-
-[tool.mypy]
-python_version = "3.14"
-ignore_missing_imports = true
-follow_imports = "silent"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
