@@ -48,7 +48,7 @@
     "activated": "Activated",
     "deactivated": "Deactivated",
     "waiting_ends_at": "Turns on at the decision at {time}",
-    "amperes": "{current} A",
+    "amperes": "{current}A",
     "bypassed": "Bypassed: draws no power",
     "waiting_charger": "Waiting: another EV charger is charging",
     "excluded": "Excluded from the regulation",

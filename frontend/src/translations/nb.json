@@ -48,7 +48,7 @@
     "activated": "Aktivert",
     "deactivated": "Deaktivert",
     "waiting_ends_at": "Slås på ved avgjørelsen kl. {time}",
-    "amperes": "{current} A",
+    "amperes": "{current}A",
     "bypassed": "Forbigått: trekker ikke strøm",
     "waiting_charger": "Ventende: en annen elbillader lader",
     "excluded": "Utenfor regulering",

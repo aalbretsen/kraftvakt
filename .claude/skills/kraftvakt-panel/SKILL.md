@@ -103,7 +103,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   «EV charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their
   reasons under the name. Columns, without headings: rank, name, variant,
-  current, waiting and state. The current column reads «6 A ▮▮▮▮▯▯▯ 9 A»: the minimum current, one
+  current, waiting and state. The current column reads «6A ▮▮▮▮▯▯▯ 9A»: the minimum current, one
   vertical bar per ampere from min to max filled up to the current (narrower
   above 16 steps), and the current. On a narrow
   screen the variant goes after the name and the ampere bars under it.
