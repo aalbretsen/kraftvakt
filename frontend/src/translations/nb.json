@@ -175,7 +175,6 @@
     "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten.",
     "add_variant": "Legg til variant",
     "remove_variant": "Fjern variant",
-    "variant": "Variant {label}",
     "delete": "Slett apparat",
     "fields": {
       "entity_id": {
@@ -194,9 +193,6 @@
       },
       "label": {
         "label": "Merkelapp"
-      },
-      "condition": {
-        "label": "Uttrykk"
       }
     }
   },
@@ -281,7 +277,6 @@
         "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} kW, standard {default} kW (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
-        "label": "Bil tilkoblet",
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
       },
       "charging_window": {

@@ -175,7 +175,6 @@
     "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list.",
     "add_variant": "Add variant",
     "remove_variant": "Remove variant",
-    "variant": "Variant {label}",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
@@ -194,9 +193,6 @@
       },
       "label": {
         "label": "Label"
-      },
-      "condition": {
-        "label": "Expression"
       }
     }
   },
@@ -281,7 +277,6 @@
         "helper": "The power the EV charger draws when charging starts at the minimum current. {min}–{max} kW, default {default} kW (about 6 A on three phases, 400 V)."
       },
       "car_connected": {
-        "label": "Car connected",
         "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
       },
       "charging_window": {
