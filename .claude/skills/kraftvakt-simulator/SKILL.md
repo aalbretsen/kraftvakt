@@ -45,6 +45,12 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   `P = √3 · 400 V · I` (6 A → 4.16 kW). It has a minimum and maximum current
   (whole amperes, `max_below_min` otherwise). It draws power only while
   charging is allowed, a car is connected and the car is not fully charged.
+- Heating devices and chargers have an «Unplugged» / «Frakoblet» switch
+  (`unplugged`, `mdi:power-plug-off`). While it is on the device uses no power
+  whatever its other switches say, so a simulation can control which devices
+  consume. A heater's cycle runs on while unplugged. The HAN has no such
+  switch: set its background power instead. `PluggedInDevice` in `devices.py`
+  gives the power as 0 while unplugged, and the devices implement `demand_w`.
 - Entity names (en / nb): charger switches «Charging allowed» / «Lading
   tillatt», «Car connected» / «Bil tilkoblet», «Car fully charged» / «Bil
   fulladet»; number «Charging current» / «Ladestrøm» (A); sensor «Charging

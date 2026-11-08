@@ -43,6 +43,12 @@
       },
       "car_fully_charged": {
         "default": "mdi:battery-charging-100"
+      },
+      "unplugged": {
+        "default": "mdi:power-plug-off",
+        "state": {
+          "off": "mdi:power-plug"
+        }
       }
     }
   }

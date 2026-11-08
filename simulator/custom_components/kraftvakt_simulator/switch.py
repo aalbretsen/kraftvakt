@@ -14,7 +14,12 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import SimulatorConfigEntry, kind_of
 from .const import CONF_HEATER_TYPE, DeviceKind
-from .devices import SimulatedCharger, SimulatedDevice, SimulatedHeater
+from .devices import (
+    PluggedInDevice,
+    SimulatedCharger,
+    SimulatedDevice,
+    SimulatedHeater,
+)
 from .entity import SimulatorEntity
 
 
@@ -36,6 +41,15 @@ def heater_switch(heater_type: str) -> SimulatorSwitchDescription[SimulatedHeate
         set_fn=lambda heater, on: heater.async_set_on(on),
     )
 
+
+UNPLUGGED_SWITCH: Final[SimulatorSwitchDescription[PluggedInDevice]] = (
+    SimulatorSwitchDescription(
+        key="unplugged",
+        translation_key="unplugged",
+        is_on_fn=lambda device: device.unplugged,
+        set_fn=lambda device, unplugged: device.async_set_unplugged(unplugged),
+    )
+)
 
 CHARGER_SWITCHES: Final[tuple[SimulatorSwitchDescription[SimulatedCharger], ...]] = (
     SimulatorSwitchDescription(
@@ -71,7 +85,7 @@ async def async_setup_entry(
         descriptions = CHARGER_SWITCHES
     async_add_entities(
         SimulatorSwitch(entry, entry.runtime_data, description)
-        for description in descriptions
+        for description in (*descriptions, UNPLUGGED_SWITCH)
     )
 
 

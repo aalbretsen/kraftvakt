@@ -129,10 +129,36 @@ class SimulatedHan(SimulatedDevice):
         self._async_changed()
 
 
-class SimulatedHeater(SimulatedDevice):
+class PluggedInDevice(SimulatedDevice):
+    """A device that can be unplugged, so it uses no power whatever its state."""
+
+    def __init__(self, hass: HomeAssistant, consumer_id: str) -> None:
+        """Start plugged in."""
+        super().__init__(hass, consumer_id)
+        self.unplugged = False
+
+    @property
+    def power_w(self) -> float:
+        """Return the power in W: what the device demands, or 0 while unplugged."""
+        return 0.0 if self.unplugged else self.demand_w
+
+    @property
+    @abstractmethod
+    def demand_w(self) -> float:
+        """Return the power the device would consume if plugged in, in W."""
+
+    @callback
+    def async_set_unplugged(self, unplugged: bool) -> None:
+        """Unplug the device or plug it in again."""
+        self.unplugged = unplugged
+        self._async_changed()
+
+
+class SimulatedHeater(PluggedInDevice):
     """A heating device with a duty cycle and an on/off switch in front of it.
 
-    The cycle starts in its off part each time the switch is turned on.
+    The cycle starts in its off part each time the switch is turned on, and
+    runs on while the device is unplugged.
     """
 
     def __init__(self, hass: HomeAssistant, consumer_id: str, cycle: DutyCycle) -> None:
@@ -148,7 +174,7 @@ class SimulatedHeater(SimulatedDevice):
         return self._switched_on_at is not None
 
     @property
-    def power_w(self) -> float:
+    def demand_w(self) -> float:
         """Return the power in W: the cycle's power while switched on."""
         if self._switched_on_at is None:
             return 0.0
@@ -196,7 +222,7 @@ class SimulatedHeater(SimulatedDevice):
             self._cancel_timer = None
 
 
-class SimulatedCharger(SimulatedDevice):
+class SimulatedCharger(PluggedInDevice):
     """A 400 V three-phase EV charger with a simulated car."""
 
     def __init__(
@@ -218,7 +244,7 @@ class SimulatedCharger(SimulatedDevice):
         )
 
     @property
-    def power_w(self) -> float:
+    def demand_w(self) -> float:
         """Return the charging power in W."""
         return self.state.power_w
 

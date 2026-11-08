@@ -13,7 +13,9 @@ from custom_components.kraftvakt_simulator.const import DeviceKind
 from .conftest import AddDevice, advance, call, power, state
 
 SWITCH = "switch.heating_cable"
+UNPLUGGED = "switch.heating_cable_unplugged"
 POWER = "sensor.heating_cable_power"
+HOUSE_POWER = "sensor.han_power"
 
 
 async def test_heater_starts_switched_off_and_consumes_nothing(
@@ -22,6 +24,7 @@ async def test_heater_starts_switched_off_and_consumes_nothing(
     await add_device(DeviceKind.HEATER, "Heating cable")
 
     assert state(hass, SWITCH) == STATE_OFF
+    assert state(hass, UNPLUGGED) == STATE_OFF
     assert power(hass, POWER) == 0
     sensor = hass.states.get(POWER)
     assert sensor is not None
@@ -113,3 +116,24 @@ async def test_heater_switch_has_the_icon_of_its_type(
     assert registry_entry is not None
     assert registry_entry.translation_key == "water_heater"
     assert registry_entry.original_name is None
+
+
+async def test_unplugged_heater_consumes_nothing_while_its_cycle_runs_on(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
+) -> None:
+    await add_device(DeviceKind.HAN, "HAN", background_w=1000)
+    await add_device(DeviceKind.HEATER, "Heating cable")
+    await call(hass, "switch", "turn_on", SWITCH)
+    await advance(hass, freezer, timedelta(minutes=50))
+    assert power(hass, HOUSE_POWER) == 1750
+
+    await call(hass, "switch", "turn_on", UNPLUGGED)
+    assert power(hass, POWER) == 0
+    assert power(hass, HOUSE_POWER) == 1000
+    await advance(hass, freezer, timedelta(minutes=60))
+    assert power(hass, POWER) == 0
+
+    await call(hass, "switch", "turn_off", UNPLUGGED)
+    assert state(hass, SWITCH) == STATE_ON
+    assert power(hass, POWER) == 750
+    assert power(hass, HOUSE_POWER) == 1750

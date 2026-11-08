@@ -18,6 +18,7 @@ from .conftest import AddDevice, call, power, state
 ALLOWED = "switch.charger_charging_allowed"
 CONNECTED = "switch.charger_car_connected"
 FULLY_CHARGED = "switch.charger_car_fully_charged"
+UNPLUGGED = "switch.charger_unplugged"
 CURRENT = "number.charger_charging_current"
 CHARGING_POWER = "sensor.charger_charging_power"
 
@@ -38,7 +39,7 @@ async def test_charger_starts_without_car_and_charging_not_allowed(
 ) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
 
-    for switch in (ALLOWED, CONNECTED, FULLY_CHARGED):
+    for switch in (ALLOWED, CONNECTED, FULLY_CHARGED, UNPLUGGED):
         assert state(hass, switch) == STATE_OFF
     assert float(state(hass, CURRENT)) == 6
     assert power(hass, CHARGING_POWER) == 0
@@ -70,6 +71,20 @@ async def test_charger_draws_three_phase_power_for_a_charging_car(
     assert power(hass, CHARGING_POWER) == 0
 
 
+async def test_unplugged_charger_draws_nothing_for_a_charging_car(
+    hass: HomeAssistant, add_device: AddDevice
+) -> None:
+    await add_device(DeviceKind.CHARGER, "Charger")
+    await call(hass, "switch", "turn_on", ALLOWED)
+    await call(hass, "switch", "turn_on", CONNECTED)
+
+    await call(hass, "switch", "turn_on", UNPLUGGED)
+    assert power(hass, CHARGING_POWER) == 0
+
+    await call(hass, "switch", "turn_off", UNPLUGGED)
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(6))
+
+
 async def test_current_outside_the_charger_range_is_refused(
     hass: HomeAssistant, add_device: AddDevice
 ) -> None:
@@ -90,6 +105,7 @@ async def test_charger_states_are_restored(
             (State(ALLOWED, STATE_ON), {}),
             (State(CONNECTED, STATE_ON), {}),
             (State(CURRENT, "12"), restored_current(12)),
+            (State(UNPLUGGED, STATE_ON), {}),
         ],
     )
 
@@ -99,7 +115,8 @@ async def test_charger_states_are_restored(
     assert state(hass, CONNECTED) == STATE_ON
     assert state(hass, FULLY_CHARGED) == STATE_OFF
     assert float(state(hass, CURRENT)) == 12
-    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(12))
+    assert state(hass, UNPLUGGED) == STATE_ON
+    assert power(hass, CHARGING_POWER) == 0
 
 
 async def test_restored_current_is_kept_within_a_changed_range(

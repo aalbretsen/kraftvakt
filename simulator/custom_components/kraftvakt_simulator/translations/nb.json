@@ -92,6 +92,9 @@
       },
       "car_fully_charged": {
         "name": "Bil fulladet"
+      },
+      "unplugged": {
+        "name": "Frakoblet"
       }
     }
   }

@@ -399,6 +399,11 @@ til én enhet om gangen med **Legg til enhet**:
   √3 × 400 V × ladestrømmen (6 A gir 4,16 kW) når lading er tillatt, en bil er
   tilkoblet og bilen ikke er fulladet.
 
+Varmeapparater og elbilladere har også bryteren **Frakoblet**. Mens den er på,
+bruker enheten ingenting, uansett hva de andre bryterne står på. Slik styrer du
+hvilke enheter som bruker strøm under en simulering. Syklusen til et
+varmeapparat går videre mens det er frakoblet.
+
 Innstillingene kan endres med **Konfigurer på nytt**. Bryterne og ladestrømmen
 beholder stillingen over en omstart.
 
