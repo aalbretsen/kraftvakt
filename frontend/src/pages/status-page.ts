@@ -23,6 +23,16 @@ import type { HomeAssistant } from "../types";
 const WAITING_WIDTH = 88;
 const WAITING_WIDTH_NARROW = 48;
 
+/** The kW steps the meter's scale may use, and how many ticks it may have at most. */
+const TICK_STEPS = [1, 2, 5, 10, 20, 50];
+const MAX_TICKS = 15;
+
+/** Return the step between ticks and the end of a scale that reaches at least `reach` kW. */
+function meterScale(reach: number): { step: number; end: number } {
+  const step = TICK_STEPS.find((candidate) => reach / candidate <= MAX_TICKS) ?? TICK_STEPS[TICK_STEPS.length - 1];
+  return { step, end: Math.ceil(reach / step) * step };
+}
+
 /** Shows how the regulation stands now, and starts and stops it. */
 @customElement("kraftvakt-status-page")
 export class KraftvaktStatusPage extends LitElement {
@@ -181,30 +191,45 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   /** The averages as bars against the power limit. */
+  /**
+   * The average consumption as a bar, the regulation average as a marker above
+   * it, the power limit with the penalty zone after it, and a scale in whole kW.
+   */
   private renderMeter(status: StatusSnapshot) {
     const regulation = status.regulation_average_kw;
     const capacity = status.capacity_average_kw;
     if (regulation === null || capacity === null) {
       return nothing;
     }
-    const scale = Math.max(status.power_limit_kw * 1.2, regulation, capacity);
-    const percent = (value: number) => `${(100 * value) / scale}%`;
+    const limit = status.power_limit_kw;
+    const penaltyAt = limit + status.penalty_threshold_kw;
+    const { step, end } = meterScale(Math.max(limit * 1.2, penaltyAt, regulation, capacity));
+    const percent = (value: number) => `${(100 * Math.min(value, end)) / end}%`;
     const language = this.hass.language;
+    const ticks = Array.from({ length: end / step + 1 }, (_, index) => index * step);
     return html`
       <div class="meter">
-        <div class="limit-label">
-          <span style="left: ${percent(status.power_limit_kw)}">
-            ${this.localize("status.scale_limit", { power: formatNumber(language, status.power_limit_kw, 1) })}
-          </span>
+        <div class="markers">
+          <span
+            class="marker regulation-average"
+            style="left: ${percent(regulation)}"
+            title="${this.localize("status.regulation_average")} ${formatPower(language, regulation)} kW"
+          ></span>
         </div>
         <div class="bar">
-          <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
-          <div class="fill regulation-average" style="width: ${percent(regulation)}"></div>
-          <div class="limit" style="left: ${percent(status.power_limit_kw)}"></div>
+          <div class="track">
+            <div class="penalty-zone" style="left: ${percent(limit)}; right: calc(100% - ${percent(penaltyAt)})"></div>
+            <div class="fill capacity-average" style="width: ${percent(capacity)}"></div>
+          </div>
+          <div class="limit" style="left: ${percent(limit)}"></div>
         </div>
+        <div class="ticks">${ticks.map((tick) => html`<span style="left: ${percent(tick)}"></span>`)}</div>
         <div class="scale">
-          <span>0 kW</span>
-          <span>${formatNumber(language, scale, 1)} kW</span>
+          <span class="start">0 kW</span>
+          <span class="limit-value" style="left: ${percent(limit)}">
+            ${this.localize("status.scale_limit", { power: formatNumber(language, limit, 1) })}
+          </span>
+          <span class="end">${formatNumber(language, end, 0)} kW</span>
         </div>
       </div>
     `;
@@ -517,15 +542,35 @@ export class KraftvaktStatusPage extends LitElement {
       height: 8px;
       border-radius: 4px;
     }
-    .capacity-average {
+    .swatch.capacity-average {
       background: var(--kraftvakt-grid-color);
     }
-    .regulation-average {
-      background: var(--primary-text-color);
+    .swatch.regulation-average,
+    .marker {
+      width: 0;
+      height: 0;
+      border-radius: 0;
+      border-inline: 5px solid transparent;
+      border-top: 7px solid var(--primary-text-color);
+    }
+    .meter .markers {
+      position: relative;
+      height: 9px;
+    }
+    .meter .marker {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%);
+      transition: left 0.6s ease;
     }
     .meter .bar {
       position: relative;
       height: 20px;
+    }
+    .meter .track {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
       border-radius: 10px;
       background: var(--secondary-background-color);
     }
@@ -535,10 +580,14 @@ export class KraftvaktStatusPage extends LitElement {
       top: 0;
       bottom: 0;
       border-radius: 10px;
+      background: var(--kraftvakt-grid-color);
+      transition: width 0.6s ease;
     }
-    .meter .fill.regulation-average {
-      top: 8px;
-      bottom: 8px;
+    .meter .penalty-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(var(--rgb-error-color, 219, 68, 55), 0.28);
     }
     .meter .limit {
       position: absolute;
@@ -548,25 +597,41 @@ export class KraftvaktStatusPage extends LitElement {
       margin-left: -1px;
       background: var(--error-color);
     }
-    .meter .scale {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 4px;
-      font-size: var(--ha-font-size-s, 12px);
-      color: var(--secondary-text-color);
+    .meter .ticks {
+      position: relative;
+      height: 5px;
+      margin-top: 2px;
     }
-    .meter .limit-label {
+    .meter .ticks span {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      margin-left: -0.5px;
+      background: var(--secondary-text-color);
+      opacity: 0.6;
+    }
+    .meter .scale {
       position: relative;
       height: 18px;
-      margin-bottom: 4px;
+      margin-top: 2px;
       font-size: var(--ha-font-size-s, 12px);
       color: var(--secondary-text-color);
     }
-    .meter .limit-label span {
+    .meter .scale span {
       position: absolute;
+      white-space: nowrap;
+    }
+    .meter .scale .start {
+      left: 0;
+    }
+    .meter .scale .end {
+      right: 0;
+    }
+    .meter .scale .limit-value {
       transform: translateX(-100%);
       padding-inline-end: 6px;
-      white-space: nowrap;
+      color: var(--error-color);
     }
     .facts {
       display: flex;

@@ -152,6 +152,7 @@ export interface StatusSnapshot {
   regulation_average_kw: number | null;
   capacity_average_kw: number | null;
   power_limit_kw: number;
+  penalty_threshold_kw: number;
   regulation_window_s: number;
   regulation_interval: number;
   next_decision_at: string | null;

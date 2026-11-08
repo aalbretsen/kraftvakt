@@ -94,10 +94,17 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   panel (`measuredPowerKw()`, same units as the backend), so it updates live;
   the meter does not show it.
 - The average consumption comes first: its tile is to the left and it is the
-  thick bar in the grid colour. The regulation average is the second
-  tile and a thin line in the text colour on top, so it shows against the blue
-  bar and the empty track. Under each average value is the time it covers
-  («over 1 hour», «over 60 s» from `regulation_window_s`).
+  20 px bar in the grid colour. The regulation average is the second tile and
+  a small triangle in the text colour above the bar (the owner chose a marker
+  over a line inside the bar), with the same triangle as swatch in its tile.
+  The power limit is a red line, and the penalty zone from the limit to the
+  limit plus `penalty_threshold_kw` is tinted red. Under the bar are ticks
+  every 1, 2, 5, 10, 20 or 50 kW (the smallest step that gives at most 15),
+  and the labels «0 kW», «Limit 10.0 kW» in red ending at the limit, and the
+  end of the scale, which is rounded up to a whole step and reaches at least
+  1.2 × the limit, the penalty zone and both averages. Under each average
+  value in the tiles is the time it covers («over 1 hour», «over 60 s» from
+  `regulation_window_s`).
 - Appliances and chargers share one full-width card, «Priority list». An «EV
   charging» row with its own rank sits at `ev_charging_position`, and the
   chargers are indented under it in the current charging priority, with their

@@ -182,6 +182,7 @@ Status snapshot:
   "regulation_average_kw": 7.42,
   "capacity_average_kw": 8.10,
   "power_limit_kw": 10.0,
+  "penalty_threshold_kw": 1.0,
   "regulation_window_s": 60,
   "regulation_interval": 1,
   "next_decision_at": "2026-11-07T12:01:00+01:00",
@@ -202,3 +203,5 @@ is `null` before the first decision after a start. Appliances are sorted by the
 entry of their current variant, chargers by the current charging priority.
 `ev_charging_position` is the number of appliances whose current variant is
 placed before «EV charging», `null` while EV charging is disabled.
+`power_limit_kw` and `penalty_threshold_kw` are from the configuration the
+regulation runs with.

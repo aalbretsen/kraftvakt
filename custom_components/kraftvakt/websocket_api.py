@@ -254,6 +254,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
             None if averages is None else averages.capacity_average_kw
         ),
         "power_limit_kw": config.general.power_limit_kw,
+        "penalty_threshold_kw": config.general.penalty_threshold_kw,
         "regulation_window_s": config.general.regulation_window_s,
         "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
