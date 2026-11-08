@@ -145,10 +145,11 @@ class RegulationEngine:
             commands += self._hold_everything_off()
         if self._state.penalty.active:
             return commands + self._switch_variants(decision.variant_conditions)
-        commands += self._decide_chargers(decision, overrides_ended)
-        commands += self._switch_variants(decision.variant_conditions)
+        forced = self._decide_chargers(decision, overrides_ended)
+        forced += self._switch_variants(decision.variant_conditions)
+        commands += forced
         if average > self._config.general.power_limit_kw:
-            return commands + self._switch_off_above_limit()
+            return commands + self._switch_off_above_limit(forced_off=bool(forced))
         return commands + self._turn_on_next(decision.now, average)
 
     def _new_charging(self) -> ChargingState:
@@ -306,9 +307,16 @@ class RegulationEngine:
             slot for slot in reversed(self._slots()) if slot.is_on and slot.can_turn_off
         )
 
-    def _switch_off_above_limit(self) -> list[Command]:
-        """Switch off the lowest priority slots that are on."""
+    def _switch_off_above_limit(self, forced_off: bool) -> list[Command]:
+        """Switch off the lowest priority slots that are on.
+
+        Nothing more is switched off when the decision has already forced
+        something off. Settled with the owner: the average was measured before
+        that, so switching off one more was often too much.
+        """
         self._state.waiting = None
+        if forced_off:
+            return []
         commands: list[Command] = []
         for slot in list(islice(self._slots_on_lowest_first(), SLOTS_PER_DECISION)):
             commands += self._switch(slot.key, turn_on=False)

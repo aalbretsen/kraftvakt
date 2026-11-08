@@ -125,7 +125,12 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   7. Build the ordered slots (current variants, fictive appliances in place of
      «EV charging»).
   8. Above the limit: switch off the lowest priority slot that is on and not a
-     bypassed charger's, without waiting, and cancel any waiting.
+     bypassed charger's, without waiting, and cancel any waiting. When step 6
+     switched something off at this decision, nothing more is switched off;
+     the waiting is still cancelled and nothing is turned on. Settled with the
+     owner after the exploratory test (finding F6): the average was measured
+     before the forced switch-off, so switching off one more was often too
+     much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
 - Only one appliance is turned on or off per decision based on free power.
   Several may be switched off at once only when consumption must drop at once

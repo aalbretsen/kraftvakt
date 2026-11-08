@@ -285,6 +285,22 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
     assert scenario.decide(ABOVE_LIMIT) == current("b", 6)
 
 
+def test_excluded_charger_above_the_limit_switches_off_nothing_more() -> None:
+    """Found in the exploratory test: b was excluded and deactivated, and a
+    lost an ampere too because the average was above the limit."""
+    scenario = two_chargers(one_at_a_time=False)
+    scenario.set_charger("a", **CHARGING)
+    scenario.set_charger("b", **CHARGING)
+    scenario.charge("a", 7)
+    scenario.charge("b", 7)
+
+    scenario.set_charger("b", excluded=True)
+
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("b")
+    assert scenario.engine.chargers["a"].current_a == 7
+    assert scenario.decide(ABOVE_LIMIT) == current("a", 6)
+
+
 def test_charging_charger_goes_first_and_the_other_waits() -> None:
     """Until it stops, whatever the priority."""
     scenario = two_chargers(one_at_a_time=True)

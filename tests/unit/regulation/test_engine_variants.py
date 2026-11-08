@@ -51,6 +51,16 @@ def test_restart_forgets_the_current_variant() -> None:
     assert scenario.engine.current_variants == {}
 
 
+def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
+    """Found in the exploratory test: the heater switched variant and went
+    off, and b was switched off too because the average was above the limit."""
+    scenario = Scenario(morning_heater_config(wait_at_limit_min=0))
+    scenario.turn_on("b", "heater")
+
+    assert scenario.decide(10.5, true=("morning",)) == off("heater")
+    assert scenario.engine.appliances_on == {"b"}
+
+
 def test_switch_above_the_lowest_on_makes_room() -> None:
     """C is switched off to give room for D, which comes back on."""
     scenario = Scenario(
@@ -69,8 +79,9 @@ def test_switch_above_the_lowest_on_makes_room() -> None:
     assert scenario.decide(9.0, true=("up",)) == on("c")
 
 
-def test_switch_happens_at_the_same_decision_as_switching_off() -> None:
-    """A variant switch may switch off more than one appliance per decision."""
+def test_room_made_above_the_limit_is_enough_for_one_decision() -> None:
+    """Making room is a switch-off, so nothing more is switched off for being
+    above the limit at the same decision."""
     scenario = Scenario(
         make_config(
             "a",
@@ -81,7 +92,8 @@ def test_switch_happens_at_the_same_decision_as_switching_off() -> None:
     )
     scenario.turn_on("a", "b")
 
-    assert scenario.decide(10.5, true=("up",)) == off("b", "a")
+    assert scenario.decide(10.5, true=("up",)) == off("b")
+    assert scenario.decide(10.5, true=("up",)) == off("a")
 
 
 def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
