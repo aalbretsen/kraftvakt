@@ -349,3 +349,44 @@ def test_long_run_keeps_only_the_last_hour() -> None:
 
     assert math.isclose(averages.capacity_average_kw or 0, 0.5, rel_tol=1e-3)
     assert len(averager._steps) <= 3600 + 2
+
+
+def test_history_fills_the_hour_before_the_first_measurement() -> None:
+    """Invalid history keeps the last valid value; history after the start is left
+    out, and the oldest value fills the time before it."""
+    averager = PowerAverager(WINDOW, START)
+    averager.add_measurement(START, 6.0)
+
+    averager.add_history(
+        [
+            (at(-30 * 60), 2.0),
+            (at(-20 * 60), None),
+            (at(-10 * 60), 6.0),
+            (at(0), 50.0),
+            (at(30), 50.0),
+        ]
+    )
+    averages = averager.close_window()
+
+    assert averages.capacity_average_kw == pytest.approx((2.0 * 49 + 6.0 * 11) / 60)
+    assert averages.regulation_average_kw == 6.0
+
+
+def test_history_without_a_measurement_since_the_start_holds_its_last_value() -> None:
+    averager = PowerAverager(WINDOW, START)
+
+    averager.add_history([(at(-60 * 60), 1.0), (at(-15 * 60), 5.0)])
+    averages = averager.close_window()
+
+    assert averages.capacity_average_kw == pytest.approx((1.0 * 44 + 5.0 * 16) / 60)
+    assert averages.regulation_average_kw == 5.0
+    assert not averages.sensor_valid
+
+
+def test_empty_history_keeps_the_first_measurement_filling_backwards() -> None:
+    averager = PowerAverager(WINDOW, START)
+    averager.add_measurement(START, 4.0)
+
+    averager.add_history([(at(-5 * 60), None)])
+
+    assert averager.close_window().capacity_average_kw == 4.0

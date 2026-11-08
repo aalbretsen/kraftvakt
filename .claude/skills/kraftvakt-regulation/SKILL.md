@@ -80,9 +80,17 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   average covers its own window, without overlap.
 - Averages are energy divided by time, correct for any update rate of the
   sensor (each value holds until the next).
-- At startup, and when a valid value comes back after the history was
-  discarded, the missing past in both windows is filled with the first
-  measured value.
+- At startup (HA or integration start) the hour before is taken from HA's
+  recorder history of the power sensor, read like live values (an invalid
+  value keeps the last valid one in place, and the oldest valid value fills
+  the time before it). Settled with the owner, because filling the hour with
+  the first value after a restart made the average consumption far too low:
+  everything is turned off at start, so the first value is only the
+  background. Without a recorder or any valid history, and when a valid value
+  comes back after the history was discarded, the missing past is filled with
+  the first measured value. The regulation window is not affected: the first
+  one starts at startup. The time HA was down counts with the last value
+  recorded before it stopped.
 - Validity is the state when a window closes. A gap inside a window is filled
   with the last valid value.
 - One window closing without a valid value is tolerated (the last valid value

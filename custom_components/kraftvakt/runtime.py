@@ -6,7 +6,9 @@ import asyncio
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
+from functools import partial
 
+from homeassistant.components.recorder import get_instance, history
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import (
@@ -36,6 +38,7 @@ from .config_model import (
     missing_items,
 )
 from .measurement import (
+    CAPACITY_WINDOW,
     CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET,
     PowerAverager,
     WindowAverages,
@@ -117,6 +120,7 @@ class KraftvaktRuntime:
         self._cancel_power_listener: CALLBACK_TYPE | None = None
         self._cancel_window_timer: CALLBACK_TYPE | None = None
         self._cancel_start_when_started: CALLBACK_TYPE | None = None
+        self._history_task: asyncio.Task[None] | None = None
 
     @property
     def latest_averages(self) -> WindowAverages | None:
@@ -205,6 +209,9 @@ class KraftvaktRuntime:
         appliances are loaded before they are turned off.
         """
         self._follow_power_sensor(self._created_at)
+        self._history_task = self._hass.async_create_background_task(
+            self._async_add_power_history(), "kraftvakt power history"
+        )
         self._schedule_window_close()
         if self._hass.state is CoreState.running:
             self._start_regulation_if_complete(self._created_at)
@@ -236,6 +243,9 @@ class KraftvaktRuntime:
     def async_shutdown(self) -> None:
         """Stop listening to the power sensor and cancel the window timer."""
         self._forget_start_when_started()
+        if self._history_task:
+            self._history_task.cancel()
+            self._history_task = None
         if self._cancel_window_timer:
             self._cancel_window_timer()
             self._cancel_window_timer = None
@@ -323,17 +333,37 @@ class KraftvaktRuntime:
                 self._hass, power_sensor, self._async_power_changed
             )
 
+    async def _async_add_power_history(self) -> None:
+        """Fill the hour before the start from the recorder's power sensor history.
+
+        Without a recorder or history, the first measurement fills it instead.
+        """
+        power_sensor = self._config.general.power_sensor
+        if not power_sensor or "recorder" not in self._hass.config.components:
+            return
+        states = await get_instance(self._hass).async_add_executor_job(
+            partial(
+                history.state_changes_during_period,
+                self._hass,
+                self._created_at - CAPACITY_WINDOW,
+                self._created_at,
+                power_sensor,
+            )
+        )
+        if power_sensor == self._config.general.power_sensor:
+            self._averager.add_history(
+                (state.last_changed, _power_of(state))
+                for state in states.get(power_sensor, [])
+            )
+
     @callback
     def _async_power_changed(self, event: Event[EventStateChangedData]) -> None:
         self._record_power(event.time_fired, event.data["new_state"])
 
     def _record_power(self, when: datetime, state: State | None) -> None:
-        power = (
-            None
-            if state is None
-            else power_kw(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+        self._averager.add_measurement(
+            when, None if state is None else _power_of(state)
         )
-        self._averager.add_measurement(when, power)
 
     def _schedule_window_close(self) -> None:
         # Absolute times keep the windows from drifting.
@@ -469,3 +499,8 @@ class KraftvaktRuntime:
     def _notify_status(self) -> None:
         for listener in list(self._status_listeners):
             listener()
+
+
+def _power_of(state: State) -> float | None:
+    """Return the power a power sensor state gives in kW, or None if invalid."""
+    return power_kw(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))

@@ -12,7 +12,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 - Complex logic (`regulation/`, `measurement.py`, `config_model.py`) is also
   proven by itself with unit tests. Error handling that is hard to reach from
   the outside is unit tested.
-- Aim for coverage, not every permutation. Today: 513 tests, 99 % line
+- Aim for coverage, not every permutation. Today: 518 tests, 99 % line
   coverage of Kraftvakt and 100 % of the simulator. The only uncovered line is
   the `TypeError` for an unknown slot in `engine.py`.
 - The panel has no automatic tests. The type check and the build run in CI, and
@@ -39,7 +39,8 @@ Setup: `uv venv --python 3.14 && uv pip install -r requirements_dev.txt`
 - `tests/`: black box tests per area: `test_regulation.py` (end to end),
   `test_charging.py`, `test_sensor.py`, `test_runtime.py`,
   `test_websocket_api.py`, `test_storage.py`, `test_init.py`,
-  `test_config_flow.py`. `tests/config_examples.py` has a full configuration.
+  `test_config_flow.py`, `test_power_history.py`. `tests/config_examples.py` has
+  a full configuration.
 - `tests/simulator/` and `tests/unit/simulator/`: the simulator, see the
   `kraftvakt-simulator` skill. `pyproject.toml` puts `simulator` on pytest's
   `pythonpath`, so both integrations load in every test.
@@ -64,6 +65,10 @@ compared with `on`, `off`, `activate`, `deactivate`, `current` and
 
 ## Black box conventions
 
+- Tests with the recorder go in their own file (`test_power_history.py`), which
+  overrides the autouse `auto_enable_custom_integrations` to request
+  `recorder_mock` first: the recorder must start before `hass`. Record states
+  at past times with `freezer.move_to()` and `async_wait_recording_done()`.
 - Store the configuration in `hass_storage[STORAGE_KEY]` before setup.
 - Use `light.*` entities for appliances: mocking `switch.turn_on` would replace
   Kraftvakt's own switch service.

@@ -165,6 +165,11 @@ effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
 Når effektsensoren gir en gyldig verdi igjen, brukes den verdien bakover i tid
 i begge snittene.
 
+Når Kraftvakt starter, hentes timen før fra historikken til effektsensoren i
+Home Assistant (opptakeren, `recorder`), slik at snittforbruket stemmer også
+rett etter en omstart. Tiden Home Assistant var nede, regnes med den siste
+verdien før den stoppet. Uten historikk brukes første måling bakover i tid.
+
 ## Start og stopp
 
 Reguleringen starter av seg selv når Home Assistant eller integrasjonen

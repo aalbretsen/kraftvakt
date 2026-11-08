@@ -1,6 +1,7 @@
 {
   "domain": "kraftvakt",
   "name": "Kraftvakt",
+  "after_dependencies": ["recorder"],
   "codeowners": ["@aalbretsen"],
   "config_flow": true,
   "dependencies": ["frontend", "http", "panel_custom"],

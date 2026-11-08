@@ -7,6 +7,7 @@ measurement, so the averages do not depend on a clock.
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import pairwise
@@ -67,7 +68,8 @@ class PowerAverager:
     The power is piecewise constant: a measurement applies until the next one,
     and an invalid measurement keeps the last valid one in place.
     The first measurement also applies backwards in time, which fills the
-    windows at startup and after a reset.
+    windows at startup and after a reset, unless history from before it has
+    been added.
     """
 
     def __init__(self, window_length: timedelta, start: datetime) -> None:
@@ -112,6 +114,26 @@ class PowerAverager:
             self._steps.pop()
         if not self._steps or self._steps[-1].power_kw != power:
             self._steps.append(_Step(when, power))
+
+    def add_history(
+        self, measurements: Iterable[tuple[datetime, float | None]]
+    ) -> None:
+        """Add measurements from before the first measurement, oldest first.
+
+        Like live measurements, an invalid one keeps the last valid one in
+        place. Measurements at or after the first recorded step are left out,
+        so the history only fills the past the averager has not measured.
+        """
+        first_measured = self._steps[0].start if self._steps else self._latest
+        history: list[_Step] = []
+        for when, power in measurements:
+            if when >= first_measured:
+                break
+            if power is not None and (not history or history[-1].power_kw != power):
+                history.append(_Step(when, power))
+        if self._steps and history and history[-1].power_kw == self._steps[0].power_kw:
+            self._steps[0] = history.pop()
+        self._steps[:0] = history
 
     def close_window(self) -> WindowAverages:
         """Close the current regulation window and start the next one.
