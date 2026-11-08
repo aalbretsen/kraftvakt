@@ -35,5 +35,10 @@
         "name": "{charger} override charging window"
       }
     }
+  },
+  "exceptions": {
+    "unreadable_configuration": {
+      "message": "The stored configuration in .storage/kraftvakt.config cannot be read ({issues}). Kraftvakt is not started, and the file is left unchanged."
+    }
   }
 }

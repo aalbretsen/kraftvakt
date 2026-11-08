@@ -35,5 +35,10 @@
         "name": "{charger} overstyr ladetidsrom"
       }
     }
+  },
+  "exceptions": {
+    "unreadable_configuration": {
+      "message": "Den lagrede konfigurasjonen i .storage/kraftvakt.config kan ikke leses ({issues}). Kraftvakt er ikke startet, og filen er ikke endret."
+    }
   }
 }

@@ -167,7 +167,9 @@ alle apparatene av og alle elbilladerne deaktiveres med en gang. Deretter slår
 reguleringen dem på ett og ett i prioritert rekkefølge. Første avgjørelse tas
 når et helt reguleringsintervall har gått etter starten. Når Home Assistant
 starter, venter reguleringen til Home Assistant har startet ferdig, slik at
-integrasjonene til apparatene er lastet før de slås av.
+integrasjonene til apparatene er lastet før de slås av. Kan ikke den lagrede
+konfigurasjonen (`.storage/kraftvakt.config`) leses, starter ikke Kraftvakt.
+Integrasjonen viser da en feilmelding, og filen endres ikke.
 
 Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
 stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.

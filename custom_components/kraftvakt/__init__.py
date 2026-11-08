@@ -8,11 +8,13 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from .charger_switches import ChargerSwitchBoard
+from .config_model import ConfigValidationError
 from .const import (
     DOMAIN,
     PANEL_COMPONENT_NAME,
@@ -38,9 +40,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
-    """Set up Kraftvakt from a config entry."""
+    """Set up Kraftvakt from a config entry.
+
+    A stored configuration that cannot be read stops the setup with a clear
+    error, and the stored file is left as it is.
+    """
     storage = KraftvaktStorage(hass)
-    stored = await storage.async_load()
+    try:
+        stored = await storage.async_load()
+    except ConfigValidationError as error:
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="unreadable_configuration",
+            translation_placeholders={"issues": str(error)},
+        ) from error
     runtime = KraftvaktRuntime(
         hass, stored.config, ChargerSwitchBoard(hass, storage, stored)
     )
