@@ -373,6 +373,37 @@ async def test_parse_config_rejects_wrong_types(hass: HomeAssistant) -> None:
         parse_config({"general": {"power_limit_kw": "ti"}})
 
 
+async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) -> None:
+    """Found in the exploratory test: a regulation window of 10.5 s hid the
+    power limit out of range and the entity used twice."""
+    data = full_config_data()
+    data["general"]["regulation_window_s"] = 10.5
+    data["general"]["power_limit_kw"] = 0.5
+    data["appliances"][1]["entity_id"] = data["appliances"][0]["entity_id"]
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert {(issue.code, issue.field) for issue in error.value.issues} == {
+        ("not_integer", "regulation_window_s"),
+        ("out_of_range", "power_limit_kw"),
+        ("duplicate_entity", "entity_id"),
+    }
+
+
+async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
+    """The default used in its place is not checked again."""
+    data = full_config_data()
+    data["appliances"][0]["power_reserve_kw"] = "mye"
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [
+        Issue("invalid_type", "appliances", "a1", "power_reserve_kw")
+    ]
+
+
 async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> None:
     data = full_config_data()
     data["appliances"][0]["variants"][0]["condition"]["value"] = "{{ 5 <= }}"

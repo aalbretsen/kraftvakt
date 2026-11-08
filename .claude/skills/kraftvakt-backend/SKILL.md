@@ -124,6 +124,10 @@ Validation (an invalid configuration is not saved):
   Whether «default» exists for the entity's domain is checked by
   `default_action_issues()` in `actions.py` (it cannot be called from
   `parse_config()`). Type errors must be fixed before that check can run.
+- A value of the wrong type is reported and read as its default, so every
+  other rule is still checked and all issues come back together; the default
+  is not checked again. Settled with the owner after the exploratory test
+  (finding F9): one type error hid every other error.
 
 An incomplete configuration can be saved, but the regulation cannot start.
 Missing items and validation errors are issues:

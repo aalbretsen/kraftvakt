@@ -369,11 +369,19 @@ def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
 
     Missing entries in the priority list are added at the bottom.
     Raises ConfigValidationError with every issue found if the configuration
-    is invalid. An incomplete configuration is valid. Must be called
-    from the event loop, since Home Assistant validates templates there.
+    is invalid. A value of the wrong type is read as the default, so the other
+    rules are still checked, but not again for that value. An incomplete
+    configuration is valid. Must be called from the event loop, since Home
+    Assistant validates templates there.
     """
-    config = _complete_priority(KraftvaktConfig.from_dict(data))
-    issues = validate_config(config) + action_and_template_issues(config)
+    reader = _Reader()
+    config = _complete_priority(reader.config(data))
+    unreadable = {(issue.section, issue.target, issue.field) for issue in reader.issues}
+    issues = reader.issues + [
+        issue
+        for issue in validate_config(config) + action_and_template_issues(config)
+        if (issue.section, issue.target, issue.field) not in unreadable
+    ]
     if issues:
         raise ConfigValidationError(issues)
     return config
