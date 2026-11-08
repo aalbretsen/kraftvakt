@@ -1,4 +1,4 @@
-"""Scenario tests for variants of appliances (APP-007, APP-009)."""
+"""Scenario tests for variants of appliances."""
 
 from .configs import appliance, make_config
 from .scenario import Scenario, off, on
@@ -15,7 +15,7 @@ def morning_heater_config(**settings):
 
 
 def test_current_variant_decides_the_place() -> None:
-    """APP-007: only the entry of the current variant takes part."""
+    """Only the entry of the current variant takes part."""
     in_the_morning = Scenario(morning_heater_config(wait_at_limit_min=0))
     otherwise = Scenario(morning_heater_config(wait_at_limit_min=0))
 
@@ -27,7 +27,7 @@ def test_current_variant_decides_the_place() -> None:
 
 
 def test_current_variant_is_found_at_each_decision() -> None:
-    """APP-007, REG-009: no current variant before the first decision."""
+    """No current variant before the first decision."""
     scenario = Scenario(morning_heater_config())
     assert scenario.engine.current_variants == {}
 
@@ -42,7 +42,7 @@ def test_current_variant_is_found_at_each_decision() -> None:
 
 
 def test_restart_forgets_the_current_variant() -> None:
-    """REG-009: the current variant is found again at the first decision."""
+    """The current variant is found again at the first decision."""
     scenario = Scenario(morning_heater_config())
     scenario.decide(1.0, true=("morning",))
 
@@ -52,7 +52,7 @@ def test_restart_forgets_the_current_variant() -> None:
 
 
 def test_switch_above_the_lowest_on_makes_room() -> None:
-    """APP-009 example: C is switched off to give room for D, which comes back on."""
+    """C is switched off to give room for D, which comes back on."""
     scenario = Scenario(
         make_config(
             "a",
@@ -70,7 +70,7 @@ def test_switch_above_the_lowest_on_makes_room() -> None:
 
 
 def test_switch_happens_at_the_same_decision_as_switching_off() -> None:
-    """APP-009 is an exception from one appliance per decision (REG-004)."""
+    """A variant switch may switch off more than one appliance per decision."""
     scenario = Scenario(
         make_config(
             "a",
@@ -85,7 +85,7 @@ def test_switch_happens_at_the_same_decision_as_switching_off() -> None:
 
 
 def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
-    """APP-009: off after the switch, then on in the normal way after waiting."""
+    """Off after the switch, then on in the normal way after waiting."""
     scenario = Scenario(morning_heater_config())
     scenario.turn_on("b", "heater")
 
@@ -119,7 +119,7 @@ def heater_moving_down_config():
 
 
 def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
-    """APP-009: the waiting time for the appliance starts again."""
+    """The waiting time for the appliance starts again."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b")
     assert scenario.decide_many(5.0, 2) == [[], []]
@@ -129,7 +129,7 @@ def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
 
 
 def test_switch_resets_the_increasing_waiting_time() -> None:
-    """APP-009: the counter for increasing waiting time is reset (REG-015)."""
+    """The counter for increasing waiting time is reset."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b", "heater")
     assert scenario.decide(10.5) == off("heater")
@@ -140,7 +140,7 @@ def test_switch_resets_the_increasing_waiting_time() -> None:
 
 
 def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
-    """T22: E makes room by switching off D, which has to go off anyway."""
+    """E makes room by switching off D, which has to go off anyway."""
     scenario = Scenario(
         make_config(
             "a",

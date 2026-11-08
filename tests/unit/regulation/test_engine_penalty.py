@@ -1,4 +1,4 @@
-"""Scenario tests for overconsumption and penalty in the engine (STR-001 to STR-009)."""
+"""Scenario tests for overconsumption and penalty in the engine."""
 
 from datetime import timedelta
 
@@ -32,7 +32,7 @@ def start_penalty(scenario: Scenario, average_kw: float = 16.0) -> list:
 
 
 def test_penalty_turns_everything_off_at_once() -> None:
-    """STR-001, STR-003: every appliance in the configuration, at one decision."""
+    """Every appliance in the configuration, at one decision."""
     scenario = Scenario(no_waiting("a", "b", "c"))
     scenario.turn_on("a", "b")
 
@@ -46,7 +46,7 @@ def test_penalty_turns_everything_off_at_once() -> None:
 
 
 def test_nothing_is_turned_on_during_the_penalty() -> None:
-    """STR-003: no appliance is turned on while the penalty lasts."""
+    """No appliance is turned on while the penalty lasts."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a")
     start_penalty(scenario)
@@ -57,7 +57,7 @@ def test_nothing_is_turned_on_during_the_penalty() -> None:
 
 
 def test_penalty_ends_with_a_restart_when_paid_back() -> None:
-    """STR-006, STR-008: the regulation starts again by REG-009 when paid back."""
+    """The regulation starts again with everything off when paid back."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
     start_penalty(scenario)
@@ -70,7 +70,7 @@ def test_penalty_ends_with_a_restart_when_paid_back() -> None:
 
 
 def test_appliances_come_back_one_by_one_after_the_penalty() -> None:
-    """STR-008, STR-009: a new overconsumption state starts at 0, without penalty."""
+    """A new overconsumption state starts at 0, without penalty."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
     start_penalty(scenario, average_kw=11.0)
@@ -83,7 +83,7 @@ def test_appliances_come_back_one_by_one_after_the_penalty() -> None:
 
 
 def test_restart_after_the_penalty_waits_again() -> None:
-    """STR-008, REG-012: after the restart, appliances wait before turning on."""
+    """After the restart, appliances wait before turning on."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
     start_penalty(scenario, average_kw=11.0)
@@ -93,7 +93,7 @@ def test_restart_after_the_penalty_waits_again() -> None:
 
 
 def test_no_penalty_when_overconsumption_is_paid_back() -> None:
-    """STR-009: the ordinary regulation goes on when nothing is left to pay back."""
+    """The ordinary regulation goes on when nothing is left to pay back."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
     assert scenario.decide(10.0, capacity=ABOVE_THRESHOLD) == []
@@ -106,7 +106,7 @@ def test_no_penalty_when_overconsumption_is_paid_back() -> None:
 
 
 def test_no_penalty_at_or_under_limit_plus_threshold() -> None:
-    """STR-001, STR-002: overconsumption grows, but the regulation goes on."""
+    """Overconsumption grows, but the regulation goes on."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
 
@@ -119,7 +119,7 @@ def test_no_penalty_at_or_under_limit_plus_threshold() -> None:
 
 
 def test_zero_threshold_gives_penalty_one_decision_later() -> None:
-    """STR-002, T4: with threshold 0, the penalty starts one decision later."""
+    """With threshold 0, the penalty starts one decision later."""
     scenario = Scenario(no_waiting("a", threshold_kw=0.0))
     scenario.turn_on("a")
 
@@ -129,7 +129,7 @@ def test_zero_threshold_gives_penalty_one_decision_later() -> None:
 
 
 def test_status_shows_the_recovery() -> None:
-    """STR-005, STR-007, T5, T11: what is left and whether recovery has started."""
+    """What is left and whether recovery has started."""
     scenario = Scenario(no_waiting("a"))
     start_penalty(scenario)
 
@@ -145,7 +145,7 @@ def test_status_shows_the_recovery() -> None:
 
 
 def test_stop_and_start_end_the_penalty() -> None:
-    """STR-006, GEN-007: a restart forgets the overconsumption and the penalty."""
+    """A restart forgets the overconsumption and the penalty."""
     scenario = Scenario(no_waiting("a"))
     start_penalty(scenario)
 
@@ -157,7 +157,7 @@ def test_stop_and_start_end_the_penalty() -> None:
 
 
 def test_current_variant_is_found_during_the_penalty() -> None:
-    """APP-007: the current variant is found at each decision, also in a penalty."""
+    """The current variant is found at each decision, also in a penalty."""
     scenario = Scenario(
         no_waiting(
             appliance("heater", variants=("morning",)),
@@ -173,7 +173,7 @@ def test_current_variant_is_found_during_the_penalty() -> None:
 
 
 def test_no_penalty_without_a_capacity_average() -> None:
-    """T2: overconsumption is only counted from a capacity average."""
+    """Overconsumption is only counted from a capacity average."""
     engine = RegulationEngine(no_waiting("a"))
     engine.start(START)
 

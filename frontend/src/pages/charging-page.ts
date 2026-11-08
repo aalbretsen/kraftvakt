@@ -27,11 +27,11 @@ const CHARGER_FIELDS = [
 ] as const;
 
 /**
- * All configuration of EV charging (GUI-010): the shared settings
- * (LAD-001, LAD-002), the EV chargers in the configured charging priority
- * (LAD-003) and the warning against manual control (GUI-011).
+ * All configuration of EV charging: the shared settings
+ *, the EV chargers in the configured charging priority
+ * and the warning against manual control.
  *
- * While EV charging is disabled, the chargers are kept but not used (T10),
+ * While EV charging is disabled, the chargers are kept but not used,
  * so the list is only shown.
  */
 @customElement("kraftvakt-charging-page")
@@ -167,7 +167,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       : field;
   }
 
-  /** Changing the shared settings also adds or removes «EV charging» in the priority list (APP-005). */
+  /** Changing the shared settings also adds or removes «EV charging» in the priority list. */
   private sharedChanged(event: CustomEvent<{ value: { enabled?: boolean; one_at_a_time?: boolean } }>): void {
     const { enabled, one_at_a_time } = event.detail.value;
     const charging = this.config.charging;

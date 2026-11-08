@@ -13,7 +13,7 @@ const ACTION_VARIABLES = ["entity_id", "entity"];
 
 /**
  * Adds or edits one appliance: its entity, its actions, its power reserve and
- * its variants (APP-002 to APP-004, APP-006, GEN-013).
+ * its variants.
  */
 @customElement("kraftvakt-appliance-dialog")
 export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
@@ -42,7 +42,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     `;
   }
 
-  /** The variants, sorted in the order their expressions are evaluated (APP-006, APP-007). */
+  /** The variants, sorted in the order their expressions are evaluated. */
   private renderVariants(issues: Issue[]) {
     return html`
       ${this.renderSection("appliance.variants")}

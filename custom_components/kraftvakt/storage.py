@@ -1,4 +1,4 @@
-"""Persistent storage of the configuration and the charger switches (GEN-011, B3)."""
+"""Persistent storage of the configuration and the charger switches."""
 
 from __future__ import annotations
 

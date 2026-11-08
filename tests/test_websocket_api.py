@@ -1,4 +1,4 @@
-"""Tests of the WebSocket commands for the panel (3.8, GUI-001, REG-010, REG-016)."""
+"""Tests of the WebSocket commands for the panel."""
 
 from datetime import timedelta
 from typing import Any
@@ -124,7 +124,7 @@ async def test_commands_require_an_administrator(
     hass_read_only_access_token: str,
     message: dict[str, Any],
 ) -> None:
-    """GUI-001: only administrators may use the panel."""
+    """Only administrators may use the panel."""
     client = await hass_ws_client(hass, hass_read_only_access_token)
 
     await client.send_json_auto_id(message)
@@ -137,7 +137,7 @@ async def test_commands_require_an_administrator(
 async def test_capabilities_give_default_actions_limits_and_defaults(
     hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
 ) -> None:
-    """3.6, 3.8: the panel gets the limits and default actions from one source."""
+    """The panel gets the limits and default actions from one source."""
     client = await hass_ws_client(hass)
 
     response = await send(client, "kraftvakt/capabilities")
@@ -183,7 +183,7 @@ async def test_config_get_gives_configuration_names_and_missing(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """GEN-013, GUI-005: the configuration with entity names and what is missing."""
+    """The configuration with entity names and what is missing."""
     config["appliances"][1]["turn_off"] = None
     hass.states.async_set("light.a", "off", {"friendly_name": "Varmtvannsbereder"})
     config_entry = MockConfigEntry(domain=DOMAIN)
@@ -261,7 +261,7 @@ async def test_save_is_refused_while_the_regulation_runs(
     hass_ws_client: WebSocketGenerator,
     hass_storage: dict[str, Any],
 ) -> None:
-    """REG-010: the configuration cannot change while the regulation runs."""
+    """The configuration cannot change while the regulation runs."""
     before = stored_config(hass_storage)
     client = await hass_ws_client(hass)
     changed = config_data()
@@ -277,7 +277,7 @@ async def test_save_is_refused_while_the_regulation_runs(
 async def test_runtime_refuses_a_new_configuration_while_running(
     hass: HomeAssistant, entry: MockConfigEntry
 ) -> None:
-    """REG-010: the runtime itself guards the configuration."""
+    """The runtime itself guards the configuration."""
     runtime = entry.runtime_data
 
     with pytest.raises(RegulationRunningError):
@@ -321,7 +321,7 @@ async def test_invalid_configuration_is_not_saved(
     change,
     errors: list[dict[str, str]],
 ) -> None:
-    """3.4, T18: every issue is given per field, and nothing is saved."""
+    """Every issue is given per field, and nothing is saved."""
     await switch_regulation(hass, "turn_off")
     before = stored_config(hass_storage)
     client = await hass_ws_client(hass)
@@ -341,7 +341,7 @@ async def test_incomplete_configuration_is_saved(
     hass_ws_client: WebSocketGenerator,
     hass_storage: dict[str, Any],
 ) -> None:
-    """REG-016, APP-008: saved with what is missing and the priority completed."""
+    """Saved with what is missing and the priority completed."""
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
     changed = config_data()
@@ -374,7 +374,7 @@ async def test_new_configuration_is_used_from_the_next_start(
     hass_ws_client: WebSocketGenerator,
     lights: list[str],
 ) -> None:
-    """B9, GEN-008: no reload, and removed appliances get no more commands."""
+    """No reload, and removed appliances get no more commands."""
     set_power(hass, "1000")
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
@@ -399,7 +399,7 @@ async def test_saved_power_sensor_and_window_are_measured(
     freezer: FrozenDateTimeFactory,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """GEN-003, MAL-002: the new sensor from now, the new window from the next."""
+    """The new sensor from now, the new window from the next."""
     set_power(hass, "1000")
     await switch_regulation(hass, "turn_off")
     hass.states.async_set("sensor.other", "4", {ATTR_UNIT_OF_MEASUREMENT: "kW"})
@@ -426,7 +426,7 @@ async def test_saved_chargers_get_their_switches(
     entry: MockConfigEntry,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """B9, ENT-003, ENT-004: the switches follow the saved chargers."""
+    """The switches follow the saved chargers."""
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
     changed = config_data()
@@ -472,7 +472,7 @@ async def test_set_running_stops_and_starts_like_the_switch(
     hass_ws_client: WebSocketGenerator,
     lights: list[str],
 ) -> None:
-    """REG-016, GUI-007, ENT-006: the panel and the switch are the same function."""
+    """The panel and the switch are the same function."""
     client = await hass_ws_client(hass)
 
     response = await set_running(client, False)
@@ -500,7 +500,7 @@ async def test_start_is_refused_while_the_configuration_is_incomplete(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """REG-016: the regulation cannot start before the configuration is complete."""
+    """The regulation cannot start before the configuration is complete."""
     config["general"]["power_sensor"] = None
     config_entry = MockConfigEntry(domain=DOMAIN)
     config_entry.add_to_hass(hass)
@@ -546,7 +546,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """GUI-005, GUI-006, T11: the status now, and after each window and decision."""
+    """The status now, and after each window and decision."""
     started = dt_util.utcnow()
     hass.states.async_set("light.a", "off", {"friendly_name": "Varmtvannsbereder"})
     await setup_entry(hass)
@@ -602,7 +602,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """APP-007, REG-012, T11: the current variant, its place and the waiting."""
+    """The current variant, its place and the waiting."""
     started = dt_util.utcnow()
     config["general"]["wait_at_limit_min"] = 5
     config["appliances"][1]["variants"] = [
@@ -635,7 +635,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
 async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(
     hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
 ) -> None:
-    """REG-016, GUI-007, ENT-006: the status, the panel and the switch agree."""
+    """The status, the panel and the switch agree."""
     subscriber = await hass_ws_client(hass)
     commander = await hass_ws_client(hass)
     assert (await subscribe_status(subscriber))["running"]
@@ -662,7 +662,7 @@ async def test_status_follows_a_saved_configuration_and_a_reload(
     entry: MockConfigEntry,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """B9: the new configuration shows at once, and the status survives a reload."""
+    """The new configuration shows at once, and the status survives a reload."""
     subscriber = await hass_ws_client(hass)
     commander = await hass_ws_client(hass)
     await subscribe_status(subscriber)
@@ -692,7 +692,7 @@ async def test_status_shows_the_chargers(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """GUI-006, T11: whether each charger is activated, with its details."""
+    """Whether each charger is activated, with its details."""
     config["charging"] = {
         "enabled": True,
         "chargers": [
@@ -748,7 +748,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """LAD-016, LAD-018, ENT-003, T11: a bypassed charger is shown last."""
+    """A bypassed charger is shown last."""
     config["charging"] = {
         "enabled": True,
         "chargers": [

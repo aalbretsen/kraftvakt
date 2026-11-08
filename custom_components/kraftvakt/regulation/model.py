@@ -13,15 +13,15 @@ from .waiting import CyclingCounter, CyclingSteps
 
 @dataclass(frozen=True, slots=True)
 class DecisionInput:
-    """Snapshot of what a decision is based on (REG-003).
+    """Snapshot of what a decision is based on.
 
-    The averages are None until the first regulation window has closed (T2).
+    The averages are None until the first regulation window has closed.
     `power_sensor_valid` tells whether the power sensor had a valid measurement
     when the last regulation window closed, and `power_sensor_lost` whether it
-    had none when each of the last two windows closed (MAL-006, REG-011, T3).
+    had none when each of the last two windows closed.
     `regulation_averages_kw` holds every regulation average computed since the
-    previous decision, oldest first (STR-005). `variant_conditions` holds the
-    evaluated condition of each variant, keyed by variant id (GEN-009). A
+    previous decision, oldest first. `variant_conditions` holds the
+    evaluated condition of each variant, keyed by variant id. A
     variant that is missing counts as false.
     """
 
@@ -38,35 +38,35 @@ class DecisionInput:
 
 @dataclass(frozen=True, slots=True)
 class TurnOnAppliance:
-    """Run the action that turns the appliance on (APP-002)."""
+    """Run the action that turns the appliance on."""
 
     appliance_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class TurnOffAppliance:
-    """Run the action that turns the appliance off (APP-003)."""
+    """Run the action that turns the appliance off."""
 
     appliance_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class ActivateCharger:
-    """Run the action that allows the charger to charge (LAD-005)."""
+    """Run the action that allows the charger to charge."""
 
     charger_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class DeactivateCharger:
-    """Run the action that does not allow the charger to charge (LAD-004)."""
+    """Run the action that does not allow the charger to charge."""
 
     charger_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class SetChargingCurrent:
-    """Run the action that sets the charging current in amperes (LAD-006)."""
+    """Run the action that sets the charging current in amperes."""
 
     charger_id: str
     current_a: int
@@ -74,7 +74,7 @@ class SetChargingCurrent:
 
 @dataclass(frozen=True, slots=True)
 class ResetWindowOverride:
-    """Switch off the override of the charging window (LAD-027, ENT-004)."""
+    """Switch off the override of the charging window."""
 
     charger_id: str
 
@@ -98,7 +98,7 @@ class ApplianceSlotKey:
 
 @dataclass(frozen=True, slots=True)
 class ChargerSlotKey:
-    """Identifies a fictive appliance of a charger (LAD-011).
+    """Identifies a fictive appliance of a charger.
 
     `index` counts from 0 for the first fictive appliance.
     """
@@ -109,11 +109,11 @@ class ChargerSlotKey:
 
 @dataclass(frozen=True, slots=True)
 class Slot:
-    """A place in the order the regulation turns things on and off (4.1).
+    """A place in the order the regulation turns things on and off.
 
     A slot that cannot be turned on is skipped when looking for the next one to
-    turn on (REG-007). A slot that cannot be turned off is skipped when the
-    regulation switches off above the limit (REG-008).
+    turn on. A slot that cannot be turned off is skipped when the
+    regulation switches off above the limit.
     """
 
     key: Hashable
@@ -126,10 +126,10 @@ class Slot:
 
 @dataclass(frozen=True, slots=True)
 class Waiting:
-    """A waiting time that runs before the slot may be turned on (REG-012).
+    """A waiting time that runs before the slot may be turned on.
 
-    `until` is when the waiting time ends, as calculated at the last decision
-    (REG-013). The slot is turned on at the first decision from then on.
+    `until` is when the waiting time ends, as calculated at the last decision. The slot
+    is turned on at the first decision from then on.
     """
 
     key: Hashable
@@ -139,9 +139,9 @@ class Waiting:
 
 @dataclass(slots=True)
 class RegulationState:
-    """What the regulation keeps track of while it runs (3.5, GEN-007).
+    """What the regulation keeps track of while it runs.
 
-    A new state with default values is created at each start (REG-009).
+    A new state with default values is created at each start.
     `current_variants` is empty until the first decision.
     """
 

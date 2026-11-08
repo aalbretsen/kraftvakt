@@ -5,7 +5,7 @@ import type { Condition } from "../api";
 import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 
-/** The domains whose entities are on or off, and so can be boolean entities (GEN-009). */
+/** The domains whose entities are on or off, and so can be boolean entities. */
 const BOOLEAN_DOMAINS = ["binary_sensor", "input_boolean", "switch", "schedule"];
 
 const PREVIEW_DELAY_MS = 500;
@@ -18,12 +18,12 @@ interface TemplateResult {
 }
 
 /**
- * A true/false value from a boolean entity or a template (GEN-009), with what
+ * A true/false value from a boolean entity or a template, with what
  * it gives now.
  *
  * The template is previewed with Home Assistant's `render_template`
- * subscription while the user writes (3.8). It gets `entity_id` and `entity`
- * of the appliance or charger, as in the regulation (T14). Fires
+ * subscription while the user writes. It gets `entity_id` and `entity`
+ * of the appliance or charger, as in the regulation. Fires
  * `value-changed` with the new condition, or `null` when an optional one is
  * not set.
  */
@@ -35,10 +35,10 @@ export class KraftvaktConditionField extends LitElement {
 
   @property({ attribute: false }) value: Condition | null = null;
 
-  /** The entity of the appliance or charger the condition belongs to (GEN-013). */
+  /** The entity of the appliance or charger the condition belongs to. */
   @property({ attribute: false }) entityId: string | null = null;
 
-  /** Whether the condition may be left out, like «car connected» (LAD-010). */
+  /** Whether the condition may be left out, like «car connected». */
   @property({ type: Boolean }) optional = false;
 
   @property() error?: string;

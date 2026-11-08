@@ -11,7 +11,7 @@ from custom_components.kraftvakt.const import DOMAIN
 
 
 async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
-    """GUI-004: adding the integration asks for no settings."""
+    """Adding the integration asks for no settings."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )

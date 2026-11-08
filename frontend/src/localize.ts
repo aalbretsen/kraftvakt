@@ -1,7 +1,7 @@
 import en from "./translations/en.json";
 import nb from "./translations/nb.json";
 
-/** English is the default language, and every language has the same keys (SPR-001). */
+/** English is the default language, and every language has the same keys. */
 type Translations = typeof en;
 
 const TRANSLATIONS: Record<string, Translations> = { en, nb };
@@ -17,7 +17,7 @@ export type TranslationKey = KeyPaths<Translations>;
 export type Localize = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
 /**
- * Return a function that looks up the panel's texts in the user's language (B8, SPR-002).
+ * Return a function that looks up the panel's texts in the user's language.
  *
  * A language without its own translations falls back to its base language, and
  * then to English. `{name}` in a text is replaced by the parameter `name`.

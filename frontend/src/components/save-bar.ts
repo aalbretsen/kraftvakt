@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import type { Localize } from "../localize";
 
 /**
- * «Save» and «Discard» for the draft of the configuration pages (B7).
+ * «Save» and «Discard» for the draft of the configuration pages.
  *
  * Fires `save` and `discard`. Saving is disabled while the draft has mistakes
  * the panel can see itself.

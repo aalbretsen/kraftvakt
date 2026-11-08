@@ -22,7 +22,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   penalty_threshold_kw: "kW",
 };
 
-/** The power sensor and the settings of the regulation and the penalty (GUI-008). */
+/** The power sensor and the settings of the regulation and the penalty. */
 @customElement("kraftvakt-general-page")
 export class KraftvaktGeneralPage extends ConfigPage {
   protected render() {
@@ -67,7 +67,7 @@ export class KraftvaktGeneralPage extends ConfigPage {
 
   /**
    * The power sensor is a sensor from another integration that measures power,
-   * in W or kW (GEN-003, MAL-007), so Kraftvakt's own averages are left out.
+   * in W or kW, so Kraftvakt's own averages are left out.
    */
   private entityField(name: GeneralField): FormField {
     return {
@@ -96,7 +96,7 @@ export class KraftvaktGeneralPage extends ConfigPage {
     };
   }
 
-  /** The interval is a whole number of regulation windows (REG-002). */
+  /** The interval is a whole number of regulation windows. */
   private intervalField(): FormField {
     const range = this.range("regulation_interval");
     const options = [];

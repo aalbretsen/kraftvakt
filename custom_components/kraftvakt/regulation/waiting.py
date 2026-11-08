@@ -1,4 +1,4 @@
-"""Waiting time before a slot is turned on (REG-012 to REG-015, LAD-014, T6)."""
+"""Waiting time before a slot is turned on."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ PERSISTENT_CYCLING_FROM: Final = 2
 
 @dataclass(frozen=True, slots=True)
 class CyclingSteps:
-    """How the waiting time grows on persistent cycling (REG-015, LAD-014)."""
+    """How the waiting time grows on persistent cycling."""
 
     step: timedelta
     cap: timedelta
@@ -29,7 +29,7 @@ FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
 def linear_waiting_time(
     average_kw: float, limit_kw: float, wait_at_limit: timedelta
 ) -> timedelta:
-    """Return the waiting time in proportion to the average (REG-013).
+    """Return the waiting time in proportion to the average.
 
     An average of 0 gives no waiting time, and an average at or above the
     limit gives the waiting time at the limit.
@@ -40,7 +40,7 @@ def linear_waiting_time(
 def cycling_waiting_time(
     reon_number: int, wait_at_limit: timedelta, steps: CyclingSteps
 ) -> timedelta:
-    """Return the fixed waiting time on persistent cycling (REG-015, T6).
+    """Return the fixed waiting time on persistent cycling.
 
     It starts at the waiting time at the limit the second time the slot is
     turned on again, and grows by one step each time up to the cap.
@@ -67,7 +67,7 @@ def waiting_time(
 
 
 class CyclingCounter:
-    """Counts how many times the same slot is turned on again (REG-015, T6).
+    """Counts how many times the same slot is turned on again.
 
     Every command the regulation sends for another slot, forced or not, ends
     the count.
@@ -94,7 +94,7 @@ class CyclingCounter:
         return self._reons + 1 if key == self._last_key else 0
 
     def reset(self, key: Hashable) -> None:
-        """Forget the count for the slot (APP-009)."""
+        """Forget the count for the slot."""
         if key == self._last_key:
             self._last_key = None
             self._reons = 0

@@ -1,7 +1,7 @@
-"""Averages of the power sensor (MAL-001 to MAL-007).
+"""Averages of the power sensor.
 
 Pure logic without Home Assistant. The caller passes in the time of every
-measurement, so the averages do not depend on a clock (B5).
+measurement, so the averages do not depend on a clock.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Final
 CAPACITY_WINDOW: Final = timedelta(hours=1)
 CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET: Final = 2
 
-# A sensor without unit is read as watt (T19).
+# A sensor without unit is read as watt.
 _KW_PER_UNIT: Final[dict[str | None, float]] = {None: 0.001, "W": 0.001, "kW": 1.0}
 
 
@@ -23,7 +23,7 @@ def power_kw(state: str | None, unit: str | None) -> float | None:
     """Return a sensor state in kW, or None when it is not a valid measurement.
 
     A measurement is valid when the state is a number and the unit is W, kW or
-    missing. Negative values count as 0 (MAL-007, T19).
+    missing. Negative values count as 0.
     """
     factor = _KW_PER_UNIT.get(unit or None)
     if factor is None or state is None:
@@ -41,9 +41,9 @@ def power_kw(state: str | None, unit: str | None) -> float | None:
 class WindowAverages:
     """The averages calculated when a regulation window closes.
 
-    The averages are None when there is no valid measurement to base them on
-    (T2, T21). `sensor_valid` tells whether the power sensor had a valid
-    measurement at the moment the window closed (MAL-006, T3).
+    The averages are None when there is no valid measurement to base them on.
+    `sensor_valid` tells whether the power sensor had a valid
+    measurement at the moment the window closed.
     """
 
     start: datetime
@@ -65,13 +65,13 @@ class PowerAverager:
     """Time-weighted averages of the power over the two windows.
 
     The power is piecewise constant: a measurement applies until the next one,
-    and an invalid measurement keeps the last valid one in place (MAL-006).
+    and an invalid measurement keeps the last valid one in place.
     The first measurement also applies backwards in time, which fills the
-    windows at startup and after a reset (MAL-005).
+    windows at startup and after a reset.
     """
 
     def __init__(self, window_length: timedelta, start: datetime) -> None:
-        """Start the first regulation window at `start` (T20)."""
+        """Start the first regulation window at `start`."""
         self._window_length = window_length
         self._next_window_length = window_length
         self._window_start = start
@@ -118,7 +118,7 @@ class PowerAverager:
 
         When the sensor was invalid at this and the previous close, the
         history is discarded, so the next valid measurement fills the windows
-        again (T21).
+        again.
         """
         start, end = self._window_start, self.window_end
         self._window_start = end

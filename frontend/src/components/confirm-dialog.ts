@@ -2,7 +2,7 @@ import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * Asks the user to confirm an action, with `ha-dialog` (5.4).
+ * Asks the user to confirm an action, with `ha-dialog`.
  *
  * Fires `confirm` when the user confirms, and `cancel` when the dialog is
  * closed any other way.

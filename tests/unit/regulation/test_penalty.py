@@ -1,4 +1,4 @@
-"""Unit tests for overconsumption and the penalty period (STR-001 to STR-009)."""
+"""Unit tests for overconsumption and the penalty period."""
 
 from datetime import timedelta
 
@@ -28,7 +28,7 @@ def overconsuming_state() -> PenaltyState:
 
 
 def test_no_overconsumption_at_or_under_the_limit() -> None:
-    """STR-004: the state starts only when the capacity average is above the limit."""
+    """The state starts only when the capacity average is above the limit."""
     state = PenaltyState()
 
     assert state.decide(LIMITS, 10.0, (12.0,)) is PenaltyOutcome.NONE
@@ -37,7 +37,7 @@ def test_no_overconsumption_at_or_under_the_limit() -> None:
 
 
 def test_overconsumption_starts_at_zero() -> None:
-    """T4: the state starts with 0, and only later averages are counted."""
+    """The state starts with 0, and only later averages are counted."""
     state = PenaltyState()
 
     assert state.decide(LIMITS, 12.0, (15.0, 15.0)) is PenaltyOutcome.NONE
@@ -47,7 +47,7 @@ def test_overconsumption_starts_at_zero() -> None:
 
 
 def test_overconsumption_is_net_energy_over_the_limit() -> None:
-    """STR-005: 12 kW for one window adds 2 kW for one minute, 8 kW takes it back."""
+    """12 kW for one window adds 2 kW for one minute, 8 kW takes it back."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10.5, (12.0,))
@@ -59,7 +59,7 @@ def test_overconsumption_is_net_energy_over_the_limit() -> None:
 
 
 def test_every_average_since_the_previous_decision_counts() -> None:
-    """STR-005: with a longer interval, every average in between is counted."""
+    """With a longer interval, every average in between is counted."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10.5, (13.0, 11.0, 9.0))
@@ -68,7 +68,7 @@ def test_every_average_since_the_previous_decision_counts() -> None:
 
 
 def test_overconsumption_state_ends_when_paid_back() -> None:
-    """STR-004: the state ends when the overconsumption is zero or less."""
+    """The state ends when the overconsumption is zero or less."""
     state = overconsuming_state()
     state.decide(LIMITS, 10.5, (11.0,))
 
@@ -78,7 +78,7 @@ def test_overconsumption_state_ends_when_paid_back() -> None:
 
 
 def test_rounding_errors_count_as_paid_back() -> None:
-    """STR-004: 0.01 + 0.46 - 0.47 kW over the limit is paid back."""
+    """0.01 + 0.46 - 0.47 kW over the limit is paid back."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10.0, (10.01, 10.46, 9.53))
@@ -87,7 +87,7 @@ def test_rounding_errors_count_as_paid_back() -> None:
 
 
 def test_overconsumption_state_starts_again_at_once() -> None:
-    """STR-004: a new state starts at 0 if the capacity average is still above."""
+    """A new state starts at 0 if the capacity average is still above."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10.5, (9.0,))
@@ -97,7 +97,7 @@ def test_overconsumption_state_starts_again_at_once() -> None:
 
 
 def test_penalty_starts_above_limit_plus_threshold() -> None:
-    """STR-001, STR-002: the capacity average must exceed limit plus threshold."""
+    """The capacity average must exceed limit plus threshold."""
     state = overconsuming_state()
 
     assert state.decide(LIMITS, 11.0, (12.0,)) is PenaltyOutcome.NONE
@@ -106,7 +106,7 @@ def test_penalty_starts_above_limit_plus_threshold() -> None:
 
 
 def test_no_penalty_when_overconsumption_is_paid_back() -> None:
-    """STR-009: no penalty when the overconsumption is already zero or less."""
+    """No penalty when the overconsumption is already zero or less."""
     state = overconsuming_state()
 
     assert state.decide(LIMITS, 12.0, (12.0, 7.0)) is PenaltyOutcome.NONE
@@ -114,7 +114,7 @@ def test_no_penalty_when_overconsumption_is_paid_back() -> None:
 
 
 def test_zero_threshold_starts_the_penalty_at_the_next_decision() -> None:
-    """STR-002, T4: with threshold 0, the penalty comes the decision after D0."""
+    """With threshold 0, the penalty comes the decision after D0."""
     state = PenaltyState()
 
     assert state.decide(NO_THRESHOLD, 10.1, (10.1,)) is PenaltyOutcome.NONE
@@ -122,7 +122,7 @@ def test_zero_threshold_starts_the_penalty_at_the_next_decision() -> None:
 
 
 def test_penalty_lasts_until_the_overconsumption_is_paid_back() -> None:
-    """STR-005, STR-006: counting goes on during the penalty, until paid back."""
+    """Counting goes on during the penalty, until paid back."""
     state = overconsuming_state()
     assert state.decide(LIMITS, 12.0, (14.0,)) is PenaltyOutcome.STARTED
 
@@ -135,7 +135,7 @@ def test_penalty_lasts_until_the_overconsumption_is_paid_back() -> None:
 
 
 def test_penalty_does_not_end_when_the_capacity_average_falls() -> None:
-    """STR-006: only paying back the overconsumption ends the penalty."""
+    """Only paying back the overconsumption ends the penalty."""
     state = overconsuming_state()
     state.decide(LIMITS, 12.0, (14.0,))
 
@@ -143,7 +143,7 @@ def test_penalty_does_not_end_when_the_capacity_average_falls() -> None:
 
 
 def test_recovery_starts_at_the_first_average_under_the_limit() -> None:
-    """STR-007, T5: recovery starts under the limit and goes on net."""
+    """Recovery starts under the limit and goes on net."""
     state = overconsuming_state()
     state.decide(LIMITS, 12.0, (16.0,))
     assert not state.recovery_started
@@ -161,7 +161,7 @@ def test_recovery_starts_at_the_first_average_under_the_limit() -> None:
 
 
 def test_recovery_is_not_tracked_outside_a_penalty() -> None:
-    """STR-007: recovery only concerns a penalty period."""
+    """Recovery only concerns a penalty period."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10.5, (12.0, 9.0))
@@ -170,7 +170,7 @@ def test_recovery_is_not_tracked_outside_a_penalty() -> None:
 
 
 def test_energy_follows_the_regulation_window() -> None:
-    """STR-005: each average covers one regulation window (MAL-002)."""
+    """Each average covers one regulation window."""
     limits = PenaltyLimits(10.0, 1.0, timedelta(seconds=600))
     state = PenaltyState()
     state.decide(limits, 10.5, ())

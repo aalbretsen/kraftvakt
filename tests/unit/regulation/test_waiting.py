@@ -1,4 +1,4 @@
-"""Unit tests for the waiting time (REG-013, REG-015, T6)."""
+"""Unit tests for the waiting time."""
 
 from datetime import timedelta
 
@@ -26,12 +26,12 @@ FIVE_MINUTES = timedelta(minutes=5)
     ],
 )
 def test_linear_waiting_time(average_kw: float, expected: timedelta) -> None:
-    """REG-013: proportional to the average, never longer than at the limit."""
+    """Proportional to the average, never longer than at the limit."""
     assert linear_waiting_time(average_kw, 10.0, FIVE_MINUTES) == expected
 
 
 def test_waiting_time_is_linear_until_persistent_cycling() -> None:
-    """The first time a slot is turned on again, the waiting time is linear (T6)."""
+    """The first time a slot is turned on again, the waiting time is linear."""
     for reon_number in (0, 1):
         assert waiting_time(
             5.0, 10.0, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING
@@ -39,7 +39,7 @@ def test_waiting_time_is_linear_until_persistent_cycling() -> None:
 
 
 def test_waiting_time_on_persistent_cycling_for_appliances() -> None:
-    """REG-015: 5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
+    """5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
     minutes = [
         waiting_time(1.0, 10.0, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING)
         / timedelta(minutes=1)
@@ -50,7 +50,7 @@ def test_waiting_time_on_persistent_cycling_for_appliances() -> None:
 
 
 def test_cycling_steps_are_parameters() -> None:
-    """Chargers use other steps and another cap (LAD-014)."""
+    """Chargers use other steps and another cap."""
     steps = CyclingSteps(step=timedelta(minutes=5), cap=timedelta(minutes=30))
     minutes = [
         waiting_time(1.0, 10.0, FIVE_MINUTES, reon_number, steps) / timedelta(minutes=1)
@@ -82,7 +82,7 @@ def test_counter_starting_with_turn_off_counts_the_next_turn_on() -> None:
 
 
 def test_command_for_another_slot_ends_the_count() -> None:
-    """REG-015: the increase is reset as soon as another slot is switched."""
+    """The increase is reset as soon as another slot is switched."""
     counter = CyclingCounter()
     for turned_on in (True, False, True, False):
         counter.record("a", turned_on)

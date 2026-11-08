@@ -1,4 +1,4 @@
-"""Tests for storage of the configuration and the charger switches (GEN-011)."""
+"""Tests for storage of the configuration and the charger switches."""
 
 from typing import Any
 

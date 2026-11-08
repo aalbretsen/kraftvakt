@@ -10,7 +10,7 @@ from .const import DOMAIN, NAME
 
 
 class KraftvaktConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Set up Kraftvakt without any settings (GUI-004).
+    """Set up Kraftvakt without any settings.
 
     The configuration (power limit, appliances and priority) is done in the
     Kraftvakt panel in the sidebar. This flow only creates the integration.

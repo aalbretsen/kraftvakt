@@ -1,4 +1,4 @@
-"""Unit tests for the slots built from the priority list (4.1, APP-007, LAD-011)."""
+"""Unit tests for the slots built from the priority list."""
 
 from datetime import timedelta
 
@@ -33,7 +33,7 @@ def test_appliance_without_true_condition_is_its_own_current_variant() -> None:
 
 
 def test_topmost_true_condition_gives_current_variant() -> None:
-    """APP-007: the variant of the topmost true expression applies."""
+    """The variant of the topmost true expression applies."""
     heater = appliance("heater", variants=("morning", "evening"))
 
     assert current_variant(heater, {"evening": True}) == "evening"
@@ -53,7 +53,7 @@ def test_slots_follow_the_priority_list() -> None:
 
 
 def test_only_the_current_variant_gets_a_slot() -> None:
-    """APP-007: the other entries of the appliance are skipped."""
+    """The other entries of the appliance are skipped."""
     config = make_config(
         appliance("heater", variants=("morning",)),
         "b",
@@ -83,7 +83,7 @@ def charger(charger_id: str, min_a: int, max_a: int, reserve: float = 4.0) -> Ch
 
 
 def test_fictive_appliances_are_interleaved_between_chargers() -> None:
-    """LAD-011, LAD-015: one per ampere, first of each charger, then second."""
+    """One per ampere, first of each charger, then second."""
     chargers = [charger("a", 6, 8), charger("b", 10, 11), charger("c", 6, 6)]
 
     slots = fictive_slots(chargers, {}, may_charge={"a", "b", "c"}, bypassed=())
@@ -99,7 +99,7 @@ def test_fictive_appliances_are_interleaved_between_chargers() -> None:
 
 
 def test_only_the_first_fictive_appliance_has_the_power_reserve() -> None:
-    """LAD-012, LAD-014: fictive appliances cycle with 5 and 30 minutes."""
+    """Fictive appliances cycle with 5 and 30 minutes."""
     slots = fictive_slots([charger("a", 6, 8, reserve=3.5)], {"a": 2}, {"a"}, ())
 
     assert slots == [
@@ -112,7 +112,6 @@ def test_only_the_first_fictive_appliance_has_the_power_reserve() -> None:
 
 
 def test_fictive_appliances_of_chargers_that_may_not_charge_or_are_bypassed() -> None:
-    """REG-007, REG-008, LAD-017."""
     slots = fictive_slots(
         [charger("a", 6, 6), charger("b", 6, 6)],
         {"a": 1},

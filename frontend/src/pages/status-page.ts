@@ -18,7 +18,7 @@ import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 
-/** Shows how the regulation stands now, and starts and stops it (GUI-005 to GUI-007). */
+/** Shows how the regulation stands now, and starts and stops it. */
 @customElement("kraftvakt-status-page")
 export class KraftvaktStatusPage extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -96,7 +96,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** What the status page shows in addition while the regulation runs (GUI-006, T11). */
+  /** What the status page shows in addition while the regulation runs. */
   private renderRunning(status: StatusSnapshot) {
     const language = this.hass.language;
     const overLimit = (value: number | null) => value !== null && value > status.power_limit_kw;
@@ -159,7 +159,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** The averages as bars against the power limit (T11). */
+  /** The averages as bars against the power limit. */
   private renderMeter(status: StatusSnapshot) {
     const regulation = status.regulation_average_kw;
     const capacity = status.capacity_average_kw;
@@ -189,7 +189,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** Each appliance with on or off, its current variant and its waiting time (GUI-006, T11). */
+  /** Each appliance with on or off, its current variant and its waiting time. */
   private renderAppliancesCard(appliances: ApplianceStatus[]) {
     return html`
       <ha-card>
@@ -226,7 +226,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** Each EV charger with whether it is activated, and why it charges or not (GUI-006, T11). */
+  /** Each EV charger with whether it is activated, and why it charges or not. */
   private renderChargersCard(chargers: ChargerStatus[]) {
     return html`
       <ha-card>
@@ -316,7 +316,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** Start or stop the regulation. The new status comes with the status subscription (GUI-007). */
+  /** Start or stop the regulation. The new status comes with the status subscription. */
   private async changeRunning(running: boolean): Promise<void> {
     this.changingRunning = true;
     this.runningError = undefined;

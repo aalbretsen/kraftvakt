@@ -1,4 +1,4 @@
-"""Black box tests of the average sensors (ENT-001, ENT-002, MAL-001 to MAL-007)."""
+"""Black box tests of the average sensors."""
 
 from datetime import timedelta
 from typing import Any
@@ -79,7 +79,7 @@ def state_of(hass: HomeAssistant, key: str) -> str:
 async def test_sensors_are_unavailable_before_the_first_average(
     hass: HomeAssistant, setup_kraftvakt
 ) -> None:
-    """There is no average before the first window has closed (T2)."""
+    """There is no average before the first window has closed."""
     set_power(hass, "2000")
     await setup_kraftvakt()
 
@@ -90,7 +90,7 @@ async def test_sensors_are_unavailable_before_the_first_average(
 async def test_sensors_show_the_averages_in_kw(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """Both averages are power sensors in kW (ENT-001, ENT-002)."""
+    """Both averages are power sensors in kW."""
     set_power(hass, "2000")
     await setup_kraftvakt()
 
@@ -131,7 +131,7 @@ async def test_sensors_belong_to_the_service_device(
 async def test_sensors_are_updated_once_per_window(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """The sensors change only when a window closes (ENT-001, ENT-002)."""
+    """The sensors change only when a window closes."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer, WINDOW)
@@ -149,7 +149,7 @@ async def test_capacity_average_over_a_whole_hour_of_updates(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
     """The capacity average is right through the whole hour when the sensor
-    updates every 10 seconds (MAL-003, MAL-004)."""
+    updates every 10 seconds."""
     set_power(hass, "2000")
     await setup_kraftvakt()
 
@@ -166,7 +166,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
     """One invalid close keeps the last value, two make the sensors unavailable,
-    and the next valid value fills the windows again (MAL-005, MAL-006, T21)."""
+    and the next valid value fills the windows again."""
     set_power(hass, "3000")
     await setup_kraftvakt()
     await advance(hass, freezer, WINDOW)
@@ -189,7 +189,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
 async def test_power_sensor_without_unit_is_read_as_watt(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """A power sensor without unit reports watt (T19)."""
+    """A power sensor without unit reports watt."""
     set_power(hass, "2500", unit=None)
     await setup_kraftvakt()
 
@@ -204,7 +204,7 @@ async def test_sensors_are_unavailable_without_power_sensor(
     stored_general: dict[str, Any],
     setup_kraftvakt,
 ) -> None:
-    """An incomplete configuration gives no averages (T2)."""
+    """An incomplete configuration gives no averages."""
     stored_general["power_sensor"] = None
     await setup_kraftvakt()
 
@@ -219,7 +219,7 @@ async def test_window_length_comes_from_the_configuration(
     stored_general: dict[str, Any],
     setup_kraftvakt,
 ) -> None:
-    """The regulation window is the configured one (MAL-002)."""
+    """The regulation window is the configured one."""
     stored_general["regulation_window_s"] = 20
     set_power(hass, "1000")
     await setup_kraftvakt()
@@ -232,7 +232,7 @@ async def test_window_length_comes_from_the_configuration(
 async def test_sensor_names_are_translated(
     hass: HomeAssistant, setup_kraftvakt
 ) -> None:
-    """Norwegian names come from the translation files (SPR-002)."""
+    """Norwegian names come from the translation files."""
     hass.config.language = "nb"
     await setup_kraftvakt()
 

@@ -1,4 +1,4 @@
-"""Switches for the regulation (ENT-006) and for each charger (ENT-003, ENT-004)."""
+"""Switches for the regulation and for each charger."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ async def async_setup_entry(
     """Add the regulation switch and the switches of the configured chargers.
 
     The charger switches follow the configuration: they are added and removed
-    when the chargers change, without reloading the config entry (B9, R5).
+    when the chargers change, without reloading the config entry.
     """
     runtime = entry.runtime_data
     async_add_entities([RegulationSwitch(entry, runtime)])
@@ -63,7 +63,7 @@ async def async_setup_entry(
 def _remove_orphaned_charger_switches(
     hass: HomeAssistant, entry: KraftvaktConfigEntry, board: ChargerSwitchBoard
 ) -> None:
-    """Remove registry entries for switches of chargers no longer configured (R5)."""
+    """Remove registry entries for switches of chargers no longer configured."""
     wanted = {
         charger_switch_key(charger.id, setting)
         for charger in board.config.charging.chargers
@@ -86,7 +86,7 @@ def charger_switch_key(charger_id: str, setting: str) -> str:
 
 
 class RegulationSwitch(KraftvaktEntity, SwitchEntity):
-    """Is on while the regulation runs, and starts and stops it (REG-016).
+    """Is on while the regulation runs, and starts and stops it.
 
     The switch has no stored state: the regulation runs after every start of
     Home Assistant or the integration when the configuration is complete.
@@ -122,13 +122,13 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
 
 
 class ChargerSwitch(KraftvaktEntity, SwitchEntity):
-    """A user's switch for a charger, kept over any restart (GEN-011).
+    """A user's switch for a charger, kept over any restart.
 
-    `excluded` takes the charger out of the regulation (ENT-003), and
-    `window_override` lets it charge outside its charging window (ENT-004). The
-    regulation reads the switch at its next decision (REG-005). The switch is
-    unavailable while charging is disabled, but keeps its position (T10). It is
-    named after the charger when it is created (LAD-003).
+    `excluded` takes the charger out of the regulation, and
+    `window_override` lets it charge outside its charging window. The
+    regulation reads the switch at its next decision. The switch is
+    unavailable while charging is disabled, but keeps its position. It is
+    named after the charger when it is created.
     """
 
     def __init__(
@@ -154,7 +154,7 @@ class ChargerSwitch(KraftvaktEntity, SwitchEntity):
 
     @property
     def available(self) -> bool:
-        """Return whether charging is enabled (T10)."""
+        """Return whether charging is enabled."""
         return self._board.config.charging.enabled
 
     @property

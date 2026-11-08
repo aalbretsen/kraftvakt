@@ -19,7 +19,7 @@ export interface ListRow {
 }
 
 /**
- * A list the user sorts by dragging, with `ha-sortable` (5.4).
+ * A list the user sorts by dragging, with `ha-sortable`.
  *
  * Fires `item-moved` with the old and new index, and `open-row` with the key of
  * the row whose button was pressed. The list does not move the rows itself.

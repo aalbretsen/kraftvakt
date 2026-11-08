@@ -55,7 +55,7 @@ class ConfigIncompleteError(HomeAssistantError):
     """Raised when the regulation is started before the configuration is complete."""
 
     def __init__(self, missing: Sequence[Issue]) -> None:
-        """Create the error from what is missing (REG-016)."""
+        """Create the error from what is missing."""
         super().__init__(
             "The configuration is not complete: "
             + ", ".join(issue.code for issue in missing)
@@ -67,7 +67,7 @@ class RegulationRunningError(HomeAssistantError):
     """Raised when the configuration is changed while the regulation runs."""
 
     def __init__(self) -> None:
-        """Create the error (REG-010)."""
+        """Create the error."""
         super().__init__("The regulation must be stopped to change the configuration")
 
 
@@ -75,11 +75,11 @@ class KraftvaktRuntime:
     """Measures the power sensor and runs the regulation.
 
     The windows keep their own cadence from the start of the runtime, also
-    while the regulation is stopped (MAL-001, T1, T20). Every closed window is
+    while the regulation is stopped. Every closed window is
     passed to the window listeners. While the regulation runs, a decision is
     made each time the N-th window that started after the start or the last
-    decision has closed, where N is the regulation interval (REG-002, T1).
-    Decisions are made only then (REG-005), also for the charging power, the
+    decision has closed, where N is the regulation interval.
+    Decisions are made only then, also for the charging power, the
     car connected and the charger switches. The status listeners are called
     after every window, decision, start and stop.
     """
@@ -130,17 +130,17 @@ class KraftvaktRuntime:
 
     @property
     def missing(self) -> list[Issue]:
-        """Return what is missing before the regulation can start (REG-016)."""
+        """Return what is missing before the regulation can start."""
         return list(self._missing)
 
     @property
     def running(self) -> bool:
-        """Return whether the regulation runs (REG-016)."""
+        """Return whether the regulation runs."""
         return self._engine.running
 
     @property
     def safe_state(self) -> bool:
-        """Return whether the regulation is in the safe state (REG-011)."""
+        """Return whether the regulation is in the safe state."""
         return self._engine.safe_state
 
     @property
@@ -150,22 +150,22 @@ class KraftvaktRuntime:
 
     @property
     def appliances_on(self) -> frozenset[str]:
-        """Return the ids of the appliances the regulation has turned on (GEN-006)."""
+        """Return the ids of the appliances the regulation has turned on."""
         return self._engine.appliances_on
 
     @property
     def current_variants(self) -> Mapping[str, str | None]:
-        """Return the current variant id of each appliance, None for none (APP-007)."""
+        """Return the current variant id of each appliance, None for none."""
         return self._engine.current_variants
 
     @property
     def waiting(self) -> Waiting | None:
-        """Return the waiting time that runs for the next slot, if any (REG-012)."""
+        """Return the waiting time that runs for the next slot, if any."""
         return self._engine.waiting
 
     @property
     def next_decision_at(self) -> datetime | None:
-        """Return when the next decision is made, or None while stopped (T1)."""
+        """Return when the next decision is made, or None while stopped."""
         started_at = self._engine.started_at
         if started_at is None:
             return None
@@ -181,7 +181,7 @@ class KraftvaktRuntime:
 
     @property
     def charger_switches(self) -> ChargerSwitchBoard:
-        """Return the user's switches for the chargers (ENT-003, ENT-004)."""
+        """Return the user's switches for the chargers."""
         return self._charger_switches
 
     @property
@@ -191,12 +191,12 @@ class KraftvaktRuntime:
 
     @property
     def charging_priority(self) -> list[str]:
-        """Return the current charging priority, highest first (LAD-016)."""
+        """Return the current charging priority, highest first."""
         return self._engine.charging_priority
 
     @callback
     def async_start(self) -> None:
-        """Start measuring, and start the regulation if it can (REG-009, REG-016).
+        """Start measuring, and start the regulation if it can.
 
         When Home Assistant is running, as after a reload, the regulation starts
         at the same moment as the first window, so the first decision comes
@@ -223,7 +223,7 @@ class KraftvaktRuntime:
             self._start_regulation(now)
 
     def _forget_start_when_started(self) -> None:
-        """Forget the start when Home Assistant has started (REG-016).
+        """Forget the start when Home Assistant has started.
 
         The user has started or stopped the regulation before that, or the
         runtime is shut down.
@@ -245,7 +245,7 @@ class KraftvaktRuntime:
 
     @callback
     def async_start_regulation(self) -> None:
-        """Turn everything off at once and start the regulation (REG-016, REG-009).
+        """Turn everything off at once and start the regulation.
 
         Does nothing if the regulation already runs. Raises
         ConfigIncompleteError if the configuration is not complete.
@@ -259,7 +259,7 @@ class KraftvaktRuntime:
 
     @callback
     def async_stop_regulation(self) -> None:
-        """Stop the regulation and turn everything off at once (REG-016)."""
+        """Stop the regulation and turn everything off at once."""
         self._forget_start_when_started()
         if not self._engine.running:
             return
@@ -268,10 +268,10 @@ class KraftvaktRuntime:
         self._notify_status()
 
     async def async_save_config(self, config: KraftvaktConfig) -> None:
-        """Save a new configuration and use it from the next start (REG-010, B9).
+        """Save a new configuration and use it from the next start.
 
         Only while the regulation is stopped, so nothing is on and nothing is
-        lost from the state of the regulation. The averages go on (GEN-007): a
+        lost from the state of the regulation. The averages go on: a
         new power sensor is followed from now, and a new regulation window
         applies from the next window. Raises RegulationRunningError while the
         regulation runs.
@@ -310,7 +310,7 @@ class KraftvaktRuntime:
         self._notify_status()
 
     def _follow_power_sensor(self, now: datetime) -> None:
-        """Measure the configured power sensor from `now` on (GEN-003)."""
+        """Measure the configured power sensor from `now` on."""
         if self._cancel_power_listener:
             self._cancel_power_listener()
             self._cancel_power_listener = None
@@ -336,7 +336,7 @@ class KraftvaktRuntime:
         self._averager.add_measurement(when, power)
 
     def _schedule_window_close(self) -> None:
-        # Absolute times keep the windows from drifting (R4).
+        # Absolute times keep the windows from drifting.
         self._cancel_window_timer = async_track_point_in_utc_time(
             self._hass, self._async_window_ended, self._averager.window_end
         )
@@ -356,7 +356,7 @@ class KraftvaktRuntime:
         self._notify_status()
 
     def _decision_is_due(self) -> bool:
-        """Return whether enough windows have closed since the start (T1).
+        """Return whether enough windows have closed since the start.
 
         Windows that started before the start of the regulation do not count.
         The engine may start the regulation again itself at a decision, after
@@ -397,7 +397,7 @@ class KraftvaktRuntime:
         self._execute(self._engine.decide(decision))
 
     def _power_sensor_lost(self) -> bool:
-        """Return whether the sensor was invalid at the last two closes (T21)."""
+        """Return whether the sensor was invalid at the last two closes."""
         return len(self._recent_windows) == self._recent_windows.maxlen and not any(
             window.sensor_valid for window in self._recent_windows
         )
@@ -412,7 +412,7 @@ class KraftvaktRuntime:
         }
 
     def _charger_readings(self) -> dict[str, ChargerReading]:
-        """Read the chargers at a decision (LAD-008, LAD-010, ENT-003, ENT-004)."""
+        """Read the chargers at a decision."""
         if not self._config.charging.enabled:
             return {}
         return {
@@ -453,7 +453,7 @@ class KraftvaktRuntime:
     def _execute(self, commands: Sequence[Command]) -> None:
         """Carry out the commands, the actions in the background after earlier ones.
 
-        A window override that has ended is switched off at once (LAD-027).
+        A window override that has ended is switched off at once.
         """
         actions = []
         for command in commands:

@@ -1,7 +1,7 @@
 """End-to-end tests of EV charging and the charger switches in Home Assistant.
 
 They set the power sensors, move the time forward and check the actions that
-reach the charger (LAD-004 to LAD-030, ENT-003, ENT-004, GEN-011, B9, R5, T10).
+reach the charger.
 """
 
 from copy import deepcopy
@@ -164,7 +164,7 @@ def stored_switches(hass_storage: dict[str, Any]) -> dict[str, Any]:
 async def test_charger_current_follows_the_free_power(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """LAD-004, LAD-011 to LAD-013: the current is set before (de)activating."""
+    """The current is set before (de)activating."""
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
     assert actions == ["current 6", f"off {CHARGER}"]
@@ -193,7 +193,6 @@ async def test_charger_without_car_is_not_activated(
     config,
     setup_kraftvakt,
 ) -> None:
-    """LAD-010, LAD-017, LAD-028, GEN-009."""
     config["charging"]["chargers"][0]["car_connected"] = {
         "type": "entity",
         "value": CAR_CONNECTED,
@@ -220,7 +219,7 @@ async def test_excluded_switch_stops_charging_and_is_saved(
     actions,
     setup_kraftvakt,
 ) -> None:
-    """LAD-024, ENT-003, GEN-011, REG-005: it takes effect at the next decision."""
+    """It takes effect at the next decision."""
     set_power(hass, CHARGER_POWER, "4100")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -250,7 +249,7 @@ async def test_window_override_lets_the_charger_charge_until_the_window(
     config,
     setup_kraftvakt,
 ) -> None:
-    """LAD-025, LAD-027, ENT-004, T13: the switch is set back when it ends."""
+    """The switch is set back when it ends."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     config["general"]["regulation_window_s"] = 600
@@ -292,7 +291,7 @@ async def test_window_override_counts_from_the_switch_over_a_stop(
     config,
     setup_kraftvakt,
 ) -> None:
-    """LAD-027, T13: a window that started while stopped ends the override."""
+    """A window that started while stopped ends the override."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     config["general"]["regulation_window_s"] = 600
@@ -327,7 +326,7 @@ async def test_window_override_counts_from_the_switch_over_a_stop(
 async def test_charger_switches_are_kept_over_a_reload(
     hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
 ) -> None:
-    """GEN-011, ENT-003, ENT-004: the positions are configuration."""
+    """The positions are configuration."""
     entry = await setup_kraftvakt()
     await use_switch(hass, "c1", "excluded", "turn_on")
     await use_switch(hass, "c1", "window_override", "turn_on")
@@ -345,7 +344,7 @@ async def test_charger_switches_are_kept_over_a_reload(
 async def test_charger_switches_are_named_after_the_charger(
     hass: HomeAssistant, actions, setup_kraftvakt
 ) -> None:
-    """LAD-003, GEN-013: the name of the charger's entity identifies the switches."""
+    """The name of the charger's entity identifies the switches."""
     await setup_kraftvakt()
 
     excluded = hass.states.get(switch_id(hass, "c1", "excluded") or "")
@@ -364,7 +363,7 @@ async def test_charger_switches_are_unavailable_while_charging_is_disabled(
     config,
     setup_kraftvakt,
 ) -> None:
-    """T10, GEN-008: the chargers are left alone and keep their switches."""
+    """The chargers are left alone and keep their switches."""
     config["charging"]["enabled"] = False
     config["priority"] = []
     config["charger_switches"] = {"c1": {"excluded": True, "window_override": False}}
@@ -385,7 +384,7 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     config,
     setup_kraftvakt,
 ) -> None:
-    """B9, R5: switches are added and removed with the chargers."""
+    """Switches are added and removed with the chargers."""
     entry = await setup_kraftvakt()
     await use_switch(hass, "c1", "excluded", "turn_on")
     old_switch = switch_id(hass, "c1", "excluded")
@@ -411,7 +410,7 @@ async def test_charger_switches_follow_the_configuration_without_reload(
 async def test_switches_of_removed_chargers_are_removed_at_setup(
     hass: HomeAssistant, actions, setup_kraftvakt
 ) -> None:
-    """R5: no orphaned switches remain in the entity registry."""
+    """No orphaned switches remain in the entity registry."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
@@ -429,7 +428,7 @@ async def test_switches_of_removed_chargers_are_removed_at_setup(
 
 
 async def test_charger_name_when_the_entity_has_no_state(hass: HomeAssistant) -> None:
-    """GEN-013: the registry is used before the entity has a state."""
+    """The registry is used before the entity has a state."""
     registry = er.async_get(hass)
     entry = registry.async_get_or_create(
         "switch", "test", "garage", original_name="Garage charger"

@@ -1,4 +1,4 @@
-"""Scenario tests for increasing waiting time on persistent cycling (REG-015, T6)."""
+"""Scenario tests for increasing waiting time on persistent cycling."""
 
 from datetime import timedelta
 
@@ -29,7 +29,7 @@ def cycle(scenario: Scenario, appliance_id: str) -> float:
 
 
 def test_waiting_time_grows_on_persistent_cycling() -> None:
-    """REG-015: from the second time on again: 5, 7, 9, 11, 13 and then 15 minutes."""
+    """From the second time on again: 5, 7, 9, 11, 13 and then 15 minutes."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
 
@@ -39,7 +39,7 @@ def test_waiting_time_grows_on_persistent_cycling() -> None:
 
 
 def test_switching_another_appliance_resets_the_increase() -> None:
-    """REG-015: the increase is reset as soon as another appliance is switched."""
+    """The increase is reset as soon as another appliance is switched."""
     scenario = Scenario(make_config("a", "b"))
     scenario.turn_on("a", "b")
     assert [cycle(scenario, "b") for _ in range(3)] == [0, 5, 7]
@@ -54,7 +54,7 @@ def test_switching_another_appliance_resets_the_increase() -> None:
 
 
 def test_restart_resets_the_increase() -> None:
-    """GEN-007: the counters for increasing waiting time start again."""
+    """The counters for increasing waiting time start again."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
     assert [cycle(scenario, "a") for _ in range(3)] == [0, 5, 7]
@@ -67,7 +67,7 @@ def test_restart_resets_the_increase() -> None:
 
 
 def test_persistent_cycling_still_needs_room_under_the_limit() -> None:
-    """REG-006 applies while the increased waiting time runs."""
+    """The appliance still needs room under the limit while the waiting runs."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
     assert [cycle(scenario, "a") for _ in range(2)] == [0, 5]

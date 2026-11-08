@@ -33,7 +33,7 @@ async def test_setup_and_unload_registers_panel(hass: HomeAssistant) -> None:
 
 
 async def test_panel_is_config_panel_for_integration(hass: HomeAssistant) -> None:
-    """The configure button for the integration opens the panel (GUI-003)."""
+    """The configure button for the integration opens the panel."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
 
@@ -48,7 +48,7 @@ async def test_panel_is_config_panel_for_integration(hass: HomeAssistant) -> Non
 async def test_panel_module_is_served(
     hass: HomeAssistant, hass_client: ClientSessionGenerator
 ) -> None:
-    """The built panel is found and served at the URL the panel loads (B1)."""
+    """The built panel is found and served at the URL the panel loads."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -63,7 +63,7 @@ async def test_panel_module_is_served(
 
 
 async def test_integration_runs_locally(hass: HomeAssistant) -> None:
-    """GEN-002: no cloud services and no packages beyond Home Assistant."""
+    """No cloud services and no packages beyond Home Assistant."""
     integration = await async_get_integration(hass, DOMAIN)
 
     assert integration.requirements == []
@@ -73,7 +73,7 @@ async def test_integration_runs_locally(hass: HomeAssistant) -> None:
 async def test_unreadable_configuration_gives_a_clear_error(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    """GEN-011: the setup stops with a message, and the stored file is kept."""
+    """The setup stops with a message, and the stored file is kept."""
     stored = {
         "version": STORAGE_VERSION,
         "key": STORAGE_KEY,

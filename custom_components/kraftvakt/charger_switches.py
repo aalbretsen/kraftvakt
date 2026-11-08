@@ -1,4 +1,4 @@
-"""The user's switches for the chargers (ENT-003, ENT-004, GEN-011)."""
+"""The user's switches for the chargers."""
 
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ class ChargerSwitchBoard:
     """Keeps the positions of the charger switches and saves them at once.
 
     The positions are configuration and are kept over any restart, together
-    with the rest of the configuration (GEN-011, B3). When the override of the
+    with the rest of the configuration. When the override of the
     charging window was switched on is kept only in memory. After a restart of
     Home Assistant or the integration, the first start of the regulation counts
-    instead (T13). The switches can be used while the regulation runs, and the
-    regulation reads them at its next decision (REG-005, REG-010).
+    instead. The switches can be used while the regulation runs, and the
+    regulation reads them at its next decision.
     """
 
     def __init__(
@@ -47,12 +47,12 @@ class ChargerSwitchBoard:
         return self._switches.get(charger_id, ChargerSwitches())
 
     def override_switched_on_at(self, charger_id: str) -> datetime | None:
-        """Return when the override was switched on, if it is on and known (T13)."""
+        """Return when the override was switched on, if it is on and known."""
         return self._override_switched_on_at.get(charger_id)
 
     @callback
     def async_regulation_started(self, now: datetime) -> None:
-        """Count overrides switched on before a restart from `now` (LAD-027, T13).
+        """Count overrides switched on before a restart from `now`.
 
         Overrides whose switch-on time is known keep it.
         """
@@ -73,7 +73,7 @@ class ChargerSwitchBoard:
 
     @callback
     def async_reset_window_override(self, charger_id: str) -> None:
-        """Switch the override off when it has ended (LAD-027, ENT-004).
+        """Switch the override off when it has ended.
 
         The position changes at once and is saved in the background.
         """
@@ -83,7 +83,7 @@ class ChargerSwitchBoard:
         )
 
     async def async_update_config(self, config: KraftvaktConfig) -> None:
-        """Use a new configuration and save it with the switches (B9).
+        """Use a new configuration and save it with the switches.
 
         Chargers that remain keep their switches, new chargers get the default
         positions, and the switches of removed chargers are dropped.

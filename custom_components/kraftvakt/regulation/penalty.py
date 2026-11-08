@@ -1,4 +1,4 @@
-"""Overconsumption and the penalty period (STR-001 to STR-009, T4, T5)."""
+"""Overconsumption and the penalty period."""
 
 from __future__ import annotations
 
@@ -24,10 +24,9 @@ class PenaltyOutcome(Enum):
 
 @dataclass(frozen=True, slots=True)
 class PenaltyLimits:
-    """The settings that decide overconsumption and penalty (REG-001, STR-002).
+    """The settings that decide overconsumption and penalty.
 
-    `window` is the regulation window that each regulation average covers
-    (MAL-001, MAL-002).
+    `window` is the regulation window that each regulation average covers.
     """
 
     power_limit_kw: float
@@ -37,10 +36,10 @@ class PenaltyLimits:
 
 @dataclass(slots=True)
 class PenaltyState:
-    """The overconsumption state and the penalty period (STR-004 to STR-007).
+    """The overconsumption state and the penalty period.
 
-    A new state with default values is created at each start (GEN-007), so a
-    penalty only ends by being paid back here or by a restart (STR-006).
+    A new state with default values is created at each start, so a
+    penalty only ends by being paid back here or by a restart.
     """
 
     overconsuming: bool = False
@@ -57,7 +56,7 @@ class PenaltyState:
         """Count the overconsumption and decide on the penalty at a decision.
 
         `regulation_averages_kw` holds every regulation average computed since
-        the previous decision, oldest first (STR-005).
+        the previous decision, oldest first.
         """
         if self.overconsuming:
             self._count(limits, regulation_averages_kw)
@@ -87,12 +86,11 @@ class PenaltyState:
     def _count(
         self, limits: PenaltyLimits, regulation_averages_kw: Sequence[float]
     ) -> None:
-        """Add the net energy over the limit of each regulation average (STR-005).
+        """Add the net energy over the limit of each regulation average.
 
         Energy under the limit only comes from a regulation average under the
         limit, so during a penalty nothing is subtracted before the recovery
-        starts at the first such average, and it goes on net from then (STR-007,
-        T5).
+        starts at the first such average, and it goes on net from then.
         """
         hours = limits.window.total_seconds() / SECONDS_PER_HOUR
         for average_kw in regulation_averages_kw:

@@ -1,5 +1,5 @@
 /**
- * Types and WebSocket calls for Kraftvakt's commands (3.8, B6).
+ * Types and WebSocket calls for Kraftvakt's commands.
  *
  * The status subscription is the one source of how the regulation stands. Its
  * events may arrive before the reply to a command that changed the status, so
@@ -7,7 +7,7 @@
  */
 import type { HomeAssistant } from "./types";
 
-/** A validation error or a missing setting (3.4). */
+/** A validation error or a missing setting. */
 export interface Issue {
   code: string;
   section: "general" | "appliances" | "priority" | "charging" | "chargers";
@@ -133,7 +133,7 @@ export interface ChargerStatus {
   waiting_until: string | null;
 }
 
-/** How the regulation stands now (GUI-005, GUI-006, T11). Times are ISO 8601. */
+/** How the regulation stands now. Times are ISO 8601. */
 export interface StatusSnapshot {
   running: boolean;
   missing: Issue[];
@@ -157,7 +157,7 @@ export interface CommandError {
   message: string;
 }
 
-/** The error codes of Kraftvakt's commands (3.8). */
+/** The error codes of Kraftvakt's commands. */
 export const ERROR_NOT_LOADED = "not_loaded";
 export const ERROR_REGULATION_RUNNING = "regulation_running";
 export const ERROR_CONFIG_INCOMPLETE = "config_incomplete";

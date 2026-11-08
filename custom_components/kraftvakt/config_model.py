@@ -1,6 +1,6 @@
 """Configuration model for Kraftvakt.
 
-The configuration is everything the user sets up in the panel (GEN-011). It is
+The configuration is everything the user sets up in the panel. It is
 immutable: a change is made by building a new configuration and saving it.
 """
 
@@ -79,7 +79,7 @@ class ActionMode(StrEnum):
 
 
 class ConditionType(StrEnum):
-    """How a true/false value is given (GEN-009)."""
+    """How a true/false value is given."""
 
     ENTITY = "entity"
     TEMPLATE = "template"
@@ -111,7 +111,7 @@ class ActionConfig:
 
 @dataclass(frozen=True, slots=True)
 class Condition:
-    """A true/false value from a boolean entity or a template (GEN-009)."""
+    """A true/false value from a boolean entity or a template."""
 
     type: ConditionType
     value: str
@@ -123,7 +123,7 @@ class Condition:
 
 @dataclass(frozen=True, slots=True)
 class Variant:
-    """An extra entry of an appliance in the priority list (APP-006)."""
+    """An extra entry of an appliance in the priority list."""
 
     id: str
     label: str
@@ -140,7 +140,7 @@ class Variant:
 
 @dataclass(frozen=True, slots=True)
 class Appliance:
-    """A device that Kraftvakt turns on and off (APP-001 to APP-006)."""
+    """A device that Kraftvakt turns on and off."""
 
     id: str
     entity_id: str | None = None
@@ -163,7 +163,7 @@ class Appliance:
 
 @dataclass(frozen=True, slots=True)
 class PriorityEntry:
-    """An entry in the priority list (APP-001, APP-005, APP-008)."""
+    """An entry in the priority list."""
 
     type: PriorityEntryType
     appliance_id: str | None = None
@@ -194,7 +194,7 @@ class PriorityEntry:
 
 @dataclass(frozen=True, slots=True)
 class ChargingWindow:
-    """Time of day when a charger may charge, possibly across midnight (LAD-025)."""
+    """Time of day when a charger may charge, possibly across midnight."""
 
     start: time
     end: time
@@ -206,7 +206,7 @@ class ChargingWindow:
 
 @dataclass(frozen=True, slots=True)
 class Charger:
-    """An EV charger (LAD-003 to LAD-010, LAD-025)."""
+    """An EV charger."""
 
     id: str
     entity_id: str | None = None
@@ -239,7 +239,7 @@ class Charger:
 
 @dataclass(frozen=True, slots=True)
 class ChargingConfig:
-    """Settings shared by all chargers (LAD-001 to LAD-003)."""
+    """Settings shared by all chargers."""
 
     enabled: bool = False
     one_at_a_time: bool = True
@@ -256,7 +256,7 @@ class ChargingConfig:
 
 @dataclass(frozen=True, slots=True)
 class GeneralConfig:
-    """General parameters (GUI-008)."""
+    """General parameters."""
 
     power_sensor: str | None = None
     power_limit_kw: float = 10.0
@@ -311,7 +311,7 @@ class KraftvaktConfig:
 
 @dataclass(frozen=True, slots=True)
 class ChargerSwitches:
-    """The user's switches for a charger (ENT-003, ENT-004)."""
+    """The user's switches for a charger."""
 
     excluded: bool = False
     window_override: bool = False
@@ -363,9 +363,9 @@ def new_id() -> str:
 def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
-    Missing entries in the priority list are added at the bottom (APP-008).
+    Missing entries in the priority list are added at the bottom.
     Raises ConfigValidationError with every issue found if the configuration
-    is invalid. An incomplete configuration is valid (REG-016). Must be called
+    is invalid. An incomplete configuration is valid. Must be called
     from the event loop, since Home Assistant validates templates there.
     """
     config = _complete_priority(KraftvaktConfig.from_dict(data))
@@ -424,11 +424,11 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def missing_items(config: KraftvaktConfig) -> list[Issue]:
-    """Return what is missing before the regulation can start (REG-016).
+    """Return what is missing before the regulation can start.
 
-    Chargers count only while charging is enabled (T10). When only one charger
+    Chargers count only while charging is enabled. When only one charger
     may charge at a time, each charger needs «car connected». Without it,
-    chargers without a car would take turns being activated (T25).
+    chargers without a car would take turns being activated.
     """
     missing = []
     if config.general.power_sensor is None:
@@ -895,7 +895,7 @@ def _duplicate_ids(items: Iterable[Appliance | Variant | Charger]) -> list[str]:
 
 
 def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Each entity may identify only one appliance or charger (GEN-013, T9)."""
+    """Each entity may identify only one appliance or charger."""
     owners = [
         *(("appliances", item.id, item.entity_id) for item in config.appliances),
         *(("chargers", item.id, item.entity_id) for item in config.charging.chargers),
@@ -909,9 +909,9 @@ def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
-    """The priority list holds every appliance and variant exactly once (APP-001).
+    """The priority list holds every appliance and variant exactly once.
 
-    It holds EV charging exactly once when charging is enabled (APP-005).
+    It holds EV charging exactly once when charging is enabled.
     """
     expected = _expected_priority(config)
     counts = Counter(config.priority)
@@ -940,7 +940,7 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def _complete_priority(config: KraftvaktConfig) -> KraftvaktConfig:
-    """Add missing entries at the bottom of the priority list (APP-008)."""
+    """Add missing entries at the bottom of the priority list."""
     missing = [
         entry for entry in _expected_priority(config) if entry not in config.priority
     ]

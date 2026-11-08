@@ -26,12 +26,12 @@ const ISSUE_PAGES: Record<Issue["section"], Page> = {
   chargers: "charging",
 };
 
-/** Return the page where the issue is fixed (GUI-005). */
+/** Return the page where the issue is fixed. */
 export function pageForIssue(issue: Issue): Page {
   return ISSUE_PAGES[issue.section];
 }
 
-/** Describe a missing setting or a validation error to the user (3.4, GUI-005). */
+/** Describe a missing setting or a validation error to the user. */
 export function describeIssue(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
   const params = {
     item: itemName(issue, config, localize),
@@ -41,7 +41,7 @@ export function describeIssue(issue: Issue, config: ConfigResponse | undefined, 
   return localize(ISSUE_TEXTS[issue.code] ?? "missing.unknown", params);
 }
 
-/** Return the name of the appliance or charger the issue is about (GEN-013). */
+/** Return the name of the appliance or charger the issue is about. */
 function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
   const items = issue.section === "chargers" ? config?.config.charging.chargers : config?.config.appliances;
   const entityId = items?.find((item) => item.id === issue.target)?.entity_id;
@@ -77,7 +77,7 @@ const LIMIT_SECTIONS: Partial<Record<Issue["section"], keyof Capabilities["limit
   chargers: "chargers",
 };
 
-/** Describe what is wrong with a field, next to the field (3.4). */
+/** Describe what is wrong with a field, next to the field. */
 export function fieldErrorText(
   issue: Issue,
   localize: Localize,

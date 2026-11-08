@@ -1,4 +1,4 @@
-"""Unit tests for the rules for the EV chargers (LAD-008, LAD-015 to LAD-030)."""
+"""Unit tests for the rules for the EV chargers."""
 
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -39,13 +39,13 @@ def oslo(hour: int, minute: int = 0, day: int = 7) -> datetime:
 
 
 def test_one_fictive_appliance_per_ampere() -> None:
-    """LAD-011: 6 A to 16 A gives 11 fictive appliances."""
+    """6 A to 16 A gives 11 fictive appliances."""
     assert fictive_appliance_count(charger(min_a=6, max_a=16)) == 11
     assert fictive_appliance_count(charger(min_a=6, max_a=6)) == 1
 
 
 def test_current_follows_the_fictive_appliances_that_are_on() -> None:
-    """LAD-011: four on gives 9 A, and a deactivated charger gets the minimum."""
+    """Four on gives 9 A, and a deactivated charger gets the minimum."""
     assert charging_current(charger(), 4) == 9
     assert charging_current(charger(), 11) == 16
     assert charging_current(charger(), 0) == 6
@@ -63,7 +63,6 @@ def test_current_follows_the_fictive_appliances_that_are_on() -> None:
 def test_actively_charging_above_100_watt_or_without_a_valid_value(
     reading: ChargerReading, expected: bool
 ) -> None:
-    """LAD-008, GEN-010, T7."""
     assert actively_charging(reading) is expected
 
 
@@ -85,12 +84,12 @@ def test_actively_charging_above_100_watt_or_without_a_valid_value(
 def test_charging_window_can_reach_across_midnight(
     window: ChargingWindow, local_time: time, expected: bool
 ) -> None:
-    """LAD-025: the start is inside the window and the end is not."""
+    """The start is inside the window and the end is not."""
     assert in_charging_window(window, local_time) is expected
 
 
 def test_charging_window_start_is_found_in_the_time_zone() -> None:
-    """LAD-025: the window is given in the time zone of Home Assistant."""
+    """The window is given in the time zone of Home Assistant."""
     assert charging_window_started(NIGHT, oslo(21, 0), oslo(22, 0), OSLO)
     assert not charging_window_started(NIGHT, oslo(22, 0), oslo(23, 0), OSLO)
     assert not charging_window_started(NIGHT, oslo(23, 0), oslo(21, 59, day=8), OSLO)
@@ -100,7 +99,7 @@ def test_charging_window_start_is_found_in_the_time_zone() -> None:
 
 
 def test_override_ends_when_the_next_window_has_started() -> None:
-    """LAD-027, T13: counted from when the switch was switched on."""
+    """Counted from when the switch was switched on."""
     night = charger(charging_window=NIGHT)
     switched_on = ChargerReading(window_override=True, override_switched_on_at=oslo(12))
 
@@ -109,7 +108,7 @@ def test_override_ends_when_the_next_window_has_started() -> None:
 
 
 def test_override_counts_from_the_switch_also_over_a_later_start() -> None:
-    """T13: a window that started while the regulation was stopped counts."""
+    """A window that started while the regulation was stopped counts."""
     night = charger(charging_window=NIGHT)
     long_ago = ChargerReading(
         window_override=True, override_switched_on_at=oslo(8, day=5)
@@ -119,7 +118,7 @@ def test_override_counts_from_the_switch_also_over_a_later_start() -> None:
 
 
 def test_override_counts_from_the_start_when_switched_on_is_unknown() -> None:
-    """T13: the start of the regulation counts when the switch time is not known."""
+    """The start of the regulation counts when the switch time is not known."""
     night = charger(charging_window=NIGHT)
     unknown = ChargerReading(window_override=True)
 
@@ -128,7 +127,7 @@ def test_override_counts_from_the_start_when_switched_on_is_unknown() -> None:
 
 
 def test_override_without_window_or_switched_off_never_ends() -> None:
-    """LAD-026, LAD-027: an override has no effect without a charging window."""
+    """An override has no effect without a charging window."""
     switched_on = ChargerReading(window_override=True, override_switched_on_at=oslo(1))
     switched_off = ChargerReading(
         window_override=False, override_switched_on_at=oslo(1)
@@ -141,7 +140,6 @@ def test_override_without_window_or_switched_off_never_ends() -> None:
 
 
 def test_allowed_to_charge() -> None:
-    """LAD-024 to LAD-027."""
     night = charger(charging_window=NIGHT)
     excluded = ChargerReading(excluded=True)
 
@@ -177,7 +175,6 @@ def evaluate(
 
 
 def test_priority_starts_as_configured() -> None:
-    """LAD-016."""
     state = ChargingState.for_chargers(chargers("a", "b"))
 
     assert state.priority == ["a", "b"]
@@ -186,7 +183,7 @@ def test_priority_starts_as_configured() -> None:
 
 
 def test_charger_without_car_is_bypassed() -> None:
-    """LAD-017: also when it has never been activated."""
+    """Also when it has never been activated."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
 
@@ -200,7 +197,7 @@ def test_charger_without_car_is_bypassed() -> None:
 
 
 def test_charger_that_does_not_draw_power_is_bypassed_after_two_windows() -> None:
-    """LAD-017: the first fictive appliance must have been on two windows."""
+    """The first fictive appliance must have been on two windows."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
     state.set_fictive_on("a", 1, NOW)
@@ -213,7 +210,7 @@ def test_charger_that_does_not_draw_power_is_bypassed_after_two_windows() -> Non
 
 
 def test_charger_without_valid_charging_power_is_bypassed_only_without_car() -> None:
-    """T7: an invalid charging power counts as charging."""
+    """An invalid charging power counts as charging."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
     state.set_fictive_on("a", 1, NOW)
@@ -226,7 +223,7 @@ def test_charger_without_valid_charging_power_is_bypassed_only_without_car() -> 
 
 
 def test_bypassed_charger_is_no_longer_bypassed_when_a_car_connects() -> None:
-    """LAD-017, LAD-018: it stays at the back until the priority is corrected."""
+    """It stays at the back until the priority is corrected."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
     evaluate(state, configured, {"a": ChargerReading(car_connected=False), "b": IDLE})
@@ -238,7 +235,6 @@ def test_bypassed_charger_is_no_longer_bypassed_when_a_car_connects() -> None:
 
 
 def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
-    """LAD-018."""
     configured = chargers("a", "b", "c", "d")
     state = ChargingState.for_chargers(configured)
     no_car = ChargerReading(car_connected=False)
@@ -253,7 +249,7 @@ def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
 
 
 def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() -> None:
-    """LAD-020: bypassed chargers stay at the back."""
+    """Bypassed chargers stay at the back."""
     configured = [charger("a"), charger("b"), charger("c", min_a=6, max_a=7)]
     state = ChargingState.for_chargers(configured)
     no_car = ChargerReading(car_connected=False)
@@ -269,7 +265,6 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
 
 
 def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed() -> None:
-    """LAD-015."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
@@ -286,7 +281,6 @@ def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed() -> None:
 
 
 def test_one_at_a_time_without_charging_takes_the_first_allowed() -> None:
-    """LAD-022."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
@@ -297,7 +291,7 @@ def test_one_at_a_time_without_charging_takes_the_first_allowed() -> None:
 
 
 def test_one_at_a_time_the_charging_charger_goes_first() -> None:
-    """LAD-021, LAD-023: the others are waiting, whatever their priority."""
+    """The others are waiting, whatever their priority."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
@@ -308,7 +302,7 @@ def test_one_at_a_time_the_charging_charger_goes_first() -> None:
 
 
 def test_one_at_a_time_charging_charger_not_allowed_keeps_others_waiting() -> None:
-    """T7: a deactivated charger without valid charging power holds the others."""
+    """A deactivated charger without valid charging power holds the others."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
 
@@ -319,7 +313,7 @@ def test_one_at_a_time_charging_charger_not_allowed_keeps_others_waiting() -> No
 
 
 def test_one_at_a_time_the_activated_one_of_several_charging_goes_first() -> None:
-    """4.3: then the first in the current priority."""
+    """Then the first in the current priority."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
     state.set_fictive_on("c", 3, NOW)
@@ -334,7 +328,7 @@ def test_one_at_a_time_the_activated_one_of_several_charging_goes_first() -> Non
 
 
 def test_bypassed_charger_does_not_stand_in_the_way() -> None:
-    """LAD-017: also not when it seems to charge."""
+    """Also not when it seems to charge."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
 
@@ -348,7 +342,7 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
 
 
 def test_status_of_each_charger() -> None:
-    """GUI-006, T11: whether it is excluded is known after the first decision."""
+    """Whether it is excluded is known after the first decision."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
     assert state.status(configured)["a"].excluded is None

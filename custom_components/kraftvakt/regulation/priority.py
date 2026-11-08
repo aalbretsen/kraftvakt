@@ -1,4 +1,4 @@
-"""The order of slots built from the priority list (4.1, APP-007, LAD-011)."""
+"""The order of slots built from the priority list."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def current_variant(
 ) -> str | None:
     """Return the id of the current variant, or None for the appliance itself.
 
-    The current variant is the one with the topmost true condition (APP-007).
+    The current variant is the one with the topmost true condition.
     """
     return next(
         (
@@ -35,8 +35,8 @@ def build_slots(
 ) -> list[Slot]:
     """Return the slots in priority order, highest priority first.
 
-    Only the entry of the current variant of each appliance gets a slot
-    (APP-007). The EV charging entry is replaced by `charger_slots` (APP-005).
+    Only the entry of the current variant of each appliance gets a slot. The EV charging
+    entry is replaced by `charger_slots`.
     """
     appliances = {appliance.id: appliance for appliance in config.appliances}
     slots: list[Slot] = []
@@ -67,13 +67,13 @@ def fictive_slots(
     may_charge: Collection[str],
     bypassed: Collection[str],
 ) -> list[Slot]:
-    """Return the fictive appliances of the chargers, interleaved (LAD-011, LAD-015).
+    """Return the fictive appliances of the chargers, interleaved.
 
     `chargers` are in the current charging priority. Each charger gets its
     first fictive appliance in that order, then its second, and so on. Only the
-    first one has the power reserve of the charger (LAD-012). Only chargers in
+    first one has the power reserve of the charger. Only chargers in
     `may_charge` can get more turned on, and the fictive appliances of bypassed
-    chargers are not switched off above the limit (LAD-017, REG-008).
+    chargers are not switched off above the limit.
     """
     rounds = max(map(fictive_appliance_count, chargers), default=0)
     return [

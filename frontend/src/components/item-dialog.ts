@@ -18,12 +18,12 @@ interface FormField {
 
 /**
  * What the dialogs for an appliance and an EV charger have in common: the
- * entity (GEN-013), the actions, the fields with limits, and the buttons.
+ * entity, the actions, the fields with limits, and the buttons.
  *
  * The dialog edits a copy of the item. «OK» fires `item-changed` with the
  * item, and «Delete» fires `item-deleted` with its id. Both only change the
- * draft (B7). `closed` is fired when the dialog has closed. While the
- * configuration is locked, the dialog only shows the item (GUI-012).
+ * draft. `closed` is fired when the dialog has closed. While the
+ * configuration is locked, the dialog only shows the item.
  */
 export abstract class ItemDialog<T extends Item> extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -36,7 +36,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
 
   @property({ type: Boolean }) isNew = false;
 
-  /** The entities of the other appliances and chargers, which cannot be chosen (T9). */
+  /** The entities of the other appliances and chargers, which cannot be chosen. */
   @property({ attribute: false }) usedEntities: string[] = [];
 
   /** The errors the backend gave for the item when the draft was last saved. */
@@ -58,7 +58,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   /** The mistakes in the item that stop the dialog from being confirmed. */
   protected abstract errors(): Issue[];
 
-  /** What is missing in the item before the regulation can start (REG-016). */
+  /** What is missing in the item before the regulation can start. */
   protected abstract missing(): Issue[];
 
   protected abstract renderFields(issues: Issue[]): TemplateResult;
@@ -81,7 +81,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
-  /** The entity of the item, which gives it its name (GEN-013). */
+  /** The entity of the item, which gives it its name. */
   protected renderEntity(issues: Issue[]) {
     const schema = [{ name: "entity_id", required: true, selector: { entity: { exclude_entities: this.usedEntities } } }];
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
@@ -185,7 +185,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
 
   /**
    * Choose the default action when the new entity has one and no action is set,
-   * and a custom action when the default is no longer available (GEN-013).
+   * and a custom action when the default is no longer available.
    */
   private entityChanged(entityId: string | null): void {
     const actions = this.draft as unknown as Record<string, ActionConfig | null>;

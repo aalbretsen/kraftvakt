@@ -1,4 +1,4 @@
-"""Tests for whether the configuration is complete enough to start (REG-016)."""
+"""Tests for whether the configuration is complete enough to start."""
 
 from custom_components.kraftvakt.config_model import (
     Issue,
@@ -71,7 +71,7 @@ def test_optional_settings_are_not_required() -> None:
 
 
 def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
-    """LAD-002, LAD-010, T25: otherwise chargers without a car take turns."""
+    """Otherwise chargers without a car take turns."""
     data = full_config_data()
     data["charging"]["one_at_a_time"] = True
     data["charging"]["chargers"][0]["car_connected"] = None

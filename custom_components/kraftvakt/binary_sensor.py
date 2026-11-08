@@ -1,4 +1,4 @@
-"""Binary sensor that tells when the regulation is in the safe state (ENT-005)."""
+"""Binary sensor that tells when the regulation is in the safe state."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ async def async_setup_entry(
 
 
 class SafeStateBinarySensor(KraftvaktEntity, BinarySensorEntity):
-    """Is on while the regulation is in the safe state (REG-011)."""
+    """Is on while the regulation is in the safe state."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 

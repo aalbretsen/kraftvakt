@@ -1,4 +1,4 @@
-"""Tests of true/false values from an entity or a template (GEN-009, GEN-010)."""
+"""Tests of true/false values from an entity or a template."""
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -32,7 +32,7 @@ async def test_entity_is_true_only_when_on(
 
 
 async def test_missing_entity_is_false(hass: HomeAssistant) -> None:
-    """A removed or disabled entity is not in the state machine (GEN-009)."""
+    """A removed or disabled entity is not in the state machine."""
     assert not evaluate_condition(hass, entity("binary_sensor.borte"), APPLIANCE)
 
 
@@ -62,7 +62,7 @@ async def test_failing_template_is_false(hass: HomeAssistant, value: str) -> Non
 
 
 async def test_template_gets_the_entity_of_the_appliance(hass: HomeAssistant) -> None:
-    """Templates can use `entity_id` and `entity` without naming it (GEN-013, T14)."""
+    """Templates can use `entity_id` and `entity` without naming it."""
     hass.states.async_set(APPLIANCE, "on", {"temperature": 55})
     condition = template(
         "{{ entity_id == 'switch.bereder' and entity.state == 'on'"

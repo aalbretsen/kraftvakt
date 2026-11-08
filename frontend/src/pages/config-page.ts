@@ -8,11 +8,11 @@ import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 
 /**
- * What every configuration page gets from the panel (GUI-008 to GUI-010).
+ * What every configuration page gets from the panel.
  *
  * `config` is the draft while the regulation is stopped, and the saved
- * configuration while it runs and the configuration is locked (GUI-012).
- * `issues` are the mistakes and what is missing in the draft (3.4).
+ * configuration while it runs and the configuration is locked.
+ * `issues` are the mistakes and what is missing in the draft.
  */
 export class ConfigPage extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
@@ -34,7 +34,7 @@ export class ConfigPage extends LitElement {
 
   @property({ type: Boolean, reflect: true }) locked = false;
 
-  /** Replace the draft with a changed configuration (B7). */
+  /** Replace the draft with a changed configuration. */
   protected changeConfig(config: KraftvaktConfig): void {
     fireDraftChanged(this, config);
   }

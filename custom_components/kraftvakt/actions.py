@@ -1,7 +1,7 @@
-"""Actions that turn appliances and chargers on and off (GEN-012, GEN-013).
+"""Actions that turn appliances and chargers on and off.
 
-The default actions for each entity domain are kept in one table (3.6), and
-custom actions run as Home Assistant scripts (B10).
+The default actions for each entity domain are kept in one table, and
+custom actions run as Home Assistant scripts.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ class ActionKind(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class DefaultAction:
-    """The action used for the entity domains that have an obvious one (GEN-013)."""
+    """The action used for the entity domains that have an obvious one."""
 
     domains: tuple[str, ...]
     service: str
@@ -105,7 +105,7 @@ def default_action_steps(kind: ActionKind, entity_id: str) -> list[dict[str, Any
 
 
 def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Return the default actions chosen for entities whose domain has none (T18)."""
+    """Return the default actions chosen for entities whose domain has none."""
     return [
         Issue("default_action_unavailable", section, item.id, field_name)
         for section, item, fields in _items_with_actions(config)
@@ -117,7 +117,7 @@ def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
 def default_action_domains() -> dict[str, dict[str, list[str]]]:
     """Return the domains that have a default action, by section and field.
 
-    The panel offers the default action only for these domains (GEN-013).
+    The panel offers the default action only for these domains.
     """
     return {
         section: {
@@ -132,9 +132,9 @@ def default_action_domains() -> dict[str, dict[str, list[str]]]:
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
-    """Return the variables of the action that sets the charging current (T14).
+    """Return the variables of the action that sets the charging current.
 
-    The current is kept between the minimum and the maximum (LAD-006).
+    The current is kept between the minimum and the maximum.
     """
     return {
         "current": min(max(current, charger.min_current_a), charger.max_current_a),
@@ -148,7 +148,7 @@ class ActionRunner:
 
     The commands run one at a time in the order they are given, also across
     decisions. A failed action is logged and not retried, and the rest of the
-    commands still run (GEN-012). Commands that are not actions, such as
+    commands still run. Commands that are not actions, such as
     resetting the window override, are left to the caller.
     """
 
@@ -207,14 +207,14 @@ class ActionRunner:
         kind: ActionKind,
         variables: Mapping[str, Any] | None = None,
     ) -> None:
-        """Run the action with the variables from T14 and log any error (GEN-012)."""
+        """Run the action with `entity_id`, `entity` and `variables`, and log errors."""
         try:
             script = await self._async_script(item.entity_id, action, kind)
             await script.async_run(
                 {**context_variables(self._hass, item.entity_id), **(variables or {})},
                 Context(),
             )
-        except Exception as err:  # The regulation goes on regardless (GEN-012).
+        except Exception as err:  # The regulation goes on regardless.
             _LOGGER.error("Could not %s %s: %s", kind, item.entity_id, err)
 
     async def _async_script(

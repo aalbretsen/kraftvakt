@@ -1,4 +1,4 @@
-"""Tests of the actions for appliances and chargers (GEN-012, GEN-013, LAD-006)."""
+"""Tests of the actions for appliances and chargers."""
 
 import asyncio
 from dataclasses import replace
@@ -100,7 +100,7 @@ def test_domains_without_default_action(kind: ActionKind, entity_id: str) -> Non
 
 
 def test_default_actions_must_exist_for_the_domain() -> None:
-    """A default action can only be chosen where the domain has one (GEN-013, T18)."""
+    """A default action can only be chosen where the domain has one."""
     config = KraftvaktConfig(
         appliances=(
             appliance("a1", "switch.ok"),
@@ -128,7 +128,7 @@ def test_default_actions_must_exist_for_the_domain() -> None:
 
 @pytest.mark.parametrize(("current", "expected"), [(3, 6), (6, 6), (9, 9), (40, 16)])
 def test_current_is_kept_between_min_and_max(current: int, expected: int) -> None:
-    """The current to set always lies between the minimum and maximum (LAD-006)."""
+    """The current to set always lies between the minimum and maximum."""
     assert set_current_variables(charger("switch.lader"), current) == {
         "current": expected,
         "min_current": 6,
@@ -152,7 +152,7 @@ async def test_default_actions_call_the_domain_service(hass: HomeAssistant) -> N
 
 
 async def test_custom_actions_get_the_entity_variables(hass: HomeAssistant) -> None:
-    """Custom actions get `entity_id` and `entity` (GEN-013, T14)."""
+    """Custom actions get `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "record")
     hass.states.async_set("switch.a", "off", {"mode": "eco"})
     action = custom(
@@ -180,7 +180,7 @@ async def test_custom_actions_get_the_entity_variables(hass: HomeAssistant) -> N
 async def test_failed_action_is_logged_and_not_retried(
     hass: HomeAssistant, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """The next commands still run after a failed action (GEN-012)."""
+    """The next commands still run after a failed action."""
     failures: list[ServiceCall] = []
 
     def fail(call: ServiceCall) -> None:
@@ -263,7 +263,7 @@ async def test_commands_run_one_at_a_time_in_order(hass: HomeAssistant) -> None:
 
 
 async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) -> None:
-    """LAD-004 to LAD-006, T14: the current is kept between the minimum and max."""
+    """The current is kept between the minimum and max."""
     activated = async_mock_service(hass, "switch", "turn_on")
     deactivated = async_mock_service(hass, "switch", "turn_off")
     currents = async_mock_service(hass, "test", "current")

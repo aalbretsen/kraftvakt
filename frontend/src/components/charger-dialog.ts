@@ -13,8 +13,7 @@ const CURRENT_VARIABLES = ["current", "min_current", "max_current", ...ENTITY_VA
 /**
  * Adds or edits one EV charger: its entity, the actions for allowed charging
  * and the charging current, the limits of the current, the charging power,
- * the power reserve, «car connected» and the charging window (LAD-004 to
- * LAD-010, LAD-025, GEN-013).
+ * the power reserve, «car connected» and the charging window.
  */
 @customElement("kraftvakt-charger-dialog")
 export class KraftvaktChargerDialog extends ItemDialog<Charger> {
@@ -24,7 +23,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected readonly actionFields = ["activate", "deactivate", "set_current"] as const;
 
-  /** Whether only one EV charger may charge at a time, which requires «car connected» (T25). */
+  /** Whether only one EV charger may charge at a time, which requires «car connected». */
   @property({ type: Boolean }) oneAtATime = false;
 
   protected errors(): Issue[] {
@@ -75,8 +74,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   /**
-   * «Car connected», where true means that a car is connected (LAD-010, GEN-010).
-   * Optional unless only one EV charger may charge at a time (T25).
+   * «Car connected», where true means that a car is connected.
+   * Optional unless only one EV charger may charge at a time.
    */
   private renderCarConnected(issues: Issue[]) {
     const issue = issues.find((item) => item.field === "car_connected");
@@ -100,7 +99,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /** The optional charging window, with start and end in whole minutes (LAD-025). */
+  /** The optional charging window, with start and end in whole minutes. */
   private renderChargingWindow(issues: Issue[]) {
     const window = this.draft.charging_window;
     const schema = [
@@ -156,7 +155,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   ];
 }
 
-/** The time selector may give seconds, but the charging window uses whole minutes (LAD-025). */
+/** The time selector may give seconds, but the charging window uses whole minutes. */
 function wholeMinutes(value: unknown): string {
   return typeof value === "string" ? value.slice(0, 5) : "";
 }

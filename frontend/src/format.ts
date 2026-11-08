@@ -6,7 +6,7 @@ export function formatNumber(language: string, value: number, decimals: number):
   }).format(value);
 }
 
-/** Format a power in kW with two decimals, or a dash when it is not known (T2, T8). */
+/** Format a power in kW with two decimals, or a dash when it is not known. */
 export function formatPower(language: string, kilowatt: number | null): string {
   return kilowatt === null ? "–" : formatNumber(language, kilowatt, 2);
 }

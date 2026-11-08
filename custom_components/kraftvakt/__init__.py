@@ -35,7 +35,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the WebSocket commands for the panel (B6)."""
+    """Register the WebSocket commands for the panel."""
     async_register_commands(hass)
     return True
 

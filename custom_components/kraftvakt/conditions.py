@@ -1,4 +1,4 @@
-"""True/false values from a boolean entity or a template (GEN-009, GEN-010)."""
+"""True/false values from a boolean entity or a template."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def context_variables(hass: HomeAssistant, entity_id: str | None) -> dict[str, Any]:
-    """Return the variables every template and action gets (GEN-013, T14).
+    """Return the variables every template and action gets.
 
     `entity` is the state object of the entity as it is now, or None when the
     entity is not in the state machine.
@@ -30,12 +30,12 @@ def context_variables(hass: HomeAssistant, entity_id: str | None) -> dict[str, A
 def evaluate_condition(
     hass: HomeAssistant, condition: Condition, entity_id: str | None
 ) -> bool:
-    """Return whether the condition is true right now (GEN-009).
+    """Return whether the condition is true right now.
 
     An entity is true only when it is on, and a template only when it renders
     the boolean value true. Everything else, also an unavailable entity and a
-    template that fails, is false (GEN-010). `entity_id` is the entity of the
-    appliance or charger the condition belongs to (GEN-013).
+    template that fails, is false. `entity_id` is the entity of the
+    appliance or charger the condition belongs to.
     """
     if condition.type is ConditionType.ENTITY:
         state = hass.states.get(condition.value)

@@ -5,7 +5,7 @@ import type { ActionConfig } from "../api";
 import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 
-/** The service of the default action for each field (3.6). */
+/** The service of the default action for each field. */
 const DEFAULT_SERVICES: Record<string, string> = {
   turn_on: "turn_on",
   turn_off: "turn_off",
@@ -15,11 +15,11 @@ const DEFAULT_SERVICES: Record<string, string> = {
 };
 
 /**
- * An action as the default action for the entity or a custom one (GEN-013).
+ * An action as the default action for the entity or a custom one.
  *
  * «Standard» is offered only when the domain of the entity has a default action
- * (3.6). The custom action uses Home Assistant's action editor. Kept in one
- * place, since the action editor may change between versions (R3).
+ *. The custom action uses Home Assistant's action editor. Kept in one
+ * place, since the action editor may change between versions.
  * Fires `value-changed` with the new action.
  */
 @customElement("kraftvakt-action-field")
@@ -39,7 +39,7 @@ export class KraftvaktActionField extends LitElement {
 
   @property({ type: Boolean }) defaultAvailable = false;
 
-  /** The variables the action gets (T14). */
+  /** The variables the action gets. */
   @property({ attribute: false }) variables: string[] = [];
 
   @property() error?: string;

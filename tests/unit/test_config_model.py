@@ -18,15 +18,15 @@ def test_defaults_follow_requirements() -> None:
     config = KraftvaktConfig()
 
     assert config.general.power_sensor is None
-    assert config.general.power_limit_kw == 10.0  # REG-001
-    assert config.general.regulation_window_s == 60  # MAL-002
-    assert config.general.regulation_interval == 1  # REG-002
-    assert config.general.wait_at_limit_min == 5  # REG-014
-    assert config.general.penalty_threshold_kw == 1.0  # STR-002
+    assert config.general.power_limit_kw == 10.0
+    assert config.general.regulation_window_s == 60
+    assert config.general.regulation_interval == 1
+    assert config.general.wait_at_limit_min == 5
+    assert config.general.penalty_threshold_kw == 1.0
     assert config.appliances == ()
     assert config.priority == ()
-    assert config.charging.enabled is False  # LAD-001
-    assert config.charging.one_at_a_time is True  # LAD-002
+    assert config.charging.enabled is False
+    assert config.charging.one_at_a_time is True
     assert config.charging.chargers == ()
 
 
@@ -35,7 +35,7 @@ def test_charger_defaults() -> None:
 
     assert charger.min_current_a == 6
     assert charger.max_current_a == 16
-    assert charger.power_reserve_kw == 4.0  # LAD-009
+    assert charger.power_reserve_kw == 4.0
     assert charger.car_connected is None
     assert charger.charging_window is None
 

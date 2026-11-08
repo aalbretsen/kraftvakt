@@ -13,7 +13,7 @@ from .const import DOMAIN, NAME
 
 
 class KraftvaktEntity(Entity):
-    """An entity that belongs to the Kraftvakt service device (3.7)."""
+    """An entity that belongs to the Kraftvakt service device."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -32,7 +32,7 @@ class KraftvaktEntity(Entity):
 
 
 def entity_name(hass: HomeAssistant, entity_id: str) -> str:
-    """Return the name of the entity in Home Assistant (GEN-013).
+    """Return the name of the entity in Home Assistant.
 
     Falls back to the name in the entity registry when the entity has no state,
     and to the entity id when it is not known at all.

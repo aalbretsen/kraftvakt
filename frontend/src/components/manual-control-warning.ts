@@ -3,7 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import type { Localize } from "../localize";
 
-/** Warns against turning regulated appliances or EV chargers on or off outside Kraftvakt (GUI-011). */
+/** Warns against turning regulated appliances or EV chargers on or off outside Kraftvakt. */
 @customElement("kraftvakt-manual-control-warning")
 export class KraftvaktManualControlWarning extends LitElement {
   @property({ attribute: false }) localize!: Localize;

@@ -1,4 +1,4 @@
-"""Scenario tests for the safe state in the engine (REG-011, MAL-006, T2)."""
+"""Scenario tests for the safe state in the engine."""
 
 from .configs import make_config
 from .scenario import Scenario, off, on
@@ -11,7 +11,7 @@ def no_waiting(*appliances):
 
 
 def test_lost_power_sensor_turns_everything_off_at_once() -> None:
-    """REG-011: every appliance in the configuration, at one decision."""
+    """Every appliance in the configuration, at one decision."""
     scenario = Scenario(no_waiting("a", "b", "c"))
     scenario.turn_on("a", "b")
 
@@ -23,7 +23,7 @@ def test_lost_power_sensor_turns_everything_off_at_once() -> None:
 
 
 def test_one_invalid_close_is_tolerated() -> None:
-    """MAL-006: the regulation goes on with the average from the last valid value."""
+    """The regulation goes on with the average from the last valid value."""
     scenario = Scenario(no_waiting("a", "b"))
 
     assert scenario.decide(2.0, sensor_valid=False) == on("a")
@@ -40,7 +40,7 @@ def test_nothing_is_turned_on_in_the_safe_state() -> None:
 
 
 def test_regulation_starts_again_when_the_sensor_is_back() -> None:
-    """REG-011, REG-009: everything off, a new state, then on one by one."""
+    """Everything off, a new state, then on one by one."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a")
     scenario.decide(None, sensor_valid=False, sensor_lost=True)
@@ -52,7 +52,7 @@ def test_regulation_starts_again_when_the_sensor_is_back() -> None:
 
 
 def test_safe_state_without_any_average() -> None:
-    """T2: no measurement since the start also leads to the safe state."""
+    """No measurement since the start also leads to the safe state."""
     scenario = Scenario(no_waiting("a"))
 
     assert scenario.decide(None, sensor_valid=False) == []
@@ -61,7 +61,7 @@ def test_safe_state_without_any_average() -> None:
 
 
 def test_safe_state_ends_a_penalty() -> None:
-    """The restart after the safe state forgets the overconsumption (GEN-007)."""
+    """The restart after the safe state forgets the overconsumption."""
     scenario = Scenario(no_waiting("a"))
     scenario.decide(10.0, capacity=ABOVE_THRESHOLD)
     scenario.decide(16.0, capacity=ABOVE_THRESHOLD)

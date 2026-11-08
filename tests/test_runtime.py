@@ -1,4 +1,4 @@
-"""Tests for the measurement part of the runtime (GEN-003, MAL-001, MAL-006)."""
+"""Tests for the measurement part of the runtime."""
 
 from datetime import timedelta
 
@@ -58,7 +58,7 @@ def start_runtime(hass: HomeAssistant, closed_windows: list[WindowAverages]):
 async def test_windows_close_at_absolute_times_from_start(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
 ) -> None:
-    """Windows follow each other from the start without drifting (R4, T20)."""
+    """Windows follow each other from the start without drifting."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     started = dt_util.utcnow()
     runtime = start_runtime(config_with())
@@ -76,7 +76,7 @@ async def test_windows_close_at_absolute_times_from_start(
 async def test_power_sensor_state_feeds_the_averages(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
 ) -> None:
-    """The power sensor is read in W or kW (GEN-003, MAL-007)."""
+    """The power sensor is read in W or kW."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     start_runtime(config_with())
 
@@ -92,7 +92,7 @@ async def test_power_sensor_state_feeds_the_averages(
 async def test_unavailable_power_sensor_makes_the_window_invalid(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
 ) -> None:
-    """An unavailable or removed sensor counts as no valid measurement (MAL-006)."""
+    """An unavailable or removed sensor counts as no valid measurement."""
     hass.states.async_set(POWER_SENSOR, "3000", {"unit_of_measurement": "W"})
     start_runtime(config_with())
 
@@ -109,7 +109,7 @@ async def test_unavailable_power_sensor_makes_the_window_invalid(
 async def test_windows_close_without_power_sensor(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
 ) -> None:
-    """Without a configured power sensor there are no averages (T2)."""
+    """Without a configured power sensor there are no averages."""
     start_runtime(config_with(power_sensor=None))
 
     await advance(hass, freezer, WINDOW)

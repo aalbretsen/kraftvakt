@@ -1,4 +1,4 @@
-"""Scenario tests for EV charging in the regulation engine (LAD-011 to LAD-030)."""
+"""Scenario tests for EV charging in the regulation engine."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -41,7 +41,7 @@ def two_chargers(*, one_at_a_time: bool, max_a: int = 7) -> Scenario:
 
 
 def test_start_and_stop_deactivate_the_chargers() -> None:
-    """REG-009, REG-016, LAD-004: the current is set to the minimum first."""
+    """The current is set to the minimum first."""
     scenario = Scenario(make_config("x", chargers=(charger("c", min_a=10),)))
 
     assert scenario.start_commands == off("x") + deactivate("c", 10)
@@ -49,7 +49,7 @@ def test_start_and_stop_deactivate_the_chargers() -> None:
 
 
 def test_chargers_are_left_alone_while_charging_is_disabled() -> None:
-    """T10, GEN-008: chargers are not part of the regulation."""
+    """Chargers are not part of the regulation."""
     scenario = Scenario(
         make_config("x", chargers=(charger("c"),), charging_enabled=False)
     )
@@ -61,7 +61,7 @@ def test_chargers_are_left_alone_while_charging_is_disabled() -> None:
 
 
 def test_current_increases_one_ampere_per_fictive_appliance() -> None:
-    """LAD-011, LAD-012, REG-004: the first one activates the charger."""
+    """The first one activates the charger."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
 
@@ -82,7 +82,6 @@ def test_current_increases_one_ampere_per_fictive_appliance() -> None:
 
 
 def test_only_the_first_fictive_appliance_needs_the_power_reserve() -> None:
-    """LAD-009, LAD-012, REG-006."""
     scenario = one_charger(reserve=4.0)
     scenario.set_charger("c", **CHARGING)
 
@@ -92,7 +91,7 @@ def test_only_the_first_fictive_appliance_needs_the_power_reserve() -> None:
 
 
 def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
-    """LAD-013, REG-008: the last one deactivates the charger."""
+    """The last one deactivates the charger."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 8)
@@ -107,7 +106,7 @@ def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
 
 
 def test_fictive_appliances_cycle_with_their_own_steps() -> None:
-    """LAD-014: 5, 10, 15, 20, 25 and then 30 minutes."""
+    """5, 10, 15, 20, 25 and then 30 minutes."""
     scenario = Scenario(
         make_config(chargers=(charger("c", max_a=6),), wait_at_limit_min=5)
     )
@@ -124,7 +123,7 @@ def test_fictive_appliances_cycle_with_their_own_steps() -> None:
 
 
 def test_several_chargers_take_turns() -> None:
-    """LAD-015: the first fictive appliance of each charger, then the second."""
+    """The first fictive appliance of each charger, then the second."""
     scenario = two_chargers(one_at_a_time=False)
     scenario.set_charger("a", **CHARGING)
     scenario.set_charger("b", **CHARGING)
@@ -140,7 +139,7 @@ def test_several_chargers_take_turns() -> None:
 
 
 def test_charger_that_does_not_draw_power_is_bypassed() -> None:
-    """LAD-017, LAD-019, LAD-030: limited to the minimum current, not deactivated."""
+    """Limited to the minimum current, not deactivated."""
     scenario = one_charger()
 
     assert scenario.decide_many(0.0, 5) == [
@@ -154,7 +153,7 @@ def test_charger_that_does_not_draw_power_is_bypassed() -> None:
 
 
 def test_bypassed_charger_starts_again_when_the_car_draws_power() -> None:
-    """LAD-017: it is no longer bypassed and gets more current."""
+    """It is no longer bypassed and gets more current."""
     scenario = one_charger()
     scenario.decide_many(0.0, 3)
 
@@ -164,7 +163,7 @@ def test_bypassed_charger_starts_again_when_the_car_draws_power() -> None:
 
 
 def test_car_disconnected_limits_the_charger_at_once() -> None:
-    """LAD-017, LAD-030: from a high current down to the minimum at once."""
+    """From a high current down to the minimum at once."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 8)
@@ -176,7 +175,7 @@ def test_car_disconnected_limits_the_charger_at_once() -> None:
 
 
 def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
-    """REG-008, LAD-017: switching it off would not lower the consumption."""
+    """Switching it off would not lower the consumption."""
     scenario = Scenario(make_config("x", chargers=(charger("c"),), wait_at_limit_min=0))
     scenario.turn_on("x")
     scenario.set_charger("c", **NO_CAR)
@@ -191,7 +190,7 @@ def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
 
 
 def test_bypassed_charger_does_not_stand_in_the_way_one_at_a_time() -> None:
-    """LAD-017, LAD-018, LAD-029: the other is activated and it is deactivated."""
+    """The other is activated and it is deactivated."""
     scenario = two_chargers(one_at_a_time=True)
 
     assert scenario.decide_many(0.0, 3) == [
@@ -203,7 +202,6 @@ def test_bypassed_charger_does_not_stand_in_the_way_one_at_a_time() -> None:
 
 
 def test_current_priority_starts_as_configured_at_each_start() -> None:
-    """LAD-016, GEN-007."""
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("a", **NO_CAR)
     scenario.decide(0.0)
@@ -215,7 +213,7 @@ def test_current_priority_starts_as_configured_at_each_start() -> None:
 
 
 def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() -> None:
-    """LAD-018, LAD-020: the example in LAD-020."""
+    """A charger that gets a car moves up again when another has all on."""
     scenario = two_chargers(one_at_a_time=False)
     scenario.set_charger("a", **NO_CAR)
     scenario.set_charger("b", **CHARGING)
@@ -231,7 +229,7 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
 
 
 def test_charging_charger_goes_first_and_the_other_waits() -> None:
-    """LAD-021, LAD-023, LAD-029: until it stops, whatever the priority."""
+    """Until it stops, whatever the priority."""
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("a", **NO_CAR)
     scenario.set_charger("b", **CHARGING)
@@ -249,7 +247,7 @@ def test_charging_charger_goes_first_and_the_other_waits() -> None:
 
 
 def test_first_charger_in_the_current_priority_is_chosen() -> None:
-    """LAD-022: when none charges, also when both have a car."""
+    """When none charges, also when both have a car."""
     scenario = two_chargers(one_at_a_time=True)
 
     assert scenario.decide(0.0) == activate("a")
@@ -257,7 +255,7 @@ def test_first_charger_in_the_current_priority_is_chosen() -> None:
 
 
 def test_charger_without_charging_power_keeps_the_other_waiting() -> None:
-    """LAD-023, T7: also when it is excluded from the regulation."""
+    """Also when it is excluded from the regulation."""
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("b", charge_power_kw=None, excluded=True)
 
@@ -266,7 +264,7 @@ def test_charger_without_charging_power_keeps_the_other_waiting() -> None:
 
 
 def test_new_car_waits_for_room_for_the_power_reserve() -> None:
-    """LAD-028: the example in LAD-028 when several may charge at once."""
+    """A new car is not activated until there is room for the power reserve."""
     scenario = two_chargers(one_at_a_time=False, max_a=16)
     scenario.set_charger("a", **NO_CAR)
     scenario.set_charger("b", **CHARGING)
@@ -279,7 +277,7 @@ def test_new_car_waits_for_room_for_the_power_reserve() -> None:
 
 
 def test_excluded_charger_stops_at_once_and_never_charges() -> None:
-    """LAD-024, ENT-003: all fictive appliances off at once."""
+    """All fictive appliances off at once."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 8)
@@ -292,7 +290,7 @@ def test_excluded_charger_stops_at_once_and_never_charges() -> None:
 
 
 def test_charger_charges_only_inside_its_charging_window() -> None:
-    """LAD-025: charging stops at the first decision after the window ends."""
+    """Charging stops at the first decision after the window ends."""
     scenario = Scenario(
         make_config(
             chargers=(charger("c", max_a=8, window="22:00-22:03"),),
@@ -312,7 +310,7 @@ def test_charger_charges_only_inside_its_charging_window() -> None:
 
 
 def test_override_allows_charging_until_the_next_window_starts() -> None:
-    """LAD-027, ENT-004, T13: the switch is set back when the override ends."""
+    """The switch is set back when the override ends."""
     scenario = one_charger(max_a=6, window="22:00-22:05")
     scenario.set_charger(
         "c", **CHARGING, window_override=True, override_switched_on_at=START
@@ -327,7 +325,7 @@ def test_override_allows_charging_until_the_next_window_starts() -> None:
 
 
 def test_override_ends_also_during_a_penalty() -> None:
-    """LAD-027, REG-005: the override is evaluated at every decision."""
+    """The override is evaluated at every decision."""
     scenario = one_charger(max_a=6, window="12:30-13:00")
     scenario.set_charger("c", window_override=True, override_switched_on_at=START)
     scenario.decide(12.0, capacity=12.0)
@@ -340,7 +338,6 @@ def test_override_ends_also_during_a_penalty() -> None:
 
 
 def test_switching_the_override_off_stops_charging_outside_the_window() -> None:
-    """LAD-027."""
     scenario = one_charger(max_a=6, window="22:00-06:00")
     scenario.set_charger("c", **CHARGING, window_override=True)
     assert scenario.decide(0.0) == activate("c")
@@ -351,7 +348,7 @@ def test_switching_the_override_off_stops_charging_outside_the_window() -> None:
 
 
 def test_override_without_window_has_no_effect() -> None:
-    """LAD-026, LAD-027: the charger may always charge, and the override stays."""
+    """The charger may always charge, and the override stays."""
     scenario = one_charger(max_a=6)
     scenario.set_charger("c", **CHARGING, window_override=True)
 
@@ -360,7 +357,7 @@ def test_override_without_window_has_no_effect() -> None:
 
 
 def test_penalty_and_safe_state_deactivate_the_chargers() -> None:
-    """STR-003, REG-011: all at once, and the charger starts again afterwards."""
+    """All at once, and the charger starts again afterwards."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 8)
@@ -372,7 +369,7 @@ def test_penalty_and_safe_state_deactivate_the_chargers() -> None:
 
 
 def test_variant_switch_makes_room_by_switching_off_a_fictive_appliance() -> None:
-    """APP-009: the lowest slot that is on may be a fictive appliance."""
+    """The lowest slot that is on may be a fictive appliance."""
     scenario = Scenario(
         make_config(
             appliance("h", variants=("morning",)),

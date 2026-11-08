@@ -1,7 +1,7 @@
 /**
  * Checks of the draft in the panel, so the user sees mistakes before saving.
  *
- * The backend validates the configuration again when it is saved (3.4), and its
+ * The backend validates the configuration again when it is saved, and its
  * errors are shown the same way. The limits come from `kraftvakt/capabilities`,
  * so they are kept in one place.
  */
@@ -31,7 +31,7 @@ export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities)
   ];
 }
 
-/** Return what is missing before the regulation can start (REG-016), as the backend does (3.4). */
+/** Return what is missing before the regulation can start, as the backend does. */
 export function missingItems(config: KraftvaktConfig): Issue[] {
   const missing: Issue[] = [];
   if (!config.general.power_sensor) {
@@ -44,14 +44,14 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   return missing;
 }
 
-/** Return what is missing in one appliance (REG-016). */
+/** Return what is missing in one appliance. */
 export function missingInAppliance(appliance: Appliance): Issue[] {
   return missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS);
 }
 
 /**
- * Return what is missing in one EV charger (REG-016). «Car connected» is
- * required when only one EV charger may charge at a time (T25).
+ * Return what is missing in one EV charger. «Car connected» is
+ * required when only one EV charger may charge at a time.
  */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
@@ -64,7 +64,7 @@ export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[]
   return missing;
 }
 
-/** Return whether the domain of the entity has a default action for the field (GEN-013, 3.6). */
+/** Return whether the domain of the entity has a default action for the field. */
 export function hasDefaultAction(
   capabilities: Capabilities,
   section: ActionSection,

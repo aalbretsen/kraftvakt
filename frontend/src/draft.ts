@@ -1,5 +1,5 @@
 /**
- * The local draft of the configuration that the configuration pages edit (B7).
+ * The local draft of the configuration that the configuration pages edit.
  *
  * The draft is never changed in place. Each change makes a new configuration,
  * which the pages send to the panel with the `draft-changed` event.
@@ -14,7 +14,7 @@ export function fireDraftChanged(element: HTMLElement, config: KraftvaktConfig):
 }
 
 /**
- * Return a short unique id for an appliance, variant or charger (3.4).
+ * Return a short unique id for an appliance, variant or charger.
  *
  * `crypto.randomUUID` needs a secure context, which Home Assistant on plain HTTP
  * in the local network is not, so the id is made from random bytes.
@@ -46,8 +46,8 @@ export function priorityKey(entry: PriorityEntry): string {
  * Return the configuration with exactly one priority entry per appliance and variant.
  *
  * Entries for appliances or variants that are gone, duplicates and «EV charging»
- * while charging is disabled are removed (T17). Missing entries are added at the
- * bottom, as a new variant is (APP-005, APP-008).
+ * while charging is disabled are removed. Missing entries are added at the
+ * bottom, as a new variant is.
  */
 export function withCompletePriority(config: KraftvaktConfig): KraftvaktConfig {
   const expected = expectedPriority(config);

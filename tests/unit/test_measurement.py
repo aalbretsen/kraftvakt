@@ -1,4 +1,4 @@
-"""Unit tests for the averages of the power sensor (MAL-001 to MAL-007)."""
+"""Unit tests for the averages of the power sensor."""
 
 import math
 from collections.abc import Callable
@@ -52,12 +52,12 @@ def close_windows_until(averager: PowerAverager, end: datetime) -> WindowAverage
 def test_power_kw_converts_valid_measurements(
     state: str | None, unit: str | None, expected: float | None
 ) -> None:
-    """W and kW are converted, a missing unit is watt (MAL-007, T19)."""
+    """W and kW are converted, a missing unit is watt."""
     assert power_kw(state, unit) == expected
 
 
 def test_window_without_measurement_has_no_averages() -> None:
-    """Before the first valid measurement the averages are unknown (T2)."""
+    """Before the first valid measurement the averages are unknown."""
     averager = PowerAverager(WINDOW, START)
 
     averages = averager.close_window()
@@ -66,7 +66,7 @@ def test_window_without_measurement_has_no_averages() -> None:
 
 
 def test_window_end_follows_the_window_length() -> None:
-    """Windows start at the given time and follow each other (MAL-001, T20)."""
+    """Windows start at the given time and follow each other."""
     averager = PowerAverager(WINDOW, START)
     assert averager.window_end == at(60)
 
@@ -95,7 +95,7 @@ def test_new_window_length_applies_from_the_next_window() -> None:
 
 
 def test_first_measurement_fills_both_windows_backwards() -> None:
-    """At startup the first measurement replaces the missing ones (MAL-005)."""
+    """At startup the first measurement replaces the missing ones."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(20), 4.0)
 
@@ -107,7 +107,7 @@ def test_first_measurement_fills_both_windows_backwards() -> None:
 
 
 def test_regulation_average_is_weighted_by_time() -> None:
-    """The average is the energy in the window divided by its length (MAL-004)."""
+    """The average is the energy in the window divided by its length."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 2.0)
     averager.add_measurement(at(15), 6.0)
@@ -118,7 +118,7 @@ def test_regulation_average_is_weighted_by_time() -> None:
 
 
 def test_regulation_windows_do_not_overlap() -> None:
-    """Each regulation average covers its own window only (MAL-001)."""
+    """Each regulation average covers its own window only."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 8.0)
     averager.add_measurement(at(60), 2.0)
@@ -132,7 +132,7 @@ def test_regulation_windows_do_not_overlap() -> None:
 
 
 def test_capacity_average_slides_over_the_last_hour() -> None:
-    """The capacity average covers exactly one hour back in time (MAL-003)."""
+    """The capacity average covers exactly one hour back in time."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 10.0)
     averager.add_measurement(at(30 * 60), 0.0)
@@ -150,7 +150,7 @@ def test_capacity_average_slides_over_the_last_hour() -> None:
 
 def test_capacity_window_does_not_depend_on_the_window_length() -> None:
     """The capacity window is one hour also when 3600 s is not a multiple of
-    the regulation window (MAL-003)."""
+    the regulation window."""
     window = timedelta(seconds=70)
     averager = PowerAverager(window, START)
     averager.add_measurement(at(0), 6.0)
@@ -190,7 +190,7 @@ def expected_average(
 ) -> float:
     """Average of samples held until the next one, counted second by second.
 
-    Before the first sample the first one applies (MAL-005).
+    Before the first sample the first one applies.
     """
     first = int((start - START).total_seconds())
     last = int((end - START).total_seconds())
@@ -203,7 +203,7 @@ def expected_average(
 @pytest.mark.parametrize("interval_s", [1, 10, 30, 47])
 def test_averages_are_correct_for_any_update_rate(interval_s: int) -> None:
     """The averages are correct whether the sensor updates every second, every
-    10 seconds or less often, through the whole capacity window (MAL-004)."""
+    10 seconds or less often, through the whole capacity window."""
     for averages in run_with_updates_every(interval_s, changing_power):
         assert averages.regulation_average_kw == pytest.approx(
             expected_average(interval_s, changing_power, averages.start, averages.end)
@@ -219,7 +219,7 @@ def test_averages_are_correct_for_any_update_rate(interval_s: int) -> None:
 
 
 def test_update_rate_does_not_change_the_result() -> None:
-    """The same power gives the same averages updated every 1 s or 10 s (MAL-004)."""
+    """The same power gives the same averages updated every 1 s or 10 s."""
     every_second = run_with_updates_every(1, changing_power, window_s=45)
     every_ten_seconds = run_with_updates_every(10, changing_power, window_s=45)
 
@@ -230,7 +230,7 @@ def test_update_rate_does_not_change_the_result() -> None:
 
 
 def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
-    """One window closing without valid measurement is tolerated (MAL-006)."""
+    """One window closing without valid measurement is tolerated."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 3.0)
     averager.add_measurement(at(30), None)
@@ -243,7 +243,7 @@ def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
 
 
 def test_validity_is_the_state_when_the_window_closes() -> None:
-    """A gap inside the window is filled, and only the close counts (T3)."""
+    """A gap inside the window is filled, and only the close counts."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 2.0)
     averager.add_measurement(at(10), None)
@@ -256,7 +256,7 @@ def test_validity_is_the_state_when_the_window_closes() -> None:
 
 
 def test_valid_close_between_invalid_ones_keeps_the_history() -> None:
-    """Only invalid closes in a row discard the history (T21)."""
+    """Only invalid closes in a row discard the history."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 3.0)
     averager.add_measurement(at(30), None)
@@ -273,7 +273,7 @@ def test_valid_close_between_invalid_ones_keeps_the_history() -> None:
 
 def test_two_invalid_closes_in_a_row_discard_the_history() -> None:
     """The averages are unknown after two invalid closes, and the next valid
-    measurement fills the windows backwards (T21, MAL-005)."""
+    measurement fills the windows backwards."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 9.0)
     averager.add_measurement(at(30), None)
@@ -292,7 +292,7 @@ def test_two_invalid_closes_in_a_row_discard_the_history() -> None:
 
 
 def test_without_first_measurement_windows_stay_unknown() -> None:
-    """Windows without any measurement at all are invalid (T2)."""
+    """Windows without any measurement at all are invalid."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(10), None)
 

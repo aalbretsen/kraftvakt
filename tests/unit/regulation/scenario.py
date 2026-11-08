@@ -40,12 +40,12 @@ def off(*appliance_ids: str) -> list[Command]:
 
 
 def activate(charger_id: str, min_a: int = 6) -> list[Command]:
-    """Return the commands that activate the charger (LAD-012)."""
+    """Return the commands that activate the charger."""
     return [SetChargingCurrent(charger_id, min_a), ActivateCharger(charger_id)]
 
 
 def deactivate(charger_id: str, min_a: int = 6) -> list[Command]:
-    """Return the commands that deactivate the charger (LAD-004)."""
+    """Return the commands that deactivate the charger."""
     return [SetChargingCurrent(charger_id, min_a), DeactivateCharger(charger_id)]
 
 
@@ -55,7 +55,7 @@ def current(charger_id: str, current_a: int) -> list[Command]:
 
 
 def reset_override(charger_id: str) -> list[Command]:
-    """Return the command that switches off the window override (LAD-027)."""
+    """Return the command that switches off the window override."""
     return [ResetWindowOverride(charger_id)]
 
 

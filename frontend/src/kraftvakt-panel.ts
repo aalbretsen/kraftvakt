@@ -38,11 +38,11 @@ const TAB_ICONS: Record<Page, string> = {
 };
 
 /**
- * The Kraftvakt panel in the Home Assistant sidebar (GUI-001).
+ * The Kraftvakt panel in the Home Assistant sidebar.
  *
  * Home Assistant sets `hass`, `narrow`, `route` and `panel` on the element. The
- * panel shows a top menu with a tab for each page (GUI-002) and the page that
- * the route points to (5.2).
+ * panel shows a top menu with a tab for each page and the page that
+ * the route points to.
  */
 @customElement("kraftvakt-panel")
 export class KraftvaktPanel extends LitElement {
@@ -52,7 +52,7 @@ export class KraftvaktPanel extends LitElement {
 
   @property({ attribute: false }) route?: Route;
 
-  /** Home Assistant's own elements, like `ha-form`, are ready to use (5.4). */
+  /** Home Assistant's own elements, like `ha-form`, are ready to use. */
   @state() private haElementsReady = false;
 
   @state() private status?: StatusSnapshot;
@@ -63,10 +63,10 @@ export class KraftvaktPanel extends LitElement {
 
   @state() private capabilities?: Capabilities;
 
-  /** The configuration the configuration pages edit until it is saved (B7). */
+  /** The configuration the configuration pages edit until it is saved. */
   @state() private draft?: KraftvaktConfig;
 
-  /** The errors the backend gave when the draft was last saved (3.4). */
+  /** The errors the backend gave when the draft was last saved. */
   @state() private saveErrors: Issue[] = [];
 
   @state() private saveMessage?: string;
@@ -182,7 +182,7 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  /** A configuration page, locked while the regulation runs (GUI-012), with the save bar (B7). */
+  /** A configuration page, locked while the regulation runs, with the save bar. */
   private renderConfigPage(page: Exclude<Page, "status">) {
     if (!this.status || !this.config || !this.draft || !this.capabilities) {
       return "";
@@ -267,7 +267,7 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  /** The mistakes, the errors from the last save and what is missing in the draft (3.4). */
+  /** The mistakes, the errors from the last save and what is missing in the draft. */
   private pageIssues(errors: Issue[]): Issue[] {
     return this.draft ? [...errors, ...this.saveErrors, ...missingItems(this.draft)] : [];
   }
@@ -389,7 +389,7 @@ export class KraftvaktPanel extends LitElement {
    * Keep the status, and get the configuration again when it may have changed.
    *
    * The configuration can only be saved while the regulation is stopped
-   * (REG-010), so it is fetched at the first status, when the regulation starts
+   *, so it is fetched at the first status, when the regulation starts
    * or stops, and when what is missing changes.
    */
   private statusReceived(status: StatusSnapshot): void {
@@ -408,7 +408,7 @@ export class KraftvaktPanel extends LitElement {
   /**
    * Get the configuration. The draft follows it unless it has unsaved changes.
    *
-   * While the regulation runs, the configuration cannot be saved (REG-010), so
+   * While the regulation runs, the configuration cannot be saved, so
    * the draft is then discarded.
    */
   private async loadConfig(options: { resetDraft?: boolean } = {}): Promise<void> {
@@ -426,7 +426,7 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  /** The configure button of the integration opens the appliances page (GUI-003, R1). */
+  /** The configure button of the integration opens the appliances page. */
   private openAppliancesFromConfigureButton(): void {
     if (new URLSearchParams(window.location.search).has("config_entry")) {
       navigateToPage("appliances", { replace: true });

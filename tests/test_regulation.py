@@ -1,8 +1,7 @@
 """End-to-end tests of the regulation in Home Assistant.
 
 They set the power sensor, move the time forward and check the actions that
-reach the appliances (REG-002, REG-005, REG-009 to REG-011, REG-016, GEN-009,
-GEN-012, GEN-013, STR-001 to STR-008).
+reach the appliances.
 """
 
 import asyncio
@@ -149,7 +148,7 @@ async def switch_regulation(hass: HomeAssistant, service: str) -> None:
 async def test_everything_is_turned_off_at_startup(
     hass: HomeAssistant, actions: list[str], setup_kraftvakt
 ) -> None:
-    """REG-009, REG-016: the regulation starts by itself with everything off."""
+    """The regulation starts by itself with everything off."""
     set_power(hass, "2000")
     await setup_kraftvakt()
 
@@ -161,7 +160,7 @@ async def test_everything_is_turned_off_at_startup(
 async def test_regulation_starts_when_home_assistant_has_started(
     hass: HomeAssistant, actions: list[str], setup_kraftvakt
 ) -> None:
-    """REG-009: the integrations of the appliances are loaded by then."""
+    """The integrations of the appliances are loaded by then."""
     hass.set_state(CoreState.starting)
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -179,7 +178,7 @@ async def test_regulation_starts_when_home_assistant_has_started(
 async def test_user_start_before_home_assistant_has_started(
     hass: HomeAssistant, actions: list[str], setup_kraftvakt
 ) -> None:
-    """REG-016: the regulation is not started a second time when HA has started."""
+    """The regulation is not started a second time when HA has started."""
     hass.set_state(CoreState.starting)
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -196,7 +195,7 @@ async def test_user_start_before_home_assistant_has_started(
 async def test_appliances_are_turned_on_one_per_decision(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-003, REG-004, REG-007: the first decision comes after one interval."""
+    """The first decision comes after one interval."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     actions.clear()
@@ -216,7 +215,7 @@ async def test_decisions_follow_the_regulation_interval(
     config,
     setup_kraftvakt,
 ) -> None:
-    """REG-002: with 2x, a decision is made for every second window."""
+    """With 2x, a decision is made for every second window."""
     config["general"]["regulation_interval"] = 2
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -234,7 +233,6 @@ async def test_decisions_follow_the_regulation_interval(
 async def test_lowest_priority_is_turned_off_above_the_limit(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-008."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -250,7 +248,7 @@ async def test_lowest_priority_is_turned_off_above_the_limit(
 async def test_stop_turns_everything_off_and_stops_the_decisions(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-016, ENT-006: stopping works at once, and nothing is turned on."""
+    """Stopping works at once, and nothing is turned on."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -268,7 +266,7 @@ async def test_stop_turns_everything_off_and_stops_the_decisions(
 async def test_start_waits_for_a_whole_window_after_the_start(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-009, REG-016, T1: a window that started before the start does not count."""
+    """A window that started before the start does not count."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     await switch_regulation(hass, "turn_off")
@@ -321,7 +319,7 @@ async def test_incomplete_configuration_does_not_start(
     setup_kraftvakt,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """REG-016, ENT-006: the switch stays off and the attempt is logged."""
+    """The switch stays off and the attempt is logged."""
     del config["appliances"][1]["turn_on"]
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
@@ -341,7 +339,7 @@ async def test_incomplete_configuration_does_not_start(
 async def test_safe_state_when_the_power_sensor_is_lost(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-011, ENT-005, MAL-006: one lost window is tolerated, two are not."""
+    """One lost window is tolerated, two are not."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -364,7 +362,6 @@ async def test_safe_state_when_the_power_sensor_is_lost(
 async def test_regulation_starts_again_when_the_power_sensor_is_back(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """REG-011, REG-009, MAL-005."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     set_power(hass, "unavailable")
@@ -386,7 +383,7 @@ async def test_regulation_starts_again_when_the_power_sensor_is_back(
 async def test_safe_state_before_the_first_measurement(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """T2: a power sensor that never reports leads to the safe state."""
+    """A power sensor that never reports leads to the safe state."""
     await setup_kraftvakt()
     actions.clear()
 
@@ -401,7 +398,7 @@ async def test_safe_state_before_the_first_measurement(
 async def test_penalty_turns_everything_off_until_paid_back(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """STR-001, STR-003, STR-006, STR-008: the regulation starts again after it."""
+    """The regulation starts again after it."""
     set_power(hass, "12000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -425,7 +422,7 @@ async def test_variant_condition_moves_the_appliance(
     config,
     setup_kraftvakt,
 ) -> None:
-    """APP-007, GEN-009: a true condition gives the variant's place in the list."""
+    """A true condition gives the variant's place in the list."""
     config["appliances"][1]["variants"] = [
         {
             "id": "morning",
@@ -453,7 +450,7 @@ async def test_template_condition_gets_the_appliance_entity(
     config,
     setup_kraftvakt,
 ) -> None:
-    """GEN-009, GEN-013, T14: `entity` is the state of the appliance's entity."""
+    """`entity` is the state of the appliance's entity."""
     config["appliances"][1]["variants"] = [
         {
             "id": "cold",
@@ -483,7 +480,7 @@ async def test_custom_action_gets_the_entity_variables(
     config,
     setup_kraftvakt,
 ) -> None:
-    """GEN-013, T14: custom actions run with `entity_id` and `entity`."""
+    """Custom actions run with `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "heat")
     config["appliances"][0]["turn_on"] = {
         "mode": "custom",
@@ -511,7 +508,7 @@ async def test_failed_action_does_not_stop_the_regulation(
     setup_kraftvakt,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """GEN-012: the error is logged, and the regulation goes on as if it worked."""
+    """The error is logged, and the regulation goes on as if it worked."""
     attempts: list[ServiceCall] = []
 
     def fail(call: ServiceCall) -> None:
@@ -538,7 +535,7 @@ async def test_failed_action_does_not_stop_the_regulation(
 async def test_appliance_states_are_not_taken_into_account(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """GEN-005, GEN-006: the regulation counts on what it last decided itself.
+    """The regulation counts on what it last decided itself.
 
     Appliances switched outside Kraftvakt are not noticed, and no appliance is
     assumed to use power just because it was turned on.
@@ -561,7 +558,7 @@ async def test_appliance_states_are_not_taken_into_account(
 async def test_reload_starts_the_regulation_again(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
 ) -> None:
-    """GEN-007, REG-009, ENT-006: a restart forgets the state and turns all off."""
+    """A restart forgets the state and turns all off."""
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     await switch_regulation(hass, "turn_off")
@@ -579,7 +576,7 @@ async def test_reload_starts_the_regulation_again(
 async def test_reload_waits_for_the_actions_of_the_old_regulation(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, config, setup_kraftvakt
 ) -> None:
-    """REG-009: the appliances are turned off after the old actions have run."""
+    """The appliances are turned off after the old actions have run."""
     recorded: list[str] = []
     release = asyncio.Event()
 
@@ -632,7 +629,7 @@ async def test_reload_waits_for_the_actions_of_the_old_regulation(
 async def test_entity_names_are_translated(
     hass: HomeAssistant, setup_kraftvakt, language: str, expected: dict[str, str]
 ) -> None:
-    """SPR-001, SPR-002: English is the default, and Norwegian is translated."""
+    """English is the default, and Norwegian is translated."""
     hass.config.language = language
     await setup_kraftvakt()
 

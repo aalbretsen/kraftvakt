@@ -1,6 +1,6 @@
-"""WebSocket commands for the panel (3.8, B6).
+"""WebSocket commands for the panel.
 
-Every command requires an administrator (GUI-001).
+Every command requires an administrator.
 """
 
 from __future__ import annotations
@@ -116,9 +116,9 @@ async def websocket_save_config(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Validate and save the whole configuration (B7).
+    """Validate and save the whole configuration.
 
-    Refused with `regulation_running` while the regulation runs (REG-010). An
+    Refused with `regulation_running` while the regulation runs. An
     invalid configuration is not saved, and the result lists every issue. An
     incomplete configuration is saved, and the result lists what is missing.
     """
@@ -159,10 +159,10 @@ def websocket_set_running(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Start or stop the regulation, the same as the regulation switch (GUI-007).
+    """Start or stop the regulation, the same as the regulation switch.
 
     Starting is refused with `config_incomplete` until the configuration is
-    complete (REG-016).
+    complete.
     """
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
@@ -187,7 +187,7 @@ def websocket_subscribe_status(
 ) -> None:
     """Send the status now and then at each new average, decision, start and stop.
 
-    The status is what the status page shows (GUI-005, GUI-006, T11).
+    The status is what the status page shows.
     """
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
@@ -206,10 +206,10 @@ def websocket_subscribe_status(
 
 
 def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:
-    """Return how the regulation stands now (GUI-005, GUI-006, T11).
+    """Return how the regulation stands now.
 
     `waiting_until` is set for the appliance or charger whose slot is next and
-    waits (REG-012). The averages are None until the first window has closed.
+    waits. The averages are None until the first window has closed.
     The appliances are in the order of their current variant in the priority
     list, and the chargers in the current charging priority.
     """
@@ -306,7 +306,7 @@ def _in_current_priority(
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:
-    """Return the chargers in the current charging priority (LAD-016)."""
+    """Return the chargers in the current charging priority."""
     return sorted(chargers, key=lambda charger: _position(priority, charger.id))
 
 
@@ -319,7 +319,7 @@ def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
     Also checks that a default action is available for the domain of each
-    entity it is chosen for (T18), which parse_config cannot do. Raises
+    entity it is chosen for, which parse_config cannot do. Raises
     ConfigValidationError with every issue found.
     """
     config = parse_config(data)
@@ -356,7 +356,7 @@ def capabilities() -> dict[str, Any]:
 
 
 def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]:
-    """Return the names of the entities of the appliances and chargers (GEN-013)."""
+    """Return the names of the entities of the appliances and chargers."""
     items: list[Appliance | Charger] = [
         *config.appliances,
         *config.charging.chargers,

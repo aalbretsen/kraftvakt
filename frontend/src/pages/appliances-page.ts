@@ -16,7 +16,7 @@ import { ConfigPage } from "./config-page";
 
 const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_kw", "label", "condition"] as const;
 
-/** The appliances and the priority list (GUI-009), with the warning against manual control (GUI-011). */
+/** The appliances and the priority list, with the warning against manual control. */
 @customElement("kraftvakt-appliances-page")
 export class KraftvaktAppliancesPage extends ConfigPage {
   /** The appliance in the dialog, and whether it is new. */
@@ -78,7 +78,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     `;
   }
 
-  /** A row for an appliance, one of its variants, or «EV charging» (APP-001, APP-005, APP-008). */
+  /** A row for an appliance, one of its variants, or «EV charging». */
   private row(entry: PriorityEntry): ListRow {
     if (entry.type === "ev_charging") {
       return {
@@ -173,7 +173,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     }
   }
 
-  /** Put the appliance in the draft. New variants end up at the bottom of the priority list (APP-008). */
+  /** Put the appliance in the draft. New variants end up at the bottom of the priority list. */
   private applianceChanged(event: CustomEvent<Appliance>): void {
     const appliance = event.detail;
     const exists = this.config.appliances.some((item) => item.id === appliance.id);

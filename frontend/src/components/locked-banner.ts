@@ -7,8 +7,8 @@ import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 
 /**
- * Tells that the configuration is locked while the regulation runs (GUI-012,
- * REG-010), with a shortcut to stop the regulation (T12).
+ * Tells that the configuration is locked while the regulation runs, with a
+ * shortcut to stop the regulation.
  */
 @customElement("kraftvakt-locked-banner")
 export class KraftvaktLockedBanner extends LitElement {

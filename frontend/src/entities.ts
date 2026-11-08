@@ -1,7 +1,7 @@
 import type { HomeAssistant } from "./types";
 
 /**
- * Return the name of an appliance's or charger's entity in Home Assistant (GEN-013).
+ * Return the name of an appliance's or charger's entity in Home Assistant.
  *
  * The backend gives the names of the saved entities. An entity chosen in the
  * draft uses its friendly name until it is saved.
@@ -12,7 +12,7 @@ export function entityName(hass: HomeAssistant, names: Record<string, string>, e
 
 /**
  * Return Kraftvakt's own entities. They are left out where a sensor from
- * another integration is chosen, like the power sensor (GEN-003).
+ * another integration is chosen, like the power sensor.
  */
 export function ownEntities(hass: HomeAssistant): string[] {
   return Object.values(hass.entities ?? {})

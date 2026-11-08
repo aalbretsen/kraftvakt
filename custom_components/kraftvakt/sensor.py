@@ -1,4 +1,4 @@
-"""Sensors for the regulation average and the capacity average (ENT-001, ENT-002)."""
+"""Sensors for the regulation average and the capacity average."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ async def async_setup_entry(
 class AverageSensor(KraftvaktEntity, SensorEntity):
     """Shows an average, updated each time a regulation window closes.
 
-    The sensor is unavailable until there is an average to show (T2).
+    The sensor is unavailable until there is an average to show.
     """
 
     entity_description: AverageSensorDescription

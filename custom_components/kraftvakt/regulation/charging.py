@@ -1,6 +1,6 @@
-"""Rules for the EV chargers (LAD-008, LAD-010, LAD-015 to LAD-030, T7, T13).
+"""Rules for the EV chargers.
 
-The regulation sees a charger as fictive appliances, one per ampere (LAD-011).
+The regulation sees a charger as fictive appliances, one per ampere.
 This module decides which chargers may charge, which are bypassed or waiting,
 and in which order they get their fictive appliances turned on.
 """
@@ -22,11 +22,11 @@ BYPASSED_AFTER_WINDOWS: Final = 2
 class ChargerReading:
     """What a decision knows about a charger.
 
-    `charge_power_kw` is None when the charging power has no valid value
-    (MAL-007). `car_connected` is None when the setting is not given (LAD-010).
-    `excluded` and `window_override` are the user's switches (ENT-003,
-    ENT-004), and `override_switched_on_at` tells when the override was switched
-    on, or None when that is not known (T13).
+    `charge_power_kw` is None when the charging power has no valid value.
+    `car_connected` is None when the setting is not given.
+    `excluded` and `window_override` are the user's switches, and
+    `override_switched_on_at` tells when the override was switched
+    on, or None when that is not known.
     """
 
     charge_power_kw: float | None = None
@@ -38,10 +38,10 @@ class ChargerReading:
 
 @dataclass(frozen=True, slots=True)
 class ChargerStatus:
-    """How a charger stands after the last decision (GUI-006, T11).
+    """How a charger stands after the last decision.
 
     `current_a` is None while the charger is deactivated. `excluded` tells
-    whether the charger was excluded from the regulation (ENT-003), and is None
+    whether the charger was excluded from the regulation, and is None
     until the first decision.
     """
 
@@ -54,32 +54,32 @@ class ChargerStatus:
 
 
 def fictive_appliance_count(charger: Charger) -> int:
-    """Return the number of fictive appliances, one per whole ampere (LAD-011)."""
+    """Return the number of fictive appliances, one per whole ampere."""
     return charger.max_current_a - charger.min_current_a + 1
 
 
 def charging_current(charger: Charger, fictive_on: int) -> int:
-    """Return the current for the number of fictive appliances that are on (LAD-011).
+    """Return the current for the number of fictive appliances that are on.
 
     It is the minimum current plus the fictive appliances that are on, minus
-    one. A deactivated charger is set to the minimum current (LAD-004).
+    one. A deactivated charger is set to the minimum current.
     """
     return charger.min_current_a + max(fictive_on, 1) - 1
 
 
 def actively_charging(reading: ChargerReading) -> bool:
-    """Return whether the charger counts as actively charging (LAD-008, T7).
+    """Return whether the charger counts as actively charging.
 
     The charging power is proof that the charger does not charge. Without a
     valid value there is no proof, so the charger counts as charging, also when
-    it is deactivated (GEN-010).
+    it is deactivated.
     """
     power_kw = reading.charge_power_kw
     return power_kw is None or power_kw > ACTIVELY_CHARGING_ABOVE_KW
 
 
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
-    """Return whether the time of day is inside the window (LAD-025).
+    """Return whether the time of day is inside the window.
 
     The start is inside and the end is not. A window whose end is before its
     start reaches across midnight.
@@ -94,7 +94,7 @@ def charging_window_started(
 ) -> bool:
     """Return whether the window started after `after` and no later than `until`.
 
-    The start of the window is a time of day in `time_zone` (LAD-025).
+    The start of the window is a time of day in `time_zone`.
     """
     day = after.astimezone(time_zone).date()
     last_day = until.astimezone(time_zone).date()
@@ -112,13 +112,13 @@ def override_expired(
     now: datetime,
     time_zone: tzinfo,
 ) -> bool:
-    """Return whether the override of the charging window has ended (LAD-027, T13).
+    """Return whether the override of the charging window has ended.
 
     It ends when a charging window has started after it was switched on, also
     when the regulation was stopped or in the safe state meanwhile. The start
     of the regulation counts only when the time it was switched on is not
     known. An override has no effect, and does not end, for a charger without
-    a charging window (LAD-026).
+    a charging window.
     """
     window = charger.charging_window
     if window is None or not reading.window_override:
@@ -130,7 +130,7 @@ def override_expired(
 def allowed_to_charge(
     charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
 ) -> bool:
-    """Return whether the charger is allowed to charge (LAD-024 to LAD-027).
+    """Return whether the charger is allowed to charge.
 
     A charger excluded from the regulation never charges. Otherwise it may
     charge without a charging window, inside it, or while the window is
@@ -144,15 +144,14 @@ def allowed_to_charge(
 
 @dataclass(slots=True)
 class ChargingState:
-    """What the regulation keeps track of for the chargers while it runs (3.5).
+    """What the regulation keeps track of for the chargers while it runs.
 
-    `priority` is the current charging priority, highest first (LAD-016).
+    `priority` is the current charging priority, highest first.
     `fictive_on` counts the fictive appliances that are on per charger, and
     `activated_at` tells when the first one was turned on. The rest is the
     result of the last evaluation: the chargers that are excluded from the
-    regulation (None before the first evaluation), allowed to charge, bypassed
-    (LAD-017), may get more fictive appliances turned on, and are waiting
-    (LAD-023).
+    regulation (None before the first evaluation), allowed to charge, bypassed, may get
+    more fictive appliances turned on, and are waiting.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -166,14 +165,14 @@ class ChargingState:
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
-        """Return the state at a start, with the configured priority (LAD-016)."""
+        """Return the state at a start, with the configured priority."""
         return cls(
             priority=[charger.id for charger in chargers],
             fictive_on={charger.id: 0 for charger in chargers},
         )
 
     def activated(self) -> list[str]:
-        """Return the chargers with at least one fictive appliance on (LAD-028)."""
+        """Return the chargers with at least one fictive appliance on."""
         return [charger_id for charger_id, on in self.fictive_on.items() if on]
 
     def set_fictive_on(
@@ -241,7 +240,7 @@ class ChargingState:
         now: datetime,
         window: timedelta,
     ) -> list[str]:
-        """Find the chargers that do not draw power (LAD-017).
+        """Find the chargers that do not draw power.
 
         A charger is bypassed when no car is connected, or when it does not
         charge although its first fictive appliance has been on for at least
@@ -268,7 +267,7 @@ class ChargingState:
     def _update_priority(
         self, chargers: Sequence[Charger], newly_bypassed: Sequence[str]
     ) -> None:
-        """Update the current charging priority (LAD-018, LAD-020).
+        """Update the current charging priority.
 
         A charger that becomes bypassed moves to the back and stays there until
         the priority is corrected. The priority is corrected back to the
@@ -297,13 +296,13 @@ class ChargingState:
     ) -> None:
         """Decide which chargers may get fictive appliances turned on.
 
-        Several at once: every charger that is allowed and not bypassed
-        (LAD-015). One at a time: a charger that charges actively goes first,
-        whether or not it may charge, and the others wait (LAD-021, LAD-023).
+        Several at once: every charger that is allowed and not bypassed. One at a time:
+        a charger that charges actively goes first,
+        whether or not it may charge, and the others wait.
         Of several that charge, the activated one goes first, otherwise the
         first in the current priority. When none charges, the first in the
-        current priority that is allowed (LAD-022). Bypassed chargers do not
-        stand in the way of others (LAD-017).
+        current priority that is allowed. Bypassed chargers do not
+        stand in the way of others.
         """
         candidates = [
             charger_id
