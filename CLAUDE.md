@@ -16,6 +16,8 @@ Read the skill for the kind of task before starting:
 - `kraftvakt-panel`: the panel, the HA components it may use, and the build.
 - `kraftvakt-testing`: test layout and conventions, checks before commit, and
   manual testing against a local Home Assistant.
+- `kraftvakt-simulator`: the simulated HAN, heaters and EV chargers for local
+  testing, and how to write code for them.
 
 ## Behavioral Guidelines
 - Always create a branch from main for a new session, commit when tasks are completed, never push, never merge to main.
