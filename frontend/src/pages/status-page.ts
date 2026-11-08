@@ -319,19 +319,18 @@ export class KraftvaktStatusPage extends LitElement {
     const size = blockSize(blocks, available);
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
-      <span
-        class="windows-left"
-        style="--block-width: ${size.width}px; --block-height: ${size.height}px"
-        title=${this.localize("status.waiting_ends_at", { time })}
-      >
-        ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
+      <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
+        <span class="indicator-label">${this.localize("status.turning_on_in")}</span>
+        <span class="windows-left" style="--block-width: ${size.width}px; --block-height: ${size.height}px">
+          ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
+        </span>
       </span>
     `;
   }
 
   /**
-   * The minimum current, one bar per ampere from the minimum to the maximum
-   * filled up to the current, and the current.
+   * The charging level, and one bar per ampere from the minimum to the
+   * maximum, filled up to the current.
    */
   private renderAmperes(charger: ChargerStatus) {
     const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
@@ -342,13 +341,14 @@ export class KraftvaktStatusPage extends LitElement {
     const on = charger.current_a === null ? 0 : charger.current_a - config.min_current_a + 1;
     return html`
       <span class="amperes">
-        <span class="ampere-value">${this.localize("status.amperes", { current: config.min_current_a })}</span>
+        <span class="indicator-label">
+          ${charger.current_a === null
+            ? this.localize("status.charging_level_off")
+            : this.localize("status.charging_level", { current: charger.current_a })}
+        </span>
         <span class="ampere-steps ${steps > 16 ? "small" : ""}">
           ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? "on" : ""}"></span>`)}
         </span>
-        ${charger.current_a === null
-          ? nothing
-          : html`<span class="ampere-value">${this.localize("status.amperes", { current: charger.current_a })}</span>`}
       </span>
     `;
   }
@@ -629,6 +629,12 @@ export class KraftvaktStatusPage extends LitElement {
       align-items: center;
       gap: 8px;
     }
+    .waiting {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
     .windows-left {
       display: flex;
       align-items: center;
@@ -644,8 +650,9 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .amperes {
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
     }
     .ampere-steps {
       display: inline-flex;
@@ -666,7 +673,7 @@ export class KraftvaktStatusPage extends LitElement {
     .ampere.on {
       background: var(--primary-color);
     }
-    .ampere-value {
+    .indicator-label {
       color: var(--secondary-text-color);
       font-size: var(--ha-font-size-s, 12px);
       white-space: nowrap;

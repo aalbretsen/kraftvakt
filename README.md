@@ -139,9 +139,9 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   av, og gjeldende variant. Der «Elbillading» står i listen, står
   elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
   aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
-  ladetidsrommet. Ladestrømmen vises med minste ladestrøm, én strek per ampere
-  opp til største ladestrøm, fylt opp til gjeldende ladestrøm, og gjeldende
-  ladestrøm. Apparatet eller elbilladeren som står for tur, har én
+  ladetidsrommet. Under «Ladenivå» og gjeldende ladestrøm står én strek per
+  ampere fra minste til største ladestrøm, fylt opp til gjeldende ladestrøm.
+  Apparatet eller elbilladeren som står for tur, har «Slås på om» over én
   blokk per reguleringsvindu som er igjen til avgjørelsen der det slås på. Er
   ventetiden lang, står hver blokk for flere vinduer.
 
