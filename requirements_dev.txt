@@ -12,4 +12,4 @@ home-assistant-frontend==20260930.5
 pytest==9.0.3
 pytest-asyncio==1.4.0
 pytest-homeassistant-custom-component==0.13.375
-ruff==0.16.9
+ruff==0.17.4
