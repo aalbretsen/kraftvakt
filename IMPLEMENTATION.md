@@ -19,6 +19,7 @@ Innhold:
 8. Sporbarhet
 9. Risikoer og tekniske avklaringer
 10. Forslag til endringer i REQUIREMENTS.md og annen dokumentasjon
+11. Åpne spørsmål til eier
 
 ---
 
@@ -880,3 +881,34 @@ Planen endrer ikke REQUIREMENTS.md. Disse endringene foreslås, og eier avgjør:
     om reguleringen er stoppet, og at snittsensorene da er utilgjengelige (T21).
 20. **APP-009:** Presiser hvordan flere apparater som bytter variant ved samme
     avgjørelse, håndteres (T22).
+
+---
+
+## 11. Åpne spørsmål til eier
+
+Valg som ble tatt underveis i fasene uten å være avklart med eier. Oppførselen
+under er slik den er implementert, og den er ikke endret. Eier avgjør om den
+skal beholdes eller endres til alternativet. Et avklart spørsmål flyttes til
+kapittel 2.
+
+| # | Fase | Krav | Oppførsel i dag | Alternativ |
+|---|---|---|---|---|
+| Å1 | 4 | STR-003 | Når straff starter, sendes av-kommando til alle apparater og elbilladere i konfigurasjonen, også de som allerede er av (som ved start, REG-009). | Sende av-kommando bare til apparatene og elbilladerne reguleringen har slått på. |
+| Å2 | 4 | APP-007 | Gjeldende variant vurderes også ved avgjørelsene under straff. Alt er av, så et bytte gir ingen kommandoer, men statussiden viser den nye varianten. | Ikke vurdere varianter under straff, og finne gjeldende variant ved første avgjørelse etter straffen. |
+| Å3 | 5 | REG-009 | Når HA starter, slås alt av straks Kraftvakt er lastet. Integrasjonene til apparatene er kanskje ikke lastet ennå. Da feiler av-kommandoene og gjentas ikke (GEN-012). | Vente med starten til HA har startet (`async_at_started`). |
+| Å4 | 5 | GEN-011 | En lagret konfigurasjon som ikke kan leses, gir et unntak, og oppsettet av integrasjonen feiler uten en egen feilmelding. | Feile med en tydelig feilmelding, eller starte med tom konfigurasjon uten å overskrive lagringen. |
+| Å5 | 5 | REG-009 | Ved reload av integrasjonen kan handlinger fra den gamle runtime-en fortsatt kjøre mens den nye slår alt av. Rekkefølgen mellom dem er da ikke garantert. Lite sannsynlig, og ikke håndtert. | Vente til handlingene fra den gamle runtime-en er ferdige før den nye slår alt av. |
+| Å6 | 6 | LAD-017, LAD-029 | Med én elbillader om gangen og uten innstillingen «bil tilkoblet» blir elbilladere uten bil aktivert etter tur. Den ene blir forbigått etter to reguleringsvinduer, og den neste aktiveres (LAD-029 deaktiverer den første). Den første er da ikke lenger forbigått og står for tur igjen. | Huske at en elbillader er forbigått også etter at den er deaktivert, til en bil kobles til eller den begynner å trekke strøm. Med «bil tilkoblet» konfigurert skjer ikke dette. |
+| Å7 | 6 | LAD-027, T13 | Et ladetidsrom som starter mens reguleringen er i sikker tilstand eller stoppet, telles ikke, fordi starten av reguleringen blir nytt referansetidspunkt. Overstyringen varer da til neste dags ladetidsrom. | Regne fra tidspunktet bryteren ble slått på også over sikker tilstand og stopp, og bare bruke starten av reguleringen etter omstart av HA eller integrasjonen. |
+| Å8 | 6 | LAD-017 | En elbillader som ikke lader, kan få flere fiktive apparater slått på i de to reguleringsvinduene før den blir forbigått. Den begrenses så til minste ladestrøm (LAD-030). Med standard ventetid skjer det sjelden. | Ikke slå på flere fiktive apparater før elbilladeren er aktivt ladende. |
+| Å9 | 7 | MAL-005, GEN-007 | Snittene går videre når konfigurasjonen lagres. En ny effektsensor følges fra lagringen, og historikken fra den gamle sensoren blir med i snittforbruket. Et nytt reguleringsvindu gjelder fra neste vindu. | Starte snittene på nytt etter MAL-005 når effektsensoren eller reguleringsvinduet endres. |
+| Å10 | 7 | REG-010 | Valideringsfeil fra `kraftvakt/config/save` sendes som resultat (`{saved: false, errors}`), ikke som WebSocket-feil, fordi HAs feilmelding ikke kan bære data. | WebSocket-feil med feilene i meldingsteksten. |
+| Å11 | 7 | GEN-013, T18 | Valideringsfeil kommer i to omganger. Feil i type og format må rettes før `default_action_unavailable` vises, fordi den sjekken trenger en lesbar konfigurasjon. | Gi alle feil samtidig, med en enklere sjekk av standardhandlinger som tåler en uferdig konfigurasjon. |
+| Å12 | 7 | REG-010 | `regulation_running` sjekkes før valideringen. Mens reguleringen kjører, får brukeren derfor ikke vite om konfigurasjonen er gyldig. | Validere først og avvise lagringen etterpå. |
+| Å13 | 7 | GUI-006, T11 | `waiting_until` i statusbildet gis også for elbilladere, og gjelder da neste fiktive apparat. | Bare gi ventetid for vanlige apparater. |
+| Å14 | 9 | GUI-008–010, B7 | Panelet sjekker utkastet mot grensene og regner ut mangler selv før lagring, i tillegg til valideringen i backend. «Lagre» er deaktivert så lenge utkastet har slike feil. | Bare vise feilene fra backend etter at brukeren har trykket «Lagre». |
+| Å15 | 9 | B7 | Panelet spør før ulagrede endringer forkastes bare når brukeren går til statussiden, og nettleseren spør når siden lukkes eller lastes på nytt. Navigering i HAs sidemeny kan ikke stoppes, så utkastet går da tapt uten spørsmål. | Lagre utkastet i nettleseren og hente det frem igjen når panelet åpnes. |
+| Å16 | 9 | REG-010, GUI-007 | Et ulagret utkast forkastes når reguleringen startes, siden det ikke kan lagres mens den kjører. | Spørre før reguleringen startes, eller beholde utkastet til reguleringen stoppes igjen. |
+| Å17 | 9 | GEN-009 | Velgeren for boolsk entitet (varianter og bil tilkoblet) viser bare domenene `binary_sensor`, `input_boolean`, `switch` og `schedule`. | Tillate alle entiteter, siden alle andre tilstander enn `on` uansett regnes som usann. |
+| Å18 | 9 | GEN-013 | Når brukeren velger egendefinert handling, er den fylt ut med standardhandlingen for entitetens domene. | Starte med en tom handling. |
+| Å19 | 9 | GUI-009, GUI-010 | Mangler (påkrevde felt) vises ikke i dialogen før et nytt apparat eller en ny elbillader er lagt til. En ny variant starter som mal. | Vise mangler med en gang, og la en ny variant starte som entitet. |
