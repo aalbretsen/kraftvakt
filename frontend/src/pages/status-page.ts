@@ -114,7 +114,7 @@ export class KraftvaktStatusPage extends LitElement {
     const overLimit = (value: number | null) => value !== null && value > status.power_limit_kw;
     const powerNow = measuredPowerKw(this.hass, this.config?.config.general.power_sensor ?? "");
     return html`
-      ${status.safe_state ? this.renderSafeState() : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
+      ${status.safe_state ? this.renderSafeState(powerNow !== null) : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <div class="stats">
         ${this.renderStat("power-now", "status.power_now", formatPower(language, powerNow), this.localize("status.momentary"))}
         ${this.renderStat(
@@ -155,12 +155,16 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  private renderSafeState() {
+  /**
+   * The safe state lasts until the next decision, also after the sensor gives
+   * a valid value again.
+   */
+  private renderSafeState(sensorBack: boolean) {
     const sensor = this.config?.config.general.power_sensor ?? "";
     const name = this.hass.states[sensor]?.attributes.friendly_name ?? sensor;
     return html`
-      <ha-alert alert-type="error" .title=${this.localize("status.safe_state_title")}>
-        ${this.localize("status.safe_state_text", { sensor: name })}
+      <ha-alert alert-type=${sensorBack ? "info" : "error"} .title=${this.localize("status.safe_state_title")}>
+        ${this.localize(sensorBack ? "status.safe_state_back_text" : "status.safe_state_text", { sensor: name })}
       </ha-alert>
     `;
   }

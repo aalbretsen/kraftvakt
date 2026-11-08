@@ -34,6 +34,7 @@
     "momentary": "momentary value",
     "power_limit": "Power limit",
     "safe_state_chip": "Safe state",
+    "safe_state_back_text": "The power sensor {sensor} gives a valid value again. The regulation starts again with everything off at the next decision.",
     "penalty_chip": "Penalty period",
     "next_decision": "Next decision",
     "next_decision_at": "Next decision at {time}",

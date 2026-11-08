@@ -80,6 +80,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   or outside the charging window. Before the first decision after a start
   (`excluded` is null) a charger shows «Waiting for the first decision»
   instead (settled after the exploratory test).
+- The safe state lasts until the next decision. While the power sensor is
+  already valid again, the safe state banner is an info that the regulation
+  starts again at the next decision, not the error that the sensor gives no
+  valid measurement (settled after the exploratory test).
 - Countdowns are never ticking text. «Next decision» is a label and
   `kraftvakt-countdown-ring` at the right end of the chips row: a 20 px ring
   that empties counterclockwise towards the top over one decision interval

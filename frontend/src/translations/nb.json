@@ -34,6 +34,7 @@
     "momentary": "øyeblikksverdi",
     "power_limit": "Effektgrense",
     "safe_state_chip": "Sikker tilstand",
+    "safe_state_back_text": "Effektsensoren {sensor} gir en gyldig verdi igjen. Reguleringen starter på nytt med alt avslått ved neste avgjørelse.",
     "penalty_chip": "Straffeperiode",
     "next_decision": "Neste avgjørelse",
     "next_decision_at": "Neste avgjørelse kl. {time}",
