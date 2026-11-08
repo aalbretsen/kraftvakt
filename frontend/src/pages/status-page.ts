@@ -320,7 +320,7 @@ export class KraftvaktStatusPage extends LitElement {
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
-        <span class="indicator-label">${this.localize("status.turning_on_in")}</span>
+        <span class="indicator-label">${this.localize("status.turning_on")}</span>
         <span class="windows-left" style="--block-width: ${size.width}px; --block-height: ${size.height}px">
           ${Array.from({ length: blocks }, () => html`<span class="window-left"></span>`)}
         </span>

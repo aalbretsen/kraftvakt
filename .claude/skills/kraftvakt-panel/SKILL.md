@@ -81,7 +81,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.
-- The waiting column shows the label «Turning on in» above one block per
+- The waiting column shows the label «Turning on» above one block per
   regulation window left until `waiting_ends_at`, the decision that turns the
   slot on. The label is the same for an activated EV charger waiting for one
   more ampere. All blocks have the same whole-pixel size (`blockSize()`): 8 px

@@ -49,7 +49,7 @@
     "activated": "Aktivert",
     "deactivated": "Deaktivert",
     "waiting_ends_at": "Slås på ved avgjørelsen kl. {time}",
-    "turning_on_in": "Slås på om",
+    "turning_on": "Slås på",
     "charging_level": "Ladenivå {current}A",
     "charging_level_off": "Ladenivå",
     "bypassed": "Forbigått: trekker ikke strøm",
