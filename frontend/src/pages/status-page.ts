@@ -290,7 +290,7 @@ export class KraftvaktStatusPage extends LitElement {
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
-        <span class="indicator-label">${this.localize("status.turn_on_delay")}</span>
+        <span class="indicator-label">${this.localize("status.delayed_turn_on")}</span>
         <kraftvakt-countdown-bar
           .start=${Date.parse(item.waiting_since)}
           .end=${Date.parse(item.waiting_ends_at)}

@@ -81,7 +81,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.
-- The waiting column shows the label «Turn-on delay» above a
+- The waiting column shows the label «Delayed turn-on» above a
   `kraftvakt-countdown-bar` (6 px, the text colour on a grey track) that empties towards
   the right from `waiting_since` to `waiting_ends_at`, the decision that turns
   the slot on, animated by the browser like the ring. The label is the same
