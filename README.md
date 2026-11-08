@@ -165,8 +165,9 @@ og `switch.kraftvakt_regulering`.
 
 Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
 effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
-Når effektsensoren gir en gyldig verdi igjen, brukes den verdien bakover i tid
-i begge snittene.
+Når effektsensoren gir en gyldig verdi igjen, blir snittene tilgjengelige
+igjen. Målingene fra før feilen beholdes, og tiden uten gyldig verdi regnes med
+den siste gyldige verdien før feilen.
 
 Når Kraftvakt starter, hentes timen før fra historikken til effektsensoren i
 Home Assistant (opptakeren, `recorder`), slik at snittforbruket stemmer også

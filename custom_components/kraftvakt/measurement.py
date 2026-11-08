@@ -14,7 +14,7 @@ from itertools import pairwise
 from typing import Final
 
 CAPACITY_WINDOW: Final = timedelta(hours=1)
-CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET: Final = 2
+CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN: Final = 2
 
 # A sensor without unit is read as watt.
 _KW_PER_UNIT: Final[dict[str | None, float]] = {None: 0.001, "W": 0.001, "kW": 1.0}
@@ -68,8 +68,7 @@ class PowerAverager:
     The power is piecewise constant: a measurement applies until the next one,
     and an invalid measurement keeps the last valid one in place.
     The first measurement also applies backwards in time, which fills the
-    windows at startup and after a reset, unless history from before it has
-    been added.
+    windows at startup, unless history from before it has been added.
     """
 
     def __init__(self, window_length: timedelta, start: datetime) -> None:
@@ -139,8 +138,11 @@ class PowerAverager:
         """Close the current regulation window and start the next one.
 
         When the sensor was invalid at this and the previous close, the
-        history is discarded, so the next valid measurement fills the windows
-        again.
+        averages are unknown until a valid measurement comes. The history is
+        kept, and the last valid measurement fills the gap, as it does for the
+        time Home Assistant was down. Settled with the owner: filling the hour
+        with the first measurement after the gap made the average consumption
+        far too low or too high.
         """
         start, end = self._window_start, self.window_end
         self._window_start = end
@@ -149,9 +151,11 @@ class PowerAverager:
         self._consecutive_invalid_closes = (
             0 if self._sensor_valid else self._consecutive_invalid_closes + 1
         )
-        if self._consecutive_invalid_closes >= CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET:
-            self._steps.clear()
-        if not self._steps:
+        if (
+            not self._steps
+            or self._consecutive_invalid_closes
+            >= CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN
+        ):
             return WindowAverages(start, end, None, None, self._sensor_valid)
 
         self._forget_steps_before(end - CAPACITY_WINDOW)

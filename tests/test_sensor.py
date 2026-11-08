@@ -166,7 +166,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
     """One invalid close keeps the last value, two make the sensors unavailable,
-    and the next valid value fills the windows again."""
+    and when a valid value comes the last valid value fills the gap."""
     set_power(hass, "3000")
     await setup_kraftvakt()
     await advance(hass, freezer, WINDOW)
@@ -182,8 +182,12 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     await advance(hass, freezer, timedelta(seconds=40))
     set_power(hass, "1500")
     await advance(hass, freezer, timedelta(seconds=20))
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(1.5)
-    assert float(state_of(hass, "capacity_average")) == pytest.approx(1.5)
+    assert float(state_of(hass, "regulation_average")) == pytest.approx(
+        (3.0 * 40 + 1.5 * 20) / 60
+    )
+    assert float(state_of(hass, "capacity_average")) == pytest.approx(
+        (3.0 * 3580 + 1.5 * 20) / 3600
+    )
 
 
 async def test_power_sensor_without_unit_is_read_as_watt(

@@ -86,16 +86,21 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   the time before it). Settled with the owner, because filling the hour with
   the first value after a restart made the average consumption far too low:
   everything is turned off at start, so the first value is only the
-  background. Without a recorder or any valid history, and when a valid value
-  comes back after the history was discarded, the missing past is filled with
-  the first measured value. The regulation window is not affected: the first
+  background. Without a recorder or any valid history, the missing past is
+  filled with the first measured value. The regulation window is not affected: the first
   one starts at startup. The time HA was down counts with the last value
   recorded before it stopped.
 - Validity is the state when a window closes. A gap inside a window is filled
   with the last valid value.
 - One window closing without a valid value is tolerated (the last valid value
-  is used). Two in a row discard the history: the average sensors become
+  is used). Two in a row make the averages unknown: the average sensors become
   unavailable until a valid value comes, also while the regulation is stopped.
+  The history is kept, and the gap counts with the last valid value before
+  it, like the time HA was down. Settled with the owner after the exploratory
+  test (finding F3): discarding the history and filling the hour with the
+  first value after the gap made the average consumption far too low (only the
+  background, since everything is off in the safe state) or far too high (a
+  value that lasted a millisecond while the appliances were turned off).
 - Before the first valid value there is no average. Windows without any
   measurement count as invalid.
 - Saving a configuration does not restart the averages. A new power sensor is
@@ -176,7 +181,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
 - Entered at the first decision where the power sensor was invalid at the last
   two window closes. Every appliance and charger is turned off at once, and
   nothing is turned on. The safe state binary sensor is on.
-- When a valid value comes back, the averages are filled and the regulation
+- When a valid value comes back, the averages are known again and the regulation
   starts again with everything off at the first decision.
 - A sensor that never reports after startup also leads to the safe state.
 

@@ -271,9 +271,9 @@ def test_valid_close_between_invalid_ones_keeps_the_history() -> None:
     assert not averages.sensor_valid
 
 
-def test_two_invalid_closes_in_a_row_discard_the_history() -> None:
-    """The averages are unknown after two invalid closes, and the next valid
-    measurement fills the windows backwards."""
+def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
+    """The history is kept, and the last valid measurement fills the gap
+    when a valid measurement comes again."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 9.0)
     averager.add_measurement(at(30), None)
@@ -286,9 +286,29 @@ def test_two_invalid_closes_in_a_row_discard_the_history() -> None:
 
     assert second == WindowAverages(at(60), at(120), None, None, sensor_valid=False)
     assert third == WindowAverages(at(120), at(180), None, None, sensor_valid=False)
-    assert fourth.regulation_average_kw == 2.0
-    assert fourth.capacity_average_kw == 2.0
+    assert fourth.regulation_average_kw == pytest.approx((9.0 * 20 + 2.0 * 40) / 60)
+    assert fourth.capacity_average_kw == pytest.approx(
+        (9.0 * 3600 - 9.0 * 40 + 2.0 * 40) / 3600
+    )
     assert fourth.sensor_valid
+
+
+def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
+    """Found in the exploratory test: a value that lasted one millisecond
+    after the safe state filled the whole hour."""
+    averager = PowerAverager(WINDOW, START)
+    averager.add_measurement(at(0), 7.0)
+    close_windows_until(averager, at(3600))
+    averager.add_measurement(at(3610), None)
+    close_windows_until(averager, at(3720))
+    averager.add_measurement(at(3720.5), 7.85)
+    averager.add_measurement(at(3720.501), 3.0)
+
+    averages = close_windows_until(averager, at(3780))
+
+    assert averages.capacity_average_kw == pytest.approx(
+        (7.0 * 3540.5 + 3.0 * 59.5) / 3600, abs=1e-4
+    )
 
 
 def test_without_first_measurement_windows_stay_unknown() -> None:

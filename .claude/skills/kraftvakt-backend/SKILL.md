@@ -36,7 +36,7 @@ integrations.
 | `config_flow.py` | Empty flow, single instance. |
 | `config_model.py` | Dataclasses, defaults, `SETTING_RANGES` (used for validation and sent to the panel), (de)serialization, `parse_config()` (must run in the event loop, templates are checked there), `missing_items()`. |
 | `storage.py` | `KraftvaktStorage`: configuration and charger switch positions in one versioned file. |
-| `measurement.py` | `PowerAverager`: time-weighted windows, sliding hour, W/kW, fill at startup, discard after two invalid closes. |
+| `measurement.py` | `PowerAverager`: time-weighted windows, sliding hour, W/kW, fill at startup, averages unknown after two invalid closes (history kept). |
 | `conditions.py` | True/false from an entity or a template, with `entity_id` and `entity`. |
 | `actions.py` | Default action table, custom actions, `ActionRunner` (one command at a time under a lock, errors logged and not retried), `default_action_issues()`. |
 | `regulation/` | `engine.py` (`RegulationEngine`: `start`, `stop`, `decide`), `model.py`, `priority.py` (slots and fictive appliances), `waiting.py`, `penalty.py`, `charging.py`. |

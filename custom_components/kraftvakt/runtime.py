@@ -39,7 +39,7 @@ from .config_model import (
 )
 from .measurement import (
     CAPACITY_WINDOW,
-    CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET,
+    CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN,
     PowerAverager,
     WindowAverages,
     power_kw,
@@ -112,7 +112,7 @@ class KraftvaktRuntime:
         )
         self._latest_averages: WindowAverages | None = None
         self._recent_windows: deque[WindowAverages] = deque(
-            maxlen=CONSECUTIVE_INVALID_CLOSES_BEFORE_RESET
+            maxlen=CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN
         )
         self._windows_since_decision: list[WindowAverages] = []
         self._window_listeners: list[WindowListener] = []
