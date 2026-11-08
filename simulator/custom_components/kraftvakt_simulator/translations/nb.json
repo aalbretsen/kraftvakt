@@ -22,7 +22,7 @@
       },
       "heater": {
         "title": "Simulert varmeapparat",
-        "description": "Apparatet varmer i en fast syklus mens bryteren er på: først av, så på i driftsandelen av perioden. Syklusen starter på nytt hver gang bryteren slås på.",
+        "description": "Apparatet varmer i en fast syklus mens bryteren er på: først av, så på i driftsandelen av perioden. Syklusen starter på nytt hver gang bryteren slås på eller syklusen endres.",
         "data": {
           "name": "Navn",
           "heater_type": "Type",
@@ -70,6 +70,15 @@
       },
       "charging_current": {
         "name": "Ladestrøm"
+      },
+      "heating_power": {
+        "name": "Varmeeffekt"
+      },
+      "duty_cycle": {
+        "name": "Driftsandel"
+      },
+      "period": {
+        "name": "Periode"
       }
     },
     "sensor": {

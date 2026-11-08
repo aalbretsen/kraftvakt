@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-from homeassistant.const import STATE_ON
+from homeassistant.const import STATE_ON, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -46,6 +46,7 @@ UNPLUGGED_SWITCH: Final[SimulatorSwitchDescription[PluggedInDevice]] = (
     SimulatorSwitchDescription(
         key="unplugged",
         translation_key="unplugged",
+        entity_category=EntityCategory.CONFIG,
         is_on_fn=lambda device: device.unplugged,
         set_fn=lambda device, unplugged: device.async_set_unplugged(unplugged),
     )
@@ -61,12 +62,14 @@ CHARGER_SWITCHES: Final[tuple[SimulatorSwitchDescription[SimulatedCharger], ...]
     SimulatorSwitchDescription(
         key="car_connected",
         translation_key="car_connected",
+        entity_category=EntityCategory.CONFIG,
         is_on_fn=lambda charger: charger.state.car_connected,
         set_fn=lambda charger, on: charger.async_set_car_connected(on),
     ),
     SimulatorSwitchDescription(
         key="car_fully_charged",
         translation_key="car_fully_charged",
+        entity_category=EntityCategory.CONFIG,
         is_on_fn=lambda charger: charger.state.car_fully_charged,
         set_fn=lambda charger, on: charger.async_set_car_fully_charged(on),
     ),

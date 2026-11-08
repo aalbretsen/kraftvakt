@@ -22,7 +22,7 @@
       },
       "heater": {
         "title": "Simulated heating device",
-        "description": "The device heats in a fixed cycle while its switch is on: first off, then on for the duty cycle's share of the period. The cycle starts again each time the switch is turned on.",
+        "description": "The device heats in a fixed cycle while its switch is on: first off, then on for the duty cycle's share of the period. The cycle starts again each time the switch is turned on or the cycle is changed.",
         "data": {
           "name": "Name",
           "heater_type": "Type",
@@ -70,6 +70,15 @@
       },
       "charging_current": {
         "name": "Charging current"
+      },
+      "heating_power": {
+        "name": "Heating power"
+      },
+      "duty_cycle": {
+        "name": "Duty cycle"
+      },
+      "period": {
+        "name": "Period"
       }
     },
     "sensor": {

@@ -12,10 +12,18 @@ from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
 
-from .const import DOMAIN
+from .const import (
+    CONF_BACKGROUND_W,
+    CONF_DUTY_CYCLE_PCT,
+    CONF_PERIOD_MIN,
+    CONF_POWER_W,
+    DOMAIN,
+)
 from .model import ChargerState, DutyCycle
 
 POWER_BOARD: HassKey[PowerBoard] = HassKey(DOMAIN)
+
+type StoreSetting = Callable[[str, float], None]
 
 
 class Observable:
@@ -109,12 +117,12 @@ class SimulatedHan(SimulatedDevice):
         hass: HomeAssistant,
         consumer_id: str,
         background_w: float,
-        store_background: Callable[[float], None],
+        store_setting: StoreSetting,
     ) -> None:
         """Start with `background_w`, and store every change with the callback."""
         super().__init__(hass, consumer_id)
         self.background_w = background_w
-        self._store_background = store_background
+        self._store_setting = store_setting
 
     @property
     def power_w(self) -> float:
@@ -125,7 +133,7 @@ class SimulatedHan(SimulatedDevice):
     def async_set_background(self, background_w: float) -> None:
         """Change the background power."""
         self.background_w = background_w
-        self._store_background(background_w)
+        self._store_setting(CONF_BACKGROUND_W, background_w)
         self._async_changed()
 
 
@@ -157,14 +165,21 @@ class PluggedInDevice(SimulatedDevice):
 class SimulatedHeater(PluggedInDevice):
     """A heating device with a duty cycle and an on/off switch in front of it.
 
-    The cycle starts in its off part each time the switch is turned on, and
-    runs on while the device is unplugged.
+    The cycle starts in its off part each time the switch is turned on or the
+    cycle is changed, and runs on while the device is unplugged.
     """
 
-    def __init__(self, hass: HomeAssistant, consumer_id: str, cycle: DutyCycle) -> None:
-        """Start switched off."""
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        consumer_id: str,
+        cycle: DutyCycle,
+        store_setting: StoreSetting,
+    ) -> None:
+        """Start switched off, and store every change of the cycle with the callback."""
         super().__init__(hass, consumer_id)
         self.cycle = cycle
+        self._store_setting = store_setting
         self._switched_on_at: datetime | None = None
         self._cancel_timer: CALLBACK_TYPE | None = None
 
@@ -185,17 +200,59 @@ class SimulatedHeater(PluggedInDevice):
         """Turn the switch on or off. Turning on restarts the cycle."""
         if on == self.is_on:
             return
-        self._async_cancel_timer()
-        self._switched_on_at = dt_util.utcnow() if on else None
         if on:
-            self._async_schedule_next_change()
+            self._async_restart_cycle()
+        else:
+            self._async_cancel_timer()
+            self._switched_on_at = None
         self._async_changed()
+
+    @callback
+    def async_set_power(self, power_w: float) -> None:
+        """Change the power while heating, in whole watts."""
+        self._async_set_cycle(
+            replace(self.cycle, power_w=int(power_w)), CONF_POWER_W, int(power_w)
+        )
+
+    @callback
+    def async_set_duty_cycle(self, duty_cycle_pct: float) -> None:
+        """Change the share of the period the device heats."""
+        self._async_set_cycle(
+            replace(self.cycle, duty_cycle_pct=int(duty_cycle_pct)),
+            CONF_DUTY_CYCLE_PCT,
+            int(duty_cycle_pct),
+        )
+
+    @callback
+    def async_set_period(self, period_min: float) -> None:
+        """Change the length of one cycle, in whole minutes."""
+        self._async_set_cycle(
+            replace(self.cycle, period=timedelta(minutes=int(period_min))),
+            CONF_PERIOD_MIN,
+            int(period_min),
+        )
 
     @callback
     def async_stop(self) -> None:
         """Stop the cycle and consume nothing."""
         self._async_cancel_timer()
         super().async_stop()
+
+    @callback
+    def _async_set_cycle(self, cycle: DutyCycle, key: str, value: float) -> None:
+        if cycle == self.cycle:
+            return
+        self.cycle = cycle
+        self._store_setting(key, value)
+        if self.is_on:
+            self._async_restart_cycle()
+        self._async_changed()
+
+    @callback
+    def _async_restart_cycle(self) -> None:
+        self._async_cancel_timer()
+        self._switched_on_at = dt_util.utcnow()
+        self._async_schedule_next_change()
 
     def _elapsed(self) -> timedelta:
         assert self._switched_on_at is not None

@@ -392,7 +392,9 @@ til én enhet om gangen med **Legg til enhet**:
   en effektsensor. Mens bryteren er på, varmer det i en fast syklus som starter
   med den avslåtte delen: 750 W, 25 % og 60 minutter gir 45 minutter av og 15
   minutter på, om igjen og om igjen. Syklusen starter på nytt hver gang
-  bryteren slås på. Med bryteren av bruker apparatet ingenting.
+  bryteren slås på. Med bryteren av bruker apparatet ingenting. Varmeeffekt,
+  driftsandel og periode er `number`-entiteter som kan endres mens Home
+  Assistant kjører. Endres de mens bryteren er på, starter syklusen på nytt.
 - **Elbillader:** trefaset 400 V med minste og største ladestrøm. Den har
   bryterne **Lading tillatt**, **Bil tilkoblet** og **Bil fulladet**,
   **Ladestrøm** (A) og sensoren **Ladeeffekt**. Laderen trekker
@@ -403,6 +405,11 @@ Varmeapparater og elbilladere har også bryteren **Frakoblet**. Mens den er på,
 bruker enheten ingenting, uansett hva de andre bryterne står på. Slik styrer du
 hvilke enheter som bruker strøm under en simulering. Syklusen til et
 varmeapparat går videre mens det er frakoblet.
+
+Det som styrer simuleringen og ikke hører til en ekte enhet, står under
+**Konfigurasjon** på enhetssiden: **Bakgrunnsforbruk**, **Varmeeffekt**,
+**Driftsandel**, **Periode**, **Bil tilkoblet**, **Bil fulladet** og
+**Frakoblet**.
 
 Innstillingene kan endres med **Konfigurer på nytt**. Bryterne og ladestrømmen
 beholder stillingen over en omstart.

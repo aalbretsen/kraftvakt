@@ -41,6 +41,10 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   is off 45 min, on 15 min, and so on. Its switch cuts the power: off consumes
   nothing. **The cycle restarts in its off part every time the switch is
   turned on**, and so also after a restart with a restored switch.
+- Power, duty cycle and period are also numbers, «Heating power» /
+  «Varmeeffekt» (W), «Duty cycle» / «Driftsandel» (%) and «Period» /
+  «Periode» (min), changeable while HA runs. A change while the switch is on
+  restarts the cycle in its off part; an unchanged value does nothing.
 - An EV charger is 400 V three-phase with power factor 1:
   `P = √3 · 400 V · I` (6 A → 4.16 kW). It has a minimum and maximum current
   (whole amperes, `max_below_min` otherwise). It draws power only while
@@ -51,6 +55,11 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   consume. A heater's cycle runs on while unplugged. The HAN has no such
   switch: set its background power instead. `PluggedInDevice` in `devices.py`
   gives the power as 0 while unplugged, and the devices implement `demand_w`.
+- Entities that control the simulation and are not part of a real device have
+  `EntityCategory.CONFIG`, so HA shows them under «Configuration» on the device
+  page: background power, heating power, duty cycle, period, car connected, car
+  fully charged and unplugged. Charging allowed, the charging current, the
+  heater switch and the sensors are the device's own and stay main entities.
 - Entity names (en / nb): charger switches «Charging allowed» / «Lading
   tillatt», «Car connected» / «Bil tilkoblet», «Car fully charged» / «Bil
   fulladet»; number «Charging current» / «Ladestrøm» (A); sensor «Charging
@@ -60,8 +69,11 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   `sensor.han_power`.
 - After a restart every entity gets its state back. The switches use
   `RestoreEntity` and the charging current `RestoreNumber` (clamped to the
-  current range). The background power is kept in the config entry data
-  instead, so that reconfiguring the HAN changes it.
+  current range). The settings that are numbers (background power, heating
+  power, duty cycle, period) are kept in the config entry data instead, so
+  that reconfiguring the device changes them. Numbers for settings use
+  `SimulatorNumberDescription` with `value_fn` and `set_fn`, and the device
+  stores a change through its `store_setting` callback.
 - Every kind has a reconfigure flow with the same form as when it was added.
   It reloads the entry.
 

@@ -6,6 +6,15 @@
       },
       "charging_current": {
         "default": "mdi:current-ac"
+      },
+      "heating_power": {
+        "default": "mdi:lightning-bolt"
+      },
+      "duty_cycle": {
+        "default": "mdi:chart-pie"
+      },
+      "period": {
+        "default": "mdi:timer-refresh-outline"
       }
     },
     "sensor": {

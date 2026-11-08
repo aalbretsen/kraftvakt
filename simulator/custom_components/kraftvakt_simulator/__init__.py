@@ -30,7 +30,7 @@ type SimulatorConfigEntry = ConfigEntry[SimulatedDevice]
 
 PLATFORMS: Final = {
     DeviceKind.HAN: [Platform.NUMBER, Platform.SENSOR],
-    DeviceKind.HEATER: [Platform.SENSOR, Platform.SWITCH],
+    DeviceKind.HEATER: [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH],
     DeviceKind.CHARGER: [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH],
 }
 
@@ -68,15 +68,14 @@ def platforms_of(entry: ConfigEntry) -> list[Platform]:
 def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
     """Create the simulated device from the config entry's settings."""
     data = entry.data
+
+    def store_setting(key: str, value: float) -> None:
+        hass.config_entries.async_update_entry(entry, data={**entry.data, key: value})
+
     match kind_of(entry):
         case DeviceKind.HAN:
             return SimulatedHan(
-                hass,
-                entry.entry_id,
-                data[CONF_BACKGROUND_W],
-                lambda background_w: hass.config_entries.async_update_entry(
-                    entry, data={**entry.data, CONF_BACKGROUND_W: background_w}
-                ),
+                hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting
             )
         case DeviceKind.HEATER:
             cycle = DutyCycle(
@@ -84,7 +83,7 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
                 duty_cycle_pct=data[CONF_DUTY_CYCLE_PCT],
                 period=timedelta(minutes=data[CONF_PERIOD_MIN]),
             )
-            return SimulatedHeater(hass, entry.entry_id, cycle)
+            return SimulatedHeater(hass, entry.entry_id, cycle, store_setting)
         case DeviceKind.CHARGER:
             return SimulatedCharger(
                 hass,
