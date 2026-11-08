@@ -165,7 +165,9 @@ er aktivert, må hver elbillader i tillegg ha entitet, handlinger for å aktiver
 deaktivere og sette ladestrøm, og sensor for ladeeffekt. Ved hver start slås
 alle apparatene av og alle elbilladerne deaktiveres med en gang. Deretter slår
 reguleringen dem på ett og ett i prioritert rekkefølge. Første avgjørelse tas
-når et helt reguleringsintervall har gått etter starten.
+når et helt reguleringsintervall har gått etter starten. Når Home Assistant
+starter, venter reguleringen til Home Assistant har startet ferdig, slik at
+integrasjonene til apparatene er lastet før de slås av.
 
 Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
 stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.

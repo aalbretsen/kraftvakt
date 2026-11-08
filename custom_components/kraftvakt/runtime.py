@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import (
     CALLBACK_TYPE,
+    CoreState,
     Event,
     EventStateChangedData,
     HomeAssistant,
@@ -22,6 +23,7 @@ from homeassistant.helpers.event import (
     async_track_point_in_utc_time,
     async_track_state_change_event,
 )
+from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from .actions import ActionRunner
@@ -109,6 +111,7 @@ class KraftvaktRuntime:
         self._status_listeners: list[StatusListener] = []
         self._cancel_power_listener: CALLBACK_TYPE | None = None
         self._cancel_window_timer: CALLBACK_TYPE | None = None
+        self._cancel_start_when_started: CALLBACK_TYPE | None = None
 
     @property
     def latest_averages(self) -> WindowAverages | None:
@@ -190,17 +193,44 @@ class KraftvaktRuntime:
     def async_start(self) -> None:
         """Start measuring, and start the regulation if it can (REG-009, REG-016).
 
-        The regulation starts at the same moment as the first window, so the
-        first decision comes after one whole regulation interval.
+        When Home Assistant is running, as after a reload, the regulation starts
+        at the same moment as the first window, so the first decision comes
+        after one whole regulation interval. While Home Assistant starts, the
+        regulation waits until it has started, so that the integrations of the
+        appliances are loaded before they are turned off.
         """
         self._follow_power_sensor(self._created_at)
         self._schedule_window_close()
+        if self._hass.state is CoreState.running:
+            self._start_regulation_if_complete(self._created_at)
+        else:
+            self._cancel_start_when_started = async_at_started(
+                self._hass, self._async_home_assistant_started
+            )
+
+    @callback
+    def _async_home_assistant_started(self, _hass: HomeAssistant) -> None:
+        self._cancel_start_when_started = None
+        self._start_regulation_if_complete(dt_util.utcnow())
+
+    def _start_regulation_if_complete(self, now: datetime) -> None:
         if not self._missing:
-            self._start_regulation(self._created_at)
+            self._start_regulation(now)
+
+    def _forget_start_when_started(self) -> None:
+        """Forget the start when Home Assistant has started (REG-016).
+
+        The user has started or stopped the regulation before that, or the
+        runtime is shut down.
+        """
+        if self._cancel_start_when_started:
+            self._cancel_start_when_started()
+            self._cancel_start_when_started = None
 
     @callback
     def async_shutdown(self) -> None:
         """Stop listening to the power sensor and cancel the window timer."""
+        self._forget_start_when_started()
         if self._cancel_window_timer:
             self._cancel_window_timer()
             self._cancel_window_timer = None
@@ -219,11 +249,13 @@ class KraftvaktRuntime:
             return
         if self._missing:
             raise ConfigIncompleteError(self._missing)
+        self._forget_start_when_started()
         self._start_regulation(dt_util.utcnow())
 
     @callback
     def async_stop_regulation(self) -> None:
         """Stop the regulation and turn everything off at once (REG-016)."""
+        self._forget_start_when_started()
         if not self._engine.running:
             return
         self._windows_since_decision.clear()

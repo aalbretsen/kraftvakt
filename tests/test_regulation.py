@@ -10,8 +10,13 @@ from typing import Any
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    EVENT_HOMEASSISTANT_STARTED,
+    STATE_OFF,
+    STATE_ON,
+)
+from homeassistant.core import CoreState, HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
@@ -144,6 +149,41 @@ async def test_everything_is_turned_off_at_startup(
     assert actions == ["off light.a", "off light.b"]
     assert regulation_switch(hass) == STATE_ON
     assert safe_state(hass) == STATE_OFF
+
+
+async def test_regulation_starts_when_home_assistant_has_started(
+    hass: HomeAssistant, actions: list[str], setup_kraftvakt
+) -> None:
+    """REG-009: the integrations of the appliances are loaded by then."""
+    hass.set_state(CoreState.starting)
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    assert actions == []
+    assert regulation_switch(hass) == STATE_OFF
+
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert actions == ["off light.a", "off light.b"]
+    assert regulation_switch(hass) == STATE_ON
+
+
+async def test_user_start_before_home_assistant_has_started(
+    hass: HomeAssistant, actions: list[str], setup_kraftvakt
+) -> None:
+    """REG-016: the regulation is not started a second time when HA has started."""
+    hass.set_state(CoreState.starting)
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    await switch_regulation(hass, "turn_on")
+
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert actions == ["off light.a", "off light.b"]
+    assert regulation_switch(hass) == STATE_ON
 
 
 async def test_appliances_are_turned_on_one_per_decision(
