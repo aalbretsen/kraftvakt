@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a simulated device",
+        "menu_options": {
+          "han": "HAN (house power)",
+          "heater": "Heating device",
+          "charger": "EV charger"
+        }
+      },
+      "han": {
+        "title": "Simulated HAN",
+        "description": "The HAN reports the power of the whole house: the background power plus the power of every simulated device.",
+        "data": {
+          "name": "Name",
+          "background_w": "Background power"
+        },
+        "data_description": {
+          "background_w": "Consumption not covered by the simulated devices. It can be changed while Home Assistant runs."
+        }
+      },
+      "heater": {
+        "title": "Simulated heating device",
+        "description": "The device heats in a fixed cycle while its switch is on: first off, then on for the duty cycle's share of the period. The cycle starts again each time the switch is turned on.",
+        "data": {
+          "name": "Name",
+          "heater_type": "Type",
+          "power_w": "Power",
+          "duty_cycle_pct": "Duty cycle",
+          "period_min": "Period"
+        },
+        "data_description": {
+          "power_w": "Power while heating.",
+          "duty_cycle_pct": "Share of the period the device heats.",
+          "period_min": "Length of one cycle in minutes."
+        }
+      },
+      "charger": {
+        "title": "Simulated EV charger",
+        "description": "A 400 V three-phase charger. It draws √3 × 400 V × the charging current while charging is allowed, a car is connected and the car is not fully charged.",
+        "data": {
+          "name": "Name",
+          "min_current_a": "Minimum current",
+          "max_current_a": "Maximum current"
+        }
+      }
+    },
+    "error": {
+      "max_below_min": "The maximum current must be at least the minimum current."
+    },
+    "abort": {
+      "single_han": "There is already a simulated HAN.",
+      "reconfigure_successful": "The settings are changed."
+    }
+  },
+  "selector": {
+    "heater_type": {
+      "options": {
+        "heating_cable": "Heating cable",
+        "water_heater": "Water heater",
+        "panel_heater": "Panel heater"
+      }
+    }
+  },
+  "entity": {
+    "number": {
+      "background_power": {
+        "name": "Background power"
+      },
+      "charging_current": {
+        "name": "Charging current"
+      }
+    },
+    "sensor": {
+      "house_power": {
+        "name": "Power"
+      },
+      "power": {
+        "name": "Power"
+      },
+      "charging_power": {
+        "name": "Charging power"
+      }
+    },
+    "switch": {
+      "charging_allowed": {
+        "name": "Charging allowed"
+      },
+      "car_connected": {
+        "name": "Car connected"
+      },
+      "car_fully_charged": {
+        "name": "Car fully charged"
+      }
+    }
+  }
+}

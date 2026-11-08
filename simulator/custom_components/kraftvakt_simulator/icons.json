@@ -1,0 +1,49 @@
+{
+  "entity": {
+    "number": {
+      "background_power": {
+        "default": "mdi:home-lightning-bolt"
+      },
+      "charging_current": {
+        "default": "mdi:current-ac"
+      }
+    },
+    "sensor": {
+      "house_power": {
+        "default": "mdi:meter-electric"
+      },
+      "charging_power": {
+        "default": "mdi:ev-plug-type2"
+      }
+    },
+    "switch": {
+      "heating_cable": {
+        "default": "mdi:heating-coil"
+      },
+      "water_heater": {
+        "default": "mdi:water-boiler",
+        "state": {
+          "off": "mdi:water-boiler-off"
+        }
+      },
+      "panel_heater": {
+        "default": "mdi:radiator",
+        "state": {
+          "off": "mdi:radiator-off"
+        }
+      },
+      "charging_allowed": {
+        "default": "mdi:ev-station"
+      },
+      "car_connected": {
+        "default": "mdi:car-electric",
+        "state": {
+          "off": "mdi:car-off"
+        }
+      },
+      "car_fully_charged": {
+        "default": "mdi:battery-charging-100"
+      }
+    }
+  }
+}

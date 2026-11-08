@@ -1,0 +1,73 @@
+"""Power sensors of the simulated devices and the house total of the HAN."""
+
+from __future__ import annotations
+
+from typing import Final
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+from homeassistant.const import UnitOfPower
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+from . import SimulatorConfigEntry, kind_of
+from .const import DeviceKind
+from .devices import Observable, async_get_power_board
+from .entity import SimulatorEntity
+
+
+def power_description(key: str) -> SensorEntityDescription:
+    """Return the description of a power sensor in W."""
+    return SensorEntityDescription(
+        key=key,
+        translation_key=key,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    )
+
+
+DESCRIPTIONS: Final = {
+    DeviceKind.HAN: power_description("house_power"),
+    DeviceKind.HEATER: power_description("power"),
+    DeviceKind.CHARGER: power_description("charging_power"),
+}
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SimulatorConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
+) -> None:
+    """Add the power sensor of the device, or the house total for the HAN."""
+    kind = kind_of(entry)
+    sensor_class = HousePowerSensor if kind is DeviceKind.HAN else PowerSensor
+    async_add_entities([sensor_class(entry, entry.runtime_data, DESCRIPTIONS[kind])])
+
+
+class PowerSensor(SimulatorEntity, SensorEntity):
+    """The power the simulated device consumes."""
+
+    @property
+    def native_value(self) -> float:
+        """Return the power in W."""
+        return self.device.power_w
+
+
+class HousePowerSensor(SimulatorEntity, SensorEntity):
+    """The power of the whole house: background plus every simulated device."""
+
+    @property
+    def observed(self) -> Observable:
+        """Follow the power board, which changes with every device."""
+        return async_get_power_board(self.hass)
+
+    @property
+    def native_value(self) -> float:
+        """Return the total power in W."""
+        return async_get_power_board(self.hass).total_w

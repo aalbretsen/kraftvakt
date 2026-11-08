@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Legg til en simulert enhet",
+        "menu_options": {
+          "han": "HAN (husets effekt)",
+          "heater": "Varmeapparat",
+          "charger": "Elbillader"
+        }
+      },
+      "han": {
+        "title": "Simulert HAN",
+        "description": "HAN-en viser effekten til hele huset: bakgrunnsforbruket pluss effekten til alle de simulerte enhetene.",
+        "data": {
+          "name": "Navn",
+          "background_w": "Bakgrunnsforbruk"
+        },
+        "data_description": {
+          "background_w": "Forbruk som ikke kommer fra de simulerte enhetene. Kan endres mens Home Assistant kjører."
+        }
+      },
+      "heater": {
+        "title": "Simulert varmeapparat",
+        "description": "Apparatet varmer i en fast syklus mens bryteren er på: først av, så på i driftsandelen av perioden. Syklusen starter på nytt hver gang bryteren slås på.",
+        "data": {
+          "name": "Navn",
+          "heater_type": "Type",
+          "power_w": "Effekt",
+          "duty_cycle_pct": "Driftsandel",
+          "period_min": "Periode"
+        },
+        "data_description": {
+          "power_w": "Effekt mens apparatet varmer.",
+          "duty_cycle_pct": "Andelen av perioden apparatet varmer.",
+          "period_min": "Lengden på én syklus i minutter."
+        }
+      },
+      "charger": {
+        "title": "Simulert elbillader",
+        "description": "En trefaset lader på 400 V. Den trekker √3 × 400 V × ladestrømmen når lading er tillatt, en bil er tilkoblet og bilen ikke er fulladet.",
+        "data": {
+          "name": "Navn",
+          "min_current_a": "Minste ladestrøm",
+          "max_current_a": "Største ladestrøm"
+        }
+      }
+    },
+    "error": {
+      "max_below_min": "Største ladestrøm må være minst like stor som minste ladestrøm."
+    },
+    "abort": {
+      "single_han": "Det finnes allerede en simulert HAN.",
+      "reconfigure_successful": "Innstillingene er endret."
+    }
+  },
+  "selector": {
+    "heater_type": {
+      "options": {
+        "heating_cable": "Varmekabler",
+        "water_heater": "Varmtvannsbereder",
+        "panel_heater": "Panelovn"
+      }
+    }
+  },
+  "entity": {
+    "number": {
+      "background_power": {
+        "name": "Bakgrunnsforbruk"
+      },
+      "charging_current": {
+        "name": "Ladestrøm"
+      }
+    },
+    "sensor": {
+      "house_power": {
+        "name": "Effekt"
+      },
+      "power": {
+        "name": "Effekt"
+      },
+      "charging_power": {
+        "name": "Ladeeffekt"
+      }
+    },
+    "switch": {
+      "charging_allowed": {
+        "name": "Lading tillatt"
+      },
+      "car_connected": {
+        "name": "Bil tilkoblet"
+      },
+      "car_fully_charged": {
+        "name": "Bil fulladet"
+      }
+    }
+  }
+}
