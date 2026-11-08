@@ -136,6 +136,10 @@
         "label": "Effektgrense",
         "helper": "Høyeste tillatte snittforbruk per time. {min}–{max} kW, standard {default} kW."
       },
+      "turn_on_margin_kw": {
+        "label": "Innkoblingsmargin",
+        "helper": "Hvor langt under effektgrensen reguleringssnittet må være før et apparat slås på. {min}–{max} kW, standard {default} kW."
+      },
       "regulation_interval": {
         "label": "Reguleringsintervall",
         "helper": "Avgjørelse hvert {seconds}. sekund. Standard {default} ×."

@@ -9,6 +9,7 @@ def full_config_data() -> dict[str, Any]:
         "general": {
             "power_sensor": "sensor.han_power",
             "power_limit_kw": 9.5,
+            "turn_on_margin_kw": 0.2,
             "regulation_window_s": 30,
             "regulation_interval": 2,
             "wait_at_limit_min": 4,

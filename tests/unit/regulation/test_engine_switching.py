@@ -43,12 +43,25 @@ def test_appliances_are_turned_on_one_per_decision_in_priority_order() -> None:
     assert scenario.engine.appliances_on == {"a", "b", "c"}
 
 
-def test_nothing_is_turned_on_at_or_above_the_limit() -> None:
-    """The regulation average must be under the limit."""
+def test_nothing_is_turned_on_within_the_turn_on_margin() -> None:
+    """The regulation average must be under the limit minus the margin,
+    by default 0.1 kW."""
     scenario = Scenario(no_waiting("a"))
 
     assert scenario.decide(10.0) == []
-    assert scenario.decide(9.99) == on("a")
+    assert scenario.decide(9.9) == []
+    assert scenario.decide(9.89) == on("a")
+
+
+def test_average_just_below_the_limit_after_a_turn_on_turns_on_nothing() -> None:
+    """Found in the exploratory test: the window after a turn-on held a few
+    milliseconds of the consumption before it, 7.9993 kW of 8 kW, and the next
+    appliance was turned on only to be switched off again."""
+    scenario = Scenario(no_waiting("a", "b", "c", limit_kw=8.0))
+    assert scenario.decide_many(4.5, 2) == [on("a"), on("b")]
+
+    assert scenario.decide_many(7.9993, 3) == [[], [], []]
+    assert scenario.decide(8.0) == []
 
 
 def test_power_reserve_must_fit_under_the_limit() -> None:

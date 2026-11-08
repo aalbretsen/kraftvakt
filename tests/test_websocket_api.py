@@ -161,12 +161,18 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
         "max": 50,
         "step": 0.01,
     }
+    assert result["limits"]["general"]["turn_on_margin_kw"] == {
+        "min": 0.01,
+        "max": 1,
+        "step": 0.01,
+    }
     assert result["limits"]["appliances"]["power_reserve_kw"]["max"] is None
     assert result["limits"]["chargers"]["power_reserve_kw"]["max"] == 5
     assert result["defaults"] == {
         "general": {
             "power_sensor": None,
             "power_limit_kw": 10.0,
+            "turn_on_margin_kw": 0.1,
             "regulation_window_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_min": 5,

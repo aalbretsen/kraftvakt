@@ -136,6 +136,10 @@
         "label": "Power limit",
         "helper": "The highest allowed average consumption per hour. {min}–{max} kW, default {default} kW."
       },
+      "turn_on_margin_kw": {
+        "label": "Turn-on margin",
+        "helper": "How far below the power limit the regulation average must be before an appliance is turned on. {min}–{max} kW, default {default} kW."
+      },
       "regulation_interval": {
         "label": "Regulation interval",
         "helper": "A decision every {seconds} seconds. Default {default} ×."

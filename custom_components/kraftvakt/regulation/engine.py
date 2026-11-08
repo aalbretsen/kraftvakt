@@ -336,9 +336,17 @@ class RegulationEngine:
         return commands
 
     def _may_turn_on(self, slot: Slot, average_kw: float) -> bool:
-        """Return whether there is room to turn the slot on."""
-        limit_kw = self._config.general.power_limit_kw
-        if average_kw >= limit_kw:
+        """Return whether there is room to turn the slot on.
+
+        The average must be below the limit by more than the turn-on margin.
+        Settled with the owner: the window after a decision still holds some of
+        the consumption from before its commands, so an average just below the
+        limit made the regulation turn on an appliance only to turn one off at
+        the next decision.
+        """
+        general = self._config.general
+        limit_kw = general.power_limit_kw
+        if average_kw >= limit_kw - general.turn_on_margin_kw:
             return False
         reserve_kw = slot.power_reserve_kw
         return reserve_kw is None or average_kw + reserve_kw <= limit_kw

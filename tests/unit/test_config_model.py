@@ -14,11 +14,19 @@ from custom_components.kraftvakt.config_model import (
 )
 
 
+def test_stored_config_without_turn_on_margin_gets_the_default() -> None:
+    """Configurations saved before the setting existed."""
+    config = KraftvaktConfig.from_dict({"general": {"power_limit_kw": 8.0}})
+
+    assert config.general.turn_on_margin_kw == 0.1
+
+
 def test_defaults_follow_requirements() -> None:
     config = KraftvaktConfig()
 
     assert config.general.power_sensor is None
     assert config.general.power_limit_kw == 10.0
+    assert config.general.turn_on_margin_kw == 0.1
     assert config.general.regulation_window_s == 60
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_min == 5

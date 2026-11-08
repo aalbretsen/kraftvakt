@@ -44,6 +44,7 @@ class Range:
 
 
 POWER_LIMIT_KW = Range(1, 50, 0.01)
+TURN_ON_MARGIN_KW = Range(0.01, 1, 0.01)
 REGULATION_WINDOW_S = Range(10, 600, 1)
 REGULATION_INTERVAL = Range(1, 4, 1)
 WAIT_AT_LIMIT_MIN = Range(0, 10, 1)
@@ -57,6 +58,7 @@ CHARGING_CURRENT_A = Range(1, None, 1)
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "general": {
         "power_limit_kw": POWER_LIMIT_KW,
+        "turn_on_margin_kw": TURN_ON_MARGIN_KW,
         "regulation_window_s": REGULATION_WINDOW_S,
         "regulation_interval": REGULATION_INTERVAL,
         "wait_at_limit_min": WAIT_AT_LIMIT_MIN,
@@ -260,6 +262,7 @@ class GeneralConfig:
 
     power_sensor: str | None = None
     power_limit_kw: float = 10.0
+    turn_on_margin_kw: float = 0.1
     regulation_window_s: int = 60
     regulation_interval: int = 1
     wait_at_limit_min: int = 5
@@ -270,6 +273,7 @@ class GeneralConfig:
         return {
             "power_sensor": self.power_sensor,
             "power_limit_kw": self.power_limit_kw,
+            "turn_on_margin_kw": self.turn_on_margin_kw,
             "regulation_window_s": self.regulation_window_s,
             "regulation_interval": self.regulation_interval,
             "wait_at_limit_min": self.wait_at_limit_min,
@@ -569,6 +573,9 @@ class _Reader:
             power_sensor=self._text(values, "power_sensor", location),
             power_limit_kw=self._number(
                 values, "power_limit_kw", defaults.power_limit_kw, location
+            ),
+            turn_on_margin_kw=self._number(
+                values, "turn_on_margin_kw", defaults.turn_on_margin_kw, location
             ),
             regulation_window_s=self._integer(
                 values, "regulation_window_s", defaults.regulation_window_s, location

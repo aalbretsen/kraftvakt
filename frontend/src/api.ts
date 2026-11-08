@@ -28,6 +28,7 @@ export interface ActionConfig {
 export interface GeneralConfig {
   power_sensor: string | null;
   power_limit_kw: number;
+  turn_on_margin_kw: number;
   regulation_window_s: number;
   regulation_interval: number;
   wait_at_limit_min: number;

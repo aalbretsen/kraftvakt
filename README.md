@@ -65,6 +65,11 @@ effekt, typisk fra HAN-porten på strømmåleren.
   slås det neste apparatet i prioritetslisten på, ett om gangen og etter en
   ventetid. Ventetiden er kortere jo lavere reguleringssnittet er, og den øker
   når det samme apparatet slås av og på gang på gang.
+- **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
+  må være før et apparat slås på, standard 0,1 kW. Vinduet rett etter en
+  avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
+  eller på, og marginen hindrer at et apparat slås på bare for å slås av igjen
+  ved neste avgjørelse.
 - **Effektreserve:** valgfri ledig effekt som må finnes før et apparat slås på,
   for eksempel 4 kW for en bassengvarmer som trekker mye straks den slås på.
 - **Varianter:** Et apparat kan ha varianter med en annen plass i
@@ -90,8 +95,9 @@ tilkoblet.
 Panelet har en meny øverst med statussiden og tre konfigurasjonssider. Bare
 administratorer har tilgang.
 
-- **Generelt:** effektsensor, effektgrense, reguleringsvindu,
-  reguleringsintervall, ventetid ved effektgrensen og straffeterskel.
+- **Generelt:** effektsensor, effektgrense, innkoblingsmargin,
+  reguleringsvindu, reguleringsintervall, ventetid ved effektgrensen og
+  straffeterskel.
   Hjelpeteksten under hvert felt viser gyldig område og standardverdi.
 - **Apparater:** prioritetslisten, med det viktigste apparatet øverst. Dra i
   håndtaket for å endre rekkefølgen. **Legg til apparat** og blyanten åpner en

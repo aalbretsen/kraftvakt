@@ -53,8 +53,8 @@ def test_waiting_time_is_calculated_again_at_each_decision() -> None:
     """The waiting time follows the average at each decision."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(9.9) == []
-    assert scenario.decide(9.9) == []
+    assert scenario.decide(9.8) == []
+    assert scenario.decide(9.8) == []
     assert scenario.decide(2.0) == on("a")
 
 

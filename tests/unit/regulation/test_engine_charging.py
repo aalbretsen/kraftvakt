@@ -88,7 +88,7 @@ def test_only_the_first_fictive_appliance_needs_the_power_reserve() -> None:
 
     assert scenario.decide(6.01) == []
     assert scenario.decide(6.0) == activate("c")
-    assert scenario.decide(9.99) == current("c", 7)
+    assert scenario.decide(9.89) == current("c", 7)
 
 
 def test_current_decreases_one_ampere_per_fictive_appliance() -> None:

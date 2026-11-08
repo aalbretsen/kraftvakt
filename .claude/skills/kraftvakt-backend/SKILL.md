@@ -52,6 +52,7 @@ integrations.
   "general": {
     "power_sensor": "sensor.han_power",
     "power_limit_kw": 10.0,
+    "turn_on_margin_kw": 0.1,
     "regulation_window_s": 60,
     "regulation_interval": 1,
     "wait_at_limit_min": 5,

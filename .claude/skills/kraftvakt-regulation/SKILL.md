@@ -27,6 +27,7 @@ owner instead of deciding.
 | Capacity window / average consumption (snittforbruk) | Sliding time-weighted average over exactly one hour back, not configurable. Used only for the penalty. |
 | Decision (avgjørelse) | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
 | Free power | Power limit minus regulation average. |
+| Turn-on margin (innkoblingsmargin) | How far below the limit the regulation average must be before anything is turned on, 0.01–1 kW, default 0.1 kW. 0 is not allowed. |
 | Power reserve (effektreserve) | Optional free power an appliance needs before it may be turned on, ≥ 0 kW, no upper limit. |
 | Waiting time (ventetid) | Time that must pass before an appliance is turned on. |
 | Appliance (apparat) | An entity Kraftvakt turns on and off with configurable actions. |
@@ -130,9 +131,17 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   Several may be switched off at once only when consumption must drop at once
   or switching does not change consumption: start and stop, safe state,
   penalty, chargers not allowed to charge, bypassed chargers, variant switches.
-- Turn on only when the regulation average is under the limit, and average plus
-  power reserve is at most the limit. At exactly the limit nothing is turned on
-  or off.
+- Turn on only when the regulation average is under the limit minus the
+  turn-on margin, and average plus power reserve is at most the limit. Switch
+  off only when the average is above the limit. Between limit minus margin and
+  the limit, both included, nothing is turned on or off. Settled with the owner
+  after the exploratory test (finding F1): commands run just after a window
+  closes, and a real meter reports the change only at its next update, so the
+  window after a decision still holds the consumption from before its
+  commands. Without a margin an average a hair under the limit turned on the
+  next appliance, only for one to be switched off at the next decision. The
+  margin is below the limit only, so the regulation never accepts being above
+  it.
 - Fixed order: an appliance is never turned on before all above it are on.
   Skipped: entries that are not the current variant, chargers not allowed to
   charge, bypassed and waiting chargers.
