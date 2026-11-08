@@ -639,7 +639,6 @@ function e(e,t,i,a){var r,s=arguments.length,n=s<3?t:null===a?a=Object.getOwnPro
       display: block;
       width: 100%;
       height: 100%;
-      transform: scaleX(-1);
     }
     circle {
       fill: none;

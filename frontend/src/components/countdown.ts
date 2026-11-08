@@ -77,7 +77,7 @@ export class KraftvaktCountdownBar extends KraftvaktCountdown {
 const RING_RADIUS = 7;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
-/** A ring that empties clockwise from the top, like a timer. */
+/** A ring that empties counterclockwise towards the top. */
 @customElement("kraftvakt-countdown-ring")
 export class KraftvaktCountdownRing extends KraftvaktCountdown {
   protected render() {
@@ -112,7 +112,6 @@ export class KraftvaktCountdownRing extends KraftvaktCountdown {
       display: block;
       width: 100%;
       height: 100%;
-      transform: scaleX(-1);
     }
     circle {
       fill: none;

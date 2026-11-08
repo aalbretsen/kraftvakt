@@ -84,7 +84,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   (`regulation_window_s` × `regulation_interval`) as `kraftvakt-countdown-bar`,
   which empties towards the right (what is left sits at the right end). The
   waiting column has `kraftvakt-countdown-ring`, an 18 px ring that empties
-  clockwise from the top like a timer, from `waiting_since` to
+  counterclockwise towards the top, from `waiting_since` to
   `waiting_ends_at`, the decision that turns the slot on, so it never stops
   and waits.
 - The tiles are average consumption, regulation average, «Consumption now» and
