@@ -39,7 +39,7 @@ frontend/src/
   entities.ts          entity names, and Kraftvakt's own entities
   types.ts, format.ts
   pages/               status, general, appliances, charging, config-page (shared)
-  components/          countdown-bar, locked-banner, manual-control-warning, sortable-list,
+  components/          countdown, locked-banner, manual-control-warning, sortable-list,
                        item-dialog (shared), appliance-dialog, charger-dialog,
                        action-field, condition-field, save-bar, confirm-dialog
 ```
@@ -76,12 +76,15 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   the limit, next decision, safe state and penalty with what is left, appliances
   with variant and waiting, chargers with current, bypassed, waiting, excluded
   or outside the charging window.
-- Countdowns are bars, never ticking text: `kraftvakt-countdown-bar` empties
-  towards the right (what is left sits at the right end) from `start` to `end` with the Web Animations API, so it needs no clock,
-  flows smoothly and restarts only when `start` or `end` changes. The exact
-  time is a tooltip (clock time). «Next decision» sits at the right end of the
-  chips row and empties over one decision interval (`regulation_window_s` ×
-  `regulation_interval`). A waiting bar empties from `waiting_since` to
+- Countdowns are never ticking text. `components/countdown.ts` has a shared
+  base that animates from `start` to `end` with the Web Animations API, so it
+  needs no clock, flows smoothly and restarts only when `start` or `end`
+  changes. The exact time is a tooltip (clock time). «Next decision» sits at
+  the right end of the chips row and empties over one decision interval
+  (`regulation_window_s` × `regulation_interval`) as `kraftvakt-countdown-bar`,
+  which empties towards the right (what is left sits at the right end). The
+  waiting column has `kraftvakt-countdown-ring`, an 18 px ring that empties
+  clockwise from the top like a timer, from `waiting_since` to
   `waiting_ends_at`, the decision that turns the slot on, so it never stops
   and waits.
 - The tiles are average consumption, regulation average, «Consumption now» and

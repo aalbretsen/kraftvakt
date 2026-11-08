@@ -11,7 +11,7 @@ import {
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
-import "../components/countdown-bar";
+import "../components/countdown";
 import { measuredPowerKw } from "../entities";
 import { formatClockTime, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -278,19 +278,18 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** A bar that empties from when the waiting started until the decision that ends it. */
+  /** A ring that empties from when the waiting started until the decision that ends it. */
   private renderWaiting(item: ApplianceStatus | ChargerStatus) {
     if (!item.waiting_since || !item.waiting_ends_at) {
       return html`<span></span>`;
     }
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
-      <kraftvakt-countdown-bar
-        class="waiting"
+      <kraftvakt-countdown-ring
         title=${this.localize("status.waiting_ends_at", { time })}
         .start=${Date.parse(item.waiting_since)}
         .end=${Date.parse(item.waiting_ends_at)}
-      ></kraftvakt-countdown-bar>
+      ></kraftvakt-countdown-ring>
     `;
   }
 
@@ -561,7 +560,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(48px, 1fr) 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) 24px 112px;
       align-items: center;
       gap: 12px;
       min-height: 56px;
@@ -623,7 +622,7 @@ export class KraftvaktStatusPage extends LitElement {
       white-space: nowrap;
     }
     :host([narrow]) .row {
-      grid-template-columns: 20px minmax(0, 1fr) 48px auto;
+      grid-template-columns: 20px minmax(0, 1fr) 24px auto;
       gap: 8px;
       padding: 6px 12px;
     }
