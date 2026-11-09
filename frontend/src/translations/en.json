@@ -135,6 +135,11 @@
   "general": {
     "measurement": "Measurement",
     "regulation": "Regulation",
+    "wait_curve": "Waiting time curve",
+    "wait_curve_info": "How much of the waiting time at the power limit an appliance waits",
+    "utilization_percent": "Utilization %",
+    "waiting_percent": "Waiting time %",
+    "utilization": "Utilization",
     "penalty": "Penalty",
     "capacity_window_info": "The capacity window is fixed at one hour and cannot be changed.",
     "interval_option": "{count} × the regulation window",
@@ -166,6 +171,12 @@
       "penalty_threshold_w": {
         "label": "Penalty threshold",
         "helper": "How much the average consumption may exceed the power limit before a penalty starts. {min}–{max} W, default {default} W."
+      },
+      "wait_curve_steepness": {
+        "label": "Steepness"
+      },
+      "wait_curve_pivot": {
+        "label": "Pivot point"
       }
     }
   },

@@ -89,7 +89,7 @@ def test_restart_after_the_penalty_waits_again() -> None:
     start_penalty(scenario, average_w=11000)
     assert scenario.decide(5000, capacity=ABOVE_THRESHOLD) == off("a")
 
-    assert scenario.decide_many(5000, 4) == [[], [], [], on("a")]
+    assert scenario.decide_many(8000, 5) == [[], [], [], [], on("a")]
 
 
 def test_no_penalty_when_overconsumption_is_paid_back() -> None:

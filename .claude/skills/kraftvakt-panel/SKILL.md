@@ -37,6 +37,8 @@ frontend/src/
   draft.ts             ids, moving, completed priority list
   validation.ts        checks the draft against the limits, and what is missing
   entities.ts          entity names, and Kraftvakt's own entities
+  wait-curve.ts        the waiting time curve, the same as WaitingCurve in
+                       regulation/waiting.py (keep the two in step)
   types.ts, format.ts
   pages/               status, general, appliances, charging, config-page (shared)
   components/          countdown (ring and bar), locked-banner, manual-control-warning, sortable-list,
@@ -49,6 +51,14 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 
 ## Behaviour that was settled
 
+- «Ventetidskurve» is its own card on «Generelt», after «Regulering»: one line
+  of text, sliders for steepness and pivot point with no helper text, a table
+  «Utnyttelse %» / «Ventetid %» at 50, 60, 70, 75, 80, 85, 90, 93, 96 and 99
+  with one decimal (0 for zero, % only in the row labels), and a graph of the
+  waiting time against utilization 0–100 %. Both follow the draft while the
+  sliders move. On a narrow screen the table is left out. The pivot point is
+  not marked on the graph. Settled with the owner, who wants little text: the
+  user reads the curve and the result, not how it is computed.
 - The configuration pages share one draft in `kraftvakt-panel.ts`. «Save»
   saves everything, «Discard» goes back to the saved configuration. The panel
   checks the draft against the limits from `kraftvakt/capabilities` and works

@@ -63,8 +63,10 @@ effekt, typisk fra HAN-porten på strømmåleren.
   apparat skal slås på eller av. Er reguleringssnittet over effektgrensen,
   slås det lavest prioriterte apparatet som er på, av. Er det ledig effekt,
   slås det neste apparatet i prioritetslisten på, ett om gangen og etter en
-  ventetid. Ventetiden er kortere jo lavere reguleringssnittet er, og den øker
-  når det samme apparatet slås av og på gang på gang.
+  ventetid. Ventetiden følger ventetidskurven: under halvparten av
+  effektgrensen ventes det ikke, og nær effektgrensen ventes nesten hele
+  ventetiden ved effektgrensen. Den øker når det samme apparatet slås av og på
+  gang på gang.
 - **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
   må være før et apparat slås på, standard 100 W. Vinduet rett etter en
   avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
@@ -99,6 +101,10 @@ administratorer har tilgang.
   reguleringsvindu, reguleringsintervall, ventetid ved effektgrensen og
   straffeterskel.
   Hjelpeteksten under hvert felt viser gyldig område og standardverdi.
+  **Ventetidskurve** har to glidebrytere, bratthet og vendepunkt, og en tabell
+  og en kurve som viser hvor stor del av ventetiden et apparat venter ved ulik
+  utnyttelse av effektgrensen. De følger glidebryterne med en gang. På en smal
+  skjerm vises ikke tabellen.
 - **Apparater:** prioritetslisten, med det viktigste apparatet øverst. Dra i
   håndtaket for å endre rekkefølgen. **Legg til apparat** og blyanten åpner en
   dialog med entitet, handlinger for å slå på og av, valgfri effektreserve og

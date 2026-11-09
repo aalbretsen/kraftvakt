@@ -32,6 +32,8 @@ export interface GeneralConfig {
   regulation_window_s: number;
   regulation_interval: number;
   wait_at_limit_s: number;
+  wait_curve_steepness: number;
+  wait_curve_pivot: number;
   penalty_threshold_w: number;
 }
 

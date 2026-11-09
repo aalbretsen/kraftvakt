@@ -166,6 +166,11 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
         "max": 1000,
         "step": 1,
     }
+    assert result["limits"]["general"]["wait_curve_steepness"] == {
+        "min": 1.5,
+        "max": 9,
+        "step": 0.5,
+    }
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
     assert result["limits"]["chargers"]["power_reserve_w"]["max"] == 5000
     assert result["defaults"] == {
@@ -176,6 +181,8 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "regulation_window_s": 10,
             "regulation_interval": 1,
             "wait_at_limit_s": 300,
+            "wait_curve_steepness": 6.0,
+            "wait_curve_pivot": 80,
             "penalty_threshold_w": 1000,
         },
         "appliances": {"power_reserve_w": None},
@@ -628,7 +635,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     config["priority"].insert(
         0, {"type": "appliance", "appliance_id": "b", "variant_id": "v1"}
     )
-    set_power(hass, "1000")
+    set_power(hass, "7000")
     await setup_entry(hass)
     client = await hass_ws_client(hass)
     status = await subscribe_status(client)
@@ -640,10 +647,11 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     assert [item["id"] for item in status["appliances"]] == ["b", "a"]
     assert status["appliances"][0]["variant"] == "Morgen"
     assert status["appliances"][0]["waiting_since"] == local(started + WINDOW)
-    assert status["appliances"][0]["waiting_until"] == local(
-        started + WINDOW + timedelta(seconds=30)
+    waiting_until = dt_util.parse_datetime(status["appliances"][0]["waiting_until"])
+    assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(
+        75.4758, abs=1e-3
     )
-    assert status["appliances"][0]["waiting_ends_at"] == local(started + 2 * WINDOW)
+    assert status["appliances"][0]["waiting_ends_at"] == local(started + 3 * WINDOW)
     assert status["appliances"][1]["waiting_until"] is None
 
 

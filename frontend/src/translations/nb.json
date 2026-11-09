@@ -135,6 +135,11 @@
   "general": {
     "measurement": "Måling",
     "regulation": "Regulering",
+    "wait_curve": "Ventetidskurve",
+    "wait_curve_info": "Hvor stor del av ventetiden ved effektgrensen et apparat venter",
+    "utilization_percent": "Utnyttelse %",
+    "waiting_percent": "Ventetid %",
+    "utilization": "Utnyttelse",
     "penalty": "Straff",
     "capacity_window_info": "Kapasitetsvinduet er fast én time og kan ikke endres.",
     "interval_option": "{count} × reguleringsvinduet",
@@ -166,6 +171,12 @@
       "penalty_threshold_w": {
         "label": "Straffeterskel",
         "helper": "Hvor mye snittforbruket kan overstige effektgrensen før straff starter. {min}–{max} W, standard {default} W."
+      },
+      "wait_curve_steepness": {
+        "label": "Bratthet"
+      },
+      "wait_curve_pivot": {
+        "label": "Vendepunkt"
       }
     }
   },

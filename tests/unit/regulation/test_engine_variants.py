@@ -101,9 +101,14 @@ def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
     scenario = Scenario(morning_heater_config())
     scenario.turn_on("b", "heater")
 
-    assert scenario.decide(5000, true=("morning",)) == off("heater")
+    assert scenario.decide(8000, true=("morning",)) == off("heater")
     assert scenario.engine.appliances_on == {"b"}
-    assert scenario.decide_many(5000, 3, true=("morning",)) == [[], [], on("heater")]
+    assert scenario.decide_many(8000, 4, true=("morning",)) == [
+        [],
+        [],
+        [],
+        on("heater"),
+    ]
 
 
 def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
@@ -134,10 +139,10 @@ def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
     """The waiting time for the appliance starts again."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b")
-    assert scenario.decide_many(5000, 2) == [[], []]
+    assert scenario.decide_many(8000, 2) == [[], []]
 
-    assert scenario.decide(5000, true=("low",)) == []
-    assert scenario.decide_many(5000, 3, true=("low",)) == [[], [], on("heater")]
+    assert scenario.decide(8000, true=("low",)) == []
+    assert scenario.decide_many(8000, 4, true=("low",)) == [[], [], [], on("heater")]
 
 
 def test_switch_resets_the_increasing_waiting_time() -> None:

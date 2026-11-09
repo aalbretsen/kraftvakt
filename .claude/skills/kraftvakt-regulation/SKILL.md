@@ -30,6 +30,7 @@ owner instead of deciding.
 | Turn-on margin (innkoblingsmargin) | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
 | Power reserve (effektreserve) | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
 | Waiting time (ventetid) | Time that must pass before an appliance is turned on. |
+| Waiting time curve (ventetidskurve) | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness (bratthet) and pivot point (vendepunkt). |
 | Appliance (apparat) | An entity Kraftvakt turns on and off with configurable actions. |
 | Priority list (prioritetsliste) | Sorted list of appliances, their variants and the «EV charging» entry. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list. |
@@ -162,9 +163,21 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   still hold. Waiting time 0 turns it on at the same decision. If the
   conditions fail, the waiting is cancelled and starts again later. Only the
   slot that is next can wait.
-- Linear: waiting time = waiting time at the limit × min(1, average / limit),
-  recalculated at each decision while it runs. Waiting time at the limit is
-  0–600 s, default 300 s. Settled with the owner, replacing 0–10 min with
+- Curve: waiting time = waiting time at the limit × share(average / limit),
+  recalculated at each decision while it runs. Settled with the owner,
+  replacing the linear time, which made appliances wait too long at low
+  utilization. With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1),
+  the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or
+  below half the limit, slow at first, and 1 at the limit and above. n is the
+  steepness, 1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default
+  80, is the utilization in percent where the share is 80 %: with
+  t = (pivot − 50) / 50, K = t^n · 0.2 / (0.8 − t^n), computed once per start.
+  A pivot the curve cannot reach at the steepness is capped silently to
+  t = 0.8^(1/n) × 0.999 (n 1.5 and pivot 95 give 80 % at about 93 %); the
+  setting keeps what the user chose. Pivot 50 gives K = 0: no waiting up to
+  half the limit and the whole waiting time above it. The test values of the
+  owner's specification are in `tests/unit/regulation/test_waiting.py`.
+  Waiting time at the limit is 0–600 s, default 300 s. Settled with the owner, replacing 0–10 min with
   default 5 min. Saved configurations with the old `wait_at_limit_min` are not
   migrated; the value falls back to the default.
 - Persistent cycling: when the same slot is turned on again without any other
@@ -174,7 +187,7 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   900 s. Fictive appliances: step 300 s, cap 1800 s. Settled with the owner:
   the steps and caps keep their values when the waiting time at the limit
   moved to seconds. The first
-  time again uses the linear time. Any command for another slot, also forced
+  time again uses the curve. Any command for another slot, also forced
   ones, resets the counter. Not configurable.
 - Kept as is after the exploratory test, to revisit if it shows
   up in real use: two slots that alternate (A on, B on, B off, A off, A on …)

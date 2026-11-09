@@ -8,40 +8,73 @@ from custom_components.kraftvakt.regulation.waiting import (
     APPLIANCE_CYCLING,
     CyclingCounter,
     CyclingSteps,
-    linear_waiting_time,
+    WaitingCurve,
     waiting_time,
 )
 
 FIVE_MINUTES = timedelta(minutes=5)
+DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
+UTILIZATIONS = (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
 
 
 @pytest.mark.parametrize(
-    ("average_w", "expected"),
+    ("steepness", "pivot", "shape", "shares"),
     [
-        (0, timedelta(0)),
-        (5000, timedelta(minutes=2.5)),
-        (7500, timedelta(minutes=3.75)),
-        (10_000, FIVE_MINUTES),
-        (14_000, FIVE_MINUTES),
+        (
+            6,
+            80,
+            0.012386,
+            (0.52, 25.16, 56.47, 80, 91.6, 96.67, 98.23, 99.21, 99.84, 100),
+        ),
+        (
+            3,
+            70,
+            0.017391,
+            (32.05, 80, 89.31, 94.16, 96.83, 98.4, 99.03, 99.52, 99.89, 100),
+        ),
+        (
+            1.5,
+            95,
+            133.166681,
+            (9.01, 25.44, 35.53, 46.66, 58.75, 71.71, 79.87, 88.32, 97.04, 100),
+        ),
+        (9, 50, 0, (100,) * 10),
     ],
 )
-def test_linear_waiting_time(average_w: float, expected: timedelta) -> None:
-    """Proportional to the average, never longer than at the limit."""
-    assert linear_waiting_time(average_w, 10_000, FIVE_MINUTES) == expected
+def test_waiting_curve_follows_the_specification(
+    steepness: float, pivot: int, shape: float, shares: tuple[float, ...]
+) -> None:
+    """The test values of the specification, the pivot 95 capped silently."""
+    curve = WaitingCurve.from_settings(steepness, pivot)
+
+    assert curve.shape == pytest.approx(shape, abs=1e-6)
+    assert [round(100 * curve.share(u / 100), 2) for u in UTILIZATIONS] == list(shares)
 
 
-def test_waiting_time_is_linear_until_persistent_cycling() -> None:
-    """The first time a slot is turned on again, the waiting time is linear."""
+@pytest.mark.parametrize("utilization", [0, 0.25, 0.5])
+def test_no_waiting_up_to_half_the_limit(utilization: float) -> None:
+    for curve in (DEFAULT_CURVE, WaitingCurve.from_settings(9, 50)):
+        assert curve.share(utilization) == 0
+
+
+def test_whole_waiting_time_above_the_limit() -> None:
+    assert DEFAULT_CURVE.share(1.4) == pytest.approx(1)
+
+
+def test_waiting_time_follows_the_curve_until_persistent_cycling() -> None:
+    """The first time a slot is turned on again, the curve still applies."""
     for reon_number in (0, 1):
         assert waiting_time(
-            5000, 10_000, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING
-        ) == timedelta(minutes=2.5)
+            8000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, APPLIANCE_CYCLING
+        ) == pytest.approx(FIVE_MINUTES * 0.8)
 
 
 def test_waiting_time_on_persistent_cycling_for_appliances() -> None:
     """5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
     minutes = [
-        waiting_time(1000, 10_000, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING)
+        waiting_time(
+            1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, APPLIANCE_CYCLING
+        )
         / timedelta(minutes=1)
         for reon_number in range(2, 10)
     ]
@@ -53,7 +86,7 @@ def test_cycling_steps_are_parameters() -> None:
     """Chargers use other steps and another cap."""
     steps = CyclingSteps(step=timedelta(minutes=5), cap=timedelta(minutes=30))
     minutes = [
-        waiting_time(1000, 10_000, FIVE_MINUTES, reon_number, steps)
+        waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, steps)
         / timedelta(minutes=1)
         for reon_number in range(2, 9)
     ]

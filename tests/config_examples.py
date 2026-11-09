@@ -13,6 +13,8 @@ def full_config_data() -> dict[str, Any]:
             "regulation_window_s": 30,
             "regulation_interval": 2,
             "wait_at_limit_s": 240,
+            "wait_curve_steepness": 4.5,
+            "wait_curve_pivot": 85,
             "penalty_threshold_w": 500,
         },
         "appliances": [

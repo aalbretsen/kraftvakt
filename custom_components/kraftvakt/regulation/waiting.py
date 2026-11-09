@@ -8,6 +8,9 @@ from datetime import timedelta
 from typing import Final
 
 PERSISTENT_CYCLING_FROM: Final = 2
+WAITING_STARTS_AT_UTILIZATION: Final = 0.5
+SHARE_AT_PIVOT: Final = 0.8
+PIVOT_CAP_FACTOR: Final = 0.999
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,15 +29,39 @@ FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
 )
 
 
-def linear_waiting_time(
-    average_w: float, limit_w: float, wait_at_limit: timedelta
-) -> timedelta:
-    """Return the waiting time in proportion to the average.
+@dataclass(frozen=True, slots=True)
+class WaitingCurve:
+    """The share of the waiting time at the limit, by utilization of the limit.
 
-    An average of 0 gives no waiting time, and an average at or above the
-    limit gives the waiting time at the limit.
+    A normalized Hill function, settled with the owner: no waiting up to half
+    the limit, then a slow start through 80 % at the pivot, and the whole
+    waiting time at the limit.
     """
-    return wait_at_limit * min(1.0, max(average_w, 0.0) / limit_w)
+
+    steepness: float
+    shape: float
+
+    @classmethod
+    def from_settings(cls, steepness: float, pivot_percent: int) -> WaitingCurve:
+        """Return the curve that passes through 80 % at the pivot."""
+        pivot = _above_start(pivot_percent / 100)
+        # A pivot the curve cannot reach at this steepness is capped silently.
+        pivot = min(pivot, SHARE_AT_PIVOT ** (1 / steepness) * PIVOT_CAP_FACTOR)
+        pivot_power = pivot**steepness
+        shape = pivot_power * (1 - SHARE_AT_PIVOT) / (SHARE_AT_PIVOT - pivot_power)
+        return cls(steepness, shape)
+
+    def share(self, utilization: float) -> float:
+        """Return the share, 0 to 1, for an average as a share of the limit."""
+        power = _above_start(utilization) ** self.steepness
+        if power == 0:
+            return 0.0
+        return power * (1 + self.shape) / (power + self.shape)
+
+
+def _above_start(utilization: float) -> float:
+    span = 1 - WAITING_STARTS_AT_UTILIZATION
+    return min(1.0, max(0.0, (utilization - WAITING_STARTS_AT_UTILIZATION) / span))
 
 
 def cycling_waiting_time(
@@ -53,6 +80,7 @@ def waiting_time(
     average_w: float,
     limit_w: float,
     wait_at_limit: timedelta,
+    curve: WaitingCurve,
     reon_number: int,
     steps: CyclingSteps,
 ) -> timedelta:
@@ -63,7 +91,7 @@ def waiting_time(
     """
     if reon_number >= PERSISTENT_CYCLING_FROM:
         return cycling_waiting_time(reon_number, wait_at_limit, steps)
-    return linear_waiting_time(average_w, limit_w, wait_at_limit)
+    return wait_at_limit * curve.share(average_w / limit_w)
 
 
 class CyclingCounter:

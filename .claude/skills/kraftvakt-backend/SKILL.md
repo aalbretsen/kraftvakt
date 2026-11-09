@@ -63,6 +63,8 @@ integrations.
     "regulation_window_s": 10,
     "regulation_interval": 1,
     "wait_at_limit_s": 300,
+    "wait_curve_steepness": 6.0,
+    "wait_curve_pivot": 80,
     "penalty_threshold_w": 1000
   },
   "appliances": [

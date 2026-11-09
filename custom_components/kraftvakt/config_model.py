@@ -33,6 +33,11 @@ class Range:
         """Return whether the value lies within the range."""
         return value >= self.minimum and (self.maximum is None or value <= self.maximum)
 
+    def matches_step(self, value: float) -> bool:
+        """Return whether the value is a whole multiple of the step."""
+        steps = value / self.step
+        return abs(steps - round(steps)) < 1e-6
+
     def to_dict(self) -> dict[str, float | None]:
         """Return the range as JSON-friendly data for the panel."""
         return {"min": self.minimum, "max": self.maximum, "step": self.step}
@@ -43,6 +48,8 @@ TURN_ON_MARGIN_W = Range(1, 1000, 1)
 REGULATION_WINDOW_S = Range(10, 600, 1)
 REGULATION_INTERVAL = Range(1, 4, 1)
 WAIT_AT_LIMIT_S = Range(0, 600, 1)
+WAIT_CURVE_STEEPNESS = Range(1.5, 9, 0.5)
+WAIT_CURVE_PIVOT = Range(50, 99, 1)
 PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
 APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
 CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
@@ -57,6 +64,8 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "regulation_window_s": REGULATION_WINDOW_S,
         "regulation_interval": REGULATION_INTERVAL,
         "wait_at_limit_s": WAIT_AT_LIMIT_S,
+        "wait_curve_steepness": WAIT_CURVE_STEEPNESS,
+        "wait_curve_pivot": WAIT_CURVE_PIVOT,
         "penalty_threshold_w": PENALTY_THRESHOLD_W,
     },
     "appliances": {"power_reserve_w": APPLIANCE_POWER_RESERVE_W},
@@ -261,6 +270,8 @@ class GeneralConfig:
     regulation_window_s: int = 10
     regulation_interval: int = 1
     wait_at_limit_s: int = 300
+    wait_curve_steepness: float = 6.0
+    wait_curve_pivot: int = 80
     penalty_threshold_w: int = 1000
 
     def to_dict(self) -> dict[str, Any]:
@@ -272,6 +283,8 @@ class GeneralConfig:
             "regulation_window_s": self.regulation_window_s,
             "regulation_interval": self.regulation_interval,
             "wait_at_limit_s": self.wait_at_limit_s,
+            "wait_curve_steepness": self.wait_curve_steepness,
+            "wait_curve_pivot": self.wait_curve_pivot,
             "penalty_threshold_w": self.penalty_threshold_w,
         }
 
@@ -589,6 +602,15 @@ class _Reader:
             wait_at_limit_s=self._integer(
                 values, "wait_at_limit_s", defaults.wait_at_limit_s, location
             ),
+            wait_curve_steepness=self._number(
+                values,
+                "wait_curve_steepness",
+                defaults.wait_curve_steepness,
+                location,
+            ),
+            wait_curve_pivot=self._integer(
+                values, "wait_curve_pivot", defaults.wait_curve_pivot, location
+            ),
             penalty_threshold_w=self._integer(
                 values, "penalty_threshold_w", defaults.penalty_threshold_w, location
             ),
@@ -894,6 +916,8 @@ def _range_issues(
 ) -> list[Issue]:
     if not value_range.contains(value):
         return [location.issue("out_of_range", field_name)]
+    if not value_range.matches_step(value):
+        return [location.issue("invalid_resolution", field_name)]
     return []
 
 

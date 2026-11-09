@@ -2,37 +2,41 @@
 
 from datetime import timedelta
 
-from custom_components.kraftvakt.regulation.model import ApplianceSlotKey, Waiting
+import pytest
+
+from custom_components.kraftvakt.regulation.model import ApplianceSlotKey
 
 from .configs import appliance, make_config
 from .scenario import Scenario, off, on
 
 
 def test_appliance_is_turned_on_after_the_waiting_time() -> None:
-    """5 kW gives 2.5 minutes, so on at the decision 3 minutes later."""
+    """At the pivot, 80 % of 5 minutes, so on at the decision 4 minutes later."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(5000) == []
+    assert scenario.decide(8000) == []
     started = scenario.now
-    assert scenario.engine.waiting == Waiting(
-        ApplianceSlotKey("a"), started, started + timedelta(minutes=2.5)
-    )
-    assert scenario.decide_many(5000, 3) == [[], [], on("a")]
-    assert scenario.now - started == timedelta(minutes=3)
+    waiting = scenario.engine.waiting
+    assert waiting is not None
+    assert (waiting.key, waiting.started_at) == (ApplianceSlotKey("a"), started)
+    assert waiting.until - started == pytest.approx(timedelta(minutes=4))
+    assert scenario.decide_many(8000, 4) == [[], [], [], on("a")]
+    assert scenario.now - started == timedelta(minutes=4)
     assert scenario.engine.waiting is None
 
 
 def test_end_of_the_waiting_time_follows_the_average() -> None:
     """The end is calculated again at each decision while it runs."""
     scenario = Scenario(make_config("a"))
-    scenario.decide(5000)
+    scenario.decide(9000)
     started = scenario.now
 
     scenario.decide(8000)
 
-    assert scenario.engine.waiting == Waiting(
-        ApplianceSlotKey("a"), started, started + timedelta(minutes=4)
-    )
+    waiting = scenario.engine.waiting
+    assert waiting is not None
+    assert waiting.started_at == started
+    assert waiting.until - started == pytest.approx(timedelta(minutes=4))
 
 
 def test_no_waiting_time_turns_on_at_the_same_decision() -> None:
@@ -59,7 +63,7 @@ def test_waiting_time_is_calculated_again_at_each_decision() -> None:
 
 
 def test_waiting_time_close_to_the_limit() -> None:
-    """9.5 kW of 10 kW gives 4.75 minutes, so on 5 minutes later."""
+    """9.5 kW of 10 kW gives about 4.95 minutes, so on 5 minutes later."""
     scenario = Scenario(make_config("a"))
 
     assert scenario.decide_many(9500, 6) == [[], [], [], [], [], on("a")]
@@ -69,17 +73,17 @@ def test_waiting_time_is_cancelled_when_conditions_fail() -> None:
     """A new waiting time starts when the appliance can be turned on again."""
     scenario = Scenario(make_config(appliance("a", reserve_w=2000)))
 
-    assert scenario.decide_many(5000, 2) == [[], []]
+    assert scenario.decide_many(7000, 2) == [[], []]
     assert scenario.decide(8500) == []
     assert scenario.engine.waiting is None
-    assert scenario.decide_many(5000, 3) == [[], [], []]
-    assert scenario.decide(5000) == on("a")
+    assert scenario.decide_many(7000, 2) == [[], []]
+    assert scenario.decide(7000) == on("a")
 
 
 def test_waiting_time_is_cancelled_at_the_limit() -> None:
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(5000) == []
+    assert scenario.decide(8000) == []
     assert scenario.decide(10000) == []
     assert scenario.engine.waiting is None
 
@@ -89,7 +93,7 @@ def test_switching_off_cancels_the_waiting_time() -> None:
     scenario = Scenario(make_config("a", "b"))
     scenario.turn_on("a")
 
-    assert scenario.decide(5000) == []
+    assert scenario.decide(8000) == []
     assert scenario.engine.waiting is not None
     assert scenario.decide(10500) == off("a")
     assert scenario.engine.waiting is None
