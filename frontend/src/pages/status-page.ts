@@ -28,7 +28,7 @@ import {
 } from "../api";
 import "../components/countdown";
 import { measuredPowerW } from "../entities";
-import { formatClockTime, formatEnergy, formatNumber, formatPower } from "../format";
+import { formatClockTime, formatEnergy, formatNumber, formatPercent, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -498,14 +498,20 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** The line where the power runs out, with the free power while there is any. */
+  /** The line where the power runs out, with the free power and its share of the limit while there is any. */
   private renderCutOff(status: StatusSnapshot) {
+    const language = this.hass.language;
     const average = status.regulation_average_w;
     const free = average === null ? 0 : status.power_limit_w - average;
     return html`
       <div class="cut-off" title=${this.localize("status.power_runs_out")}>
         <ha-svg-icon .path=${mdiArrowDown}></ha-svg-icon>
-        ${free > 0 ? this.localize("status.free_power", { power: formatPower(this.hass.language, free) }) : nothing}
+        ${free > 0
+          ? this.localize("status.free_power", {
+              power: formatPower(language, free),
+              share: formatPercent(language, free / status.power_limit_w),
+            })
+          : nothing}
       </div>
     `;
   }

@@ -166,7 +166,8 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
     that is on: an appliance, or «EV charging» while one of its chargers is
     activated and not bypassed. It is hidden when nothing or everything is on,
     so it always sits between two entries. It shows the free power, the power
-    limit minus the regulation average, while that is above 0, and explains
+    limit minus the regulation average, and its share of the power limit as a
+    whole percentage («5.00 kW (50%) free»), while that is above 0, and explains
     itself in a tooltip. By the fixed order nothing below the line is on.
 - Colours come from Home Assistant's theme variables, set once on `:host`:
   `--kraftvakt-grid-color` (the Energy dashboard's `--energy-grid-consumption-

@@ -66,7 +66,7 @@
     "chip_window": "{start}–{end}",
     "chip_override": "Overstyrt",
     "chip_first_decision": "Første avgjørelse",
-    "free_power": "{power} kW ledig",
+    "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt."
   },
   "missing": {

@@ -163,7 +163,8 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   forklaringen,
 - en stiplet linje under det siste i listen som er på. Der er effekten brukt
   opp, og det som står under, venter på ledig effekt. Linjen viser hvor mye
-  effekt som er ledig, effektgrensen minus reguleringssnittet. Den vises ikke
+  effekt som er ledig, effektgrensen minus reguleringssnittet, og hvor stor
+  del av effektgrensen det er, for eksempel «5,00 kW (50 %) ledig». Den vises ikke
   når alt er på eller alt er av. «Elbillading» regnes som på når en elbillader
   er aktivert og ikke forbigått,
 - en stolpe som tømmes jevnt frem til avgjørelsen der apparatet eller

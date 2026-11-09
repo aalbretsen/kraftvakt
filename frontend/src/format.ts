@@ -11,6 +11,11 @@ export function formatPower(language: string, watt: number | null): string {
   return watt === null ? "–" : formatNumber(language, watt / 1000, 2);
 }
 
+/** Format a share between 0 and 1 as a whole percentage, like 50 %, in the user's language. */
+export function formatPercent(language: string, share: number): string {
+  return new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 0 }).format(share);
+}
+
 /** Format an energy given in Wh as kWh with two decimals. */
 export function formatEnergy(language: string, wattHours: number): string {
   return formatNumber(language, wattHours / 1000, 2);
