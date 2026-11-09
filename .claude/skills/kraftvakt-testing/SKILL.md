@@ -110,7 +110,7 @@ compared with `on`, `off`, `activate`, `deactivate`, `current` and
 5. Save a Kraftvakt configuration against those entities with
    `kraftvakt/config/save` over the WebSocket (or `hass.callWS` from the panel)
    and start it with `kraftvakt/regulation/set_running`. A short regulation
-   window (10 s) and waiting time (0–1 min) make it fast.
+   window (10 s) and waiting time (0–60 s) make it fast.
 6. Drive the scenario with the simulator: change `number.han_background_power`,
    connect the car and let it be fully charged, and record the states every
    10 s (or read `/api/history/period/...`). Open

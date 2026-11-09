@@ -47,7 +47,7 @@ POWER_LIMIT_KW = Range(1, 50, 0.01)
 TURN_ON_MARGIN_KW = Range(0.01, 1, 0.01)
 REGULATION_WINDOW_S = Range(10, 600, 1)
 REGULATION_INTERVAL = Range(1, 4, 1)
-WAIT_AT_LIMIT_MIN = Range(0, 10, 1)
+WAIT_AT_LIMIT_S = Range(0, 600, 1)
 PENALTY_THRESHOLD_KW = Range(0, 10, 0.01)
 APPLIANCE_POWER_RESERVE_KW = Range(0, None, 0.01)
 CHARGER_POWER_RESERVE_KW = Range(0, 5, 0.01)
@@ -61,7 +61,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "turn_on_margin_kw": TURN_ON_MARGIN_KW,
         "regulation_window_s": REGULATION_WINDOW_S,
         "regulation_interval": REGULATION_INTERVAL,
-        "wait_at_limit_min": WAIT_AT_LIMIT_MIN,
+        "wait_at_limit_s": WAIT_AT_LIMIT_S,
         "penalty_threshold_kw": PENALTY_THRESHOLD_KW,
     },
     "appliances": {"power_reserve_kw": APPLIANCE_POWER_RESERVE_KW},
@@ -265,7 +265,7 @@ class GeneralConfig:
     turn_on_margin_kw: float = 0.1
     regulation_window_s: int = 60
     regulation_interval: int = 1
-    wait_at_limit_min: int = 5
+    wait_at_limit_s: int = 60
     penalty_threshold_kw: float = 1.0
 
     def to_dict(self) -> dict[str, Any]:
@@ -276,7 +276,7 @@ class GeneralConfig:
             "turn_on_margin_kw": self.turn_on_margin_kw,
             "regulation_window_s": self.regulation_window_s,
             "regulation_interval": self.regulation_interval,
-            "wait_at_limit_min": self.wait_at_limit_min,
+            "wait_at_limit_s": self.wait_at_limit_s,
             "penalty_threshold_kw": self.penalty_threshold_kw,
         }
 
@@ -591,8 +591,8 @@ class _Reader:
             regulation_interval=self._integer(
                 values, "regulation_interval", defaults.regulation_interval, location
             ),
-            wait_at_limit_min=self._integer(
-                values, "wait_at_limit_min", defaults.wait_at_limit_min, location
+            wait_at_limit_s=self._integer(
+                values, "wait_at_limit_s", defaults.wait_at_limit_s, location
             ),
             penalty_threshold_kw=self._number(
                 values, "penalty_threshold_kw", defaults.penalty_threshold_kw, location

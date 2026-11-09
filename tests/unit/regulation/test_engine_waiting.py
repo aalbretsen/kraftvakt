@@ -37,7 +37,7 @@ def test_end_of_the_waiting_time_follows_the_average() -> None:
 
 def test_no_waiting_time_turns_on_at_the_same_decision() -> None:
     """A waiting time of 0 turns the appliance on at once."""
-    scenario = Scenario(make_config("a", "b", wait_at_limit_min=0))
+    scenario = Scenario(make_config("a", "b", wait_at_limit_s=0))
 
     assert scenario.decide(9.0) == on("a")
 

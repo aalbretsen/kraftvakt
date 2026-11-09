@@ -159,9 +159,9 @@
         "label": "Regulation interval",
         "helper": "A decision every {seconds} seconds. Default {default} ×."
       },
-      "wait_at_limit_min": {
+      "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance waits before it is turned on when the regulation average is at the power limit. Shorter when the average is lower. {min}–{max} min, default {default} min."
+        "helper": "How long an appliance waits before it is turned on when the regulation average is at the power limit. Shorter when the average is lower. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_kw": {
         "label": "Penalty threshold",

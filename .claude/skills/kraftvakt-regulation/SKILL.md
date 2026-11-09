@@ -44,7 +44,7 @@ owner instead of deciding.
 | Charging window (ladetidsrom) | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
 
 Resolution of settings: kW with two decimals, the regulation window in whole
-seconds, the waiting time in whole minutes, currents in whole amperes.
+seconds, the waiting time at the limit in whole seconds, currents in whole amperes.
 
 ## Ground rules
 
@@ -160,12 +160,16 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   slot that is next can wait.
 - Linear: waiting time = waiting time at the limit × min(1, average / limit),
   recalculated at each decision while it runs. Waiting time at the limit is
-  0–10 min, default 5 min.
+  0–600 s, default 60 s. Settled with the owner, replacing 0–10 min with
+  default 5 min. Saved configurations with the old `wait_at_limit_min` are not
+  migrated; the value falls back to the default.
 - Persistent cycling: when the same slot is turned on again without any other
   slot being switched in between, the counter grows. From the second time on
   the waiting time is fixed, independent of the average:
-  min(cap, waiting at limit + step × (n − 2)). Appliances: step 2 min, cap
-  15 min (5, 7, 9 … 15). Fictive appliances: step 5 min, cap 30 min. The first
+  min(cap, waiting at limit + step × (n − 2)). Appliances: step 120 s, cap
+  900 s. Fictive appliances: step 300 s, cap 1800 s. Settled with the owner:
+  the steps and caps keep their values when the waiting time at the limit
+  moved to seconds. The first
   time again uses the linear time. Any command for another slot, also forced
   ones, resets the counter. Not configurable.
 - Kept as is after the exploratory test, to revisit if it shows

@@ -33,7 +33,7 @@ def kraftvakt_config() -> dict[str, Any]:
             "power_limit_kw": 10.0,
             "regulation_window_s": 60,
             "regulation_interval": 1,
-            "wait_at_limit_min": 0,
+            "wait_at_limit_s": 0,
             "penalty_threshold_kw": 1.0,
         },
         "appliances": [

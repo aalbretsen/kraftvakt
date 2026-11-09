@@ -386,7 +386,7 @@ class RegulationEngine:
         required = waiting_time(
             average_kw,
             general.power_limit_kw,
-            timedelta(minutes=general.wait_at_limit_min),
+            timedelta(seconds=general.wait_at_limit_s),
             self._state.cycling.upcoming_reon_number(slot.key),
             slot.cycling,
         )

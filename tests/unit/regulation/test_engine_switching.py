@@ -8,7 +8,7 @@ from .scenario import START, Scenario, off, on
 
 
 def no_waiting(*appliances, **settings):
-    return make_config(*appliances, wait_at_limit_min=0, **settings)
+    return make_config(*appliances, wait_at_limit_s=0, **settings)
 
 
 def test_engine_is_stopped_until_started() -> None:

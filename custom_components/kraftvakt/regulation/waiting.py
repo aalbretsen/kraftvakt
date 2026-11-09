@@ -19,10 +19,10 @@ class CyclingSteps:
 
 
 APPLIANCE_CYCLING: Final = CyclingSteps(
-    step=timedelta(minutes=2), cap=timedelta(minutes=15)
+    step=timedelta(seconds=120), cap=timedelta(seconds=900)
 )
 FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
-    step=timedelta(minutes=5), cap=timedelta(minutes=30)
+    step=timedelta(seconds=300), cap=timedelta(seconds=1800)
 )
 
 

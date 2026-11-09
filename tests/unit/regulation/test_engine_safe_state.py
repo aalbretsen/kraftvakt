@@ -7,7 +7,7 @@ ABOVE_THRESHOLD = 11.5
 
 
 def no_waiting(*appliances):
-    return make_config(*appliances, wait_at_limit_min=0)
+    return make_config(*appliances, wait_at_limit_s=0)
 
 
 def test_lost_power_sensor_turns_everything_off_at_once() -> None:

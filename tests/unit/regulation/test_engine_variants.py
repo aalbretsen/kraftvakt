@@ -16,8 +16,8 @@ def morning_heater_config(**settings):
 
 def test_current_variant_decides_the_place() -> None:
     """Only the entry of the current variant takes part."""
-    in_the_morning = Scenario(morning_heater_config(wait_at_limit_min=0))
-    otherwise = Scenario(morning_heater_config(wait_at_limit_min=0))
+    in_the_morning = Scenario(morning_heater_config(wait_at_limit_s=0))
+    otherwise = Scenario(morning_heater_config(wait_at_limit_s=0))
 
     assert in_the_morning.decide_many(1.0, 2, true=("morning",)) == [
         on("heater"),
@@ -54,7 +54,7 @@ def test_restart_forgets_the_current_variant() -> None:
 def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
     """Found in the exploratory test: the heater switched variant and went
     off, and b was switched off too because the average was above the limit."""
-    scenario = Scenario(morning_heater_config(wait_at_limit_min=0))
+    scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
     scenario.turn_on("b", "heater")
 
     assert scenario.decide(10.5, true=("morning",)) == off("heater")
@@ -70,7 +70,7 @@ def test_switch_above_the_lowest_on_makes_room() -> None:
             "c",
             appliance("d", variants=("up",)),
             priority=("a", "b", "d:up", "c", "d"),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
     scenario.turn_on("a", "b", "c")
@@ -113,7 +113,7 @@ def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
             "b",
             appliance("d", variants=("down",)),
             priority=("a", "d", "b", "d:down"),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
     scenario.turn_on("a")
@@ -160,7 +160,7 @@ def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
             appliance("d", variants=("down",)),
             appliance("e", variants=("up",)),
             priority=("a", "e:up", "b", "d", "e", "d:down"),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
     scenario.turn_on("a", "b", "d")
@@ -178,7 +178,7 @@ def test_several_appliances_switching_up_switch_off_one_each() -> None:
             appliance("d", variants=("up",)),
             appliance("e", variants=("up_too",)),
             priority=("d:up", "e:up_too", "a", "b", "c", "d", "e"),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
     scenario.turn_on("a", "b", "c")

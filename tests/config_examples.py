@@ -12,7 +12,7 @@ def full_config_data() -> dict[str, Any]:
             "turn_on_margin_kw": 0.2,
             "regulation_window_s": 30,
             "regulation_interval": 2,
-            "wait_at_limit_min": 4,
+            "wait_at_limit_s": 240,
             "penalty_threshold_kw": 0.5,
         },
         "appliances": [

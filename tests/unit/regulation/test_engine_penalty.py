@@ -16,7 +16,7 @@ KWH_PER_KW_WINDOW = 1 / 60
 
 
 def no_waiting(*appliances, **settings):
-    return make_config(*appliances, wait_at_limit_min=0, **settings)
+    return make_config(*appliances, wait_at_limit_s=0, **settings)
 
 
 def start_penalty(scenario: Scenario, average_kw: float = 16.0) -> list:

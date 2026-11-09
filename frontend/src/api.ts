@@ -31,7 +31,7 @@ export interface GeneralConfig {
   turn_on_margin_kw: number;
   regulation_window_s: number;
   regulation_interval: number;
-  wait_at_limit_min: number;
+  wait_at_limit_s: number;
   penalty_threshold_kw: number;
 }
 

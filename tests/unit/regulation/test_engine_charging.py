@@ -26,7 +26,7 @@ def one_charger(**settings) -> Scenario:
     """Return a scenario with charger c from 6 A to 8 A and no waiting time."""
     settings.setdefault("max_a", 8)
     return Scenario(
-        make_config(chargers=(charger("c", **settings),), wait_at_limit_min=0)
+        make_config(chargers=(charger("c", **settings),), wait_at_limit_s=0)
     )
 
 
@@ -36,7 +36,7 @@ def two_chargers(*, one_at_a_time: bool, max_a: int = 7) -> Scenario:
         make_config(
             chargers=(charger("a", max_a=max_a), charger("b", max_a=max_a)),
             one_at_a_time=one_at_a_time,
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
 
@@ -110,7 +110,7 @@ def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
 def test_fictive_appliances_cycle_with_their_own_steps() -> None:
     """5, 10, 15, 20, 25 and then 30 minutes."""
     scenario = Scenario(
-        make_config(chargers=(charger("c", max_a=6),), wait_at_limit_min=5)
+        make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300)
     )
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 6)
@@ -153,7 +153,7 @@ def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
     before it was bypassed, and held back the appliances below «EV charging»."""
     scenario = Scenario(
         make_config(
-            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_min=0
+            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0
         )
     )
 
@@ -185,7 +185,7 @@ def test_car_disconnected_limits_the_charger_at_once() -> None:
 
 def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
     """Switching it off would not lower the consumption."""
-    scenario = Scenario(make_config("x", chargers=(charger("c"),), wait_at_limit_min=0))
+    scenario = Scenario(make_config("x", chargers=(charger("c"),), wait_at_limit_s=0))
     scenario.turn_on("x")
     scenario.set_charger("c", **NO_CAR)
     assert scenario.decide(0.0) == []
@@ -217,7 +217,7 @@ def full_cars_after_both_were_tried() -> Scenario:
             "x",
             chargers=(charger("a", max_a=7), charger("b", max_a=7)),
             priority=("ev", "x"),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         )
     )
     assert scenario.decide_many(0.0, 5) == [
@@ -375,7 +375,7 @@ def test_charger_charges_only_inside_its_charging_window() -> None:
     scenario = Scenario(
         make_config(
             chargers=(charger("c", max_a=8, window="22:00-22:03"),),
-            wait_at_limit_min=0,
+            wait_at_limit_s=0,
         ),
         start=datetime(2026, 11, 7, 21, 58, tzinfo=UTC),
     )

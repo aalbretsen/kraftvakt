@@ -159,9 +159,9 @@
         "label": "Reguleringsintervall",
         "helper": "Avgjørelse hvert {seconds}. sekund. Standard {default} ×."
       },
-      "wait_at_limit_min": {
+      "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",
-        "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er ved effektgrensen. Kortere når snittet er lavere. {min}–{max} min, standard {default} min."
+        "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er ved effektgrensen. Kortere når snittet er lavere. {min}–{max} s, standard {default} s."
       },
       "penalty_threshold_kw": {
         "label": "Straffeterskel",

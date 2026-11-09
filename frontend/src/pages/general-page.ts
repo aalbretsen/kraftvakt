@@ -19,7 +19,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   power_limit_kw: "kW",
   turn_on_margin_kw: "kW",
   regulation_window_s: "s",
-  wait_at_limit_min: "min",
+  wait_at_limit_s: "s",
   penalty_threshold_kw: "kW",
 };
 
@@ -36,7 +36,7 @@ export class KraftvaktGeneralPage extends ConfigPage {
         this.numberField("power_limit_kw"),
         this.numberField("turn_on_margin_kw"),
         this.intervalField(),
-        this.numberField("wait_at_limit_min"),
+        this.numberField("wait_at_limit_s"),
       ])}
       ${this.renderCard(
         "general.penalty",

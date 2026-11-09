@@ -29,7 +29,7 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.turn_on_margin_kw == 0.1
     assert config.general.regulation_window_s == 60
     assert config.general.regulation_interval == 1
-    assert config.general.wait_at_limit_min == 5
+    assert config.general.wait_at_limit_s == 60
     assert config.general.penalty_threshold_kw == 1.0
     assert config.appliances == ()
     assert config.priority == ()

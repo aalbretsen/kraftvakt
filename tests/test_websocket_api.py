@@ -42,7 +42,7 @@ def config_data() -> dict[str, Any]:
             "power_limit_kw": 10.0,
             "regulation_window_s": 60,
             "regulation_interval": 1,
-            "wait_at_limit_min": 0,
+            "wait_at_limit_s": 0,
             "penalty_threshold_kw": 1.0,
         },
         "appliances": [appliance("a"), appliance("b")],
@@ -175,7 +175,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "turn_on_margin_kw": 0.1,
             "regulation_window_s": 60,
             "regulation_interval": 1,
-            "wait_at_limit_min": 5,
+            "wait_at_limit_s": 60,
             "penalty_threshold_kw": 1.0,
         },
         "appliances": {"power_reserve_kw": None},
@@ -617,7 +617,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
 ) -> None:
     """The current variant, its place and the waiting."""
     started = dt_util.utcnow()
-    config["general"]["wait_at_limit_min"] = 5
+    config["general"]["wait_at_limit_s"] = 300
     config["appliances"][1]["variants"] = [
         {
             "id": "v1",

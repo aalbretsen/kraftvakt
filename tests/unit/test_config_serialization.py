@@ -285,9 +285,9 @@ def test_wrong_types_are_rejected(data: dict[str, Any], expected: Issue) -> None
 
 
 def test_all_type_errors_are_reported_together() -> None:
-    issues = _issues({"general": {"power_limit_kw": "x", "wait_at_limit_min": "y"}})
+    issues = _issues({"general": {"power_limit_kw": "x", "wait_at_limit_s": "y"}})
 
-    assert {issue.field for issue in issues} == {"power_limit_kw", "wait_at_limit_min"}
+    assert {issue.field for issue in issues} == {"power_limit_kw", "wait_at_limit_s"}
 
 
 def test_charger_switches_round_trip() -> None:
