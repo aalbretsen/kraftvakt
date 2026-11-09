@@ -175,8 +175,10 @@ class ChargingState:
     `activated_at` tells when the first one was turned on. The rest is the
     result of the last evaluation: the chargers that are excluded from the
     regulation (None before the first evaluation), allowed to charge, bypassed, may get
-    more fictive appliances turned on, and are waiting. `rests` holds the
-    chargers that did not charge and when they may be tried again.
+    more fictive appliances turned on, are on trial, and are waiting. A charger
+    on trial may charge but does not charge actively, so it may only get its
+    first fictive appliance. `rests` holds the chargers that did not charge and
+    when they may be tried again.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -186,6 +188,7 @@ class ChargingState:
     allowed: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
+    on_trial: set[str] = field(default_factory=set)
     waiting: set[str] = field(default_factory=set)
     rests: dict[str, Rest] = field(default_factory=dict)
 
@@ -239,6 +242,7 @@ class ChargingState:
         newly_bypassed = self._update_bypassed(chargers, readings, now, window)
         self._update_priority(chargers, newly_bypassed)
         self._select(readings, one_at_a_time)
+        self._update_on_trial(readings)
         return newly_bypassed
 
     def status(self, chargers: Sequence[Charger]) -> dict[str, ChargerStatus]:
@@ -342,6 +346,20 @@ class ChargingState:
                 for charger_id in self.priority
                 if charger_id in self.bypassed
             ]
+
+    def _update_on_trial(self, readings: Mapping[str, ChargerReading]) -> None:
+        """Find the chargers that may charge but do not charge actively.
+
+        Settled with the owner after the exploratory test: a charger that was
+        tried without a car that charges got more current during the two
+        windows before it was bypassed, and held back the appliances below
+        «EV charging».
+        """
+        self.on_trial = {
+            charger_id
+            for charger_id in self.may_charge
+            if not actively_charging(readings.get(charger_id, ChargerReading()))
+        }
 
     def _select(
         self, readings: Mapping[str, ChargerReading], one_at_a_time: bool

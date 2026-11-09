@@ -297,6 +297,7 @@ class RegulationEngine:
                 [self._chargers[charger_id] for charger_id in charging.priority],
                 charging.fictive_on,
                 charging.may_charge,
+                charging.on_trial,
                 charging.bypassed,
             ),
         )

@@ -140,17 +140,24 @@ def test_several_chargers_take_turns() -> None:
 
 
 def test_charger_that_does_not_draw_power_is_bypassed() -> None:
-    """Limited to the minimum current, not deactivated."""
+    """Kept at the minimum current while it is tried, and not deactivated."""
     scenario = one_charger()
 
-    assert scenario.decide_many(0.0, 5) == [
-        activate("c"),
-        current("c", 7),
-        current("c", 6),
-        [],
-        [],
-    ]
+    assert scenario.decide_many(0.0, 5) == [activate("c"), [], [], [], []]
     assert scenario.engine.chargers["c"].bypassed
+
+
+def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
+    """Found in the retest of the exploratory test: the charger got more current
+    before it was bypassed, and held back the appliances below «EV charging»."""
+    scenario = Scenario(
+        make_config(
+            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_min=0
+        )
+    )
+
+    assert scenario.decide_many(0.0, 3) == [activate("c"), on("x"), []]
+    assert scenario.engine.chargers["c"].current_a == 6
 
 
 def test_bypassed_charger_starts_again_when_the_car_draws_power() -> None:
@@ -196,8 +203,8 @@ def test_bypassed_charger_does_not_stand_in_the_way_one_at_a_time() -> None:
 
     assert scenario.decide_many(0.0, 3) == [
         activate("a"),
-        current("a", 7),
-        current("a", 6) + deactivate("a") + activate("b"),
+        [],
+        deactivate("a") + activate("b"),
     ]
     assert scenario.engine.charging_priority == ["b", "a"]
 
@@ -214,10 +221,10 @@ def full_cars_after_both_were_tried() -> Scenario:
     )
     assert scenario.decide_many(0.0, 5) == [
         activate("a"),
-        current("a", 7),
-        current("a", 6) + deactivate("a") + activate("b"),
-        current("b", 7),
-        current("b", 6) + on("x"),
+        on("x"),
+        deactivate("a") + activate("b"),
+        [],
+        [],
     ]
     return scenario
 
@@ -324,7 +331,7 @@ def test_first_charger_in_the_current_priority_is_chosen() -> None:
     scenario = two_chargers(one_at_a_time=True)
 
     assert scenario.decide(0.0) == activate("a")
-    assert scenario.decide(0.0) == current("a", 7)
+    assert scenario.engine.chargers["b"].current_a is None
 
 
 def test_charger_without_charging_power_keeps_the_other_waiting() -> None:

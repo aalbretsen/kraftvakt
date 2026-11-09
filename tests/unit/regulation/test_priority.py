@@ -86,7 +86,9 @@ def test_fictive_appliances_are_interleaved_between_chargers() -> None:
     """One per ampere, first of each charger, then second."""
     chargers = [charger("a", 6, 8), charger("b", 10, 11), charger("c", 6, 6)]
 
-    slots = fictive_slots(chargers, {}, may_charge={"a", "b", "c"}, bypassed=())
+    slots = fictive_slots(
+        chargers, {}, may_charge={"a", "b", "c"}, on_trial=(), bypassed=()
+    )
 
     assert [(slot.key.charger_id, slot.key.index) for slot in slots] == [
         ("a", 0),
@@ -100,7 +102,7 @@ def test_fictive_appliances_are_interleaved_between_chargers() -> None:
 
 def test_only_the_first_fictive_appliance_has_the_power_reserve() -> None:
     """Fictive appliances cycle with 5 and 30 minutes."""
-    slots = fictive_slots([charger("a", 6, 8, reserve=3.5)], {"a": 2}, {"a"}, ())
+    slots = fictive_slots([charger("a", 6, 8, reserve=3.5)], {"a": 2}, {"a"}, (), ())
 
     assert slots == [
         Slot(ChargerSlotKey("a", 0), True, 3.5, FICTIVE_APPLIANCE_CYCLING),
@@ -116,6 +118,7 @@ def test_fictive_appliances_of_chargers_that_may_not_charge_or_are_bypassed() ->
         [charger("a", 6, 6), charger("b", 6, 6)],
         {"a": 1},
         may_charge={"b"},
+        on_trial=(),
         bypassed={"a"},
     )
 
@@ -123,3 +126,11 @@ def test_fictive_appliances_of_chargers_that_may_not_charge_or_are_bypassed() ->
         (False, False),
         (True, True),
     ]
+
+
+def test_charger_on_trial_can_only_get_its_first_fictive_appliance() -> None:
+    slots = fictive_slots(
+        [charger("a", 6, 8)], {"a": 1}, may_charge={"a"}, on_trial={"a"}, bypassed=()
+    )
+
+    assert [slot.can_turn_on for slot in slots] == [True, False, False]

@@ -261,6 +261,14 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   first. The set-current action always gets a current between min and max.
 - Actively charging: charging power > 100 W (not configurable), or an invalid
   charging power, also when deactivated.
+- On trial (settled with the owner after the retest of the exploratory test,
+  observation N2): a charger that may charge but does not charge actively gets
+  only its first fictive appliance, so it stays at the minimum current until
+  it charges actively. Meanwhile the slots after it may be turned on. Before,
+  a charger tried without a car that charged got more current during the two
+  windows before it was bypassed, and held back the appliances below
+  «EV charging». A car that starts slowly gets its second ampere a decision
+  later.
 - Bypassed: «car connected» is set and false, or not actively charging while
   the first fictive appliance has been on for at least two windows. Evaluated at
   each decision, ends as soon as neither holds. A bypassed charger keeps its

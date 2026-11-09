@@ -222,6 +222,8 @@ aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
 
 - Ladeeffekten leses ved hver avgjørelse. Over 100 W regnes elbilladeren som
   aktivt ladende. Er sensoren utilgjengelig, regnes den også som ladende.
+- En elbillader får mer enn minste ladestrøm først når den lader aktivt. Mens
+  den prøves, kan apparatene under «Elbillading» slås på.
 - En elbillader som ikke trekker strøm, fordi bilen ikke er tilkoblet eller
   ikke lader to reguleringsvinduer etter at den ble aktivert, blir forbigått.
   Den begrenses til minste ladestrøm, beholdes aktivert og står ikke i veien

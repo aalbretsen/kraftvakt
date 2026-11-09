@@ -65,6 +65,7 @@ def fictive_slots(
     chargers: Sequence[Charger],
     fictive_on: Mapping[str, int],
     may_charge: Collection[str],
+    on_trial: Collection[str],
     bypassed: Collection[str],
 ) -> list[Slot]:
     """Return the fictive appliances of the chargers, interleaved.
@@ -72,8 +73,9 @@ def fictive_slots(
     `chargers` are in the current charging priority. Each charger gets its
     first fictive appliance in that order, then its second, and so on. Only the
     first one has the power reserve of the charger. Only chargers in
-    `may_charge` can get more turned on, and the fictive appliances of bypassed
-    chargers are not switched off above the limit.
+    `may_charge` can get more turned on, chargers `on_trial` only their first,
+    and the fictive appliances of bypassed chargers are not switched off above
+    the limit.
     """
     rounds = max(map(fictive_appliance_count, chargers), default=0)
     return [
@@ -82,7 +84,8 @@ def fictive_slots(
             is_on=index < fictive_on.get(charger.id, 0),
             power_reserve_kw=charger.power_reserve_kw if index == 0 else None,
             cycling=FICTIVE_APPLIANCE_CYCLING,
-            can_turn_on=charger.id in may_charge,
+            can_turn_on=charger.id in may_charge
+            and (index == 0 or charger.id not in on_trial),
             can_turn_off=charger.id not in bypassed,
         )
         for index in range(rounds)
