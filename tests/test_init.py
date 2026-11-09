@@ -77,7 +77,7 @@ async def test_unreadable_configuration_gives_a_clear_error(
     stored = {
         "version": STORAGE_VERSION,
         "key": STORAGE_KEY,
-        "data": {"general": {"power_limit_kw": "ti"}},
+        "data": {"general": {"power_limit_w": "ti"}},
     }
     hass_storage[STORAGE_KEY] = stored
     entry = MockConfigEntry(domain=DOMAIN)

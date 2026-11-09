@@ -33,42 +33,37 @@ class Range:
         """Return whether the value lies within the range."""
         return value >= self.minimum and (self.maximum is None or value <= self.maximum)
 
-    def matches_step(self, value: float) -> bool:
-        """Return whether the value is a whole multiple of the step."""
-        steps = value / self.step
-        return abs(steps - round(steps)) < 1e-6
-
     def to_dict(self) -> dict[str, float | None]:
         """Return the range as JSON-friendly data for the panel."""
         return {"min": self.minimum, "max": self.maximum, "step": self.step}
 
 
-POWER_LIMIT_KW = Range(1, 50, 0.01)
-TURN_ON_MARGIN_KW = Range(0.01, 1, 0.01)
+POWER_LIMIT_W = Range(1000, 50_000, 1)
+TURN_ON_MARGIN_W = Range(1, 1000, 1)
 REGULATION_WINDOW_S = Range(10, 600, 1)
 REGULATION_INTERVAL = Range(1, 4, 1)
 WAIT_AT_LIMIT_S = Range(0, 600, 1)
-PENALTY_THRESHOLD_KW = Range(0, 10, 0.01)
-APPLIANCE_POWER_RESERVE_KW = Range(0, None, 0.01)
-CHARGER_POWER_RESERVE_KW = Range(0, 5, 0.01)
+PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
+APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
+CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
 CHARGING_CURRENT_A = Range(1, None, 1)
 
 # The ranges of the settings, by section and field, used both to validate the
 # configuration and to tell the panel the limits.
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "general": {
-        "power_limit_kw": POWER_LIMIT_KW,
-        "turn_on_margin_kw": TURN_ON_MARGIN_KW,
+        "power_limit_w": POWER_LIMIT_W,
+        "turn_on_margin_w": TURN_ON_MARGIN_W,
         "regulation_window_s": REGULATION_WINDOW_S,
         "regulation_interval": REGULATION_INTERVAL,
         "wait_at_limit_s": WAIT_AT_LIMIT_S,
-        "penalty_threshold_kw": PENALTY_THRESHOLD_KW,
+        "penalty_threshold_w": PENALTY_THRESHOLD_W,
     },
-    "appliances": {"power_reserve_kw": APPLIANCE_POWER_RESERVE_KW},
+    "appliances": {"power_reserve_w": APPLIANCE_POWER_RESERVE_W},
     "chargers": {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
-        "power_reserve_kw": CHARGER_POWER_RESERVE_KW,
+        "power_reserve_w": CHARGER_POWER_RESERVE_W,
     },
 }
 
@@ -148,7 +143,7 @@ class Appliance:
     entity_id: str | None = None
     turn_on: ActionConfig | None = None
     turn_off: ActionConfig | None = None
-    power_reserve_kw: float | None = None
+    power_reserve_w: int | None = None
     variants: tuple[Variant, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
@@ -158,7 +153,7 @@ class Appliance:
             "entity_id": self.entity_id,
             "turn_on": _optional_dict(self.turn_on),
             "turn_off": _optional_dict(self.turn_off),
-            "power_reserve_kw": self.power_reserve_kw,
+            "power_reserve_w": self.power_reserve_w,
             "variants": [variant.to_dict() for variant in self.variants],
         }
 
@@ -218,7 +213,7 @@ class Charger:
     min_current_a: int = 6
     max_current_a: int = 16
     charge_power_sensor: str | None = None
-    power_reserve_kw: float = 4.0
+    power_reserve_w: int = 4000
     car_connected: Condition | None = None
     charging_window: ChargingWindow | None = None
 
@@ -233,7 +228,7 @@ class Charger:
             "min_current_a": self.min_current_a,
             "max_current_a": self.max_current_a,
             "charge_power_sensor": self.charge_power_sensor,
-            "power_reserve_kw": self.power_reserve_kw,
+            "power_reserve_w": self.power_reserve_w,
             "car_connected": _optional_dict(self.car_connected),
             "charging_window": _optional_dict(self.charging_window),
         }
@@ -261,23 +256,23 @@ class GeneralConfig:
     """General parameters."""
 
     power_sensor: str | None = None
-    power_limit_kw: float = 10.0
-    turn_on_margin_kw: float = 0.1
+    power_limit_w: int = 10_000
+    turn_on_margin_w: int = 100
     regulation_window_s: int = 10
     regulation_interval: int = 1
     wait_at_limit_s: int = 300
-    penalty_threshold_kw: float = 1.0
+    penalty_threshold_w: int = 1000
 
     def to_dict(self) -> dict[str, Any]:
         """Return the general parameters as JSON-friendly data."""
         return {
             "power_sensor": self.power_sensor,
-            "power_limit_kw": self.power_limit_kw,
-            "turn_on_margin_kw": self.turn_on_margin_kw,
+            "power_limit_w": self.power_limit_w,
+            "turn_on_margin_w": self.turn_on_margin_w,
             "regulation_window_s": self.regulation_window_s,
             "regulation_interval": self.regulation_interval,
             "wait_at_limit_s": self.wait_at_limit_s,
-            "penalty_threshold_kw": self.penalty_threshold_kw,
+            "penalty_threshold_w": self.penalty_threshold_w,
         }
 
 
@@ -579,11 +574,11 @@ class _Reader:
         defaults = GeneralConfig()
         return GeneralConfig(
             power_sensor=self._text(values, "power_sensor", location),
-            power_limit_kw=self._number(
-                values, "power_limit_kw", defaults.power_limit_kw, location
+            power_limit_w=self._integer(
+                values, "power_limit_w", defaults.power_limit_w, location
             ),
-            turn_on_margin_kw=self._number(
-                values, "turn_on_margin_kw", defaults.turn_on_margin_kw, location
+            turn_on_margin_w=self._integer(
+                values, "turn_on_margin_w", defaults.turn_on_margin_w, location
             ),
             regulation_window_s=self._integer(
                 values, "regulation_window_s", defaults.regulation_window_s, location
@@ -594,8 +589,8 @@ class _Reader:
             wait_at_limit_s=self._integer(
                 values, "wait_at_limit_s", defaults.wait_at_limit_s, location
             ),
-            penalty_threshold_kw=self._number(
-                values, "penalty_threshold_kw", defaults.penalty_threshold_kw, location
+            penalty_threshold_w=self._integer(
+                values, "penalty_threshold_w", defaults.penalty_threshold_w, location
             ),
         )
 
@@ -608,7 +603,7 @@ class _Reader:
             entity_id=self._text(values, "entity_id", location),
             turn_on=self._action(values, "turn_on", location),
             turn_off=self._action(values, "turn_off", location),
-            power_reserve_kw=self._number(values, "power_reserve_kw", None, location),
+            power_reserve_w=self._integer(values, "power_reserve_w", None, location),
             variants=tuple(
                 self._variant(item, appliance_id)
                 for item in self._list(values.get("variants"), location, "variants")
@@ -673,8 +668,8 @@ class _Reader:
                 values, "max_current_a", defaults.max_current_a, location
             ),
             charge_power_sensor=self._text(values, "charge_power_sensor", location),
-            power_reserve_kw=self._number(
-                values, "power_reserve_kw", defaults.power_reserve_kw, location
+            power_reserve_w=self._integer(
+                values, "power_reserve_w", defaults.power_reserve_w, location
             ),
             car_connected=self._condition(values, "car_connected", location),
             charging_window=self._charging_window(values, location),
@@ -777,9 +772,9 @@ class _Reader:
             return default
         return float(value)
 
-    def _integer(
-        self, values: Mapping[str, Any], key: str, default: int, location: _Location
-    ) -> int:
+    def _integer[T: int | None](
+        self, values: Mapping[str, Any], key: str, default: T, location: _Location
+    ) -> int | T:
         value = self._number(values, key, None, location)
         if value is None:
             return default
@@ -899,8 +894,6 @@ def _range_issues(
 ) -> list[Issue]:
     if not value_range.contains(value):
         return [location.issue("out_of_range", field_name)]
-    if not value_range.matches_step(value):
-        return [location.issue("invalid_resolution", field_name)]
     return []
 
 

@@ -27,8 +27,8 @@ import {
   type StatusSnapshot,
 } from "../api";
 import "../components/countdown";
-import { measuredPowerKw } from "../entities";
-import { formatClockTime, formatNumber, formatPower } from "../format";
+import { measuredPowerW } from "../entities";
+import { formatClockTime, formatEnergy, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -182,8 +182,8 @@ export class KraftvaktStatusPage extends LitElement {
   /** What the status page shows in addition while the regulation runs. */
   private renderRunning(status: StatusSnapshot) {
     const language = this.hass.language;
-    const overLimit = (value: number | null) => value !== null && value > status.power_limit_kw;
-    const powerNow = measuredPowerKw(this.hass, this.config?.config.general.power_sensor ?? "");
+    const overLimit = (value: number | null) => value !== null && value > status.power_limit_w;
+    const powerNow = measuredPowerW(this.hass, this.config?.config.general.power_sensor ?? "");
     return html`
       ${status.safe_state ? this.renderSafeState(powerNow !== null) : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <div class="stats">
@@ -191,17 +191,17 @@ export class KraftvaktStatusPage extends LitElement {
         ${this.renderStat(
           "regulation-average",
           "status.regulation_average",
-          formatPower(language, status.regulation_average_kw),
+          formatPower(language, status.regulation_average_w),
           this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
         ${this.renderStat(
           "capacity-average",
           "status.capacity_average",
-          formatPower(language, status.capacity_average_kw),
+          formatPower(language, status.capacity_average_w),
           this.localize("status.average_over_hour"),
-          overLimit(status.capacity_average_kw),
+          overLimit(status.capacity_average_w),
         )}
-        ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_kw))}
+        ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_w))}
       </div>
       ${this.renderMeter(status, powerNow)}
     `;
@@ -235,7 +235,7 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   private renderPenalty(status: StatusSnapshot) {
-    const energy = formatNumber(this.hass.language, Math.max(0, status.penalty.overconsumption_kwh), 2);
+    const energy = formatEnergy(this.hass.language, Math.max(0, status.penalty.overconsumption_wh));
     const recovery = status.penalty.recovery_started ? "status.recovery_started" : "status.recovery_not_started";
     return html`
       <ha-alert alert-type="warning" .title=${this.localize("status.penalty_title")}>
@@ -261,9 +261,13 @@ export class KraftvaktStatusPage extends LitElement {
    * power limit, and a scale in whole kW with a value at every second tick
    * (every third on a narrow screen).
    */
-  private renderMeter(status: StatusSnapshot, powerNow: number | null) {
-    const limit = status.power_limit_kw;
-    const values = [powerNow, status.capacity_average_kw, status.regulation_average_kw];
+  private renderMeter(status: StatusSnapshot, powerNowW: number | null) {
+    const kilowatt = (watt: number | null) => (watt === null ? null : watt / 1000);
+    const limit = status.power_limit_w / 1000;
+    const powerNow = kilowatt(powerNowW);
+    const capacityAverage = kilowatt(status.capacity_average_w);
+    const regulationAverage = kilowatt(status.regulation_average_w);
+    const values = [powerNow, capacityAverage, regulationAverage];
     const { step, end } = meterScale(Math.max(limit * 1.2, ...values.map((value) => value ?? 0)));
     const percent = (value: number) => `${(100 * Math.min(value, end)) / end}%`;
     const language = this.hass.language;
@@ -276,14 +280,14 @@ export class KraftvaktStatusPage extends LitElement {
         : html`<span
             class="marker ${kind}"
             style="left: ${percent(value)}"
-            title="${this.localize(label)} ${formatPower(language, value)} kW"
+            title="${this.localize(label)} ${formatNumber(language, value, 2)} kW"
           ></span>`;
     return html`
       <div class="meter">
         <div class="markers">
           ${marker("power-limit", "status.power_limit", limit)}
-          ${marker("capacity-average", "status.capacity_average", status.capacity_average_kw)}
-          ${marker("regulation-average", "status.regulation_average", status.regulation_average_kw)}
+          ${marker("capacity-average", "status.capacity_average", capacityAverage)}
+          ${marker("regulation-average", "status.regulation_average", regulationAverage)}
         </div>
         <div class="bar">
           ${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}
@@ -496,8 +500,8 @@ export class KraftvaktStatusPage extends LitElement {
 
   /** The line where the power runs out, with the free power while there is any. */
   private renderCutOff(status: StatusSnapshot) {
-    const average = status.regulation_average_kw;
-    const free = average === null ? 0 : status.power_limit_kw - average;
+    const average = status.regulation_average_w;
+    const free = average === null ? 0 : status.power_limit_w - average;
     return html`
       <div class="cut-off" title=${this.localize("status.power_runs_out")}>
         <ha-svg-icon .path=${mdiArrowDown}></ha-svg-icon>

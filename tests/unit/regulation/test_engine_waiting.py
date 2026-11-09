@@ -12,12 +12,12 @@ def test_appliance_is_turned_on_after_the_waiting_time() -> None:
     """5 kW gives 2.5 minutes, so on at the decision 3 minutes later."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(5.0) == []
+    assert scenario.decide(5000) == []
     started = scenario.now
     assert scenario.engine.waiting == Waiting(
         ApplianceSlotKey("a"), started, started + timedelta(minutes=2.5)
     )
-    assert scenario.decide_many(5.0, 3) == [[], [], on("a")]
+    assert scenario.decide_many(5000, 3) == [[], [], on("a")]
     assert scenario.now - started == timedelta(minutes=3)
     assert scenario.engine.waiting is None
 
@@ -25,10 +25,10 @@ def test_appliance_is_turned_on_after_the_waiting_time() -> None:
 def test_end_of_the_waiting_time_follows_the_average() -> None:
     """The end is calculated again at each decision while it runs."""
     scenario = Scenario(make_config("a"))
-    scenario.decide(5.0)
+    scenario.decide(5000)
     started = scenario.now
 
-    scenario.decide(8.0)
+    scenario.decide(8000)
 
     assert scenario.engine.waiting == Waiting(
         ApplianceSlotKey("a"), started, started + timedelta(minutes=4)
@@ -39,48 +39,48 @@ def test_no_waiting_time_turns_on_at_the_same_decision() -> None:
     """A waiting time of 0 turns the appliance on at once."""
     scenario = Scenario(make_config("a", "b", wait_at_limit_s=0))
 
-    assert scenario.decide(9.0) == on("a")
+    assert scenario.decide(9000) == on("a")
 
 
 def test_zero_average_gives_no_waiting_time() -> None:
     """An average of 0 gives no waiting time."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(0.0) == on("a")
+    assert scenario.decide(0) == on("a")
 
 
 def test_waiting_time_is_calculated_again_at_each_decision() -> None:
     """The waiting time follows the average at each decision."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(9.8) == []
-    assert scenario.decide(9.8) == []
-    assert scenario.decide(2.0) == on("a")
+    assert scenario.decide(9800) == []
+    assert scenario.decide(9800) == []
+    assert scenario.decide(2000) == on("a")
 
 
 def test_waiting_time_close_to_the_limit() -> None:
     """9.5 kW of 10 kW gives 4.75 minutes, so on 5 minutes later."""
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide_many(9.5, 6) == [[], [], [], [], [], on("a")]
+    assert scenario.decide_many(9500, 6) == [[], [], [], [], [], on("a")]
 
 
 def test_waiting_time_is_cancelled_when_conditions_fail() -> None:
     """A new waiting time starts when the appliance can be turned on again."""
-    scenario = Scenario(make_config(appliance("a", reserve=2.0)))
+    scenario = Scenario(make_config(appliance("a", reserve_w=2000)))
 
-    assert scenario.decide_many(5.0, 2) == [[], []]
-    assert scenario.decide(8.5) == []
+    assert scenario.decide_many(5000, 2) == [[], []]
+    assert scenario.decide(8500) == []
     assert scenario.engine.waiting is None
-    assert scenario.decide_many(5.0, 3) == [[], [], []]
-    assert scenario.decide(5.0) == on("a")
+    assert scenario.decide_many(5000, 3) == [[], [], []]
+    assert scenario.decide(5000) == on("a")
 
 
 def test_waiting_time_is_cancelled_at_the_limit() -> None:
     scenario = Scenario(make_config("a"))
 
-    assert scenario.decide(5.0) == []
-    assert scenario.decide(10.0) == []
+    assert scenario.decide(5000) == []
+    assert scenario.decide(10000) == []
     assert scenario.engine.waiting is None
 
 
@@ -89,7 +89,7 @@ def test_switching_off_cancels_the_waiting_time() -> None:
     scenario = Scenario(make_config("a", "b"))
     scenario.turn_on("a")
 
-    assert scenario.decide(5.0) == []
+    assert scenario.decide(5000) == []
     assert scenario.engine.waiting is not None
-    assert scenario.decide(10.5) == off("a")
+    assert scenario.decide(10500) == off("a")
     assert scenario.engine.waiting is None

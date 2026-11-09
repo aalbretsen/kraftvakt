@@ -58,12 +58,12 @@ integrations.
 {
   "general": {
     "power_sensor": "sensor.han_power",
-    "power_limit_kw": 10.0,
-    "turn_on_margin_kw": 0.1,
+    "power_limit_w": 10000,
+    "turn_on_margin_w": 100,
     "regulation_window_s": 10,
     "regulation_interval": 1,
     "wait_at_limit_s": 300,
-    "penalty_threshold_kw": 1.0
+    "penalty_threshold_w": 1000
   },
   "appliances": [
     {
@@ -71,7 +71,7 @@ integrations.
       "entity_id": "switch.varmtvannsbereder",
       "turn_on": { "mode": "default" },
       "turn_off": { "mode": "custom", "action": [ { "action": "switch.turn_off", "target": { "entity_id": "{{ entity_id }}" } } ] },
-      "power_reserve_kw": null,
+      "power_reserve_w": null,
       "variants": [
         { "id": "v1", "label": "Morgen", "condition": { "type": "template", "value": "{{ 5 <= now().hour < 8 }}" } }
       ]
@@ -95,7 +95,7 @@ integrations.
         "min_current_a": 6,
         "max_current_a": 16,
         "charge_power_sensor": "sensor.lader_garasje_effekt",
-        "power_reserve_kw": 4.0,
+        "power_reserve_w": 4000,
         "car_connected": { "type": "entity", "value": "binary_sensor.lader_garasje_bil" },
         "charging_window": { "start": "22:00", "end": "06:00" }
       }
@@ -157,8 +157,8 @@ All belong to one service device «Kraftvakt» and use `has_entity_name` and
 
 | Entity | Unique ID | Notes |
 |---|---|---|
-| Regulation average (`sensor`, power, kW) | `regulation_average` | Updated when a window closes. Unavailable without an average. |
-| Average consumption (`sensor`, power, kW) | `capacity_average` | Same. |
+| Regulation average (`sensor`, power, W shown as kW) | `regulation_average` | Updated when a window closes. Unavailable without an average. |
+| Average consumption (`sensor`, power, W shown as kW) | `capacity_average` | Same. |
 | Safe state (`binary_sensor`, problem) | `safe_state` | On in the safe state. |
 | Regulation (`switch`) | `regulation` | No stored position. Same function as start/stop in the panel. Stays off and logs when the configuration is incomplete. |
 | ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Stored position. Unavailable while charging is disabled. |
@@ -190,10 +190,10 @@ Status snapshot:
   "running": true,
   "missing": [],
   "safe_state": false,
-  "penalty": { "active": false, "overconsumption_kwh": 0.0, "recovery_started": false },
-  "regulation_average_kw": 7.42,
-  "capacity_average_kw": 8.10,
-  "power_limit_kw": 10.0,
+  "penalty": { "active": false, "overconsumption_wh": 0.0, "recovery_started": false },
+  "regulation_average_w": 7420.0,
+  "capacity_average_w": 8100.0,
+  "power_limit_w": 10000,
   "regulation_window_s": 60,
   "regulation_interval": 1,
   "next_decision_at": "2026-11-07T12:01:00+01:00",

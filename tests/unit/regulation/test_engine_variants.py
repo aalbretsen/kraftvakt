@@ -19,11 +19,11 @@ def test_current_variant_decides_the_place() -> None:
     in_the_morning = Scenario(morning_heater_config(wait_at_limit_s=0))
     otherwise = Scenario(morning_heater_config(wait_at_limit_s=0))
 
-    assert in_the_morning.decide_many(1.0, 2, true=("morning",)) == [
+    assert in_the_morning.decide_many(1000, 2, true=("morning",)) == [
         on("heater"),
         on("b"),
     ]
-    assert otherwise.decide_many(1.0, 2) == [on("b"), on("heater")]
+    assert otherwise.decide_many(1000, 2) == [on("b"), on("heater")]
 
 
 def test_current_variant_is_found_at_each_decision() -> None:
@@ -34,17 +34,17 @@ def test_current_variant_is_found_at_each_decision() -> None:
     scenario.decide(None, true=("morning",))
     assert scenario.engine.current_variants == {}
 
-    scenario.decide(1.0)
+    scenario.decide(1000)
     assert scenario.engine.current_variants == {"heater": None, "b": None}
 
-    scenario.decide(1.0, true=("morning",))
+    scenario.decide(1000, true=("morning",))
     assert scenario.engine.current_variants == {"heater": "morning", "b": None}
 
 
 def test_restart_forgets_the_current_variant() -> None:
     """The current variant is found again at the first decision."""
     scenario = Scenario(morning_heater_config())
-    scenario.decide(1.0, true=("morning",))
+    scenario.decide(1000, true=("morning",))
 
     scenario.engine.start(scenario.now)
 
@@ -57,7 +57,7 @@ def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
     scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
     scenario.turn_on("b", "heater")
 
-    assert scenario.decide(10.5, true=("morning",)) == off("heater")
+    assert scenario.decide(10500, true=("morning",)) == off("heater")
     assert scenario.engine.appliances_on == {"b"}
 
 
@@ -75,8 +75,8 @@ def test_switch_above_the_lowest_on_makes_room() -> None:
     )
     scenario.turn_on("a", "b", "c")
 
-    assert scenario.decide(9.0, true=("up",)) == off("c") + on("d")
-    assert scenario.decide(9.0, true=("up",)) == on("c")
+    assert scenario.decide(9000, true=("up",)) == off("c") + on("d")
+    assert scenario.decide(9000, true=("up",)) == on("c")
 
 
 def test_room_made_above_the_limit_is_enough_for_one_decision() -> None:
@@ -92,8 +92,8 @@ def test_room_made_above_the_limit_is_enough_for_one_decision() -> None:
     )
     scenario.turn_on("a", "b")
 
-    assert scenario.decide(10.5, true=("up",)) == off("b")
-    assert scenario.decide(10.5, true=("up",)) == off("a")
+    assert scenario.decide(10500, true=("up",)) == off("b")
+    assert scenario.decide(10500, true=("up",)) == off("a")
 
 
 def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
@@ -101,9 +101,9 @@ def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
     scenario = Scenario(morning_heater_config())
     scenario.turn_on("b", "heater")
 
-    assert scenario.decide(5.0, true=("morning",)) == off("heater")
+    assert scenario.decide(5000, true=("morning",)) == off("heater")
     assert scenario.engine.appliances_on == {"b"}
-    assert scenario.decide_many(5.0, 3, true=("morning",)) == [[], [], on("heater")]
+    assert scenario.decide_many(5000, 3, true=("morning",)) == [[], [], on("heater")]
 
 
 def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
@@ -118,7 +118,7 @@ def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
     )
     scenario.turn_on("a")
 
-    assert scenario.decide(9.0, true=("down",)) == on("b")
+    assert scenario.decide(9000, true=("down",)) == on("b")
 
 
 def heater_moving_down_config():
@@ -134,21 +134,21 @@ def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
     """The waiting time for the appliance starts again."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b")
-    assert scenario.decide_many(5.0, 2) == [[], []]
+    assert scenario.decide_many(5000, 2) == [[], []]
 
-    assert scenario.decide(5.0, true=("low",)) == []
-    assert scenario.decide_many(5.0, 3, true=("low",)) == [[], [], on("heater")]
+    assert scenario.decide(5000, true=("low",)) == []
+    assert scenario.decide_many(5000, 3, true=("low",)) == [[], [], on("heater")]
 
 
 def test_switch_resets_the_increasing_waiting_time() -> None:
     """The counter for increasing waiting time is reset."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b", "heater")
-    assert scenario.decide(10.5) == off("heater")
-    assert scenario.decide(0.0) == on("heater")
-    assert scenario.decide(10.5) == off("heater")
+    assert scenario.decide(10500) == off("heater")
+    assert scenario.decide(0) == on("heater")
+    assert scenario.decide(10500) == off("heater")
 
-    assert scenario.decide(0.0, true=("low",)) == on("heater")
+    assert scenario.decide(0, true=("low",)) == on("heater")
 
 
 def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
@@ -165,7 +165,7 @@ def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
     )
     scenario.turn_on("a", "b", "d")
 
-    assert scenario.decide(10.0, true=("down", "up")) == off("d")
+    assert scenario.decide(10000, true=("down", "up")) == off("d")
     assert scenario.engine.appliances_on == {"a", "b"}
 
 
@@ -183,4 +183,4 @@ def test_several_appliances_switching_up_switch_off_one_each() -> None:
     )
     scenario.turn_on("a", "b", "c")
 
-    assert scenario.decide(10.0, true=("up", "up_too")) == off("c", "b")
+    assert scenario.decide(10000, true=("up", "up_too")) == off("c", "b")

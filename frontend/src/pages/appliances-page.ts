@@ -14,7 +14,7 @@ import type { TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import { ConfigPage } from "./config-page";
 
-const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_kw", "label", "condition"] as const;
+const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
 
 /** The appliances and the priority list, with the warning against manual control. */
 @customElement("kraftvakt-appliances-page")
@@ -119,10 +119,10 @@ export class KraftvaktAppliancesPage extends ConfigPage {
 
   private applianceDetails(appliance: Appliance): string[] {
     const details = appliance.entity_id ? [appliance.entity_id] : [];
-    if (appliance.power_reserve_kw !== null) {
+    if (appliance.power_reserve_w !== null) {
       details.push(
         this.localize("appliances.power_reserve", {
-          power: formatNumber(this.hass.language, appliance.power_reserve_kw, 2),
+          power: formatNumber(this.hass.language, appliance.power_reserve_w, 0),
         }),
       );
     }
@@ -157,7 +157,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       entity_id: null,
       turn_on: null,
       turn_off: null,
-      power_reserve_kw: this.capabilities.defaults.appliances.power_reserve_kw,
+      power_reserve_w: this.capabilities.defaults.appliances.power_reserve_w,
       variants: [],
     };
     this.editing = { appliance, isNew: true };

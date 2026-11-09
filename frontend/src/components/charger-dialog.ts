@@ -60,13 +60,13 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
               entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities(this.hass) },
             },
           },
-          this.numberField("power_reserve_kw", "kW", true),
+          this.numberField("power_reserve_w", "W", true),
         ],
         issues,
         (value) =>
           this.changeDraft({
             charge_power_sensor: (value.charge_power_sensor as string | undefined) || null,
-            power_reserve_kw: value.power_reserve_kw as number,
+            power_reserve_w: value.power_reserve_w as number,
           }),
       )}
       ${this.renderCarConnected(issues)} ${this.renderChargingWindow(issues)}

@@ -30,11 +30,11 @@ def kraftvakt_config() -> dict[str, Any]:
     return {
         "general": {
             "power_sensor": HOUSE_POWER,
-            "power_limit_kw": 10.0,
+            "power_limit_w": 10000,
             "regulation_window_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
-            "penalty_threshold_kw": 1.0,
+            "penalty_threshold_w": 1000,
         },
         "appliances": [
             {

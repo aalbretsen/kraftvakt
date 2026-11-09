@@ -16,11 +16,11 @@ interface FormField {
 }
 
 const UNITS: Partial<Record<GeneralField, string>> = {
-  power_limit_kw: "kW",
-  turn_on_margin_kw: "kW",
+  power_limit_w: "W",
+  turn_on_margin_w: "W",
   regulation_window_s: "s",
   wait_at_limit_s: "s",
-  penalty_threshold_kw: "kW",
+  penalty_threshold_w: "W",
 };
 
 /** The power sensor and the settings of the regulation and the penalty. */
@@ -33,14 +33,14 @@ export class KraftvaktGeneralPage extends ConfigPage {
         this.numberField("regulation_window_s"),
       ])}
       ${this.renderCard("general.regulation", [
-        this.numberField("power_limit_kw"),
-        this.numberField("turn_on_margin_kw"),
+        this.numberField("power_limit_w"),
+        this.numberField("turn_on_margin_w"),
         this.intervalField(),
         this.numberField("wait_at_limit_s"),
       ])}
       ${this.renderCard(
         "general.penalty",
-        [this.numberField("penalty_threshold_kw")],
+        [this.numberField("penalty_threshold_w")],
         html`<ha-alert alert-type="info">${this.localize("general.capacity_window_info")}</ha-alert>`,
       )}
     `;

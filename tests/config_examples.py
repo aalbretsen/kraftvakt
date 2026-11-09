@@ -8,12 +8,12 @@ def full_config_data() -> dict[str, Any]:
     return {
         "general": {
             "power_sensor": "sensor.han_power",
-            "power_limit_kw": 9.5,
-            "turn_on_margin_kw": 0.2,
+            "power_limit_w": 9500,
+            "turn_on_margin_w": 200,
             "regulation_window_s": 30,
             "regulation_interval": 2,
             "wait_at_limit_s": 240,
-            "penalty_threshold_kw": 0.5,
+            "penalty_threshold_w": 500,
         },
         "appliances": [
             {
@@ -30,7 +30,7 @@ def full_config_data() -> dict[str, Any]:
                         }
                     ],
                 },
-                "power_reserve_kw": None,
+                "power_reserve_w": None,
                 "variants": [
                     {
                         "id": "v1",
@@ -47,7 +47,7 @@ def full_config_data() -> dict[str, Any]:
                 "entity_id": "climate.bad",
                 "turn_on": {"mode": "default"},
                 "turn_off": {"mode": "default"},
-                "power_reserve_kw": 0.8,
+                "power_reserve_w": 800,
                 "variants": [],
             },
         ],
@@ -79,7 +79,7 @@ def full_config_data() -> dict[str, Any]:
                     "min_current_a": 6,
                     "max_current_a": 32,
                     "charge_power_sensor": "sensor.lader_garasje_effekt",
-                    "power_reserve_kw": 3.0,
+                    "power_reserve_w": 3000,
                     "car_connected": {
                         "type": "entity",
                         "value": "binary_sensor.lader_garasje_bil",

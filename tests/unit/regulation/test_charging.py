@@ -25,8 +25,8 @@ NIGHT = ChargingWindow(time(22, 0), time(6, 0))
 DAY = ChargingWindow(time(9, 0), time(15, 30))
 NOW = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 WINDOW = timedelta(minutes=1)
-CHARGING = ChargerReading(charge_power_kw=7.0)
-IDLE = ChargerReading(charge_power_kw=0.0)
+CHARGING = ChargerReading(charge_power_w=7000)
+IDLE = ChargerReading(charge_power_w=0)
 
 
 def charger(
@@ -55,10 +55,10 @@ def test_current_follows_the_fictive_appliances_that_are_on() -> None:
 @pytest.mark.parametrize(
     ("reading", "expected"),
     [
-        (ChargerReading(charge_power_kw=0.1), False),
-        (ChargerReading(charge_power_kw=0.11), True),
-        (ChargerReading(charge_power_kw=0.0), False),
-        (ChargerReading(charge_power_kw=None), True),
+        (ChargerReading(charge_power_w=100), False),
+        (ChargerReading(charge_power_w=110), True),
+        (ChargerReading(charge_power_w=0), False),
+        (ChargerReading(charge_power_w=None), True),
     ],
 )
 def test_actively_charging_above_100_watt_or_without_a_valid_value(
@@ -387,7 +387,7 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
     evaluate(
         state,
         configured,
-        {"a": ChargerReading(charge_power_kw=7.0, car_connected=False), "b": IDLE},
+        {"a": ChargerReading(charge_power_w=7000, car_connected=False), "b": IDLE},
     )
 
     assert state.may_charge == {"b"}
@@ -402,7 +402,7 @@ def test_status_of_each_charger() -> None:
     evaluate(
         state,
         configured,
-        {"a": CHARGING, "b": ChargerReading(charge_power_kw=0.0, excluded=True)},
+        {"a": CHARGING, "b": ChargerReading(charge_power_w=0, excluded=True)},
         allowed=("a",),
         overridden=("a",),
     )

@@ -14,7 +14,7 @@ from typing import Final
 
 from ..config_model import Charger, ChargingWindow
 
-ACTIVELY_CHARGING_ABOVE_KW: Final = 0.1
+ACTIVELY_CHARGING_ABOVE_W: Final = 100
 BYPASSED_AFTER_WINDOWS: Final = 2
 RETRY_PAUSES: Final = (
     timedelta(minutes=15),
@@ -27,14 +27,14 @@ RETRY_PAUSES: Final = (
 class ChargerReading:
     """What a decision knows about a charger.
 
-    `charge_power_kw` is None when the charging power has no valid value.
+    `charge_power_w` is None when the charging power has no valid value.
     `car_connected` is None when the setting is not given.
     `excluded` and `window_override` are the user's switches, and
     `override_switched_on_at` tells when the override was switched
     on, or None when that is not known.
     """
 
-    charge_power_kw: float | None = None
+    charge_power_w: float | None = None
     car_connected: bool | None = None
     excluded: bool = False
     window_override: bool = False
@@ -84,8 +84,8 @@ def actively_charging(reading: ChargerReading) -> bool:
     valid value there is no proof, so the charger counts as charging, also when
     it is deactivated.
     """
-    power_kw = reading.charge_power_kw
-    return power_kw is None or power_kw > ACTIVELY_CHARGING_ABOVE_KW
+    power_w = reading.charge_power_w
+    return power_w is None or power_w > ACTIVELY_CHARGING_ABOVE_W
 
 
 @dataclass(frozen=True, slots=True)

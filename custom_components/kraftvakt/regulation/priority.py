@@ -54,7 +54,7 @@ def build_slots(
             Slot(
                 key=ApplianceSlotKey(appliance_id),
                 is_on=appliance_id in appliances_on,
-                power_reserve_kw=appliances[appliance_id].power_reserve_kw,
+                power_reserve_w=appliances[appliance_id].power_reserve_w,
                 cycling=APPLIANCE_CYCLING,
             )
         )
@@ -82,7 +82,7 @@ def fictive_slots(
         Slot(
             key=ChargerSlotKey(charger.id, index),
             is_on=index < fictive_on.get(charger.id, 0),
-            power_reserve_kw=charger.power_reserve_kw if index == 0 else None,
+            power_reserve_w=charger.power_reserve_w if index == 0 else None,
             cycling=FICTIVE_APPLIANCE_CYCLING,
             can_turn_on=charger.id in may_charge
             and (index == 0 or charger.id not in on_trial),

@@ -43,7 +43,7 @@ from .measurement import (
     CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN,
     PowerAverager,
     WindowAverages,
-    power_kw,
+    power_w,
 )
 from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
@@ -413,12 +413,12 @@ class KraftvaktRuntime:
         """Make a decision based on the windows closed since the previous one."""
         decision = DecisionInput(
             now=averages.end,
-            regulation_average_kw=averages.regulation_average_kw,
-            capacity_average_kw=averages.capacity_average_kw,
-            regulation_averages_kw=[
-                window.regulation_average_kw
+            regulation_average_w=averages.regulation_average_w,
+            capacity_average_w=averages.capacity_average_w,
+            regulation_averages_w=[
+                window.regulation_average_w
                 for window in self._windows_since_decision
-                if window.regulation_average_kw is not None
+                if window.regulation_average_w is not None
             ],
             power_sensor_valid=averages.sensor_valid,
             power_sensor_lost=self._power_sensor_lost(),
@@ -438,16 +438,16 @@ class KraftvaktRuntime:
         penalty = self._engine.penalty
         waiting = self._engine.waiting
         _LOGGER.debug(
-            "Decision at %s: regulation average %s kW, average consumption %s kW, "
-            "sensor valid %s, safe state %s, penalty %s (%.4f kWh), waiting %s, "
+            "Decision at %s: regulation average %s W, average consumption %s W, "
+            "sensor valid %s, safe state %s, penalty %s (%.1f Wh), waiting %s, "
             "commands %s",
             dt_util.as_local(decision.now).isoformat(timespec="seconds"),
-            _rounded(decision.regulation_average_kw),
-            _rounded(decision.capacity_average_kw),
+            _rounded(decision.regulation_average_w),
+            _rounded(decision.capacity_average_w),
             decision.power_sensor_valid,
             self._engine.safe_state,
             penalty.active,
-            penalty.overconsumption_kwh,
+            penalty.overconsumption_wh,
             None
             if waiting is None
             else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
@@ -486,10 +486,10 @@ class KraftvaktRuntime:
             else None
         )
         return ChargerReading(
-            charge_power_kw=(
+            charge_power_w=(
                 None
                 if power_state is None
-                else power_kw(
+                else power_w(
                     power_state.state,
                     power_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT),
                 )
@@ -529,11 +529,11 @@ class KraftvaktRuntime:
             listener()
 
 
-def _rounded(power_kw: float | None) -> float | None:
+def _rounded(power_w: float | None) -> int | None:
     """Return a power rounded to watts for the log."""
-    return None if power_kw is None else round(power_kw, 3)
+    return None if power_w is None else round(power_w)
 
 
 def _power_of(state: State) -> float | None:
-    """Return the power a power sensor state gives in kW, or None if invalid."""
-    return power_kw(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+    """Return the power a power sensor state gives in W, or None if invalid."""
+    return power_w(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))

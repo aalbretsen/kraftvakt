@@ -11,22 +11,22 @@ from custom_components.kraftvakt.regulation.penalty import PenaltyState
 from .configs import appliance, make_config
 from .scenario import START, Scenario, off, on
 
-ABOVE_THRESHOLD = 11.5
-KWH_PER_KW_WINDOW = 1 / 60
+ABOVE_THRESHOLD = 11_500
+WH_PER_W_WINDOW = 1 / 60
 
 
 def no_waiting(*appliances, **settings):
     return make_config(*appliances, wait_at_limit_s=0, **settings)
 
 
-def start_penalty(scenario: Scenario, average_kw: float = 16.0) -> list:
+def start_penalty(scenario: Scenario, average_w: float = 16_000) -> list:
     """Start the overconsumption state, then the penalty, and return its commands.
 
     The average equals the limit at the first decision, so the ordinary
     regulation leaves everything as it is.
     """
-    assert scenario.decide(10.0, capacity=ABOVE_THRESHOLD) == []
-    commands = scenario.decide(average_kw, capacity=ABOVE_THRESHOLD)
+    assert scenario.decide(10000, capacity=ABOVE_THRESHOLD) == []
+    commands = scenario.decide(average_w, capacity=ABOVE_THRESHOLD)
     assert scenario.engine.penalty.active
     return commands
 
@@ -40,8 +40,8 @@ def test_penalty_turns_everything_off_at_once() -> None:
 
     assert scenario.engine.appliances_on == set()
     assert scenario.engine.waiting is None
-    assert scenario.engine.penalty.overconsumption_kwh == pytest.approx(
-        6 * KWH_PER_KW_WINDOW
+    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(
+        6000 * WH_PER_W_WINDOW
     )
 
 
@@ -51,8 +51,8 @@ def test_nothing_is_turned_on_during_the_penalty() -> None:
     scenario.turn_on("a")
     start_penalty(scenario)
 
-    assert scenario.decide(5.0, capacity=ABOVE_THRESHOLD) == []
-    assert scenario.decide(9.5, capacity=2.0) == []
+    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD) == []
+    assert scenario.decide(9500, capacity=2000) == []
     assert scenario.engine.penalty.active
 
 
@@ -61,9 +61,9 @@ def test_penalty_ends_with_a_restart_when_paid_back() -> None:
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
     start_penalty(scenario)
-    assert scenario.decide(5.0, capacity=ABOVE_THRESHOLD) == []
+    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD) == []
 
-    assert scenario.decide(9.0, capacity=ABOVE_THRESHOLD) == off("a", "b")
+    assert scenario.decide(9000, capacity=ABOVE_THRESHOLD) == off("a", "b")
 
     assert scenario.engine.started_at == scenario.now
     assert scenario.engine.penalty == PenaltyState()
@@ -73,12 +73,12 @@ def test_appliances_come_back_one_by_one_after_the_penalty() -> None:
     """A new overconsumption state starts at 0, without penalty."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
-    start_penalty(scenario, average_kw=11.0)
-    assert scenario.decide(9.0, capacity=ABOVE_THRESHOLD) == off("a", "b")
+    start_penalty(scenario, average_w=11000)
+    assert scenario.decide(9000, capacity=ABOVE_THRESHOLD) == off("a", "b")
 
-    assert scenario.decide(1.0, capacity=ABOVE_THRESHOLD) == on("a")
+    assert scenario.decide(1000, capacity=ABOVE_THRESHOLD) == on("a")
     assert scenario.engine.penalty.overconsuming
-    assert scenario.decide(2.0, capacity=ABOVE_THRESHOLD) == on("b")
+    assert scenario.decide(2000, capacity=ABOVE_THRESHOLD) == on("b")
     assert not scenario.engine.penalty.active
 
 
@@ -86,21 +86,21 @@ def test_restart_after_the_penalty_waits_again() -> None:
     """After the restart, appliances wait before turning on."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
-    start_penalty(scenario, average_kw=11.0)
-    assert scenario.decide(5.0, capacity=ABOVE_THRESHOLD) == off("a")
+    start_penalty(scenario, average_w=11000)
+    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD) == off("a")
 
-    assert scenario.decide_many(5.0, 4) == [[], [], [], on("a")]
+    assert scenario.decide_many(5000, 4) == [[], [], [], on("a")]
 
 
 def test_no_penalty_when_overconsumption_is_paid_back() -> None:
     """The ordinary regulation goes on when nothing is left to pay back."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
-    assert scenario.decide(10.0, capacity=ABOVE_THRESHOLD) == []
+    assert scenario.decide(10000, capacity=ABOVE_THRESHOLD) == []
 
-    assert scenario.decide(10.5, capacity=ABOVE_THRESHOLD, averages=(6.0, 10.5)) == off(
-        "b"
-    )
+    assert scenario.decide(
+        10500, capacity=ABOVE_THRESHOLD, averages=(6000, 10500)
+    ) == off("b")
 
     assert not scenario.engine.penalty.active
 
@@ -110,21 +110,21 @@ def test_no_penalty_at_or_under_limit_plus_threshold() -> None:
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a", "b")
 
-    assert scenario.decide_many(12.0, 3, capacity=11.0) == [off("b"), off("a"), []]
+    assert scenario.decide_many(12000, 3, capacity=11000) == [off("b"), off("a"), []]
 
     assert not scenario.engine.penalty.active
-    assert scenario.engine.penalty.overconsumption_kwh == pytest.approx(
-        4 * KWH_PER_KW_WINDOW
+    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(
+        4000 * WH_PER_W_WINDOW
     )
 
 
 def test_zero_threshold_gives_penalty_one_decision_later() -> None:
     """With threshold 0, the penalty starts one decision later."""
-    scenario = Scenario(no_waiting("a", threshold_kw=0.0))
+    scenario = Scenario(no_waiting("a", threshold_w=0))
     scenario.turn_on("a")
 
-    assert scenario.decide(10.0, capacity=10.01) == []
-    assert scenario.decide(10.0, capacity=10.01, averages=(10.5, 10.0)) == off("a")
+    assert scenario.decide(10000, capacity=10010) == []
+    assert scenario.decide(10000, capacity=10010, averages=(10500, 10000)) == off("a")
     assert scenario.engine.penalty.active
 
 
@@ -133,15 +133,15 @@ def test_status_shows_the_recovery() -> None:
     scenario = Scenario(no_waiting("a"))
     start_penalty(scenario)
 
-    scenario.decide(12.0, capacity=ABOVE_THRESHOLD)
+    scenario.decide(12000, capacity=ABOVE_THRESHOLD)
     assert not scenario.engine.penalty.recovery_started
-    scenario.decide(9.0, capacity=ABOVE_THRESHOLD)
+    scenario.decide(9000, capacity=ABOVE_THRESHOLD)
     assert scenario.engine.penalty.recovery_started
-    scenario.decide(11.0, capacity=ABOVE_THRESHOLD)
+    scenario.decide(11000, capacity=ABOVE_THRESHOLD)
 
     penalty = scenario.engine.penalty
     assert penalty.recovery_started
-    assert penalty.overconsumption_kwh == pytest.approx(8 * KWH_PER_KW_WINDOW)
+    assert penalty.overconsumption_wh == pytest.approx(8000 * WH_PER_W_WINDOW)
 
 
 def test_stop_and_start_end_the_penalty() -> None:
@@ -153,7 +153,7 @@ def test_stop_and_start_end_the_penalty() -> None:
     assert scenario.engine.penalty == PenaltyState()
     scenario.engine.start(scenario.now)
 
-    assert scenario.decide(1.0) == on("a")
+    assert scenario.decide(1000) == on("a")
 
 
 def test_current_variant_is_found_during_the_penalty() -> None:
@@ -168,7 +168,7 @@ def test_current_variant_is_found_during_the_penalty() -> None:
     scenario.turn_on("b", "heater")
     start_penalty(scenario)
 
-    assert scenario.decide(5.0, capacity=ABOVE_THRESHOLD, true=("morning",)) == []
+    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD, true=("morning",)) == []
     assert scenario.engine.current_variants == {"heater": "morning", "b": None}
 
 

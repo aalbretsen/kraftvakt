@@ -27,18 +27,19 @@ class AverageSensorDescription(SensorEntityDescription):
     value_fn: Callable[[WindowAverages], float | None]
     device_class: SensorDeviceClass = SensorDeviceClass.POWER
     state_class: SensorStateClass = SensorStateClass.MEASUREMENT
-    native_unit_of_measurement: str = UnitOfPower.KILO_WATT
+    native_unit_of_measurement: str = UnitOfPower.WATT
+    suggested_unit_of_measurement: str = UnitOfPower.KILO_WATT
     suggested_display_precision: int = 2
 
 
 AVERAGE_SENSORS: tuple[AverageSensorDescription, ...] = (
     AverageSensorDescription(
         key="regulation_average",
-        value_fn=lambda averages: averages.regulation_average_kw,
+        value_fn=lambda averages: averages.regulation_average_w,
     ),
     AverageSensorDescription(
         key="capacity_average",
-        value_fn=lambda averages: averages.capacity_average_kw,
+        value_fn=lambda averages: averages.capacity_average_w,
     ),
 )
 

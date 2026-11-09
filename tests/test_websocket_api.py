@@ -39,11 +39,11 @@ def config_data() -> dict[str, Any]:
     return {
         "general": {
             "power_sensor": POWER_SENSOR,
-            "power_limit_kw": 10.0,
+            "power_limit_w": 10000,
             "regulation_window_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
-            "penalty_threshold_kw": 1.0,
+            "penalty_threshold_w": 1000,
         },
         "appliances": [appliance("a"), appliance("b")],
         "priority": [
@@ -156,31 +156,31 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
         "number",
         "input_number",
     ]
-    assert result["limits"]["general"]["power_limit_kw"] == {
+    assert result["limits"]["general"]["power_limit_w"] == {
+        "min": 1000,
+        "max": 50_000,
+        "step": 1,
+    }
+    assert result["limits"]["general"]["turn_on_margin_w"] == {
         "min": 1,
-        "max": 50,
-        "step": 0.01,
+        "max": 1000,
+        "step": 1,
     }
-    assert result["limits"]["general"]["turn_on_margin_kw"] == {
-        "min": 0.01,
-        "max": 1,
-        "step": 0.01,
-    }
-    assert result["limits"]["appliances"]["power_reserve_kw"]["max"] is None
-    assert result["limits"]["chargers"]["power_reserve_kw"]["max"] == 5
+    assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
+    assert result["limits"]["chargers"]["power_reserve_w"]["max"] == 5000
     assert result["defaults"] == {
         "general": {
             "power_sensor": None,
-            "power_limit_kw": 10.0,
-            "turn_on_margin_kw": 0.1,
+            "power_limit_w": 10000,
+            "turn_on_margin_w": 100,
             "regulation_window_s": 10,
             "regulation_interval": 1,
             "wait_at_limit_s": 300,
-            "penalty_threshold_kw": 1.0,
+            "penalty_threshold_w": 1000,
         },
-        "appliances": {"power_reserve_kw": None},
+        "appliances": {"power_reserve_w": None},
         "charging": {"enabled": False, "one_at_a_time": True},
-        "chargers": {"min_current_a": 6, "max_current_a": 16, "power_reserve_kw": 4.0},
+        "chargers": {"min_current_a": 6, "max_current_a": 16, "power_reserve_w": 4000},
     }
 
 
@@ -271,7 +271,7 @@ async def test_save_is_refused_while_the_regulation_runs(
     before = stored_config(hass_storage)
     client = await hass_ws_client(hass)
     changed = config_data()
-    changed["general"]["power_limit_kw"] = 8.0
+    changed["general"]["power_limit_w"] = 8.0
 
     response = await send(client, "kraftvakt/config/save", config=changed)
 
@@ -296,12 +296,12 @@ async def test_runtime_refuses_a_new_configuration_while_running(
     ("change", "errors"),
     [
         (
-            lambda data: data["general"].update(power_limit_kw=100),
+            lambda data: data["general"].update(power_limit_w=100000),
             [
                 {
                     "code": "out_of_range",
                     "section": "general",
-                    "field": "power_limit_kw",
+                    "field": "power_limit_w",
                 }
             ],
         ),
@@ -419,11 +419,11 @@ async def test_saved_power_sensor_and_window_are_measured(
 
     averages = entry.runtime_data.latest_averages
     assert averages.end - averages.start == timedelta(seconds=30)
-    assert averages.regulation_average_kw == pytest.approx(4.0)
+    assert averages.regulation_average_w == pytest.approx(4000)
     set_power(hass, "9000")
     await advance(hass, freezer, timedelta(seconds=30))
-    assert entry.runtime_data.latest_averages.regulation_average_kw == pytest.approx(
-        4.0
+    assert entry.runtime_data.latest_averages.regulation_average_w == pytest.approx(
+        4000
     )
 
 
@@ -566,12 +566,12 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "safe_state": False,
         "penalty": {
             "active": False,
-            "overconsumption_kwh": 0.0,
+            "overconsumption_wh": 0,
             "recovery_started": False,
         },
-        "regulation_average_kw": None,
-        "capacity_average_kw": None,
-        "power_limit_kw": 10.0,
+        "regulation_average_w": None,
+        "capacity_average_w": None,
+        "power_limit_w": 10000,
         "regulation_window_s": 60,
         "regulation_interval": 1,
         "next_decision_at": local(started + WINDOW),
@@ -603,8 +603,8 @@ async def test_status_is_sent_at_once_and_at_each_window(
     await advance(hass, freezer)
     status = await next_status(client)
 
-    assert status["regulation_average_kw"] == pytest.approx(2.0)
-    assert status["capacity_average_kw"] == pytest.approx(2.0)
+    assert status["regulation_average_w"] == pytest.approx(2000)
+    assert status["capacity_average_w"] == pytest.approx(2000)
     assert status["next_decision_at"] == local(started + 2 * WINDOW)
     assert [item["on"] for item in status["appliances"]] == [True, False]
 
@@ -684,12 +684,12 @@ async def test_status_follows_a_saved_configuration_and_a_reload(
     await set_running(commander, False)
     await next_status(subscriber)
     changed = config_data()
-    changed["general"].update(power_sensor=None, power_limit_kw=8.0)
+    changed["general"].update(power_sensor=None, power_limit_w=8000)
 
     await send(commander, "kraftvakt/config/save", config=changed)
     status = await next_status(subscriber)
 
-    assert status["power_limit_kw"] == 8.0
+    assert status["power_limit_w"] == 8000
     assert [issue["code"] for issue in status["missing"]] == ["missing_power_sensor"]
 
     changed["general"]["power_sensor"] = POWER_SENSOR
@@ -699,7 +699,7 @@ async def test_status_follows_a_saved_configuration_and_a_reload(
     status = await next_status(subscriber)
     while not status["running"]:
         status = await next_status(subscriber)
-    assert status["power_limit_kw"] == 8.0
+    assert status["power_limit_w"] == 8000
 
 
 async def test_status_shows_the_chargers(

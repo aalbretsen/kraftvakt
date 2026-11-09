@@ -41,12 +41,12 @@ def test_topmost_true_condition_gives_current_variant() -> None:
 
 
 def test_slots_follow_the_priority_list() -> None:
-    config = make_config(appliance("a", reserve=2.5), "b", "c")
+    config = make_config(appliance("a", reserve_w=2500), "b", "c")
 
     slots = build_slots(config, current_variants={}, appliances_on={"b"})
 
     assert slots == [
-        Slot(ApplianceSlotKey("a"), False, 2.5, APPLIANCE_CYCLING),
+        Slot(ApplianceSlotKey("a"), False, 2500, APPLIANCE_CYCLING),
         Slot(ApplianceSlotKey("b"), True, None, APPLIANCE_CYCLING),
         Slot(ApplianceSlotKey("c"), False, None, APPLIANCE_CYCLING),
     ]
@@ -76,9 +76,9 @@ def test_ev_charging_entry_is_replaced_by_charger_slots() -> None:
     ]
 
 
-def charger(charger_id: str, min_a: int, max_a: int, reserve: float = 4.0) -> Charger:
+def charger(charger_id: str, min_a: int, max_a: int, reserve_w: int = 4000) -> Charger:
     return Charger(
-        charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_kw=reserve
+        charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_w=reserve_w
     )
 
 
@@ -102,10 +102,10 @@ def test_fictive_appliances_are_interleaved_between_chargers() -> None:
 
 def test_only_the_first_fictive_appliance_has_the_power_reserve() -> None:
     """Fictive appliances cycle with 5 and 30 minutes."""
-    slots = fictive_slots([charger("a", 6, 8, reserve=3.5)], {"a": 2}, {"a"}, (), ())
+    slots = fictive_slots([charger("a", 6, 8, reserve_w=3500)], {"a": 2}, {"a"}, (), ())
 
     assert slots == [
-        Slot(ChargerSlotKey("a", 0), True, 3.5, FICTIVE_APPLIANCE_CYCLING),
+        Slot(ChargerSlotKey("a", 0), True, 3500, FICTIVE_APPLIANCE_CYCLING),
         Slot(ChargerSlotKey("a", 1), True, None, FICTIVE_APPLIANCE_CYCLING),
         Slot(ChargerSlotKey("a", 2), False, None, FICTIVE_APPLIANCE_CYCLING),
     ]

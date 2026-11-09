@@ -30,7 +30,7 @@ DEFAULT_ACTION = ActionConfig(ActionMode.DEFAULT)
 def appliance(
     appliance_id: str,
     *,
-    reserve: float | None = None,
+    reserve_w: int | None = None,
     variants: tuple[str, ...] = (),
 ) -> Appliance:
     """Return an appliance whose variants have the given ids, in that order."""
@@ -39,7 +39,7 @@ def appliance(
         entity_id=f"switch.{appliance_id}",
         turn_on=DEFAULT_ACTION,
         turn_off=DEFAULT_ACTION,
-        power_reserve_kw=reserve,
+        power_reserve_w=reserve_w,
         variants=tuple(
             Variant(
                 id=variant_id,
@@ -58,7 +58,7 @@ def charger(
     *,
     min_a: int = 6,
     max_a: int = 16,
-    reserve: float = 4.0,
+    reserve_w: int = 4000,
     window: str | None = None,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""
@@ -75,7 +75,7 @@ def charger(
         min_current_a=min_a,
         max_current_a=max_a,
         charge_power_sensor=f"sensor.{charger_id}_power",
-        power_reserve_kw=reserve,
+        power_reserve_w=reserve_w,
         charging_window=charging_window,
     )
 
@@ -91,9 +91,9 @@ def priority_entry(text: str) -> PriorityEntry:
 def make_config(
     *appliances: Appliance | str,
     priority: tuple[str, ...] | None = None,
-    limit_kw: float = 10.0,
+    limit_w: int = 10_000,
     wait_at_limit_s: int = 300,
-    threshold_kw: float = 1.0,
+    threshold_w: int = 1000,
     chargers: tuple[Charger, ...] = (),
     one_at_a_time: bool = True,
     charging_enabled: bool | None = None,
@@ -118,10 +118,10 @@ def make_config(
     return KraftvaktConfig(
         general=GeneralConfig(
             power_sensor="sensor.power",
-            power_limit_kw=limit_kw,
+            power_limit_w=limit_w,
             regulation_window_s=int(DECISION_INTERVAL.total_seconds()),
             wait_at_limit_s=wait_at_limit_s,
-            penalty_threshold_kw=threshold_kw,
+            penalty_threshold_w=threshold_w,
         ),
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),

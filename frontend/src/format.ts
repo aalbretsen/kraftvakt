@@ -6,9 +6,14 @@ export function formatNumber(language: string, value: number, decimals: number):
   }).format(value);
 }
 
-/** Format a power in kW with two decimals, or a dash when it is not known. */
-export function formatPower(language: string, kilowatt: number | null): string {
-  return kilowatt === null ? "–" : formatNumber(language, kilowatt, 2);
+/** Format a power given in W as kW with two decimals, or a dash when it is not known. */
+export function formatPower(language: string, watt: number | null): string {
+  return watt === null ? "–" : formatNumber(language, watt / 1000, 2);
+}
+
+/** Format an energy given in Wh as kWh with two decimals. */
+export function formatEnergy(language: string, wattHours: number): string {
+  return formatNumber(language, wattHours / 1000, 2);
 }
 
 /** Format the clock time of a moment, like 14:05:30, in the user's language. */

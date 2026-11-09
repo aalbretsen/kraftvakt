@@ -54,11 +54,11 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
     data = {
         "general": {
             "power_sensor": POWER_SENSOR,
-            "power_limit_kw": 10.0,
+            "power_limit_w": 10000,
             "regulation_window_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
-            "penalty_threshold_kw": 1.0,
+            "penalty_threshold_w": 1000,
         },
         "appliances": [appliance("a"), appliance("b")],
         "priority": [
@@ -354,8 +354,8 @@ async def test_each_decision_is_logged_for_debugging(
 
     assert f"Decision at {dt_util.now().isoformat(timespec='seconds')}:" in caplog.text
     assert (
-        "regulation average 2.0 kW, average consumption 2.0 kW, sensor valid True, "
-        "safe state False, penalty False (0.0000 kWh), waiting None, "
+        "regulation average 2000 W, average consumption 2000 W, sensor valid True, "
+        "safe state False, penalty False (0.0 Wh), waiting None, "
         "commands [TurnOnAppliance(appliance_id='a')]"
     ) in caplog.text
 

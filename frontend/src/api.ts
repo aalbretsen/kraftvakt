@@ -27,12 +27,12 @@ export interface ActionConfig {
 
 export interface GeneralConfig {
   power_sensor: string | null;
-  power_limit_kw: number;
-  turn_on_margin_kw: number;
+  power_limit_w: number;
+  turn_on_margin_w: number;
   regulation_window_s: number;
   regulation_interval: number;
   wait_at_limit_s: number;
-  penalty_threshold_kw: number;
+  penalty_threshold_w: number;
 }
 
 export interface Variant {
@@ -46,7 +46,7 @@ export interface Appliance {
   entity_id: string | null;
   turn_on: ActionConfig | null;
   turn_off: ActionConfig | null;
-  power_reserve_kw: number | null;
+  power_reserve_w: number | null;
   variants: Variant[];
 }
 
@@ -68,7 +68,7 @@ export interface Charger {
   min_current_a: number;
   max_current_a: number;
   charge_power_sensor: string | null;
-  power_reserve_kw: number;
+  power_reserve_w: number;
   car_connected: Condition | null;
   charging_window: ChargingWindow | null;
 }
@@ -108,9 +108,9 @@ export interface Capabilities {
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
   defaults: {
     general: GeneralConfig;
-    appliances: { power_reserve_kw: number | null };
+    appliances: { power_reserve_w: number | null };
     charging: { enabled: boolean; one_at_a_time: boolean };
-    chargers: { min_current_a: number; max_current_a: number; power_reserve_kw: number };
+    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number };
   };
 }
 
@@ -151,12 +151,12 @@ export interface StatusSnapshot {
   safe_state: boolean;
   penalty: {
     active: boolean;
-    overconsumption_kwh: number;
+    overconsumption_wh: number;
     recovery_started: boolean;
   };
-  regulation_average_kw: number | null;
-  capacity_average_kw: number | null;
-  power_limit_kw: number;
+  regulation_average_w: number | null;
+  capacity_average_w: number | null;
+  power_limit_w: number;
   regulation_window_s: number;
   regulation_interval: number;
   next_decision_at: string | null;

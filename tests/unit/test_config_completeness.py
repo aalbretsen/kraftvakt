@@ -59,13 +59,13 @@ def test_chargers_do_not_count_while_charging_is_disabled() -> None:
 
 def test_optional_settings_are_not_required() -> None:
     data = full_config_data()
-    data["appliances"][1]["power_reserve_kw"] = None
+    data["appliances"][1]["power_reserve_w"] = None
     charger = data["charging"]["chargers"][0]
     charger["car_connected"] = None
     charger["charging_window"] = None
     del charger["min_current_a"]
     del charger["max_current_a"]
-    del charger["power_reserve_kw"]
+    del charger["power_reserve_w"]
 
     assert _missing(data) == []
 

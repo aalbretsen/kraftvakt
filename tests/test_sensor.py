@@ -87,7 +87,7 @@ async def test_sensors_are_unavailable_before_the_first_average(
     assert state_of(hass, "capacity_average") == STATE_UNAVAILABLE
 
 
-async def test_sensors_show_the_averages_in_kw(
+async def test_sensors_show_the_averages_in_w(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
     """Both averages are power sensors in kW."""

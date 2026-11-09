@@ -109,8 +109,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   narrow screen (settled in the priority list redesign).
 - The tiles are, from the left, «Consumption now», regulation average,
   average consumption and the power limit. «Consumption now» is the power
-  sensor's state read in the panel (`measuredPowerKw()`, same units as the
-  backend), so it updates live. Under each average value is the time it covers
+  sensor's state read in the panel (`measuredPowerW()`, same units as the
+  backend), so it updates live. The snapshot and the configuration are in W;
+  the status page shows kW (`formatPower()`, `formatEnergy()`), the
+  configuration pages and dialogs W. Under each average value is the time it covers
   («over 1 hour», «over 60 s» from `regulation_window_s`).
 - The meter is a 12 px bar for «Consumption now» in grey
   (`--kraftvakt-now-color`, the secondary text colour). Each other value is a

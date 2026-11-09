@@ -147,13 +147,13 @@
         "label": "Reguleringsvindu",
         "helper": "Tidsrommet reguleringssnittet beregnes over. {min}–{max} s, standard {default} s."
       },
-      "power_limit_kw": {
+      "power_limit_w": {
         "label": "Effektgrense",
-        "helper": "Høyeste tillatte snittforbruk per time. {min}–{max} kW, standard {default} kW."
+        "helper": "Høyeste tillatte snittforbruk per time. {min}–{max} W, standard {default} W."
       },
-      "turn_on_margin_kw": {
+      "turn_on_margin_w": {
         "label": "Innkoblingsmargin",
-        "helper": "Hvor langt under effektgrensen reguleringssnittet må være før et apparat slås på. {min}–{max} kW, standard {default} kW."
+        "helper": "Hvor langt under effektgrensen reguleringssnittet må være før et apparat slås på. {min}–{max} W, standard {default} W."
       },
       "regulation_interval": {
         "label": "Reguleringsintervall",
@@ -163,9 +163,9 @@
         "label": "Ventetid ved effektgrensen",
         "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er ved effektgrensen. Kortere når snittet er lavere. {min}–{max} s, standard {default} s."
       },
-      "penalty_threshold_kw": {
+      "penalty_threshold_w": {
         "label": "Straffeterskel",
-        "helper": "Hvor mye snittforbruket kan overstige effektgrensen før straff starter. {min}–{max} kW, standard {default} kW."
+        "helper": "Hvor mye snittforbruket kan overstige effektgrensen før straff starter. {min}–{max} W, standard {default} W."
       }
     }
   },
@@ -181,7 +181,7 @@
     "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
     "ev_charging": "Elbillading",
     "ev_charging_sub": "elbilladere: {count} · konfigureres under",
-    "power_reserve": "effektreserve {power} kW",
+    "power_reserve": "effektreserve {power} W",
     "variant_count": "varianter: {count}",
     "variant_entity": "Variant · entitet {entity}",
     "variant_template": "Variant · mal"
@@ -207,7 +207,7 @@
       "turn_off": {
         "label": "Slå av"
       },
-      "power_reserve_kw": {
+      "power_reserve_w": {
         "label": "Effektreserve (valgfri)",
         "helper": "Ledig effekt som må finnes før apparatet slås på. Bruk den for apparater som trekker mye straks de slås på."
       },
@@ -251,7 +251,7 @@
     "empty": "Ingen elbilladere ennå.",
     "switches_info": "For hver elbillader lager Kraftvakt to brytere som kan brukes også mens reguleringen kjører: «‹lader› utenfor regulering» og «‹lader› overstyr ladetidsrom».",
     "currents": "{min}–{max} A",
-    "reserve": "reserve {power} kW",
+    "reserve": "reserve {power} W",
     "window": "ladetidsrom {start}–{end}",
     "always_allowed": "alltid lov til å lade",
     "car_from": "bil tilkoblet fra {source}",
@@ -293,9 +293,9 @@
         "label": "Sensor for ladeeffekt",
         "helper": "Over 100 W regnes som lading. Utilgjengelig regnes som lading."
       },
-      "power_reserve_kw": {
+      "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} kW, standard {default} kW (ca. 6 A på tre faser, 400 V)."
+        "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."

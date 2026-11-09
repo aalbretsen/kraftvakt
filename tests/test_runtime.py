@@ -85,7 +85,7 @@ async def test_power_sensor_state_feeds_the_averages(
     await advance(hass, freezer, timedelta(seconds=20))
 
     averages = closed_windows[-1]
-    assert averages.regulation_average_kw == pytest.approx((2 * 10 + 5 * 20) / 30)
+    assert averages.regulation_average_w == pytest.approx((2000 * 10 + 5000 * 20) / 30)
     assert averages.sensor_valid
 
 
@@ -102,8 +102,8 @@ async def test_unavailable_power_sensor_makes_the_window_invalid(
     await advance(hass, freezer, WINDOW)
 
     first, second = closed_windows
-    assert (first.regulation_average_kw, first.sensor_valid) == (3.0, False)
-    assert (second.regulation_average_kw, second.sensor_valid) == (None, False)
+    assert (first.regulation_average_w, first.sensor_valid) == (3000, False)
+    assert (second.regulation_average_w, second.sensor_valid) == (None, False)
 
 
 async def test_windows_close_without_power_sensor(
@@ -114,7 +114,7 @@ async def test_windows_close_without_power_sensor(
 
     await advance(hass, freezer, WINDOW)
 
-    assert closed_windows[0].regulation_average_kw is None
+    assert closed_windows[0].regulation_average_w is None
     assert not closed_windows[0].sensor_valid
 
 

@@ -27,14 +27,14 @@ FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
 
 
 def linear_waiting_time(
-    average_kw: float, limit_kw: float, wait_at_limit: timedelta
+    average_w: float, limit_w: float, wait_at_limit: timedelta
 ) -> timedelta:
     """Return the waiting time in proportion to the average.
 
     An average of 0 gives no waiting time, and an average at or above the
     limit gives the waiting time at the limit.
     """
-    return wait_at_limit * min(1.0, max(average_kw, 0.0) / limit_kw)
+    return wait_at_limit * min(1.0, max(average_w, 0.0) / limit_w)
 
 
 def cycling_waiting_time(
@@ -50,8 +50,8 @@ def cycling_waiting_time(
 
 
 def waiting_time(
-    average_kw: float,
-    limit_kw: float,
+    average_w: float,
+    limit_w: float,
     wait_at_limit: timedelta,
     reon_number: int,
     steps: CyclingSteps,
@@ -63,7 +63,7 @@ def waiting_time(
     """
     if reon_number >= PERSISTENT_CYCLING_FROM:
         return cycling_waiting_time(reon_number, wait_at_limit, steps)
-    return linear_waiting_time(average_kw, limit_kw, wait_at_limit)
+    return linear_waiting_time(average_w, limit_w, wait_at_limit)
 
 
 class CyclingCounter:

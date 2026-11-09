@@ -19,7 +19,7 @@ owner instead of deciding.
 
 | Term (Norwegian in the UI) | Meaning |
 |---|---|
-| Power limit (effektgrense) | The highest allowed average power, 1–50 kW, default 10 kW. The target the regulation keeps just below. |
+| Power limit (effektgrense) | The highest allowed average power, 1000–50 000 W, default 10 000 W. The target the regulation keeps just below. |
 | Power sensor (effektsensor) | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
 | Regulation window (reguleringsvindu) | 10–600 s, default 10 s (settled with the owner, was 60 s). |
 | Regulation average (reguleringssnitt) | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
@@ -27,15 +27,15 @@ owner instead of deciding.
 | Capacity window / average consumption (snittforbruk) | Sliding time-weighted average over exactly one hour back, not configurable. Used only for the penalty. |
 | Decision (avgjørelse) | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
 | Free power | Power limit minus regulation average. |
-| Turn-on margin (innkoblingsmargin) | How far below the limit the regulation average must be before anything is turned on, 0.01–1 kW, default 0.1 kW. 0 is not allowed. |
-| Power reserve (effektreserve) | Optional free power an appliance needs before it may be turned on, ≥ 0 kW, no upper limit. |
+| Turn-on margin (innkoblingsmargin) | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
+| Power reserve (effektreserve) | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
 | Waiting time (ventetid) | Time that must pass before an appliance is turned on. |
 | Appliance (apparat) | An entity Kraftvakt turns on and off with configurable actions. |
 | Priority list (prioritetsliste) | Sorted list of appliances, their variants and the «EV charging» entry. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
 | Safe state (sikker tilstand) | Everything off and nothing turned on, because there is no valid power measurement. |
-| Penalty threshold (straffeterskel) | 0–10 kW above the power limit, default 1 kW. |
+| Penalty threshold (straffeterskel) | 0–10 000 W above the power limit, default 1000 W. |
 | Overconsumption (overforbruk) | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period (straffeperiode) | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
 | Fictive appliance (fiktivt apparat) | One ampere of an EV charger's current, treated by the regulation as an appliance. |
@@ -43,8 +43,12 @@ owner instead of deciding.
 | Waiting charger (ventende) | With one charger at a time: a charger that may not charge because another is actively charging. |
 | Charging window (ladetidsrom) | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
 
-Resolution of settings: kW with two decimals, the regulation window in whole
+Resolution of settings: power in whole watts, the regulation window in whole
 seconds, the waiting time at the limit in whole seconds, currents in whole amperes.
+Settled with the owner: power settings are in W (they were kW with two
+decimals, same defaults), and so are the averages, the overconsumption (Wh)
+and everything inside the regulation. The status page and the average sensors
+still show kW. Saved configurations with the old `_kw` keys are not migrated.
 
 ## Ground rules
 
@@ -183,7 +187,7 @@ seconds, the waiting time at the limit in whole seconds, currents in whole amper
 - Overconsumption state: starts when the average consumption is above the limit
   at a decision, with overconsumption 0 at that decision. Every regulation
   average closed after it adds (average − limit) × window. It ends when the
-  overconsumption is ≤ 0 (rounding below 1e-9 kWh counts as 0), at the
+  overconsumption is ≤ 0 (rounding below 1e-6 Wh counts as 0), at the
   earliest at the next decision. If the average consumption is still above the
   limit, a new state starts at 0 at once.
 - A penalty starts when the average consumption is above limit + threshold and
@@ -259,7 +263,7 @@ seconds, the waiting time at the limit in whole seconds, currents in whole amper
   number on − 1. None on means deactivated. The fictive appliances sit at the
   place of «EV charging».
 - First fictive on: set current to min, then activate, and only the first has
-  the charger's power reserve (0–5 kW, default 4 kW). Later ones: set the new
+  the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new
   current. Switching off: set the lower current, or for the last one set
   current to min and then deactivate. Every deactivation sets min current
   first. The set-current action always gets a current between min and max.

@@ -19,16 +19,16 @@ class DecisionInput:
     `power_sensor_valid` tells whether the power sensor had a valid measurement
     when the last regulation window closed, and `power_sensor_lost` whether it
     had none when each of the last two windows closed.
-    `regulation_averages_kw` holds every regulation average computed since the
+    `regulation_averages_w` holds every regulation average computed since the
     previous decision, oldest first. `variant_conditions` holds the
     evaluated condition of each variant, keyed by variant id. A
     variant that is missing counts as false.
     """
 
     now: datetime
-    regulation_average_kw: float | None
-    capacity_average_kw: float | None
-    regulation_averages_kw: Sequence[float]
+    regulation_average_w: float | None
+    capacity_average_w: float | None
+    regulation_averages_w: Sequence[float]
     power_sensor_valid: bool
     power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
@@ -118,7 +118,7 @@ class Slot:
 
     key: Hashable
     is_on: bool
-    power_reserve_kw: float | None
+    power_reserve_w: float | None
     cycling: CyclingSteps
     can_turn_on: bool = True
     can_turn_off: bool = True

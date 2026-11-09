@@ -3,7 +3,7 @@
 from .configs import make_config
 from .scenario import Scenario, off, on
 
-ABOVE_THRESHOLD = 11.5
+ABOVE_THRESHOLD = 11_500
 
 
 def no_waiting(*appliances):
@@ -26,7 +26,7 @@ def test_one_invalid_close_is_tolerated() -> None:
     """The regulation goes on with the average from the last valid value."""
     scenario = Scenario(no_waiting("a", "b"))
 
-    assert scenario.decide(2.0, sensor_valid=False) == on("a")
+    assert scenario.decide(2000, sensor_valid=False) == on("a")
     assert not scenario.engine.safe_state
 
 
@@ -34,7 +34,7 @@ def test_nothing_is_turned_on_in_the_safe_state() -> None:
     scenario = Scenario(no_waiting("a"))
     scenario.decide(None, sensor_valid=False, sensor_lost=True)
 
-    assert scenario.decide(2.0, sensor_valid=False) == []
+    assert scenario.decide(2000, sensor_valid=False) == []
     assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == []
     assert scenario.engine.safe_state
 
@@ -45,10 +45,10 @@ def test_regulation_starts_again_when_the_sensor_is_back() -> None:
     scenario.turn_on("a")
     scenario.decide(None, sensor_valid=False, sensor_lost=True)
 
-    assert scenario.decide(2.0) == off("a", "b")
+    assert scenario.decide(2000) == off("a", "b")
     assert not scenario.engine.safe_state
     assert scenario.engine.started_at == scenario.now
-    assert scenario.decide(2.0) == on("a")
+    assert scenario.decide(2000) == on("a")
 
 
 def test_safe_state_without_any_average() -> None:
@@ -63,15 +63,15 @@ def test_safe_state_without_any_average() -> None:
 def test_safe_state_ends_a_penalty() -> None:
     """The restart after the safe state forgets the overconsumption."""
     scenario = Scenario(no_waiting("a"))
-    scenario.decide(10.0, capacity=ABOVE_THRESHOLD)
-    scenario.decide(16.0, capacity=ABOVE_THRESHOLD)
+    scenario.decide(10000, capacity=ABOVE_THRESHOLD)
+    scenario.decide(16000, capacity=ABOVE_THRESHOLD)
     assert scenario.engine.penalty.active
 
     scenario.decide(None, sensor_valid=False, sensor_lost=True)
-    scenario.decide(2.0, capacity=ABOVE_THRESHOLD)
+    scenario.decide(2000, capacity=ABOVE_THRESHOLD)
 
     assert not scenario.engine.penalty.active
-    assert scenario.engine.penalty.overconsumption_kwh == 0.0
+    assert scenario.engine.penalty.overconsumption_wh == 0.0
 
 
 def test_stop_leaves_the_safe_state() -> None:

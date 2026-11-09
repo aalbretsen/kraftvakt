@@ -99,7 +99,7 @@ async def test_load_rejects_unreadable_data(
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
         "key": STORAGE_KEY,
-        "data": {"general": {"power_limit_kw": "ti"}},
+        "data": {"general": {"power_limit_w": "ti"}},
     }
 
     with pytest.raises(ConfigValidationError):

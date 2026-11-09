@@ -56,7 +56,7 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
         "min_current_a": 6,
         "max_current_a": 8,
         "charge_power_sensor": CHARGER_POWER,
-        "power_reserve_kw": 4.0,
+        "power_reserve_w": 4000,
     }
 
 
@@ -66,11 +66,11 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
     data: dict[str, Any] = {
         "general": {
             "power_sensor": POWER_SENSOR,
-            "power_limit_kw": 10.0,
+            "power_limit_w": 10000,
             "regulation_window_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
-            "penalty_threshold_kw": 1.0,
+            "penalty_threshold_w": 1000,
         },
         "appliances": [],
         "priority": [{"type": "ev_charging"}],

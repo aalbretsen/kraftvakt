@@ -3,8 +3,7 @@
 import pytest
 
 from custom_components.kraftvakt.config_model import (
-    CHARGER_POWER_RESERVE_KW,
-    POWER_LIMIT_KW,
+    POWER_LIMIT_W,
     REGULATION_WINDOW_S,
     Charger,
     ChargerSwitches,
@@ -16,21 +15,21 @@ from custom_components.kraftvakt.config_model import (
 
 def test_stored_config_without_turn_on_margin_gets_the_default() -> None:
     """Configurations saved before the setting existed."""
-    config = KraftvaktConfig.from_dict({"general": {"power_limit_kw": 8.0}})
+    config = KraftvaktConfig.from_dict({"general": {"power_limit_w": 8000}})
 
-    assert config.general.turn_on_margin_kw == 0.1
+    assert config.general.turn_on_margin_w == 100
 
 
 def test_defaults_follow_requirements() -> None:
     config = KraftvaktConfig()
 
     assert config.general.power_sensor is None
-    assert config.general.power_limit_kw == 10.0
-    assert config.general.turn_on_margin_kw == 0.1
+    assert config.general.power_limit_w == 10_000
+    assert config.general.turn_on_margin_w == 100
     assert config.general.regulation_window_s == 10
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 300
-    assert config.general.penalty_threshold_kw == 1.0
+    assert config.general.penalty_threshold_w == 1000
     assert config.appliances == ()
     assert config.priority == ()
     assert config.charging.enabled is False
@@ -43,7 +42,7 @@ def test_charger_defaults() -> None:
 
     assert charger.min_current_a == 6
     assert charger.max_current_a == 16
-    assert charger.power_reserve_kw == 4.0
+    assert charger.power_reserve_w == 4000
     assert charger.car_connected is None
     assert charger.charging_window is None
 
@@ -55,10 +54,10 @@ def test_charger_switches_default_off() -> None:
 @pytest.mark.parametrize(
     ("value_range", "value", "expected"),
     [
-        (POWER_LIMIT_KW, 1, True),
-        (POWER_LIMIT_KW, 50, True),
-        (POWER_LIMIT_KW, 0.99, False),
-        (POWER_LIMIT_KW, 50.01, False),
+        (POWER_LIMIT_W, 1000, True),
+        (POWER_LIMIT_W, 50_000, True),
+        (POWER_LIMIT_W, 999, False),
+        (POWER_LIMIT_W, 50_001, False),
         (REGULATION_WINDOW_S, 9, False),
         (REGULATION_WINDOW_S, 600, True),
         (Range(0, None, 0.01), 1000, True),
@@ -67,21 +66,6 @@ def test_charger_switches_default_off() -> None:
 )
 def test_range_contains(value_range: Range, value: float, expected: bool) -> None:
     assert value_range.contains(value) is expected
-
-
-@pytest.mark.parametrize(
-    ("value_range", "value", "expected"),
-    [
-        (POWER_LIMIT_KW, 10.1, True),
-        (POWER_LIMIT_KW, 9.99, True),
-        (POWER_LIMIT_KW, 10.005, False),
-        (CHARGER_POWER_RESERVE_KW, 3.3, True),
-        (REGULATION_WINDOW_S, 60, True),
-        (REGULATION_WINDOW_S, 60.5, False),
-    ],
-)
-def test_range_matches_step(value_range: Range, value: float, expected: bool) -> None:
-    assert value_range.matches_step(value) is expected
 
 
 def test_issue_to_dict_leaves_out_empty_keys() -> None:

@@ -52,11 +52,10 @@ def test_default_config_is_valid() -> None:
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
-        ("power_limit_kw", 1, None),
-        ("power_limit_kw", 50, None),
-        ("power_limit_kw", 0.99, "out_of_range"),
-        ("power_limit_kw", 50.01, "out_of_range"),
-        ("power_limit_kw", 10.005, "invalid_resolution"),
+        ("power_limit_w", 1000, None),
+        ("power_limit_w", 50_000, None),
+        ("power_limit_w", 999, "out_of_range"),
+        ("power_limit_w", 50_001, "out_of_range"),
         ("regulation_window_s", 10, None),
         ("regulation_window_s", 600, None),
         ("regulation_window_s", 9, "out_of_range"),
@@ -67,15 +66,13 @@ def test_default_config_is_valid() -> None:
         ("wait_at_limit_s", 0, None),
         ("wait_at_limit_s", 600, None),
         ("wait_at_limit_s", 601, "out_of_range"),
-        ("turn_on_margin_kw", 0.01, None),
-        ("turn_on_margin_kw", 1, None),
-        ("turn_on_margin_kw", 0, "out_of_range"),
-        ("turn_on_margin_kw", 1.01, "out_of_range"),
-        ("turn_on_margin_kw", 0.105, "invalid_resolution"),
-        ("penalty_threshold_kw", 0, None),
-        ("penalty_threshold_kw", 10, None),
-        ("penalty_threshold_kw", -0.01, "out_of_range"),
-        ("penalty_threshold_kw", 0.255, "invalid_resolution"),
+        ("turn_on_margin_w", 1, None),
+        ("turn_on_margin_w", 1000, None),
+        ("turn_on_margin_w", 0, "out_of_range"),
+        ("turn_on_margin_w", 1001, "out_of_range"),
+        ("penalty_threshold_w", 0, None),
+        ("penalty_threshold_w", 10_000, None),
+        ("penalty_threshold_w", -1, "out_of_range"),
         ("power_sensor", "sensor.other", None),
         ("power_sensor", "not an entity", "invalid_entity_id"),
     ],
@@ -88,23 +85,22 @@ def test_general_ranges(field: str, value: Any, code: str | None) -> None:
 
 @pytest.mark.parametrize(
     ("value", "code"),
-    [(0, None), (100.0, None), (-0.01, "out_of_range"), (0.333, "invalid_resolution")],
+    [(0, None), (100_000, None), (-1, "out_of_range")],
 )
 def test_appliance_power_reserve(value: float, code: str | None) -> None:
     expected = (
-        [] if code is None else [Issue(code, "appliances", "a2", "power_reserve_kw")]
+        [] if code is None else [Issue(code, "appliances", "a2", "power_reserve_w")]
     )
 
-    assert _issues_after(_set("appliances.1.power_reserve_kw", value)) == expected
+    assert _issues_after(_set("appliances.1.power_reserve_w", value)) == expected
 
 
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
-        ("power_reserve_kw", 0, None),
-        ("power_reserve_kw", 5, None),
-        ("power_reserve_kw", 5.01, "out_of_range"),
-        ("power_reserve_kw", 1.001, "invalid_resolution"),
+        ("power_reserve_w", 0, None),
+        ("power_reserve_w", 5000, None),
+        ("power_reserve_w", 5001, "out_of_range"),
         ("min_current_a", 1, None),
         ("min_current_a", 0, "out_of_range"),
         ("entity_id", "switch", "invalid_entity_id"),
@@ -357,20 +353,20 @@ async def test_parse_config_accepts_incomplete_config(hass: HomeAssistant) -> No
 
 async def test_parse_config_rejects_invalid_config(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["general"]["power_limit_kw"] = 60
+    data["general"]["power_limit_w"] = 60_000
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
     assert error.value.issues == [
-        Issue("out_of_range", "general", None, "power_limit_kw")
+        Issue("out_of_range", "general", None, "power_limit_w")
     ]
     assert str(error.value) == "out_of_range"
 
 
 async def test_parse_config_rejects_wrong_types(hass: HomeAssistant) -> None:
     with pytest.raises(ConfigValidationError):
-        parse_config({"general": {"power_limit_kw": "ti"}})
+        parse_config({"general": {"power_limit_w": "ti"}})
 
 
 async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) -> None:
@@ -378,7 +374,7 @@ async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) ->
     power limit out of range and the entity used twice."""
     data = full_config_data()
     data["general"]["regulation_window_s"] = 10.5
-    data["general"]["power_limit_kw"] = 0.5
+    data["general"]["power_limit_w"] = 500
     data["appliances"][1]["entity_id"] = data["appliances"][0]["entity_id"]
 
     with pytest.raises(ConfigValidationError) as error:
@@ -386,7 +382,7 @@ async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) ->
 
     assert {(issue.code, issue.field) for issue in error.value.issues} == {
         ("not_integer", "regulation_window_s"),
-        ("out_of_range", "power_limit_kw"),
+        ("out_of_range", "power_limit_w"),
         ("duplicate_entity", "entity_id"),
     }
 
@@ -394,13 +390,13 @@ async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) ->
 async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
     """The default used in its place is not checked again."""
     data = full_config_data()
-    data["appliances"][0]["power_reserve_kw"] = "mye"
+    data["appliances"][0]["power_reserve_w"] = "mye"
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
     assert error.value.issues == [
-        Issue("invalid_type", "appliances", "a1", "power_reserve_kw")
+        Issue("invalid_type", "appliances", "a1", "power_reserve_w")
     ]
 
 

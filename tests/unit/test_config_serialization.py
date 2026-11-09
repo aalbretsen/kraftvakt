@@ -64,10 +64,10 @@ def test_missing_settings_get_defaults() -> None:
     appliance = config.appliances[0]
     assert appliance.entity_id is None
     assert appliance.turn_on is None
-    assert appliance.power_reserve_kw is None
+    assert appliance.power_reserve_w is None
     charger = config.charging.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
-    assert charger.power_reserve_kw == 4.0
+    assert charger.power_reserve_w == 4000
 
 
 def test_empty_strings_count_as_not_set() -> None:
@@ -162,12 +162,12 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
     [
         ({"general": []}, Issue("invalid_type", "general")),
         (
-            {"general": {"power_limit_kw": "10"}},
-            Issue("invalid_type", "general", None, "power_limit_kw"),
+            {"general": {"power_limit_w": "10"}},
+            Issue("invalid_type", "general", None, "power_limit_w"),
         ),
         (
-            {"general": {"power_limit_kw": True}},
-            Issue("invalid_type", "general", None, "power_limit_kw"),
+            {"general": {"power_limit_w": True}},
+            Issue("invalid_type", "general", None, "power_limit_w"),
         ),
         (
             {"general": {"regulation_window_s": 60.5}},
@@ -285,9 +285,9 @@ def test_wrong_types_are_rejected(data: dict[str, Any], expected: Issue) -> None
 
 
 def test_all_type_errors_are_reported_together() -> None:
-    issues = _issues({"general": {"power_limit_kw": "x", "wait_at_limit_s": "y"}})
+    issues = _issues({"general": {"power_limit_w": "x", "wait_at_limit_s": "y"}})
 
-    assert {issue.field for issue in issues} == {"power_limit_kw", "wait_at_limit_s"}
+    assert {issue.field for issue in issues} == {"power_limit_w", "wait_at_limit_s"}
 
 
 def test_charger_switches_round_trip() -> None:

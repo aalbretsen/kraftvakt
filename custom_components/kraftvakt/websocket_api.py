@@ -244,16 +244,16 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         "safe_state": runtime.safe_state,
         "penalty": {
             "active": penalty.active,
-            "overconsumption_kwh": penalty.overconsumption_kwh,
+            "overconsumption_wh": penalty.overconsumption_wh,
             "recovery_started": penalty.recovery_started,
         },
-        "regulation_average_kw": (
-            None if averages is None else averages.regulation_average_kw
+        "regulation_average_w": (
+            None if averages is None else averages.regulation_average_w
         ),
-        "capacity_average_kw": (
-            None if averages is None else averages.capacity_average_kw
+        "capacity_average_w": (
+            None if averages is None else averages.capacity_average_w
         ),
-        "power_limit_kw": config.general.power_limit_kw,
+        "power_limit_w": config.general.power_limit_w,
         "regulation_window_s": config.general.regulation_window_s,
         "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
@@ -364,7 +364,7 @@ def capabilities() -> dict[str, Any]:
         },
         "defaults": {
             "general": general.to_dict(),
-            "appliances": {"power_reserve_kw": Appliance(id="").power_reserve_kw},
+            "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},
             "charging": {
                 "enabled": charging.enabled,
                 "one_at_a_time": charging.one_at_a_time,
@@ -372,7 +372,7 @@ def capabilities() -> dict[str, Any]:
             "chargers": {
                 "min_current_a": charger.min_current_a,
                 "max_current_a": charger.max_current_a,
-                "power_reserve_kw": charger.power_reserve_kw,
+                "power_reserve_w": charger.power_reserve_w,
             },
         },
     }

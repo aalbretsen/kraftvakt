@@ -17,16 +17,16 @@ CAPACITY_WINDOW: Final = timedelta(hours=1)
 CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN: Final = 2
 
 # A sensor without unit is read as watt.
-_KW_PER_UNIT: Final[dict[str | None, float]] = {None: 0.001, "W": 0.001, "kW": 1.0}
+_W_PER_UNIT: Final[dict[str | None, float]] = {None: 1.0, "W": 1.0, "kW": 1000.0}
 
 
-def power_kw(state: str | None, unit: str | None) -> float | None:
-    """Return a sensor state in kW, or None when it is not a valid measurement.
+def power_w(state: str | None, unit: str | None) -> float | None:
+    """Return a sensor state in W, or None when it is not a valid measurement.
 
     A measurement is valid when the state is a number and the unit is W, kW or
     missing. Negative values count as 0.
     """
-    factor = _KW_PER_UNIT.get(unit or None)
+    factor = _W_PER_UNIT.get(unit or None)
     if factor is None or state is None:
         return None
     try:
@@ -49,8 +49,8 @@ class WindowAverages:
 
     start: datetime
     end: datetime
-    regulation_average_kw: float | None
-    capacity_average_kw: float | None
+    regulation_average_w: float | None
+    capacity_average_w: float | None
     sensor_valid: bool
 
 
@@ -59,7 +59,7 @@ class _Step:
     """Power that applies from `start` until the next step starts."""
 
     start: datetime
-    power_kw: float
+    power_w: float
 
 
 class PowerAverager:
@@ -99,7 +99,7 @@ class PowerAverager:
         self._next_window_length = window_length
 
     def add_measurement(self, when: datetime, power: float | None) -> None:
-        """Record the power in kW measured at `when`, or None if it is invalid.
+        """Record the power in W measured at `when`, or None if it is invalid.
 
         A measurement older than the latest one is treated as made at the time
         of the latest one, so closed windows never change.
@@ -111,7 +111,7 @@ class PowerAverager:
             return
         if self._steps and self._steps[-1].start == when:
             self._steps.pop()
-        if not self._steps or self._steps[-1].power_kw != power:
+        if not self._steps or self._steps[-1].power_w != power:
             self._steps.append(_Step(when, power))
 
     def add_history(
@@ -128,9 +128,9 @@ class PowerAverager:
         for when, power in measurements:
             if when >= first_measured:
                 break
-            if power is not None and (not history or history[-1].power_kw != power):
+            if power is not None and (not history or history[-1].power_w != power):
                 history.append(_Step(when, power))
-        if self._steps and history and history[-1].power_kw == self._steps[0].power_kw:
+        if self._steps and history and history[-1].power_w == self._steps[0].power_w:
             self._steps[0] = history.pop()
         self._steps[:0] = history
 
@@ -162,8 +162,8 @@ class PowerAverager:
         return WindowAverages(
             start,
             end,
-            regulation_average_kw=self._average(start, end),
-            capacity_average_kw=self._average(end - CAPACITY_WINDOW, end),
+            regulation_average_w=self._average(start, end),
+            capacity_average_w=self._average(end - CAPACITY_WINDOW, end),
             sensor_valid=self._sensor_valid,
         )
 
@@ -175,7 +175,7 @@ class PowerAverager:
             self._steps, pairwise(bounds), strict=True
         ):
             duration = (min(step_end, end) - max(step_start, start)).total_seconds()
-            energy += step.power_kw * max(duration, 0.0)
+            energy += step.power_w * max(duration, 0.0)
         return energy / (end - start).total_seconds()
 
     def _forget_steps_before(self, horizon: datetime) -> None:

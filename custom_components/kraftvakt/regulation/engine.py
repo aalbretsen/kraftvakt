@@ -132,7 +132,7 @@ class RegulationEngine:
         if decision.power_sensor_lost:
             self._state.safe_state = True
             return self._hold_everything_off()
-        average = decision.regulation_average_kw
+        average = decision.regulation_average_w
         if average is None:
             return []
         overrides_ended = self._overrides_ended(decision)
@@ -149,7 +149,7 @@ class RegulationEngine:
         forced = self._decide_chargers(decision, overrides_ended)
         forced += self._switch_variants(decision.variant_conditions)
         commands += forced
-        if average > self._config.general.power_limit_kw:
+        if average > self._config.general.power_limit_w:
             return commands + self._switch_off_above_limit(forced_off=bool(forced))
         return commands + self._turn_on_next(decision.now, average)
 
@@ -238,16 +238,16 @@ class RegulationEngine:
 
     def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
         """Count the overconsumption and decide on the penalty."""
-        if decision.capacity_average_kw is None:
+        if decision.capacity_average_w is None:
             return PenaltyOutcome.NONE
         general = self._config.general
         limits = PenaltyLimits(
-            power_limit_kw=general.power_limit_kw,
-            threshold_kw=general.penalty_threshold_kw,
+            power_limit_w=general.power_limit_w,
+            threshold_w=general.penalty_threshold_w,
             window=timedelta(seconds=general.regulation_window_s),
         )
         return self._state.penalty.decide(
-            limits, decision.capacity_average_kw, decision.regulation_averages_kw
+            limits, decision.capacity_average_w, decision.regulation_averages_w
         )
 
     def _hold_everything_off(self) -> list[Command]:
@@ -333,7 +333,7 @@ class RegulationEngine:
             commands += self._switch(slot.key, turn_on=False)
         return commands
 
-    def _turn_on_next(self, now: datetime, average_kw: float) -> list[Command]:
+    def _turn_on_next(self, now: datetime, average_w: float) -> list[Command]:
         """Turn on the next slots in fixed priority order after waiting.
 
         Only the first slot that is off can be turned on, and only
@@ -346,15 +346,15 @@ class RegulationEngine:
                 (slot for slot in self._slots() if not slot.is_on and slot.can_turn_on),
                 None,
             )
-            if candidate is None or not self._may_turn_on(candidate, average_kw):
+            if candidate is None or not self._may_turn_on(candidate, average_w):
                 self._state.waiting = None
                 break
-            if not self._has_waited(candidate, now, average_kw):
+            if not self._has_waited(candidate, now, average_w):
                 break
             commands += self._switch(candidate.key, turn_on=True, now=now)
         return commands
 
-    def _may_turn_on(self, slot: Slot, average_kw: float) -> bool:
+    def _may_turn_on(self, slot: Slot, average_w: float) -> bool:
         """Return whether there is room to turn the slot on.
 
         The average must be below the limit by more than the turn-on margin.
@@ -364,13 +364,13 @@ class RegulationEngine:
         the next decision.
         """
         general = self._config.general
-        limit_kw = general.power_limit_kw
-        if average_kw >= limit_kw - general.turn_on_margin_kw:
+        limit_w = general.power_limit_w
+        if average_w >= limit_w - general.turn_on_margin_w:
             return False
-        reserve_kw = slot.power_reserve_kw
-        return reserve_kw is None or average_kw + reserve_kw <= limit_kw
+        reserve_w = slot.power_reserve_w
+        return reserve_w is None or average_w + reserve_w <= limit_w
 
-    def _has_waited(self, slot: Slot, now: datetime, average_kw: float) -> bool:
+    def _has_waited(self, slot: Slot, now: datetime, average_w: float) -> bool:
         """Start or continue the waiting time for the slot.
 
         The waiting time is calculated again at each decision from the
@@ -384,8 +384,8 @@ class RegulationEngine:
         )
         general = self._config.general
         required = waiting_time(
-            average_kw,
-            general.power_limit_kw,
+            average_w,
+            general.power_limit_w,
             timedelta(seconds=general.wait_at_limit_s),
             self._state.cycling.upcoming_reon_number(slot.key),
             slot.cycling,

@@ -5,8 +5,8 @@ from datetime import timedelta
 from .configs import make_config
 from .scenario import Scenario, off, on
 
-ABOVE_LIMIT = 10.5
-NO_LOAD = 0.0
+ABOVE_LIMIT = 10_500
+NO_LOAD = 0
 
 
 def minutes_until_on(scenario: Scenario, appliance_id: str) -> float:
@@ -74,6 +74,6 @@ def test_persistent_cycling_still_needs_room_under_the_limit() -> None:
     assert scenario.decide(ABOVE_LIMIT) == off("a")
 
     assert scenario.decide_many(NO_LOAD, 4) == [[], [], [], []]
-    assert scenario.decide(10.0) == []
+    assert scenario.decide(10000) == []
     assert scenario.decide_many(NO_LOAD, 7) == [[]] * 7
     assert scenario.decide(NO_LOAD) == on("a")

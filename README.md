@@ -53,7 +53,7 @@ effekt, typisk fra HAN-porten på strømmåleren.
 
 ## Slik virker det
 
-- **Effektgrense:** høyeste tillatte gjennomsnittseffekt, for eksempel 10 kW.
+- **Effektgrense:** høyeste tillatte gjennomsnittseffekt, for eksempel 10 000 W (10 kW).
   Den tilsvarer trinnet i kapasitetsleddet du vil holde deg under.
 - **Reguleringssnitt:** gjennomsnittet av effektsensoren over et kort
   reguleringsvindu, standard 10 sekunder. Det styrer reguleringen.
@@ -66,12 +66,12 @@ effekt, typisk fra HAN-porten på strømmåleren.
   ventetid. Ventetiden er kortere jo lavere reguleringssnittet er, og den øker
   når det samme apparatet slås av og på gang på gang.
 - **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
-  må være før et apparat slås på, standard 0,1 kW. Vinduet rett etter en
+  må være før et apparat slås på, standard 100 W. Vinduet rett etter en
   avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
   eller på, og marginen hindrer at et apparat slås på bare for å slås av igjen
   ved neste avgjørelse.
 - **Effektreserve:** valgfri ledig effekt som må finnes før et apparat slås på,
-  for eksempel 4 kW for en bassengvarmer som trekker mye straks den slås på.
+  for eksempel 4000 W for en bassengvarmer som trekker mye straks den slås på.
 - **Varianter:** Et apparat kan ha varianter med en annen plass i
   prioritetslisten, for eksempel høyere prioritet om morgenen.
 - **Straff:** Går snittforbruket over effektgrensen pluss straffeterskelen,

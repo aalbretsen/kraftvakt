@@ -16,32 +16,32 @@ FIVE_MINUTES = timedelta(minutes=5)
 
 
 @pytest.mark.parametrize(
-    ("average_kw", "expected"),
+    ("average_w", "expected"),
     [
-        (0.0, timedelta(0)),
-        (5.0, timedelta(minutes=2.5)),
-        (7.5, timedelta(minutes=3.75)),
-        (10.0, FIVE_MINUTES),
-        (14.0, FIVE_MINUTES),
+        (0, timedelta(0)),
+        (5000, timedelta(minutes=2.5)),
+        (7500, timedelta(minutes=3.75)),
+        (10_000, FIVE_MINUTES),
+        (14_000, FIVE_MINUTES),
     ],
 )
-def test_linear_waiting_time(average_kw: float, expected: timedelta) -> None:
+def test_linear_waiting_time(average_w: float, expected: timedelta) -> None:
     """Proportional to the average, never longer than at the limit."""
-    assert linear_waiting_time(average_kw, 10.0, FIVE_MINUTES) == expected
+    assert linear_waiting_time(average_w, 10_000, FIVE_MINUTES) == expected
 
 
 def test_waiting_time_is_linear_until_persistent_cycling() -> None:
     """The first time a slot is turned on again, the waiting time is linear."""
     for reon_number in (0, 1):
         assert waiting_time(
-            5.0, 10.0, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING
+            5000, 10_000, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING
         ) == timedelta(minutes=2.5)
 
 
 def test_waiting_time_on_persistent_cycling_for_appliances() -> None:
     """5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
     minutes = [
-        waiting_time(1.0, 10.0, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING)
+        waiting_time(1000, 10_000, FIVE_MINUTES, reon_number, APPLIANCE_CYCLING)
         / timedelta(minutes=1)
         for reon_number in range(2, 10)
     ]
@@ -53,7 +53,8 @@ def test_cycling_steps_are_parameters() -> None:
     """Chargers use other steps and another cap."""
     steps = CyclingSteps(step=timedelta(minutes=5), cap=timedelta(minutes=30))
     minutes = [
-        waiting_time(1.0, 10.0, FIVE_MINUTES, reon_number, steps) / timedelta(minutes=1)
+        waiting_time(1000, 10_000, FIVE_MINUTES, reon_number, steps)
+        / timedelta(minutes=1)
         for reon_number in range(2, 9)
     ]
 

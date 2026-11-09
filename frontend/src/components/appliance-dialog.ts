@@ -35,8 +35,8 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     return html`
       ${this.renderEntity(issues)} ${this.renderSection("appliance.actions")}
       ${this.actionFields.map((field) => this.renderAction(field, issues, ACTION_VARIABLES))}
-      ${this.renderForm([this.numberField("power_reserve_kw", "kW", false)], issues, (value) =>
-        this.changeDraft({ power_reserve_kw: (value.power_reserve_kw as number | undefined) ?? null }),
+      ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
+        this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
       )}
       ${this.renderVariants(issues)}
     `;

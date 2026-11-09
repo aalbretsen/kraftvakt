@@ -11,18 +11,18 @@ from custom_components.kraftvakt.regulation.penalty import (
 )
 
 LIMITS = PenaltyLimits(
-    power_limit_kw=10.0, threshold_kw=1.0, window=timedelta(seconds=60)
+    power_limit_w=10_000, threshold_w=1000, window=timedelta(seconds=60)
 )
 NO_THRESHOLD = PenaltyLimits(
-    power_limit_kw=10.0, threshold_kw=0.0, window=timedelta(seconds=60)
+    power_limit_w=10_000, threshold_w=0, window=timedelta(seconds=60)
 )
-KWH_PER_KW_WINDOW = 1 / 60
+WH_PER_W_WINDOW = 1 / 60
 
 
 def overconsuming_state() -> PenaltyState:
     """Return a state whose overconsumption state started at this decision."""
     state = PenaltyState()
-    assert state.decide(LIMITS, 10.5, ()) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 10500, ()) is PenaltyOutcome.NONE
     assert state.overconsuming
     return state
 
@@ -31,48 +31,48 @@ def test_no_overconsumption_at_or_under_the_limit() -> None:
     """The state starts only when the capacity average is above the limit."""
     state = PenaltyState()
 
-    assert state.decide(LIMITS, 10.0, (12.0,)) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 10000, (12000,)) is PenaltyOutcome.NONE
     assert not state.overconsuming
-    assert state.overconsumption_kwh == 0
+    assert state.overconsumption_wh == 0
 
 
 def test_overconsumption_starts_at_zero() -> None:
     """The state starts with 0, and only later averages are counted."""
     state = PenaltyState()
 
-    assert state.decide(LIMITS, 12.0, (15.0, 15.0)) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 12000, (15000, 15000)) is PenaltyOutcome.NONE
 
     assert state.overconsuming
-    assert state.overconsumption_kwh == 0
+    assert state.overconsumption_wh == 0
 
 
 def test_overconsumption_is_net_energy_over_the_limit() -> None:
     """12 kW for one window adds 2 kW for one minute, 8 kW takes it back."""
     state = overconsuming_state()
 
-    state.decide(LIMITS, 10.5, (12.0,))
-    assert state.overconsumption_kwh == pytest.approx(2 * KWH_PER_KW_WINDOW)
+    state.decide(LIMITS, 10500, (12000,))
+    assert state.overconsumption_wh == pytest.approx(2000 * WH_PER_W_WINDOW)
 
-    state.decide(LIMITS, 10.0, (8.0,))
+    state.decide(LIMITS, 10000, (8000,))
     assert not state.overconsuming
-    assert state.overconsumption_kwh == 0
+    assert state.overconsumption_wh == 0
 
 
 def test_every_average_since_the_previous_decision_counts() -> None:
     """With a longer interval, every average in between is counted."""
     state = overconsuming_state()
 
-    state.decide(LIMITS, 10.5, (13.0, 11.0, 9.0))
+    state.decide(LIMITS, 10500, (13000, 11000, 9000))
 
-    assert state.overconsumption_kwh == pytest.approx(3 * KWH_PER_KW_WINDOW)
+    assert state.overconsumption_wh == pytest.approx(3000 * WH_PER_W_WINDOW)
 
 
 def test_overconsumption_state_ends_when_paid_back() -> None:
     """The state ends when the overconsumption is zero or less."""
     state = overconsuming_state()
-    state.decide(LIMITS, 10.5, (11.0,))
+    state.decide(LIMITS, 10500, (11000,))
 
-    assert state.decide(LIMITS, 10.0, (9.0,)) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 10000, (9000,)) is PenaltyOutcome.NONE
 
     assert not state.overconsuming
 
@@ -81,7 +81,7 @@ def test_rounding_errors_count_as_paid_back() -> None:
     """0.01 + 0.46 - 0.47 kW over the limit is paid back."""
     state = overconsuming_state()
 
-    state.decide(LIMITS, 10.0, (10.01, 10.46, 9.53))
+    state.decide(LIMITS, 10000, (10010, 10460, 9530))
 
     assert not state.overconsuming
 
@@ -90,18 +90,18 @@ def test_overconsumption_state_starts_again_at_once() -> None:
     """A new state starts at 0 if the capacity average is still above."""
     state = overconsuming_state()
 
-    state.decide(LIMITS, 10.5, (9.0,))
+    state.decide(LIMITS, 10500, (9000,))
 
     assert state.overconsuming
-    assert state.overconsumption_kwh == 0
+    assert state.overconsumption_wh == 0
 
 
 def test_penalty_starts_above_limit_plus_threshold() -> None:
     """The capacity average must exceed limit plus threshold."""
     state = overconsuming_state()
 
-    assert state.decide(LIMITS, 11.0, (12.0,)) is PenaltyOutcome.NONE
-    assert state.decide(LIMITS, 11.01, (12.0,)) is PenaltyOutcome.STARTED
+    assert state.decide(LIMITS, 11000, (12000,)) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 11010, (12000,)) is PenaltyOutcome.STARTED
     assert state.active
 
 
@@ -109,7 +109,7 @@ def test_no_penalty_when_overconsumption_is_paid_back() -> None:
     """No penalty when the overconsumption is already zero or less."""
     state = overconsuming_state()
 
-    assert state.decide(LIMITS, 12.0, (12.0, 7.0)) is PenaltyOutcome.NONE
+    assert state.decide(LIMITS, 12000, (12000, 7000)) is PenaltyOutcome.NONE
     assert not state.active
 
 
@@ -117,19 +117,19 @@ def test_zero_threshold_starts_the_penalty_at_the_next_decision() -> None:
     """With threshold 0, the penalty comes the decision after D0."""
     state = PenaltyState()
 
-    assert state.decide(NO_THRESHOLD, 10.1, (10.1,)) is PenaltyOutcome.NONE
-    assert state.decide(NO_THRESHOLD, 10.1, (10.1,)) is PenaltyOutcome.STARTED
+    assert state.decide(NO_THRESHOLD, 10100, (10100,)) is PenaltyOutcome.NONE
+    assert state.decide(NO_THRESHOLD, 10100, (10100,)) is PenaltyOutcome.STARTED
 
 
 def test_penalty_lasts_until_the_overconsumption_is_paid_back() -> None:
     """Counting goes on during the penalty, until paid back."""
     state = overconsuming_state()
-    assert state.decide(LIMITS, 12.0, (14.0,)) is PenaltyOutcome.STARTED
+    assert state.decide(LIMITS, 12000, (14000,)) is PenaltyOutcome.STARTED
 
-    assert state.decide(LIMITS, 12.0, (13.0,)) is PenaltyOutcome.ONGOING
-    assert state.overconsumption_kwh == pytest.approx(7 * KWH_PER_KW_WINDOW)
-    assert state.decide(LIMITS, 12.0, (5.0,)) is PenaltyOutcome.ONGOING
-    assert state.decide(LIMITS, 12.0, (8.0,)) is PenaltyOutcome.ENDED
+    assert state.decide(LIMITS, 12000, (13000,)) is PenaltyOutcome.ONGOING
+    assert state.overconsumption_wh == pytest.approx(7000 * WH_PER_W_WINDOW)
+    assert state.decide(LIMITS, 12000, (5000,)) is PenaltyOutcome.ONGOING
+    assert state.decide(LIMITS, 12000, (8000,)) is PenaltyOutcome.ENDED
 
     assert state == PenaltyState()
 
@@ -137,34 +137,34 @@ def test_penalty_lasts_until_the_overconsumption_is_paid_back() -> None:
 def test_penalty_does_not_end_when_the_capacity_average_falls() -> None:
     """Only paying back the overconsumption ends the penalty."""
     state = overconsuming_state()
-    state.decide(LIMITS, 12.0, (14.0,))
+    state.decide(LIMITS, 12000, (14000,))
 
-    assert state.decide(LIMITS, 2.0, (11.0,)) is PenaltyOutcome.ONGOING
+    assert state.decide(LIMITS, 2000, (11000,)) is PenaltyOutcome.ONGOING
 
 
 def test_recovery_starts_at_the_first_average_under_the_limit() -> None:
     """Recovery starts under the limit and goes on net."""
     state = overconsuming_state()
-    state.decide(LIMITS, 12.0, (16.0,))
+    state.decide(LIMITS, 12000, (16000,))
     assert not state.recovery_started
 
-    state.decide(LIMITS, 12.0, (12.0, 10.0))
+    state.decide(LIMITS, 12000, (12000, 10000))
     assert not state.recovery_started
 
-    state.decide(LIMITS, 12.0, (9.0,))
+    state.decide(LIMITS, 12000, (9000,))
     assert state.recovery_started
-    assert state.overconsumption_kwh == pytest.approx(7 * KWH_PER_KW_WINDOW)
+    assert state.overconsumption_wh == pytest.approx(7000 * WH_PER_W_WINDOW)
 
-    state.decide(LIMITS, 12.0, (12.0,))
+    state.decide(LIMITS, 12000, (12000,))
     assert state.recovery_started
-    assert state.overconsumption_kwh == pytest.approx(9 * KWH_PER_KW_WINDOW)
+    assert state.overconsumption_wh == pytest.approx(9000 * WH_PER_W_WINDOW)
 
 
 def test_recovery_is_not_tracked_outside_a_penalty() -> None:
     """Recovery only concerns a penalty period."""
     state = overconsuming_state()
 
-    state.decide(LIMITS, 10.5, (12.0, 9.0))
+    state.decide(LIMITS, 10500, (12000, 9000))
 
     assert not state.recovery_started
 
@@ -177,4 +177,4 @@ def test_energy_follows_the_regulation_window() -> None:
 
     state.decide(limits, 10.5, (16.0,))
 
-    assert state.overconsumption_kwh == pytest.approx(1.0)
+    assert state.overconsumption_wh == pytest.approx(1.0)

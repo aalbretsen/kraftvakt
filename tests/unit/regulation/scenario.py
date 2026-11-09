@@ -59,7 +59,7 @@ def reset_override(charger_id: str) -> list[Command]:
     return [ResetWindowOverride(charger_id)]
 
 
-IDLE_CHARGER = ChargerReading(charge_power_kw=0.0)
+IDLE_CHARGER = ChargerReading(charge_power_w=0)
 
 
 class Scenario:
@@ -90,7 +90,7 @@ class Scenario:
 
     def decide(
         self,
-        average_kw: float | None,
+        average_w: float | None,
         *,
         capacity: float = 0.0,
         averages: tuple[float, ...] | None = None,
@@ -105,18 +105,18 @@ class Scenario:
         last windows closed, by default valid.
         `capacity` is the capacity average, well under the limit unless given.
         `averages` are the regulation averages since the previous decision, by
-        default only `average_kw`. `true` lists the variants whose conditions
+        default only `average_w`. `true` lists the variants whose conditions
         are true.
         """
         self.now += after
         if averages is None:
-            averages = () if average_kw is None else (average_kw,)
+            averages = () if average_w is None else (average_w,)
         return self.engine.decide(
             DecisionInput(
                 now=self.now,
-                regulation_average_kw=average_kw,
-                capacity_average_kw=None if average_kw is None else capacity,
-                regulation_averages_kw=averages,
+                regulation_average_w=average_w,
+                capacity_average_w=None if average_w is None else capacity,
+                regulation_averages_w=averages,
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
@@ -127,7 +127,7 @@ class Scenario:
 
     def decide_many(
         self,
-        average_kw: float,
+        average_w: float,
         count: int,
         *,
         capacity: float = 0.0,
@@ -135,7 +135,7 @@ class Scenario:
     ) -> list[list[Command]]:
         """Make `count` decisions with the same averages and return their commands."""
         return [
-            self.decide(average_kw, capacity=capacity, true=true) for _ in range(count)
+            self.decide(average_w, capacity=capacity, true=true) for _ in range(count)
         ]
 
     def turn_on(self, *appliance_ids: str, true: tuple[str, ...] = ()) -> None:
@@ -147,12 +147,12 @@ class Scenario:
         for _ in range(100):
             if not expected:
                 return
-            commands = self.decide(0.0, true=true)
+            commands = self.decide(0, true=true)
             if commands:
                 assert commands == on(expected.pop(0))
         raise AssertionError(f"{expected} were never turned on")
 
-    def charge(self, charger_id: str, amperes: int, *, average_kw: float = 0.0) -> None:
+    def charge(self, charger_id: str, amperes: int, *, average_w: float = 0.0) -> None:
         """Decide until the charger has its current set to `amperes`.
 
         Waits as long as needed, so it also works with waiting times. Other
@@ -162,5 +162,5 @@ class Scenario:
             status = self.engine.chargers[charger_id]
             if status.current_a == amperes:
                 return
-            self.decide(average_kw)
+            self.decide(average_w)
         raise AssertionError(f"{charger_id} never got {amperes} A")
