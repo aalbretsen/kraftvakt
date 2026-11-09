@@ -12,16 +12,11 @@ LINE_VOLTAGE_V: Final = 400
 
 @dataclass(frozen=True)
 class DutyCycle:
-    """A heating device that heats a share of every period, off part first."""
+    """A heating device that heats a share of every period, on part first."""
 
     power_w: float
     duty_cycle_pct: int
     period: timedelta
-
-    @property
-    def off_duration(self) -> timedelta:
-        """Return how long the device is off in each period."""
-        return self.period - self.on_duration
 
     @property
     def on_duration(self) -> timedelta:
@@ -30,9 +25,7 @@ class DutyCycle:
 
     def is_heating(self, elapsed: timedelta) -> bool:
         """Return whether the device heats `elapsed` after the cycle started."""
-        if self.duty_cycle_pct == 0:
-            return False
-        return elapsed % self.period >= self.off_duration
+        return elapsed % self.period < self.on_duration
 
     def power_at(self, elapsed: timedelta) -> float:
         """Return the power in W `elapsed` after the cycle started."""
@@ -46,8 +39,8 @@ class DutyCycle:
         if self.duty_cycle_pct in (0, 100):
             return None
         position = elapsed % self.period
-        if position < self.off_duration:
-            return self.off_duration - position
+        if position < self.on_duration:
+            return self.on_duration - position
         return self.period - position
 
 

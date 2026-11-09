@@ -24,16 +24,16 @@ def heating_cable(duty_cycle_pct: int = 25) -> DutyCycle:
 @pytest.mark.parametrize(
     ("elapsed", "heating"),
     [
-        (minutes(0), False),
-        (minutes(44.99), False),
-        (minutes(45), True),
-        (minutes(59.99), True),
-        (minutes(60), False),
-        (minutes(105), True),
+        (minutes(0), True),
+        (minutes(14.99), True),
+        (minutes(15), False),
+        (minutes(59.99), False),
+        (minutes(60), True),
+        (minutes(105), False),
     ],
 )
-def test_the_cycle_is_off_first_then_on(elapsed: timedelta, heating: bool) -> None:
-    """750 W at 25 % of an hour: off 45 minutes, on 15, again and again."""
+def test_the_cycle_is_on_first_then_off(elapsed: timedelta, heating: bool) -> None:
+    """750 W at 25 % of an hour: on 15 minutes, off 45, again and again."""
     cycle = heating_cable()
 
     assert cycle.is_heating(elapsed) is heating
@@ -43,11 +43,11 @@ def test_the_cycle_is_off_first_then_on(elapsed: timedelta, heating: bool) -> No
 @pytest.mark.parametrize(
     ("elapsed", "expected"),
     [
-        (minutes(0), minutes(45)),
-        (minutes(30), minutes(15)),
-        (minutes(45), minutes(15)),
-        (minutes(50), minutes(10)),
-        (minutes(60), minutes(45)),
+        (minutes(0), minutes(15)),
+        (minutes(10), minutes(5)),
+        (minutes(15), minutes(45)),
+        (minutes(30), minutes(30)),
+        (minutes(60), minutes(15)),
     ],
 )
 def test_time_to_next_change(elapsed: timedelta, expected: timedelta) -> None:

@@ -37,14 +37,16 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   (`mdi:water-boiler`), panel heater (`mdi:radiator`). They behave the same; the
   type only gives the switch its icon (an icon translation keyed by the type).
 - A heating device has power (W), duty cycle (0–100 %) and period (whole
-  minutes). It heats in a fixed cycle, the off part first: 750 W, 25 %, 60 min
-  is off 45 min, on 15 min, and so on. Its switch cuts the power: off consumes
-  nothing. **The cycle restarts in its off part every time the switch is
-  turned on**, and so also after a restart with a restored switch.
+  minutes). It heats in a fixed cycle, the on part first: 750 W, 25 %, 60 min
+  is on 15 min, off 45 min, and so on. Its switch cuts the power: off consumes
+  nothing. **The cycle restarts in its on part every time the switch is
+  turned on**, and so also after a restart with a restored switch. Settled
+  with the owner after manual testing: the off part first made a device
+  switched on by Kraftvakt look like it used nothing.
 - Power, duty cycle and period are also numbers, «Heating power» /
   «Varmeeffekt» (W), «Duty cycle» / «Driftsandel» (%) and «Period» /
   «Periode» (min), changeable while HA runs. A change while the switch is on
-  restarts the cycle in its off part; an unchanged value does nothing.
+  restarts the cycle in its on part; an unchanged value does nothing.
 - An EV charger is 400 V three-phase with power factor 1:
   `P = √3 · 400 V · I` (6 A → 4.16 kW). It has a minimum and maximum current
   (whole amperes, `max_below_min` otherwise). It draws power only while

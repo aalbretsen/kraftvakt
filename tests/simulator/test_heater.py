@@ -36,20 +36,20 @@ async def test_heater_starts_switched_off_and_consumes_nothing(
 async def test_heater_follows_its_duty_cycle_while_switched_on(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
 ) -> None:
-    """750 W at 25 % of an hour: off 45 minutes, then on 15, again and again."""
+    """750 W at 25 % of an hour: on 15 minutes, then off 45, again and again."""
     await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", SWITCH)
 
     assert state(hass, SWITCH) == STATE_ON
-    assert power(hass, POWER) == 0
-    await advance(hass, freezer, timedelta(minutes=44))
-    assert power(hass, POWER) == 0
-    await advance(hass, freezer, timedelta(minutes=1))
     assert power(hass, POWER) == 750
-    await advance(hass, freezer, timedelta(minutes=15))
+    await advance(hass, freezer, timedelta(minutes=14))
+    assert power(hass, POWER) == 750
+    await advance(hass, freezer, timedelta(minutes=1))
     assert power(hass, POWER) == 0
     await advance(hass, freezer, timedelta(minutes=45))
     assert power(hass, POWER) == 750
+    await advance(hass, freezer, timedelta(minutes=15))
+    assert power(hass, POWER) == 0
 
 
 async def test_switching_off_stops_heating_and_on_restarts_the_cycle(
@@ -57,7 +57,7 @@ async def test_switching_off_stops_heating_and_on_restarts_the_cycle(
 ) -> None:
     await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", SWITCH)
-    await advance(hass, freezer, timedelta(minutes=50))
+    await advance(hass, freezer, timedelta(minutes=10))
     assert power(hass, POWER) == 750
 
     await call(hass, "switch", "turn_off", SWITCH)
@@ -66,9 +66,9 @@ async def test_switching_off_stops_heating_and_on_restarts_the_cycle(
     assert power(hass, POWER) == 0
 
     await call(hass, "switch", "turn_on", SWITCH)
-    assert power(hass, POWER) == 0
-    await advance(hass, freezer, timedelta(minutes=45))
     assert power(hass, POWER) == 750
+    await advance(hass, freezer, timedelta(minutes=15))
+    assert power(hass, POWER) == 0
 
 
 async def test_turning_on_a_heater_that_is_on_keeps_the_cycle(
@@ -80,7 +80,7 @@ async def test_turning_on_a_heater_that_is_on_keeps_the_cycle(
 
     await call(hass, "switch", "turn_on", SWITCH)
 
-    assert power(hass, POWER) == 750
+    assert power(hass, POWER) == 0
 
 
 async def test_heater_with_full_duty_cycle_heats_at_once(
@@ -93,7 +93,7 @@ async def test_heater_with_full_duty_cycle_heats_at_once(
     assert power(hass, POWER) == 750
 
 
-async def test_heater_switch_is_restored_with_the_cycle_in_its_off_part(
+async def test_heater_switch_is_restored_with_the_cycle_in_its_on_part(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
 ) -> None:
     mock_restore_cache(hass, [State(SWITCH, STATE_ON)])
@@ -101,9 +101,9 @@ async def test_heater_switch_is_restored_with_the_cycle_in_its_off_part(
     await add_device(DeviceKind.HEATER, "Heating cable")
 
     assert state(hass, SWITCH) == STATE_ON
-    assert power(hass, POWER) == 0
-    await advance(hass, freezer, timedelta(minutes=45))
     assert power(hass, POWER) == 750
+    await advance(hass, freezer, timedelta(minutes=15))
+    assert power(hass, POWER) == 0
 
 
 async def test_heater_switch_has_the_icon_of_its_type(
@@ -125,7 +125,7 @@ async def test_unplugged_heater_consumes_nothing_while_its_cycle_runs_on(
     await add_device(DeviceKind.HAN, "HAN", background_w=1000)
     await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", SWITCH)
-    await advance(hass, freezer, timedelta(minutes=50))
+    await advance(hass, freezer, timedelta(minutes=10))
     assert power(hass, HOUSE_POWER) == 1750
 
     await call(hass, "switch", "turn_on", UNPLUGGED)
@@ -140,25 +140,25 @@ async def test_unplugged_heater_consumes_nothing_while_its_cycle_runs_on(
     assert power(hass, HOUSE_POWER) == 1750
 
 
-async def test_cycle_can_be_changed_and_restarts_in_its_off_part(
+async def test_cycle_can_be_changed_and_restarts_in_its_on_part(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
 ) -> None:
-    """2000 W at 50 % of 10 minutes: off 5 minutes, then on 5."""
+    """2000 W at 50 % of 10 minutes: on 5 minutes, then off 5."""
     entry = await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", SWITCH)
     await advance(hass, freezer, timedelta(minutes=50))
-    assert power(hass, POWER) == 750
+    assert power(hass, POWER) == 0
 
     await call(hass, "number", "set_value", "number.heating_cable_period", value=10)
-    assert power(hass, POWER) == 0
+    assert power(hass, POWER) == 750
     await call(hass, "number", "set_value", "number.heating_cable_duty_cycle", value=50)
     await call(
         hass, "number", "set_value", "number.heating_cable_heating_power", value=2000
     )
     await advance(hass, freezer, timedelta(minutes=4))
-    assert power(hass, POWER) == 0
-    await advance(hass, freezer, timedelta(minutes=1))
     assert power(hass, POWER) == 2000
+    await advance(hass, freezer, timedelta(minutes=1))
+    assert power(hass, POWER) == 0
 
     assert entry.data["power_w"] == 2000
     assert entry.data["duty_cycle_pct"] == 50
@@ -175,7 +175,7 @@ async def test_unchanged_cycle_keeps_running(
 
     await call(hass, "number", "set_value", "number.heating_cable_period", value=60)
 
-    assert power(hass, POWER) == 750
+    assert power(hass, POWER) == 0
 
 
 async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(

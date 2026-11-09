@@ -440,8 +440,8 @@ til én enhet om gangen med **Legg til enhet**:
 - **Varmeapparat:** varmekabler, varmtvannsbereder eller panelovn, med effekt
   (W), driftsandel (0–100 %) og periode (minutter). Apparatet har en bryter og
   en effektsensor. Mens bryteren er på, varmer det i en fast syklus som starter
-  med den avslåtte delen: 750 W, 25 % og 60 minutter gir 45 minutter av og 15
-  minutter på, om igjen og om igjen. Syklusen starter på nytt hver gang
+  med den påslåtte delen: 750 W, 25 % og 60 minutter gir 15 minutter på og 45
+  minutter av, om igjen og om igjen. Syklusen starter på nytt hver gang
   bryteren slås på. Med bryteren av bruker apparatet ingenting. Varmeeffekt,
   driftsandel og periode er `number`-entiteter som kan endres mens Home
   Assistant kjører. Endres de mens bryteren er på, starter syklusen på nytt.

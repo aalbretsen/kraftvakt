@@ -77,7 +77,6 @@ async def test_unloaded_device_no_longer_counts(
     await add_device(DeviceKind.HAN, "HAN")
     heater = await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", "switch.heating_cable")
-    await advance(hass, freezer, timedelta(minutes=45))
     assert power(hass, HOUSE_POWER) == 3500 + 750
 
     assert await hass.config_entries.async_unload(heater.entry_id)

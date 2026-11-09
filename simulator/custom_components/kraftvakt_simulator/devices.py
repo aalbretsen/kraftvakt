@@ -165,7 +165,7 @@ class PluggedInDevice(SimulatedDevice):
 class SimulatedHeater(PluggedInDevice):
     """A heating device with a duty cycle and an on/off switch in front of it.
 
-    The cycle starts in its off part each time the switch is turned on or the
+    The cycle starts in its on part each time the switch is turned on or the
     cycle is changed, and runs on while the device is unplugged.
     """
 
