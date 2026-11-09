@@ -79,7 +79,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   with variant and waiting, chargers with current, bypassed, waiting, excluded
   or outside the charging window. Before the first decision after a start
   (`excluded` is null) a charger shows «Waiting for the first decision»
-  instead (settled after the exploratory test).
+  instead (settled after the exploratory test). A charger that rests after
+  not charging is shown as bypassed, without when it is tried again; the
+  owner chose not to add it to the status (observation N1 in the retest of
+  the exploratory test).
 - The safe state lasts until the next decision. While the power sensor is
   already valid again, the safe state banner is an info that the regulation
   starts again at the next decision, not the error that the sensor gives no
