@@ -22,6 +22,8 @@ from custom_components.kraftvakt.config_model import (
     Variant,
 )
 
+from .scenario import DECISION_INTERVAL
+
 DEFAULT_ACTION = ActionConfig(ActionMode.DEFAULT)
 
 
@@ -117,6 +119,7 @@ def make_config(
         general=GeneralConfig(
             power_sensor="sensor.power",
             power_limit_kw=limit_kw,
+            regulation_window_s=int(DECISION_INTERVAL.total_seconds()),
             wait_at_limit_s=wait_at_limit_s,
             penalty_threshold_kw=threshold_kw,
         ),

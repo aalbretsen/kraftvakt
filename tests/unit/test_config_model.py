@@ -27,7 +27,7 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.power_sensor is None
     assert config.general.power_limit_kw == 10.0
     assert config.general.turn_on_margin_kw == 0.1
-    assert config.general.regulation_window_s == 60
+    assert config.general.regulation_window_s == 10
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 60
     assert config.general.penalty_threshold_kw == 1.0

@@ -56,7 +56,7 @@ effekt, typisk fra HAN-porten på strømmåleren.
 - **Effektgrense:** høyeste tillatte gjennomsnittseffekt, for eksempel 10 kW.
   Den tilsvarer trinnet i kapasitetsleddet du vil holde deg under.
 - **Reguleringssnitt:** gjennomsnittet av effektsensoren over et kort
-  reguleringsvindu, standard 60 sekunder. Det styrer reguleringen.
+  reguleringsvindu, standard 10 sekunder. Det styrer reguleringen.
 - **Snittforbruk:** glidende gjennomsnitt over siste time. Det er dette
   nettselskapet måler, og det som skal holdes under effektgrensen.
 - **Avgjørelser:** Ved hvert reguleringsintervall avgjør reguleringen om et

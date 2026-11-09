@@ -21,7 +21,7 @@ owner instead of deciding.
 |---|---|
 | Power limit (effektgrense) | The highest allowed average power, 1–50 kW, default 10 kW. The target the regulation keeps just below. |
 | Power sensor (effektsensor) | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
-| Regulation window (reguleringsvindu) | 10–600 s, default 60 s. |
+| Regulation window (reguleringsvindu) | 10–600 s, default 10 s (settled with the owner, was 60 s). |
 | Regulation average (reguleringssnitt) | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Regulation interval (reguleringsintervall) | 1x–4x the regulation window, default 1x. A decision is made every N windows. |
 | Capacity window / average consumption (snittforbruk) | Sliding time-weighted average over exactly one hour back, not configurable. Used only for the penalty. |

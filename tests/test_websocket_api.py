@@ -173,7 +173,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "power_sensor": None,
             "power_limit_kw": 10.0,
             "turn_on_margin_kw": 0.1,
-            "regulation_window_s": 60,
+            "regulation_window_s": 10,
             "regulation_interval": 1,
             "wait_at_limit_s": 60,
             "penalty_threshold_kw": 1.0,

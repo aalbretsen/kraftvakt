@@ -263,7 +263,7 @@ class GeneralConfig:
     power_sensor: str | None = None
     power_limit_kw: float = 10.0
     turn_on_margin_kw: float = 0.1
-    regulation_window_s: int = 60
+    regulation_window_s: int = 10
     regulation_interval: int = 1
     wait_at_limit_s: int = 60
     penalty_threshold_kw: float = 1.0

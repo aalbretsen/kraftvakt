@@ -31,7 +31,12 @@ async def setup_kraftvakt(hass: HomeAssistant, hass_storage: dict[str, Any]) -> 
         "version": STORAGE_VERSION,
         "minor_version": 1,
         "key": STORAGE_KEY,
-        "data": {"general": {"power_sensor": POWER_SENSOR}},
+        "data": {
+            "general": {
+                "power_sensor": POWER_SENSOR,
+                "regulation_window_s": int(WINDOW.total_seconds()),
+            }
+        },
     }
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
