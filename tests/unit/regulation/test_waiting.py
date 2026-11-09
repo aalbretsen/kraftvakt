@@ -5,7 +5,6 @@ from datetime import timedelta
 import pytest
 
 from custom_components.kraftvakt.regulation.waiting import (
-    APPLIANCE_CYCLING,
     CyclingCounter,
     CyclingSteps,
     WaitingCurve,
@@ -14,6 +13,7 @@ from custom_components.kraftvakt.regulation.waiting import (
 
 FIVE_MINUTES = timedelta(minutes=5)
 DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
+APPLIANCE_CYCLING = CyclingSteps.from_seconds(120, 900)
 UTILIZATIONS = (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
 
 

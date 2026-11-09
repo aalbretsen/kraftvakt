@@ -183,12 +183,15 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - Persistent cycling: when the same slot is turned on again without any other
   slot being switched in between, the counter grows. From the second time on
   the waiting time is fixed, independent of the average:
-  min(cap, waiting at limit + step × (n − 2)). Appliances: step 120 s, cap
-  900 s. Fictive appliances: step 300 s, cap 1800 s. Settled with the owner:
-  the steps and caps keep their values when the waiting time at the limit
-  moved to seconds. The first
+  min(cap, waiting at limit + step × (n − 2)). The step and the cap are set
+  separately for appliances (default step 120 s, cap 900 s) and for fictive
+  appliances (default step 300 s, cap 1800 s), in whole seconds, step 10–600
+  s and cap 60–3600 s. There is no rule between the cap and the waiting time
+  at the limit: a cap below it makes the waiting time on persistent cycling
+  shorter than the waiting time at the limit. Settled with the owner, they
+  were fixed before. The first
   time again uses the curve. Any command for another slot, also forced
-  ones, resets the counter. Not configurable.
+  ones, resets the counter.
 - Kept as is after the exploratory test, to revisit if it shows
   up in real use: two slots that alternate (A on, B on, B off, A off, A on …)
   reset each other's counter, so their waiting time never grows. In the test
@@ -218,7 +221,8 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - The start after a penalty resets the cycling counters like every other
   start. Kept as is after the exploratory test: while the average
   consumption stays above limit plus threshold, an appliance that pushes the
-  average over the limit goes on and off with the linear waiting time only.
+  average over the limit goes on and off with the waiting time from the
+  curve only, never the longer waiting time on persistent cycling.
   The penalty should never be needed.
 
 ## Safe state

@@ -124,6 +124,27 @@ def test_fictive_appliances_cycle_with_their_own_steps() -> None:
     assert waits == [0, 5, 10, 15, 20, 25, 30, 30]
 
 
+def test_fictive_appliances_cycle_with_the_configured_step_and_cap() -> None:
+    """Step 2 minutes and cap 9 minutes: 5, 7, 9 and then 9 minutes."""
+    scenario = Scenario(
+        make_config(
+            chargers=(charger("c", max_a=6),),
+            wait_at_limit_s=300,
+            charger_cycling_s=(120, 540),
+        )
+    )
+    scenario.set_charger("c", **CHARGING)
+    scenario.charge("c", 6)
+    waits = []
+    for _ in range(6):
+        assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
+        waiting_started = scenario.now + timedelta(minutes=1)
+        scenario.charge("c", 6)
+        waits.append((scenario.now - waiting_started) / timedelta(minutes=1))
+
+    assert waits == [0, 5, 7, 9, 9, 9]
+
+
 def test_several_chargers_take_turns() -> None:
     """The first fictive appliance of each charger, then the second."""
     scenario = two_chargers(one_at_a_time=False)

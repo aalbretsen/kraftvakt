@@ -1,5 +1,5 @@
 /** The pages of the panel, with their address under the panel. */
-export const PAGES = ["status", "general", "appliances", "charging"] as const;
+export const PAGES = ["status", "general", "appliances", "charging", "advanced"] as const;
 
 export type Page = (typeof PAGES)[number];
 

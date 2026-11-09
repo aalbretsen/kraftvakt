@@ -1,4 +1,4 @@
-import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse } from "@mdi/js";
+import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse, mdiTune } from "@mdi/js";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { live } from "lit/directives/live.js";
@@ -23,6 +23,7 @@ import "./components/save-bar";
 import { DRAFT_CHANGED, sameConfig, withCompletePriority } from "./draft";
 import { localizer, type Localize } from "./localize";
 import { navigateToPage, pageForPath, type Page } from "./navigation";
+import "./pages/advanced-page";
 import "./pages/appliances-page";
 import "./pages/charging-page";
 import "./pages/general-page";
@@ -35,6 +36,7 @@ const TAB_ICONS: Record<Page, string> = {
   general: mdiCog,
   appliances: mdiFormatListNumbered,
   charging: mdiCarElectric,
+  advanced: mdiTune,
 };
 
 /**
@@ -178,6 +180,7 @@ export class KraftvaktPanel extends LitElement {
       case "general":
       case "appliances":
       case "charging":
+      case "advanced":
         return this.renderConfigPage(page);
     }
   }
@@ -263,6 +266,20 @@ export class KraftvaktPanel extends LitElement {
             .saveErrors=${this.saveErrors}
             .locked=${locked}
           ></kraftvakt-charging-page>
+        `;
+      case "advanced":
+        return html`
+          <kraftvakt-advanced-page
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .narrow=${this.narrow}
+            .config=${config}
+            .entityNames=${this.config?.entity_names ?? {}}
+            .capabilities=${this.capabilities}
+            .issues=${issues}
+            .saveErrors=${this.saveErrors}
+            .locked=${locked}
+          ></kraftvakt-advanced-page>
         `;
     }
   }

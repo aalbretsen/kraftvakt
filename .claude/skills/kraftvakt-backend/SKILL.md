@@ -65,6 +65,10 @@ integrations.
     "wait_at_limit_s": 300,
     "wait_curve_steepness": 6.0,
     "wait_curve_pivot": 80,
+    "appliance_cycling_step_s": 120,
+    "appliance_cycling_cap_s": 900,
+    "charger_cycling_step_s": 300,
+    "charger_cycling_cap_s": 1800,
     "penalty_threshold_w": 1000
   },
   "appliances": [

@@ -35,7 +35,7 @@ from .model import (
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import build_slots, current_variant, fictive_slots
-from .waiting import WaitingCurve, waiting_time
+from .waiting import CyclingSteps, WaitingCurve, waiting_time
 
 # Kept apart so it can change without changing the rest of the regulation.
 SLOTS_PER_DECISION: Final = 1
@@ -58,8 +58,15 @@ class RegulationEngine:
             if config.charging.enabled
             else {}
         )
+        general = config.general
         self._waiting_curve = WaitingCurve.from_settings(
-            config.general.wait_curve_steepness, config.general.wait_curve_pivot
+            general.wait_curve_steepness, general.wait_curve_pivot
+        )
+        self._appliance_cycling = CyclingSteps.from_seconds(
+            general.appliance_cycling_step_s, general.appliance_cycling_cap_s
+        )
+        self._fictive_appliance_cycling = CyclingSteps.from_seconds(
+            general.charger_cycling_step_s, general.charger_cycling_cap_s
         )
         self._running = False
         self._state = RegulationState()
@@ -306,12 +313,14 @@ class RegulationEngine:
             self._config,
             self._state.current_variants,
             self._state.appliances_on,
+            self._appliance_cycling,
             fictive_slots(
                 [self._chargers[charger_id] for charger_id in charging.priority],
                 charging.fictive_on,
                 charging.may_charge,
                 charging.on_trial,
                 charging.bypassed,
+                self._fictive_appliance_cycling,
             ),
         )
 

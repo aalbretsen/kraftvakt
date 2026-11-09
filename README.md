@@ -65,8 +65,11 @@ effekt, typisk fra HAN-porten på strømmåleren.
   slås det neste apparatet i prioritetslisten på, ett om gangen og etter en
   ventetid. Ventetiden følger ventetidskurven: under halvparten av
   effektgrensen ventes det ikke, og nær effektgrensen ventes nesten hele
-  ventetiden ved effektgrensen. Den øker når det samme apparatet slås av og på
-  gang på gang.
+  ventetiden ved effektgrensen. Slås det samme apparatet på igjen gang på
+  gang, er ventetiden fra andre gang lik ventetiden ved effektgrensen, og den
+  øker med et steg hver gang opp til et tak. Standard er steg 120 s og tak
+  900 s for apparater, og steg 300 s og tak 1800 s for elbilladere, der hver
+  ampere regnes for seg.
 - **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
   må være før et apparat slås på, standard 100 W. Vinduet rett etter en
   avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
@@ -94,17 +97,13 @@ tilkoblet.
 
 ## Konfigurasjon i panelet
 
-Panelet har en meny øverst med statussiden og tre konfigurasjonssider. Bare
+Panelet har en meny øverst med statussiden og fire konfigurasjonssider. Bare
 administratorer har tilgang.
 
 - **Generelt:** effektsensor, effektgrense, innkoblingsmargin,
   reguleringsvindu, reguleringsintervall, ventetid ved effektgrensen og
   straffeterskel.
   Hjelpeteksten under hvert felt viser gyldig område og standardverdi.
-  **Ventetidskurve** har to glidebrytere, bratthet og vendepunkt, og en tabell
-  og en kurve som viser hvor stor del av ventetiden et apparat venter ved ulik
-  utnyttelse av effektgrensen. De følger glidebryterne med en gang. På en smal
-  skjerm vises ikke tabellen.
 - **Apparater:** prioritetslisten, med det viktigste apparatet øverst. Dra i
   håndtaket for å endre rekkefølgen. **Legg til apparat** og blyanten åpner en
   dialog med entitet, handlinger for å slå på og av, valgfri effektreserve og
@@ -119,6 +118,12 @@ administratorer har tilgang.
   ladestrøm, sensor for ladeeffekt, effektreserve, bil tilkoblet og ladetidsrom.
   Bil tilkoblet er påkrevd når bare én elbillader kan lade om gangen.
   Når billadestyring er av, beholdes elbilladerne, men de kan bare vises.
+- **Avansert:** **Ventetidskurve** har to glidebrytere, bratthet og
+  vendepunkt, og en tabell og en kurve som viser hvor stor del av ventetiden
+  et apparat venter ved ulik utnyttelse av effektgrensen. De følger
+  glidebryterne med en gang. På en smal skjerm vises ikke tabellen.
+  **Ventetid ved ny innkobling** har steg og tak for apparater og for
+  elbilladere. Steget er 10–600 s og taket 60–3600 s.
 
 For handlingene kan du velge **Standard** når entitetens domene har en
 standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers

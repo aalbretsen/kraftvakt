@@ -8,7 +8,8 @@
     "status": "Status",
     "general": "Generelt",
     "appliances": "Apparater",
-    "charging": "Billading"
+    "charging": "Billading",
+    "advanced": "Avansert"
   },
   "status": {
     "regulation": "Regulering",
@@ -137,11 +138,6 @@
   "general": {
     "measurement": "Måling",
     "regulation": "Regulering",
-    "wait_curve": "Ventetidskurve",
-    "wait_curve_info": "Hvor stor del av ventetiden ved effektgrensen et apparat venter",
-    "utilization_percent": "Utnyttelse %",
-    "waiting_percent": "Ventetid %",
-    "utilization": "Utnyttelse",
     "penalty": "Straff",
     "capacity_window_info": "Kapasitetsvinduet er fast én time og kan ikke endres.",
     "interval_option": "{count} × reguleringsvinduet",
@@ -179,8 +175,35 @@
       },
       "wait_curve_pivot": {
         "label": "Vendepunkt"
+      },
+      "appliance_cycling_step_s": {
+        "label": "Steg",
+        "helper": "Hvor mye ventetiden øker hver gang. {min}–{max} s, standard {default} s."
+      },
+      "appliance_cycling_cap_s": {
+        "label": "Tak",
+        "helper": "Ventetiden blir aldri lengre enn dette. {min}–{max} s, standard {default} s."
+      },
+      "charger_cycling_step_s": {
+        "label": "Steg",
+        "helper": "Hvor mye ventetiden øker hver gang. {min}–{max} s, standard {default} s."
+      },
+      "charger_cycling_cap_s": {
+        "label": "Tak",
+        "helper": "Ventetiden blir aldri lengre enn dette. {min}–{max} s, standard {default} s."
       }
     }
+  },
+  "advanced": {
+    "wait_curve": "Ventetidskurve",
+    "wait_curve_info": "Hvor stor del av ventetiden ved effektgrensen et apparat venter",
+    "utilization_percent": "Utnyttelse %",
+    "waiting_percent": "Ventetid %",
+    "utilization": "Utnyttelse",
+    "cycling": "Ventetid ved ny innkobling",
+    "cycling_info": "Når det samme apparatet eller én ampere til for en elbillader slås på igjen gang på gang, er ventetiden lik ventetiden ved effektgrensen fra andre gang, og den øker med steget hver gang opp til taket.",
+    "appliances": "Apparater",
+    "chargers": "Elbilladere"
   },
   "list": {
     "drag": "Dra for å endre rekkefølgen",

@@ -6,7 +6,7 @@ description: The Kraftvakt panel in frontend/ - Lit and TypeScript structure, ro
 # Kraftvakt panel
 
 The panel is the only user interface: a sidebar panel for administrators with a
-top menu (Status, General, Appliances, EV charging). Messages to the backend
+top menu (Status, General, Appliances, EV charging, Advanced). Messages to the backend
 are in the `kraftvakt-backend` skill.
 
 ## Build
@@ -40,18 +40,29 @@ frontend/src/
   wait-curve.ts        the waiting time curve, the same as WaitingCurve in
                        regulation/waiting.py (keep the two in step)
   types.ts, format.ts
-  pages/               status, general, appliances, charging, config-page (shared)
+  pages/               status, general, appliances, charging, advanced,
+                       config-page (shared), general-settings-page (shared by the
+                       pages with general settings: General and Advanced)
   components/          countdown (ring and bar), locked-banner, manual-control-warning, sortable-list,
                        item-dialog (shared), appliance-dialog, charger-dialog,
                        action-field, condition-field, save-bar, confirm-dialog
 ```
 
 Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
-`/kraftvakt/appliances`, `/kraftvakt/charging`.
+`/kraftvakt/appliances`, `/kraftvakt/charging`, `/kraftvakt/advanced`.
 
 ## Behaviour that was settled
 
-- «Ventetidskurve» is the last card on «Generelt», after «Straff»: one line
+- «Avansert» is the last page in the menu (icon `mdiTune`), with the settings
+  most users never change. It is locked while the regulation runs, like the
+  other configuration pages. Its settings belong to `general` in the stored
+  configuration, so `pageForIssue()` sends issues for those fields to it.
+  Settled with the owner: «Ventetid ved effektgrensen» stays on «Generelt».
+- «Ventetid ved ny innkobling» is the second card on «Avansert»: one line of
+  text, then «Apparater» and «Elbilladere», each with the number fields
+  «Steg» and «Tak» in seconds.
+- «Ventetidskurve» is the first card on «Avansert» (it was the last card on
+  «Generelt», moved by the owner): one line
   of text, sliders for steepness and pivot point (`ha-slider` without tooltip,
   the value as plain text to the right, no input box, no helper text), a table
   «Utnyttelse %» / «Ventetid %» at 50, 60, 70, 75, 80, 85, 90, 93, 96 and 99

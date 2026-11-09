@@ -8,7 +8,8 @@
     "status": "Status",
     "general": "General",
     "appliances": "Appliances",
-    "charging": "EV charging"
+    "charging": "EV charging",
+    "advanced": "Advanced"
   },
   "status": {
     "regulation": "Regulation",
@@ -137,11 +138,6 @@
   "general": {
     "measurement": "Measurement",
     "regulation": "Regulation",
-    "wait_curve": "Waiting time curve",
-    "wait_curve_info": "How much of the waiting time at the power limit an appliance waits",
-    "utilization_percent": "Utilization %",
-    "waiting_percent": "Waiting time %",
-    "utilization": "Utilization",
     "penalty": "Penalty",
     "capacity_window_info": "The capacity window is fixed at one hour and cannot be changed.",
     "interval_option": "{count} × the regulation window",
@@ -179,8 +175,35 @@
       },
       "wait_curve_pivot": {
         "label": "Pivot point"
+      },
+      "appliance_cycling_step_s": {
+        "label": "Step",
+        "helper": "How much the waiting time grows each time. {min}–{max} s, default {default} s."
+      },
+      "appliance_cycling_cap_s": {
+        "label": "Cap",
+        "helper": "The waiting time never gets longer than this. {min}–{max} s, default {default} s."
+      },
+      "charger_cycling_step_s": {
+        "label": "Step",
+        "helper": "How much the waiting time grows each time. {min}–{max} s, default {default} s."
+      },
+      "charger_cycling_cap_s": {
+        "label": "Cap",
+        "helper": "The waiting time never gets longer than this. {min}–{max} s, default {default} s."
       }
     }
+  },
+  "advanced": {
+    "wait_curve": "Waiting time curve",
+    "wait_curve_info": "How much of the waiting time at the power limit an appliance waits",
+    "utilization_percent": "Utilization %",
+    "waiting_percent": "Waiting time %",
+    "utilization": "Utilization",
+    "cycling": "Waiting time when turned on again",
+    "cycling_info": "When the same appliance or one more ampere for an EV charger is turned on again and again, the waiting time is the waiting time at the power limit from the second time, and grows by the step each time up to the cap.",
+    "appliances": "Appliances",
+    "chargers": "EV chargers"
   },
   "list": {
     "drag": "Drag to change the order",

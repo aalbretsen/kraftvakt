@@ -34,6 +34,10 @@ export interface GeneralConfig {
   wait_at_limit_s: number;
   wait_curve_steepness: number;
   wait_curve_pivot: number;
+  appliance_cycling_step_s: number;
+  appliance_cycling_cap_s: number;
+  charger_cycling_step_s: number;
+  charger_cycling_cap_s: number;
   penalty_threshold_w: number;
 }
 

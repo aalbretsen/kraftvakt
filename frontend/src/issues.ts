@@ -26,8 +26,21 @@ const ISSUE_PAGES: Record<Issue["section"], Page> = {
   chargers: "charging",
 };
 
+/** The general settings that are on the advanced page. */
+const ADVANCED_FIELDS = new Set([
+  "wait_curve_steepness",
+  "wait_curve_pivot",
+  "appliance_cycling_step_s",
+  "appliance_cycling_cap_s",
+  "charger_cycling_step_s",
+  "charger_cycling_cap_s",
+]);
+
 /** Return the page where the issue is fixed. */
 export function pageForIssue(issue: Issue): Page {
+  if (issue.section === "general" && issue.field && ADVANCED_FIELDS.has(issue.field)) {
+    return "advanced";
+  }
   return ISSUE_PAGES[issue.section];
 }
 

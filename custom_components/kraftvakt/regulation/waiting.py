@@ -20,13 +20,10 @@ class CyclingSteps:
     step: timedelta
     cap: timedelta
 
-
-APPLIANCE_CYCLING: Final = CyclingSteps(
-    step=timedelta(seconds=120), cap=timedelta(seconds=900)
-)
-FICTIVE_APPLIANCE_CYCLING: Final = CyclingSteps(
-    step=timedelta(seconds=300), cap=timedelta(seconds=1800)
-)
+    @classmethod
+    def from_seconds(cls, step_s: float, cap_s: float) -> CyclingSteps:
+        """Return the steps for a step and a cap in seconds."""
+        return cls(step=timedelta(seconds=step_s), cap=timedelta(seconds=cap_s))
 
 
 @dataclass(frozen=True, slots=True)

@@ -12,8 +12,8 @@ NO_LOAD = 0
 def minutes_until_on(scenario: Scenario, appliance_id: str) -> float:
     """Decide without load until the appliance is on and return the waiting time.
 
-    Without load, the linear waiting time is 0, so only persistent cycling
-    makes the regulation wait.
+    Without load, the waiting time from the curve is 0, so only persistent
+    cycling makes the regulation wait.
     """
     assert scenario.decide(NO_LOAD) in ([], on(appliance_id))
     waiting_started = scenario.now
@@ -36,6 +36,16 @@ def test_waiting_time_grows_on_persistent_cycling() -> None:
     waits = [cycle(scenario, "a") for _ in range(8)]
 
     assert waits == [0, 5, 7, 9, 11, 13, 15, 15]
+
+
+def test_waiting_time_grows_with_the_configured_step_and_cap() -> None:
+    """Step 1 minute and cap 8 minutes: 5, 6, 7 and then 8 minutes."""
+    scenario = Scenario(make_config("a", appliance_cycling_s=(60, 480)))
+    scenario.turn_on("a")
+
+    waits = [cycle(scenario, "a") for _ in range(6)]
+
+    assert waits == [0, 5, 6, 7, 8, 8]
 
 
 def test_switching_another_appliance_resets_the_increase() -> None:

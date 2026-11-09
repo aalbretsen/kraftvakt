@@ -15,6 +15,10 @@ def full_config_data() -> dict[str, Any]:
             "wait_at_limit_s": 240,
             "wait_curve_steepness": 4.5,
             "wait_curve_pivot": 85,
+            "appliance_cycling_step_s": 90,
+            "appliance_cycling_cap_s": 600,
+            "charger_cycling_step_s": 240,
+            "charger_cycling_cap_s": 1200,
             "penalty_threshold_w": 500,
         },
         "appliances": [

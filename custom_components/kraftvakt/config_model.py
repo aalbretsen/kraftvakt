@@ -50,6 +50,8 @@ REGULATION_INTERVAL = Range(1, 4, 1)
 WAIT_AT_LIMIT_S = Range(0, 600, 1)
 WAIT_CURVE_STEEPNESS = Range(1.5, 9, 0.5)
 WAIT_CURVE_PIVOT = Range(50, 99, 1)
+CYCLING_STEP_S = Range(10, 600, 1)
+CYCLING_CAP_S = Range(60, 3600, 1)
 PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
 APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
 CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
@@ -66,6 +68,10 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "wait_at_limit_s": WAIT_AT_LIMIT_S,
         "wait_curve_steepness": WAIT_CURVE_STEEPNESS,
         "wait_curve_pivot": WAIT_CURVE_PIVOT,
+        "appliance_cycling_step_s": CYCLING_STEP_S,
+        "appliance_cycling_cap_s": CYCLING_CAP_S,
+        "charger_cycling_step_s": CYCLING_STEP_S,
+        "charger_cycling_cap_s": CYCLING_CAP_S,
         "penalty_threshold_w": PENALTY_THRESHOLD_W,
     },
     "appliances": {"power_reserve_w": APPLIANCE_POWER_RESERVE_W},
@@ -272,6 +278,10 @@ class GeneralConfig:
     wait_at_limit_s: int = 300
     wait_curve_steepness: float = 6.0
     wait_curve_pivot: int = 80
+    appliance_cycling_step_s: int = 120
+    appliance_cycling_cap_s: int = 900
+    charger_cycling_step_s: int = 300
+    charger_cycling_cap_s: int = 1800
     penalty_threshold_w: int = 1000
 
     def to_dict(self) -> dict[str, Any]:
@@ -285,6 +295,10 @@ class GeneralConfig:
             "wait_at_limit_s": self.wait_at_limit_s,
             "wait_curve_steepness": self.wait_curve_steepness,
             "wait_curve_pivot": self.wait_curve_pivot,
+            "appliance_cycling_step_s": self.appliance_cycling_step_s,
+            "appliance_cycling_cap_s": self.appliance_cycling_cap_s,
+            "charger_cycling_step_s": self.charger_cycling_step_s,
+            "charger_cycling_cap_s": self.charger_cycling_cap_s,
             "penalty_threshold_w": self.penalty_threshold_w,
         }
 
@@ -610,6 +624,30 @@ class _Reader:
             ),
             wait_curve_pivot=self._integer(
                 values, "wait_curve_pivot", defaults.wait_curve_pivot, location
+            ),
+            appliance_cycling_step_s=self._integer(
+                values,
+                "appliance_cycling_step_s",
+                defaults.appliance_cycling_step_s,
+                location,
+            ),
+            appliance_cycling_cap_s=self._integer(
+                values,
+                "appliance_cycling_cap_s",
+                defaults.appliance_cycling_cap_s,
+                location,
+            ),
+            charger_cycling_step_s=self._integer(
+                values,
+                "charger_cycling_step_s",
+                defaults.charger_cycling_step_s,
+                location,
+            ),
+            charger_cycling_cap_s=self._integer(
+                values,
+                "charger_cycling_cap_s",
+                defaults.charger_cycling_cap_s,
+                location,
             ),
             penalty_threshold_w=self._integer(
                 values, "penalty_threshold_w", defaults.penalty_threshold_w, location
