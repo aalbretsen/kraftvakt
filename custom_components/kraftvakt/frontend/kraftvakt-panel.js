@@ -356,11 +356,6 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       color: var(--error-color);
     }
   `}};function Pt(e,t,i){return t[i]??e.states[i]?.attributes.friendly_name??i}function Nt(e,t,i){const a=e.entities?.[i]?.device_id,r=a?e.devices?.[a]:void 0;return t[i]??r?.name_by_user??r?.name??Pt(e,t,i)}function Rt(e){return Object.values(e.entities??{}).filter(e=>"kraftvakt"===e.platform).map(e=>e.entity_id)}function Dt(e,t,i){return new Intl.NumberFormat(e,{minimumFractionDigits:i,maximumFractionDigits:i}).format(t)}function Wt(e,t){return null===t?"–":Dt(e,t/1e3,2)}function Ut(e,t){return new Date(t).toLocaleTimeString(e)}e([$e({attribute:!1})],Tt.prototype,"localize",void 0),e([$e({attribute:!1})],Tt.prototype,"rows",void 0),e([$e({type:Boolean})],Tt.prototype,"locked",void 0),Tt=e([be("kraftvakt-sortable-list")],Tt);class jt extends me{constructor(){super(...arguments),this.narrow=!1,this.entityNames={},this.issues=[],this.saveErrors=[],this.locked=!1,this.describeIssue=e=>kt(e,this.localize,this.capabilities,this.hass.language)}changeConfig(e){!function(e,t){e.dispatchEvent(new CustomEvent(Fe,{detail:t,bubbles:!0,composed:!0}))}(this,e)}formErrors(e,t,i=""){return At(this.issues.filter(i=>i.section===e&&i.target===t),i,this.describeIssue)}}e([$e({attribute:!1})],jt.prototype,"hass",void 0),e([$e({attribute:!1})],jt.prototype,"localize",void 0),e([$e({type:Boolean,reflect:!0})],jt.prototype,"narrow",void 0),e([$e({attribute:!1})],jt.prototype,"config",void 0),e([$e({attribute:!1})],jt.prototype,"entityNames",void 0),e([$e({attribute:!1})],jt.prototype,"capabilities",void 0),e([$e({attribute:!1})],jt.prototype,"issues",void 0),e([$e({attribute:!1})],jt.prototype,"saveErrors",void 0),e([$e({type:Boolean,reflect:!0})],jt.prototype,"locked",void 0);const Ot=["entity_id","turn_on","turn_off","power_reserve_w","label","condition"];let It=class extends jt{render(){const e=this.config.priority.map(e=>this.row(e));return Q`
-      <kraftvakt-manual-control-warning
-        .localize=${this.localize}
-        .narrow=${this.narrow}
-        kind="appliances"
-      ></kraftvakt-manual-control-warning>
       <ha-card>
         <div class="card-header">
           <div class="heading">
@@ -382,6 +377,13 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
               ></kraftvakt-sortable-list>
             `}
       </ha-card>
+      ${0===this.config.appliances.length?Q`
+            <kraftvakt-manual-control-warning
+              .localize=${this.localize}
+              .narrow=${this.narrow}
+              kind="appliances"
+            ></kraftvakt-manual-control-warning>
+          `:te}
       ${this.editing?this.renderDialog(this.editing.appliance,this.editing.isNew):""}
     `}renderDialog(e,t){const i=[...this.config.appliances,...this.config.charging.chargers].filter(t=>t.id!==e.id&&t.entity_id).map(e=>e.entity_id);return Q`
       <kraftvakt-appliance-dialog
@@ -473,11 +475,6 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         margin-top: 0;
       }
     `]}};function Kt(e){return"string"==typeof e?e.slice(0,5):""}e([$e({type:Boolean})],qt.prototype,"oneAtATime",void 0),qt=e([be("kraftvakt-charger-dialog")],qt);const Zt=["entity_id","activate","deactivate","set_current","min_current_a","max_current_a","charge_power_sensor","power_reserve_w","car_connected","charging_window"];let Jt=class extends jt{render(){const e=this.config.charging;return Q`
-      <kraftvakt-manual-control-warning
-        .localize=${this.localize}
-        .narrow=${this.narrow}
-        kind="chargers"
-      ></kraftvakt-manual-control-warning>
       <ha-card .header=${this.localize("charging.shared")}>
         <div class="card-content">
           <ha-form
@@ -518,6 +515,13 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
             `}
         <div class="switches-info">${this.localize("charging.switches_info")}</div>
       </ha-card>
+      ${0===e.chargers.length?Q`
+            <kraftvakt-manual-control-warning
+              .localize=${this.localize}
+              .narrow=${this.narrow}
+              kind="chargers"
+            ></kraftvakt-manual-control-warning>
+          `:te}
     `}renderDialog(e,t){const i=[...this.config.appliances,...this.config.charging.chargers].filter(t=>t.id!==e.id&&t.entity_id).map(e=>e.entity_id);return Q`
       <kraftvakt-charger-dialog
         .hass=${this.hass}

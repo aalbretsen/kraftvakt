@@ -27,9 +27,9 @@ const CHARGER_FIELDS = [
 ] as const;
 
 /**
- * All configuration of EV charging: the shared settings
- *, the EV chargers in the configured charging priority
- * and the warning against manual control.
+ * All configuration of EV charging: the shared settings,
+ * the EV chargers in the configured charging priority
+ * and, while there are no chargers, the warning against manual control.
  *
  * While EV charging is disabled, the chargers are kept but not used,
  * so the list is only shown.
@@ -42,11 +42,6 @@ export class KraftvaktChargingPage extends ConfigPage {
   protected render() {
     const charging = this.config.charging;
     return html`
-      <kraftvakt-manual-control-warning
-        .localize=${this.localize}
-        .narrow=${this.narrow}
-        kind="chargers"
-      ></kraftvakt-manual-control-warning>
       <ha-card .header=${this.localize("charging.shared")}>
         <div class="card-content">
           <ha-form
@@ -97,6 +92,15 @@ export class KraftvaktChargingPage extends ConfigPage {
             `}
         <div class="switches-info">${this.localize("charging.switches_info")}</div>
       </ha-card>
+      ${charging.chargers.length === 0
+        ? html`
+            <kraftvakt-manual-control-warning
+              .localize=${this.localize}
+              .narrow=${this.narrow}
+              kind="chargers"
+            ></kraftvakt-manual-control-warning>
+          `
+        : nothing}
     `;
   }
 

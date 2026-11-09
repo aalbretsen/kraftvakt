@@ -1,5 +1,5 @@
 import { mdiEvStation, mdiPlus } from "@mdi/js";
-import { css, html } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Appliance, Issue, PriorityEntry } from "../api";
@@ -16,7 +16,7 @@ import { ConfigPage } from "./config-page";
 
 const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
 
-/** The appliances and the priority list, with the warning against manual control. */
+/** The appliances and the priority list, with the warning against manual control while there are no appliances. */
 @customElement("kraftvakt-appliances-page")
 export class KraftvaktAppliancesPage extends ConfigPage {
   /** The appliance in the dialog, and whether it is new. */
@@ -25,11 +25,6 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   protected render() {
     const rows = this.config.priority.map((entry) => this.row(entry));
     return html`
-      <kraftvakt-manual-control-warning
-        .localize=${this.localize}
-        .narrow=${this.narrow}
-        kind="appliances"
-      ></kraftvakt-manual-control-warning>
       <ha-card>
         <div class="card-header">
           <div class="heading">
@@ -53,6 +48,15 @@ export class KraftvaktAppliancesPage extends ConfigPage {
               ></kraftvakt-sortable-list>
             `}
       </ha-card>
+      ${this.config.appliances.length === 0
+        ? html`
+            <kraftvakt-manual-control-warning
+              .localize=${this.localize}
+              .narrow=${this.narrow}
+              kind="appliances"
+            ></kraftvakt-manual-control-warning>
+          `
+        : nothing}
       ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
     `;
   }
