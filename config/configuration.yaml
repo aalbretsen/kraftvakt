@@ -6,6 +6,16 @@
 #   ln -s ../../simulator/custom_components/kraftvakt_simulator config/custom_components/kraftvakt_simulator
 default_config:
 
+# Innlogging uten passord fra samme maskin. Andre må bruke passord.
+homeassistant:
+  auth_providers:
+    - type: trusted_networks
+      trusted_networks:
+        - 127.0.0.1/32
+        - ::1/128
+      allow_bypass_login: true
+    - type: homeassistant
+
 logger:
   default: info
   logs:
