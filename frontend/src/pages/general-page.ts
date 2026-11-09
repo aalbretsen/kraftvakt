@@ -10,7 +10,7 @@ import { ConfigPage } from "./config-page";
 
 type GeneralField = keyof GeneralConfig;
 
-type CardTitle = "general.measurement" | "general.regulation" | "general.wait_curve" | "general.penalty";
+type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
 
 interface FormField {
   name: GeneralField;
@@ -26,7 +26,9 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   penalty_threshold_w: "W",
 };
 
-const SLIDER_FIELDS: GeneralField[] = ["wait_curve_steepness", "wait_curve_pivot"];
+type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
+
+const CURVE_FIELDS: CurveField[] = ["wait_curve_steepness", "wait_curve_pivot"];
 const TABLE_UTILIZATIONS = [50, 60, 70, 75, 80, 85, 90, 93, 96, 99];
 
 /** The power sensor and the settings of the regulation and the penalty. */
@@ -45,24 +47,18 @@ export class KraftvaktGeneralPage extends ConfigPage {
         this.numberField("wait_at_limit_s"),
       ])}
       ${this.renderCard(
-        "general.wait_curve",
-        SLIDER_FIELDS.map((name) => this.sliderField(name)),
-        this.renderWaitCurve(),
-        this.localize("general.wait_curve_info"),
-      )}
-      ${this.renderCard(
         "general.penalty",
         [this.numberField("penalty_threshold_w")],
         html`<ha-alert alert-type="info">${this.localize("general.capacity_window_info")}</ha-alert>`,
       )}
+      ${this.renderWaitCurveCard()}
     `;
   }
 
-  private renderCard(title: CardTitle, schema: FormField[], extra?: unknown, description?: string) {
+  private renderCard(title: CardTitle, schema: FormField[], extra?: unknown) {
     return html`
       <ha-card .header=${this.localize(title)}>
         <div class="card-content">
-          ${description ? html`<p class="description">${description}</p>` : nothing}
           <ha-form
             .hass=${this.hass}
             .data=${this.formData}
@@ -111,13 +107,43 @@ export class KraftvaktGeneralPage extends ConfigPage {
     };
   }
 
-  private sliderField(name: GeneralField): FormField {
+  /** Sliders for the waiting time curve, and the curve as a table and a graph that follow them. */
+  private renderWaitCurveCard() {
+    return html`
+      <ha-card .header=${this.localize("general.wait_curve")}>
+        <div class="card-content">
+          <p class="description">${this.localize("general.wait_curve_info")}</p>
+          <div class="sliders">${CURVE_FIELDS.map((name) => this.renderSlider(name))}</div>
+          ${this.renderWaitCurve()}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  private renderSlider(name: CurveField) {
     const range = this.range(name);
-    return {
-      name,
-      required: true,
-      selector: { number: { min: range.min ?? undefined, max: range.max ?? undefined, step: range.step, mode: "slider" } },
-    };
+    const value = this.config.general[name];
+    const label = this.localize(`general.fields.${name}.label`);
+    return html`
+      <span class="slider-label">${label}</span>
+      <ha-slider
+        aria-label=${label}
+        .min=${range.min}
+        .max=${range.max}
+        .step=${range.step}
+        .value=${value}
+        .withTooltip=${false}
+        ?disabled=${this.locked}
+        @input=${(event: Event) => this.changeCurve(name, Number((event.target as HTMLInputElement).value))}
+      ></ha-slider>
+      <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(value)}</span>
+    `;
+  }
+
+  private changeCurve(name: CurveField, value: number): void {
+    if (value !== this.config.general[name]) {
+      this.changeConfig({ ...this.config, general: { ...this.config.general, [name]: value } });
+    }
   }
 
   /** The waiting time curve as a table of shares and a graph, as the sliders are moved. */
@@ -205,9 +231,6 @@ export class KraftvaktGeneralPage extends ConfigPage {
   private computeLabel = (field: FormField): string => this.localize(`general.fields.${field.name}.label`);
 
   private computeHelper = (field: FormField): string => {
-    if (SLIDER_FIELDS.includes(field.name)) {
-      return "";
-    }
     const range = this.range(field.name) as Range | undefined;
     const defaults = this.capabilities.defaults.general;
     const number = (value: number | null | undefined) =>
@@ -241,6 +264,22 @@ export class KraftvaktGeneralPage extends ConfigPage {
     .description {
       margin: 0;
       color: var(--secondary-text-color);
+    }
+    .sliders {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 3em;
+      align-items: center;
+      gap: 8px 16px;
+    }
+    .sliders ha-slider {
+      width: 100%;
+    }
+    :host([locked]) .sliders {
+      opacity: 0.6;
+    }
+    .slider-value {
+      text-align: end;
+      font-variant-numeric: tabular-nums;
     }
     .curve-table {
       width: 100%;

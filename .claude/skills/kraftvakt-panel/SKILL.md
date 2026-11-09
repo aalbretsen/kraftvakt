@@ -51,8 +51,9 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 
 ## Behaviour that was settled
 
-- «Ventetidskurve» is its own card on «Generelt», after «Regulering»: one line
-  of text, sliders for steepness and pivot point with no helper text, a table
+- «Ventetidskurve» is the last card on «Generelt», after «Straff»: one line
+  of text, sliders for steepness and pivot point (`ha-slider` without tooltip,
+  the value as plain text to the right, no input box, no helper text), a table
   «Utnyttelse %» / «Ventetid %» at 50, 60, 70, 75, 80, 85, 90, 93, 96 and 99
   with one decimal (0 for zero, % only in the row labels), and a graph of the
   waiting time against utilization 0–100 %. Both follow the draft while the
@@ -187,7 +188,9 @@ to `item-moved` and re-render; it does not move elements), `ha-dialog`,
 `ha-card`, `ha-alert`, `ha-button`, `ha-icon-button`, `ha-svg-icon`,
 `ha-state-icon` (`.hass`, `.stateObj`), `ha-switch`, `ha-formfield`, `ha-settings-row`, `ha-expansion-panel`,
 `ha-md-list-item`, `ha-code-editor`, `ha-yaml-editor`, `ha-menu-button`,
-`ha-tab-group` with `ha-tab-group-tab` (event `wa-tab-show`).
+`ha-tab-group` with `ha-tab-group-tab` (event `wa-tab-show`), `ha-slider`
+(`.min`, `.max`, `.step`, `.value`, `.withTooltip`, event `input`; defined by
+the number selector that the same page loads).
 
 Not available, do not use: `ha-textfield`, `ha-radio`, `ha-md-list`,
 `ha-list-item`, `ha-wa-dialog`, `ha-md-dialog`, `ha-segmented-button`,
