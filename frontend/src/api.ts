@@ -140,6 +140,8 @@ export interface ChargerStatus {
   charging: boolean;
   /** Allowed to charge only because its charging window is overridden. */
   window_overridden: boolean;
+  /** «Car connected» at the last decision, null when it is not set or before the first decision. */
+  car_connected: boolean | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */

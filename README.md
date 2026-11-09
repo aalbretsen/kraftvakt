@@ -157,9 +157,10 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
 - en merkelapp på hver rad. For et apparat står det «På» eller «Av». For en
   elbillader står det viktigste av: «Første avgjørelse», «Utenfor regulering»,
   ladetidsrommet (for eksempel «22–06») når den er utenfor ladetidsrommet,
-  «Trekker ikke strøm» når den er forbigått, «Ventende», «Overstyrt» når den
-  lader utenfor ladetidsrommet fordi det er overstyrt, «Lader», «Aktivert»
-  eller «Deaktivert». Hold musen over en merkelapp eller et ikon for å se hele
+  «Ingen bil tilkoblet» når den er forbigått fordi ingen bil er tilkoblet,
+  «Trekker ikke strøm» når den er forbigått av en annen grunn, «Ventende»,
+  «Overstyrt» når den lader utenfor ladetidsrommet fordi det er overstyrt,
+  «Lader», «Aktivert» eller «Deaktivert». Hold musen over en merkelapp eller et ikon for å se hele
   forklaringen,
 - en stiplet linje under det siste i listen som er på. Der er effekten brukt
   opp, og det som står under, venter på ledig effekt. Linjen viser hvor mye

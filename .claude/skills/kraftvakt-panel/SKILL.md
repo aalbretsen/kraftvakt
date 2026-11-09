@@ -158,10 +158,13 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
     tooltip; On and Off have a dot. An appliance shows «On» or «Off». An EV
     charger shows the first that holds of: «First decision» (`excluded` is
     null), «Excluded», the charging window («22–06», whole hours without
-    «:00») when it is not allowed to charge, «No power draw» (bypassed),
+    «:00») when it is not allowed to charge, «No car connected» (bypassed and
+    `car_connected` is false), «No power draw» (bypassed otherwise),
     «Queued» (waiting), «Override» (`window_overridden` while activated),
     «Charging» (`charging`), «Activated» (activated, not charging yet) and
     «Deactivated». Excluded comes first, so a stale bypassed is not shown.
+    «No car connected» was settled with the owner after manual testing with
+    the simulator: «No power draw» did not tell that the car was missing.
   - A dashed cut-off line, in the primary colour, goes under the last entry
     that is on: an appliance, or «EV charging» while one of its chargers is
     activated and not bypassed. It is hidden when nothing or everything is on,

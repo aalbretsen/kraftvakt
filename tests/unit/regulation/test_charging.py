@@ -394,15 +394,19 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
 
 
 def test_status_of_each_charger() -> None:
-    """Whether it is excluded is known after the first decision."""
+    """Whether it is excluded and «car connected» are known after the first decision."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
     assert state.status(configured)["a"].excluded is None
+    assert state.status(configured)["a"].car_connected is None
     state.set_fictive_on("a", 4, NOW)
     evaluate(
         state,
         configured,
-        {"a": CHARGING, "b": ChargerReading(charge_power_w=0, excluded=True)},
+        {
+            "a": ChargerReading(charge_power_w=7000, car_connected=True),
+            "b": ChargerReading(charge_power_w=0, excluded=True),
+        },
         allowed=("a",),
         overridden=("a",),
     )
@@ -417,6 +421,7 @@ def test_status_of_each_charger() -> None:
             excluded=False,
             charging=True,
             window_overridden=True,
+            car_connected=True,
         ),
         "b": ChargerStatus(
             0, None, allowed=False, bypassed=False, waiting=False, excluded=True

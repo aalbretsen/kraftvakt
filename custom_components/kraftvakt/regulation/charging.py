@@ -50,7 +50,8 @@ class ChargerStatus:
     until the first decision. `charging` tells whether the charger is
     activated and was actively charging at the last decision, and
     `window_overridden` whether it was allowed to charge only because its
-    charging window is overridden.
+    charging window is overridden. `car_connected` is «car connected» at the
+    last decision, and None when it is not given or before the first decision.
     """
 
     fictive_on: int
@@ -61,6 +62,7 @@ class ChargerStatus:
     excluded: bool | None = None
     charging: bool = False
     window_overridden: bool = False
+    car_connected: bool | None = None
 
 
 def fictive_appliance_count(charger: Charger) -> int:
@@ -199,7 +201,7 @@ class ChargingState:
     regulation (None before the first evaluation), allowed to charge, allowed
     only because the charging window is overridden, activated and actively
     charging, bypassed, may get more fictive appliances turned on, are on
-    trial, and are waiting. A charger
+    trial, and are waiting, and «car connected» per charger. A charger
     on trial may charge but does not charge actively, so it may only get its
     first fictive appliance. `rests` holds the chargers that did not charge and
     when they may be tried again.
@@ -217,6 +219,7 @@ class ChargingState:
     on_trial: set[str] = field(default_factory=set)
     waiting: set[str] = field(default_factory=set)
     rests: dict[str, Rest] = field(default_factory=dict)
+    car_connected: dict[str, bool | None] = field(default_factory=dict)
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -266,6 +269,10 @@ class ChargingState:
             for charger in chargers
             if readings.get(charger.id, ChargerReading()).excluded
         }
+        self.car_connected = {
+            charger.id: readings.get(charger.id, ChargerReading()).car_connected
+            for charger in chargers
+        }
         self.allowed = set(allowed)
         self.overridden = set(overridden)
         self.charging = {
@@ -296,6 +303,7 @@ class ChargingState:
                 charging=charger.id in self.charging
                 and bool(self.fictive_on.get(charger.id)),
                 window_overridden=charger.id in self.overridden,
+                car_connected=self.car_connected.get(charger.id),
             )
             for charger in chargers
         }

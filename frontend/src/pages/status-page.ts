@@ -2,6 +2,7 @@ import {
   mdiArrowDown,
   mdiCancel,
   mdiCarElectric,
+  mdiCarOff,
   mdiClockFast,
   mdiClockOutline,
   mdiEvStation,
@@ -47,6 +48,7 @@ const CHIP_ON: Chip = { kind: "on" };
 const CHIP_OFF: Chip = { kind: "off" };
 const CHIP_CHARGING: Chip = { kind: "on", icon: mdiLightningBolt };
 const CHIP_NO_POWER: Chip = { kind: "warning", icon: mdiPowerPlugOff };
+const CHIP_NO_CAR: Chip = { kind: "warning", icon: mdiCarOff };
 const CHIP_QUEUED: Chip = { kind: "off", icon: mdiTimerSand };
 const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
 const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
@@ -463,6 +465,9 @@ export class KraftvaktStatusPage extends LitElement {
     if (!charger.allowed && window) {
       const short = { start: shortTime(window.start), end: shortTime(window.end) };
       return this.renderChip(CHIP_OUTSIDE_WINDOW, "status.chip_window", "status.outside_window", short, { ...window });
+    }
+    if (charger.bypassed && charger.car_connected === false) {
+      return this.renderChip(CHIP_NO_CAR, "status.chip_no_car", "status.bypassed_no_car");
     }
     if (charger.bypassed) {
       return this.renderChip(CHIP_NO_POWER, "status.chip_no_power", "status.bypassed");

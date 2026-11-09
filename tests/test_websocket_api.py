@@ -750,6 +750,7 @@ async def test_status_shows_the_chargers(
             "excluded": None,
             "charging": False,
             "window_overridden": False,
+            "car_connected": None,
             "waiting_since": None,
             "waiting_until": None,
             "waiting_ends_at": None,
@@ -776,7 +777,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """A bypassed charger is shown last."""
+    """A bypassed charger is shown last, with whether its car is connected."""
     config["charging"] = {
         "enabled": True,
         "chargers": [
@@ -808,9 +809,15 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     status = await next_status(client)
 
     assert [
-        (item["id"], item["bypassed"], item["allowed"], item["excluded"])
+        (
+            item["id"],
+            item["bypassed"],
+            item["allowed"],
+            item["excluded"],
+            item["car_connected"],
+        )
         for item in status["chargers"]
-    ] == [("c2", False, False, True), ("c1", True, True, False)]
+    ] == [("c2", False, False, True, True), ("c1", True, True, False, False)]
 
 
 async def test_status_places_ev_charging_among_the_current_variants(
