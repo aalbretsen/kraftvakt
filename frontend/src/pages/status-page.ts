@@ -1,4 +1,19 @@
-import { mdiCarElectric, mdiEvStation, mdiFlash, mdiPlay, mdiStop } from "@mdi/js";
+import {
+  mdiArrowDown,
+  mdiCancel,
+  mdiCarElectric,
+  mdiClockFast,
+  mdiClockOutline,
+  mdiEvStation,
+  mdiFlash,
+  mdiLightningBolt,
+  mdiPlay,
+  mdiPlus,
+  mdiPowerPlugOff,
+  mdiStop,
+  mdiTimerOutline,
+  mdiTimerSand,
+} from "@mdi/js";
 import { LitElement, css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
@@ -15,13 +30,63 @@ import "../components/countdown";
 import { measuredPowerKw } from "../entities";
 import { formatClockTime, formatNumber, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
-import type { Localize } from "../localize";
+import type { Localize, TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 
 /** The width of the waiting column in pixels. */
-const WAITING_WIDTH = 88;
-const WAITING_WIDTH_NARROW = 48;
+const WAITING_WIDTH = 120;
+
+/** How a chip looks: its colour and its icon, or a dot without one. */
+interface Chip {
+  kind: "on" | "off" | "warning" | "outline" | "info";
+  icon?: string;
+}
+
+const CHIP_ON: Chip = { kind: "on" };
+const CHIP_OFF: Chip = { kind: "off" };
+const CHIP_CHARGING: Chip = { kind: "on", icon: mdiLightningBolt };
+const CHIP_NO_POWER: Chip = { kind: "warning", icon: mdiPowerPlugOff };
+const CHIP_QUEUED: Chip = { kind: "off", icon: mdiTimerSand };
+const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
+const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
+const CHIP_OVERRIDE: Chip = { kind: "info", icon: mdiClockFast };
+const CHIP_FIRST_DECISION: Chip = { kind: "off", icon: mdiTimerSand };
+
+/** An entry in the priority list: an appliance, or «EV charging» with its EV chargers. */
+type PriorityEntry =
+  | { kind: "appliance"; appliance: ApplianceStatus; on: boolean }
+  | { kind: "ev_charging"; chargers: ChargerStatus[]; on: boolean };
+
+/** Return the entries of the priority list in order, with «EV charging» at its place. */
+function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
+  const entries: PriorityEntry[] = status.appliances.map((appliance) => ({
+    kind: "appliance",
+    appliance,
+    on: appliance.on,
+  }));
+  if (status.ev_charging_position !== null) {
+    const chargers = status.chargers;
+    const on = chargers.some((charger) => charger.activated && !charger.bypassed);
+    entries.splice(status.ev_charging_position, 0, { kind: "ev_charging", chargers, on });
+  }
+  return entries;
+}
+
+/**
+ * Return the index of the entry the cut-off line goes under: the last entry
+ * that is on. There is no line (-1) when nothing is on or everything is on.
+ * «EV charging» is on while one of its EV chargers is activated and not bypassed.
+ */
+function cutOffIndex(entries: PriorityEntry[]): number {
+  const last = entries.map((entry) => entry.on).lastIndexOf(true);
+  return last === entries.length - 1 ? -1 : last;
+}
+
+/** Return «22» for «22:00», and the time as it is otherwise. */
+function shortTime(time: string): string {
+  return time.endsWith(":00") ? time.slice(0, -3) : time;
+}
 
 /** The kW steps the meter's scale may use, and how many ticks it may have at most. */
 const TICK_STEPS = [1, 2, 5, 10, 20, 50];
@@ -236,42 +301,47 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** The appliances in order of priority, with the EV chargers grouped at the place of «EV charging». */
+  /**
+   * The appliances in order of priority, with the EV chargers grouped at the
+   * place of «EV charging», and a line under the last entry that is on.
+   */
   private renderPriorityCard(status: StatusSnapshot) {
-    const position = status.ev_charging_position;
-    const appliances = status.appliances;
-    const before = position === null ? appliances : appliances.slice(0, position);
-    const after = position === null ? [] : appliances.slice(position);
-    const empty = appliances.length === 0 && position === null;
+    const entries = priorityEntries(status);
+    const cutAfter = cutOffIndex(entries);
     return html`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("status.priority_list")}</span>
         </div>
-        ${empty
+        ${entries.length === 0
           ? html`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`
           : html`<div class="list">
-              ${before.map((appliance, index) => this.renderApplianceRow(appliance, index + 1))}
-              ${position === null ? nothing : this.renderEvCharging(status.chargers, position + 1)}
-              ${after.map((appliance, index) => this.renderApplianceRow(appliance, before.length + index + 2))}
+              ${entries.map(
+                (entry, index) => html`
+                  ${entry.kind === "appliance"
+                    ? this.renderApplianceRow(entry.appliance, index + 1)
+                    : this.renderEvCharging(entry.chargers, index + 1)}
+                  ${index === cutAfter ? this.renderCutOff(status) : nothing}
+                `,
+              )}
             </div>`}
       </ha-card>
     `;
   }
 
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
-    const variant = appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing;
     return html`
       <div class="row ${appliance.on ? "" : "off"}">
         <span class="rank">${rank}</span>
-        <div class="row-main">
-          <div class="row-title">
-            ${this.renderApplianceIcon(appliance)}<span class="name">${appliance.name}</span>
-            ${this.narrow ? variant : nothing}
-          </div>
+        <div class="row-title">
+          ${this.renderApplianceIcon(appliance)}<span class="name">${appliance.name}</span>
+          ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
         </div>
-        ${this.narrow ? nothing : html`<span>${variant}</span><span></span>`} ${this.renderWaiting(appliance)}
-        ${this.renderOnOff(appliance.on, "status.on", "status.off")}
+        <span></span>
+        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
+        ${appliance.on
+          ? this.renderChip(CHIP_ON, "status.on", "status.on")
+          : this.renderChip(CHIP_OFF, "status.off", "status.off")}
       </div>
     `;
   }
@@ -288,48 +358,61 @@ export class KraftvaktStatusPage extends LitElement {
 
   /** The «EV charging» entry, with each EV charger in the current charging priority under it. */
   private renderEvCharging(chargers: ChargerStatus[], rank: number) {
+    const charging = chargers.filter((charger) => charger.charging).length;
     return html`
       <div class="row group">
         <span class="rank">${rank}</span>
-        <div class="row-main">
-          <div class="row-title">
-            <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
-            <span class="name">${this.localize("status.ev_charging")}</span>
-          </div>
-          ${chargers.length === 0 ? html`<div class="row-sub">${this.localize("status.no_chargers")}</div>` : nothing}
+        <div class="row-title">
+          <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
+          <span class="name">${this.localize("status.ev_charging")}</span>
+          ${chargers.length === 0 ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>` : nothing}
         </div>
+        ${chargers.length === 0
+          ? html`<span></span>`
+          : html`<span
+              class="charging-count"
+              title=${this.localize("status.chargers_charging", { charging, total: chargers.length })}
+            >
+              <ha-svg-icon .path=${mdiLightningBolt}></ha-svg-icon>${charging} / ${chargers.length}
+            </span>`}
       </div>
-      ${chargers.map((charger) => {
-        const details = this.chargerDetails(charger);
-        const amperes = this.renderAmperes(charger);
-        return html`
+      ${chargers.map(
+        (charger) => html`
           <div class="row charger ${charger.activated ? "" : "off"}">
             <span class="rank"></span>
-            <div class="row-main">
-              <div class="row-title">
-                <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
-                <span class="name charger-name">${charger.name}</span>
-              </div>
-              ${this.narrow ? html`<div class="row-sub">${amperes}</div>` : nothing}
-              ${details.length > 0 ? html`<div class="row-sub">${details.join(" · ")}</div>` : nothing}
+            <div class="row-title">
+              <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
+              <span class="name">${charger.name}</span>
             </div>
-            ${this.narrow ? nothing : html`<span></span>${amperes}`} ${this.renderWaiting(charger)}
-            ${this.renderOnOff(charger.activated, "status.activated", "status.deactivated")}
+            ${this.renderAmperes(charger)}
+            ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
+            ${this.renderChargerChip(charger)}
           </div>
-        `;
-      })}
+        `,
+      )}
     `;
   }
 
-  /** A bar that empties from when the waiting started until the decision that ends it. */
-  private renderWaiting(item: ApplianceStatus | ChargerStatus) {
+  /**
+   * An icon and a bar that empties from when the waiting started until the
+   * decision that ends it. Left out on a narrow screen.
+   */
+  private renderWaiting(
+    item: ApplianceStatus | ChargerStatus,
+    icon: string,
+    label: TranslationKey,
+    endsAt: TranslationKey,
+  ) {
+    if (this.narrow) {
+      return nothing;
+    }
     if (!item.waiting_since || !item.waiting_ends_at) {
       return html`<span></span>`;
     }
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
-      <span class="waiting" title=${this.localize("status.waiting_ends_at", { time })}>
-        <span class="indicator-label">${this.localize("status.delayed_turn_on")}</span>
+      <span class="waiting" title="${this.localize(label)}: ${this.localize(endsAt, { time })}">
+        <ha-svg-icon .path=${icon}></ha-svg-icon>
         <kraftvakt-countdown-bar
           .start=${Date.parse(item.waiting_since)}
           .end=${Date.parse(item.waiting_ends_at)}
@@ -339,52 +422,92 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   /**
-   * The charging level, and one bar per ampere from the minimum to the
-   * maximum, filled up to the current.
+   * The current, and one bar per ampere from the minimum to the maximum,
+   * filled up to the current. The current is left out on a narrow screen.
    */
   private renderAmperes(charger: ChargerStatus) {
-    const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
+    const config = this.chargerConfig(charger);
     if (!config) {
       return html`<span></span>`;
     }
     const steps = config.max_current_a - config.min_current_a + 1;
     const on = charger.current_a === null ? 0 : charger.current_a - config.min_current_a + 1;
+    const filled = charger.bypassed ? "on bypassed" : "on";
     return html`
       <span class="amperes">
-        <span class="indicator-label">
-          ${charger.current_a === null
-            ? this.localize("status.not_charging")
-            : this.localize("status.charging_at", { current: charger.current_a })}
-        </span>
+        ${this.narrow
+          ? nothing
+          : html`<span class="current ${charger.current_a === null ? "none" : ""}"
+              >${charger.current_a === null ? "–" : this.localize("status.amperes", { current: charger.current_a })}</span
+            >`}
         <span class="ampere-steps ${steps > 16 ? "small" : ""}">
-          ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? "on" : ""}"></span>`)}
+          ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? filled : ""}"></span>`)}
         </span>
       </span>
     `;
   }
 
-  private chargerDetails(charger: ChargerStatus): string[] {
-    const config = this.config?.config.charging.chargers.find((item) => item.id === charger.id);
-    const details: string[] = [];
+  /** The chip with the most important reason why the EV charger stands as it does. */
+  private renderChargerChip(charger: ChargerStatus) {
+    const window = this.chargerConfig(charger)?.charging_window;
     if (charger.excluded === null) {
-      return [this.localize("status.first_decision")];
+      return this.renderChip(CHIP_FIRST_DECISION, "status.chip_first_decision", "status.first_decision");
+    }
+    if (charger.excluded) {
+      return this.renderChip(CHIP_EXCLUDED, "status.chip_excluded", "status.excluded");
+    }
+    if (!charger.allowed && window) {
+      const short = { start: shortTime(window.start), end: shortTime(window.end) };
+      return this.renderChip(CHIP_OUTSIDE_WINDOW, "status.chip_window", "status.outside_window", short, { ...window });
     }
     if (charger.bypassed) {
-      details.push(this.localize("status.bypassed"));
+      return this.renderChip(CHIP_NO_POWER, "status.chip_no_power", "status.bypassed");
     }
     if (charger.waiting) {
-      details.push(this.localize("status.waiting_charger"));
+      return this.renderChip(CHIP_QUEUED, "status.chip_queued", "status.waiting_charger");
     }
-    if (!charger.allowed && charger.excluded) {
-      details.push(this.localize("status.excluded"));
-    } else if (!charger.allowed && charger.excluded === false && config?.charging_window) {
-      details.push(this.localize("status.outside_window", { ...config.charging_window }));
+    if (charger.window_overridden && charger.activated) {
+      return this.renderChip(CHIP_OVERRIDE, "status.chip_override", "status.window_overridden");
     }
-    return details;
+    if (charger.charging) {
+      const current = { current: charger.current_a ?? 0 };
+      return this.renderChip(CHIP_CHARGING, "status.chip_charging", "status.charging_at", {}, current);
+    }
+    return charger.activated
+      ? this.renderChip(CHIP_ON, "status.activated", "status.activated_not_charging")
+      : this.renderChip(CHIP_OFF, "status.deactivated", "status.deactivated");
   }
 
-  private renderOnOff(on: boolean, onText: Parameters<Localize>[0], offText: Parameters<Localize>[0]) {
-    return html`<span class="state chip ${on ? "on" : "off"}"><span class="dot"></span>${this.localize(on ? onText : offText)}</span>`;
+  /** A chip with an icon (or a dot) and a word, and the whole sentence as a tooltip. */
+  private renderChip(
+    chip: Chip,
+    word: TranslationKey,
+    sentence: TranslationKey,
+    wordParams: Record<string, string | number> = {},
+    sentenceParams: Record<string, string | number> = wordParams,
+  ) {
+    return html`
+      <span class="state chip ${chip.kind}" title=${this.localize(sentence, sentenceParams)}>
+        ${chip.icon ? html`<ha-svg-icon .path=${chip.icon}></ha-svg-icon>` : html`<span class="dot"></span>`}
+        ${this.localize(word, wordParams)}
+      </span>
+    `;
+  }
+
+  /** The line where the power runs out, with the free power while there is any. */
+  private renderCutOff(status: StatusSnapshot) {
+    const average = status.regulation_average_kw;
+    const free = average === null ? 0 : status.power_limit_kw - average;
+    return html`
+      <div class="cut-off" title=${this.localize("status.power_runs_out")}>
+        <ha-svg-icon .path=${mdiArrowDown}></ha-svg-icon>
+        ${free > 0 ? this.localize("status.free_power", { power: formatPower(this.hass.language, free) }) : nothing}
+      </div>
+    `;
+  }
+
+  private chargerConfig(charger: ChargerStatus) {
+    return this.config?.config.charging.chargers.find((item) => item.id === charger.id);
   }
 
   private renderStopped(status: StatusSnapshot) {
@@ -638,30 +761,43 @@ export class KraftvaktStatusPage extends LitElement {
     .empty {
       color: var(--secondary-text-color);
     }
-    .row {
+    .list {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.6fr) ${unsafeCSS(WAITING_WIDTH)}px 112px;
+      grid-template-columns: 24px minmax(0, 2fr) minmax(max-content, 1.3fr) ${unsafeCSS(WAITING_WIDTH)}px max-content;
+      column-gap: 12px;
+    }
+    :host([narrow]) .list {
+      grid-template-columns: 20px minmax(0, 1fr) max-content max-content;
+      column-gap: 8px;
+    }
+    .row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
       align-items: center;
-      gap: 12px;
-      min-height: 56px;
-      padding: 6px 16px;
+      min-height: 48px;
+      padding: 4px 16px;
       border-top: 1px solid var(--divider-color);
       box-sizing: border-box;
     }
-    .row.group {
-      min-height: 40px;
+    :host([narrow]) .row {
+      padding: 4px 12px;
     }
     .row.group,
     .row.charger {
       background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
     }
     .row.charger {
+      min-height: 44px;
       border-top-style: dashed;
     }
     .row.off .name {
       color: var(--secondary-text-color);
     }
-    .row.charger .row-main {
+    .row.charger .row-title {
+      padding-inline-start: 24px;
+    }
+    :host([narrow]) .row.charger .row-title {
       padding-inline-start: 16px;
     }
     .rank {
@@ -671,6 +807,44 @@ export class KraftvaktStatusPage extends LitElement {
     .row > .chip {
       justify-self: start;
     }
+    :host([narrow]) .row > .chip {
+      justify-self: end;
+    }
+    .chip ha-svg-icon {
+      --mdc-icon-size: 16px;
+    }
+    .chip.warning {
+      background: rgba(var(--rgb-warning-color, 255, 166, 0), 0.16);
+      color: var(--warning-color, #ffa600);
+    }
+    .chip.outline {
+      background: none;
+      box-shadow: inset 0 0 0 1px var(--divider-color);
+    }
+    .chip.info {
+      background: rgba(var(--rgb-info-color, 3, 155, 229), 0.16);
+      color: var(--info-color, #039be5);
+    }
+    .cut-off {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 16px;
+      border-top: 1px solid var(--divider-color);
+      color: var(--primary-color);
+      font-size: var(--ha-font-size-s, 12px);
+      white-space: nowrap;
+    }
+    .cut-off::before,
+    .cut-off::after {
+      content: "";
+      flex: 1;
+      border-top: 2px dashed var(--primary-color);
+    }
+    .cut-off ha-svg-icon {
+      --mdc-icon-size: 14px;
+    }
     .next-decision {
       display: inline-flex;
       align-items: center;
@@ -678,18 +852,41 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .waiting {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      text-align: end;
+      align-items: center;
+      gap: 6px;
     }
-    .waiting .indicator-label {
-      white-space: normal;
+    .waiting kraftvakt-countdown-bar {
+      flex: 1;
+    }
+    .waiting ha-svg-icon,
+    .charging-count ha-svg-icon {
+      flex: none;
+      --mdc-icon-size: 16px;
+      color: var(--secondary-text-color);
+    }
+    .charging-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--secondary-text-color);
+      font-size: var(--ha-font-size-s, 12px);
+    }
+    .charging-count ha-svg-icon {
+      color: var(--kraftvakt-ev-color);
     }
     .amperes {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
+      align-items: center;
+      gap: 10px;
+    }
+    .amperes .current {
+      min-width: 40px;
+      text-align: end;
+      font-weight: 500;
+    }
+    .amperes .current.none {
+      color: var(--secondary-text-color);
+      font-weight: normal;
     }
     .ampere-steps {
       display: inline-flex;
@@ -697,7 +894,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .ampere {
       width: 3px;
-      height: 12px;
+      height: 14px;
       border-radius: 1px;
       background: rgba(127, 127, 127, 0.32);
     }
@@ -710,38 +907,26 @@ export class KraftvaktStatusPage extends LitElement {
     .ampere.on {
       background: var(--kraftvakt-ev-color);
     }
-    .indicator-label {
-      color: var(--secondary-text-color);
-      font-size: var(--ha-font-size-s, 12px);
-      white-space: nowrap;
-    }
-    :host([narrow]) .amperes {
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 4px 6px;
+    .ampere.on.bypassed {
+      background: repeating-linear-gradient(
+        45deg,
+        var(--secondary-text-color) 0 2px,
+        rgba(127, 127, 127, 0.16) 2px 4px
+      );
     }
     :host([narrow]) .ampere-steps {
       gap: 1px;
     }
     :host([narrow]) .ampere {
       width: 2px;
-    }
-    :host([narrow]) .row {
-      grid-template-columns: 20px minmax(0, 1fr) ${unsafeCSS(WAITING_WIDTH_NARROW)}px auto;
-      gap: 8px;
-      padding: 6px 12px;
+      height: 12px;
     }
     .row-title {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 6px 10px;
       overflow-wrap: anywhere;
-    }
-    .charger-name {
-      flex: 1;
-      min-width: 0;
     }
     .row-title ha-svg-icon,
     .row-title ha-state-icon {
@@ -755,6 +940,9 @@ export class KraftvaktStatusPage extends LitElement {
     .row-title .device-icon.ev.on,
     .row-title .ev-icon {
       color: var(--kraftvakt-ev-color);
+    }
+    .row.group .name {
+      font-weight: 500;
     }
     .row-sub {
       color: var(--secondary-text-color);

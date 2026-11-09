@@ -199,7 +199,7 @@ Status snapshot:
   "next_decision_at": "2026-11-07T12:01:00+01:00",
   "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ],
   "ev_charging_position": 1,
-  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ]
+  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "charging": true, "window_overridden": false, "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ]
 }
 ```
 
@@ -210,7 +210,11 @@ fictive appliance): `waiting_since` when it started, `waiting_until` when the
 waiting time ends, and `waiting_ends_at` the decision that turns it on, the
 first at or after `waiting_until` (`first_decision_from()`). `variant` is the label of the current variant or `null`.
 Charger details are from the last decision; `allowed` is false and `excluded`
-is `null` before the first decision after a start. Appliances are sorted by the
+is `null` before the first decision after a start. `charging` is true while
+the charger is activated and was actively charging at the last decision, and
+`window_overridden` while it was allowed to charge only because its charging
+window is overridden (outside the window, not excluded). Both are for the
+panel's state chip. Appliances are sorted by the
 entry of their current variant, chargers by the current charging priority.
 `ev_charging_position` is the number of appliances whose current variant is
 placed before «EV charging», `null` while EV charging is disabled.

@@ -17,6 +17,7 @@ from custom_components.kraftvakt.regulation.charging import (
     fictive_appliance_count,
     in_charging_window,
     override_expired,
+    window_overridden,
 )
 
 OSLO = ZoneInfo("Europe/Oslo")
@@ -151,6 +152,16 @@ def test_allowed_to_charge() -> None:
     assert not allowed_to_charge(night, excluded, True, time(23))
 
 
+def test_window_overridden_only_outside_the_window() -> None:
+    night = charger(charging_window=NIGHT)
+
+    assert window_overridden(night, IDLE, True, time(12))
+    assert not window_overridden(night, IDLE, True, time(23))
+    assert not window_overridden(night, IDLE, False, time(12))
+    assert not window_overridden(charger(), IDLE, True, time(12))
+    assert not window_overridden(night, ChargerReading(excluded=True), True, time(12))
+
+
 def chargers(*ids: str) -> list[Charger]:
     return [charger(charger_id) for charger_id in ids]
 
@@ -161,6 +172,7 @@ def evaluate(
     readings: dict[str, ChargerReading],
     *,
     allowed: tuple[str, ...] | None = None,
+    overridden: tuple[str, ...] = (),
     now: datetime = NOW,
     one_at_a_time: bool = True,
 ) -> list[str]:
@@ -171,6 +183,7 @@ def evaluate(
         now,
         WINDOW,
         one_at_a_time,
+        overridden,
     )
 
 
@@ -391,16 +404,37 @@ def test_status_of_each_charger() -> None:
         configured,
         {"a": CHARGING, "b": ChargerReading(charge_power_kw=0.0, excluded=True)},
         allowed=("a",),
+        overridden=("a",),
     )
 
     assert state.status(configured) == {
         "a": ChargerStatus(
-            4, 9, allowed=True, bypassed=False, waiting=False, excluded=False
+            4,
+            9,
+            allowed=True,
+            bypassed=False,
+            waiting=False,
+            excluded=False,
+            charging=True,
+            window_overridden=True,
         ),
         "b": ChargerStatus(
             0, None, allowed=False, bypassed=False, waiting=False, excluded=True
         ),
     }
+
+
+def test_charging_needs_an_activated_charger() -> None:
+    """A charger is not charging once it is deactivated, nor before it is."""
+    configured = chargers("a", "b")
+    state = ChargingState.for_chargers(configured)
+    state.set_fictive_on("a", 1, NOW)
+    evaluate(state, configured, {"a": CHARGING, "b": CHARGING})
+
+    state.set_fictive_on("a", 0)
+
+    assert not state.status(configured)["a"].charging
+    assert not state.status(configured)["b"].charging
 
 
 def test_activating_needs_the_time() -> None:

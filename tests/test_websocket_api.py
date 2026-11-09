@@ -740,6 +740,8 @@ async def test_status_shows_the_chargers(
             "waiting": False,
             "allowed": False,
             "excluded": None,
+            "charging": False,
+            "window_overridden": False,
             "waiting_since": None,
             "waiting_until": None,
             "waiting_ends_at": None,

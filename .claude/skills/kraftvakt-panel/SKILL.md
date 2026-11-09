@@ -76,10 +76,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - Kraftvakt's own sensors are left out of the power sensor pickers.
 - The status page shows everything in the status snapshot: averages against
   the limit, next decision, safe state and penalty with what is left, appliances
-  with variant and waiting, chargers with current, bypassed, waiting, excluded
-  or outside the charging window. Before the first decision after a start
-  (`excluded` is null) a charger shows «Waiting for the first decision»
-  instead (settled after the exploratory test). A charger that rests after
+  with variant and waiting, chargers with current, bypassed, waiting, excluded,
+  outside the charging window, overridden or charging. Before the first
+  decision after a start (`excluded` is null) a charger shows «First
+  decision» instead (settled after the exploratory test). A charger that rests after
   not charging is shown as bypassed, without when it is tried again; the
   owner chose not to add it to the status (after the retest of the exploratory test).
 - The safe state lasts until the next decision. While the power sensor is
@@ -91,14 +91,15 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.
-- The waiting column shows the label «Delayed turn-on» above a
-  `kraftvakt-countdown-bar` (6 px, the text colour on a grey track) that empties towards
-  the right from `waiting_since` to `waiting_ends_at`, the decision that turns
-  the slot on, animated by the browser like the ring. The label is the same
-  for an activated EV charger waiting for one more ampere. The time is a
-  tooltip. The owner settled on the smooth bar, because a wait can span very
-  many regulation windows; one block per window and a ring were tried and
-  turned down.
+- The waiting column shows an icon before a `kraftvakt-countdown-bar` (6 px,
+  the text colour on a grey track) that empties towards the right from
+  `waiting_since` to `waiting_ends_at`, the decision that turns the slot on,
+  animated by the browser like the ring. The icon is a timer for an appliance
+  (delayed turn-on) and a plus for an EV charger waiting for one more ampere.
+  What it is and the time are a tooltip. The owner settled on the smooth bar,
+  because a wait can span very many regulation windows; one block per window
+  and a ring were tried and turned down. The waiting column is left out on a
+  narrow screen (settled in the priority list redesign).
 - The tiles are, from the left, «Consumption now», regulation average,
   average consumption and the power limit. «Consumption now» is the power
   sensor's state read in the panel (`measuredPowerKw()`, same units as the
@@ -118,15 +119,33 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   and turned down.
 - Appliances and chargers share one full-width card, «Priority list». An «EV
   charging» row with its own rank sits at `ev_charging_position`, and the
-  chargers are indented under it in the current charging priority, with their
-  reasons under the name. Columns, without headings: rank, name, variant,
-  current, waiting and state. The current column has the label «Charging at
-  9A» («Not charging» while deactivated) above one vertical bar per
-  ampere from min to max, filled up to the current (narrower above 16 steps),
-  with no text beside the bars. On a narrow screen the variant goes after the
-  name, and the label and the ampere bars (always the narrow 2 px bars) go on
-  one line under it, wrapping only when they do not fit. The waiting label
-  may wrap to two lines, always so on a narrow screen (48 px column).
+  chargers are indented under it in the current charging priority. Every row
+  is one line. Columns, without headings: rank, name with the variant tag after
+  it, current, waiting and state chip. The rows are a CSS subgrid of the list,
+  so the columns line up although the chips differ in width. Settled with the
+  owner in the priority list redesign, after mockups of lanes across the row,
+  charger tiles and badges on the icons were turned down:
+  - Icons instead of text wherever a short text was, each with its sentence as
+    a tooltip, and no legend. «EV charging» shows a bolt and «2 / 5»: chargers
+    charging of all chargers.
+  - The current column has the current right-aligned («11 A», «–» while
+    deactivated) before one vertical bar per ampere from min to max, filled up
+    to the current (narrower above 16 steps). The filled bar of a bypassed
+    charger is hatched. On a narrow screen only the bars are shown.
+  - The state chip has an icon and a word, with the whole sentence as a
+    tooltip; On and Off have a dot. An appliance shows «On» or «Off». An EV
+    charger shows the first that holds of: «First decision» (`excluded` is
+    null), «Excluded», the charging window («22–06», whole hours without
+    «:00») when it is not allowed to charge, «No power draw» (bypassed),
+    «Queued» (waiting), «Override» (`window_overridden` while activated),
+    «Charging» (`charging`), «Activated» (activated, not charging yet) and
+    «Deactivated». Excluded comes first, so a stale bypassed is not shown.
+  - A dashed cut-off line, in the primary colour, goes under the last entry
+    that is on: an appliance, or «EV charging» while one of its chargers is
+    activated and not bypassed. It is hidden when nothing or everything is on,
+    so it always sits between two entries. It shows the free power, the power
+    limit minus the regulation average, while that is above 0, and explains
+    itself in a tooltip. By the fixed order nothing below the line is on.
 - Colours come from Home Assistant's theme variables, set once on `:host`:
   `--kraftvakt-grid-color` (the Energy dashboard's `--energy-grid-consumption-
   color`) for the average consumption, `--kraftvakt-ev-color` (`--teal-color`)

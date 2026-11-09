@@ -284,6 +284,8 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                 "waiting": status.waiting,
                 "allowed": status.allowed,
                 "excluded": status.excluded,
+                "charging": status.charging,
+                "window_overridden": status.window_overridden,
                 **(
                     waiting_fields
                     if isinstance(waiting_key, ChargerSlotKey)

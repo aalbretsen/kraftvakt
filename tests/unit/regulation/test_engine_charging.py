@@ -79,6 +79,7 @@ def test_current_increases_one_ampere_per_fictive_appliance() -> None:
         bypassed=False,
         waiting=False,
         excluded=False,
+        charging=True,
     )
 
 
@@ -397,8 +398,10 @@ def test_override_allows_charging_until_the_next_window_starts() -> None:
     )
 
     assert scenario.decide(0.0) == activate("c")
+    assert scenario.engine.chargers["c"].window_overridden
     assert scenario.decide(0.0, after=timedelta(hours=9, minutes=58)) == []
     assert scenario.decide(0.0) == reset_override("c")
+    assert not scenario.engine.chargers["c"].window_overridden
     scenario.set_charger("c", window_override=False)
     assert scenario.decide(0.0, after=timedelta(minutes=4)) == []
     assert scenario.decide(0.0) == deactivate("c")

@@ -47,7 +47,10 @@ class ChargerStatus:
 
     `current_a` is None while the charger is deactivated. `excluded` tells
     whether the charger was excluded from the regulation, and is None
-    until the first decision.
+    until the first decision. `charging` tells whether the charger is
+    activated and was actively charging at the last decision, and
+    `window_overridden` whether it was allowed to charge only because its
+    charging window is overridden.
     """
 
     fictive_on: int
@@ -56,6 +59,8 @@ class ChargerStatus:
     bypassed: bool
     waiting: bool
     excluded: bool | None = None
+    charging: bool = False
+    window_overridden: bool = False
 
 
 def fictive_appliance_count(charger: Charger) -> int:
@@ -166,6 +171,23 @@ def allowed_to_charge(
     return window is None or override_active or in_charging_window(window, local_time)
 
 
+def window_overridden(
+    charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
+) -> bool:
+    """Return whether the charger may charge only because of the override.
+
+    That is outside its charging window while the override is active, and
+    when it is not excluded from the regulation.
+    """
+    window = charger.charging_window
+    return (
+        not reading.excluded
+        and window is not None
+        and override_active
+        and not in_charging_window(window, local_time)
+    )
+
+
 @dataclass(slots=True)
 class ChargingState:
     """What the regulation keeps track of for the chargers while it runs.
@@ -174,8 +196,10 @@ class ChargingState:
     `fictive_on` counts the fictive appliances that are on per charger, and
     `activated_at` tells when the first one was turned on. The rest is the
     result of the last evaluation: the chargers that are excluded from the
-    regulation (None before the first evaluation), allowed to charge, bypassed, may get
-    more fictive appliances turned on, are on trial, and are waiting. A charger
+    regulation (None before the first evaluation), allowed to charge, allowed
+    only because the charging window is overridden, activated and actively
+    charging, bypassed, may get more fictive appliances turned on, are on
+    trial, and are waiting. A charger
     on trial may charge but does not charge actively, so it may only get its
     first fictive appliance. `rests` holds the chargers that did not charge and
     when they may be tried again.
@@ -186,6 +210,8 @@ class ChargingState:
     activated_at: dict[str, datetime] = field(default_factory=dict)
     excluded: set[str] | None = None
     allowed: set[str] = field(default_factory=set)
+    overridden: set[str] = field(default_factory=set)
+    charging: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
     on_trial: set[str] = field(default_factory=set)
@@ -227,11 +253,13 @@ class ChargingState:
         now: datetime,
         window: timedelta,
         one_at_a_time: bool,
+        overridden: Collection[str] = (),
     ) -> list[str]:
         """Evaluate the chargers at a decision and return the newly bypassed ones.
 
-        `chargers` are in the configured charging priority, and `allowed` are
-        the chargers allowed to charge.
+        `chargers` are in the configured charging priority, `allowed` are
+        the chargers allowed to charge, and `overridden` those allowed only
+        because their charging window is overridden.
         """
         self.excluded = {
             charger.id
@@ -239,6 +267,12 @@ class ChargingState:
             if readings.get(charger.id, ChargerReading()).excluded
         }
         self.allowed = set(allowed)
+        self.overridden = set(overridden)
+        self.charging = {
+            charger_id
+            for charger_id in self.activated()
+            if actively_charging(readings.get(charger_id, ChargerReading()))
+        }
         newly_bypassed = self._update_bypassed(chargers, readings, now, window)
         self._update_priority(chargers, newly_bypassed)
         self._select(readings, one_at_a_time)
@@ -259,6 +293,9 @@ class ChargingState:
                 bypassed=charger.id in self.bypassed,
                 waiting=charger.id in self.waiting,
                 excluded=None if self.excluded is None else charger.id in self.excluded,
+                charging=charger.id in self.charging
+                and bool(self.fictive_on.get(charger.id)),
+                window_overridden=charger.id in self.overridden,
             )
             for charger in chargers
         }

@@ -16,6 +16,7 @@ from .charging import (
     allowed_to_charge,
     charging_current,
     override_expired,
+    window_overridden,
 )
 from .model import (
     ActivateCharger,
@@ -198,15 +199,23 @@ class RegulationEngine:
             charger_id: decision.chargers.get(charger_id, ChargerReading())
             for charger_id in self._chargers
         }
+        override_active = {
+            charger_id: readings[charger_id].window_override
+            and charger_id not in overrides_ended
+            for charger_id in self._chargers
+        }
         allowed = [
             charger.id
             for charger in self._chargers.values()
             if allowed_to_charge(
-                charger,
-                readings[charger.id],
-                readings[charger.id].window_override
-                and charger.id not in overrides_ended,
-                local_time,
+                charger, readings[charger.id], override_active[charger.id], local_time
+            )
+        ]
+        overridden = [
+            charger.id
+            for charger in self._chargers.values()
+            if window_overridden(
+                charger, readings[charger.id], override_active[charger.id], local_time
             )
         ]
         newly_bypassed = charging.evaluate(
@@ -216,6 +225,7 @@ class RegulationEngine:
             decision.now,
             timedelta(seconds=self._config.general.regulation_window_s),
             self._config.charging.one_at_a_time,
+            overridden,
         )
         commands: list[Command] = []
         for charger_id in charging.activated():

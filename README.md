@@ -142,15 +142,28 @@ til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
   holder musen over,
 - om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
   gjenstående overforbruk. Dette vises bare når det inntreffer,
-- prioritetslisten med apparatene i prioritert rekkefølge, om de er på eller
-  av, og gjeldende variant. Ikonet til et apparat som er på, er gult, som i
-  Home Assistant. Der «Elbillading» står i listen, står
-  elbilladerne under hverandre i gjeldende ladeprioritering, med om de er
-  aktivert, og om de er forbigått, ventende, utenfor regulering eller utenfor
-  ladetidsrommet. Under «Lader med» og gjeldende ladestrøm står én strek per
-  ampere fra minste til største ladestrøm, fylt opp til gjeldende ladestrøm.
-  Apparatet eller elbilladeren som står for tur, har «Forsinket innkobling»
-  over en stolpe som tømmes jevnt frem til avgjørelsen der det slås på.
+- prioritetslisten med apparatene i prioritert rekkefølge og gjeldende variant.
+  Ikonet til et apparat som er på, er gult, som i Home Assistant. Der
+  «Elbillading» står i listen, står elbilladerne under hverandre i gjeldende
+  ladeprioritering, med ladestrømmen og én strek per ampere fra minste til
+  største ladestrøm, fylt opp til gjeldende ladestrøm. «Elbillading» viser hvor
+  mange elbilladere som lader, for eksempel «2 / 5»,
+- en merkelapp på hver rad. For et apparat står det «På» eller «Av». For en
+  elbillader står det viktigste av: «Første avgjørelse», «Utenfor regulering»,
+  ladetidsrommet (for eksempel «22–06») når den er utenfor ladetidsrommet,
+  «Trekker ikke strøm» når den er forbigått, «Ventende», «Overstyrt» når den
+  lader utenfor ladetidsrommet fordi det er overstyrt, «Lader», «Aktivert»
+  eller «Deaktivert». Hold musen over en merkelapp eller et ikon for å se hele
+  forklaringen,
+- en stiplet linje under det siste i listen som er på. Der er effekten brukt
+  opp, og det som står under, venter på ledig effekt. Linjen viser hvor mye
+  effekt som er ledig, effektgrensen minus reguleringssnittet. Den vises ikke
+  når alt er på eller alt er av. «Elbillading» regnes som på når en elbillader
+  er aktivert og ikke forbigått,
+- en stolpe som tømmes jevnt frem til avgjørelsen der apparatet eller
+  elbilladeren som står for tur, slås på. Foran stolpen står en stoppeklokke
+  for et apparat og et plusstegn for én ampere til. På en smal skjerm vises
+  verken stolpen eller ladestrømmen i tall.
 
 ## Entiteter
 

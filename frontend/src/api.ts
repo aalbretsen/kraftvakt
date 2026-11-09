@@ -134,6 +134,10 @@ export interface ChargerStatus {
   waiting: boolean;
   allowed: boolean;
   excluded: boolean | null;
+  /** Activated and actively charging at the last decision. */
+  charging: boolean;
+  /** Allowed to charge only because its charging window is overridden. */
+  window_overridden: boolean;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */
