@@ -62,7 +62,7 @@ integrations.
     "turn_on_margin_kw": 0.1,
     "regulation_window_s": 10,
     "regulation_interval": 1,
-    "wait_at_limit_s": 60,
+    "wait_at_limit_s": 300,
     "penalty_threshold_kw": 1.0
   },
   "appliances": [

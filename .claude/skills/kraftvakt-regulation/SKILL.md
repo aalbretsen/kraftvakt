@@ -160,7 +160,7 @@ seconds, the waiting time at the limit in whole seconds, currents in whole amper
   slot that is next can wait.
 - Linear: waiting time = waiting time at the limit × min(1, average / limit),
   recalculated at each decision while it runs. Waiting time at the limit is
-  0–600 s, default 60 s. Settled with the owner, replacing 0–10 min with
+  0–600 s, default 300 s. Settled with the owner, replacing 0–10 min with
   default 5 min. Saved configurations with the old `wait_at_limit_min` are not
   migrated; the value falls back to the default.
 - Persistent cycling: when the same slot is turned on again without any other

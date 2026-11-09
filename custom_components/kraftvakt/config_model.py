@@ -265,7 +265,7 @@ class GeneralConfig:
     turn_on_margin_kw: float = 0.1
     regulation_window_s: int = 10
     regulation_interval: int = 1
-    wait_at_limit_s: int = 60
+    wait_at_limit_s: int = 300
     penalty_threshold_kw: float = 1.0
 
     def to_dict(self) -> dict[str, Any]:
