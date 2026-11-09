@@ -54,6 +54,9 @@ export class KraftvaktLockedBanner extends LitElement {
       display: block;
       margin-bottom: 16px;
     }
+    ha-button::part(base) {
+      white-space: nowrap;
+    }
     .error {
       margin-top: 8px;
       color: var(--error-color);

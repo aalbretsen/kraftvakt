@@ -21,6 +21,9 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       display: block;
       margin-bottom: 16px;
     }
+    ha-button::part(base) {
+      white-space: nowrap;
+    }
     .error {
       margin-top: 8px;
       color: var(--error-color);

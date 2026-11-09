@@ -71,7 +71,7 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   be stopped. The draft is discarded when the regulation starts (only possible
   from the status page in the panel, or from the switch).
 - While the regulation runs, config pages are locked and show «Stop regulation»
-  in the banner. The warning against manual control is shown under the list
+  in the banner, with icon and text on one line. The warning against manual control is shown under the list
   of appliances on «Appliances» while there are no appliances, and under the
   list of chargers on «EV charging» while there are no chargers. The owner
   chose this, because the user does not need to see it all the time.
