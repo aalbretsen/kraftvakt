@@ -86,8 +86,15 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   already valid again, the safe state banner is an info that the regulation
   starts again at the next decision, not the error that the sensor gives no
   valid measurement (settled after the exploratory test).
-- Countdowns are never ticking text. «Next decision» is a label and
-  `kraftvakt-countdown-ring` at the right end of the chips row: a 20 px ring
+- The header of the «Regulation» card holds the title, the «Running» or
+  «Stopped» chip, the «Safe state» and «Penalty period» chips while active,
+  and «Next decision» at the right end. «Start regulation» and «Stop
+  regulation» are in a footer under a divider, on every screen width; stop is
+  a plain danger button, start a filled one. The owner chose this over a
+  switch or a small button in the header, because a large outlined button in
+  the header looked misplaced and the ring stood alone on its own row.
+- Countdowns are never ticking text. «Next decision» is a label (only the
+  ring on a narrow screen) and `kraftvakt-countdown-ring`: a 20 px ring
   that empties counterclockwise towards the top over one decision interval
   (`regulation_window_s` × `regulation_interval`), animated with the Web
   Animations API, so it needs no clock. The time is a tooltip.

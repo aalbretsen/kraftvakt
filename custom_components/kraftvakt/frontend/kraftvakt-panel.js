@@ -667,19 +667,21 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
             <span class="dot"></span>
             ${this.localize(e.running?"status.running":"status.stopped")}
           </span>
+          ${e.running&&e.safe_state?Q`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`:te}
+          ${e.running&&e.penalty.active?Q`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`:te}
           <span class="spacer"></span>
-          ${this.narrow?te:this.renderStartStop(e)}
+          ${e.running&&e.next_decision_at?this.renderNextDecision(e,e.next_decision_at):te}
         </div>
         <div class="card-content">
           ${this.runningError?Q`<ha-alert alert-type="error">${this.runningError}</ha-alert>`:te}
           ${e.running?this.renderRunning(e):this.renderStopped(e)}
         </div>
-        ${this.narrow?Q`<div class="card-actions">${this.renderStartStop(e)}</div>`:te}
+        <div class="card-actions">${this.renderStartStop(e)}</div>
       </ha-card>
     `}renderStartStop(e){return e.running?Q`
         <ha-button
           variant="danger"
-          appearance="outlined"
+          appearance="plain"
           .disabled=${this.changingRunning}
           @click=${()=>this.changeRunning(!1)}
         >
@@ -703,15 +705,9 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         ${this.renderStat("power-limit","status.power_limit",jt(t,e.power_limit_kw))}
       </div>
       ${this.renderMeter(e,i)}
-      <div class="facts">
-        ${e.safe_state?Q`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`:te}
-        ${e.penalty.active?Q`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`:te}
-        <span class="spacer"></span>
-        ${e.next_decision_at?this.renderNextDecision(e,e.next_decision_at):te}
-      </div>
     `;var a}renderNextDecision(e,t){const i=Date.parse(t),a=e.regulation_window_s*e.regulation_interval*1e3,r=Ut(this.hass.language,t);return Q`
       <span class="next-decision" title=${this.localize("status.next_decision_at",{time:r})}>
-        ${this.localize("status.next_decision")}
+        ${this.narrow?te:this.localize("status.next_decision")}
         <kraftvakt-countdown-ring .start=${i-a} .end=${i}></kraftvakt-countdown-ring>
       </span>
     `}renderSafeState(e){const t=this.config?.config.general.power_sensor??"",i=this.hass.states[t]?.attributes.friendly_name??t;return Q`
@@ -861,6 +857,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       align-items: center;
       flex-wrap: wrap;
       gap: 12px;
+      min-height: 40px;
       padding: 12px 16px;
       font-size: var(--ha-font-size-xl, 20px);
     }
@@ -1034,13 +1031,6 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     .meter .scale .end {
       transform: translateX(-100%);
     }
-    .facts {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      color: var(--secondary-text-color);
-    }
     .penalty-details {
       margin-top: 8px;
     }
@@ -1135,6 +1125,8 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      font-size: var(--ha-font-size-m, 14px);
+      color: var(--secondary-text-color);
     }
     .waiting {
       display: flex;

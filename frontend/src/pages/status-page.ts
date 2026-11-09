@@ -136,14 +136,20 @@ export class KraftvaktStatusPage extends LitElement {
             <span class="dot"></span>
             ${this.localize(status.running ? "status.running" : "status.stopped")}
           </span>
+          ${status.running && status.safe_state
+            ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`
+            : nothing}
+          ${status.running && status.penalty.active
+            ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`
+            : nothing}
           <span class="spacer"></span>
-          ${this.narrow ? nothing : this.renderStartStop(status)}
+          ${status.running && status.next_decision_at ? this.renderNextDecision(status, status.next_decision_at) : nothing}
         </div>
         <div class="card-content">
           ${this.runningError ? html`<ha-alert alert-type="error">${this.runningError}</ha-alert>` : nothing}
           ${status.running ? this.renderRunning(status) : this.renderStopped(status)}
         </div>
-        ${this.narrow ? html`<div class="card-actions">${this.renderStartStop(status)}</div>` : nothing}
+        <div class="card-actions">${this.renderStartStop(status)}</div>
       </ha-card>
     `;
   }
@@ -153,7 +159,7 @@ export class KraftvaktStatusPage extends LitElement {
       return html`
         <ha-button
           variant="danger"
-          appearance="outlined"
+          appearance="plain"
           .disabled=${this.changingRunning}
           @click=${() => this.changeRunning(false)}
         >
@@ -198,12 +204,6 @@ export class KraftvaktStatusPage extends LitElement {
         ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_kw))}
       </div>
       ${this.renderMeter(status, powerNow)}
-      <div class="facts">
-        ${status.safe_state ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>` : nothing}
-        ${status.penalty.active ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>` : nothing}
-        <span class="spacer"></span>
-        ${status.next_decision_at ? this.renderNextDecision(status, status.next_decision_at) : nothing}
-      </div>
     `;
   }
 
@@ -214,7 +214,7 @@ export class KraftvaktStatusPage extends LitElement {
     const time = formatClockTime(this.hass.language, nextDecisionAt);
     return html`
       <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
-        ${this.localize("status.next_decision")}
+        ${this.narrow ? nothing : this.localize("status.next_decision")}
         <kraftvakt-countdown-ring .start=${end - interval} .end=${end}></kraftvakt-countdown-ring>
       </span>
     `;
@@ -575,6 +575,7 @@ export class KraftvaktStatusPage extends LitElement {
       align-items: center;
       flex-wrap: wrap;
       gap: 12px;
+      min-height: 40px;
       padding: 12px 16px;
       font-size: var(--ha-font-size-xl, 20px);
     }
@@ -748,13 +749,6 @@ export class KraftvaktStatusPage extends LitElement {
     .meter .scale .end {
       transform: translateX(-100%);
     }
-    .facts {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      color: var(--secondary-text-color);
-    }
     .penalty-details {
       margin-top: 8px;
     }
@@ -849,6 +843,8 @@ export class KraftvaktStatusPage extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      font-size: var(--ha-font-size-m, 14px);
+      color: var(--secondary-text-color);
     }
     .waiting {
       display: flex;
