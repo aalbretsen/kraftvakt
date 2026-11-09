@@ -98,7 +98,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   unavailable until a valid value comes, also while the regulation is stopped.
   The history is kept, and the gap counts with the last valid value before
   it, like the time HA was down. Settled with the owner after the exploratory
-  test (finding F3): discarding the history and filling the hour with the
+  test: discarding the history and filling the hour with the
   first value after the gap made the average consumption far too low (only the
   background, since everything is off in the safe state) or far too high (a
   value that lasted a millisecond while the appliances were turned off).
@@ -128,7 +128,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
      bypassed charger's, without waiting, and cancel any waiting. When step 6
      switched something off at this decision, nothing more is switched off;
      the waiting is still cancelled and nothing is turned on. Settled with the
-     owner after the exploratory test (finding F6): the average was measured
+     owner after the exploratory test: the average was measured
      before the forced switch-off, so switching off one more was often too
      much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
@@ -140,7 +140,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   turn-on margin, and average plus power reserve is at most the limit. Switch
   off only when the average is above the limit. Between limit minus margin and
   the limit, both included, nothing is turned on or off. Settled with the owner
-  after the exploratory test (finding F1): commands run just after a window
+  after the exploratory test: commands run just after a window
   closes, and a real meter reports the change only at its next update, so the
   window after a decision still holds the consumption from before its
   commands. Without a margin an average a hair under the limit turned on the
@@ -168,7 +168,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   15 min (5, 7, 9 … 15). Fictive appliances: step 5 min, cap 30 min. The first
   time again uses the linear time. Any command for another slot, also forced
   ones, resets the counter. Not configurable.
-- Kept as is after the exploratory test (finding F2), to revisit if it shows
+- Kept as is after the exploratory test, to revisit if it shows
   up in real use: two slots that alternate (A on, B on, B off, A off, A on …)
   reset each other's counter, so their waiting time never grows. In the test
   it came from the stale window after a decision with waiting time 0, which
@@ -195,7 +195,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   (stop, safe state, HA start). The current variants are still evaluated during
   a penalty; they give no commands since everything is off.
 - The start after a penalty resets the cycling counters like every other
-  start. Kept as is after the exploratory test (finding F4): while the average
+  start. Kept as is after the exploratory test: while the average
   consumption stays above limit plus threshold, an appliance that pushes the
   average over the limit goes on and off with the linear waiting time only.
   The penalty should never be needed.
@@ -261,8 +261,8 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   first. The set-current action always gets a current between min and max.
 - Actively charging: charging power > 100 W (not configurable), or an invalid
   charging power, also when deactivated.
-- On trial (settled with the owner after the retest of the exploratory test,
-  observation N2): a charger that may charge but does not charge actively gets
+- On trial (settled with the owner after the retest of the exploratory
+  test): a charger that may charge but does not charge actively gets
   only its first fictive appliance, so it stays at the minimum current until
   it charges actively. Meanwhile the slots after it may be turned on. Before,
   a charger tried without a car that charged got more current during the two
@@ -275,7 +275,7 @@ seconds, the waiting time in whole minutes, currents in whole amperes.
   first fictive appliance and stays activated, gets no more, is not switched
   off above the limit and does not stand in the way of others. When it becomes
   bypassed, all fictive appliances but the first are switched off at once.
-- Rest (settled with the owner after the exploratory test, finding F5): a
+- Rest (settled with the owner after the exploratory test): a
   charger that becomes bypassed because it does not charge rests. It stays
   bypassed while it rests, also after it is deactivated, and may be tried
   again when the rest is over: 15 min the first time, then 30 min, then 60 min

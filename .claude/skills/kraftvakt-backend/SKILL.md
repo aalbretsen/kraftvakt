@@ -28,7 +28,7 @@ integrations.
   named after its entity. The status, `entity_names` and the charger switches
   use the same names (`item_name()` in `entity.py`), and the panel mirrors it
   for a charger that is not saved yet. Settled with the owner after the
-  exploratory test (finding F8): the entity that allows charging often has a
+  exploratory test: the entity that allows charging often has a
   name like «Garage Charging allowed».
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
@@ -126,8 +126,8 @@ Validation (an invalid configuration is not saved):
   `parse_config()`). Type errors must be fixed before that check can run.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
-  is not checked again. Settled with the owner after the exploratory test
-  (finding F9): one type error hid every other error.
+  is not checked again. Settled with the owner after the exploratory test:
+  one type error hid every other error.
 
 An incomplete configuration can be saved, but the regulation cannot start.
 Missing items and validation errors are issues:
