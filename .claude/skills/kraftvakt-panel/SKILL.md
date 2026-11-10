@@ -87,10 +87,12 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   after the waiting time, all from the draft (– when not set). The line of
   text says why it is rounded. The graph keeps the waiting time in percent on
   the y-axis (so the shape does not change with the waiting time at the
-  limit) and has free power in kW on the x-axis, from the power limit at the
-  left to 0 at the right, so the waiting time grows to the right; ticks every
-  0.1, 0.2, 0.5, 1, 2, 5 or 10 kW, the smallest step that gives at most 10
-  (4 on a narrow screen).
+  limit) and has free power in kW on the x-axis, from 60 % of the power
+  limit at the left to 0 at the right, so the waiting time grows to the
+  right; ticks every 0.1, 0.2, 0.5, 1, 2, 5 or 10 kW, the smallest step that
+  gives at most 10 (4 on a narrow screen). It starts at 60 %, a bit above
+  50 % where the waiting time can start, so the curve always starts flat at
+  0 (settled with the owner).
 - The configuration pages share one draft in `kraftvakt-panel.ts`. «Save»
   saves everything, «Discard» goes back to the saved configuration. The panel
   checks the draft against the limits from `kraftvakt/capabilities` and works

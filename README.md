@@ -125,10 +125,11 @@ administratorer har tilgang.
   prosent av effektgrensen. Tabellen viser ledig effekt i kW, ventetiden i
   sekunder og reell ventetid, som er ventetiden rundet opp til
   reguleringsintervallet, fordi apparatet slås på ved første avgjørelse etter
-  ventetiden. Kurven viser ledig effekt i kW. Tallene regnes ut fra
-  effektgrensen, ventetiden ved effektgrensen, reguleringsvinduet og
-  reguleringsintervallet som er satt. Tabellen og kurven følger glidebryterne
-  med en gang. På en smal skjerm vises ikke tabellen.
+  ventetiden. Kurven viser ledig effekt i kW fra 60 % av effektgrensen og ned
+  til 0. Tallene regnes ut fra effektgrensen, ventetiden ved effektgrensen,
+  reguleringsvinduet og reguleringsintervallet som er satt. Tabellen og
+  kurven følger glidebryterne med en gang. På en smal skjerm vises ikke
+  tabellen.
   **Ventetid ved gjentatt innkobling** har steg og tak for apparater og for
   elbilladere. Steget er 10–600 s og taket 60–3600 s.
 
