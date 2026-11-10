@@ -61,8 +61,17 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - «Ventetid ved gjentatt innkobling» is the second card on «Avansert»: a short
   text that tells it is about the regulation turning the same appliance or
   ampere on over and over again (renamed from «Ventetid ved ny innkobling» by
-  the owner), then «Apparater» and «Elbilladere», each with the number fields
-  «Steg» and «Tak» in seconds.
+  the owner; the English title is «Waiting time on repeated turn-on»), then
+  «Apparater» and «Elbilladere». Each has two dropdowns, «Steg» (× 0.25, ×
+  0.5, × 0.75 or × 1 of the waiting time at the limit) and «Antall steg»
+  (1–9), and a table with one column per turn-on in a row: «Innkobling på
+  rad» 1, 2, … up to the one that reaches the cap, marked «+» since it holds
+  for every time after it, then «Ventetid s» and «Reell ventetid s» (rounded
+  up to whole decision intervals like the curve table). The first two show
+  the curve's range, «0–300». The table is left out on a narrow screen.
+  Settled with the owner, replacing number fields for step and cap in
+  seconds. Dropdowns use `selectField()` in `general-settings-page.ts`,
+  which keeps the values as numbers in the draft.
 - «Ventetidskurve» is the first card on «Avansert» (it was the last card on
   «Generelt», moved by the owner): one line
   of text, sliders for steepness and pivot point (`ha-slider` without tooltip,

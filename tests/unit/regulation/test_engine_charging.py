@@ -108,7 +108,7 @@ def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
 
 
 def test_fictive_appliances_cycle_with_their_own_steps() -> None:
-    """5, 10, 15, 20, 25 and then 30 minutes."""
+    """5, 10, 15, 20 and then 25 minutes."""
     scenario = Scenario(
         make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300)
     )
@@ -121,16 +121,16 @@ def test_fictive_appliances_cycle_with_their_own_steps() -> None:
         scenario.charge("c", 6)
         waits.append((scenario.now - waiting_started) / timedelta(minutes=1))
 
-    assert waits == [0, 5, 10, 15, 20, 25, 30, 30]
+    assert waits == [0, 5, 10, 15, 20, 25, 25, 25]
 
 
 def test_fictive_appliances_cycle_with_the_configured_step_and_cap() -> None:
-    """Step 2 minutes and cap 9 minutes: 5, 7, 9 and then 9 minutes."""
+    """Steps of half of 4 minutes, 2 steps: 4, 6 and then 8 minutes."""
     scenario = Scenario(
         make_config(
             chargers=(charger("c", max_a=6),),
-            wait_at_limit_s=300,
-            charger_cycling_s=(120, 540),
+            wait_at_limit_s=240,
+            charger_cycling=(0.5, 2),
         )
     )
     scenario.set_charger("c", **CHARGING)
@@ -142,7 +142,7 @@ def test_fictive_appliances_cycle_with_the_configured_step_and_cap() -> None:
         scenario.charge("c", 6)
         waits.append((scenario.now - waiting_started) / timedelta(minutes=1))
 
-    assert waits == [0, 5, 7, 9, 9, 9]
+    assert waits == [0, 4, 6, 8, 8, 8]
 
 
 def test_several_chargers_take_turns() -> None:

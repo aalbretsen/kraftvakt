@@ -176,21 +176,21 @@
       "wait_curve_pivot": {
         "label": "Vendepunkt"
       },
-      "appliance_cycling_step_s": {
+      "appliance_cycling_step_factor": {
         "label": "Steg",
-        "helper": "Hvor mye ventetiden øker hver gang. {min}–{max} s, standard {default} s."
+        "helper": "Hvor mye ventetiden øker hver gang, som andel av ventetiden ved effektgrensen. Standard × {default}."
       },
-      "appliance_cycling_cap_s": {
-        "label": "Tak",
-        "helper": "Ventetiden blir aldri lengre enn dette. {min}–{max} s, standard {default} s."
+      "appliance_cycling_steps": {
+        "label": "Antall steg",
+        "helper": "Hvor mange ganger ventetiden øker. {min}–{max}, standard {default}."
       },
-      "charger_cycling_step_s": {
+      "charger_cycling_step_factor": {
         "label": "Steg",
-        "helper": "Hvor mye ventetiden øker hver gang. {min}–{max} s, standard {default} s."
+        "helper": "Hvor mye ventetiden øker hver gang, som andel av ventetiden ved effektgrensen. Standard × {default}."
       },
-      "charger_cycling_cap_s": {
-        "label": "Tak",
-        "helper": "Ventetiden blir aldri lengre enn dette. {min}–{max} s, standard {default} s."
+      "charger_cycling_steps": {
+        "label": "Antall steg",
+        "helper": "Hvor mange ganger ventetiden øker. {min}–{max}, standard {default}."
       }
     }
   },
@@ -201,7 +201,8 @@
     "waiting_seconds": "Ventetid s",
     "actual_waiting_seconds": "Reell ventetid s",
     "cycling": "Ventetid ved gjentatt innkobling",
-    "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. Første gang det slås på igjen, følger ventetiden kurven. Fra andre gang er den lik ventetiden ved effektgrensen, og den øker med steget hver gang opp til taket.",
+    "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og den øker med ett steg hver gang til antall steg er nådd.",
+    "turn_on_in_a_row": "Innkobling på rad",
     "appliances": "Apparater",
     "chargers": "Elbilladere"
   },

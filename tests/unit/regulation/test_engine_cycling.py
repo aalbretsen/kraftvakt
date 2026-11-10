@@ -29,30 +29,35 @@ def cycle(scenario: Scenario, appliance_id: str) -> float:
 
 
 def test_waiting_time_grows_on_persistent_cycling() -> None:
-    """From the second time on again: 5, 7, 9, 11, 13 and then 15 minutes."""
+    """From the second time on again: 5, 7.5, 10, 12.5 and then 15 minutes.
+
+    Decisions come every minute, so half minutes are turned on at the next.
+    """
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
 
     waits = [cycle(scenario, "a") for _ in range(8)]
 
-    assert waits == [0, 5, 7, 9, 11, 13, 15, 15]
+    assert waits == [0, 5, 8, 10, 13, 15, 15, 15]
 
 
 def test_waiting_time_grows_with_the_configured_step_and_cap() -> None:
-    """Step 1 minute and cap 8 minutes: 5, 6, 7 and then 8 minutes."""
-    scenario = Scenario(make_config("a", appliance_cycling_s=(60, 480)))
+    """Steps of a quarter of 4 minutes, 3 steps: 4, 5, 6 and then 7 minutes."""
+    scenario = Scenario(
+        make_config("a", wait_at_limit_s=240, appliance_cycling=(0.25, 3))
+    )
     scenario.turn_on("a")
 
     waits = [cycle(scenario, "a") for _ in range(6)]
 
-    assert waits == [0, 5, 6, 7, 8, 8]
+    assert waits == [0, 4, 5, 6, 7, 7]
 
 
 def test_switching_another_appliance_resets_the_increase() -> None:
     """The increase is reset as soon as another appliance is switched."""
     scenario = Scenario(make_config("a", "b"))
     scenario.turn_on("a", "b")
-    assert [cycle(scenario, "b") for _ in range(3)] == [0, 5, 7]
+    assert [cycle(scenario, "b") for _ in range(3)] == [0, 5, 8]
 
     assert scenario.decide(ABOVE_LIMIT) == off("b")
     assert scenario.decide(ABOVE_LIMIT) == off("a")
@@ -67,7 +72,7 @@ def test_restart_resets_the_increase() -> None:
     """The counters for increasing waiting time start again."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")
-    assert [cycle(scenario, "a") for _ in range(3)] == [0, 5, 7]
+    assert [cycle(scenario, "a") for _ in range(3)] == [0, 5, 8]
 
     scenario.engine.start(scenario.now)
 
@@ -85,5 +90,5 @@ def test_persistent_cycling_still_needs_room_under_the_limit() -> None:
 
     assert scenario.decide_many(NO_LOAD, 4) == [[], [], [], []]
     assert scenario.decide(10000) == []
-    assert scenario.decide_many(NO_LOAD, 7) == [[]] * 7
+    assert scenario.decide_many(NO_LOAD, 8) == [[]] * 8
     assert scenario.decide(NO_LOAD) == on("a")

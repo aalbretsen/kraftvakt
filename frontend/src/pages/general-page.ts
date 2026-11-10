@@ -53,12 +53,7 @@ export class KraftvaktGeneralPage extends GeneralSettingsPage {
 
   /** The interval is a whole number of regulation windows. */
   private intervalField(): FormField {
-    const range = this.range("regulation_interval");
-    const options = [];
-    for (let count = range.min ?? 1; count <= (range.max ?? count); count += range.step) {
-      options.push({ value: String(count), label: this.localize("general.interval_option", { count }) });
-    }
-    return { name: "regulation_interval", required: true, selector: { select: { mode: "dropdown", options } } };
+    return this.selectField("regulation_interval", (count) => this.localize("general.interval_option", { count }));
   }
 }
 

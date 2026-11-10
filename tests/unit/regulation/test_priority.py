@@ -15,8 +15,8 @@ from custom_components.kraftvakt.regulation.waiting import CyclingSteps
 
 from .configs import appliance, make_config
 
-APPLIANCE_CYCLING = CyclingSteps.from_seconds(120, 900)
-FICTIVE_APPLIANCE_CYCLING = CyclingSteps.from_seconds(300, 1800)
+APPLIANCE_CYCLING = CyclingSteps.from_waiting_at_limit(300, 0.5, 4)
+FICTIVE_APPLIANCE_CYCLING = CyclingSteps.from_waiting_at_limit(300, 1.0, 4)
 
 
 def keys(slots: list[Slot]) -> list[str]:

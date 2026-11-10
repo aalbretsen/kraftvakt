@@ -30,10 +30,10 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 300
     assert config.general.penalty_threshold_w == 100
-    assert config.general.appliance_cycling_step_s == 120
-    assert config.general.appliance_cycling_cap_s == 900
-    assert config.general.charger_cycling_step_s == 300
-    assert config.general.charger_cycling_cap_s == 1800
+    assert config.general.appliance_cycling_step_factor == 0.5
+    assert config.general.appliance_cycling_steps == 4
+    assert config.general.charger_cycling_step_factor == 1.0
+    assert config.general.charger_cycling_steps == 4
     assert config.appliances == ()
     assert config.priority == ()
     assert config.charging.enabled is False

@@ -62,11 +62,15 @@ class RegulationEngine:
         self._waiting_curve = WaitingCurve.from_settings(
             general.wait_curve_steepness, general.wait_curve_pivot
         )
-        self._appliance_cycling = CyclingSteps.from_seconds(
-            general.appliance_cycling_step_s, general.appliance_cycling_cap_s
+        self._appliance_cycling = CyclingSteps.from_waiting_at_limit(
+            general.wait_at_limit_s,
+            general.appliance_cycling_step_factor,
+            general.appliance_cycling_steps,
         )
-        self._fictive_appliance_cycling = CyclingSteps.from_seconds(
-            general.charger_cycling_step_s, general.charger_cycling_cap_s
+        self._fictive_appliance_cycling = CyclingSteps.from_waiting_at_limit(
+            general.wait_at_limit_s,
+            general.charger_cycling_step_factor,
+            general.charger_cycling_steps,
         )
         self._running = False
         self._state = RegulationState()

@@ -176,21 +176,21 @@
       "wait_curve_pivot": {
         "label": "Pivot point"
       },
-      "appliance_cycling_step_s": {
+      "appliance_cycling_step_factor": {
         "label": "Step",
-        "helper": "How much the waiting time grows each time. {min}–{max} s, default {default} s."
+        "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
       },
-      "appliance_cycling_cap_s": {
-        "label": "Cap",
-        "helper": "The waiting time never gets longer than this. {min}–{max} s, default {default} s."
+      "appliance_cycling_steps": {
+        "label": "Number of steps",
+        "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
       },
-      "charger_cycling_step_s": {
+      "charger_cycling_step_factor": {
         "label": "Step",
-        "helper": "How much the waiting time grows each time. {min}–{max} s, default {default} s."
+        "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
       },
-      "charger_cycling_cap_s": {
-        "label": "Cap",
-        "helper": "The waiting time never gets longer than this. {min}–{max} s, default {default} s."
+      "charger_cycling_steps": {
+        "label": "Number of steps",
+        "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
       }
     }
   },
@@ -200,8 +200,9 @@
     "free_power_kw": "Free power kW",
     "waiting_seconds": "Waiting time s",
     "actual_waiting_seconds": "Actual waiting time s",
-    "cycling": "Waiting time when turned on again and again",
-    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first time it is turned on again, the waiting time follows the curve. From the second time, it is the waiting time at the power limit, and it grows by the step each time up to the cap.",
+    "cycling": "Waiting time on repeated turn-on",
+    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one step each time until the number of steps is reached.",
+    "turn_on_in_a_row": "Turn-on in a row",
     "appliances": "Appliances",
     "chargers": "EV chargers"
   },

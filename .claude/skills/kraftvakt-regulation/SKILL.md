@@ -183,13 +183,15 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - Persistent cycling: when the same slot is turned on again without any other
   slot being switched in between, the counter grows. From the second time on
   the waiting time is fixed, independent of the average:
-  min(cap, waiting at limit + step × (n − 2)). The step and the cap are set
-  separately for appliances (default step 120 s, cap 900 s) and for fictive
-  appliances (default step 300 s, cap 1800 s), in whole seconds, step 10–600
-  s and cap 60–3600 s. There is no rule between the cap and the waiting time
-  at the limit: a cap below it makes the waiting time on persistent cycling
-  shorter than the waiting time at the limit. Settled with the owner, they
-  were fixed before. The first
+  min(cap, waiting at limit + step × (n − 2)). The step is a share of the
+  waiting time at the limit, 0.25, 0.5, 0.75 or 1, and the cap is the waiting
+  time at the limit plus a number of steps, 1–9. Both are set separately for
+  appliances (default 0.5 and 4: step 150 s and cap 900 s with 300 s at the
+  limit) and for fictive appliances (default 1 and 4: step 300 s and cap
+  1500 s). With waiting time 0 at the limit the step and the cap are 0, so
+  the waiting time does not grow; accepted by the owner. Settled with the
+  owner, replacing a step and a cap in seconds, which replaced fixed values,
+  because a share and a number of steps are easier to understand. The first
   time again uses the curve. Any command for another slot, also forced
   ones, resets the counter.
 - Kept as is after the exploratory test, to revisit if it shows

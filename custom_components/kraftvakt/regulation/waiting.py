@@ -21,9 +21,15 @@ class CyclingSteps:
     cap: timedelta
 
     @classmethod
-    def from_seconds(cls, step_s: float, cap_s: float) -> CyclingSteps:
-        """Return the steps for a step and a cap in seconds."""
-        return cls(step=timedelta(seconds=step_s), cap=timedelta(seconds=cap_s))
+    def from_waiting_at_limit(
+        cls, wait_at_limit_s: float, step_factor: float, steps: int
+    ) -> CyclingSteps:
+        """Return the steps as a share of the waiting time at the limit.
+
+        The cap is the waiting time at the limit and the given number of steps.
+        """
+        step = timedelta(seconds=wait_at_limit_s * step_factor)
+        return cls(step=step, cap=timedelta(seconds=wait_at_limit_s) + step * steps)
 
 
 @dataclass(frozen=True, slots=True)

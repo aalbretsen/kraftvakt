@@ -17,12 +17,17 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   turn_on_margin_w: "W",
   regulation_window_s: "s",
   wait_at_limit_s: "s",
-  appliance_cycling_step_s: "s",
-  appliance_cycling_cap_s: "s",
-  charger_cycling_step_s: "s",
-  charger_cycling_cap_s: "s",
   penalty_threshold_w: "W",
 };
+
+/** Fields chosen from a list, which works with text values. */
+const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set([
+  "regulation_interval",
+  "appliance_cycling_step_factor",
+  "appliance_cycling_steps",
+  "charger_cycling_step_factor",
+  "charger_cycling_steps",
+]);
 
 /**
  * A configuration page with fields from the general settings. The settings
@@ -63,14 +68,28 @@ export class GeneralSettingsPage extends ConfigPage {
     };
   }
 
+  /** A list of the values in the field's range, each shown with `label`. */
+  protected selectField(name: GeneralField, label: (value: number) => string): FormField {
+    const range = this.range(name);
+    const options = [];
+    for (let value = range.min ?? range.step; value <= (range.max ?? value); value += range.step) {
+      options.push({ value: String(value), label: label(value) });
+    }
+    return { name, required: true, selector: { select: { mode: "dropdown", options } } };
+  }
+
   protected range(name: GeneralField): Range {
     return this.capabilities.limits.general[name];
   }
 
-  /** The select field for the interval works with text values. */
   private get formData(): Record<string, unknown> {
-    const general = this.config.general;
-    return { ...general, regulation_interval: String(general.regulation_interval) };
+    const general = this.config.general as unknown as Record<GeneralField, unknown>;
+    return Object.fromEntries(
+      Object.entries(general).map(([name, value]) => [
+        name,
+        SELECT_FIELDS.has(name as GeneralField) && value !== null ? String(value) : value,
+      ]),
+    );
   }
 
   private valueChanged(event: CustomEvent<{ value: Record<string, unknown> }>): void {
@@ -79,7 +98,7 @@ export class GeneralSettingsPage extends ConfigPage {
     for (const name of Object.keys(general) as GeneralField[]) {
       const changed = value[name];
       (general as Record<string, unknown>)[name] =
-        name === "regulation_interval" && changed !== undefined ? Number(changed) : (changed ?? null);
+        SELECT_FIELDS.has(name) && changed !== undefined ? Number(changed) : (changed ?? null);
     }
     this.changeConfig({ ...this.config, general });
   }

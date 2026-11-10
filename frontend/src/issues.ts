@@ -30,10 +30,10 @@ const ISSUE_PAGES: Record<Issue["section"], Page> = {
 const ADVANCED_FIELDS = new Set([
   "wait_curve_steepness",
   "wait_curve_pivot",
-  "appliance_cycling_step_s",
-  "appliance_cycling_cap_s",
-  "charger_cycling_step_s",
-  "charger_cycling_cap_s",
+  "appliance_cycling_step_factor",
+  "appliance_cycling_steps",
+  "charger_cycling_step_factor",
+  "charger_cycling_steps",
 ]);
 
 /** Return the page where the issue is fixed. */

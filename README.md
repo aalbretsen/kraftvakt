@@ -67,9 +67,11 @@ effekt, typisk fra HAN-porten på strømmåleren.
   effektgrensen ventes det ikke, og nær effektgrensen ventes nesten hele
   ventetiden ved effektgrensen. Slås det samme apparatet på igjen gang på
   gang, er ventetiden fra andre gang lik ventetiden ved effektgrensen, og den
-  øker med et steg hver gang opp til et tak. Standard er steg 120 s og tak
-  900 s for apparater, og steg 300 s og tak 1800 s for elbilladere, der hver
-  ampere regnes for seg.
+  øker med et steg hver gang til et valgt antall steg er nådd. Steget er en
+  andel av ventetiden ved effektgrensen. Standard er × 0,5 og 4 steg for
+  apparater (150 s steg og høyst 900 s med 300 s ved effektgrensen), og × 1
+  og 4 steg for elbilladere (300 s steg og høyst 1500 s), der hver ampere
+  regnes for seg. Med ventetid 0 ved effektgrensen øker ikke ventetiden.
 - **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
   må være før et apparat slås på, standard 100 W. Vinduet rett etter en
   avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
@@ -130,8 +132,10 @@ administratorer har tilgang.
   reguleringsvinduet og reguleringsintervallet som er satt. Tabellen og
   kurven følger glidebryterne med en gang. På en smal skjerm vises ikke
   tabellen.
-  **Ventetid ved gjentatt innkobling** har steg og tak for apparater og for
-  elbilladere. Steget er 10–600 s og taket 60–3600 s.
+  **Ventetid ved gjentatt innkobling** har steg og antall steg for apparater
+  og for elbilladere. Steget velges som × 0,25, × 0,5, × 0,75 eller × 1 av
+  ventetiden ved effektgrensen, og antall steg er 1–9. En tabell under hver
+  viser ventetiden og reell ventetid for hver innkobling på rad.
 
 For handlingene kan du velge **Standard** når entitetens domene har en
 standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers

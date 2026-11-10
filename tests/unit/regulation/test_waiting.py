@@ -13,7 +13,7 @@ from custom_components.kraftvakt.regulation.waiting import (
 
 FIVE_MINUTES = timedelta(minutes=5)
 DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
-APPLIANCE_CYCLING = CyclingSteps.from_seconds(120, 900)
+APPLIANCE_CYCLING = CyclingSteps(step=timedelta(minutes=2), cap=timedelta(minutes=15))
 UTILIZATIONS = (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
 
 
@@ -92,6 +92,24 @@ def test_cycling_steps_are_parameters() -> None:
     ]
 
     assert minutes == [5, 10, 15, 20, 25, 30, 30]
+
+
+@pytest.mark.parametrize(
+    ("wait_at_limit_s", "factor", "steps", "step_s", "cap_s"),
+    [(300, 0.5, 4, 150, 900), (300, 1.0, 4, 300, 1500), (0, 0.25, 9, 0, 0)],
+)
+def test_cycling_steps_from_the_waiting_time_at_the_limit(
+    wait_at_limit_s: int, factor: float, steps: int, step_s: int, cap_s: int
+) -> None:
+    """The step is a share of the waiting time at the limit.
+
+    The cap is the given number of steps above the waiting time at the limit.
+    """
+    cycling = CyclingSteps.from_waiting_at_limit(wait_at_limit_s, factor, steps)
+
+    assert cycling == CyclingSteps(
+        step=timedelta(seconds=step_s), cap=timedelta(seconds=cap_s)
+    )
 
 
 def test_counter_counts_slot_turned_on_again() -> None:
