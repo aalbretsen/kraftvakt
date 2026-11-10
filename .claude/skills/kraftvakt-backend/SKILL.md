@@ -68,7 +68,7 @@ integrations.
     "appliance_cycling_step_factor": 0.5,
     "appliance_cycling_steps": 4,
     "charger_cycling_step_factor": 1.0,
-    "charger_cycling_steps": 4,
+    "charger_cycling_steps": 5,
     "penalty_threshold_w": 100
   },
   "appliances": [

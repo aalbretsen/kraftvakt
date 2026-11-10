@@ -95,7 +95,7 @@ def make_config(
     wait_at_limit_s: int = 300,
     threshold_w: int = 1000,
     appliance_cycling: tuple[float, int] = (0.5, 4),
-    charger_cycling: tuple[float, int] = (1.0, 4),
+    charger_cycling: tuple[float, int] = (1.0, 5),
     chargers: tuple[Charger, ...] = (),
     one_at_a_time: bool = True,
     charging_enabled: bool | None = None,

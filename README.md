@@ -70,7 +70,7 @@ effekt, typisk fra HAN-porten på strømmåleren.
   øker med et steg hver gang til et valgt antall steg er nådd. Steget er en
   andel av ventetiden ved effektgrensen. Standard er × 0,5 og 4 steg for
   apparater (150 s steg og høyst 900 s med 300 s ved effektgrensen), og × 1
-  og 4 steg for elbilladere (300 s steg og høyst 1500 s), der hver ampere
+  og 5 steg for elbilladere (300 s steg og høyst 1800 s), der hver ampere
   regnes for seg. Med ventetid 0 ved effektgrensen øker ikke ventetiden.
 - **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
   må være før et apparat slås på, standard 100 W. Vinduet rett etter en

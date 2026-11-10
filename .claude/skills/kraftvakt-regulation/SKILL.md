@@ -187,8 +187,8 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   waiting time at the limit, 0.25, 0.5, 0.75 or 1, and the cap is the waiting
   time at the limit plus a number of steps, 1–9. Both are set separately for
   appliances (default 0.5 and 4: step 150 s and cap 900 s with 300 s at the
-  limit) and for fictive appliances (default 1 and 4: step 300 s and cap
-  1500 s). With waiting time 0 at the limit the step and the cap are 0, so
+  limit) and for fictive appliances (default 1 and 5: step 300 s and cap
+  1800 s). With waiting time 0 at the limit the step and the cap are 0, so
   the waiting time does not grow; accepted by the owner. Settled with the
   owner, replacing a step and a cap in seconds, which replaced fixed values,
   because a share and a number of steps are easier to understand. The first

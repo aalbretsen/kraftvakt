@@ -281,7 +281,7 @@ class GeneralConfig:
     appliance_cycling_step_factor: float = 0.5
     appliance_cycling_steps: int = 4
     charger_cycling_step_factor: float = 1.0
-    charger_cycling_steps: int = 4
+    charger_cycling_steps: int = 5
     penalty_threshold_w: int = 100
 
     def to_dict(self) -> dict[str, Any]:
