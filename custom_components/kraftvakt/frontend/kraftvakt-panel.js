@@ -136,16 +136,16 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         @input=${t=>this.changeCurve(e,Number(t.target.value))}
       ></ha-slider>
       <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(a)}${n}</span>
-    `}changeCurve(e,t){t!==this.config.general[e]&&this.changeConfig({...this.config,general:{...this.config.general,[e]:t}})}renderWaitCurve(){const e=this.config.general,t=function(e,t){const i=Math.min(nt(t/100),.8**(1/e)*.999)**e,a=i*(1-.8)/(.8-i);return t=>{const i=nt(t)**e;return 0===i?0:i*(1+a)/(i+a)}}(e.wait_curve_steepness,e.wait_curve_pivot),i=e=>t(1-e/100),a=this.hass.language,r=e.power_limit_w,n=e.wait_at_limit_s,s=(e,t,i="")=>Q`
+    `}changeCurve(e,t){t!==this.config.general[e]&&this.changeConfig({...this.config,general:{...this.config.general,[e]:t}})}renderWaitCurve(){const e=this.config.general,t=function(e,t){const i=Math.min(nt(t/100),.8**(1/e)*.999)**e,a=i*(1-.8)/(.8-i);return t=>{const i=nt(t)**e;return 0===i?0:i*(1+a)/(i+a)}}(e.wait_curve_steepness,e.wait_curve_pivot),i=e=>t(1-e/100),a=this.hass.language,r=e.power_limit_w,n=e.wait_at_limit_s,s=(e,t)=>Q`
       <tr>
         <th>${this.localize(e)}</th>
-        ${bt.map(e=>Q`<td class=${i}>${t(e)}</td>`)}
+        ${bt.map(e=>Q`<td>${t(e)}</td>`)}
       </tr>
     `;return Q`
       ${this.narrow?te:Q`<table class="curve-table">
             ${s("advanced.free_power_percent",e=>e)} ${s("advanced.free_power_kw",e=>it(a,null===r?null:r*e/100))}
-            ${s("advanced.waiting_percent",e=>{const t=100*i(e);return 0===t?"0":tt(a,t,1)},"value")}
-            ${s("advanced.waiting_seconds",e=>null===n?"–":tt(a,Math.round(n*i(e)),0),"value")}
+            ${s("advanced.waiting_percent",e=>{const t=100*i(e);return 0===t?"0":tt(a,t,1)})}
+            ${s("advanced.waiting_seconds",e=>null===n?"–":tt(a,Math.round(n*i(e)),0))}
           </table>`}
       ${this.renderCurveGraph(i)}
     `}renderCurveGraph(e){const[t,i]=this.narrow?[320,200]:[900,260],[a,r,n,s]=[44,24,8,38],o=e=>a+(t-a-r)*(100-e)/100,l=e=>n+(i-n-s)*(100-e)/100,c=e=>`${tt(this.hass.language,e,0)} %`,d=`M${Array.from({length:201},(t,i)=>{const a=100-i/2;return`${o(a)},${l(100*e(a))}`}).join("L")}`,h=Array.from({length:this.narrow?5:11},(e,t)=>100-t*(this.narrow?25:10));return Q`
@@ -200,11 +200,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       }
       .curve-table td {
         text-align: center;
-        color: var(--secondary-text-color);
-      }
-      .curve-table .value {
-        color: var(--primary-text-color);
-        font-weight: 500;
+        font-variant-numeric: tabular-nums;
       }
       .curve {
         display: block;

@@ -107,10 +107,10 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     const freeKw = (free: number) => formatPower(language, limit === null ? null : (limit * free) / 100);
     const waitingSeconds = (free: number) =>
       waitAtLimit === null ? "–" : formatNumber(language, Math.round(waitAtLimit * share(free)), 0);
-    const row = (title: TableRow, cell: (free: number) => unknown, valueClass = "") => html`
+    const row = (title: TableRow, cell: (free: number) => unknown) => html`
       <tr>
         <th>${this.localize(title)}</th>
-        ${TABLE_FREE_PERCENTS.map((free) => html`<td class=${valueClass}>${cell(free)}</td>`)}
+        ${TABLE_FREE_PERCENTS.map((free) => html`<td>${cell(free)}</td>`)}
       </tr>
     `;
     return html`
@@ -118,8 +118,8 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         ? nothing
         : html`<table class="curve-table">
             ${row("advanced.free_power_percent", (free) => free)} ${row("advanced.free_power_kw", freeKw)}
-            ${row("advanced.waiting_percent", waitingPercent, "value")}
-            ${row("advanced.waiting_seconds", waitingSeconds, "value")}
+            ${row("advanced.waiting_percent", waitingPercent)}
+            ${row("advanced.waiting_seconds", waitingSeconds)}
           </table>`}
       ${this.renderCurveGraph(share)}
     `;
@@ -198,11 +198,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
       }
       .curve-table td {
         text-align: center;
-        color: var(--secondary-text-color);
-      }
-      .curve-table .value {
-        color: var(--primary-text-color);
-        font-weight: 500;
+        font-variant-numeric: tabular-nums;
       }
       .curve {
         display: block;
