@@ -76,14 +76,21 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   «ledig effekt» is the one the status page uses). The pivot point slider
   shows free power, 50 % at the left end to 1 % at the right (default 20 %,
   settled with the owner), like the graph: the slider moves over the stored
-  `wait_curve_pivot` and shows 100 minus it; the stored value and the regulation still use
-  utilization, so nothing is migrated. The table has the rows «Ledig effekt
-  %», «Ledig effekt kW», «Ventetid %» and «Ventetid s» at 50, 40, 30, 25,
-  20, 15, 10, 7, 4 and 1 % free: kW from the power limit with two decimals,
-  the waiting share with one decimal (0 for zero), and seconds from the
-  waiting time at the limit, whole seconds, all from the draft (– when not
-  set). The graph has 100 % free to the left and 0 % to the right, so the
-  waiting time grows to the right.
+  `wait_curve_pivot` and shows 100 minus it; the stored value and the
+  regulation still use utilization, so nothing is migrated. The table has no
+  percent rows (the owner found them redundant), only «Ledig effekt kW»,
+  «Ventetid s» and «Reell ventetid s» at 50, 40, 30, 25, 20, 15, 10, 7, 4 and
+  1 % free: kW from the power limit with two decimals, seconds from the
+  waiting time at the limit in whole seconds, and the actual waiting time
+  rounded up to whole decision intervals (`regulation_window_s` ×
+  `regulation_interval`), since the slot is turned on at the first decision
+  after the waiting time, all from the draft (– when not set). The line of
+  text says why it is rounded. The graph keeps the waiting time in percent on
+  the y-axis (so the shape does not change with the waiting time at the
+  limit) and has free power in kW on the x-axis, from the power limit at the
+  left to 0 at the right, so the waiting time grows to the right; ticks every
+  0.1, 0.2, 0.5, 1, 2, 5 or 10 kW, the smallest step that gives at most 10
+  (4 on a narrow screen).
 - The configuration pages share one draft in `kraftvakt-panel.ts`. «Save»
   saves everything, «Discard» goes back to the saved configuration. The panel
   checks the draft against the limits from `kraftvakt/capabilities` and works
