@@ -30,7 +30,12 @@ from .storage import KraftvaktStorage
 from .websocket_api import async_forward_status, async_register_commands
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 

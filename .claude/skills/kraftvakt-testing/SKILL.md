@@ -12,7 +12,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 - Complex logic (`regulation/`, `measurement.py`, `config_model.py`) is also
   proven by itself with unit tests. Error handling that is hard to reach from
   the outside is unit tested.
-- Aim for coverage, not every permutation. Today: 570 tests, 99 % line
+- Aim for coverage, not every permutation. Today: 577 tests, 99 % line
   coverage of Kraftvakt and 100 % of the simulator. The only uncovered line is
   the `TypeError` for an unknown slot in `engine.py`.
 - The panel has no automatic tests. The type check and the build run in CI, and
@@ -71,7 +71,9 @@ compared with `on`, `off`, `activate`, `deactivate`, `current` and
   at past times with `freezer.move_to()` and `async_wait_recording_done()`.
 - Store the configuration in `hass_storage[STORAGE_KEY]` before setup.
 - Use `light.*` entities for appliances: mocking `switch.turn_on` would replace
-  Kraftvakt's own switch service.
+  Kraftvakt's own switch service. For the same reason, mock
+  `input_number.set_value`, not `number.set_value`: Kraftvakt has a number
+  entity.
 - Move time with `freezer.tick()` and `async_fire_time_changed`. Commands run in
   a background task: use `hass.async_block_till_done(wait_background_tasks=True)`.
   A test with a service that blocks on purpose must not wait for it.

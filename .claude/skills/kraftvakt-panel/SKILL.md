@@ -115,6 +115,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   page; the browser asks when the page is closed. HA sidebar navigation cannot
   be stopped. The draft is discarded when the regulation starts (only possible
   from the status page in the panel, or from the switch).
+- The configuration is fetched again at the first status, when the regulation
+  starts or stops, when what is missing changes, and when `power_limit_w` in
+  the status changes, since the power limit entity can change the stored
+  limit at any time. A draft with unsaved changes is kept while stopped.
 - While the regulation runs, config pages are locked and show «Stop regulation»
   in the banner, with icon and text on one line. The warning against manual control is shown under the list
   of appliances on «Appliances» while there are no appliances, and under the

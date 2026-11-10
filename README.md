@@ -154,7 +154,9 @@ ikke før de er rettet. Panelet spør før ulagrede endringer forkastes.
 
 Konfigurasjonen kan bare endres mens reguleringen er stoppet. Mens den kjører,
 er konfigurasjonssidene låst og viser knappen **Stopp regulering**. En lagret
-konfigurasjon tas i bruk neste gang reguleringen startes.
+konfigurasjon tas i bruk neste gang reguleringen startes. Unntaket er
+effektgrensen, som også kan endres med entiteten **Effektgrense**, se
+[Entiteter](#entiteter).
 
 ## Statussiden
 
@@ -204,8 +206,23 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 | `sensor.kraftvakt_average_consumption` (Snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
 | `switch.kraftvakt_regulation` (Regulering) | Er på mens reguleringen kjører. Slå av for å stoppe reguleringen og på for å starte den igjen. |
 | `binary_sensor.kraftvakt_safe_state` (Sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
+| `number.kraftvakt_power_limit` (Effektgrense) | Effektgrensen i W, den samme som i panelet. Kan settes fra en automasjon, også mens reguleringen kjører. Se under. |
+| `binary_sensor.kraftvakt_penalty` (Straff) | Diagnostikk. Er på mens en straffeperiode pågår. |
+| `sensor.kraftvakt_overconsumption` (Overforbruk) | Diagnostikk. Overforbruket i Wh fra siste avgjørelse, 0 når snittforbruket ikke er over effektgrensen. |
+| `sensor.kraftvakt_free_power` (Ledig effekt) | Diagnostikk. Effektgrensen minus reguleringssnittet, i kW. Negativ over effektgrensen. Oppdateres hver gang et reguleringsvindu lukkes. |
+| `sensor.kraftvakt_steps_switched_on` (Innkoblede trinn) | Diagnostikk. Antall trinn som er på: hvert apparat er ett trinn, og hver ampere fra minste ladestrøm og opp er ett trinn for en elbillader. Viser hvor mye reguleringen har slått på, for eksempel i en graf. |
+| `sensor.kraftvakt_time_to_next_turn_on` (Tid til neste innkobling) | Diagnostikk. Sekunder til avgjørelsen der apparatet eller ampere som venter, slås på, 0 når ingenting venter. Den regner til avgjørelsen, altså reell ventetid, og oppdateres hver gang et reguleringsvindu lukkes. |
+| `sensor.kraftvakt_waiting_time_from_curve` (Ventetid etter kurven) | Diagnostikk. Ventetiden i sekunder etter ventetidskurven ut fra siste reguleringssnitt, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
 | `switch.kraftvakt_<lader>_excluded_from_regulation` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
 | `switch.kraftvakt_<lader>_override_charging_window` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
+
+En ny verdi i **Effektgrense** lagres med en gang og vises i panelet. Er
+reguleringen stoppet, brukes den neste gang den startes. Kjører reguleringen,
+startes den på nytt med den nye effektgrensen ved neste avgjørelse, med alle
+apparater avslått, og en pågående straff avsluttes. Flere endringer før neste
+avgjørelse gir én omstart, og er verdien satt tilbake til effektgrensen som
+brukes, skjer ingenting. Det samme gjelder en verdi som er lik den lagrede.
+Statussiden viser effektgrensen som brukes.
 
 ‹lader› er navnet på enheten som entiteten til elbilladeren hører til, eller
 navnet på entiteten når den ikke hører til en enhet. Entitets-ID-ene over
@@ -240,6 +257,9 @@ Når Home Assistant starter, venter reguleringen til Home Assistant har startet
 ferdig, slik at integrasjonene til apparatene er lastet før de slås av. Kan ikke
 den lagrede konfigurasjonen (`.storage/kraftvakt.config`) leses, starter ikke
 Kraftvakt. Integrasjonen viser da en feilmelding, og filen endres ikke.
+
+Reguleringen startes også på nytt ved neste avgjørelse når effektgrensen er
+endret med entiteten **Effektgrense** mens den kjører.
 
 Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
 stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.

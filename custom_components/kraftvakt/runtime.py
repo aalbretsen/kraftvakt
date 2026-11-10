@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import replace
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -88,6 +90,9 @@ class KraftvaktRuntime:
     Decisions are made only then, also for the charging power, the
     car connected and the charger switches. The status listeners are called
     after every window, decision, start and stop.
+
+    The power limit can be changed while the regulation runs. The regulation
+    then starts again with the new limit at the next decision.
     """
 
     def __init__(
@@ -156,6 +161,20 @@ class KraftvaktRuntime:
         return self._engine.penalty
 
     @property
+    def power_limit_w(self) -> int:
+        """Return the power limit the regulation uses now.
+
+        After the power limit is changed while the regulation runs, this is
+        the previous limit until the next decision.
+        """
+        return self._engine.power_limit_w
+
+    @property
+    def slots_on(self) -> int:
+        """Return how many appliances and amperes of the chargers are on."""
+        return self._engine.slots_on
+
+    @property
     def appliances_on(self) -> frozenset[str]:
         """Return the ids of the appliances the regulation has turned on."""
         return self._engine.appliances_on
@@ -185,6 +204,36 @@ class KraftvaktRuntime:
         return self._averager.window_end + windows_left * timedelta(
             seconds=self._config.general.regulation_window_s
         )
+
+    @property
+    def decision_interval(self) -> timedelta:
+        """Return the time between two decisions."""
+        general = self._config.general
+        return timedelta(
+            seconds=general.regulation_window_s * general.regulation_interval
+        )
+
+    @property
+    def waiting_ends_at(self) -> datetime | None:
+        """Return the decision that ends the waiting time, if one runs.
+
+        It is the first decision at or after the end of the waiting time.
+        """
+        waiting = self._engine.waiting
+        next_decision_at = self.next_decision_at
+        if waiting is None or next_decision_at is None:
+            return None
+        return first_decision_from(
+            waiting.until, next_decision_at, self.decision_interval
+        )
+
+    @property
+    def curve_waiting_time(self) -> timedelta | None:
+        """Return the waiting time from the curve for the last regulation average."""
+        averages = self._latest_averages
+        if averages is None or averages.regulation_average_w is None:
+            return None
+        return self._engine.curve_waiting_time(averages.regulation_average_w)
 
     @property
     def charger_switches(self) -> ChargerSwitchBoard:
@@ -272,12 +321,17 @@ class KraftvaktRuntime:
 
     @callback
     def async_stop_regulation(self) -> None:
-        """Stop the regulation and turn everything off at once."""
+        """Stop the regulation and turn everything off at once.
+
+        The stopped engine uses the stored configuration, also a power limit
+        changed while the regulation ran.
+        """
         self._forget_start_when_started()
         if not self._engine.running:
             return
         self._windows_since_decision.clear()
         self._execute(self._engine.stop())
+        self._engine = RegulationEngine(self._config)
         self._notify_status()
 
     async def async_save_config(self, config: KraftvaktConfig) -> None:
@@ -301,6 +355,27 @@ class KraftvaktRuntime:
         )
         if config.general.power_sensor != previous.general.power_sensor:
             self._follow_power_sensor(dt_util.utcnow())
+        self._notify_status()
+        await self._charger_switches.async_update_config(config)
+
+    async def async_set_power_limit(self, power_limit_w: int) -> None:
+        """Save a new power limit, also while the regulation runs.
+
+        While the regulation runs, it starts again with the new limit at the
+        next decision. Settled with the owner: several changes before that
+        give one restart, and a limit changed back to the one in use gives
+        none. A limit equal to the stored one changes nothing.
+        """
+        general = self._config.general
+        if power_limit_w == general.power_limit_w:
+            return
+        config = replace(
+            self._config, general=replace(general, power_limit_w=power_limit_w)
+        )
+        if not self._engine.running:
+            await self.async_save_config(config)
+            return
+        self._config = config
         self._notify_status()
         await self._charger_switches.async_update_config(config)
 
@@ -385,7 +460,7 @@ class KraftvaktRuntime:
         if self._engine.running:
             self._windows_since_decision.append(averages)
             if self._decision_is_due():
-                self._decide(averages)
+                self._decide_or_restart(averages)
         self._notify_status()
 
     def _decision_is_due(self) -> bool:
@@ -408,6 +483,23 @@ class KraftvaktRuntime:
             for window in self._windows_since_decision
             if started_at is not None and window.start >= started_at
         )
+
+    def _decide_or_restart(self, averages: WindowAverages) -> None:
+        """Make a decision, or start again when the power limit has changed."""
+        if self._engine.power_limit_w == self._config.general.power_limit_w:
+            self._decide(averages)
+        else:
+            self._restart_with_new_power_limit(averages.end)
+
+    def _restart_with_new_power_limit(self, now: datetime) -> None:
+        """Start the regulation again with the power limit changed while it ran."""
+        _LOGGER.info(
+            "The power limit changed from %s W to %s W, the regulation starts again",
+            self._engine.power_limit_w,
+            self._config.general.power_limit_w,
+        )
+        self._engine = RegulationEngine(self._config)
+        self._start_regulation(now)
 
     def _decide(self, averages: WindowAverages) -> None:
         """Make a decision based on the windows closed since the previous one."""
@@ -527,6 +619,20 @@ class KraftvaktRuntime:
     def _notify_status(self) -> None:
         for listener in list(self._status_listeners):
             listener()
+
+
+def first_decision_from(
+    moment: datetime, next_decision_at: datetime, interval: timedelta
+) -> datetime:
+    """Return the first decision at or after `moment`.
+
+    Decisions are `interval` apart from the next decision on.
+    """
+    if moment <= next_decision_at:
+        return next_decision_at
+    return next_decision_at + interval * math.ceil(
+        (moment - next_decision_at) / interval
+    )
 
 
 def _rounded(power_w: float | None) -> int | None:

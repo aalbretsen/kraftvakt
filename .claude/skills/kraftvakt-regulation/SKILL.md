@@ -64,9 +64,9 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
 - The configuration can only be changed while the regulation is stopped,
-  except the two switches per charger. Everything is off while stopped, so
-  removed appliances are already off and new ones are controlled from the next
-  start.
+  except the two switches per charger and the power limit (see «Power limit
+  entity»). Everything is off while stopped, so removed appliances are
+  already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, cycling counters,
   overconsumption, penalty, current charging priority, bypassed chargers,
   current variants) starts again with defaults at every start: HA or
@@ -243,7 +243,11 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   variant is found at the first decision.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
-  when a penalty ends, and when the power sensor is back after the safe state.
+  when a penalty ends, when the power sensor is back after the safe state, and
+  at the next decision after the power limit was changed while it ran.
+  Confirmed by the owner: the regulation always tries to start when HA
+  restarts and when the integration is reloaded (for example after an
+  update).
   If the user starts or stops before HA has finished starting, that wins.
 - After a reload, the turn-off commands wait until the previous runtime's
   actions are done (a lock shared over reloads).
@@ -256,6 +260,44 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   every charger has entity, activate, deactivate and set-current actions and a
   charging power sensor, and also «car connected» when only one charger may
   charge at a time.
+
+## Power limit entity
+
+Settled with the owner, so automations can set the power limit:
+
+- A `number` entity in W (1000–50 000, whole watts, box mode), the same value
+  as the power limit in the panel. A new value is saved at once and rounded
+  to whole watts.
+- While stopped, the new limit is used from the next start.
+- While running, the regulation starts again with the new limit at the next
+  decision instead of deciding, like the start after a penalty: everything is
+  turned off, the state starts with defaults (a penalty ends), and the first
+  decision comes one interval later. Until then it regulates against the
+  previous limit. Several changes before the decision give one restart with
+  the last value, and a value changed back to the limit in use gives none.
+  A value equal to the stored one changes nothing.
+
+## Diagnostic entities
+
+Settled with the owner, all with entity category diagnostic:
+
+- Penalty (binary sensor, problem): on while a penalty period lasts.
+- Overconsumption (Wh): the overconsumption at the last decision, 0 outside
+  the overconsumption state.
+- Free power (W shown as kW): the power limit in use minus the last
+  regulation average, negative above the limit. Unavailable without an
+  average.
+- Steps switched on: the number of slots that are on, appliances and
+  fictive appliances (one per ampere) alike. Meant for a graph of how much
+  the regulation has switched on.
+- Time to next turn-on (s): the time from now to the decision that turns on
+  the waiting slot (`waiting_ends_at`, an appliance or a charger's next
+  ampere), so it is the real time left, a whole number of decision intervals
+  after a decision. 0 when nothing waits. Updated at each window, decision,
+  start and stop.
+- Waiting time from curve (s): waiting time at the limit × share of the
+  curve for the last regulation average and the limit in use, without the
+  longer waiting time on persistent cycling. Unavailable without an average.
 
 ## Variants
 

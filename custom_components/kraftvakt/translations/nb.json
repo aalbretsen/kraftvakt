@@ -14,6 +14,14 @@
     "binary_sensor": {
       "safe_state": {
         "name": "Sikker tilstand"
+      },
+      "penalty": {
+        "name": "Straff"
+      }
+    },
+    "number": {
+      "power_limit": {
+        "name": "Effektgrense"
       }
     },
     "sensor": {
@@ -22,6 +30,21 @@
       },
       "capacity_average": {
         "name": "Snittforbruk"
+      },
+      "free_power": {
+        "name": "Ledig effekt"
+      },
+      "overconsumption": {
+        "name": "Overforbruk"
+      },
+      "steps_switched_on": {
+        "name": "Innkoblede trinn"
+      },
+      "time_to_next_turn_on": {
+        "name": "Tid til neste innkobling"
+      },
+      "curve_waiting_time": {
+        "name": "Ventetid etter kurven"
       }
     },
     "switch": {

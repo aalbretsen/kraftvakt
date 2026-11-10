@@ -50,7 +50,7 @@ integrations.
 | `runtime.py` | `KraftvaktRuntime`: follows the power sensor, fills the hour before the start from the recorder's history in a background task (`recorder` is an `after_dependency`; skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG (averages, safe state, penalty, waiting, commands), runs commands in a background task, start/stop, starts when HA has started, safe state, status listeners, `async_save_config()`. |
 | `charger_switches.py` | `ChargerSwitchBoard`: switch positions, saving with the configuration, when the override was switched on (memory only). |
 | `websocket_api.py` | The commands below. |
-| `entity.py`, `sensor.py`, `binary_sensor.py`, `switch.py` | The entities. |
+| `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. |
 
 ## Stored configuration
 
@@ -176,6 +176,13 @@ All belong to one service device «Kraftvakt» and use `has_entity_name` and
 | Regulation average (`sensor`, power, W shown as kW) | `regulation_average` | Updated when a window closes. Unavailable without an average. |
 | Average consumption (`sensor`, power, W shown as kW) | `capacity_average` | Same. |
 | Safe state (`binary_sensor`, problem) | `safe_state` | On in the safe state. |
+| Power limit (`number`, power, W, box) | `power_limit` | The stored power limit. `async_set_power_limit()` in the runtime saves it at once (through the charger switch board, which saves configuration and switches together); while running, the runtime builds a new engine and starts it at the next decision when the engine's limit differs from the stored one. |
+| Penalty (`binary_sensor`, problem, diagnostic) | `penalty` | On during a penalty period. |
+| Overconsumption (`sensor`, energy, Wh, diagnostic) | `overconsumption` | 0 outside the overconsumption state. No state class: it is not a total. |
+| Free power (`sensor`, power, W shown as kW, diagnostic) | `free_power` | Limit in use minus the regulation average. |
+| Steps switched on (`sensor`, measurement, diagnostic) | `steps_switched_on` | `RegulationEngine.slots_on`: appliances on plus fictive appliances on. |
+| Time to next turn-on (`sensor`, duration, s, diagnostic) | `time_to_next_turn_on` | `runtime.waiting_ends_at` minus now, whole seconds, 0 when nothing waits. |
+| Waiting time from curve (`sensor`, duration, s, diagnostic) | `curve_waiting_time` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
 | Regulation (`switch`) | `regulation` | No stored position. Same function as start/stop in the panel. Stays off and logs when the configuration is incomplete. |
 | ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Stored position. Unavailable while charging is disabled. |
 | ‹charger› override charging window (`switch`) | `charger_<id>_window_override` | Stored position, set back when it ends. Unavailable while charging is disabled. |
@@ -220,11 +227,14 @@ Status snapshot:
 ```
 
 Times are ISO 8601 in HA's time zone. Averages are `null` until the first
-window. `next_decision_at` is `null` while stopped. The waiting fields are set
+window. `power_limit_w` is the limit the regulation uses now, which lags the
+stored one until the next decision after the power limit entity changed it
+while running. `next_decision_at` is `null` while stopped. The waiting fields are set
 for the appliance or charger that is next and waiting (for a charger: its next
 fictive appliance): `waiting_since` when it started, `waiting_until` when the
 waiting time ends, and `waiting_ends_at` the decision that turns it on, the
-first at or after `waiting_until` (`first_decision_from()`). `variant` is the label of the current variant or `null`.
+first at or after `waiting_until` (`runtime.waiting_ends_at`, from
+`first_decision_from()` in `runtime.py`). `variant` is the label of the current variant or `null`.
 Charger details are from the last decision; `allowed` is false and `excluded`
 is `null` before the first decision after a start. `charging` is true while
 the charger is activated and was actively charging at the last decision, and

@@ -86,6 +86,25 @@ class RegulationEngine:
         return self._state.started_at
 
     @property
+    def power_limit_w(self) -> int:
+        """Return the power limit the engine regulates against."""
+        return self._config.general.power_limit_w
+
+    @property
+    def slots_on(self) -> int:
+        """Return how many slots are on: appliances and fictive appliances."""
+        return len(self._state.appliances_on) + sum(
+            self._state.charging.fictive_on.values()
+        )
+
+    def curve_waiting_time(self, average_w: float) -> timedelta:
+        """Return the waiting time from the curve for a regulation average."""
+        general = self._config.general
+        return timedelta(seconds=general.wait_at_limit_s) * self._waiting_curve.share(
+            average_w / general.power_limit_w
+        )
+
+    @property
     def appliances_on(self) -> frozenset[str]:
         """Return the ids of the appliances the regulation has turned on."""
         return frozenset(self._state.appliances_on)

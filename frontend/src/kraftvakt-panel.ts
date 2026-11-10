@@ -407,7 +407,9 @@ export class KraftvaktPanel extends LitElement {
    *
    * The configuration can only be saved while the regulation is stopped
    *, so it is fetched at the first status, when the regulation starts
-   * or stops, and when what is missing changes.
+   * or stops, and when what is missing changes. The power limit entity can
+   * change the power limit at any time, so it is also fetched when the power
+   * limit in use changes.
    */
   private statusReceived(status: StatusSnapshot): void {
     const previous = this.status;
@@ -416,6 +418,7 @@ export class KraftvaktPanel extends LitElement {
     if (
       previous === undefined ||
       previous.running !== status.running ||
+      previous.power_limit_w !== status.power_limit_w ||
       JSON.stringify(previous.missing) !== JSON.stringify(status.missing)
     ) {
       this.loadConfig();

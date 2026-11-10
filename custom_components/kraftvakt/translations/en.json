@@ -14,6 +14,14 @@
     "binary_sensor": {
       "safe_state": {
         "name": "Safe state"
+      },
+      "penalty": {
+        "name": "Penalty"
+      }
+    },
+    "number": {
+      "power_limit": {
+        "name": "Power limit"
       }
     },
     "sensor": {
@@ -22,6 +30,21 @@
       },
       "capacity_average": {
         "name": "Average consumption"
+      },
+      "free_power": {
+        "name": "Free power"
+      },
+      "overconsumption": {
+        "name": "Overconsumption"
+      },
+      "steps_switched_on": {
+        "name": "Steps switched on"
+      },
+      "time_to_next_turn_on": {
+        "name": "Time to next turn-on"
+      },
+      "curve_waiting_time": {
+        "name": "Waiting time from curve"
       }
     },
     "switch": {

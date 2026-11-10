@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from custom_components.kraftvakt.websocket_api import first_decision_from
+from custom_components.kraftvakt.runtime import first_decision_from
 
 NEXT = datetime(2026, 11, 8, 12, 0, tzinfo=UTC)
 INTERVAL = timedelta(seconds=60)

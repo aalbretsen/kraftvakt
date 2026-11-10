@@ -47,8 +47,8 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
             "mode": "custom",
             "action": [
                 {
-                    "action": "number.set_value",
-                    "target": {"entity_id": "number.charger_current"},
+                    "action": "input_number.set_value",
+                    "target": {"entity_id": "input_number.charger_current"},
                     "data": {"value": "{{ current }}"},
                 }
             ],
@@ -103,7 +103,7 @@ def actions(hass: HomeAssistant) -> list[str]:
 
     hass.services.async_register("input_boolean", "turn_on", record_switch)
     hass.services.async_register("input_boolean", "turn_off", record_switch)
-    hass.services.async_register("number", "set_value", record_current)
+    hass.services.async_register("input_number", "set_value", record_current)
     return recorded
 
 
@@ -158,6 +158,16 @@ async def use_switch(
     )
 
 
+def steps_switched_on(hass: HomeAssistant) -> str:
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, "steps_switched_on"
+    )
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    return state.state
+
+
 def stored_switches(hass_storage: dict[str, Any]) -> dict[str, Any]:
     return hass_storage[STORAGE_KEY]["data"]["charger_switches"]
 
@@ -178,6 +188,7 @@ async def test_charger_current_follows_the_free_power(
     await advance(hass, freezer)
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 8"]
+    assert steps_switched_on(hass) == "3"
     actions.clear()
 
     set_power(hass, POWER_SENSOR, "11000")
@@ -185,6 +196,7 @@ async def test_charger_current_follows_the_free_power(
     await advance(hass, freezer)
     await advance(hass, freezer)
     assert actions == ["current 7", "current 6", "current 6", f"off {CHARGER}"]
+    assert steps_switched_on(hass) == "0"
 
 
 async def test_charger_without_car_is_not_activated(

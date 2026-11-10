@@ -5,9 +5,8 @@ Every command requires an administrator.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Final
 
 import voluptuous as vol
@@ -223,10 +222,8 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     penalty = runtime.penalty
     waiting = runtime.waiting
     waiting_key = None if waiting is None else waiting.key
-    no_waiting = _waiting_fields(None, None, timedelta())
-    waiting_fields = _waiting_fields(
-        waiting, runtime.next_decision_at, _decision_interval(config)
-    )
+    no_waiting = _waiting_fields(None, None)
+    waiting_fields = _waiting_fields(waiting, runtime.waiting_ends_at)
     variant_labels = {
         variant.id: variant.label
         for appliance in config.appliances
@@ -253,7 +250,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         "capacity_average_w": (
             None if averages is None else averages.capacity_average_w
         ),
-        "power_limit_w": config.general.power_limit_w,
+        "power_limit_w": runtime.power_limit_w,
         "regulation_window_s": config.general.regulation_window_s,
         "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
@@ -392,39 +389,17 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
     }
 
 
-def _decision_interval(config: KraftvaktConfig) -> timedelta:
-    """Return the time between two decisions."""
-    general = config.general
-    return timedelta(seconds=general.regulation_window_s * general.regulation_interval)
-
-
 def _waiting_fields(
-    waiting: Waiting | None, next_decision_at: datetime | None, interval: timedelta
+    waiting: Waiting | None, ends_at: datetime | None
 ) -> dict[str, str | None]:
     """Return when the waiting started and ends, and the decision that ends it."""
-    if waiting is None or next_decision_at is None:
+    if waiting is None or ends_at is None:
         return {"waiting_since": None, "waiting_until": None, "waiting_ends_at": None}
     return {
         "waiting_since": _local_time(waiting.started_at),
         "waiting_until": _local_time(waiting.until),
-        "waiting_ends_at": _local_time(
-            first_decision_from(waiting.until, next_decision_at, interval)
-        ),
+        "waiting_ends_at": _local_time(ends_at),
     }
-
-
-def first_decision_from(
-    moment: datetime, next_decision_at: datetime, interval: timedelta
-) -> datetime:
-    """Return the first decision at or after `moment`.
-
-    Decisions are `interval` apart from the next decision on.
-    """
-    if moment <= next_decision_at:
-        return next_decision_at
-    return next_decision_at + interval * math.ceil(
-        (moment - next_decision_at) / interval
-    )
 
 
 def _local_time(moment: datetime | None) -> str | None:

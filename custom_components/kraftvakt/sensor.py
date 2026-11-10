@@ -1,4 +1,4 @@
-"""Sensors for the regulation average and the capacity average."""
+"""Sensors for the averages and the diagnostics of the regulation."""
 
 from __future__ import annotations
 
@@ -11,20 +11,29 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfPower
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.const import EntityCategory, UnitOfEnergy, UnitOfPower, UnitOfTime
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .entity import KraftvaktEntity
-from .measurement import WindowAverages
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
 
 @dataclass(frozen=True, kw_only=True)
-class AverageSensorDescription(SensorEntityDescription):
-    """Describes a sensor that shows one of the averages in kW."""
+class RegulationSensorDescription(SensorEntityDescription):
+    """Describes a sensor that shows a value of the regulation.
 
-    value_fn: Callable[[WindowAverages], float | None]
+    The sensor is unavailable while `value_fn` gives None.
+    """
+
+    value_fn: Callable[[KraftvaktRuntime], float | None]
+
+
+@dataclass(frozen=True, kw_only=True)
+class PowerSensorDescription(RegulationSensorDescription):
+    """Describes a sensor that shows a power in W, displayed in kW."""
+
     device_class: SensorDeviceClass = SensorDeviceClass.POWER
     state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     native_unit_of_measurement: str = UnitOfPower.WATT
@@ -32,15 +41,80 @@ class AverageSensorDescription(SensorEntityDescription):
     suggested_display_precision: int = 2
 
 
-AVERAGE_SENSORS: tuple[AverageSensorDescription, ...] = (
-    AverageSensorDescription(
-        key="regulation_average",
-        value_fn=lambda averages: averages.regulation_average_w,
+def _regulation_average_w(runtime: KraftvaktRuntime) -> float | None:
+    averages = runtime.latest_averages
+    return None if averages is None else averages.regulation_average_w
+
+
+def _capacity_average_w(runtime: KraftvaktRuntime) -> float | None:
+    averages = runtime.latest_averages
+    return None if averages is None else averages.capacity_average_w
+
+
+def _free_power_w(runtime: KraftvaktRuntime) -> float | None:
+    average_w = _regulation_average_w(runtime)
+    return None if average_w is None else runtime.power_limit_w - average_w
+
+
+def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
+    penalty = runtime.penalty
+    return penalty.overconsumption_wh if penalty.overconsuming else 0.0
+
+
+def _time_to_next_turn_on_s(runtime: KraftvaktRuntime) -> int:
+    """Return the seconds until the decision that ends the waiting time, or 0.
+
+    It counts to the decision, not to the end of the waiting time, since the
+    slot is turned on at the first decision after it.
+    """
+    ends_at = runtime.waiting_ends_at
+    if ends_at is None:
+        return 0
+    return max(0, round((ends_at - dt_util.utcnow()).total_seconds()))
+
+
+def _curve_waiting_time_s(runtime: KraftvaktRuntime) -> float | None:
+    waiting_time = runtime.curve_waiting_time
+    return None if waiting_time is None else waiting_time.total_seconds()
+
+
+@dataclass(frozen=True, kw_only=True)
+class DurationSensorDescription(RegulationSensorDescription):
+    """Describes a diagnostic sensor that shows a duration in seconds."""
+
+    entity_category: EntityCategory = EntityCategory.DIAGNOSTIC
+    device_class: SensorDeviceClass = SensorDeviceClass.DURATION
+    state_class: SensorStateClass = SensorStateClass.MEASUREMENT
+    native_unit_of_measurement: str = UnitOfTime.SECONDS
+    suggested_display_precision: int = 0
+
+
+SENSORS: tuple[RegulationSensorDescription, ...] = (
+    PowerSensorDescription(key="regulation_average", value_fn=_regulation_average_w),
+    PowerSensorDescription(key="capacity_average", value_fn=_capacity_average_w),
+    PowerSensorDescription(
+        key="free_power",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_free_power_w,
     ),
-    AverageSensorDescription(
-        key="capacity_average",
-        value_fn=lambda averages: averages.capacity_average_w,
+    RegulationSensorDescription(
+        key="overconsumption",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
+        suggested_display_precision=0,
+        value_fn=_overconsumption_wh,
     ),
+    RegulationSensorDescription(
+        key="steps_switched_on",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda runtime: runtime.slots_on,
+    ),
+    DurationSensorDescription(
+        key="time_to_next_turn_on", value_fn=_time_to_next_turn_on_s
+    ),
+    DurationSensorDescription(key="curve_waiting_time", value_fn=_curve_waiting_time_s),
 )
 
 
@@ -49,26 +123,27 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the average sensors for the config entry."""
+    """Add the sensors for the config entry."""
     async_add_entities(
-        AverageSensor(entry, entry.runtime_data, description)
-        for description in AVERAGE_SENSORS
+        RegulationSensor(entry, entry.runtime_data, description)
+        for description in SENSORS
     )
 
 
-class AverageSensor(KraftvaktEntity, SensorEntity):
-    """Shows an average, updated each time a regulation window closes.
+class RegulationSensor(KraftvaktEntity, SensorEntity):
+    """Shows a value of the regulation.
 
-    The sensor is unavailable until there is an average to show.
+    Updated each time the status of the regulation may change: when a window
+    closes, at decisions, start and stop.
     """
 
-    entity_description: AverageSensorDescription
+    entity_description: RegulationSensorDescription
 
     def __init__(
         self,
         entry: KraftvaktConfigEntry,
         runtime: KraftvaktRuntime,
-        description: AverageSensorDescription,
+        description: RegulationSensorDescription,
     ) -> None:
         """Create the sensor described by `description`."""
         super().__init__(entry, description.key)
@@ -76,22 +151,17 @@ class AverageSensor(KraftvaktEntity, SensorEntity):
         self._runtime = runtime
 
     async def async_added_to_hass(self) -> None:
-        """Update the sensor each time a window closes."""
+        """Update the sensor each time the status of the regulation may change."""
         self.async_on_remove(
-            self._runtime.async_add_window_listener(self._async_window_closed)
+            self._runtime.async_add_status_listener(self.async_write_ha_state)
         )
 
     @property
     def native_value(self) -> float | None:
-        """Return the average of the last closed window."""
-        averages = self._runtime.latest_averages
-        return None if averages is None else self.entity_description.value_fn(averages)
+        """Return the value of the regulation."""
+        return self.entity_description.value_fn(self._runtime)
 
     @property
     def available(self) -> bool:
-        """Return whether there is an average to show."""
+        """Return whether there is a value to show."""
         return self.native_value is not None
-
-    @callback
-    def _async_window_closed(self, _averages: WindowAverages) -> None:
-        self.async_write_ha_state()
