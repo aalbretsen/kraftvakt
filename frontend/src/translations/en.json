@@ -200,8 +200,8 @@
     "utilization_percent": "Utilization %",
     "waiting_percent": "Waiting time %",
     "utilization": "Utilization",
-    "cycling": "Waiting time when turned on again",
-    "cycling_info": "When the same appliance or one more ampere for an EV charger is turned on again and again, the waiting time is the waiting time at the power limit from the second time, and grows by the step each time up to the cap.",
+    "cycling": "Waiting time when turned on again and again",
+    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first time it is turned on again, the waiting time follows the curve. From the second time, it is the waiting time at the power limit, and it grows by the step each time up to the cap.",
     "appliances": "Appliances",
     "chargers": "EV chargers"
   },

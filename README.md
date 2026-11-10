@@ -122,7 +122,7 @@ administratorer har tilgang.
   vendepunkt, og en tabell og en kurve som viser hvor stor del av ventetiden
   et apparat venter ved ulik utnyttelse av effektgrensen. De følger
   glidebryterne med en gang. På en smal skjerm vises ikke tabellen.
-  **Ventetid ved ny innkobling** har steg og tak for apparater og for
+  **Ventetid ved gjentatt innkobling** har steg og tak for apparater og for
   elbilladere. Steget er 10–600 s og taket 60–3600 s.
 
 For handlingene kan du velge **Standard** når entitetens domene har en

@@ -200,8 +200,8 @@
     "utilization_percent": "Utnyttelse %",
     "waiting_percent": "Ventetid %",
     "utilization": "Utnyttelse",
-    "cycling": "Ventetid ved ny innkobling",
-    "cycling_info": "Når det samme apparatet eller én ampere til for en elbillader slås på igjen gang på gang, er ventetiden lik ventetiden ved effektgrensen fra andre gang, og den øker med steget hver gang opp til taket.",
+    "cycling": "Ventetid ved gjentatt innkobling",
+    "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. Første gang det slås på igjen, følger ventetiden kurven. Fra andre gang er den lik ventetiden ved effektgrensen, og den øker med steget hver gang opp til taket.",
     "appliances": "Apparater",
     "chargers": "Elbilladere"
   },

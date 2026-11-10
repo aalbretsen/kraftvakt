@@ -58,8 +58,10 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   other configuration pages. Its settings belong to `general` in the stored
   configuration, so `pageForIssue()` sends issues for those fields to it.
   Settled with the owner: «Ventetid ved effektgrensen» stays on «Generelt».
-- «Ventetid ved ny innkobling» is the second card on «Avansert»: one line of
-  text, then «Apparater» and «Elbilladere», each with the number fields
+- «Ventetid ved gjentatt innkobling» is the second card on «Avansert»: a short
+  text that tells it is about the regulation turning the same appliance or
+  ampere on over and over again (renamed from «Ventetid ved ny innkobling» by
+  the owner), then «Apparater» and «Elbilladere», each with the number fields
   «Steg» and «Tak» in seconds.
 - «Ventetidskurve» is the first card on «Avansert» (it was the last card on
   «Generelt», moved by the owner): one line
