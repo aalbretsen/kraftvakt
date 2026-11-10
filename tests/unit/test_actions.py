@@ -296,3 +296,61 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
     ]
     assert [call.data["entity_id"] for call in activated] == [["switch.lader"]]
     assert [call.data["entity_id"] for call in deactivated] == [["switch.lader"]]
+
+
+async def test_charging_current_can_be_set_on_a_chosen_number_entity(
+    hass: HomeAssistant,
+) -> None:
+    """The default action for the chosen entity, with the current as value."""
+    values = async_mock_service(hass, "number", "set_value")
+    set_current = ActionConfig(ActionMode.ENTITY, entity_id="number.lader_strom")
+    config = KraftvaktConfig(
+        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+    )
+
+    await ActionRunner(hass, config).async_execute(
+        [SetChargingCurrent("c1", 9), SetChargingCurrent("c1", 20)]
+    )
+
+    assert [call.data for call in values] == [
+        {"entity_id": ["number.lader_strom"], "value": 9},
+        {"entity_id": ["number.lader_strom"], "value": 16},
+    ]
+
+
+async def test_entity_action_without_entity_is_logged(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    set_current = ActionConfig(ActionMode.ENTITY)
+    config = KraftvaktConfig(
+        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+    )
+
+    await ActionRunner(hass, config).async_execute([SetChargingCurrent("c1", 6)])
+
+    assert "the entity of the action is not chosen" in caplog.text
+
+
+def test_chosen_entity_must_have_a_default_action() -> None:
+    """Only number entities can be given to set the charging current."""
+    config = KraftvaktConfig(
+        charging=ChargingConfig(
+            chargers=(
+                charger(
+                    "switch.a", ActionConfig(ActionMode.ENTITY, entity_id="number.a")
+                ),
+                replace(
+                    charger(
+                        "switch.b",
+                        ActionConfig(ActionMode.ENTITY, entity_id="switch.b"),
+                    ),
+                    id="c2",
+                ),
+                replace(charger("switch.c", ActionConfig(ActionMode.ENTITY)), id="c3"),
+            )
+        )
+    )
+
+    assert default_action_issues(config) == [
+        Issue("unsupported_entity_domain", "chargers", "c2", "set_current")
+    ]

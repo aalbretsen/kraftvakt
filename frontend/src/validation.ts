@@ -81,7 +81,11 @@ export function issuesFor(issues: Issue[], section: Issue["section"], target: st
 }
 
 export function isMissingAction(action: ActionConfig | null): boolean {
-  return action === null || (action.mode === "custom" && (action.action ?? []).length === 0);
+  return (
+    action === null ||
+    (action.mode === "custom" && (action.action ?? []).length === 0) ||
+    (action.mode === "entity" && !action.entity_id)
+  );
 }
 
 /** Return the mistakes in one appliance and its variants. */

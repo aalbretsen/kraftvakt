@@ -142,7 +142,9 @@ administratorer har tilgang.
 For handlingene kan du velge **Standard** når entitetens domene har en
 standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers
 lager du en egendefinert handling med HAs handlingsredigerer, se eksemplene
-lenger ned. Mislykkes en handling, skrives feilen til loggen, og reguleringen
+lenger ned. For **Sett ladestrøm** kan du også velge **Entitet** og en
+`number`- eller `input_number`-entitet, som da får ladestrømmen som verdi.
+Mislykkes en handling, skrives feilen til loggen, og reguleringen
 fortsetter uten å prøve igjen. Entiteter som allerede brukes av et annet apparat
 eller en elbillader, kan ikke velges.
 
@@ -345,7 +347,9 @@ er apparatets egen entitet:
     temperature: 8
 ```
 
-**Sett ladestrøm** når laderen har en egen `number`-entitet for ladestrøm:
+**Sett ladestrøm** når laderen har en egen `number`-entitet for ladestrøm.
+Det enkleste er å velge **Entitet** og entiteten. Som egendefinert handling
+blir det slik:
 
 ```yaml
 - action: number.set_value
@@ -492,7 +496,7 @@ bryterne til varmeapparatene som apparater, og for hver elbillader:
 |---|---|
 | Entitet | `switch.<lader>_lading_tillatt` |
 | Aktiver og deaktiver | Standard |
-| Sett ladestrøm | Egendefinert handling med `number.set_value` mot `number.<lader>_ladestrom` og `value: "{{ current }}"` |
+| Sett ladestrøm | Entitet: `number.<lader>_ladestrom` |
 | Sensor for ladeeffekt | `sensor.<lader>_ladeeffekt` |
 | Bil tilkoblet | `switch.<lader>_bil_tilkoblet` |
 

@@ -127,6 +127,8 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
         ("min_current_a", 0, "out_of_range"),
         ("entity_id", "switch", "invalid_entity_id"),
         ("charge_power_sensor", "Sensor.X", "invalid_entity_id"),
+        ("set_current", {"mode": "entity", "entity_id": "number.x"}, None),
+        ("set_current", {"mode": "entity", "entity_id": "Number"}, "invalid_entity_id"),
     ],
 )
 def test_charger_settings(field: str, value: Any, code: str | None) -> None:
@@ -420,6 +422,35 @@ async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
     assert error.value.issues == [
         Issue("invalid_type", "appliances", "a1", "power_reserve_w")
     ]
+
+
+@pytest.mark.parametrize(
+    ("field", "action"),
+    [
+        ("activate", {"mode": "entity", "entity_id": "number.x"}),
+        ("set_current", {"mode": "entity", "entity_id": 7}),
+    ],
+)
+async def test_only_the_charging_current_may_be_given_as_an_entity(
+    hass: HomeAssistant, field: str, action: dict[str, Any]
+) -> None:
+    data = full_config_data()
+    data["charging"]["chargers"][0][field] = action
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", field)]
+
+
+async def test_charging_current_entity_is_kept(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    action = {"mode": "entity", "entity_id": "number.lader_strom"}
+    data["charging"]["chargers"][0]["set_current"] = action
+
+    config = parse_config(data)
+
+    assert config.charging.chargers[0].to_dict()["set_current"] == action
 
 
 async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> None:

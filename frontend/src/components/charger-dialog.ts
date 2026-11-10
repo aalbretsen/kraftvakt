@@ -50,7 +50,13 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
             max_current_a: value.max_current_a as number,
           }),
       )}
-      ${this.renderAction("set_current", issues, CURRENT_VARIABLES)} ${this.renderSection("charger.measurement")}
+      ${this.renderAction(
+        "set_current",
+        issues,
+        CURRENT_VARIABLES,
+        this.capabilities.default_actions.chargers.set_current,
+      )}
+      ${this.renderSection("charger.measurement")}
       ${this.renderForm(
         [
           {

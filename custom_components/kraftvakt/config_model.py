@@ -84,10 +84,15 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
 
 
 class ActionMode(StrEnum):
-    """Whether an action uses the default action for the entity or a custom one."""
+    """How an action is given.
+
+    The default action for the entity, a custom action, or the default action
+    for another entity, which only setting the charging current offers.
+    """
 
     DEFAULT = "default"
     CUSTOM = "custom"
+    ENTITY = "entity"
 
 
 class ConditionType(StrEnum):
@@ -113,12 +118,22 @@ class ActionConfig:
 
     mode: ActionMode
     steps: tuple[dict[str, Any], ...] = ()
+    entity_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return the action as JSON-friendly data."""
         if self.mode is ActionMode.DEFAULT:
             return {"mode": self.mode.value}
+        if self.mode is ActionMode.ENTITY:
+            return {"mode": self.mode.value, "entity_id": self.entity_id}
         return {"mode": self.mode.value, "action": list(self.steps)}
+
+    @property
+    def is_missing(self) -> bool:
+        """Return whether the action has nothing to run yet."""
+        if self.mode is ActionMode.CUSTOM:
+            return not self.steps
+        return self.mode is ActionMode.ENTITY and self.entity_id is None
 
 
 @dataclass(frozen=True, slots=True)
@@ -720,7 +735,9 @@ class _Reader:
             entity_id=self._text(values, "entity_id", location),
             activate=self._action(values, "activate", location),
             deactivate=self._action(values, "deactivate", location),
-            set_current=self._action(values, "set_current", location),
+            set_current=self._action(
+                values, "set_current", location, entity_allowed=True
+            ),
             min_current_a=self._integer(
                 values, "min_current_a", defaults.min_current_a, location
             ),
@@ -736,7 +753,12 @@ class _Reader:
         )
 
     def _action(
-        self, values: Mapping[str, Any], key: str, location: _Location
+        self,
+        values: Mapping[str, Any],
+        key: str,
+        location: _Location,
+        *,
+        entity_allowed: bool = False,
     ) -> ActionConfig | None:
         action = values.get(key)
         if action is None:
@@ -744,6 +766,13 @@ class _Reader:
         if isinstance(action, Mapping):
             if action.get("mode") == ActionMode.DEFAULT:
                 return ActionConfig(ActionMode.DEFAULT)
+            entity_id = action.get("entity_id") or None
+            if (
+                entity_allowed
+                and action.get("mode") == ActionMode.ENTITY
+                and (entity_id is None or isinstance(entity_id, str))
+            ):
+                return ActionConfig(ActionMode.ENTITY, entity_id=entity_id)
             if action.get("mode") == ActionMode.CUSTOM:
                 steps = action.get("action") or []
                 if isinstance(steps, Mapping):
@@ -900,6 +929,11 @@ def _charger_issues(charger: Charger) -> list[Issue]:
         *_entity_format_issues(location, "entity_id", charger.entity_id),
         *_entity_format_issues(
             location, "charge_power_sensor", charger.charge_power_sensor
+        ),
+        *_entity_format_issues(
+            location,
+            "set_current",
+            charger.set_current.entity_id if charger.set_current else None,
         ),
         *_ranges_issues(location, charger),
     ]
@@ -1075,6 +1109,6 @@ def _missing_entity_and_actions(
         missing.append(Issue("missing_entity", section, item.id, "entity_id"))
     for field_name in action_fields:
         action = getattr(item, field_name)
-        if action is None or (action.mode is ActionMode.CUSTOM and not action.steps):
+        if action is None or action.is_missing:
             missing.append(Issue("missing_action", section, item.id, field_name))
     return missing

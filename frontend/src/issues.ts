@@ -82,6 +82,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   invalid_action: "errors.invalid_action",
   invalid_template: "errors.invalid_template",
   default_action_unavailable: "errors.default_action_unavailable",
+  unsupported_entity_domain: "errors.unsupported_entity_domain",
 };
 
 const LIMIT_SECTIONS: Partial<Record<Issue["section"], keyof Capabilities["limits"]>> = {

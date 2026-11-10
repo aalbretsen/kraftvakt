@@ -87,7 +87,8 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
   }
 
-  protected renderAction(field: string, issues: Issue[], variables: string[]) {
+  /** An action field; `entityDomains` offers to give the action as an entity of those domains. */
+  protected renderAction(field: string, issues: Issue[], variables: string[], entityDomains: string[] = []) {
     const issue = issues.find((item) => item.field === field);
     return html`
       <kraftvakt-action-field
@@ -98,6 +99,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
         .value=${(this.draft as unknown as Record<string, ActionConfig | null>)[field]}
         .entityId=${this.draft.entity_id}
         .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, field, this.draft.entity_id)}
+        .entityDomains=${entityDomains}
         .variables=${variables}
         .error=${issue ? this.describe(issue) : undefined}
         .disabled=${this.locked}

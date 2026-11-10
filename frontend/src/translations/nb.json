@@ -128,6 +128,7 @@
     "invalid_action": "Home Assistant kan ikke lese handlingen.",
     "invalid_template": "Malen har en syntaksfeil.",
     "default_action_unavailable": "Entiteten har ingen standardhandling. Velg egendefinert handling.",
+    "unsupported_entity_domain": "Entiteten kan ikke brukes. Velg en tallentitet.",
     "unknown": "Ugyldig verdi ({code})."
   },
   "dialog": {
@@ -256,9 +257,12 @@
   "action": {
     "default": "Standard",
     "custom": "Egendefinert",
+    "entity": "Entitet",
     "default_runs": "Kjører {service} for entiteten.",
+    "entity_runs": "Kjører {service} for den valgte entiteten med ladestrømmen som verdi.",
     "no_default": "Entitetstypen har ingen standardhandling, så handlingen må være egendefinert.",
     "choose_entity": "Velg entitet for å bruke standardhandlingen.",
+    "choose_action_entity": "Velg entiteten som skal få verdien.",
     "variables": "Variabler: {variables}."
   },
   "condition": {

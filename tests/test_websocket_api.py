@@ -333,6 +333,30 @@ async def test_runtime_refuses_a_new_configuration_while_running(
                 for field in ("turn_on", "turn_off")
             ],
         ),
+        (
+            lambda data: data.update(
+                charging={
+                    "chargers": [
+                        {
+                            "id": "c1",
+                            "entity_id": "switch.lader",
+                            "set_current": {
+                                "mode": "entity",
+                                "entity_id": "switch.lader_strom",
+                            },
+                        }
+                    ]
+                }
+            ),
+            [
+                {
+                    "code": "unsupported_entity_domain",
+                    "section": "chargers",
+                    "target": "c1",
+                    "field": "set_current",
+                }
+            ],
+        ),
     ],
 )
 async def test_invalid_configuration_is_not_saved(

@@ -97,7 +97,7 @@ integrations.
         "entity_id": "switch.lader_garasje",
         "activate": { "mode": "default" },
         "deactivate": { "mode": "default" },
-        "set_current": { "mode": "custom", "action": [ { "action": "number.set_value", "target": { "entity_id": "number.lader_garasje_strom" }, "data": { "value": "{{ current }}" } } ] },
+        "set_current": { "mode": "entity", "entity_id": "number.lader_garasje_strom" },
         "min_current_a": 6,
         "max_current_a": 16,
         "charge_power_sensor": "sensor.lader_garasje_effekt",
@@ -130,6 +130,14 @@ Validation (an invalid configuration is not saved):
   Whether «default» exists for the entity's domain is checked by
   `default_action_issues()` in `actions.py` (it cannot be called from
   `parse_config()`). Type errors must be fixed before that check can run.
+- An action is `default`, `custom` or `entity`. `entity` is only allowed for
+  `set_current` (elsewhere it is `invalid_type`): it runs the default action
+  of the chosen `entity_id` instead of the charger's own entity, so it must
+  be a `number` or `input_number` (`unsupported_entity_domain` from
+  `default_action_issues()`, `invalid_entity_id` when malformed, and
+  `missing_action` while none is chosen). Settled with the owner: most
+  chargers have a number entity for the current, and a custom action for it
+  was needlessly hard.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
   is not checked again. Settled with the owner after the exploratory test:
@@ -150,7 +158,9 @@ and a variant field is `variants.<id>.label`. Missing codes:
 | `switch`, `input_boolean`, `light`, `fan`, `climate`, `water_heater` | `<domain>.turn_on` | `<domain>.turn_off` | – |
 | `number`, `input_number` | – | – | `<domain>.set_value` with `value: {{ current }}` |
 
-The table is in one place in `actions.py` and is sent to the panel. All
+The table is in one place in `actions.py` and is sent to the panel. The
+`entity` mode of the set-current action uses the same table for the chosen
+entity. All
 templates and actions get `entity_id` and `entity` (the state object of the
 appliance's or charger's entity, `none` when missing). The set-current action
 also gets `current`, `min_current` and `max_current`; `current` is clamped

@@ -128,6 +128,7 @@
     "invalid_action": "Home Assistant cannot read the action.",
     "invalid_template": "The template has a syntax error.",
     "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
+    "unsupported_entity_domain": "The entity cannot be used. Choose a number entity.",
     "unknown": "Invalid value ({code})."
   },
   "dialog": {
@@ -256,9 +257,12 @@
   "action": {
     "default": "Standard",
     "custom": "Custom",
+    "entity": "Entity",
     "default_runs": "Runs {service} for the entity.",
+    "entity_runs": "Runs {service} for the chosen entity with the current as value.",
     "no_default": "The entity type has no standard action, so the action must be custom.",
     "choose_entity": "Choose the entity to use the standard action.",
+    "choose_action_entity": "Choose the entity to set the value of.",
     "variables": "Variables: {variables}."
   },
   "condition": {

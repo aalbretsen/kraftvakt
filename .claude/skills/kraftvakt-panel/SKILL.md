@@ -123,6 +123,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - «Default» is offered only for domains in `default_actions`, and is chosen
   when an entity with a default action is picked. A custom action starts as the
   default action.
+- «Set charging current» also offers «Entity» (`entityDomains` on
+  `kraftvakt-action-field`, from `default_actions.chargers.set_current`): an
+  entity picker limited to `number` and `input_number`, with a helper telling
+  which service runs. Required until an entity is chosen (settled with the
+  owner).
 - The boolean entity picker shows `binary_sensor`, `input_boolean`, `switch`
   and `schedule`. Templates are previewed with HA's `render_template`
   subscription, with `entity` as the frontend's state object. A result that is not

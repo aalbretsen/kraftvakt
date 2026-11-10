@@ -15,12 +15,13 @@ const DEFAULT_SERVICES: Record<string, string> = {
 };
 
 /**
- * An action as the default action for the entity or a custom one.
+ * An action as the default action for the entity, the default action for
+ * another chosen entity, or a custom one.
  *
- * «Standard» is offered only when the domain of the entity has a default action
- *. The custom action uses Home Assistant's action editor. Kept in one
- * place, since the action editor may change between versions.
- * Fires `value-changed` with the new action.
+ * «Standard» is offered only when the domain of the entity has a default
+ * action, and «Entity» only when `entityDomains` is given. The custom action
+ * uses Home Assistant's action editor. Kept in one place, since the action
+ * editor may change between versions. Fires `value-changed` with the new action.
  */
 @customElement("kraftvakt-action-field")
 export class KraftvaktActionField extends LitElement {
@@ -39,6 +40,9 @@ export class KraftvaktActionField extends LitElement {
 
   @property({ type: Boolean }) defaultAvailable = false;
 
+  /** The domains of the entities the action may be given as, or none. */
+  @property({ attribute: false }) entityDomains: string[] = [];
+
   /** The variables the action gets. */
   @property({ attribute: false }) variables: string[] = [];
 
@@ -53,7 +57,7 @@ export class KraftvaktActionField extends LitElement {
         <div class="label">${this.label}</div>
         <ha-form
           .hass=${this.hass}
-          .data=${{ mode, action: this.value?.action ?? [] }}
+          .data=${{ mode, action: this.value?.action ?? [], entity_id: this.value?.entity_id ?? undefined }}
           .schema=${this.schema(mode)}
           .disabled=${this.disabled}
           .computeLabel=${() => ""}
@@ -68,10 +72,12 @@ export class KraftvaktActionField extends LitElement {
   private schema(mode: ActionConfig["mode"] | undefined) {
     const options = [
       ...(this.defaultAvailable ? [{ value: "default", label: this.localize("action.default") }] : []),
+      ...(this.entityDomains.length ? [{ value: "entity", label: this.localize("action.entity") }] : []),
       { value: "custom", label: this.localize("action.custom") },
     ];
     return [
       { name: "mode", selector: { select: { mode: "list", options } } },
+      ...(mode === "entity" ? [{ name: "entity_id", selector: { entity: { filter: { domain: this.entityDomains } } } }] : []),
       ...(mode === "custom" ? [{ name: "action", selector: { action: {} } }] : []),
     ];
   }
@@ -80,21 +86,31 @@ export class KraftvaktActionField extends LitElement {
     if (mode === "custom") {
       return this.localize("action.variables", { variables: this.variables.join(", ") });
     }
+    if (mode === "entity") {
+      const entityId = this.value?.entity_id;
+      return entityId
+        ? this.localize("action.entity_runs", { service: this.defaultService(entityId) })
+        : this.localize("action.choose_action_entity");
+    }
     if (this.defaultAvailable && this.entityId) {
       return this.localize("action.default_runs", { service: this.defaultService(this.entityId) });
     }
     return this.localize(this.entityId ? "action.no_default" : "action.choose_entity");
   }
 
-  private valueChanged(event: CustomEvent<{ value: { mode?: ActionConfig["mode"]; action?: unknown } }>): void {
+  private valueChanged(
+    event: CustomEvent<{ value: { mode?: ActionConfig["mode"]; action?: unknown; entity_id?: string } }>,
+  ): void {
     event.stopPropagation();
-    const { mode, action } = event.detail.value;
+    const { mode, action, entity_id } = event.detail.value;
     const value: ActionConfig | null =
       mode === "default"
         ? { mode }
-        : mode === "custom"
-          ? { mode, action: this.value?.mode === "custom" ? toList(action) : this.defaultSteps() }
-          : null;
+        : mode === "entity"
+          ? { mode, entity_id: entity_id || null }
+          : mode === "custom"
+            ? { mode, action: this.value?.mode === "custom" ? toList(action) : this.defaultSteps() }
+            : null;
     this.dispatchEvent(new CustomEvent("value-changed", { detail: { value } }));
   }
 

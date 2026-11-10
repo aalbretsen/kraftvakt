@@ -105,12 +105,20 @@ def default_action_steps(kind: ActionKind, entity_id: str) -> list[dict[str, Any
 
 
 def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Return the default actions chosen for entities whose domain has none."""
+    """Return the default actions chosen for entities whose domain has none.
+
+    That is the item's own entity for a default action, and the chosen entity
+    when the action is given as another entity.
+    """
     return [
-        Issue("default_action_unavailable", section, item.id, field_name)
+        Issue(code, section, item.id, field_name)
         for section, item, fields in _items_with_actions(config)
         for field_name, kind in fields.items()
-        if _uses_unavailable_default(item.entity_id, getattr(item, field_name), kind)
+        if (
+            code := _unavailable_default(
+                item.entity_id, getattr(item, field_name), kind
+            )
+        )
     ]
 
 
@@ -224,11 +232,7 @@ class ActionRunner:
             raise ValueError("the action is not configured")
         key = (entity_id, kind)
         if key not in self._scripts:
-            steps = (
-                default_action_steps(kind, entity_id)
-                if action.mode is ActionMode.DEFAULT
-                else copy.deepcopy(list(action.steps))
-            )
+            steps = _action_steps(entity_id, action, kind)
             sequence = await async_validate_actions_config(
                 self._hass, cv.SCRIPT_SCHEMA(steps)
             )
@@ -252,9 +256,31 @@ def _items_with_actions(
         yield "chargers", charger, CHARGER_ACTIONS
 
 
-def _uses_unavailable_default(
+def _action_steps(
+    entity_id: str, action: ActionConfig, kind: ActionKind
+) -> list[dict[str, Any]]:
+    match action.mode:
+        case ActionMode.DEFAULT:
+            return default_action_steps(kind, entity_id)
+        case ActionMode.ENTITY if action.entity_id is not None:
+            return default_action_steps(kind, action.entity_id)
+        case ActionMode.ENTITY:
+            raise ValueError("the entity of the action is not chosen")
+    return copy.deepcopy(list(action.steps))
+
+
+def _unavailable_default(
     entity_id: str | None, action: ActionConfig | None, kind: ActionKind
-) -> bool:
-    if entity_id is None or action is None or action.mode is not ActionMode.DEFAULT:
-        return False
-    return split_entity_id(entity_id)[0] not in DEFAULT_ACTIONS[kind].domains
+) -> str | None:
+    """Return the issue when a default action is chosen for a domain without one."""
+    if action is None:
+        return None
+    match action.mode:
+        case ActionMode.DEFAULT if entity_id is not None:
+            code, target = "default_action_unavailable", entity_id
+        case ActionMode.ENTITY if action.entity_id is not None:
+            code, target = "unsupported_entity_domain", action.entity_id
+        case _:
+            return None
+    domain = split_entity_id(target)[0] if "." in target else None
+    return None if domain in DEFAULT_ACTIONS[kind].domains else code

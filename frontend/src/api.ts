@@ -21,8 +21,9 @@ export interface Condition {
 }
 
 export interface ActionConfig {
-  mode: "default" | "custom";
+  mode: "default" | "custom" | "entity";
   action?: Record<string, unknown>[];
+  entity_id?: string | null;
 }
 
 export interface GeneralConfig {

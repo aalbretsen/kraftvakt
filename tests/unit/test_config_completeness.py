@@ -49,6 +49,13 @@ def test_charger_needs_entity_actions_and_charge_power_sensor() -> None:
     ]
 
 
+def test_charging_current_entity_must_be_chosen() -> None:
+    data = full_config_data()
+    data["charging"]["chargers"][0]["set_current"] = {"mode": "entity"}
+
+    assert _missing(data) == [Issue("missing_action", "chargers", "c1", "set_current")]
+
+
 def test_chargers_do_not_count_while_charging_is_disabled() -> None:
     data = full_config_data()
     data["charging"]["enabled"] = False
