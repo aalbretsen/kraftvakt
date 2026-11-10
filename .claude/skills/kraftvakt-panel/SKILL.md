@@ -74,8 +74,9 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
 - The card shows free power, the power limit minus the regulation average as
   a share of the limit, not utilization (settled with the owner, the term
   «ledig effekt» is the one the status page uses). The pivot point slider
-  shows free power, 1–50 % (default 20 %), as 100 minus the stored
-  `wait_curve_pivot`; the stored value and the regulation still use
+  shows free power, 50 % at the left end to 1 % at the right (default 20 %,
+  settled with the owner), like the graph: the slider moves over the stored
+  `wait_curve_pivot` and shows 100 minus it; the stored value and the regulation still use
   utilization, so nothing is migrated. The table has the rows «Ledig effekt
   %», «Ledig effekt kW», «Ventetid %» and «Ventetid s» at 50, 40, 30, 25,
   20, 15, 10, 7, 4 and 1 % free: kW from the power limit with two decimals,

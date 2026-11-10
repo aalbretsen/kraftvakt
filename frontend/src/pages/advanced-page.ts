@@ -18,17 +18,13 @@ const TABLE_FREE_PERCENTS = [50, 40, 30, 25, 20, 15, 10, 7, 4, 1];
 /**
  * The regulation works with utilization of the power limit, but the page shows
  * free power, the power limit minus the regulation average, as a share of the
- * limit. The pivot point is stored as utilization, so it is shown as 100 minus
- * the stored value; the same conversion turns it back.
+ * limit. The pivot point slider moves over the stored utilization, so free
+ * power goes down to the right like on the graph, and shows 100 minus it.
  */
 const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
   wait_curve_steepness: false,
   wait_curve_pivot: true,
 };
-
-function shown(name: CurveField, value: number): number {
-  return SHOWN_AS_FREE_POWER[name] ? 100 - value : value;
-}
 
 /** The waiting time curve and the waiting time when the same slot is turned on again and again. */
 @customElement("kraftvakt-advanced-page")
@@ -66,23 +62,23 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
 
   private renderSlider(name: CurveField) {
     const range = this.range(name);
-    const ends = [shown(name, range.min ?? 0), shown(name, range.max ?? 0)];
-    const value = shown(name, this.config.general[name]);
+    const value = this.config.general[name];
+    const shownValue = SHOWN_AS_FREE_POWER[name] ? 100 - value : value;
     const label = this.localize(`general.fields.${name}.label`);
     const unit = SHOWN_AS_FREE_POWER[name] ? " %" : "";
     return html`
       <span class="slider-label">${label}</span>
       <ha-slider
         aria-label=${label}
-        .min=${Math.min(...ends)}
-        .max=${Math.max(...ends)}
+        .min=${range.min}
+        .max=${range.max}
         .step=${range.step}
         .value=${value}
         .withTooltip=${false}
         ?disabled=${this.locked}
-        @input=${(event: Event) => this.changeCurve(name, shown(name, Number((event.target as HTMLInputElement).value)))}
+        @input=${(event: Event) => this.changeCurve(name, Number((event.target as HTMLInputElement).value))}
       ></ha-slider>
-      <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(value)}${unit}</span>
+      <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(shownValue)}${unit}</span>
     `;
   }
 
