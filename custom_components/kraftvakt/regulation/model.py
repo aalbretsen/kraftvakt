@@ -15,14 +15,9 @@ from .waiting import CyclingCounter, CyclingSteps
 class DecisionInput:
     """Snapshot of what a decision is based on.
 
-    The averages are None until the first regulation window has closed.
-    `power_sensor_valid` tells whether the power sensor had a valid measurement
-    when the last regulation window closed, and `power_sensor_lost` whether it
-    had none when each of the last two windows closed.
-    `regulation_averages_w` holds every regulation average computed since the
-    previous decision, oldest first. `variant_conditions` holds the
-    evaluated condition of each variant, keyed by variant id. A
-    variant that is missing counts as false.
+    `power_sensor_lost` tells whether the power sensor was invalid when each of
+    the last two windows closed. A variant missing from `variant_conditions`
+    counts as false.
     """
 
     now: datetime
@@ -98,10 +93,7 @@ class ApplianceSlotKey:
 
 @dataclass(frozen=True, slots=True)
 class ChargerSlotKey:
-    """Identifies a fictive appliance of a charger.
-
-    `index` counts from 0 for the first fictive appliance.
-    """
+    """Identifies a fictive appliance of a charger, counted from 0."""
 
     charger_id: str
     index: int
@@ -109,12 +101,7 @@ class ChargerSlotKey:
 
 @dataclass(frozen=True, slots=True)
 class Slot:
-    """A place in the order the regulation turns things on and off.
-
-    A slot that cannot be turned on is skipped when looking for the next one to
-    turn on. A slot that cannot be turned off is skipped when the
-    regulation switches off above the limit.
-    """
+    """A place in the order the regulation turns things on and off."""
 
     key: Hashable
     is_on: bool
@@ -128,8 +115,7 @@ class Slot:
 class Waiting:
     """A waiting time that runs before the slot may be turned on.
 
-    `until` is when the waiting time ends, as calculated at the last decision. The slot
-    is turned on at the first decision from then on.
+    The slot is turned on at the first decision at or after `until`.
     """
 
     key: Hashable
@@ -139,11 +125,7 @@ class Waiting:
 
 @dataclass(slots=True)
 class RegulationState:
-    """What the regulation keeps track of while it runs.
-
-    A new state with default values is created at each start.
-    `current_variants` is empty until the first decision.
-    """
+    """What the regulation keeps track of while it runs."""
 
     started_at: datetime | None = None
     appliances_on: set[str] = field(default_factory=set)

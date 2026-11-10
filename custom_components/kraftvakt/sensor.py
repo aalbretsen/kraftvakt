@@ -22,10 +22,7 @@ from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
 @dataclass(frozen=True, kw_only=True)
 class RegulationSensorDescription(SensorEntityDescription):
-    """Describes a sensor that shows a value of the regulation.
-
-    The sensor is unavailable while `value_fn` gives None.
-    """
+    """Describes a sensor that shows a value of the regulation."""
 
     value_fn: Callable[[KraftvaktRuntime], float | None]
 
@@ -64,8 +61,8 @@ def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
 def _time_to_next_turn_on_s(runtime: KraftvaktRuntime) -> int:
     """Return the seconds until the decision that ends the waiting time, or 0.
 
-    It counts to the decision, not to the end of the waiting time, since the
-    slot is turned on at the first decision after it.
+    It counts to the decision, since the slot is turned on at the first
+    decision after the waiting time.
     """
     ends_at = runtime.waiting_ends_at
     if ends_at is None:
@@ -131,11 +128,7 @@ async def async_setup_entry(
 
 
 class RegulationSensor(KraftvaktEntity, SensorEntity):
-    """Shows a value of the regulation.
-
-    Updated each time the status of the regulation may change: when a window
-    closes, at decisions, start and stop.
-    """
+    """Shows a value of the regulation."""
 
     entity_description: RegulationSensorDescription
 

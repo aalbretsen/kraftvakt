@@ -394,8 +394,7 @@ async def test_parse_config_rejects_wrong_types(hass: HomeAssistant) -> None:
 
 
 async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) -> None:
-    """Found in the exploratory test: a regulation window of 10.5 s hid the
-    power limit out of range and the entity used twice."""
+    """A value of the wrong type does not hide the other issues."""
     data = full_config_data()
     data["general"]["regulation_window_s"] = 10.5
     data["general"]["power_limit_w"] = 500

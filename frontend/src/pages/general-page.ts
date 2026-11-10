@@ -37,10 +37,7 @@ export class KraftvaktGeneralPage extends GeneralSettingsPage {
     `;
   }
 
-  /**
-   * The power sensor is a sensor from another integration that measures power,
-   * in W or kW, so Kraftvakt's own averages are left out.
-   */
+  /** Kraftvakt's own averages are left out of the power sensors to choose from. */
   private entityField(name: GeneralField): FormField {
     return {
       name,

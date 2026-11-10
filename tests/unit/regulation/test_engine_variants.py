@@ -52,8 +52,8 @@ def test_restart_forgets_the_current_variant() -> None:
 
 
 def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
-    """Found in the exploratory test: the heater switched variant and went
-    off, and b was switched off too because the average was above the limit."""
+    """Above the limit, nothing more is switched off when a variant switch has
+    switched something off."""
     scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
     scenario.turn_on("b", "heater")
 

@@ -1,1 +1,1 @@
-"""Tester for Kraftvakt."""
+"""Tests for Kraftvakt."""

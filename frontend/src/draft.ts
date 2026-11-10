@@ -1,8 +1,6 @@
 /**
- * The local draft of the configuration that the configuration pages edit.
- *
- * The draft is never changed in place. Each change makes a new configuration,
- * which the pages send to the panel with the `draft-changed` event.
+ * The draft that the configuration pages edit. It is never changed in place:
+ * each change makes a new configuration.
  */
 import type { KraftvaktConfig, PriorityEntry } from "./api";
 
@@ -42,13 +40,7 @@ export function priorityKey(entry: PriorityEntry): string {
   return entry.type === "ev_charging" ? "ev_charging" : `${entry.appliance_id}/${entry.variant_id ?? ""}`;
 }
 
-/**
- * Return the configuration with exactly one priority entry per appliance and variant.
- *
- * Entries for appliances or variants that are gone, duplicates and «EV charging»
- * while charging is disabled are removed. Missing entries are added at the
- * bottom, as a new variant is.
- */
+/** Return the configuration with exactly one priority entry per appliance and variant. */
 export function withCompletePriority(config: KraftvaktConfig): KraftvaktConfig {
   const expected = expectedPriority(config);
   const expectedKeys = new Set(expected.map(priorityKey));

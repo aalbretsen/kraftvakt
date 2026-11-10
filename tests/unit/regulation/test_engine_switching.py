@@ -54,9 +54,8 @@ def test_nothing_is_turned_on_within_the_turn_on_margin() -> None:
 
 
 def test_average_just_below_the_limit_after_a_turn_on_turns_on_nothing() -> None:
-    """Found in the exploratory test: the window after a turn-on held a few
-    milliseconds of the consumption before it, 7.9993 kW of 8 kW, and the next
-    appliance was turned on only to be switched off again."""
+    """An average a hair under the limit turns nothing on, because of the
+    turn-on margin."""
     scenario = Scenario(no_waiting("a", "b", "c", limit_w=8000))
     assert scenario.decide_many(4500, 2) == [on("a"), on("b")]
 

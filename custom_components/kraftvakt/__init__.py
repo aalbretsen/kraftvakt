@@ -48,8 +48,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
     """Set up Kraftvakt from a config entry.
 
-    A stored configuration that cannot be read stops the setup with a clear
-    error, and the stored file is left as it is.
+    A stored configuration that cannot be read stops the setup and is left as
+    it is.
     """
     storage = KraftvaktStorage(hass)
     try:
@@ -90,7 +90,6 @@ def _action_lock(hass: HomeAssistant) -> asyncio.Lock:
 
 
 async def _async_register_panel(hass: HomeAssistant) -> None:
-    """Register the panel in the sidebar."""
     # Static paths cannot be unregistered, so they are registered only once
     # per run of Home Assistant, also when the config entry is reloaded.
     if not hass.data.get(DOMAIN, {}).get("static_registered"):

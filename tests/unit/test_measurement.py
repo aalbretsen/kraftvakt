@@ -294,8 +294,8 @@ def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
 
 
 def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
-    """Found in the exploratory test: a value that lasted one millisecond
-    after the safe state filled the whole hour."""
+    """A value that lasts one millisecond after the safe state does not fill
+    the whole hour."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 7.0)
     close_windows_until(averager, at(3600))

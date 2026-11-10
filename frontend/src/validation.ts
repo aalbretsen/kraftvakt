@@ -1,10 +1,4 @@
-/**
- * Checks of the draft in the panel, so the user sees mistakes before saving.
- *
- * The backend validates the configuration again when it is saved, and its
- * errors are shown the same way. The limits come from `kraftvakt/capabilities`,
- * so they are kept in one place.
- */
+/** Checks of the draft, so the user sees mistakes before saving. */
 import type {
   ActionConfig,
   Appliance,
@@ -49,10 +43,7 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   return missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS);
 }
 
-/**
- * Return what is missing in one EV charger. «Car connected» is
- * required when only one EV charger may charge at a time.
- */
+/** Return what is missing in one EV charger. */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
   if (!charger.charge_power_sensor) {
@@ -137,10 +128,7 @@ function conditionIssues(section: Issue["section"], target: string, field: strin
   return condition.value.trim() === "" ? [{ code: "required", section, target, field }] : [];
 }
 
-/**
- * Check the settings that have limits. Optional settings that are not given are
- * only checked when `required` is set.
- */
+/** Optional settings that are not given are only checked when `required` is set. */
 function rangeIssues(
   section: LimitSection,
   target: string | undefined,

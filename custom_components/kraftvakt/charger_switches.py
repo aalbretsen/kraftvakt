@@ -18,12 +18,8 @@ type SwitchListener = Callable[[], None]
 class ChargerSwitchBoard:
     """Keeps the positions of the charger switches and saves them at once.
 
-    The positions are configuration and are kept over any restart, together
-    with the rest of the configuration. When the override of the
-    charging window was switched on is kept only in memory. After a restart of
-    Home Assistant or the integration, the first start of the regulation counts
-    instead. The switches can be used while the regulation runs, and the
-    regulation reads them at its next decision.
+    When the override of the charging window was switched on is kept only in
+    memory. After a restart, the first start of the regulation counts instead.
     """
 
     def __init__(
@@ -52,10 +48,7 @@ class ChargerSwitchBoard:
 
     @callback
     def async_regulation_started(self, now: datetime) -> None:
-        """Count overrides switched on before a restart from `now`.
-
-        Overrides whose switch-on time is known keep it.
-        """
+        """Count overrides switched on before a restart from `now`."""
         for charger_id, switches in self._switches.items():
             if switches.window_override:
                 self._override_switched_on_at.setdefault(charger_id, now)
@@ -73,21 +66,14 @@ class ChargerSwitchBoard:
 
     @callback
     def async_reset_window_override(self, charger_id: str) -> None:
-        """Switch the override off when it has ended.
-
-        The position changes at once and is saved in the background.
-        """
+        """Switch the override off when it has ended."""
         self._apply(charger_id, None, False)
         self._hass.async_create_task(
             self._async_save(), "kraftvakt save charger switches"
         )
 
     async def async_update_config(self, config: KraftvaktConfig) -> None:
-        """Use a new configuration and save it with the switches.
-
-        Chargers that remain keep their switches, new chargers get the default
-        positions, and the switches of removed chargers are dropped.
-        """
+        """Use a new configuration and save it with the switches."""
         self._config = config
         self._switches = charger_switches_for(config, self._switches)
         self._override_switched_on_at = {

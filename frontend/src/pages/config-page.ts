@@ -34,7 +34,6 @@ export class ConfigPage extends LitElement {
 
   @property({ type: Boolean, reflect: true }) locked = false;
 
-  /** Replace the draft with a changed configuration. */
   protected changeConfig(config: KraftvaktConfig): void {
     fireDraftChanged(this, config);
   }
@@ -42,7 +41,6 @@ export class ConfigPage extends LitElement {
   protected describeIssue = (issue: Issue): string =>
     fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
-  /** The error text per field for `ha-form`, of the issues in a section. */
   protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
     const issues = this.issues.filter((issue) => issue.section === section && issue.target === target);
     return errorsByField(issues, prefix, this.describeIssue);

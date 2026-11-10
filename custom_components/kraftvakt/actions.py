@@ -1,8 +1,4 @@
-"""Actions that turn appliances and chargers on and off.
-
-The default actions for each entity domain are kept in one table, and
-custom actions run as Home Assistant scripts.
-"""
+"""Actions that turn appliances and chargers on and off."""
 
 from __future__ import annotations
 
@@ -105,11 +101,7 @@ def default_action_steps(kind: ActionKind, entity_id: str) -> list[dict[str, Any
 
 
 def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Return the default actions chosen for entities whose domain has none.
-
-    That is the item's own entity for a default action, and the chosen entity
-    when the action is given as another entity.
-    """
+    """Return the default actions chosen for entities whose domain has none."""
     return [
         Issue(code, section, item.id, field_name)
         for section, item, fields in _items_with_actions(config)
@@ -123,10 +115,7 @@ def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def default_action_domains() -> dict[str, dict[str, list[str]]]:
-    """Return the domains that have a default action, by section and field.
-
-    The panel offers the default action only for these domains.
-    """
+    """Return the domains that have a default action, by section and field."""
     return {
         section: {
             field_name: list(DEFAULT_ACTIONS[kind].domains)
@@ -140,10 +129,7 @@ def default_action_domains() -> dict[str, dict[str, list[str]]]:
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
-    """Return the variables of the action that sets the charging current.
-
-    The current is kept between the minimum and the maximum.
-    """
+    """Return the variables of the action that sets the charging current."""
     return {
         "current": min(max(current, charger.min_current_a), charger.max_current_a),
         "min_current": charger.min_current_a,
@@ -152,12 +138,10 @@ def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
 
 
 class ActionRunner:
-    """Carries out the commands from the regulation engine.
+    """Carries out the commands from the regulation engine, one at a time.
 
-    The commands run one at a time in the order they are given, also across
-    decisions. A failed action is logged and not retried, and the rest of the
-    commands still run. Commands that are not actions, such as
-    resetting the window override, are left to the caller.
+    A failed action is logged and not retried, and the rest of the commands
+    still run.
     """
 
     def __init__(
@@ -215,7 +199,6 @@ class ActionRunner:
         kind: ActionKind,
         variables: Mapping[str, Any] | None = None,
     ) -> None:
-        """Run the action with `entity_id`, `entity` and `variables`, and log errors."""
         try:
             script = await self._async_script(item.entity_id, action, kind)
             await script.async_run(
@@ -272,7 +255,6 @@ def _action_steps(
 def _unavailable_default(
     entity_id: str | None, action: ActionConfig | None, kind: ActionKind
 ) -> str | None:
-    """Return the issue when a default action is chosen for a domain without one."""
     if action is None:
         return None
     match action.mode:

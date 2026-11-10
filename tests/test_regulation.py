@@ -354,7 +354,7 @@ async def test_each_decision_is_logged_for_debugging(
     setup_kraftvakt,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Found in the exploratory test: only the commands were logged, not why."""
+    """The log tells what each decision was based on, not only the commands."""
     caplog.set_level(logging.DEBUG, logger="custom_components.kraftvakt.runtime")
     set_power(hass, "2000")
     await setup_kraftvakt()

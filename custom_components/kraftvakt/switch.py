@@ -27,8 +27,8 @@ async def async_setup_entry(
 ) -> None:
     """Add the regulation switch and the switches of the configured chargers.
 
-    The charger switches follow the configuration: they are added and removed
-    when the chargers change, without reloading the config entry.
+    The charger switches follow the chargers without a reload of the config
+    entry, which would start the regulation again.
     """
     runtime = entry.runtime_data
     async_add_entities([RegulationSwitch(entry, runtime)])
@@ -63,7 +63,6 @@ async def async_setup_entry(
 def _remove_orphaned_charger_switches(
     hass: HomeAssistant, entry: KraftvaktConfigEntry, board: ChargerSwitchBoard
 ) -> None:
-    """Remove registry entries for switches of chargers no longer configured."""
     wanted = {
         charger_switch_key(charger.id, setting)
         for charger in board.config.charging.chargers
@@ -124,11 +123,7 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
 class ChargerSwitch(KraftvaktEntity, SwitchEntity):
     """A user's switch for a charger, kept over any restart.
 
-    `excluded` takes the charger out of the regulation, and
-    `window_override` lets it charge outside its charging window. The
-    regulation reads the switch at its next decision. The switch is
-    unavailable while charging is disabled, but keeps its position. It is
-    named after the charger when it is created.
+    It is named after the charger when it is created.
     """
 
     def __init__(

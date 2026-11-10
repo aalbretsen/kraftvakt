@@ -24,10 +24,7 @@ class CyclingSteps:
     def from_waiting_at_limit(
         cls, wait_at_limit_s: float, step_factor: float, steps: int
     ) -> CyclingSteps:
-        """Return the steps as a share of the waiting time at the limit.
-
-        The cap is the waiting time at the limit and the given number of steps.
-        """
+        """Return the steps as a share of the waiting time at the limit."""
         step = timedelta(seconds=wait_at_limit_s * step_factor)
         return cls(step=step, cap=timedelta(seconds=wait_at_limit_s) + step * steps)
 
@@ -70,11 +67,7 @@ def _above_start(utilization: float) -> float:
 def cycling_waiting_time(
     reon_number: int, wait_at_limit: timedelta, steps: CyclingSteps
 ) -> timedelta:
-    """Return the fixed waiting time on persistent cycling.
-
-    It starts at the waiting time at the limit the second time the slot is
-    turned on again, and grows by one step each time up to the cap.
-    """
+    """Return the fixed waiting time on persistent cycling."""
     growth = steps.step * (reon_number - PERSISTENT_CYCLING_FROM)
     return min(steps.cap, wait_at_limit + growth)
 
@@ -89,8 +82,7 @@ def waiting_time(
 ) -> timedelta:
     """Return the waiting time before a slot is turned on.
 
-    `reon_number` tells how many times in a row the slot will have been turned
-    on again when it is turned on next (see `CyclingCounter`).
+    `reon_number` is the count from `CyclingCounter.upcoming_reon_number()`.
     """
     if reon_number >= PERSISTENT_CYCLING_FROM:
         return cycling_waiting_time(reon_number, wait_at_limit, steps)
@@ -118,10 +110,7 @@ class CyclingCounter:
             self._reons += 1
 
     def upcoming_reon_number(self, key: Hashable) -> int:
-        """Return the count the slot gets if it is turned on next.
-
-        Zero means the slot is not being turned on again.
-        """
+        """Return the count the slot gets if it is turned on next, 0 if not again."""
         return self._reons + 1 if key == self._last_key else 0
 
     def reset(self, key: Hashable) -> None:

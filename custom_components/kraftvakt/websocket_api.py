@@ -1,7 +1,4 @@
-"""WebSocket commands for the panel.
-
-Every command requires an administrator.
-"""
+"""WebSocket commands for the panel."""
 
 from __future__ import annotations
 
@@ -75,10 +72,7 @@ def websocket_capabilities(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Send the default actions, the limits and the defaults of the settings.
-
-    The panel gets the limits from here, so they are kept in one place.
-    """
+    """Send the default actions, the limits and the defaults of the settings."""
     connection.send_result(msg["id"], capabilities())
 
 
@@ -118,9 +112,7 @@ async def websocket_save_config(
 ) -> None:
     """Validate and save the whole configuration.
 
-    Refused with `regulation_running` while the regulation runs. An
-    invalid configuration is not saved, and the result lists every issue. An
-    incomplete configuration is saved, and the result lists what is missing.
+    An incomplete configuration is saved, and the result lists what is missing.
     """
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
@@ -159,11 +151,7 @@ def websocket_set_running(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Start or stop the regulation, the same as the regulation switch.
-
-    Starting is refused with `config_incomplete` until the configuration is
-    complete.
-    """
+    """Start or stop the regulation, the same as the regulation switch."""
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
     if not msg["running"]:
@@ -185,10 +173,7 @@ def websocket_subscribe_status(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Send the status now and then at each new average, decision, start and stop.
-
-    The status is what the status page shows.
-    """
+    """Send the status now and each time it may change."""
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
 
@@ -206,17 +191,7 @@ def websocket_subscribe_status(
 
 
 def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:
-    """Return how the regulation stands now.
-
-    The waiting fields are set for the appliance or charger whose slot is next
-    and waits: when it started, when the waiting time ends, and the decision
-    that will turn it on, the first at or after the end. The averages are None
-    until the first window has closed.
-    The appliances are in the order of their current variant in the priority
-    list, and the chargers in the current charging priority.
-    `ev_charging_position` is the number of appliances before «EV charging»,
-    None while EV charging is disabled.
-    """
+    """Return how the regulation stands now, for the status page."""
     config = runtime.config
     averages = runtime.latest_averages
     penalty = runtime.penalty
@@ -302,10 +277,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
 def _current_positions(
     config: KraftvaktConfig, current_variants: Mapping[str, str | None]
 ) -> dict[str, int]:
-    """Return the place in the priority list of each appliance's current variant.
-
-    The appliance itself counts as the current variant until the first decision.
-    """
+    """The appliance itself counts as the current variant until the first decision."""
     entries = [(entry.appliance_id, entry.variant_id) for entry in config.priority]
     return {
         appliance.id: _position(
@@ -318,7 +290,6 @@ def _current_positions(
 def _ev_charging_position(
     config: KraftvaktConfig, positions: Mapping[str, int]
 ) -> int | None:
-    """Return how many appliances are placed before «EV charging»."""
     types = [entry.type for entry in config.priority]
     if PriorityEntryType.EV_CHARGING not in types:
         return None
@@ -327,7 +298,6 @@ def _ev_charging_position(
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:
-    """Return the chargers in the current charging priority."""
     return sorted(chargers, key=lambda charger: _position(priority, charger.id))
 
 
@@ -339,8 +309,7 @@ def _position[T](items: Sequence[T], item: T) -> int:
 def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
-    Also checks that a default action is available for the domain of each
-    entity it is chosen for, which parse_config cannot do. Raises
+    Also checks the default actions, which `parse_config()` cannot do. Raises
     ConfigValidationError with every issue found.
     """
     config = parse_config(data)
@@ -392,7 +361,6 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
 def _waiting_fields(
     waiting: Waiting | None, ends_at: datetime | None
 ) -> dict[str, str | None]:
-    """Return when the waiting started and ends, and the decision that ends it."""
     if waiting is None or ends_at is None:
         return {"waiting_since": None, "waiting_until": None, "waiting_ends_at": None}
     return {
@@ -421,7 +389,6 @@ def _loaded_runtime(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> KraftvaktRuntime | None:
-    """Return the runtime, or send an error when Kraftvakt is not loaded."""
     if entries := hass.config_entries.async_loaded_entries(DOMAIN):
         return entries[0].runtime_data
     connection.send_error(msg["id"], ERR_NOT_LOADED, "Kraftvakt is not loaded")

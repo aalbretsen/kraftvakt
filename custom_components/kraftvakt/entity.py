@@ -33,11 +33,7 @@ class KraftvaktEntity(Entity):
 
 
 def entity_name(hass: HomeAssistant, entity_id: str) -> str:
-    """Return the name of the entity in Home Assistant.
-
-    Falls back to the name in the entity registry when the entity has no state,
-    and to the entity id when it is not known at all.
-    """
+    """Return the name of the entity in Home Assistant, or else its id."""
     if state := hass.states.get(entity_id):
         return state.name
     registry_entry = er.async_get(hass).async_get(entity_id)
@@ -50,8 +46,7 @@ def charger_name(hass: HomeAssistant, entity_id: str) -> str:
     """Return the name of a charger: its device's, or else its entity's.
 
     Settled with the owner: the entity that allows charging often has a name
-    like «Garage Charging allowed», which also ended up in the names of the
-    charger's switches.
+    like «Garage Charging allowed».
     """
     registry_entry = er.async_get(hass).async_get(entity_id)
     if registry_entry is not None and registry_entry.device_id is not None:

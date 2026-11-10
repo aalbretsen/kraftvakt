@@ -170,8 +170,8 @@ def test_charger_that_does_not_draw_power_is_bypassed() -> None:
 
 
 def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
-    """Found in the retest of the exploratory test: the charger got more current
-    before it was bypassed, and held back the appliances below «EV charging»."""
+    """A charger on trial gets no more current and does not hold back the
+    appliances below «EV charging»."""
     scenario = Scenario(
         make_config(
             "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0
@@ -315,8 +315,8 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
 
 
 def test_excluded_charger_above_the_limit_switches_off_nothing_more() -> None:
-    """Found in the exploratory test: b was excluded and deactivated, and a
-    lost an ampere too because the average was above the limit."""
+    """Above the limit, nothing more is switched off when an excluded charger
+    is deactivated."""
     scenario = two_chargers(one_at_a_time=False)
     scenario.set_charger("a", **CHARGING)
     scenario.set_charger("b", **CHARGING)

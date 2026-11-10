@@ -1,4 +1,4 @@
-"""Felles fixtures for Kraftvakt-testene."""
+"""Fixtures for the Kraftvakt tests."""
 
 import pytest
 

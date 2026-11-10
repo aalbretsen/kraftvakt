@@ -27,16 +27,11 @@ const CHARGER_FIELDS = [
 ] as const;
 
 /**
- * All configuration of EV charging: the shared settings,
- * the EV chargers in the configured charging priority
- * and, while there are no chargers, the warning against manual control.
- *
- * While EV charging is disabled, the chargers are kept but not used,
- * so the list is only shown.
+ * All configuration of EV charging. While it is disabled, the chargers are kept
+ * but only shown.
  */
 @customElement("kraftvakt-charging-page")
 export class KraftvaktChargingPage extends ConfigPage {
-  /** The charger in the dialog, and whether it is new. */
   @state() private editing?: { charger: Charger; isNew: boolean };
 
   protected render() {
@@ -163,7 +158,6 @@ export class KraftvaktChargingPage extends ConfigPage {
     };
   }
 
-  /** The name of the field the issue is about, as the charger dialog shows it. */
   private fieldLabel(issue: Issue): string {
     const field = issue.field ?? "";
     return (CHARGER_FIELDS as readonly string[]).includes(field)

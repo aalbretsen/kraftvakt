@@ -16,10 +16,9 @@ import { ConfigPage } from "./config-page";
 
 const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
 
-/** The appliances and the priority list, with the warning against manual control while there are no appliances. */
+/** The appliances and the priority list. */
 @customElement("kraftvakt-appliances-page")
 export class KraftvaktAppliancesPage extends ConfigPage {
-  /** The appliance in the dialog, and whether it is new. */
   @state() private editing?: { appliance: Appliance; isNew: boolean };
 
   protected render() {
@@ -82,7 +81,6 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     `;
   }
 
-  /** A row for an appliance, one of its variants, or «EV charging». */
   private row(entry: PriorityEntry): ListRow {
     if (entry.type === "ev_charging") {
       return {
@@ -142,7 +140,6 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       : this.localize("appliances.variant_template");
   }
 
-  /** The name of the field the issue is about, as the appliance dialog shows it. */
   private fieldLabel(issue: Issue): string {
     const field = issue.field?.split(".").at(-1) ?? "";
     return (APPLIANCE_FIELDS as readonly string[]).includes(field)
@@ -167,7 +164,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     this.editing = { appliance, isNew: true };
   }
 
-  /** Open the appliance of the row. A variant opens its appliance. */
+  /** A variant opens its appliance. */
   private openRow(event: CustomEvent<string>): void {
     const entry = this.config.priority.find((item) => priorityKey(item) === event.detail);
     const appliance =
@@ -177,7 +174,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     }
   }
 
-  /** Put the appliance in the draft. New variants end up at the bottom of the priority list. */
+  /** New variants end up at the bottom of the priority list. */
   private applianceChanged(event: CustomEvent<Appliance>): void {
     const appliance = event.detail;
     const exists = this.config.appliances.some((item) => item.id === appliance.id);

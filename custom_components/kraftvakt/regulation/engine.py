@@ -42,12 +42,10 @@ SLOTS_PER_DECISION: Final = 1
 
 
 class RegulationEngine:
-    """Decides which appliances are on, in priority order (REG, STR, APP, LAD).
+    """Decides which appliances are on, in priority order.
 
-    The engine only knows what it has told the appliances to do and
-    keeps its state only while it runs. The configuration cannot
-    change while the regulation runs, so it is given once. The
-    chargers are part of the regulation only while charging is enabled.
+    The engine only knows what it has told the appliances to do. The
+    configuration cannot change while it runs, so it is given once.
     """
 
     def __init__(self, config: KraftvaktConfig) -> None:
@@ -152,12 +150,7 @@ class RegulationEngine:
         return self._turn_off_everything()
 
     def decide(self, decision: DecisionInput) -> list[Command]:
-        """Make one decision and return the commands to carry out.
-
-        The regulation starts again when the power sensor
-        is back after the safe state and when a penalty ends. While a penalty lasts, the
-        current variants are still found, but nothing is turned on.
-        """
+        """Make one decision and return the commands to carry out."""
         if not self._running:
             return []
         if self._state.safe_state:
@@ -190,7 +183,6 @@ class RegulationEngine:
         return ChargingState.for_chargers(list(self._chargers.values()))
 
     def _turn_off_everything(self) -> list[Command]:
-        """Turn off every appliance and deactivate every charger."""
         commands: list[Command] = [
             TurnOffAppliance(appliance.id) for appliance in self._config.appliances
         ]
@@ -199,7 +191,6 @@ class RegulationEngine:
         return commands
 
     def _overrides_ended(self, decision: DecisionInput) -> list[str]:
-        """Return the chargers whose override of the charging window ends."""
         started_at = self._state.started_at
         assert started_at is not None
         return [
@@ -217,13 +208,7 @@ class RegulationEngine:
     def _decide_chargers(
         self, decision: DecisionInput, overrides_ended: list[str]
     ) -> list[Command]:
-        """Evaluate the chargers and switch off what they must.
-
-        Chargers that are not allowed to charge get all their fictive
-        appliances switched off, and chargers that
-        become bypassed are limited to the first one. These are
-        exceptions from one slot per decision.
-        """
+        """Switch off what the chargers must, an exception to one slot per decision."""
         if not self._chargers:
             return []
         charging = self._state.charging
@@ -270,7 +255,6 @@ class RegulationEngine:
         return commands
 
     def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
-        """Count the overconsumption and decide on the penalty."""
         if decision.capacity_average_w is None:
             return PenaltyOutcome.NONE
         general = self._config.general
@@ -284,10 +268,7 @@ class RegulationEngine:
         )
 
     def _hold_everything_off(self) -> list[Command]:
-        """Turn everything off at once in a penalty or the safe state.
-
-        This is an exception from one slot per decision.
-        """
+        """Turn everything off, an exception to one slot per decision."""
         self._state.appliances_on.clear()
         self._state.waiting = None
         for charger_id in self._chargers:
@@ -295,13 +276,9 @@ class RegulationEngine:
         return self._turn_off_everything()
 
     def _switch_variants(self, variant_conditions: Mapping[str, bool]) -> list[Command]:
-        """Find the current variants and handle the appliances that switch.
+        """Handle the appliances that switch variant.
 
-        An appliance that switches is off afterwards, in the place of its new
-        variant. If it was off and its new place is above the lowest slot that
-        is on, that slot is switched off to make room. Several appliances that
-        switch at once are handled one by one from the highest new place.
-        These switch-offs are exceptions from one slot per decision.
+        The switch-offs are an exception to one slot per decision.
         """
         previous = self._state.current_variants
         self._state.current_variants = {
@@ -348,17 +325,15 @@ class RegulationEngine:
         )
 
     def _slots_on_lowest_first(self) -> Iterator[Slot]:
-        """Return the slots the regulation may switch off, lowest priority first."""
         return (
             slot for slot in reversed(self._slots()) if slot.is_on and slot.can_turn_off
         )
 
     def _switch_off_above_limit(self, forced_off: bool) -> list[Command]:
-        """Switch off the lowest priority slots that are on.
+        """Switch off the lowest priority slot that is on.
 
-        Nothing more is switched off when the decision has already forced
-        something off. Settled with the owner: the average was measured before
-        that, so switching off one more was often too much.
+        Settled with the owner: nothing more is switched off when the decision has
+        already forced something off, since the average was measured before that.
         """
         self._state.waiting = None
         if forced_off:
@@ -369,12 +344,6 @@ class RegulationEngine:
         return commands
 
     def _turn_on_next(self, now: datetime, average_w: float) -> list[Command]:
-        """Turn on the next slots in fixed priority order after waiting.
-
-        Only the first slot that is off can be turned on, and only
-        when there is room for it and its waiting time has passed. A waiting time for
-        any other slot is cancelled.
-        """
         commands: list[Command] = []
         for _ in range(SLOTS_PER_DECISION):
             candidate = next(
@@ -392,11 +361,9 @@ class RegulationEngine:
     def _may_turn_on(self, slot: Slot, average_w: float) -> bool:
         """Return whether there is room to turn the slot on.
 
-        The average must be below the limit by more than the turn-on margin.
-        Settled with the owner: the window after a decision still holds some of
-        the consumption from before its commands, so an average just below the
-        limit made the regulation turn on an appliance only to turn one off at
-        the next decision.
+        Settled with the owner: the average must be below the limit by the turn-on
+        margin, since the window after a decision still holds some of the
+        consumption from before its commands.
         """
         general = self._config.general
         limit_w = general.power_limit_w
@@ -406,11 +373,6 @@ class RegulationEngine:
         return reserve_w is None or average_w + reserve_w <= limit_w
 
     def _has_waited(self, slot: Slot, now: datetime, average_w: float) -> bool:
-        """Start or continue the waiting time for the slot.
-
-        The waiting time is calculated again at each decision from the
-        average at that decision, unless the slot cycles persistently.
-        """
         waiting = self._state.waiting
         started_at = (
             waiting.started_at
@@ -436,10 +398,7 @@ class RegulationEngine:
     def _switch(
         self, key: Hashable, turn_on: bool, now: datetime | None = None
     ) -> list[Command]:
-        """Return the commands that switch the slot and record it as switched.
-
-        `now` is needed only to turn on the first fictive appliance of a charger.
-        """
+        """`now` is needed only to turn on the first fictive appliance of a charger."""
         match key:
             case ApplianceSlotKey(appliance_id):
                 self._record_switch(key, turn_on)
@@ -459,11 +418,7 @@ class RegulationEngine:
         raise TypeError(f"Unknown slot {key!r}")
 
     def _deactivate_others(self, charger_id: str) -> list[Command]:
-        """Deactivate the other chargers before one is activated.
-
-        Only when one charger at a time may charge. This is an exception from
-        one slot per decision.
-        """
+        """Deactivate the other chargers, an exception to one slot per decision."""
         if not self._config.charging.one_at_a_time:
             return []
         commands: list[Command] = []
@@ -475,11 +430,6 @@ class RegulationEngine:
     def _set_fictive_on(
         self, charger_id: str, count: int, now: datetime | None = None
     ) -> list[Command]:
-        """Switch the fictive appliances of the charger so `count` are on.
-
-        Each fictive appliance that changes counts as switched.
-        `now` is needed only when the charger is activated.
-        """
         charging = self._state.charging
         before = charging.fictive_on[charger_id]
         turn_on = count > before
@@ -492,12 +442,7 @@ class RegulationEngine:
         return commands
 
     def _charger_commands(self, charger: Charger, count: int) -> list[Command]:
-        """Return the commands that give the charger `count` fictive appliances on.
-
-        The current is always set first. A charger with none on is set to the
-        minimum current and then deactivated. Activating it
-        is added by the caller after the current.
-        """
+        """Return the commands for the charger, always setting the current first."""
         commands: list[Command] = [
             SetChargingCurrent(charger.id, charging_current(charger, count))
         ]

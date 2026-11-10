@@ -39,7 +39,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   /** The entities of the other appliances and chargers, which cannot be chosen. */
   @property({ attribute: false }) usedEntities: string[] = [];
 
-  /** The errors the backend gave for the item when the draft was last saved. */
   @property({ attribute: false }) saveErrors: Issue[] = [];
 
   @property({ type: Boolean }) locked = false;
@@ -81,7 +80,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
-  /** The entity of the item, which gives it its name. */
   protected renderEntity(issues: Issue[]) {
     const schema = [{ name: "entity_id", required: true, selector: { entity: { exclude_entities: this.usedEntities } } }];
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
@@ -109,7 +107,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
-  /** An `ha-form` for fields of the item, whose changes are given to `changed`. */
   protected renderForm(
     schema: FormField[],
     issues: Issue[],
@@ -138,7 +135,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
-  /** A number field with the limits from `kraftvakt/capabilities`. */
   protected numberField(name: string, unit: string, required: boolean): FormField {
     const range = this.capabilities.limits[this.section][name];
     return {
@@ -160,7 +156,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.localize(`${this.texts}.fields.${field}.label` as TranslationKey);
   }
 
-  /** The help text of the field, with the limits and the default of the field, if it has one. */
   protected helper(field: string): string {
     const key = `${this.texts}.fields.${field}.helper` as TranslationKey;
     const text = this.localize(key);

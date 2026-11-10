@@ -16,11 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def context_variables(hass: HomeAssistant, entity_id: str | None) -> dict[str, Any]:
-    """Return the variables every template and action gets.
-
-    `entity` is the state object of the entity as it is now, or None when the
-    entity is not in the state machine.
-    """
+    """Return the variables every template and action gets."""
     return {
         "entity_id": entity_id,
         "entity": None if entity_id is None else hass.states.get(entity_id),
@@ -32,10 +28,9 @@ def evaluate_condition(
 ) -> bool:
     """Return whether the condition is true right now.
 
-    An entity is true only when it is on, and a template only when it renders
-    the boolean value true. Everything else, also an unavailable entity and a
-    template that fails, is false. `entity_id` is the entity of the
-    appliance or charger the condition belongs to.
+    Only an entity that is on and a template that renders the boolean true are
+    true. Everything else is false, also an unavailable entity and a template
+    that fails.
     """
     if condition.type is ConditionType.ENTITY:
         state = hass.states.get(condition.value)

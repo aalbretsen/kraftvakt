@@ -8,7 +8,6 @@ from datetime import timedelta
 from enum import Enum, auto
 from typing import Final
 
-# Lets rounding errors in the sum count as paid back.
 PAID_BACK_TOLERANCE_WH: Final = 1e-6
 SECONDS_PER_HOUR: Final = 3600
 
@@ -24,10 +23,7 @@ class PenaltyOutcome(Enum):
 
 @dataclass(frozen=True, slots=True)
 class PenaltyLimits:
-    """The settings that decide overconsumption and penalty.
-
-    `window` is the regulation window that each regulation average covers.
-    """
+    """The settings that decide overconsumption and penalty."""
 
     power_limit_w: float
     threshold_w: float
@@ -36,11 +32,7 @@ class PenaltyLimits:
 
 @dataclass(slots=True)
 class PenaltyState:
-    """The overconsumption state and the penalty period.
-
-    A new state with default values is created at each start, so a
-    penalty only ends by being paid back here or by a restart.
-    """
+    """The overconsumption state and the penalty period."""
 
     overconsuming: bool = False
     overconsumption_wh: float = 0.0
@@ -53,11 +45,7 @@ class PenaltyState:
         capacity_average_w: float,
         regulation_averages_w: Sequence[float],
     ) -> PenaltyOutcome:
-        """Count the overconsumption and decide on the penalty at a decision.
-
-        `regulation_averages_w` holds every regulation average computed since
-        the previous decision, oldest first.
-        """
+        """Count the overconsumption and decide on the penalty at a decision."""
         if self.overconsuming:
             self._count(limits, regulation_averages_w)
             if self.overconsumption_wh <= PAID_BACK_TOLERANCE_WH:
@@ -88,9 +76,8 @@ class PenaltyState:
     ) -> None:
         """Add the net energy over the limit of each regulation average.
 
-        Energy under the limit only comes from a regulation average under the
-        limit, so during a penalty nothing is subtracted before the recovery
-        starts at the first such average, and it goes on net from then.
+        During a penalty nothing is subtracted before the first regulation average
+        under the limit, and from then on it counts net.
         """
         hours = limits.window.total_seconds() / SECONDS_PER_HOUR
         for average_w in regulation_averages_w:

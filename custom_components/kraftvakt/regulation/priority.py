@@ -13,10 +13,7 @@ from .waiting import CyclingSteps
 def current_variant(
     appliance: Appliance, variant_conditions: Mapping[str, bool]
 ) -> str | None:
-    """Return the id of the current variant, or None for the appliance itself.
-
-    The current variant is the one with the topmost true condition.
-    """
+    """Return the variant with the topmost true condition, or None for the appliance."""
     return next(
         (
             variant.id
@@ -34,12 +31,7 @@ def build_slots(
     cycling: CyclingSteps,
     charger_slots: Sequence[Slot] = (),
 ) -> list[Slot]:
-    """Return the slots in priority order, highest priority first.
-
-    Only the entry of the current variant of each appliance gets a slot, with
-    the appliances' `cycling` steps. The EV charging entry is replaced by
-    `charger_slots`.
-    """
+    """Return the slots in priority order, highest priority first."""
     appliances = {appliance.id: appliance for appliance in config.appliances}
     slots: list[Slot] = []
     for entry in config.priority:
@@ -71,15 +63,7 @@ def fictive_slots(
     bypassed: Collection[str],
     cycling: CyclingSteps,
 ) -> list[Slot]:
-    """Return the fictive appliances of the chargers, interleaved.
-
-    `chargers` are in the current charging priority. Each charger gets its
-    first fictive appliance in that order, then its second, and so on. Only the
-    first one has the power reserve of the charger. Only chargers in
-    `may_charge` can get more turned on, chargers `on_trial` only their first,
-    and the fictive appliances of bypassed chargers are not switched off above
-    the limit. All get the fictive appliances' `cycling` steps.
-    """
+    """Return the fictive appliances of the chargers, interleaved."""
     rounds = max(map(fictive_appliance_count, chargers), default=0)
     return [
         Slot(

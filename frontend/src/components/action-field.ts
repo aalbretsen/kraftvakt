@@ -15,13 +15,11 @@ const DEFAULT_SERVICES: Record<string, string> = {
 };
 
 /**
- * An action as the default action for the entity, the default action for
- * another chosen entity, or a custom one.
+ * An action as the default action for the entity, the default action of another
+ * entity, or a custom one made with Home Assistant's action editor.
  *
- * «Standard» is offered only when the domain of the entity has a default
- * action, and «Entity» only when `entityDomains` is given. The custom action
- * uses Home Assistant's action editor. Kept in one place, since the action
- * editor may change between versions. Fires `value-changed` with the new action.
+ * Kept in one place, since the action editor may change between versions.
+ * Fires `value-changed` with the new action.
  */
 @customElement("kraftvakt-action-field")
 export class KraftvaktActionField extends LitElement {

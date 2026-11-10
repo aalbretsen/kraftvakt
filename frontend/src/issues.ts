@@ -54,7 +54,6 @@ export function describeIssue(issue: Issue, config: ConfigResponse | undefined, 
   return localize(ISSUE_TEXTS[issue.code] ?? "missing.unknown", params);
 }
 
-/** Return the name of the appliance or charger the issue is about. */
 function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
   const items = issue.section === "chargers" ? config?.config.charging.chargers : config?.config.appliances;
   const entityId = items?.find((item) => item.id === issue.target)?.entity_id;

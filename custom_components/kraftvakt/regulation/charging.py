@@ -1,9 +1,4 @@
-"""Rules for the EV chargers.
-
-The regulation sees a charger as fictive appliances, one per ampere.
-This module decides which chargers may charge, which are bypassed or waiting,
-and in which order they get their fictive appliances turned on.
-"""
+"""Rules for the EV chargers, one fictive appliance per ampere."""
 
 from __future__ import annotations
 
@@ -27,11 +22,7 @@ RETRY_PAUSES: Final = (
 class ChargerReading:
     """What a decision knows about a charger.
 
-    `charge_power_w` is None when the charging power has no valid value.
-    `car_connected` is None when the setting is not given.
-    `excluded` and `window_override` are the user's switches, and
-    `override_switched_on_at` tells when the override was switched
-    on, or None when that is not known.
+    None means that the value is not valid or not given.
     """
 
     charge_power_w: float | None = None
@@ -43,16 +34,7 @@ class ChargerReading:
 
 @dataclass(frozen=True, slots=True)
 class ChargerStatus:
-    """How a charger stands after the last decision.
-
-    `current_a` is None while the charger is deactivated. `excluded` tells
-    whether the charger was excluded from the regulation, and is None
-    until the first decision. `charging` tells whether the charger is
-    activated and was actively charging at the last decision, and
-    `window_overridden` whether it was allowed to charge only because its
-    charging window is overridden. `car_connected` is «car connected» at the
-    last decision, and None when it is not given or before the first decision.
-    """
+    """How a charger stands after the last decision."""
 
     fictive_on: int
     current_a: int | None
@@ -71,20 +53,15 @@ def fictive_appliance_count(charger: Charger) -> int:
 
 
 def charging_current(charger: Charger, fictive_on: int) -> int:
-    """Return the current for the number of fictive appliances that are on.
-
-    It is the minimum current plus the fictive appliances that are on, minus
-    one. A deactivated charger is set to the minimum current.
-    """
+    """Return the current for the number of fictive appliances that are on."""
     return charger.min_current_a + max(fictive_on, 1) - 1
 
 
 def actively_charging(reading: ChargerReading) -> bool:
     """Return whether the charger counts as actively charging.
 
-    The charging power is proof that the charger does not charge. Without a
-    valid value there is no proof, so the charger counts as charging, also when
-    it is deactivated.
+    Without a valid charging power there is no proof that the charger does not
+    charge, so it counts as charging, also when it is deactivated.
     """
     power_w = reading.charge_power_w
     return power_w is None or power_w > ACTIVELY_CHARGING_ABOVE_W
@@ -92,11 +69,7 @@ def actively_charging(reading: ChargerReading) -> bool:
 
 @dataclass(frozen=True, slots=True)
 class Rest:
-    """A charger that did not charge, and when it may be tried again.
-
-    `count` tells how many rests in a row the charger has had without
-    charging, starting at 0.
-    """
+    """A charger that did not charge, and when it may be tried again."""
 
     until: datetime
     count: int
@@ -110,11 +83,7 @@ class Rest:
 
 
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
-    """Return whether the time of day is inside the window.
-
-    The start is inside and the end is not. A window whose end is before its
-    start reaches across midnight.
-    """
+    """Return whether the time of day is inside the window, which may span midnight."""
     if window.start < window.end:
         return window.start <= local_time < window.end
     return local_time >= window.start or local_time < window.end
@@ -123,10 +92,7 @@ def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
 def charging_window_started(
     window: ChargingWindow, after: datetime, until: datetime, time_zone: tzinfo
 ) -> bool:
-    """Return whether the window started after `after` and no later than `until`.
-
-    The start of the window is a time of day in `time_zone`.
-    """
+    """Return whether the window started after `after` and no later than `until`."""
     day = after.astimezone(time_zone).date()
     last_day = until.astimezone(time_zone).date()
     while day <= last_day:
@@ -145,11 +111,8 @@ def override_expired(
 ) -> bool:
     """Return whether the override of the charging window has ended.
 
-    It ends when a charging window has started after it was switched on, also
-    when the regulation was stopped or in the safe state meanwhile. The start
-    of the regulation counts only when the time it was switched on is not
-    known. An override has no effect, and does not end, for a charger without
-    a charging window.
+    The start of the regulation counts only when the time the override was
+    switched on is not known, as after a restart of Home Assistant.
     """
     window = charger.charging_window
     if window is None or not reading.window_override:
@@ -161,12 +124,7 @@ def override_expired(
 def allowed_to_charge(
     charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
 ) -> bool:
-    """Return whether the charger is allowed to charge.
-
-    A charger excluded from the regulation never charges. Otherwise it may
-    charge without a charging window, inside it, or while the window is
-    overridden.
-    """
+    """Return whether the charger is allowed to charge."""
     if reading.excluded:
         return False
     window = charger.charging_window
@@ -176,11 +134,7 @@ def allowed_to_charge(
 def window_overridden(
     charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
 ) -> bool:
-    """Return whether the charger may charge only because of the override.
-
-    That is outside its charging window while the override is active, and
-    when it is not excluded from the regulation.
-    """
+    """Return whether the charger may charge only because of the override."""
     window = charger.charging_window
     return (
         not reading.excluded
@@ -194,17 +148,8 @@ def window_overridden(
 class ChargingState:
     """What the regulation keeps track of for the chargers while it runs.
 
-    `priority` is the current charging priority, highest first.
-    `fictive_on` counts the fictive appliances that are on per charger, and
-    `activated_at` tells when the first one was turned on. The rest is the
-    result of the last evaluation: the chargers that are excluded from the
-    regulation (None before the first evaluation), allowed to charge, allowed
-    only because the charging window is overridden, activated and actively
-    charging, bypassed, may get more fictive appliances turned on, are on
-    trial, and are waiting, and «car connected» per charger. A charger
-    on trial may charge but does not charge actively, so it may only get its
-    first fictive appliance. `rests` holds the chargers that did not charge and
-    when they may be tried again.
+    A charger on trial may charge but does not charge actively, so it may only
+    get its first fictive appliance.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -238,7 +183,7 @@ class ChargingState:
     ) -> None:
         """Record how many fictive appliances of the charger are on.
 
-        `now` is when the charger is activated, and is needed only then.
+        `now` is needed only when the charger is activated.
         """
         if count == 0:
             self.activated_at.pop(charger_id, None)
@@ -258,12 +203,7 @@ class ChargingState:
         one_at_a_time: bool,
         overridden: Collection[str] = (),
     ) -> list[str]:
-        """Evaluate the chargers at a decision and return the newly bypassed ones.
-
-        `chargers` are in the configured charging priority, `allowed` are
-        the chargers allowed to charge, and `overridden` those allowed only
-        because their charging window is overridden.
-        """
+        """Evaluate the chargers at a decision and return the newly bypassed ones."""
         self.excluded = {
             charger.id
             for charger in chargers
@@ -315,13 +255,6 @@ class ChargingState:
         now: datetime,
         window: timedelta,
     ) -> list[str]:
-        """Find the chargers that do not draw power.
-
-        A charger is bypassed when no car is connected, or when it does not
-        charge although its first fictive appliance has been on for at least
-        two regulation windows. A charger that did not charge rests: it stays
-        bypassed, also after it is deactivated, until it may be tried again.
-        """
         bypassed = set()
         for charger in chargers:
             reading = readings.get(charger.id, ChargerReading())
@@ -344,10 +277,8 @@ class ChargingState:
     ) -> bool:
         """Update the rest of the charger and return whether it is bypassed.
 
-        Settled with the owner: without a rest, two chargers with full cars
-        took turns being activated forever when only one may charge at a time.
-        A rest ends early when the car is disconnected, so a car that is
-        connected again is tried at once, and when the charger charges.
+        Settled with the owner: without a rest, two chargers with full cars take
+        turns being activated forever when only one may charge at a time.
         """
         activated_at = self.activated_at.get(charger_id)
         charges = activated_at is not None and actively_charging(reading)
@@ -368,12 +299,10 @@ class ChargingState:
     def _update_priority(
         self, chargers: Sequence[Charger], newly_bypassed: Sequence[str]
     ) -> None:
-        """Update the current charging priority.
+        """Move newly bypassed chargers to the back until a charger is full.
 
-        A charger that becomes bypassed moves to the back and stays there until
-        the priority is corrected. The priority is corrected back to the
-        configured one for the chargers that are not bypassed when a charger has
-        all its fictive appliances on. Bypassed chargers stay at the back.
+        The configured order comes back for the chargers that are not bypassed
+        when a charger has all its fictive appliances on.
         """
         self.priority = [
             charger_id
@@ -395,10 +324,8 @@ class ChargingState:
     def _update_on_trial(self, readings: Mapping[str, ChargerReading]) -> None:
         """Find the chargers that may charge but do not charge actively.
 
-        Settled with the owner after the exploratory test: a charger that was
-        tried without a car that charges got more current during the two
-        windows before it was bypassed, and held back the appliances below
-        «EV charging».
+        Settled with the owner: a charger tried without a car that charges must
+        not get more current and hold back the appliances below «EV charging».
         """
         self.on_trial = {
             charger_id
@@ -411,13 +338,8 @@ class ChargingState:
     ) -> None:
         """Decide which chargers may get fictive appliances turned on.
 
-        Several at once: every charger that is allowed and not bypassed. One at a time:
-        a charger that charges actively goes first,
-        whether or not it may charge, and the others wait.
-        Of several that charge, the activated one goes first, otherwise the
-        first in the current priority. When none charges, the first in the
-        current priority that is allowed. Bypassed chargers do not
-        stand in the way of others.
+        With one charger at a time, a charger that charges actively goes first,
+        also when it is not allowed to charge, and the others wait.
         """
         candidates = [
             charger_id

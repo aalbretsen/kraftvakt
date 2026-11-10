@@ -36,7 +36,7 @@ export class KraftvaktLockedBanner extends LitElement {
     `;
   }
 
-  /** Stop the regulation the same way as the status page does. The status subscription unlocks the pages. */
+  /** The status subscription unlocks the pages. */
   private async stop(): Promise<void> {
     this.stopping = true;
     this.error = undefined;

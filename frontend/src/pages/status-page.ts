@@ -181,7 +181,6 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** What the status page shows in addition while the regulation runs. */
   private renderRunning(status: StatusSnapshot) {
     const language = this.hass.language;
     const overLimit = (value: number | null) => value !== null && value > status.power_limit_w;
@@ -209,7 +208,6 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** «Next decision» and a ring that empties until it, with the time as a tooltip. */
   private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
     const end = Date.parse(nextDecisionAt);
     const interval = status.regulation_window_s * status.regulation_interval * 1000;
@@ -257,7 +255,6 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** The averages as bars against the power limit. */
   /**
    * The consumption now as a bar, with a triangle for each average and the
    * power limit, and a scale in whole kW with a value at every second tick
@@ -307,10 +304,6 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /**
-   * The appliances in order of priority, with the EV chargers grouped at the
-   * place of «EV charging», and a line under the last entry that is on.
-   */
   private renderPriorityCard(status: StatusSnapshot) {
     const entries = priorityEntries(status);
     const cutAfter = cutOffIndex(entries);
@@ -362,7 +355,6 @@ export class KraftvaktStatusPage extends LitElement {
       : html`<ha-svg-icon class="device-icon ${on}" .path=${mdiFlash}></ha-svg-icon>`;
   }
 
-  /** The «EV charging» entry, with each EV charger in the current charging priority under it. */
   private renderEvCharging(chargers: ChargerStatus[], rank: number) {
     const charging = chargers.filter((charger) => charger.charging).length;
     return html`

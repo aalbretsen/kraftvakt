@@ -53,7 +53,6 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     return html`${this.renderWaitCurveCard()} ${this.renderCyclingCard()}`;
   }
 
-  /** Sliders for the waiting time curve, and the curve as a table and a graph that follow them. */
   private renderWaitCurveCard() {
     return html`
       <ha-card .header=${this.localize("advanced.wait_curve")}>
@@ -164,11 +163,6 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     }
   }
 
-  /**
-   * The waiting time curve as a table and a graph, as the sliders are moved,
-   * with the power limit, the waiting time at the limit and the decision
-   * interval in the draft.
-   */
   private renderWaitCurve() {
     const general = this.config.general;
     const curve = waitingCurve(general.wait_curve_steepness, general.wait_curve_pivot);

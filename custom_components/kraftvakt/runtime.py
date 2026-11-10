@@ -82,17 +82,9 @@ class RegulationRunningError(HomeAssistantError):
 class KraftvaktRuntime:
     """Measures the power sensor and runs the regulation.
 
-    The windows keep their own cadence from the start of the runtime, also
-    while the regulation is stopped. Every closed window is
-    passed to the window listeners. While the regulation runs, a decision is
-    made each time the N-th window that started after the start or the last
-    decision has closed, where N is the regulation interval.
-    Decisions are made only then, also for the charging power, the
-    car connected and the charger switches. The status listeners are called
-    after every window, decision, start and stop.
-
-    The power limit can be changed while the regulation runs. The regulation
-    then starts again with the new limit at the next decision.
+    The windows keep their own cadence, also while the regulation is stopped. A
+    decision is made when the N-th window that started after the start or the
+    last decision has closed, where N is the regulation interval.
     """
 
     def __init__(
@@ -215,10 +207,7 @@ class KraftvaktRuntime:
 
     @property
     def waiting_ends_at(self) -> datetime | None:
-        """Return the decision that ends the waiting time, if one runs.
-
-        It is the first decision at or after the end of the waiting time.
-        """
+        """Return the first decision at or after the end of the waiting time, if any."""
         waiting = self._engine.waiting
         next_decision_at = self.next_decision_at
         if waiting is None or next_decision_at is None:
@@ -254,11 +243,9 @@ class KraftvaktRuntime:
     def async_start(self) -> None:
         """Start measuring, and start the regulation if it can.
 
-        When Home Assistant is running, as after a reload, the regulation starts
-        at the same moment as the first window, so the first decision comes
-        after one whole regulation interval. While Home Assistant starts, the
-        regulation waits until it has started, so that the integrations of the
-        appliances are loaded before they are turned off.
+        While Home Assistant starts, the regulation waits until it has started, so
+        that the integrations of the appliances are loaded before they are turned
+        off.
         """
         self._follow_power_sensor(self._created_at)
         self._history_task = self._hass.async_create_background_task(
@@ -282,11 +269,6 @@ class KraftvaktRuntime:
             self._start_regulation(now)
 
     def _forget_start_when_started(self) -> None:
-        """Forget the start when Home Assistant has started.
-
-        The user has started or stopped the regulation before that, or the
-        runtime is shut down.
-        """
         if self._cancel_start_when_started:
             self._cancel_start_when_started()
             self._cancel_start_when_started = None
@@ -307,10 +289,9 @@ class KraftvaktRuntime:
 
     @callback
     def async_start_regulation(self) -> None:
-        """Turn everything off at once and start the regulation.
+        """Start the regulation with everything off, if it does not run.
 
-        Does nothing if the regulation already runs. Raises
-        ConfigIncompleteError if the configuration is not complete.
+        Raises ConfigIncompleteError if the configuration is not complete.
         """
         if self._engine.running:
             return
@@ -323,8 +304,7 @@ class KraftvaktRuntime:
     def async_stop_regulation(self) -> None:
         """Stop the regulation and turn everything off at once.
 
-        The stopped engine uses the stored configuration, also a power limit
-        changed while the regulation ran.
+        The new engine picks up a power limit changed while the regulation ran.
         """
         self._forget_start_when_started()
         if not self._engine.running:
@@ -337,11 +317,8 @@ class KraftvaktRuntime:
     async def async_save_config(self, config: KraftvaktConfig) -> None:
         """Save a new configuration and use it from the next start.
 
-        Only while the regulation is stopped, so nothing is on and nothing is
-        lost from the state of the regulation. The averages go on: a
-        new power sensor is followed from now, and a new regulation window
-        applies from the next window. Raises RegulationRunningError while the
-        regulation runs.
+        The averages go on, also with a new power sensor or window length. Raises
+        RegulationRunningError while the regulation runs.
         """
         if self._engine.running:
             raise RegulationRunningError
@@ -361,10 +338,9 @@ class KraftvaktRuntime:
     async def async_set_power_limit(self, power_limit_w: int) -> None:
         """Save a new power limit, also while the regulation runs.
 
-        While the regulation runs, it starts again with the new limit at the
-        next decision. Settled with the owner: several changes before that
-        give one restart, and a limit changed back to the one in use gives
-        none. A limit equal to the stored one changes nothing.
+        Settled with the owner: while it runs, the regulation starts again with the
+        new limit at the next decision, so several changes give one restart and a
+        limit changed back to the one in use gives none.
         """
         general = self._config.general
         if power_limit_w == general.power_limit_w:
@@ -398,7 +374,6 @@ class KraftvaktRuntime:
         self._notify_status()
 
     def _follow_power_sensor(self, now: datetime) -> None:
-        """Measure the configured power sensor from `now` on."""
         if self._cancel_power_listener:
             self._cancel_power_listener()
             self._cancel_power_listener = None
@@ -412,10 +387,6 @@ class KraftvaktRuntime:
             )
 
     async def _async_add_power_history(self) -> None:
-        """Fill the hour before the start from the recorder's power sensor history.
-
-        Without a recorder or history, the first measurement fills it instead.
-        """
         power_sensor = self._config.general.power_sensor
         if not power_sensor or "recorder" not in self._hass.config.components:
             return
@@ -466,10 +437,8 @@ class KraftvaktRuntime:
     def _decision_is_due(self) -> bool:
         """Return whether enough windows have closed since the start.
 
-        Windows that started before the start of the regulation do not count.
-        The engine may start the regulation again itself at a decision, after
-        the safe state or a penalty. It then starts at the end of the last
-        window, so the windows after it count from the next one.
+        Windows that started before the start do not count, also when the engine
+        starts again itself at a decision after the safe state or a penalty.
         """
         return (
             self._windows_counted_since_decision()
@@ -485,14 +454,12 @@ class KraftvaktRuntime:
         )
 
     def _decide_or_restart(self, averages: WindowAverages) -> None:
-        """Make a decision, or start again when the power limit has changed."""
         if self._engine.power_limit_w == self._config.general.power_limit_w:
             self._decide(averages)
         else:
             self._restart_with_new_power_limit(averages.end)
 
     def _restart_with_new_power_limit(self, now: datetime) -> None:
-        """Start the regulation again with the power limit changed while it ran."""
         _LOGGER.info(
             "The power limit changed from %s W to %s W, the regulation starts again",
             self._engine.power_limit_w,
@@ -502,7 +469,6 @@ class KraftvaktRuntime:
         self._start_regulation(now)
 
     def _decide(self, averages: WindowAverages) -> None:
-        """Make a decision based on the windows closed since the previous one."""
         decision = DecisionInput(
             now=averages.end,
             regulation_average_w=averages.regulation_average_w,
@@ -524,7 +490,6 @@ class KraftvaktRuntime:
         self._execute(commands)
 
     def _log_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
-        """Log what a decision was based on and what it decided, for debugging."""
         if not _LOGGER.isEnabledFor(logging.DEBUG):
             return
         penalty = self._engine.penalty
@@ -547,7 +512,6 @@ class KraftvaktRuntime:
         )
 
     def _power_sensor_lost(self) -> bool:
-        """Return whether the sensor was invalid at the last two closes."""
         return len(self._recent_windows) == self._recent_windows.maxlen and not any(
             window.sensor_valid for window in self._recent_windows
         )
@@ -562,7 +526,6 @@ class KraftvaktRuntime:
         }
 
     def _charger_readings(self) -> dict[str, ChargerReading]:
-        """Read the chargers at a decision."""
         if not self._config.charging.enabled:
             return {}
         return {
@@ -601,10 +564,6 @@ class KraftvaktRuntime:
         )
 
     def _execute(self, commands: Sequence[Command]) -> None:
-        """Carry out the commands, the actions in the background after earlier ones.
-
-        A window override that has ended is switched off at once.
-        """
         actions = []
         for command in commands:
             if isinstance(command, ResetWindowOverride):
@@ -624,10 +583,7 @@ class KraftvaktRuntime:
 def first_decision_from(
     moment: datetime, next_decision_at: datetime, interval: timedelta
 ) -> datetime:
-    """Return the first decision at or after `moment`.
-
-    Decisions are `interval` apart from the next decision on.
-    """
+    """Return the first decision at or after `moment`."""
     if moment <= next_decision_at:
         return next_decision_at
     return next_decision_at + interval * math.ceil(
@@ -636,10 +592,8 @@ def first_decision_from(
 
 
 def _rounded(power_w: float | None) -> int | None:
-    """Return a power rounded to watts for the log."""
     return None if power_w is None else round(power_w)
 
 
 def _power_of(state: State) -> float | None:
-    """Return the power a power sensor state gives in W, or None if invalid."""
     return power_w(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))

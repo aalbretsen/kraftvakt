@@ -453,9 +453,8 @@ async def test_charger_name_when_the_entity_has_no_state(hass: HomeAssistant) ->
 
 
 async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
-    """Found in the exploratory test: the charger was named «Lader A Charging
-    allowed» after the entity that allows charging. A name the user gave the
-    device wins, and an entity without a device keeps its own name."""
+    """A name the user gave the device wins, and an entity without a device
+    keeps its own name."""
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(

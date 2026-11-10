@@ -1,7 +1,7 @@
 """Configuration model for Kraftvakt.
 
-The configuration is everything the user sets up in the panel. It is
-immutable: a change is made by building a new configuration and saving it.
+The configuration is immutable: a change is made by building a new
+configuration and saving it.
 """
 
 from __future__ import annotations
@@ -57,8 +57,6 @@ APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
 CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
 CHARGING_CURRENT_A = Range(1, None, 1)
 
-# The ranges of the settings, by section and field, used both to validate the
-# configuration and to tell the panel the limits.
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "general": {
         "power_limit_w": POWER_LIMIT_W,
@@ -86,8 +84,8 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
 class ActionMode(StrEnum):
     """How an action is given.
 
-    The default action for the entity, a custom action, or the default action
-    for another entity, which only setting the charging current offers.
+    `ENTITY` runs the default action of another entity, and is offered only for
+    setting the charging current.
     """
 
     DEFAULT = "default"
@@ -364,13 +362,7 @@ class ChargerSwitches:
 
 @dataclass(frozen=True, slots=True)
 class Issue:
-    """A validation error or a missing setting.
-
-    ``section`` is the part of the configuration (``general``, ``appliances``,
-    ``priority``, ``charging`` or ``chargers``), ``target`` the id of an appliance
-    or charger, and ``field`` the setting, with ``variants.<id>`` in front for a
-    variant.
-    """
+    """A validation error or a missing setting."""
 
     code: str
     section: str
@@ -404,12 +396,10 @@ def new_id() -> str:
 def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
-    Missing entries in the priority list are added at the bottom.
-    Raises ConfigValidationError with every issue found if the configuration
-    is invalid. A value of the wrong type is read as the default, so the other
-    rules are still checked, but not again for that value. An incomplete
-    configuration is valid. Must be called from the event loop, since Home
-    Assistant validates templates there.
+    Raises ConfigValidationError with every issue found. Settled with the
+    owner: a value of the wrong type is read as the default, so the other rules
+    are still checked. Must be called from the event loop, since Home Assistant
+    validates templates there.
     """
     reader = _Reader()
     config = _complete_priority(reader.config(data))
@@ -427,8 +417,8 @@ def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
 def validate_config(config: KraftvaktConfig) -> list[Issue]:
     """Return every rule the configuration breaks.
 
-    The syntax of custom actions and templates is checked separately by
-    action_and_template_issues, since it needs the event loop.
+    The syntax of custom actions and templates is checked by
+    `action_and_template_issues()`, since it needs the event loop.
     """
     return [
         *_general_issues(config.general),
@@ -475,9 +465,9 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
 def missing_items(config: KraftvaktConfig) -> list[Issue]:
     """Return what is missing before the regulation can start.
 
-    Chargers count only while charging is enabled. When only one charger
-    may charge at a time, each charger needs «car connected». Without it,
-    chargers without a car would take turns being activated.
+    When only one charger may charge at a time, each charger needs «car
+    connected». Without it, chargers without a car would take turns being
+    activated.
     """
     missing = []
     if config.general.power_sensor is None:
@@ -526,11 +516,7 @@ def charger_switches_from_dict(
 def charger_switches_for(
     config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]
 ) -> dict[str, ChargerSwitches]:
-    """Return the switches for exactly the chargers in the configuration.
-
-    Chargers without stored switches get the default positions, and switches
-    for chargers that are no longer configured are left out.
-    """
+    """Return the switches for exactly the chargers in the configuration."""
     return {
         charger.id: switches.get(charger.id, ChargerSwitches())
         for charger in config.charging.chargers
@@ -559,8 +545,6 @@ _TIME_PATTERN = re.compile(r"(\d{1,2}):(\d{2})(?::(\d{2}))?")
 
 @dataclass(frozen=True, slots=True)
 class _Location:
-    """Where in the configuration a value is read from."""
-
     section: str
     target: str | None = None
     prefix: str = ""
@@ -573,8 +557,8 @@ class _Location:
 class _Reader:
     """Reads JSON-friendly data into the model and collects type errors.
 
-    The data comes from the panel and may be normalized by Home Assistant's
-    editors, so missing and empty values are tolerated and get defaults.
+    Home Assistant's editors may normalize the data from the panel, so missing
+    and empty values are tolerated and get defaults.
     """
 
     def __init__(self) -> None:
@@ -971,10 +955,6 @@ def _entity_format_issues(
 def _ranges_issues(
     location: _Location, item: GeneralConfig | Appliance | Charger
 ) -> list[Issue]:
-    """Check the settings of the item that have a range in SETTING_RANGES.
-
-    Optional settings that are not given are not checked.
-    """
     return [
         issue
         for field_name, value_range in SETTING_RANGES[location.section].items()
@@ -999,7 +979,6 @@ def _duplicate_ids(items: Iterable[Appliance | Variant | Charger]) -> list[str]:
 
 
 def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Each entity may identify only one appliance or charger."""
     owners = [
         *(("appliances", item.id, item.entity_id) for item in config.appliances),
         *(("chargers", item.id, item.entity_id) for item in config.charging.chargers),
@@ -1013,10 +992,6 @@ def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
-    """The priority list holds every appliance and variant exactly once.
-
-    It holds EV charging exactly once when charging is enabled.
-    """
     expected = _expected_priority(config)
     counts = Counter(config.priority)
     issues = []
@@ -1044,7 +1019,6 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def _complete_priority(config: KraftvaktConfig) -> KraftvaktConfig:
-    """Add missing entries at the bottom of the priority list."""
     missing = [
         entry for entry in _expected_priority(config) if entry not in config.priority
     ]

@@ -13,6 +13,7 @@ from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
 
 async def test_setup_and_unload_registers_panel(hass: HomeAssistant) -> None:
+    """Setting up again must not register the static path twice."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
 
@@ -26,7 +27,6 @@ async def test_setup_and_unload_registers_panel(hass: HomeAssistant) -> None:
     assert entry.state is ConfigEntryState.NOT_LOADED
     assert PANEL_URL_PATH not in hass.data["frontend_panels"]
 
-    # Reload skal ikke feile på dobbel registrering av statisk sti.
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED

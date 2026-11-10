@@ -10,11 +10,7 @@ import { ItemDialog } from "./item-dialog";
 const ENTITY_VARIABLES = ["entity_id", "entity"];
 const CURRENT_VARIABLES = ["current", "min_current", "max_current", ...ENTITY_VARIABLES];
 
-/**
- * Adds or edits one EV charger: its entity, the actions for allowed charging
- * and the charging current, the limits of the current, the charging power,
- * the power reserve, «car connected» and the charging window.
- */
+/** Adds or edits one EV charger. */
 @customElement("kraftvakt-charger-dialog")
 export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   protected readonly section = "chargers";
@@ -23,7 +19,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected readonly actionFields = ["activate", "deactivate", "set_current"] as const;
 
-  /** Whether only one EV charger may charge at a time, which requires «car connected». */
   @property({ type: Boolean }) oneAtATime = false;
 
   protected errors(): Issue[] {
@@ -79,10 +74,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /**
-   * «Car connected», where true means that a car is connected.
-   * Optional unless only one EV charger may charge at a time.
-   */
   private renderCarConnected(issues: Issue[]) {
     const issue = issues.find((item) => item.field === "car_connected");
     const label = this.oneAtATime ? "charger.car_connected_required" : "charger.car_connected_optional";
@@ -105,7 +96,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /** The optional charging window, with start and end in whole minutes. */
   private renderChargingWindow(issues: Issue[]) {
     const window = this.draft.charging_window;
     const schema = [

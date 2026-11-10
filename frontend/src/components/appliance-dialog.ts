@@ -11,10 +11,7 @@ import { ItemDialog } from "./item-dialog";
 
 const ACTION_VARIABLES = ["entity_id", "entity"];
 
-/**
- * Adds or edits one appliance: its entity, its actions, its power reserve and
- * its variants.
- */
+/** Adds or edits one appliance. */
 @customElement("kraftvakt-appliance-dialog")
 export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected readonly section = "appliances";

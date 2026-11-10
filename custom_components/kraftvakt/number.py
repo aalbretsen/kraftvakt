@@ -26,11 +26,7 @@ async def async_setup_entry(
 
 
 class PowerLimitNumber(KraftvaktEntity, NumberEntity):
-    """The stored power limit, the same as in the panel.
-
-    A change is saved at once. While the regulation runs, it starts again with
-    the new limit at the next decision.
-    """
+    """The stored power limit, the same as in the panel."""
 
     _attr_device_class = NumberDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT

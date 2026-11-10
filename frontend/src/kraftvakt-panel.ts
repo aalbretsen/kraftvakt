@@ -39,13 +39,7 @@ const TAB_ICONS: Record<Page, string> = {
   advanced: mdiTune,
 };
 
-/**
- * The Kraftvakt panel in the Home Assistant sidebar.
- *
- * Home Assistant sets `hass`, `narrow`, `route` and `panel` on the element. The
- * panel shows a top menu with a tab for each page and the page that
- * the route points to.
- */
+/** The Kraftvakt panel in the Home Assistant sidebar. */
 @customElement("kraftvakt-panel")
 export class KraftvaktPanel extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistant;
@@ -54,7 +48,6 @@ export class KraftvaktPanel extends LitElement {
 
   @property({ attribute: false }) route?: Route;
 
-  /** Home Assistant's own elements, like `ha-form`, are ready to use. */
   @state() private haElementsReady = false;
 
   @state() private status?: StatusSnapshot;
@@ -65,10 +58,8 @@ export class KraftvaktPanel extends LitElement {
 
   @state() private capabilities?: Capabilities;
 
-  /** The configuration the configuration pages edit until it is saved. */
   @state() private draft?: KraftvaktConfig;
 
-  /** The errors the backend gave when the draft was last saved. */
   @state() private saveErrors: Issue[] = [];
 
   @state() private saveMessage?: string;
@@ -185,7 +176,6 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  /** A configuration page, locked while the regulation runs, with the save bar. */
   private renderConfigPage(page: Exclude<Page, "status">) {
     if (!this.status || !this.config || !this.draft || !this.capabilities) {
       return "";
@@ -284,12 +274,10 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  /** The mistakes, the errors from the last save and what is missing in the draft. */
   private pageIssues(errors: Issue[]): Issue[] {
     return this.draft ? [...errors, ...this.saveErrors, ...missingItems(this.draft)] : [];
   }
 
-  /** Whether the draft has changes that are not saved. */
   private get dirty(): boolean {
     return this.draft !== undefined && !sameConfig(this.draft, this.savedConfig);
   }
@@ -352,7 +340,6 @@ export class KraftvaktPanel extends LitElement {
     this.leavingTo = undefined;
   }
 
-  /** Let the browser ask before the panel is closed or reloaded with unsaved changes. */
   private warnBeforeUnload = (event: BeforeUnloadEvent): void => {
     if (this.dirty) {
       event.preventDefault();
@@ -368,8 +355,8 @@ export class KraftvaktPanel extends LitElement {
   }
 
   /**
-   * Go to the page of the tab. The draft is shared by the configuration pages,
-   * so the panel asks to discard unsaved changes only when going to the status page.
+   * The draft is shared by the configuration pages, so the panel asks to discard
+   * unsaved changes only when going to the status page.
    */
   private tabShown(event: CustomEvent<{ name: Page }>): void {
     const page = event.detail.name;
@@ -402,15 +389,7 @@ export class KraftvaktPanel extends LitElement {
     this.unsubscribeStatus = undefined;
   }
 
-  /**
-   * Keep the status, and get the configuration again when it may have changed.
-   *
-   * The configuration can only be saved while the regulation is stopped
-   *, so it is fetched at the first status, when the regulation starts
-   * or stops, and when what is missing changes. The power limit entity can
-   * change the power limit at any time, so it is also fetched when the power
-   * limit in use changes.
-   */
+  /** The power limit entity can change the power limit at any time. */
   private statusReceived(status: StatusSnapshot): void {
     const previous = this.status;
     this.status = status;
@@ -426,10 +405,8 @@ export class KraftvaktPanel extends LitElement {
   }
 
   /**
-   * Get the configuration. The draft follows it unless it has unsaved changes.
-   *
-   * While the regulation runs, the configuration cannot be saved, so
-   * the draft is then discarded.
+   * The draft follows the configuration unless it has unsaved changes while the
+   * regulation is stopped.
    */
   private async loadConfig(options: { resetDraft?: boolean } = {}): Promise<void> {
     if (!this.hass) {
