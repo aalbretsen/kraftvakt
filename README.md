@@ -125,7 +125,7 @@ administratorer har tilgang.
   et apparat venter etter hvor mye effekt som er ledig, det vil si
   effektgrensen minus reguleringssnittet. Vendepunktet er ledig effekt i
   prosent av effektgrensen. Tabellen viser ledig effekt i kW, ventetiden i
-  sekunder og reell ventetid, som er ventetiden rundet opp til
+  minutter og sekunder og reell ventetid, som er ventetiden rundet opp til
   reguleringsintervallet, fordi apparatet slås på ved første avgjørelse etter
   ventetiden. Kurven viser ledig effekt i kW fra 60 % av effektgrensen og ned
   til 0. Tallene regnes ut fra effektgrensen, ventetiden ved effektgrensen,
@@ -135,7 +135,9 @@ administratorer har tilgang.
   **Ventetid ved gjentatt innkobling** har steg og antall steg for apparater
   og for elbilladere. Steget velges som × 0,25, × 0,5, × 0,75 eller × 1 av
   ventetiden ved effektgrensen, og antall steg er 1–9. En tabell under hver
-  viser ventetiden og reell ventetid for hver innkobling på rad.
+  viser ventetiden og reell ventetid for hver innkobling på rad, i minutter
+  og sekunder. For de to første, der ventetiden følger kurven, viser den
+  ventetiden ved vendepunktet.
 
 For handlingene kan du velge **Standard** når entitetens domene har en
 standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers

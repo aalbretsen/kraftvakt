@@ -198,10 +198,10 @@
     "wait_curve": "Ventetidskurve",
     "wait_curve_info": "Hvor stor del av ventetiden ved effektgrensen et apparat venter, etter hvor mye effekt som er ledig: effektgrensen minus reguleringssnittet. Apparatet slås på ved første avgjørelse etter ventetiden, så reell ventetid er rundet opp til reguleringsintervallet.",
     "free_power_kw": "Ledig effekt kW",
-    "waiting_seconds": "Ventetid s",
-    "actual_waiting_seconds": "Reell ventetid s",
+    "waiting_minutes": "Ventetid min:s",
+    "actual_waiting_minutes": "Reell ventetid min:s",
     "cycling": "Ventetid ved gjentatt innkobling",
-    "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og den øker med ett steg hver gang til antall steg er nådd.",
+    "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og den øker med ett steg hver gang til antall steg er nådd. For de to første viser tabellen ventetiden ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
     "appliances": "Apparater",
     "chargers": "Elbilladere"

@@ -198,10 +198,10 @@
     "wait_curve": "Waiting time curve",
     "wait_curve_info": "How much of the waiting time at the power limit an appliance waits, by how much power is free: the power limit minus the regulation average. The appliance is turned on at the first decision after the waiting time, so the actual waiting time is rounded up to the regulation interval.",
     "free_power_kw": "Free power kW",
-    "waiting_seconds": "Waiting time s",
-    "actual_waiting_seconds": "Actual waiting time s",
+    "waiting_minutes": "Waiting time min:s",
+    "actual_waiting_minutes": "Actual waiting time min:s",
     "cycling": "Waiting time on repeated turn-on",
-    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one step each time until the number of steps is reached.",
+    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one step each time until the number of steps is reached. For the first two, the table shows the waiting time at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
     "appliances": "Appliances",
     "chargers": "EV chargers"

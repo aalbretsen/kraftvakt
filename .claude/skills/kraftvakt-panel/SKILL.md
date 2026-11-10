@@ -66,9 +66,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   0.5, × 0.75 or × 1 of the waiting time at the limit) and «Antall steg»
   (1–9), and a table with one column per turn-on in a row: «Innkobling på
   rad» 1, 2, … up to the one that reaches the cap, marked «+» since it holds
-  for every time after it, then «Ventetid s» and «Reell ventetid s» (rounded
-  up to whole decision intervals like the curve table). The first two show
-  the curve's range, «0–300». The table is left out on a narrow screen.
+  for every time after it, then «Ventetid min:s» and «Reell ventetid min:s»
+  (rounded up to whole decision intervals like the curve table). The first
+  two follow the curve and show the waiting time at the pivot point, which
+  the card's text says (settled with the owner, replacing the range
+  «0–300»). The table is left out on a narrow screen.
   Settled with the owner, replacing number fields for step and cap in
   seconds. Dropdowns use `selectField()` in `general-settings-page.ts`,
   which keeps the values as numbers in the draft.
@@ -88,10 +90,11 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   `wait_curve_pivot` and shows 100 minus it; the stored value and the
   regulation still use utilization, so nothing is migrated. The table has no
   percent rows (the owner found them redundant), only «Ledig effekt kW»,
-  «Ventetid s» and «Reell ventetid s» at 50, 40, 30, 25, 20, 15, 10, 7, 4 and
-  1 % free: kW from the power limit with two decimals, seconds from the
-  waiting time at the limit in whole seconds, and the actual waiting time
-  rounded up to whole decision intervals (`regulation_window_s` ×
+  «Ventetid min:s» and «Reell ventetid min:s» at 50, 40, 30, 25, 20, 15, 10,
+  7, 4 and 1 % free: kW from the power limit with two decimals, the waiting
+  time from the waiting time at the limit as minutes and whole seconds
+  (`formatMinutes()`, «4:35», settled with the owner, like the other table),
+  and the actual waiting time rounded up to whole decision intervals (`regulation_window_s` ×
   `regulation_interval`), since the slot is turned on at the first decision
   after the waiting time, all from the draft (– when not set). The line of
   text says why it is rounded. The graph keeps the waiting time in percent on

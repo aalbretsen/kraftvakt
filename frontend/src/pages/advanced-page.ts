@@ -1,7 +1,7 @@
 import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { formatNumber, formatPower } from "../format";
+import { formatMinutes, formatNumber, formatPower } from "../format";
 import { waitingCurve } from "../wait-curve";
 import { GeneralSettingsPage } from "./general-settings-page";
 
@@ -9,7 +9,7 @@ type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
 type CyclingTitle = "advanced.appliances" | "advanced.chargers";
 type CyclingFactorField = "appliance_cycling_step_factor" | "charger_cycling_step_factor";
 type CyclingStepsField = "appliance_cycling_steps" | "charger_cycling_steps";
-type TableRow = "advanced.free_power_kw" | "advanced.waiting_seconds" | "advanced.actual_waiting_seconds";
+type TableRow = "advanced.free_power_kw" | "advanced.waiting_minutes" | "advanced.actual_waiting_minutes";
 
 const CURVE_FIELDS: CurveField[] = ["wait_curve_steepness", "wait_curve_pivot"];
 /** The first time a slot is turned on, and the first time again, follow the curve. */
@@ -92,25 +92,25 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
 
   /**
    * The waiting time each time the same slot is turned on in a row. The first
-   * two follow the curve, from 0 up to the waiting time at the limit; from the
-   * third it is the waiting time at the limit, one step longer each time, until
-   * the last column, which holds for every time after it as well.
+   * two follow the curve and are shown at the pivot point; from the third it
+   * is the waiting time at the limit, one step longer each time, until the
+   * last column, which holds for every time after it as well.
    */
   private renderCyclingTable(factor: number, steps: number) {
-    const language = this.hass.language;
-    const waitAtLimit = this.config.general.wait_at_limit_s as number | null;
+    const general = this.config.general;
+    const waitAtLimit = general.wait_at_limit_s as number | null;
     const decisionInterval = this.decisionInterval;
+    const shareAtPivot = waitingCurve(general.wait_curve_steepness, general.wait_curve_pivot)(general.wait_curve_pivot / 100);
     const turnOns = Array.from({ length: steps + CURVE_TURN_ONS + 1 }, (_, index) => index + 1);
-    const seconds = (value: number) => formatNumber(language, Math.round(value), 0);
     const waiting = (turnOn: number, actual: boolean) => {
       if (waitAtLimit === null || (actual && decisionInterval === null)) {
         return "–";
       }
-      const round = (value: number) => (actual ? untilDecision(value, decisionInterval as number) : value);
-      if (turnOn <= CURVE_TURN_ONS) {
-        return `0–${seconds(round(waitAtLimit))}`;
-      }
-      return seconds(round(waitAtLimit * (1 + factor * (turnOn - CURVE_TURN_ONS - 1))));
+      const value =
+        turnOn <= CURVE_TURN_ONS
+          ? waitAtLimit * shareAtPivot
+          : waitAtLimit * (1 + factor * (turnOn - CURVE_TURN_ONS - 1));
+      return formatMinutes(actual ? untilDecision(value, decisionInterval as number) : value);
     };
     return html`
       <table class="curve-table">
@@ -119,11 +119,11 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
           ${turnOns.map((turnOn) => html`<td>${turnOn}${turnOn === turnOns.length ? "+" : ""}</td>`)}
         </tr>
         <tr>
-          <th>${this.localize("advanced.waiting_seconds")}</th>
+          <th>${this.localize("advanced.waiting_minutes")}</th>
           ${turnOns.map((turnOn) => html`<td>${waiting(turnOn, false)}</td>`)}
         </tr>
         <tr>
-          <th>${this.localize("advanced.actual_waiting_seconds")}</th>
+          <th>${this.localize("advanced.actual_waiting_minutes")}</th>
           ${turnOns.map((turnOn) => html`<td>${waiting(turnOn, true)}</td>`)}
         </tr>
       </table>
@@ -177,7 +177,6 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     const limit = general.power_limit_w as number | null;
     const waitAtLimit = general.wait_at_limit_s as number | null;
     const decisionInterval = this.decisionInterval;
-    const seconds = (value: number | null) => (value === null ? "–" : formatNumber(language, Math.round(value), 0));
     const waiting = (free: number) => (waitAtLimit === null ? null : waitAtLimit * share(free));
     const actualWaiting = (free: number) => {
       const value = waiting(free);
@@ -194,8 +193,8 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         ? nothing
         : html`<table class="curve-table">
             ${row("advanced.free_power_kw", (free) => formatPower(language, limit === null ? null : (limit * free) / 100))}
-            ${row("advanced.waiting_seconds", (free) => seconds(waiting(free)))}
-            ${row("advanced.actual_waiting_seconds", (free) => seconds(actualWaiting(free)))}
+            ${row("advanced.waiting_minutes", (free) => formatMinutes(waiting(free)))}
+            ${row("advanced.actual_waiting_minutes", (free) => formatMinutes(actualWaiting(free)))}
           </table>`}
       ${this.renderCurveGraph(share, limit)}
     `;
@@ -272,7 +271,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         table-layout: fixed;
       }
       .curve-table th {
-        width: 150px;
+        width: 180px;
         text-align: start;
         font-weight: normal;
         color: var(--secondary-text-color);

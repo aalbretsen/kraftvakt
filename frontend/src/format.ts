@@ -11,6 +11,15 @@ export function formatPower(language: string, watt: number | null): string {
   return watt === null ? "–" : formatNumber(language, watt / 1000, 2);
 }
 
+/** Format a duration in seconds as minutes and whole seconds, like 6:15, or a dash when it is not known. */
+export function formatMinutes(seconds: number | null): string {
+  if (seconds === null) {
+    return "–";
+  }
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
 /** Format a share between 0 and 1 as a whole percentage, like 50 %, in the user's language. */
 export function formatPercent(language: string, share: number): string {
   return new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 0 }).format(share);
