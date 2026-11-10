@@ -192,7 +192,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "appliance_cycling_cap_s": 900,
             "charger_cycling_step_s": 300,
             "charger_cycling_cap_s": 1800,
-            "penalty_threshold_w": 1000,
+            "penalty_threshold_w": 100,
         },
         "appliances": {"power_reserve_w": None},
         "charging": {"enabled": False, "one_at_a_time": True},

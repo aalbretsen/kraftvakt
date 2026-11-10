@@ -69,7 +69,7 @@ integrations.
     "appliance_cycling_cap_s": 900,
     "charger_cycling_step_s": 300,
     "charger_cycling_cap_s": 1800,
-    "penalty_threshold_w": 1000
+    "penalty_threshold_w": 100
   },
   "appliances": [
     {

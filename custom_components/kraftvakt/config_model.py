@@ -282,7 +282,7 @@ class GeneralConfig:
     appliance_cycling_cap_s: int = 900
     charger_cycling_step_s: int = 300
     charger_cycling_cap_s: int = 1800
-    penalty_threshold_w: int = 1000
+    penalty_threshold_w: int = 100
 
     def to_dict(self) -> dict[str, Any]:
         """Return the general parameters as JSON-friendly data."""

@@ -29,7 +29,7 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.regulation_window_s == 10
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 300
-    assert config.general.penalty_threshold_w == 1000
+    assert config.general.penalty_threshold_w == 100
     assert config.general.appliance_cycling_step_s == 120
     assert config.general.appliance_cycling_cap_s == 900
     assert config.general.charger_cycling_step_s == 300

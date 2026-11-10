@@ -36,7 +36,7 @@ owner instead of deciding.
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
 | Safe state (sikker tilstand) | Everything off and nothing turned on, because there is no valid power measurement. |
-| Penalty threshold (straffeterskel) | 0–10 000 W above the power limit, default 1000 W. |
+| Penalty threshold (straffeterskel) | 0–10 000 W above the power limit, default 100 W (settled with the owner, was 1000 W). |
 | Overconsumption (overforbruk) | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period (straffeperiode) | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
 | Fictive appliance (fiktivt apparat) | One ampere of an EV charger's current, treated by the regulation as an appliance. |
