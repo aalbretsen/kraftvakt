@@ -1,14 +1,34 @@
 import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { formatNumber } from "../format";
+import { formatNumber, formatPower } from "../format";
 import { waitingCurve } from "../wait-curve";
 import { GeneralSettingsPage } from "./general-settings-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
+type TableRow =
+  | "advanced.free_power_percent"
+  | "advanced.free_power_kw"
+  | "advanced.waiting_percent"
+  | "advanced.waiting_seconds";
 
 const CURVE_FIELDS: CurveField[] = ["wait_curve_steepness", "wait_curve_pivot"];
-const TABLE_UTILIZATIONS = [50, 60, 70, 75, 80, 85, 90, 93, 96, 99];
+const TABLE_FREE_PERCENTS = [50, 40, 30, 25, 20, 15, 10, 7, 4, 1];
+
+/**
+ * The regulation works with utilization of the power limit, but the page shows
+ * free power, the power limit minus the regulation average, as a share of the
+ * limit. The pivot point is stored as utilization, so it is shown as 100 minus
+ * the stored value; the same conversion turns it back.
+ */
+const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
+  wait_curve_steepness: false,
+  wait_curve_pivot: true,
+};
+
+function shown(name: CurveField, value: number): number {
+  return SHOWN_AS_FREE_POWER[name] ? 100 - value : value;
+}
 
 /** The waiting time curve and the waiting time when the same slot is turned on again and again. */
 @customElement("kraftvakt-advanced-page")
@@ -46,21 +66,23 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
 
   private renderSlider(name: CurveField) {
     const range = this.range(name);
-    const value = this.config.general[name];
+    const ends = [shown(name, range.min ?? 0), shown(name, range.max ?? 0)];
+    const value = shown(name, this.config.general[name]);
     const label = this.localize(`general.fields.${name}.label`);
+    const unit = SHOWN_AS_FREE_POWER[name] ? " %" : "";
     return html`
       <span class="slider-label">${label}</span>
       <ha-slider
         aria-label=${label}
-        .min=${range.min}
-        .max=${range.max}
+        .min=${Math.min(...ends)}
+        .max=${Math.max(...ends)}
         .step=${range.step}
         .value=${value}
         .withTooltip=${false}
         ?disabled=${this.locked}
-        @input=${(event: Event) => this.changeCurve(name, Number((event.target as HTMLInputElement).value))}
+        @input=${(event: Event) => this.changeCurve(name, shown(name, Number((event.target as HTMLInputElement).value)))}
       ></ha-slider>
-      <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(value)}</span>
+      <span class="slider-value">${new Intl.NumberFormat(this.hass.language).format(value)}${unit}</span>
     `;
   }
 
@@ -70,41 +92,57 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     }
   }
 
-  /** The waiting time curve as a table of shares and a graph, as the sliders are moved. */
+  /**
+   * The waiting time curve as a table and a graph, as the sliders are moved.
+   * The table also gives the free power in kW and the waiting time in seconds
+   * with the power limit and the waiting time at the limit in the draft.
+   */
   private renderWaitCurve() {
     const general = this.config.general;
-    const share = waitingCurve(general.wait_curve_steepness, general.wait_curve_pivot);
-    const percent = (utilization: number) => {
-      const value = 100 * share(utilization / 100);
-      return value === 0 ? "0" : formatNumber(this.hass.language, value, 1);
+    const curve = waitingCurve(general.wait_curve_steepness, general.wait_curve_pivot);
+    const share = (freePercent: number) => curve(1 - freePercent / 100);
+    const language = this.hass.language;
+    const limit = general.power_limit_w as number | null;
+    const waitAtLimit = general.wait_at_limit_s as number | null;
+    const waitingPercent = (free: number) => {
+      const value = 100 * share(free);
+      return value === 0 ? "0" : formatNumber(language, value, 1);
     };
+    const freeKw = (free: number) => formatPower(language, limit === null ? null : (limit * free) / 100);
+    const waitingSeconds = (free: number) =>
+      waitAtLimit === null ? "–" : formatNumber(language, Math.round(waitAtLimit * share(free)), 0);
+    const row = (title: TableRow, cell: (free: number) => unknown, valueClass = "") => html`
+      <tr>
+        <th>${this.localize(title)}</th>
+        ${TABLE_FREE_PERCENTS.map((free) => html`<td class=${valueClass}>${cell(free)}</td>`)}
+      </tr>
+    `;
     return html`
       ${this.narrow
         ? nothing
         : html`<table class="curve-table">
-            <tr>
-              <th>${this.localize("advanced.utilization_percent")}</th>
-              ${TABLE_UTILIZATIONS.map((utilization) => html`<td>${utilization}</td>`)}
-            </tr>
-            <tr>
-              <th>${this.localize("advanced.waiting_percent")}</th>
-              ${TABLE_UTILIZATIONS.map((utilization) => html`<td class="value">${percent(utilization)}</td>`)}
-            </tr>
+            ${row("advanced.free_power_percent", (free) => free)} ${row("advanced.free_power_kw", freeKw)}
+            ${row("advanced.waiting_percent", waitingPercent, "value")}
+            ${row("advanced.waiting_seconds", waitingSeconds, "value")}
           </table>`}
       ${this.renderCurveGraph(share)}
     `;
   }
 
-  private renderCurveGraph(share: (utilization: number) => number) {
+  /** The graph has less free power to the right, so the waiting time grows to the right. */
+  private renderCurveGraph(share: (freePercent: number) => number) {
     const [width, height] = this.narrow ? [320, 200] : [900, 260];
     const [left, right, top, bottom] = [44, 24, 8, 38];
-    const x = (utilization: number) => left + ((width - left - right) * utilization) / 100;
+    const x = (freePercent: number) => left + ((width - left - right) * (100 - freePercent)) / 100;
     const y = (percent: number) => top + ((height - top - bottom) * (100 - percent)) / 100;
     const label = (value: number) => `${formatNumber(this.hass.language, value, 0)} %`;
-    const points = Array.from({ length: 201 }, (_, index) => `${x(index / 2)},${y(100 * share(index / 200))}`);
+    const points = Array.from({ length: 201 }, (_, index) => {
+      const free = 100 - index / 2;
+      return `${x(free)},${y(100 * share(free))}`;
+    });
     const line = `M${points.join("L")}`;
     const yTicks = [0, 20, 40, 60, 80, 100];
-    const xTicks = Array.from({ length: this.narrow ? 5 : 11 }, (_, index) => index * (this.narrow ? 25 : 10));
+    const xTicks = Array.from({ length: this.narrow ? 5 : 11 }, (_, index) => 100 - index * (this.narrow ? 25 : 10));
     return html`
       <svg class="curve" viewBox="0 0 ${width} ${height}" role="img" aria-label=${this.localize("advanced.wait_curve")}>
         ${yTicks.map(
@@ -114,8 +152,8 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
           `,
         )}
         ${xTicks.map((tick) => svg`<text x=${x(tick)} y=${height - bottom + 18} text-anchor="middle">${label(tick)}</text>`)}
-        <text x=${x(50)} y=${height - 4} text-anchor="middle">${this.localize("advanced.utilization")}</text>
-        <path class="area" d="${line}L${x(100)},${y(0)}L${x(0)},${y(0)}Z"></path>
+        <text x=${x(50)} y=${height - 4} text-anchor="middle">${this.localize("advanced.free_power")}</text>
+        <path class="area" d="${line}L${x(0)},${y(0)}L${x(100)},${y(0)}Z"></path>
         <path class="line" d=${line}></path>
       </svg>
     `;

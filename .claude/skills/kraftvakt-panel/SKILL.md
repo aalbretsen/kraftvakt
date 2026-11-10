@@ -67,12 +67,22 @@ Routes: `/kraftvakt` and `/kraftvakt/status`, `/kraftvakt/general`,
   «Generelt», moved by the owner): one line
   of text, sliders for steepness and pivot point (`ha-slider` without tooltip,
   the value as plain text to the right, no input box, no helper text), a table
-  «Utnyttelse %» / «Ventetid %» at 50, 60, 70, 75, 80, 85, 90, 93, 96 and 99
-  with one decimal (0 for zero, % only in the row labels), and a graph of the
-  waiting time against utilization 0–100 %. Both follow the draft while the
-  sliders move. On a narrow screen the table is left out. The pivot point is
-  not marked on the graph. Settled with the owner, who wants little text: the
-  user reads the curve and the result, not how it is computed.
+  and a graph of the waiting time. Both follow the
+  draft while the sliders move. On a narrow screen the table is left out. The
+  pivot point is not marked on the graph. Settled with the owner, who wants
+  little text: the user reads the curve and the result, not how it is computed.
+- The card shows free power, the power limit minus the regulation average as
+  a share of the limit, not utilization (settled with the owner, the term
+  «ledig effekt» is the one the status page uses). The pivot point slider
+  shows free power, 1–50 % (default 20 %), as 100 minus the stored
+  `wait_curve_pivot`; the stored value and the regulation still use
+  utilization, so nothing is migrated. The table has the rows «Ledig effekt
+  %», «Ledig effekt kW», «Ventetid %» and «Ventetid s» at 50, 40, 30, 25,
+  20, 15, 10, 7, 4 and 1 % free: kW from the power limit with two decimals,
+  the waiting share with one decimal (0 for zero), and seconds from the
+  waiting time at the limit, whole seconds, all from the draft (– when not
+  set). The graph has 100 % free to the left and 0 % to the right, so the
+  waiting time grows to the right.
 - The configuration pages share one draft in `kraftvakt-panel.ts`. «Save»
   saves everything, «Discard» goes back to the saved configuration. The panel
   checks the draft against the limits from `kraftvakt/capabilities` and works
