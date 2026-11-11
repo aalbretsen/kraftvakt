@@ -74,7 +74,7 @@ def release(version: str) -> None:
     tag = f"v{version}"
     check_version(version, current_version())
     check_repository(tag)
-    print("Running the checks …")
+    print("Running the checks …", flush=True)
     for check in CHECKS:
         run(*check)
     if git("status", "--porcelain"):
