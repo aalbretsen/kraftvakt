@@ -353,15 +353,20 @@ def test_one_at_a_time_the_charging_charger_goes_first() -> None:
     assert state.waiting == {"a", "b"}
 
 
-def test_one_at_a_time_charging_charger_not_allowed_keeps_others_waiting() -> None:
-    """A deactivated charger without valid charging power holds the others."""
-    configured = chargers("a", "b")
+def test_one_at_a_time_charging_charger_not_allowed_does_not_hold_others() -> None:
+    """Not a charger without valid charging power, nor one that charges."""
+    configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
-    evaluate(state, configured, {"a": IDLE, "b": ChargerReading()}, allowed=("a",))
+    evaluate(
+        state,
+        configured,
+        {"a": ChargerReading(), "b": CHARGING, "c": IDLE},
+        allowed=("c",),
+    )
 
-    assert state.may_charge == set()
-    assert state.waiting == {"a"}
+    assert state.may_charge == {"c"}
+    assert state.waiting == set()
 
 
 def test_one_at_a_time_the_activated_one_of_several_charging_goes_first() -> None:

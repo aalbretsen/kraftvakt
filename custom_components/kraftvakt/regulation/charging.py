@@ -338,16 +338,15 @@ class ChargingState:
     ) -> None:
         """Decide which chargers may get fictive appliances turned on.
 
-        With one charger at a time, a charger that charges actively goes first,
-        also when it is not allowed to charge, and the others wait.
+        With one charger at a time, a charger that charges actively goes first
+        and the others wait. Settled with the owner: only a charger that is
+        allowed to charge holds back the others, so a charger outside its
+        charging window without a valid charging power does not stop them.
         """
-        candidates = [
+        eligible = [
             charger_id
             for charger_id in self.priority
-            if charger_id not in self.bypassed
-        ]
-        eligible = [
-            charger_id for charger_id in candidates if charger_id in self.allowed
+            if charger_id not in self.bypassed and charger_id in self.allowed
         ]
         self.waiting = set()
         if not one_at_a_time:
@@ -355,7 +354,7 @@ class ChargingState:
             return
         charging = [
             charger_id
-            for charger_id in candidates
+            for charger_id in eligible
             if actively_charging(readings.get(charger_id, ChargerReading()))
         ]
         if not charging:
@@ -365,5 +364,5 @@ class ChargingState:
             (charger_id for charger_id in charging if self.fictive_on.get(charger_id)),
             charging[0],
         )
-        self.may_charge = {selected} & self.allowed
+        self.may_charge = {selected}
         self.waiting = set(eligible) - {selected}

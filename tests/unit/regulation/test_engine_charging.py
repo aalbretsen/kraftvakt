@@ -357,12 +357,20 @@ def test_first_charger_in_the_current_priority_is_chosen() -> None:
 
 
 def test_charger_without_charging_power_keeps_the_other_waiting() -> None:
-    """Also when it is excluded from the regulation."""
+    scenario = two_chargers(one_at_a_time=True)
+    scenario.set_charger("b", charge_power_w=None)
+
+    assert scenario.decide(0) == activate("b")
+    assert scenario.engine.chargers["a"].waiting
+
+
+def test_excluded_charger_without_charging_power_lets_the_other_charge() -> None:
+    """Only a charger that is allowed to charge holds back the others."""
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("b", charge_power_w=None, excluded=True)
 
-    assert scenario.decide_many(0, 3) == [[], [], []]
-    assert scenario.engine.chargers["a"].waiting
+    assert scenario.decide(0) == activate("a")
+    assert not scenario.engine.chargers["a"].waiting
 
 
 def test_new_car_waits_for_room_for_the_power_reserve() -> None:
