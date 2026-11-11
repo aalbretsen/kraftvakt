@@ -1,4 +1,4 @@
-"""Tester for config flow."""
+"""Tests for the config flow."""
 
 from unittest.mock import patch
 

@@ -184,8 +184,8 @@ def test_charging_window_across_midnight_is_valid() -> None:
 @pytest.mark.parametrize(
     ("condition", "code"),
     [
-        ({"type": "entity", "value": "binary_sensor.bil"}, None),
-        ({"type": "entity", "value": "bil"}, "invalid_entity_id"),
+        ({"type": "entity", "value": "binary_sensor.car"}, None),
+        ({"type": "entity", "value": "car"}, "invalid_entity_id"),
         ({"type": "entity", "value": ""}, "required"),
         ({"type": "template", "value": "  "}, "required"),
         ({"type": "template", "value": "{{ true }}"}, None),
@@ -217,7 +217,7 @@ def test_variant_labels_must_be_unique_per_appliance() -> None:
     def mutate(data: dict[str, Any]) -> None:
         variant = data["appliances"][0]["variants"][0]
         data["appliances"][0]["variants"].append(
-            {**variant, "id": "v2", "label": "Morgen "}
+            {**variant, "id": "v2", "label": "Morning "}
         )
         data["appliances"][1]["variants"].append({**variant, "id": "v3"})
         data["priority"] += [
@@ -233,8 +233,8 @@ def test_variant_labels_must_be_unique_per_appliance() -> None:
 
 def test_entity_is_unique_across_appliances_and_chargers() -> None:
     def mutate(data: dict[str, Any]) -> None:
-        data["appliances"][1]["entity_id"] = "switch.varmtvannsbereder"
-        data["charging"]["chargers"][0]["entity_id"] = "switch.varmtvannsbereder"
+        data["appliances"][1]["entity_id"] = "switch.water_heater"
+        data["charging"]["chargers"][0]["entity_id"] = "switch.water_heater"
 
     assert _issues_after(mutate) == [
         Issue("duplicate_entity", "appliances", "a1", "entity_id"),
@@ -247,7 +247,7 @@ def test_entity_uniqueness_ignores_sensors_and_conditions() -> None:
     def mutate(data: dict[str, Any]) -> None:
         charger = data["charging"]["chargers"][0]
         charger["charge_power_sensor"] = "sensor.han_power"
-        charger["car_connected"] = {"type": "entity", "value": "climate.bad"}
+        charger["car_connected"] = {"type": "entity", "value": "climate.bathroom"}
 
     assert _issues_after(mutate) == []
 
@@ -264,10 +264,10 @@ def test_ids_must_be_unique() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["appliances"][1]["id"] = "a1"
         data["appliances"][0]["variants"].append(
-            {**data["appliances"][0]["variants"][0], "label": "Kveld"}
+            {**data["appliances"][0]["variants"][0], "label": "Evening"}
         )
         data["charging"]["chargers"].append(
-            {**data["charging"]["chargers"][0], "entity_id": "switch.lader_2"}
+            {**data["charging"]["chargers"][0], "entity_id": "switch.charger_2"}
         )
         data["priority"] = [
             entry for entry in data["priority"] if entry.get("appliance_id") != "a2"
@@ -348,8 +348,8 @@ async def test_parse_config_adds_missing_priority_entries_at_bottom(
     data["appliances"][0]["variants"].append(
         {
             "id": "v2",
-            "label": "Kveld",
-            "condition": {"type": "entity", "value": "input_boolean.kveld"},
+            "label": "Evening",
+            "condition": {"type": "entity", "value": "input_boolean.evening"},
         }
     )
     data["priority"] = data["priority"][1:]
@@ -444,7 +444,7 @@ async def test_only_the_charging_current_may_be_given_as_an_entity(
 
 async def test_charging_current_entity_is_kept(hass: HomeAssistant) -> None:
     data = full_config_data()
-    action = {"mode": "entity", "entity_id": "number.lader_strom"}
+    action = {"mode": "entity", "entity_id": "number.charger_current"}
     data["charging"]["chargers"][0]["set_current"] = action
 
     config = parse_config(data)

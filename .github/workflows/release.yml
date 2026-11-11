@@ -9,15 +9,15 @@ permissions:
 
 jobs:
   check-version:
-    name: Sjekk at manifest-versjon matcher tag
+    name: Check that the manifest version matches the tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Sammenlign versjoner
+      - name: Compare versions
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           MANIFEST=$(jq -r .version custom_components/kraftvakt/manifest.json)
           if [ "$TAG" != "$MANIFEST" ]; then
-            echo "::error::Tag $TAG matcher ikke manifest.json-versjon $MANIFEST"
+            echo "::error::Tag $TAG does not match the manifest.json version $MANIFEST"
             exit 1
           fi

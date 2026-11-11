@@ -9,7 +9,7 @@ dist/
 venv/
 .python-version
 
-# ─── Verktøy ─────────────────────────────────────────────────────────────────
+# ─── Tools ───────────────────────────────────────────────────────────────────
 .pytest_cache/
 .ruff_cache/
 .coverage
@@ -17,11 +17,11 @@ venv/
 htmlcov/
 coverage.xml
 
-# ─── Lokal Home Assistant-instans for utvikling ──────────────────────────────
+# ─── Local Home Assistant instance for development ───────────────────────────
 config/*
 !config/configuration.yaml
 
-# ─── Node (bygging av panelet i frontend/) ───────────────────────────────────
+# ─── Node (building the panel in frontend/) ──────────────────────────────────
 node_modules/
 
 # ─── IntelliJ / PyCharm ──────────────────────────────────────────────────────
@@ -52,11 +52,11 @@ node_modules/
 Thumbs.db
 [Dd]esktop.ini
 
-# ─── Diverse ─────────────────────────────────────────────────────────────────
+# ─── Misc ────────────────────────────────────────────────────────────────────
 *.log
 .env
 .env.*
 !.env.example
 
-# Avhengigheter styres via requirements_dev.txt
+# Dependencies are managed in requirements_dev.txt
 uv.lock

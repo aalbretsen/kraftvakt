@@ -110,8 +110,8 @@ def test_default_actions_must_exist_for_the_domain() -> None:
         ),
         charging=ChargingConfig(
             chargers=(
-                charger("switch.lader"),
-                replace(charger("number.lader"), id="c2"),
+                charger("switch.charger"),
+                replace(charger("number.charger"), id="c2"),
             )
         ),
     )
@@ -129,7 +129,7 @@ def test_default_actions_must_exist_for_the_domain() -> None:
 @pytest.mark.parametrize(("current", "expected"), [(3, 6), (6, 6), (9, 9), (40, 16)])
 def test_current_is_kept_between_min_and_max(current: int, expected: int) -> None:
     """The current to set always lies between the minimum and maximum."""
-    assert set_current_variables(charger("switch.lader"), current) == {
+    assert set_current_variables(charger("switch.charger"), current) == {
         "current": expected,
         "min_current": 6,
         "max_current": 16,
@@ -278,7 +278,7 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
         }
     )
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
     )
 
     await ActionRunner(hass, config).async_execute(
@@ -291,11 +291,11 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
     )
 
     assert [call.data for call in currents] == [
-        {"entity": "switch.lader", "value": 6, "range": "6-16"},
-        {"entity": "switch.lader", "value": 16, "range": "6-16"},
+        {"entity": "switch.charger", "value": 6, "range": "6-16"},
+        {"entity": "switch.charger", "value": 16, "range": "6-16"},
     ]
-    assert [call.data["entity_id"] for call in activated] == [["switch.lader"]]
-    assert [call.data["entity_id"] for call in deactivated] == [["switch.lader"]]
+    assert [call.data["entity_id"] for call in activated] == [["switch.charger"]]
+    assert [call.data["entity_id"] for call in deactivated] == [["switch.charger"]]
 
 
 async def test_charging_current_can_be_set_on_a_chosen_number_entity(
@@ -303,9 +303,9 @@ async def test_charging_current_can_be_set_on_a_chosen_number_entity(
 ) -> None:
     """The default action for the chosen entity, with the current as value."""
     values = async_mock_service(hass, "number", "set_value")
-    set_current = ActionConfig(ActionMode.ENTITY, entity_id="number.lader_strom")
+    set_current = ActionConfig(ActionMode.ENTITY, entity_id="number.charger_current")
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
     )
 
     await ActionRunner(hass, config).async_execute(
@@ -313,8 +313,8 @@ async def test_charging_current_can_be_set_on_a_chosen_number_entity(
     )
 
     assert [call.data for call in values] == [
-        {"entity_id": ["number.lader_strom"], "value": 9},
-        {"entity_id": ["number.lader_strom"], "value": 16},
+        {"entity_id": ["number.charger_current"], "value": 9},
+        {"entity_id": ["number.charger_current"], "value": 16},
     ]
 
 
@@ -323,7 +323,7 @@ async def test_entity_action_without_entity_is_logged(
 ) -> None:
     set_current = ActionConfig(ActionMode.ENTITY)
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.lader", set_current),))
+        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
     )
 
     await ActionRunner(hass, config).async_execute([SetChargingCurrent("c1", 6)])

@@ -207,7 +207,7 @@ async def test_config_get_gives_configuration_names_and_missing(
 ) -> None:
     """The configuration with entity names and what is missing."""
     config["appliances"][1]["turn_off"] = None
-    hass.states.async_set("light.a", "off", {"friendly_name": "Varmtvannsbereder"})
+    hass.states.async_set("light.a", "off", {"friendly_name": "Water heater"})
     config_entry = MockConfigEntry(domain=DOMAIN)
     config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
@@ -220,7 +220,7 @@ async def test_config_get_gives_configuration_names_and_missing(
     assert result["config"]["general"]["power_sensor"] == POWER_SENSOR
     assert [item["id"] for item in result["config"]["appliances"]] == ["a", "b"]
     assert result["entity_names"] == {
-        "light.a": "Varmtvannsbereder",
+        "light.a": "Water heater",
         "light.b": "light.b",
     }
     assert result["missing"] == [
@@ -339,10 +339,10 @@ async def test_runtime_refuses_a_new_configuration_while_running(
                     "chargers": [
                         {
                             "id": "c1",
-                            "entity_id": "switch.lader",
+                            "entity_id": "switch.charger",
                             "set_current": {
                                 "mode": "entity",
-                                "entity_id": "switch.lader_strom",
+                                "entity_id": "switch.charger_current",
                             },
                         }
                     ]
@@ -594,7 +594,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
 ) -> None:
     """The status now, and after each window and decision."""
     started = dt_util.utcnow()
-    hass.states.async_set("light.a", "off", {"friendly_name": "Varmtvannsbereder"})
+    hass.states.async_set("light.a", "off", {"friendly_name": "Water heater"})
     await setup_entry(hass)
     client = await hass_ws_client(hass)
 
@@ -618,7 +618,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "appliances": [
             {
                 "id": "a",
-                "name": "Varmtvannsbereder",
+                "name": "Water heater",
                 "on": False,
                 "variant": None,
                 "waiting_since": None,
@@ -661,7 +661,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     config["appliances"][1]["variants"] = [
         {
             "id": "v1",
-            "label": "Morgen",
+            "label": "Morning",
             "condition": {"type": "template", "value": "{{ true }}"},
         }
     ]
@@ -678,7 +678,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     status = await next_status(client)
 
     assert [item["id"] for item in status["appliances"]] == ["b", "a"]
-    assert status["appliances"][0]["variant"] == "Morgen"
+    assert status["appliances"][0]["variant"] == "Morning"
     assert status["appliances"][0]["waiting_since"] == local(started + WINDOW)
     waiting_until = dt_util.parse_datetime(status["appliances"][0]["waiting_until"])
     assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(
@@ -868,7 +868,7 @@ async def test_status_places_ev_charging_among_the_current_variants(
     config["appliances"][1]["variants"] = [
         {
             "id": "v1",
-            "label": "Morgen",
+            "label": "Morning",
             "condition": {"type": "template", "value": "{{ true }}"},
         }
     ]

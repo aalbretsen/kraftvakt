@@ -1,12 +1,12 @@
 [project]
 name = "kraftvakt"
 version = "0.1.0"
-description = "Home Assistant custom integration – prioritert effektstyring rettet mot kapasitetsleddet i nettleien"
+description = "Home Assistant custom integration for prioritized power management under the Norwegian capacity tariff"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.14.2"
 
-# Ingen runtime-avhengigheter – Home Assistant leverer alt.
+# No runtime dependencies; Home Assistant provides everything.
 dependencies = []
 
 [tool.ruff]

@@ -79,7 +79,7 @@ async def test_switches_follow_configured_chargers(
 ) -> None:
     data = full_config_data()
     data["charging"]["chargers"].append(
-        {**data["charging"]["chargers"][0], "id": "c2", "entity_id": "switch.lader_2"}
+        {**data["charging"]["chargers"][0], "id": "c2", "entity_id": "switch.charger_2"}
     )
     config = KraftvaktConfig.from_dict(data)
     switches = {"gone": ChargerSwitches(excluded=True)}

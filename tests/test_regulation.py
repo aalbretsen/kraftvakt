@@ -468,7 +468,7 @@ async def test_variant_condition_moves_the_appliance(
     config["appliances"][1]["variants"] = [
         {
             "id": "morning",
-            "label": "Morgen",
+            "label": "Morning",
             "condition": {"type": "entity", "value": "input_boolean.morning"},
         }
     ]
@@ -496,7 +496,7 @@ async def test_template_condition_gets_the_appliance_entity(
     config["appliances"][1]["variants"] = [
         {
             "id": "cold",
-            "label": "Kald",
+            "label": "Cold",
             "condition": {
                 "type": "template",
                 "value": "{{ entity.attributes.temperature < 40 }}",

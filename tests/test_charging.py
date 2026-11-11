@@ -465,18 +465,18 @@ async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Lader A"
+        config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Charger A"
     )
     allowed = er.async_get(hass).async_get_or_create(
         "switch",
         "test",
         "a_allowed",
         device_id=device.id,
-        original_name="Lader A Charging allowed",
+        original_name="Charger A Charging allowed",
     )
 
-    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Lader A"
+    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Charger A"
 
-    dr.async_get(hass).async_update_device(device.id, name_by_user="Garasje")
+    dr.async_get(hass).async_update_device(device.id, name_by_user="Garage")
 
-    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Garasje"
+    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Garage"

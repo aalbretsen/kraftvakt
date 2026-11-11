@@ -1,11 +1,11 @@
-# Utviklingsavhengigheter. Lag et venv og installer:
+# Development dependencies. Create a venv and install:
 #   uv venv --python 3.14 && uv pip install -r requirements_dev.txt
 #
-# Versjonene følger det Home Assistant foretrekker:
-# - homeassistant og pytest-pakkene: det pytest-homeassistant-custom-component krever
-# - home-assistant-frontend: kravet i HAs frontend-manifest for samme HA-versjon
-# - ruff: versjonen i HA core sine testkrav for samme HA-versjon
-# Dependabot foreslår oppdateringer hver uke.
+# The versions follow what Home Assistant prefers:
+# - homeassistant and the pytest packages: what pytest-homeassistant-custom-component requires
+# - home-assistant-frontend: the requirement in the HA frontend manifest for the same HA version
+# - ruff: the version in the HA core test requirements for the same HA version
+# Dependabot proposes updates every week.
 
 homeassistant==2026.10.4
 home-assistant-frontend==20260930.5

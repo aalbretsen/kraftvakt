@@ -1,4 +1,4 @@
-"""Tester for oppsett og utlasting av integrasjonen."""
+"""Tests for setting up and unloading the integration."""
 
 from typing import Any
 

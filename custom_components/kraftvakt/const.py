@@ -1,4 +1,4 @@
-"""Konstanter for Kraftvakt."""
+"""Constants for Kraftvakt."""
 
 from __future__ import annotations
 

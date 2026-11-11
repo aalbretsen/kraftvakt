@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from custom_components.kraftvakt.conditions import evaluate_condition
 from custom_components.kraftvakt.config_model import Condition, ConditionType
 
-APPLIANCE = "switch.bereder"
+APPLIANCE = "switch.water_heater"
 
 
 def entity(value: str) -> Condition:
@@ -24,9 +24,9 @@ def template(value: str) -> Condition:
 async def test_entity_is_true_only_when_on(
     hass: HomeAssistant, state: str, expected: bool
 ) -> None:
-    hass.states.async_set("binary_sensor.morgen", state)
+    hass.states.async_set("binary_sensor.morning", state)
 
-    assert evaluate_condition(hass, entity("binary_sensor.morgen"), APPLIANCE) is (
+    assert evaluate_condition(hass, entity("binary_sensor.morning"), APPLIANCE) is (
         expected
     )
 
@@ -65,7 +65,7 @@ async def test_template_gets_the_entity_of_the_appliance(hass: HomeAssistant) ->
     """Templates can use `entity_id` and `entity` without naming it."""
     hass.states.async_set(APPLIANCE, "on", {"temperature": 55})
     condition = template(
-        "{{ entity_id == 'switch.bereder' and entity.state == 'on'"
+        "{{ entity_id == 'switch.water_heater' and entity.state == 'on'"
         " and entity.attributes.temperature < 60 }}"
     )
 

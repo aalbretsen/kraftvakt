@@ -24,7 +24,7 @@ def full_config_data() -> dict[str, Any]:
         "appliances": [
             {
                 "id": "a1",
-                "entity_id": "switch.varmtvannsbereder",
+                "entity_id": "switch.water_heater",
                 "turn_on": {"mode": "default"},
                 "turn_off": {
                     "mode": "custom",
@@ -40,7 +40,7 @@ def full_config_data() -> dict[str, Any]:
                 "variants": [
                     {
                         "id": "v1",
-                        "label": "Morgen",
+                        "label": "Morning",
                         "condition": {
                             "type": "template",
                             "value": "{{ 5 <= now().hour < 8 }}",
@@ -50,7 +50,7 @@ def full_config_data() -> dict[str, Any]:
             },
             {
                 "id": "a2",
-                "entity_id": "climate.bad",
+                "entity_id": "climate.bathroom",
                 "turn_on": {"mode": "default"},
                 "turn_off": {"mode": "default"},
                 "power_reserve_w": 800,
@@ -69,7 +69,7 @@ def full_config_data() -> dict[str, Any]:
             "chargers": [
                 {
                     "id": "c1",
-                    "entity_id": "switch.lader_garasje",
+                    "entity_id": "switch.garage_charger",
                     "activate": {"mode": "default"},
                     "deactivate": {"mode": "default"},
                     "set_current": {
@@ -77,18 +77,20 @@ def full_config_data() -> dict[str, Any]:
                         "action": [
                             {
                                 "action": "number.set_value",
-                                "target": {"entity_id": "number.lader_garasje_strom"},
+                                "target": {
+                                    "entity_id": "number.garage_charger_current"
+                                },
                                 "data": {"value": "{{ current }}"},
                             }
                         ],
                     },
                     "min_current_a": 6,
                     "max_current_a": 32,
-                    "charge_power_sensor": "sensor.lader_garasje_effekt",
+                    "charge_power_sensor": "sensor.garage_charger_power",
                     "power_reserve_w": 3000,
                     "car_connected": {
                         "type": "entity",
-                        "value": "binary_sensor.lader_garasje_bil",
+                        "value": "binary_sensor.garage_charger_car",
                     },
                     "charging_window": {"start": "22:00", "end": "06:00"},
                 }
