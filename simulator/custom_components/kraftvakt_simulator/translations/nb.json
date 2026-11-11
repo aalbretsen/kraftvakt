@@ -6,6 +6,7 @@
         "menu_options": {
           "han": "HAN (husets effekt)",
           "heater": "Varmeapparat",
+          "thermostat": "Termostat",
           "charger": "Elbillader"
         }
       },
@@ -26,6 +27,21 @@
         "data": {
           "name": "Navn",
           "heater_type": "Type",
+          "power_w": "Effekt",
+          "duty_cycle_pct": "Driftsandel",
+          "period_min": "Periode"
+        },
+        "data_description": {
+          "power_w": "Effekt mens apparatet varmer.",
+          "duty_cycle_pct": "Andelen av perioden apparatet varmer.",
+          "period_min": "Lengden på én syklus i minutter."
+        }
+      },
+      "thermostat": {
+        "title": "Simulert termostat",
+        "description": "Et varmeapparat styrt av en termostat med modusene av, varme og auto. I varme og auto varmer det i en fast syklus, uansett temperatur: først på i driftsandelen av perioden, så av. Syklusen starter på nytt hver gang modusen endres fra av, og når syklusen endres. Når den slås på, går den tilbake til den siste modusen den varmet i.",
+        "data": {
+          "name": "Navn",
           "power_w": "Effekt",
           "duty_cycle_pct": "Driftsandel",
           "period_min": "Periode"

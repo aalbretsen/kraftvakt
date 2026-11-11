@@ -6,6 +6,7 @@
         "menu_options": {
           "han": "HAN (house power)",
           "heater": "Heating device",
+          "thermostat": "Thermostat",
           "charger": "EV charger"
         }
       },
@@ -26,6 +27,21 @@
         "data": {
           "name": "Name",
           "heater_type": "Type",
+          "power_w": "Power",
+          "duty_cycle_pct": "Duty cycle",
+          "period_min": "Period"
+        },
+        "data_description": {
+          "power_w": "Power while heating.",
+          "duty_cycle_pct": "Share of the period the device heats.",
+          "period_min": "Length of one cycle in minutes."
+        }
+      },
+      "thermostat": {
+        "title": "Simulated thermostat",
+        "description": "A heating device controlled by a thermostat with the modes off, heat and auto. In heat and auto it heats in a fixed cycle, whatever the temperatures: first on for the duty cycle's share of the period, then off. The cycle starts again each time the mode changes from off, and when the cycle is changed. Turning it on returns it to the last mode it heated in.",
+        "data": {
+          "name": "Name",
           "power_w": "Power",
           "duty_cycle_pct": "Duty cycle",
           "period_min": "Period"

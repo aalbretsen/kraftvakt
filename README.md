@@ -540,6 +540,12 @@ device at a time with **Add device**:
   the on part: 750 W, 25 % and 60 minutes give 15 minutes on and 45 minutes
   off, over and over. The cycle starts again every time the switch is turned
   on or the cycle is changed. With the switch off, it uses nothing.
+- **Thermostat:** a heating device controlled by a thermostat, with the same
+  power, duty cycle and period, and a climate entity with the modes off, heat
+  and auto and a target temperature. In heat and auto it heats in the cycle,
+  whatever the temperatures, and in off it uses nothing. The cycle starts
+  again every time the mode changes from off. Turning it on returns it to the
+  last mode it heated in, heat at first.
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has
   the switches **Charging allowed**, **Car connected** and **Car fully
   charged**, **Charging current** (A), the sensor **Charging power** and the
@@ -547,21 +553,22 @@ device at a time with **Add device**:
   draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging
   is allowed, a car is connected and the car is not fully charged.
 
-Heating devices and EV chargers also have the switch **Unplugged**. While it
-is on, the device uses nothing, whatever the other switches are set to. The
-cycle of a heating device runs on while it is unplugged.
+Heating devices, thermostats and EV chargers also have the switch
+**Unplugged**. While it is on, the device uses nothing, whatever the other
+switches are set to. The cycle of a heating device runs on while it is
+unplugged.
 
 What controls the simulation and does not belong to a real device is under
 **Configuration** on the device page, and can be changed while Home Assistant
 runs: **Background power**, **Heating power**, **Duty cycle**, **Period**,
 **Car connected**, **Car fully charged** and **Unplugged**. The settings can
-be changed with **Reconfigure**. The switches and the charging current keep
-their state over a restart.
+be changed with **Reconfigure**. The switches, the charging current, and the
+mode and target temperature of a thermostat keep their state over a restart.
 
 Then set up Kraftvakt against the simulator: the power sensor of the HAN as
-the power sensor, the switches of the heating devices as appliances, and for
-each EV charger (the entity IDs follow the language of Home Assistant when
-the device is added):
+the power sensor, the switches of the heating devices and the thermostats as
+appliances, and for each EV charger (the entity IDs follow the language of
+Home Assistant when the device is added):
 
 | Field in Kraftvakt | Value |
 |---|---|

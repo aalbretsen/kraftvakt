@@ -13,6 +13,7 @@ class DeviceKind(StrEnum):
 
     HAN = "han"
     HEATER = "heater"
+    THERMOSTAT = "thermostat"
     CHARGER = "charger"
 
 
@@ -37,3 +38,6 @@ MAX_BACKGROUND_W: Final = 50_000
 MAX_HEATER_POWER_W: Final = 20_000
 MAX_PERIOD_MIN: Final = 24 * 60
 MAX_CURRENT_A: Final = 63
+DEFAULT_TARGET_TEMPERATURE: Final = 21.0
+MIN_TARGET_TEMPERATURE: Final = 5.0
+MAX_TARGET_TEMPERATURE: Final = 30.0

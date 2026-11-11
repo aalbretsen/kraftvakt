@@ -1,4 +1,4 @@
-"""Switches of the simulated heating devices and EV chargers."""
+"""Switches of the simulated heating devices, thermostats and EV chargers."""
 
 from __future__ import annotations
 
@@ -81,11 +81,14 @@ async def async_setup_entry(
     entry: SimulatorConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the switches of a heating device or an EV charger."""
-    if kind_of(entry) is DeviceKind.HEATER:
-        descriptions = (heater_switch(entry.data[CONF_HEATER_TYPE]),)
-    else:
-        descriptions = CHARGER_SWITCHES
+    """Add the switches of a heating device, a thermostat or an EV charger."""
+    match kind_of(entry):
+        case DeviceKind.HEATER:
+            descriptions = (heater_switch(entry.data[CONF_HEATER_TYPE]),)
+        case DeviceKind.THERMOSTAT:
+            descriptions = ()
+        case _:
+            descriptions = CHARGER_SWITCHES
     async_add_entities(
         SimulatorSwitch(entry, entry.runtime_data, description)
         for description in (*descriptions, UNPLUGGED_SWITCH)

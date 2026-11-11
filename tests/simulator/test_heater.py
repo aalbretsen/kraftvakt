@@ -206,6 +206,16 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(
             ],
         ),
         (
+            DeviceKind.THERMOSTAT,
+            "Thermostat",
+            [
+                "number.thermostat_heating_power",
+                "number.thermostat_duty_cycle",
+                "number.thermostat_period",
+                "switch.thermostat_unplugged",
+            ],
+        ),
+        (
             DeviceKind.CHARGER,
             "Charger",
             [

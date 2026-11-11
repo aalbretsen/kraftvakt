@@ -7,6 +7,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, timedelta
 
+from homeassistant.components.climate import HVACMode
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.util import dt as dt_util
@@ -17,6 +18,7 @@ from .const import (
     CONF_DUTY_CYCLE_PCT,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    DEFAULT_TARGET_TEMPERATURE,
     DOMAIN,
 )
 from .model import ChargerState, DutyCycle
@@ -277,6 +279,51 @@ class SimulatedHeater(PluggedInDevice):
         if self._cancel_timer is not None:
             self._cancel_timer()
             self._cancel_timer = None
+
+
+class SimulatedThermostat(SimulatedHeater):
+    """A heating device controlled by a thermostat with the modes off, heat and auto.
+
+    It runs the duty cycle in heat and auto, whatever the temperatures. Turning
+    it on returns it to the last mode it heated in, heat at first.
+    """
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        consumer_id: str,
+        cycle: DutyCycle,
+        store_setting: StoreSetting,
+    ) -> None:
+        """Start in off with the default target temperature."""
+        super().__init__(hass, consumer_id, cycle, store_setting)
+        self.hvac_mode = HVACMode.OFF
+        self.target_temperature = DEFAULT_TARGET_TEMPERATURE
+        self._last_heating_mode = HVACMode.HEAT
+
+    @callback
+    def async_set_hvac_mode(self, mode: HVACMode) -> None:
+        """Change the mode. Leaving off restarts the cycle."""
+        if mode != HVACMode.OFF:
+            self._last_heating_mode = mode
+        mode_changed = mode != self.hvac_mode
+        self.hvac_mode = mode
+        heating_mode = mode != HVACMode.OFF
+        if heating_mode != self.is_on:
+            self.async_set_on(heating_mode)
+        elif mode_changed:
+            self._async_notify()
+
+    @callback
+    def async_turn_on(self) -> None:
+        """Return to the last mode the thermostat heated in."""
+        self.async_set_hvac_mode(self._last_heating_mode)
+
+    @callback
+    def async_set_target_temperature(self, temperature: float) -> None:
+        """Change the target temperature. It does not change the power."""
+        self.target_temperature = temperature
+        self._async_notify()
 
 
 class SimulatedCharger(PluggedInDevice):

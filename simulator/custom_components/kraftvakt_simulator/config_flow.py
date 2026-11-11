@@ -61,6 +61,14 @@ def whole_number(
     return vol.All(selector, vol.Coerce(int))
 
 
+DUTY_CYCLE_FIELDS = {
+    vol.Required(CONF_POWER_W, default=1000): whole_number(
+        1, MAX_HEATER_POWER_W, UnitOfPower.WATT
+    ),
+    vol.Required(CONF_DUTY_CYCLE_PCT, default=50): whole_number(0, 100, PERCENTAGE),
+    vol.Required(CONF_PERIOD_MIN, default=60): whole_number(1, MAX_PERIOD_MIN, "min"),
+}
+
 SCHEMAS = {
     DeviceKind.HAN: vol.Schema(
         {
@@ -80,16 +88,11 @@ SCHEMAS = {
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
-            vol.Required(CONF_POWER_W, default=1000): whole_number(
-                1, MAX_HEATER_POWER_W, UnitOfPower.WATT
-            ),
-            vol.Required(CONF_DUTY_CYCLE_PCT, default=50): whole_number(
-                0, 100, PERCENTAGE
-            ),
-            vol.Required(CONF_PERIOD_MIN, default=60): whole_number(
-                1, MAX_PERIOD_MIN, "min"
-            ),
+            **DUTY_CYCLE_FIELDS,
         }
+    ),
+    DeviceKind.THERMOSTAT: vol.Schema(
+        {vol.Required(CONF_NAME): TextSelector(), **DUTY_CYCLE_FIELDS}
     ),
     DeviceKind.CHARGER: vol.Schema(
         {
@@ -116,7 +119,7 @@ def validate(kind: DeviceKind, user_input: dict[str, Any]) -> dict[str, str]:
 
 
 class SimulatorConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Add a simulated HAN, heating device or EV charger, or change its settings."""
+    """Add a simulated device of any kind, or change its settings."""
 
     VERSION = 1
 
@@ -142,6 +145,12 @@ class SimulatorConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Ask for the settings of a heating device."""
         return await self._async_device_step(DeviceKind.HEATER, user_input)
+
+    async def async_step_thermostat(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for the settings of a thermostat."""
+        return await self._async_device_step(DeviceKind.THERMOSTAT, user_input)
 
     async def async_step_charger(
         self, user_input: dict[str, Any] | None = None

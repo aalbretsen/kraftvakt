@@ -35,6 +35,7 @@ def power_description(key: str) -> SensorEntityDescription:
 DESCRIPTIONS: Final = {
     DeviceKind.HAN: power_description("house_power"),
     DeviceKind.HEATER: power_description("power"),
+    DeviceKind.THERMOSTAT: power_description("power"),
     DeviceKind.CHARGER: power_description("charging_power"),
 }
 

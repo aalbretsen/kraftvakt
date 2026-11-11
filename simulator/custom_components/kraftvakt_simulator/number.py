@@ -114,7 +114,7 @@ async def async_setup_entry(
     match kind_of(entry):
         case DeviceKind.HAN:
             descriptions: tuple[SimulatorNumberDescription, ...] = (BACKGROUND_POWER,)
-        case DeviceKind.HEATER:
+        case DeviceKind.HEATER | DeviceKind.THERMOSTAT:
             descriptions = HEATER_NUMBERS
         case DeviceKind.CHARGER:
             async_add_entities(

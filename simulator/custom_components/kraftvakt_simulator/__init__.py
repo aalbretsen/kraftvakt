@@ -1,4 +1,4 @@
-"""Kraftvakt simulator: simulated HAN, heating devices and EV chargers.
+"""Kraftvakt simulator: simulated HAN, heating devices, thermostats and EV chargers.
 
 Only for testing Kraftvakt against a local Home Assistant. It is not part of
 the Kraftvakt integration that users install.
@@ -6,9 +6,10 @@ the Kraftvakt integration that users install.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import timedelta
 from functools import partial
-from typing import Final
+from typing import Any, Final
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -24,7 +25,13 @@ from .const import (
     CONF_POWER_W,
     DeviceKind,
 )
-from .devices import SimulatedCharger, SimulatedDevice, SimulatedHan, SimulatedHeater
+from .devices import (
+    SimulatedCharger,
+    SimulatedDevice,
+    SimulatedHan,
+    SimulatedHeater,
+    SimulatedThermostat,
+)
 from .model import DutyCycle
 
 type SimulatorConfigEntry = ConfigEntry[SimulatedDevice]
@@ -32,6 +39,12 @@ type SimulatorConfigEntry = ConfigEntry[SimulatedDevice]
 PLATFORMS: Final = {
     DeviceKind.HAN: [Platform.NUMBER, Platform.SENSOR],
     DeviceKind.HEATER: [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH],
+    DeviceKind.THERMOSTAT: [
+        Platform.CLIMATE,
+        Platform.NUMBER,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
     DeviceKind.CHARGER: [
         Platform.BINARY_SENSOR,
         Platform.NUMBER,
@@ -81,12 +94,13 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
                 hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting
             )
         case DeviceKind.HEATER:
-            cycle = DutyCycle(
-                power_w=data[CONF_POWER_W],
-                duty_cycle_pct=data[CONF_DUTY_CYCLE_PCT],
-                period=timedelta(minutes=data[CONF_PERIOD_MIN]),
+            return SimulatedHeater(
+                hass, entry.entry_id, _duty_cycle(data), store_setting
             )
-            return SimulatedHeater(hass, entry.entry_id, cycle, store_setting)
+        case DeviceKind.THERMOSTAT:
+            return SimulatedThermostat(
+                hass, entry.entry_id, _duty_cycle(data), store_setting
+            )
         case DeviceKind.CHARGER:
             return SimulatedCharger(
                 hass,
@@ -94,6 +108,14 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
                 data[CONF_MIN_CURRENT_A],
                 data[CONF_MAX_CURRENT_A],
             )
+
+
+def _duty_cycle(data: Mapping[str, Any]) -> DutyCycle:
+    return DutyCycle(
+        power_w=data[CONF_POWER_W],
+        duty_cycle_pct=data[CONF_DUTY_CYCLE_PCT],
+        period=timedelta(minutes=data[CONF_PERIOD_MIN]),
+    )
 
 
 def _store_setting(

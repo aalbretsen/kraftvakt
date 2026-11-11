@@ -23,8 +23,14 @@ HEATER = {
     "duty_cycle_pct": 25,
     "period_min": 60,
 }
+THERMOSTAT = {"power_w": 750, "duty_cycle_pct": 25, "period_min": 60}
 CHARGER = {"min_current_a": 6, "max_current_a": 16}
-SETTINGS = {DeviceKind.HAN: HAN, DeviceKind.HEATER: HEATER, DeviceKind.CHARGER: CHARGER}
+SETTINGS = {
+    DeviceKind.HAN: HAN,
+    DeviceKind.HEATER: HEATER,
+    DeviceKind.THERMOSTAT: THERMOSTAT,
+    DeviceKind.CHARGER: CHARGER,
+}
 
 
 @pytest.fixture

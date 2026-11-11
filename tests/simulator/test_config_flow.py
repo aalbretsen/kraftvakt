@@ -9,7 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.kraftvakt_simulator.const import DOMAIN, DeviceKind
 
-from .conftest import CHARGER, HAN, HEATER, AddDevice, power, state
+from .conftest import CHARGER, HAN, HEATER, THERMOSTAT, AddDevice, power, state
 
 
 async def start_flow(hass: HomeAssistant, kind: DeviceKind) -> dict[str, Any]:
@@ -18,7 +18,7 @@ async def start_flow(hass: HomeAssistant, kind: DeviceKind) -> dict[str, Any]:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["han", "heater", "charger"]
+    assert result["menu_options"] == ["han", "heater", "thermostat", "charger"]
     return await hass.config_entries.flow.async_configure(
         result["flow_id"], {"next_step_id": kind}
     )
@@ -29,6 +29,7 @@ async def start_flow(hass: HomeAssistant, kind: DeviceKind) -> dict[str, Any]:
     [
         (DeviceKind.HAN, "HAN", HAN),
         (DeviceKind.HEATER, "Bathroom floor", HEATER),
+        (DeviceKind.THERMOSTAT, "Living room", THERMOSTAT),
         (DeviceKind.CHARGER, "Garage", CHARGER),
     ],
 )

@@ -1,6 +1,6 @@
 ---
 name: kraftvakt-simulator
-description: The Kraftvakt simulator in simulator/custom_components/kraftvakt_simulator - a simulated HAN, heating devices with a duty cycle and 400 V three-phase EV chargers, set up as config entries in a local Home Assistant to test Kraftvakt by hand. Where it lives and why, how the devices behave, the modules, entities and config flow, and how to extend it. Use before changing or adding anything in simulator/ or tests/simulator/.
+description: The Kraftvakt simulator in simulator/custom_components/kraftvakt_simulator - a simulated HAN, heating devices and thermostats with a duty cycle, and 400 V three-phase EV chargers, set up as config entries in a local Home Assistant to test Kraftvakt by hand. Where it lives and why, how the devices behave, the modules, entities and config flow, and how to extend it. Use before changing or adding anything in simulator/ or tests/simulator/.
 ---
 
 # Kraftvakt simulator
@@ -28,8 +28,8 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 
 ## How the devices behave
 
-- One integration. Adding a device shows a menu: HAN, heating device or EV
-  charger. Each device is its own config entry and device.
+- One integration. Adding a device shows a menu: HAN, heating device,
+  thermostat or EV charger. Each device is its own config entry and device.
 - Only one HAN. It reports the background power plus the power of every
   simulated device, also devices set up after it.
 - Heating device types (heating cable, water heater, panel heater) behave the
@@ -40,6 +40,12 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   the switch is turned on**, and so also after a restart with a restored
   switch. Why: a device that Kraftvakt turns on must draw power at once, as a
   real one does.
+- A thermostat is a heating device whose climate entity takes the place of
+  the switch: off, heat and auto, with a target temperature. Heat and auto
+  both run the cycle and the temperatures change nothing, so the regulation
+  sees the same power as from a heating device. Turning it on returns to the
+  last heating mode (heat at first), as `climate.turn_on` does on real
+  thermostats, so Kraftvakt's default climate actions can be tested.
 - Power, duty cycle and period are also number entities, changeable while HA
   runs. A change while the switch is on restarts the cycle in its on part; an
   unchanged value does nothing.
@@ -48,7 +54,7 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   amperes. It draws power only while charging is allowed, a car is connected
   and the car is not fully charged. Its charging binary sensor is on while it
   draws power, so Kraftvakt's actively charging can be tested from an entity.
-- Heating devices and chargers have an unplugged switch. While it is on, the
+- Heating devices, thermostats and chargers have an unplugged switch. While it is on, the
   device uses no power whatever its other switches say, so a simulation can
   control which devices consume. A heater's cycle runs on while unplugged. The
   HAN has no such switch: set its background power instead.
@@ -57,11 +63,12 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   page: background power, heating power, duty cycle, period, car connected,
   car fully charged and unplugged. Charging allowed, the charging current, the
   heater switch and the sensors are the device's own and stay main entities.
-- A heating device's switch has the device's name. The other entities are
+- A heating device's switch and a thermostat's climate entity have the
+  device's name. The other entities are
   named by their translation key.
-- After a restart every entity gets its state back. The switches and the
-  charging current restore themselves (the current clamped to the current
-  range). The settings that are numbers (background power, heating power,
+- After a restart every entity gets its state back. The switches, the
+  charging current (clamped to the current range) and a thermostat's mode and
+  target temperature restore themselves. The settings that are numbers (background power, heating power,
   duty cycle, period) are kept in the config entry data instead, so that
   reconfiguring the device changes them.
 - Every kind has a reconfigure flow with the same form as when it was added.
@@ -76,7 +83,7 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 | `__init__.py` | Creates the device of an entry by its kind and forwards only the platforms of that kind. |
 | `config_flow.py` | Menu, one form per kind, validation, reconfigure. |
 | `entity.py` | The base entity: device info, a unique ID from the entry and a key, writes its state when what it observes changes. |
-| `sensor.py`, `switch.py`, `number.py` | The entities, as entity descriptions with functions that read and set the device. |
+| `sensor.py`, `switch.py`, `number.py`, `binary_sensor.py`, `climate.py` | The entities, as entity descriptions with functions that read and set the device. |
 
 ## How to write code for the simulator
 
