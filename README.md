@@ -5,355 +5,352 @@
   </picture>
 </p>
 
-# Kraftvakt: prioritert effektstyring for Home Assistant
+# Kraftvakt: prioritized power management for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![Validate](https://github.com/aalbretsen/kraftvakt/actions/workflows/validate.yml/badge.svg)](https://github.com/aalbretsen/kraftvakt/actions/workflows/validate.yml)
 [![CI](https://github.com/aalbretsen/kraftvakt/actions/workflows/ci.yml/badge.svg)](https://github.com/aalbretsen/kraftvakt/actions/workflows/ci.yml)
 
-Kraftvakt styrer hvilke effektkrevende apparater som får bruke strøm, i
-prioritert rekkefølge. Eksempler er varmtvannsbereder, varmekabler og
-elbillader. Den er rettet mot det norske strømmarkedet og holder
-snittforbruket siste time rett under en valgt effektgrense, slik at du unngår
-et dyrere trinn i kapasitetsleddet i nettleien. Alt settes opp i et eget panel
-i sidemenyen. Kraftvakt kjører helt lokalt, uten skytjenester.
+Kraftvakt decides which power-hungry appliances may use power, in priority
+order, for example a water heater, heating cables and EV chargers. It is made
+for the Norwegian electricity market and keeps the average consumption over
+the last hour just below a chosen power limit, so you avoid a more expensive
+step in the capacity part of the grid tariff. Everything is set up in a panel
+in the sidebar. Kraftvakt runs entirely locally, without cloud services.
 
-> **Status:** Første versjon under utprøving. Måling, regulering av apparater
-> med varianter, elbillading, straff, sikker tilstand og panelet er på plass og
-> testet automatisk og manuelt mot Home Assistant 2026.10.4, men Kraftvakt har
-> ennå lite erfaring fra virkelig drift.
+> **Status:** First version, being tried out. Measurement, regulation of
+> appliances with variants, EV charging, penalty, safe state and the panel are
+> in place and tested automatically and by hand against Home Assistant
+> 2026.10.4, but Kraftvakt has little experience from real use yet.
 
-## Krav
+## Requirements
 
-- Home Assistant 2026.10 eller nyere
+- Home Assistant 2026.10 or newer
+- A sensor from another integration that measures the total power of the
+  house, typically from the HAN port of the electricity meter. It may report
+  W or kW. A sensor without a unit is read as W.
 
-## Installasjon
+## Installation
 
-### HACS (anbefalt)
+### HACS (recommended)
 
-1. Åpne HACS → ⋮ → **Egendefinerte repositorier**.
-2. Legg til `https://github.com/aalbretsen/kraftvakt` med kategori **Integrasjon**.
-3. Installer **Kraftvakt** og start Home Assistant på nytt.
+1. Open HACS → ⋮ → **Custom repositories**.
+2. Add `https://github.com/aalbretsen/kraftvakt` with the type **Integration**.
+3. Install **Kraftvakt** and restart Home Assistant.
 
-### Manuelt
+### Manual
 
-Kopier `custom_components/kraftvakt` til `config/custom_components/` i
-Home Assistant og start på nytt.
+Copy `custom_components/kraftvakt` to `config/custom_components/` in Home
+Assistant and restart.
 
-## Oppsett
+## Setup
 
-1. Gå til **Innstillinger → Enheter og tjenester → Legg til integrasjon**.
-2. Søk etter **Kraftvakt** og fullfør oppsettet. Det er ingen innstillinger her.
-3. Åpne **Kraftvakt** i sidemenyen, eller trykk på tannhjulet for integrasjonen,
-   og sett opp effektsensor, effektgrense, apparater og eventuelt elbilladere.
-4. Trykk **Lagre**, gå til **Status** og trykk **Start regulering**.
+1. Go to **Settings → Devices & services → Add integration**, search for
+   **Kraftvakt** and finish the setup. It has no settings.
+2. Open **Kraftvakt** in the sidebar, or press the cogwheel of the
+   integration, and set the power sensor, the power limit, the appliances and
+   any EV chargers.
+3. Press **Save**, go to **Status** and press **Start regulation**.
 
-Effektsensoren er en sensor fra en annen integrasjon som måler husets totale
-effekt, typisk fra HAN-porten på strømmåleren.
+## How it works
 
-## Slik virker det
+- **Power limit:** the highest allowed average consumption, for example
+  10,000 W. It matches the step of the capacity tariff you want to stay below.
+- **Average consumption:** the moving average of the power sensor over the
+  last hour. This is what the grid company measures, and what is kept below
+  the power limit.
+- **Regulation average:** the average of the power sensor over a short
+  regulation window, 10 seconds by default. It drives the decisions.
+- **Decisions:** at every regulation interval, the regulation decides whether
+  to turn an appliance on or off. When the regulation average is above the
+  power limit, the lowest-priority appliance that is on is turned off. When
+  power is free, the next appliance in the priority list is turned on, one at
+  a time and after a waiting time.
+- **Turn-on margin:** how far below the power limit the regulation average
+  must be before an appliance is turned on, 100 W by default. The window right
+  after a decision still holds some of the consumption from before it, and
+  the margin keeps an appliance from being turned on only to be turned off
+  again at the next decision.
+- **Power reserve:** optional free power that must be available before an
+  appliance is turned on, for example 4000 W for a pool heater that draws a
+  lot as soon as it is turned on.
+- **Waiting time:** follows the waiting time curve. With the regulation
+  average below half the power limit there is no waiting, and close to the
+  power limit the appliance waits nearly the whole waiting time at the power
+  limit, 300 seconds by default.
+- **Repeated turn-on:** when the regulation turns the same appliance on over
+  and over again with nothing else switched in between, the first two
+  turn-ons follow the curve. From the third, the waiting time is the waiting
+  time at the power limit, and it grows by one step each time until the
+  chosen number of steps is reached. The step is a share of the waiting time
+  at the power limit. The defaults are × 0.5 and 4 steps for appliances
+  (150 s steps, at most 900 s), and × 1 and 5 steps for EV chargers (300 s
+  steps, at most 1800 s), where each ampere counts on its own. With no waiting
+  time at the power limit, the waiting time does not grow.
+- **Variants:** an appliance can have variants with another place in the
+  priority list, for example a higher priority in the morning.
+- **Penalty:** when the average consumption goes above the power limit plus
+  the penalty threshold, every appliance is kept off until the overconsumption
+  is recovered, and the regulation then starts again. The penalty is a safety
+  valve and should normally never happen.
+- **Safe state:** when the power sensor has had no valid value as two
+  regulation windows in a row closed, every appliance is kept off. A single
+  missing value is tolerated. When the sensor gives a valid value again, the
+  regulation starts again.
 
-- **Effektgrense:** høyeste tillatte gjennomsnittseffekt, for eksempel 10 000 W (10 kW).
-  Den tilsvarer trinnet i kapasitetsleddet du vil holde deg under.
-- **Reguleringssnitt:** gjennomsnittet av effektsensoren over et kort
-  reguleringsvindu, standard 10 sekunder. Det styrer reguleringen.
-- **Snittforbruk:** glidende gjennomsnitt over siste time. Det er dette
-  nettselskapet måler, og det som skal holdes under effektgrensen.
-- **Avgjørelser:** Ved hvert reguleringsintervall avgjør reguleringen om et
-  apparat skal slås på eller av. Er reguleringssnittet over effektgrensen,
-  slås det lavest prioriterte apparatet som er på, av. Er det ledig effekt,
-  slås det neste apparatet i prioritetslisten på, ett om gangen og etter en
-  ventetid. Ventetiden følger ventetidskurven: under halvparten av
-  effektgrensen ventes det ikke, og nær effektgrensen ventes nesten hele
-  ventetiden ved effektgrensen. Slås det samme apparatet på igjen gang på
-  gang, er ventetiden fra andre gang lik ventetiden ved effektgrensen, og den
-  øker med et steg hver gang til et valgt antall steg er nådd. Steget er en
-  andel av ventetiden ved effektgrensen. Standard er × 0,5 og 4 steg for
-  apparater (150 s steg og høyst 900 s med 300 s ved effektgrensen), og × 1
-  og 5 steg for elbilladere (300 s steg og høyst 1800 s), der hver ampere
-  regnes for seg. Med ventetid 0 ved effektgrensen øker ikke ventetiden.
-- **Innkoblingsmargin:** hvor langt under effektgrensen reguleringssnittet
-  må være før et apparat slås på, standard 100 W. Vinduet rett etter en
-  avgjørelse inneholder litt av forbruket fra før apparatene ble slått av
-  eller på, og marginen hindrer at et apparat slås på bare for å slås av igjen
-  ved neste avgjørelse.
-- **Effektreserve:** valgfri ledig effekt som må finnes før et apparat slås på,
-  for eksempel 4000 W for en bassengvarmer som trekker mye straks den slås på.
-- **Varianter:** Et apparat kan ha varianter med en annen plass i
-  prioritetslisten, for eksempel høyere prioritet om morgenen.
-- **Straff:** Går snittforbruket over effektgrensen pluss straffeterskelen,
-  slås alle apparater av til overforbruket er hentet inn. Straffen er en
-  sikkerhetsventil og skal normalt aldri inntre.
-- **Sikker tilstand:** Har effektsensoren vært uten gyldig verdi da to
-  reguleringsvinduer på rad ble lukket, slås alle apparater av til den kommer
-  tilbake. Én manglende verdi tåles.
+Kraftvakt does not know what an appliance actually uses, and does not read
+whether it is on. It assumes the appliances are as Kraftvakt last set them. Do
+not turn regulated appliances on or off outside Kraftvakt. It can disturb the
+regulation, affect appliances with higher priority and trigger a penalty. EV
+chargers are the exception: Kraftvakt reads their charging power and whether a
+car is connected.
 
-Effektsensoren kan oppgi effekt i W eller kW. En sensor uten enhet leses som W.
+## Starting and stopping
 
-Kraftvakt vet ikke hva et apparat faktisk bruker, og leser ikke om det står på.
-Den regner med at apparatene står slik Kraftvakt sist bestemte. Ikke slå
-regulerte apparater av eller på utenom Kraftvakt, for det kan forstyrre
-reguleringen, gå ut over apparater med høyere prioritet og utløse straff.
-Unntaket er elbilladere, der Kraftvakt leser ladeeffekt og om en bil er
-tilkoblet.
+The regulation starts by itself when Home Assistant or the integration starts,
+provided the configuration is complete:
 
-## Konfigurasjon i panelet
+- a power sensor is chosen,
+- every appliance has an entity and actions to turn it on and off,
+- when EV charging control is on, every EV charger has an entity, actions to
+  activate, deactivate and set the charging current, and a sensor for charging
+  power, and also **Car connected** when only one EV charger may charge at a
+  time.
 
-Panelet har en meny øverst med statussiden og fire konfigurasjonssider. Bare
-administratorer har tilgang.
+When Home Assistant starts, the regulation waits until Home Assistant has
+finished starting, so the integrations of the appliances are loaded. If the
+stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt
+does not start, the integration shows an error, and the file is left
+unchanged.
 
-- **Generelt:** effektsensor, effektgrense, innkoblingsmargin,
-  reguleringsvindu, reguleringsintervall, ventetid ved effektgrensen og
-  straffeterskel.
-  Hjelpeteksten under hvert felt viser gyldig område og standardverdi.
-- **Apparater:** prioritetslisten, med det viktigste apparatet øverst. Dra i
-  håndtaket for å endre rekkefølgen. **Legg til apparat** og blyanten åpner en
-  dialog med entitet, handlinger for å slå på og av, valgfri effektreserve og
-  varianter. En variant har en merkelapp og et uttrykk, enten en boolsk entitet
-  eller en mal. Varianten står som en egen oppføring i prioritetslisten, og det
-  øverste sanne uttrykket gjelder. Under malen vises hva den gir nå.
-  Når billadestyring er på, står **Elbillading** i listen og kan flyttes som et
-  apparat.
-- **Billading:** billadestyring av og på, én elbillader om gangen, og
-  elbilladerne i ladeprioritering. Dialogen for en elbillader har entitet,
-  handlinger for å aktivere, deaktivere og sette ladestrøm, minste og største
-  ladestrøm, sensor for ladeeffekt, effektreserve, bil tilkoblet og ladetidsrom.
-  Bil tilkoblet er påkrevd når bare én elbillader kan lade om gangen.
-  Når billadestyring er av, beholdes elbilladerne, men de kan bare vises.
-- **Avansert:** **Ventetidskurve** har to glidebrytere, bratthet og
-  vendepunkt, og en tabell og en kurve som viser hvor stor del av ventetiden
-  et apparat venter etter hvor mye effekt som er ledig, det vil si
-  effektgrensen minus reguleringssnittet. Vendepunktet er ledig effekt i
-  prosent av effektgrensen. Tabellen viser ledig effekt i kW, ventetiden i
-  minutter og sekunder og reell ventetid, som er ventetiden rundet opp til
-  reguleringsintervallet, fordi apparatet slås på ved første avgjørelse etter
-  ventetiden. Kurven viser ledig effekt i kW fra 60 % av effektgrensen og ned
-  til 0. Tallene regnes ut fra effektgrensen, ventetiden ved effektgrensen,
-  reguleringsvinduet og reguleringsintervallet som er satt. Tabellen og
-  kurven følger glidebryterne med en gang. På en smal skjerm vises ikke
-  tabellen.
-  **Ventetid ved gjentatt innkobling** har steg og antall steg for apparater
-  og for elbilladere. Steget velges som × 0,25, × 0,5, × 0,75 eller × 1 av
-  ventetiden ved effektgrensen, og antall steg er 1–9. En tabell under hver
-  viser ventetiden og reell ventetid for hver innkobling på rad, i minutter
-  og sekunder. For de to første, der ventetiden følger kurven, viser den
-  ventetiden ved vendepunktet.
+Every start turns all appliances off and deactivates all EV chargers at once.
+The regulation then turns them on one by one in priority order, with the first
+decision one full regulation interval after the start. The regulation also
+starts again with everything off when a penalty or the safe state ends, and at
+the next decision after the power limit is changed with the **Power limit**
+entity, see [Entities](#entities).
 
-For handlingene kan du velge **Standard** når entitetens domene har en
-standardhandling (for eksempel `switch.turn_on` og `switch.turn_off`), ellers
-lager du en egendefinert handling med HAs handlingsredigerer, se eksemplene
-lenger ned. For **Sett ladestrøm** kan du også velge **Entitet** og en
-`number`- eller `input_number`-entitet, som da får ladestrømmen som verdi.
-Mislykkes en handling, skrives feilen til loggen, og reguleringen
-fortsetter uten å prøve igjen. Entiteter som allerede brukes av et annet apparat
-eller en elbillader, kan ikke velges.
+The **Regulation** switch, and the button on the status page, stop and start
+the regulation. Stopping turns all appliances off, and nothing is turned on
+until it starts again. If the configuration is not complete, the switch stays
+off and the attempt is logged. The switch has no stored state, so the
+regulation runs again after a restart.
 
-Endringene samles i et utkast. **Lagre** lagrer alt på én gang, og **Forkast**
-går tilbake til det som er lagret. Feil vises ved feltet, og panelet lagrer
-ikke før de er rettet. Panelet spør før ulagrede endringer forkastes.
+## EV charging
 
-Konfigurasjonen kan bare endres mens reguleringen er stoppet. Mens den kjører,
-er konfigurasjonssidene låst og viser knappen **Stopp regulering**. En lagret
-konfigurasjon tas i bruk neste gang reguleringen startes. Unntaket er
-effektgrensen, som også kan endres med entiteten **Effektgrense**, se
-[Entiteter](#entiteter).
+When EV charging control is on, Kraftvakt sets the charging current of each EV
+charger one ampere at a time, by how much power is free. The place of
+**EV charging** in the priority list decides where the EV chargers are in the
+order. An EV charger charges only when Kraftvakt has activated it, so a car
+that is connected does not start charging by itself. The charging current is
+set to the minimum before the EV charger is activated or deactivated.
 
-## Statussiden
+- The charging power is read at every decision. Above 100 W the EV charger
+  counts as actively charging, and so does an unavailable sensor.
+- An EV charger gets more than the minimum current only when it is actively
+  charging. While it is being tried, the appliances below **EV charging** can
+  be turned on.
+- An EV charger that draws no power, because no car is connected or because
+  it is not charging two regulation windows after it was activated, is
+  bypassed. It is held at the minimum current, stays activated, and does not
+  stand in the way of other EV chargers.
+- An EV charger that is not charging rests before it is tried again: 15
+  minutes the first time, then 30, and then 60 minutes each time the car still
+  does not charge. It stays bypassed while it rests. If the car is
+  disconnected and connected again, or starts charging, it is tried at once.
+- When only one EV charger may charge at a time, an EV charger that is
+  actively charging may continue until it is done, and the others wait.
+  **Car connected** is then required for every EV charger. Without it,
+  Kraftvakt could only find a connected car by activating the EV charger, and
+  EV chargers without a car would be activated in turn.
+- Outside its charging window, an EV charger does not charge. The charging
+  window can span midnight and follows the time zone of Home Assistant.
+- The switch **‹charger› override charging window** lets the EV charger
+  charge outside the charging window until the next charging window has
+  started, even if the regulation has been stopped or in safe state
+  meanwhile. After a restart of Home Assistant, this is counted from the
+  first start of the regulation.
 
-Statussiden viser om reguleringen kjører, og har knappen for å starte og stoppe
-den. Er konfigurasjonen ikke fullstendig, står det hva som mangler, med lenke
-til siden der det rettes. Mens reguleringen kjører, viser den i tillegg:
+## The panel
 
-- snittforbruket og reguleringssnittet mot effektgrensen, med tiden hvert snitt
-  dekker, og forbruket nå, slik effektsensoren måler det. Stolpen viser
-  forbruket nå, med en trekant for hvert snitt og for effektgrensen,
-- en ring som tømmes frem mot neste avgjørelse. Klokkeslettet vises når du
-  holder musen over,
-- om reguleringen er i sikker tilstand, og om en straffeperiode pågår, med
-  gjenstående overforbruk. Dette vises bare når det inntreffer,
-- prioritetslisten med apparatene i prioritert rekkefølge og gjeldende variant.
-  Ikonet til et apparat som er på, er gult, som i Home Assistant. Der
-  «Elbillading» står i listen, står elbilladerne under hverandre i gjeldende
-  ladeprioritering, med ladestrømmen og én strek per ampere fra minste til
-  største ladestrøm, fylt opp til gjeldende ladestrøm. «Elbillading» viser hvor
-  mange elbilladere som lader, for eksempel «2 / 5»,
-- en merkelapp på hver rad. For et apparat står det «På» eller «Av». For en
-  elbillader står det viktigste av: «Første avgjørelse», «Utenfor regulering»,
-  ladetidsrommet (for eksempel «22–06») når den er utenfor ladetidsrommet,
-  «Ingen bil tilkoblet» når den er forbigått fordi ingen bil er tilkoblet,
-  «Trekker ikke strøm» når den er forbigått av en annen grunn, «Ventende»,
-  «Overstyrt» når den lader utenfor ladetidsrommet fordi det er overstyrt,
-  «Lader», «Aktivert» eller «Deaktivert». Hold musen over en merkelapp eller et ikon for å se hele
-  forklaringen,
-- en stiplet linje under det siste i listen som er på. Der er effekten brukt
-  opp, og det som står under, venter på ledig effekt. Linjen viser hvor mye
-  effekt som er ledig, effektgrensen minus reguleringssnittet, og hvor stor
-  del av effektgrensen det er, for eksempel «5,00 kW (50 %) ledig». Den vises ikke
-  når alt er på eller alt er av. «Elbillading» regnes som på når en elbillader
-  er aktivert og ikke forbigått,
-- en stolpe som tømmes jevnt frem til avgjørelsen der apparatet eller
-  elbilladeren som står for tur, slås på. Foran stolpen står en stoppeklokke
-  for et apparat og et plusstegn for én ampere til. På en smal skjerm vises
-  verken stolpen eller ladestrømmen i tall.
+The panel has a menu at the top with the status page and four configuration
+pages. Only administrators have access.
 
-## Entiteter
+Changes are collected in a draft. **Save** stores everything at once, and
+**Discard** goes back to what is stored. Errors are shown at the field, and
+nothing is saved until they are fixed. The panel asks before unsaved changes
+are discarded. The configuration can only be changed while the regulation is
+stopped. While it runs, the configuration pages are locked and show the
+**Stop regulation** button. A saved configuration is used the next time the
+regulation starts.
 
-Alle entitetene hører til tjenesteenheten **Kraftvakt**.
+### Configuration pages
 
-| Entitet | Beskrivelse |
+- **General:** power sensor, power limit, turn-on margin, regulation window,
+  regulation interval, waiting time at the power limit and penalty threshold.
+  The helper text under each field shows the valid range and the default.
+- **Appliances:** the priority list, with the most important appliance at the
+  top. Drag the handle to change the order. **Add appliance** and the pencil
+  open a dialog with the entity, the actions to turn it on and off, an
+  optional power reserve, and variants. A variant has a label and an
+  expression, either a boolean entity or a template, and is a separate entry
+  in the priority list. The top true expression applies. The current result
+  of a template is shown under it. When EV charging control is on, **EV
+  charging** is in the list and can be moved like an appliance.
+- **EV charging:** EV charging control on or off, one EV charger at a time,
+  and the EV chargers in charging priority. The dialog for an EV charger has
+  the entity, the actions to activate, deactivate and set the charging
+  current, the minimum and maximum charging current, the sensor for charging
+  power, the power reserve, car connected, and the charging window. When EV
+  charging control is off, the EV chargers are kept but can only be viewed.
+- **Advanced:**
+  - **Waiting time curve:** two sliders, steepness and pivot point, with a
+    table and a curve showing how much of the waiting time an appliance waits
+    by how much power is free (the power limit minus the regulation average).
+    The pivot point is free power as a percentage of the power limit. The
+    table also shows the actual waiting time, rounded up to the regulation
+    interval, since the appliance is turned on at the first decision after
+    the waiting time. The table is hidden on a narrow screen.
+  - **Waiting time on repeated turn-on:** step (× 0.25, × 0.5, × 0.75 or × 1)
+    and number of steps (1–9), for appliances and for EV chargers, each with a
+    table of the waiting time for each turn-on in a row.
+
+### Actions
+
+For each action you can choose **Standard** when the domain of the entity has
+a standard action (for example `switch.turn_on` and `switch.turn_off`), or
+create a custom action with the action editor of Home Assistant, see
+[Template and action examples](#template-and-action-examples). For **Set
+charging current** you can also choose **Entity** and a `number` or
+`input_number` entity, which then gets the charging current as its value. A
+failed action is logged, and the regulation continues without retrying. An
+entity used by another appliance or EV charger cannot be chosen.
+
+### Status page
+
+The status page shows whether the regulation runs and has the button to start
+and stop it. If the configuration is not complete, it lists what is missing,
+with a link to the page where it is fixed. While the regulation runs, it also
+shows:
+
+- the average consumption and the regulation average against the power limit,
+  and the consumption now. The bar shows the consumption now, with a marker
+  for each average and for the power limit,
+- a ring that empties towards the next decision,
+- safe state and penalty periods, with the overconsumption left, when they
+  occur,
+- the priority list with the current variant of each appliance. The icon of
+  an appliance that is on is yellow, as in Home Assistant. Under **EV
+  charging**, the EV chargers are listed in the current charging priority with
+  the charging current and one mark per ampere from the minimum to the maximum
+  current, filled up to the current one. **EV charging** shows how many EV
+  chargers are charging, for example «2 / 5»,
+- a label on each row: **On** or **Off** for an appliance, and for an EV
+  charger the most important of **First decision**, **Excluded**, the charging
+  window (for example «22–06») when outside it, **No car connected**, **No
+  power draw**, **Queued**, **Override**, **Charging**, **Activated** or
+  **Deactivated**. Hover over a label or an icon for the full explanation,
+- a dashed line under the last entry that is on. Here the power is used up,
+  and what is below waits for free power. The line shows the free power and
+  its share of the power limit, for example «5.00 kW (50 %) free». It is not
+  shown when everything is on or everything is off. **EV charging** counts as
+  on when an EV charger is activated and not bypassed,
+- a bar that empties evenly until the decision where the next appliance, or
+  one more ampere, is turned on.
+
+On a narrow screen, the bar for the next turn-on and the charging current in
+numbers are hidden.
+
+## Entities
+
+All entities belong to the service device **Kraftvakt**.
+
+| Entity | Description |
 |---|---|
-| **Regulering** | |
-| `switch.kraftvakt_regulation` (Regulering) | Er på mens reguleringen kjører. Slå av for å stoppe reguleringen og på for å starte den igjen. |
-| `binary_sensor.kraftvakt_regulation_safe_state` (Regulering sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
-| `sensor.kraftvakt_regulation_steps_on` (Regulering innkoblede trinn) | Diagnostikk. Antall trinn som er på: hvert apparat er ett trinn, og hver ampere fra minste ladestrøm og opp er ett trinn for en elbillader. Viser hvor mye reguleringen har slått på, for eksempel i en graf. |
-| **Effekt** | |
-| `number.kraftvakt_power_limit` (Effektgrense) | Effektgrensen i W, den samme som i panelet. Kan settes fra en automasjon, også mens reguleringen kjører. Se under. |
-| `sensor.kraftvakt_power_regulation_average` (Effekt reguleringssnitt) | Gjennomsnittlig effekt i kW over siste reguleringsvindu. Oppdateres hver gang et vindu lukkes. |
-| `sensor.kraftvakt_power_hourly_average` (Effekt snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
-| `sensor.kraftvakt_power_free` (Effekt ledig) | Diagnostikk. Effektgrensen minus reguleringssnittet, i kW. Negativ over effektgrensen. Oppdateres hver gang et reguleringsvindu lukkes. |
-| **Ventetid** | |
-| `sensor.kraftvakt_waiting_time_remaining` (Ventetid gjenstående) | Diagnostikk. Sekunder til avgjørelsen der apparatet eller ampere som venter, slås på, 0 når ingenting venter. Den regner til avgjørelsen, altså reell ventetid, og oppdateres hver gang et reguleringsvindu lukkes. |
-| `sensor.kraftvakt_waiting_time_next_turn_on` (Ventetid neste innkobling (beregnet)) | Diagnostikk. Ventetiden i sekunder som neste innkobling får, beregnet ut fra siste reguleringssnitt og innstillingene for ventetidskurven, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
-| **Straff** | |
-| `binary_sensor.kraftvakt_penalty_active` (Straff aktiv) | Diagnostikk. Er på mens en straffeperiode pågår. |
-| `sensor.kraftvakt_penalty_overconsumption` (Straff overforbruk) | Diagnostikk. Overforbruket i Wh fra siste avgjørelse, 0 når snittforbruket ikke er over effektgrensen. |
-| **Elbillader** | |
-| `switch.kraftvakt_charger_<lader>_excluded` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
-| `switch.kraftvakt_charger_<lader>_window_override` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
+| **Regulation** | |
+| `switch.kraftvakt_regulation` (Regulation) | On while the regulation runs. Turn off to stop the regulation, and on to start it again. |
+| `binary_sensor.kraftvakt_regulation_safe_state` (Regulation safe state) | On while the regulation is in safe state. Can trigger an automation that notifies you. |
+| `sensor.kraftvakt_regulation_steps_on` (Regulation steps on) | Diagnostic. The number of steps that are on: each appliance is one step, and each ampere of an EV charger, from the minimum current up, is one step. |
+| **Power** | |
+| `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs, see below. |
+| `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in kW. |
+| `sensor.kraftvakt_power_hourly_average` (Power hourly average) | The average consumption over the last hour in kW. |
+| `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in kW. Negative above the power limit. |
+| **Waiting time** | |
+| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on. |
+| **Penalty** | |
+| `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
+| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision, 0 when the average consumption is not above the power limit. |
+| **EV charger** | |
+| `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges. |
+| `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
 
-En ny verdi i **Effektgrense** lagres med en gang og vises i panelet. Er
-reguleringen stoppet, brukes den neste gang den startes. Kjører reguleringen,
-startes den på nytt med den nye effektgrensen ved neste avgjørelse, med alle
-apparater avslått, og en pågående straff avsluttes. Flere endringer før neste
-avgjørelse gir én omstart, og er verdien satt tilbake til effektgrensen som
-brukes, skjer ingenting. Det samme gjelder en verdi som er lik den lagrede.
-Statussiden viser effektgrensen som brukes.
+The sensors are updated every time a regulation window closes. The sensors
+that depend on the averages are unavailable until the first regulation window
+has closed, and during safe state. When the power sensor gives a valid value
+again, the measurements from before are kept, and the time without a valid
+value is counted with the last valid value before it.
 
-Entitets-ID-ene er like uansett språk og er gruppert etter hva de gjelder:
-`regulation`, `power`, `waiting_time`, `penalty` og `charger`. Navnene som
-vises, følger språket i Home Assistant og er gruppert på samme måte. ‹lader›
-er navnet på enheten som entiteten til elbilladeren hører til, eller navnet på
-entiteten når den ikke hører til en enhet, slik det var da elbilladeren ble
-lagt til.
+When Kraftvakt starts, the hour before is read from the history of the power
+sensor in the Home Assistant recorder, so the average consumption is right
+also just after a restart. The time Home Assistant was down is counted with
+the last value before it stopped. Without history, the first measurement is
+used back in time.
 
-Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
-effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
-Når effektsensoren gir en gyldig verdi igjen, blir snittene tilgjengelige
-igjen. Målingene fra før feilen beholdes, og tiden uten gyldig verdi regnes med
-den siste gyldige verdien før feilen.
+A new value in **Power limit** is stored at once. While the regulation runs,
+it starts again with the new power limit at the next decision, and an ongoing
+penalty ends. Several changes before the next decision give one restart, and a
+value equal to the power limit in use does nothing. The status page shows the
+power limit in use.
 
-Når Kraftvakt starter, hentes timen før fra historikken til effektsensoren i
-Home Assistant (opptakeren, `recorder`), slik at snittforbruket stemmer også
-rett etter en omstart. Tiden Home Assistant var nede, regnes med den siste
-verdien før den stoppet. Uten historikk brukes første måling bakover i tid.
+The EV charger switches can be used while the regulation runs and apply from
+the next decision. Their state is stored at once and kept over a restart.
+While EV charging control is off, they are unavailable, but their state is
+kept.
 
-## Start og stopp
+The entity IDs are the same in every language and are grouped by what they
+concern: `regulation`, `power`, `waiting_time`, `penalty` and `charger`. The
+names shown follow the language of Home Assistant. ‹charger› is the name of
+the device the entity of the EV charger belongs to, or the name of the entity
+when it has no device, as it was when the EV charger was added.
 
-Reguleringen starter av seg selv når Home Assistant eller integrasjonen
-starter, forutsatt at konfigurasjonen er fullstendig: effektsensor er valgt, og
-hvert apparat har entitet og handlinger for å slå på og av. Når billadestyring
-er aktivert, må hver elbillader i tillegg ha entitet, handlinger for å aktivere,
-deaktivere og sette ladestrøm, og sensor for ladeeffekt. Kan bare én
-elbillader lade om gangen, må hver elbillader også ha bil tilkoblet.
+## Template and action examples
 
-Ved hver start slås alle apparatene av og alle elbilladerne deaktiveres med en
-gang. Deretter slår reguleringen dem på ett og ett i prioritert rekkefølge.
-Første avgjørelse tas når et helt reguleringsintervall har gått etter starten.
-Når Home Assistant starter, venter reguleringen til Home Assistant har startet
-ferdig, slik at integrasjonene til apparatene er lastet før de slås av. Kan ikke
-den lagrede konfigurasjonen (`.storage/kraftvakt.config`) leses, starter ikke
-Kraftvakt. Integrasjonen viser da en feilmelding, og filen endres ikke.
+Templates use the template language of Home Assistant (Jinja2), and actions
+are the same as in automations and scripts. In the action editor you can
+switch to YAML from the ⋮ menu and paste the examples. Every template and
+action gets the variables `entity_id` (the entity of the appliance or EV
+charger) and `entity` (its state object, for example `entity.state` and
+`entity.attributes`), so the templates keep working when the entity is
+replaced. The action for the charging current also gets `current`,
+`min_current` and `max_current`. `current` is always between the minimum and
+maximum charging current.
 
-Reguleringen startes også på nytt ved neste avgjørelse når effektgrensen er
-endret med entiteten **Effektgrense** mens den kjører.
+A template is true only when it gives the boolean value true. Anything else,
+including an error in the template, counts as false. An entity is true only
+when it is `on`.
 
-Bryteren **Regulering** stopper og starter reguleringen. Når reguleringen
-stoppes, slås alle apparatene av, og ingenting slås på før den startes igjen.
-Er konfigurasjonen ikke fullstendig, blir bryteren stående av, og forsøket
-skrives til loggen. Bryteren har ingen lagret stilling. Etter en omstart kjører
-reguleringen igjen.
-
-I sikker tilstand blir sensoren **Regulering sikker tilstand** på. Når effektsensoren gir
-en gyldig verdi igjen, starter reguleringen på nytt med alle apparater avslått.
-Går snittforbruket over effektgrensen pluss straffeterskelen, holdes alle
-apparater av til overforbruket er hentet inn, og så starter reguleringen på
-nytt på samme måte.
-
-## Elbillading
-
-Når billadestyring er aktivert, styrer Kraftvakt ladestrømmen til hver
-elbillader trinnvis, ett ampere om gangen, etter hvor mye effekt som er ledig.
-Plasseringen av «Elbillading» i prioritetslisten bestemmer hvor i rekkefølgen
-elbilladerne ligger. En elbillader lader bare når Kraftvakt har aktivert den,
-så en bil som kobles til, begynner ikke å lade av seg selv. Før elbilladeren
-aktiveres eller deaktiveres, settes ladestrømmen til minste ladestrøm.
-
-- Ladeeffekten leses ved hver avgjørelse. Over 100 W regnes elbilladeren som
-  aktivt ladende. Er sensoren utilgjengelig, regnes den også som ladende.
-- En elbillader får mer enn minste ladestrøm først når den lader aktivt. Mens
-  den prøves, kan apparatene under «Elbillading» slås på.
-- En elbillader som ikke trekker strøm, fordi bilen ikke er tilkoblet eller
-  ikke lader to reguleringsvinduer etter at den ble aktivert, blir forbigått.
-  Den begrenses til minste ladestrøm, beholdes aktivert og står ikke i veien
-  for andre elbilladere.
-- En elbillader som ikke lader, hviler før den prøves igjen: 15 minutter
-  første gang, så 30 og deretter 60 minutter hver gang bilen fortsatt ikke
-  lader. Den forblir forbigått mens den hviler, også om en annen elbillader
-  aktiveres i mellomtiden. Kobles bilen fra og til igjen, eller begynner den å
-  lade, prøves den med en gang neste gang.
-- Kan bare én elbillader lade om gangen, får en elbillader som lader aktivt,
-  fortsette til den er ferdig. De andre venter. Da må bil tilkoblet være satt
-  for hver elbillader. Uten den kan Kraftvakt bare se at en bil er koblet til
-  ved å aktivere elbilladeren, og elbilladere uten bil ville blitt aktivert
-  etter tur.
-- Utenfor ladetidsrommet lader ikke elbilladeren. Ladetidsrommet kan gå over
-  midnatt og gjelder i Home Assistants tidssone.
-- Overstyringen av ladetidsrommet gjelder til neste ladetidsrom har startet
-  etter at bryteren ble slått på, også om reguleringen har vært stoppet eller i
-  sikker tilstand imens. Etter en omstart av Home Assistant regnes det fra
-  første start av reguleringen.
-
-Bryterne **‹lader› utenfor regulering** og **‹lader› overstyr ladetidsrom**
-kan brukes mens reguleringen kjører, og endringen gjelder fra neste
-avgjørelse. Stillingen lagres med en gang og beholdes over omstart. Mens
-billadestyring er deaktivert, er bryterne utilgjengelige, men stillingen
-beholdes.
-
-## Eksempler på maler og handlinger
-
-Maler skrives med Home Assistants malspråk (Jinja2), og handlinger er de samme
-som i automasjoner og skript. I handlingsredigereren kan du bytte til YAML via
-menyen ⋮ og lime inn eksemplene. Alle maler og handlinger får variablene
-`entity_id` (apparatets eller elbilladerens entitet) og `entity` (tilstanden
-til entiteten, for eksempel `entity.state` og `entity.attributes`). Byttes
-entiteten ut, virker malene fortsatt. Handlingen for ladestrøm får i tillegg
-variablene `current`, `min_current` og `max_current`. `current` ligger alltid
-mellom minste og største ladestrøm.
-
-En mal er sann bare når den gir den boolske verdien sann. Alt annet, også en
-feil i malen, regnes som usann. En entitet er sann bare når den er `on`.
-
-**Variant «Morgen»** som gir varmtvannsberederen høyere prioritet mellom
-klokken 05 og 08:
+**Variant «Morning»** that gives the water heater a higher priority between
+05 and 08:
 
 ```jinja
 {{ 5 <= now().hour < 8 }}
 ```
 
-**Variant «Kaldt»** for en varmepumpe når det er under 18 grader inne. `entity`
-er apparatets egen entitet:
+**Variant «Cold»** for a heat pump when it is below 18 degrees indoors:
 
 ```jinja
 {{ entity.attributes.current_temperature | float(99) < 18 }}
 ```
 
-**Bil tilkoblet** ut fra statussensoren til laderen:
+**Car connected** from the status sensor of the charger:
 
 ```jinja
-{{ states('sensor.lader_garasje_status') in ['connected', 'charging', 'awaiting_start'] }}
+{{ states('sensor.garage_charger_status') in ['connected', 'charging', 'awaiting_start'] }}
 ```
 
-**Slå på** et apparat ved å sette en temperatur i stedet for å slå det på:
+**Turn on** an appliance by setting a temperature instead of turning it on:
 
 ```yaml
 - action: climate.set_temperature
@@ -363,7 +360,7 @@ er apparatets egen entitet:
     temperature: 22
 ```
 
-**Slå av** det samme apparatet ved å sette det til frostsikring:
+**Turn off** the same appliance by setting it to frost protection:
 
 ```yaml
 - action: climate.set_temperature
@@ -373,37 +370,23 @@ er apparatets egen entitet:
     temperature: 8
 ```
 
-**Sett ladestrøm** når laderen har en egen `number`-entitet for ladestrøm.
-Det enkleste er å velge **Entitet** og entiteten. Som egendefinert handling
-blir det slik:
+**Set charging current** with a service from the charger's integration that
+takes the current per phase. `my_charger.set_current` is an example; use the
+service and fields of your charger's integration:
 
 ```yaml
-- action: number.set_value
-  target:
-    entity_id: number.lader_garasje_ladestrom
+- action: my_charger.set_current
   data:
-    value: "{{ current }}"
-```
-
-**Sett ladestrøm** med en tjeneste fra laderens integrasjon, som tar
-strømmen per fase:
-
-```yaml
-- action: min_lader.set_current
-  data:
-    charger_id: garasje
+    charger_id: garage
     phase1: "{{ current }}"
     phase2: "{{ current }}"
     phase3: "{{ current }}"
 ```
 
-`min_lader.set_current` er et eksempel. Bruk tjenesten og feltene laderens
-integrasjon har.
+## Development
 
-## Utvikling
-
-Krever Python 3.14.2 eller nyere, som Home Assistant 2026.10.4 krever, og
-[uv](https://docs.astral.sh/uv/). Utviklingsavhengighetene står i
+Requires Python 3.14.2 or newer, as Home Assistant 2026.10.4 does, and
+[uv](https://docs.astral.sh/uv/). The development dependencies are in
 `requirements_dev.txt`.
 
 ```bash
@@ -414,21 +397,17 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-Koden ligger i `custom_components/kraftvakt/`. Reguleringen er ren Python uten
-Home Assistant i `regulation/`, og `runtime.py` kobler den til Home Assistant.
-Testene ligger i `tests/`, med enhetstester i `tests/unit/`. Simulatoren
-ligger i `simulator/`, og testene for den i `tests/simulator/` og
+The code is in `custom_components/kraftvakt/`. The regulation is plain Python
+without Home Assistant in `regulation/`, and `runtime.py` connects it to Home
+Assistant. The tests are in `tests/`, with unit tests in `tests/unit/`. The
+simulator is in `simulator/`, with its tests in `tests/simulator/` and
 `tests/unit/simulator/`.
 
-Instruksjoner til Claude Code står i `CLAUDE.md` og i skill-filene i
-`.claude/skills/`. Der står også hvordan reguleringen skal virke, i detalj.
+### Panel
 
-### Panelet
-
-Panelet er skrevet i Lit og TypeScript og ligger i `frontend/`. Det bygges med
-Node.js. Versjonen står i `.nvmrc`, og den samme versjonen brukes av Home
-Assistant-frontenden. Installer og aktiver den med
-[nvm](https://github.com/nvm-sh/nvm) eller
+The panel is written in Lit and TypeScript in `frontend/` and built with
+Node.js, in the version in `.nvmrc`, the same as the Home Assistant frontend
+uses. Install and activate it with [nvm](https://github.com/nvm-sh/nvm) or
 [nvm.fish](https://github.com/jorgebucaran/nvm.fish):
 
 ```bash
@@ -439,10 +418,10 @@ nvm install
 nvm use
 ```
 
-Den ferdige bundlen, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`,
-sjekkes inn, fordi HACS installerer rett fra repoet. Bygg den på nytt etter
-hver endring i `frontend/`, og sjekk inn kilden og bundlen sammen. CI feiler
-hvis den innsjekkede bundlen ikke stemmer med kilden.
+The built bundle, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`,
+is committed, because HACS installs straight from the repository. Build it
+again after every change in `frontend/`, and commit the source and the bundle
+together. CI fails if the committed bundle does not match the source.
 
 ```bash
 cd frontend
@@ -451,16 +430,16 @@ npm run typecheck
 npm run build
 ```
 
-`npm run watch` bygger på nytt ved hver endring. Bundlen lastes med versjonen
-fra `manifest.json` i URL-en, så nettleseren kan bruke en gammel bundle etter
-et nytt bygg. Last da siden på nytt uten hurtigbuffer. Tekstene i panelet ligger
-i `frontend/src/translations/` (engelsk og norsk) og velges ut fra språket til
-brukeren i Home Assistant.
+`npm run watch` builds again on every change. The bundle is loaded with the
+version from `manifest.json` in the URL, so the browser may use an old bundle
+after a new build. Reload the page without cache then. The texts of the panel
+are in `frontend/src/translations/` (English and Norwegian) and follow the
+language of the user in Home Assistant.
 
-### Lokal Home Assistant
+### Local Home Assistant
 
-Kjør en lokal Home Assistant mot repoet. `config/custom_components/` er en
-vanlig mappe med én lenke til Kraftvakt og én til simulatoren:
+Run a local Home Assistant against the repository. `config/custom_components/`
+is a plain folder with one link to Kraftvakt and one to the simulator:
 
 ```bash
 mkdir -p config/custom_components
@@ -469,93 +448,86 @@ ln -s ../../simulator/custom_components/kraftvakt_simulator config/custom_compon
 uv run hass -c config
 ```
 
-Fra samme maskin logger du inn uten passord på http://127.0.0.1:8123
-(`trusted_networks` for `127.0.0.1` og `::1` i `config/configuration.yaml`).
-Fra andre maskiner kreves passord.
+From the same machine you log in without a password at http://127.0.0.1:8123
+(`trusted_networks` for `127.0.0.1` and `::1` in `config/configuration.yaml`).
+Other machines require a password.
 
 ### Simulator
 
-Simulatoren gjør det mulig å teste Kraftvakt uten HAN-port og ekte apparater.
-Den er en egen integrasjon, **Kraftvakt simulator**, i
-`simulator/custom_components/kraftvakt_simulator/`. Den ligger utenfor
-`custom_components/` og blir derfor ikke installert av HACS, og den brukes bare
-med en lokal Home Assistant.
+The simulator makes it possible to test Kraftvakt without a HAN port and real
+appliances. It is a separate integration, **Kraftvakt simulator**, in
+`simulator/custom_components/kraftvakt_simulator/`. It is outside
+`custom_components/`, so HACS does not install it, and it is only used with a
+local Home Assistant.
 
-Legg til integrasjonen under **Innstillinger → Enheter og tjenester**, og legg
-til én enhet om gangen med **Legg til enhet**:
+Add the integration under **Settings → Devices & services**, and add one
+device at a time with **Add device**:
 
-- **HAN:** husets effekt (`sensor.han_effekt`, eller `sensor.han_power` på
-  engelsk, når enheten heter «HAN»). Den er bakgrunnsforbruket pluss effekten
-  til alle de simulerte enhetene. Bakgrunnsforbruket er en `number`-entitet som
-  kan endres mens Home Assistant kjører. Det kan bare finnes én HAN.
-- **Varmeapparat:** varmekabler, varmtvannsbereder eller panelovn, med effekt
-  (W), driftsandel (0–100 %) og periode (minutter). Apparatet har en bryter og
-  en effektsensor. Mens bryteren er på, varmer det i en fast syklus som starter
-  med den påslåtte delen: 750 W, 25 % og 60 minutter gir 15 minutter på og 45
-  minutter av, om igjen og om igjen. Syklusen starter på nytt hver gang
-  bryteren slås på. Med bryteren av bruker apparatet ingenting. Varmeeffekt,
-  driftsandel og periode er `number`-entiteter som kan endres mens Home
-  Assistant kjører. Endres de mens bryteren er på, starter syklusen på nytt.
-- **Elbillader:** trefaset 400 V med minste og største ladestrøm. Den har
-  bryterne **Lading tillatt**, **Bil tilkoblet** og **Bil fulladet**,
-  **Ladestrøm** (A) og sensoren **Ladeeffekt**. Laderen trekker
-  √3 × 400 V × ladestrømmen (6 A gir 4,16 kW) når lading er tillatt, en bil er
-  tilkoblet og bilen ikke er fulladet.
+- **HAN:** the power of the house, the background power plus the power of all
+  the simulated devices (`sensor.han_power` when the device is named «HAN»).
+  There can be only one HAN.
+- **Heating device:** heating cable, water heater or panel heater, with power
+  (W), duty cycle (0–100 %) and period (minutes). It has a switch and a power
+  sensor. While the switch is on, it heats in a fixed cycle that starts with
+  the on part: 750 W, 25 % and 60 minutes give 15 minutes on and 45 minutes
+  off, over and over. The cycle starts again every time the switch is turned
+  on or the cycle is changed. With the switch off, it uses nothing.
+- **EV charger:** three-phase 400 V with a minimum and maximum current. It has
+  the switches **Charging allowed**, **Car connected** and **Car fully
+  charged**, **Charging current** (A) and the sensor **Charging power**. It
+  draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging
+  is allowed, a car is connected and the car is not fully charged.
 
-Varmeapparater og elbilladere har også bryteren **Frakoblet**. Mens den er på,
-bruker enheten ingenting, uansett hva de andre bryterne står på. Slik styrer du
-hvilke enheter som bruker strøm under en simulering. Syklusen til et
-varmeapparat går videre mens det er frakoblet.
+Heating devices and EV chargers also have the switch **Unplugged**. While it
+is on, the device uses nothing, whatever the other switches are set to. The
+cycle of a heating device runs on while it is unplugged.
 
-Det som styrer simuleringen og ikke hører til en ekte enhet, står under
-**Konfigurasjon** på enhetssiden: **Bakgrunnsforbruk**, **Varmeeffekt**,
-**Driftsandel**, **Periode**, **Bil tilkoblet**, **Bil fulladet** og
-**Frakoblet**.
+What controls the simulation and does not belong to a real device is under
+**Configuration** on the device page, and can be changed while Home Assistant
+runs: **Background power**, **Heating power**, **Duty cycle**, **Period**,
+**Car connected**, **Car fully charged** and **Unplugged**. The settings can
+be changed with **Reconfigure**. The switches and the charging current keep
+their state over a restart.
 
-Innstillingene kan endres med **Konfigurer på nytt**. Bryterne og ladestrømmen
-beholder stillingen over en omstart.
+Then set up Kraftvakt against the simulator: the power sensor of the HAN as
+the power sensor, the switches of the heating devices as appliances, and for
+each EV charger (the entity IDs follow the language of Home Assistant when
+the device is added):
 
-Sett så opp Kraftvakt mot simulatoren: HAN-ens effektsensor som effektsensor,
-bryterne til varmeapparatene som apparater, og for hver elbillader:
-
-| Felt i Kraftvakt | Verdi |
+| Field in Kraftvakt | Value |
 |---|---|
-| Entitet | `switch.<lader>_lading_tillatt` |
-| Aktiver og deaktiver | Standard |
-| Sett ladestrøm | Entitet: `number.<lader>_ladestrom` |
-| Sensor for ladeeffekt | `sensor.<lader>_ladeeffekt` |
-| Bil tilkoblet | `switch.<lader>_bil_tilkoblet` |
+| Entity for allowed charging | `switch.<charger>_charging_allowed` |
+| Activate and Deactivate | Standard |
+| Set charging current | Entity: `number.<charger>_charging_current` |
+| Sensor for charging power | `sensor.<charger>_charging_power` |
+| Car connected | `switch.<charger>_car_connected` |
 
-Endre bakgrunnsforbruket og bryterne for bilen, og se reguleringen på
-statussiden.
+Change the background power and the switches for the car, and watch the
+regulation on the status page.
 
-### WebSocket-API
+### WebSocket API
 
-Panelet snakker med integrasjonen over egne WebSocket-kommandoer. Alle krever
-administrator.
+The panel talks to the integration over its own WebSocket commands. All of
+them require an administrator.
 
-| Kommando | Gjør |
+| Command | Does |
 |---|---|
-| `kraftvakt/capabilities` | Gir standardhandlinger per felt, grenser og standardverdier. |
-| `kraftvakt/config/get` | Gir konfigurasjonen, navnene på entitetene og hva som mangler. |
-| `kraftvakt/config/save` | Lagrer hele konfigurasjonen. Avvises mens reguleringen kjører. Ugyldig konfigurasjon lagres ikke, og svaret gir feilene per felt. |
-| `kraftvakt/regulation/set_running` | Starter eller stopper reguleringen, som bryteren **Regulering**. |
-| `kraftvakt/status/subscribe` | Sender status straks og deretter for hvert reguleringsvindu, hver avgjørelse og ved start, stopp og lagring. |
+| `kraftvakt/capabilities` | Gives the standard actions per field, the limits and the defaults. |
+| `kraftvakt/config/get` | Gives the configuration, the names of the entities and what is missing. |
+| `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
+| `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |
+| `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save. |
 
-Formatene for konfigurasjonen, feilene og statusen står i
-`.claude/skills/kraftvakt-backend/SKILL.md`. En lagret konfigurasjon tas i bruk
-neste gang reguleringen startes, uten at integrasjonen lastes på nytt.
+### Logo and icon
 
-### Logo og ikon
-
-Kildene ligger i `assets/brand/`. PNG-filene i
-`custom_components/kraftvakt/brand/` (lastes direkte av Home Assistant
-fra 2026.3) bygges med:
+The sources are in `assets/brand/`. The PNG files in
+`custom_components/kraftvakt/brand/` (loaded directly by Home Assistant from
+2026.3) are built with:
 
 ```bash
 uv run --with cairosvg --with pillow scripts/build_brand.py
 ```
 
-## Lisens
+## License
 
 [MIT](LICENSE)
