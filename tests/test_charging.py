@@ -16,6 +16,7 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
+    EntityCategory,
 )
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import device_registry as dr
@@ -161,6 +162,20 @@ async def use_switch(
         {"entity_id": switch_id(hass, charger_id, setting)},
         blocking=True,
     )
+
+
+def window_sensor_id(hass: HomeAssistant, charger_id: str) -> str | None:
+    return er.async_get(hass).async_get_entity_id(
+        "binary_sensor", DOMAIN, f"charger_{charger_id}_window_allowed"
+    )
+
+
+def window_sensor_state(hass: HomeAssistant, charger_id: str) -> str:
+    entity_id = window_sensor_id(hass, charger_id)
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    return state.state
 
 
 def steps_switched_on(hass: HomeAssistant) -> str:
@@ -429,6 +444,112 @@ async def test_window_override_counts_from_the_switch_over_a_stop(
     assert switch_state(hass, "c1", "window_override") == STATE_OFF
 
 
+async def test_window_sensor_follows_the_clock_and_the_override(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """It changes at the whole minute, also while the regulation is stopped."""
+    await hass.config.async_set_time_zone("Europe/Oslo")
+    freezer.move_to("2026-11-07T11:59:00+00:00")
+    config["general"]["regulation_window_s"] = 600
+    config["charging"]["chargers"][0]["charging_window"] = {
+        "start": "13:00",
+        "end": "14:00",
+    }
+    await setup_kraftvakt()
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.kraftvakt_regulation"},
+        blocking=True,
+    )
+    assert window_sensor_state(hass, "c1") == STATE_OFF
+
+    await use_switch(hass, "c1", "window_override", "turn_on")
+    assert window_sensor_state(hass, "c1") == STATE_ON
+    await use_switch(hass, "c1", "window_override", "turn_off")
+    assert window_sensor_state(hass, "c1") == STATE_OFF
+
+    await advance(hass, freezer, timedelta(seconds=59))
+    assert window_sensor_state(hass, "c1") == STATE_OFF
+    await advance(hass, freezer, timedelta(seconds=1))
+    assert window_sensor_state(hass, "c1") == STATE_ON
+
+    await advance(hass, freezer, timedelta(minutes=60))
+    assert window_sensor_state(hass, "c1") == STATE_OFF
+
+
+async def test_window_sensor_is_on_without_a_window(
+    hass: HomeAssistant, actions, setup_kraftvakt
+) -> None:
+    """A diagnostic named after the charger."""
+    await setup_kraftvakt()
+
+    entity_id = window_sensor_id(hass, "c1")
+    assert entity_id == "binary_sensor.kraftvakt_charger_garage_window_allowed"
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == STATE_ON
+    assert state.name == "Kraftvakt Garage charging allowed by window"
+    registry_entry = er.async_get(hass).async_get(entity_id)
+    assert registry_entry is not None
+    assert registry_entry.entity_category is EntityCategory.DIAGNOSTIC
+
+
+async def test_window_sensor_follows_the_configuration_without_reload(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """A new window applies at once, and the sensor goes with its charger."""
+    await hass.config.async_set_time_zone("Europe/Oslo")
+    freezer.move_to("2026-11-07T11:00:00+00:00")
+    entry = await setup_kraftvakt()
+    board = entry.runtime_data.switch_board
+    data = deepcopy(config)
+    data["charging"]["chargers"][0]["charging_window"] = {
+        "start": "13:00",
+        "end": "14:00",
+    }
+
+    await board.async_update_config(read_config(data))
+    await hass.async_block_till_done()
+    assert window_sensor_state(hass, "c1") == STATE_OFF
+
+    hass.states.async_set("input_boolean.carport", STATE_OFF)
+    data["charging"]["chargers"] = [charger_data("c2", "input_boolean.carport")]
+    await board.async_update_config(read_config(data))
+    await hass.async_block_till_done()
+
+    assert window_sensor_id(hass, "c1") is None
+    assert window_sensor_state(hass, "c2") == STATE_ON
+
+
+async def test_window_sensor_of_removed_charger_is_removed_at_setup(
+    hass: HomeAssistant, actions, setup_kraftvakt
+) -> None:
+    """No orphaned binary sensors remain in the entity registry."""
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    orphan = registry.async_get_or_create(
+        "binary_sensor", DOMAIN, "charger_old_window_allowed", config_entry=entry
+    )
+    hass.states.async_set(CHARGER, STATE_OFF, {ATTR_FRIENDLY_NAME: "Garage"})
+    set_power(hass, POWER_SENSOR, "2000")
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert registry.async_get(orphan.entity_id) is None
+    assert window_sensor_id(hass, "c1") is not None
+
+
 async def test_charger_switches_are_kept_over_a_reload(
     hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
 ) -> None:
@@ -469,7 +590,7 @@ async def test_charger_switches_are_named_after_the_charger(
     assert override.name == "Kraftvakt Garage override charging window"
 
 
-async def test_charger_switches_are_unavailable_while_charging_is_disabled(
+async def test_charger_entities_are_unavailable_while_charging_is_disabled(
     hass: HomeAssistant,
     hass_storage: dict[str, Any],
     actions,
@@ -484,6 +605,7 @@ async def test_charger_switches_are_unavailable_while_charging_is_disabled(
 
     assert switch_state(hass, "c1", "excluded") == STATE_UNAVAILABLE
     assert switch_state(hass, "c1", "window_override") == STATE_UNAVAILABLE
+    assert window_sensor_state(hass, "c1") == STATE_UNAVAILABLE
     assert actions == []
     assert hass_storage[STORAGE_KEY]["data"]["charger_switches"] == {
         "c1": {"excluded": True, "window_override": False}

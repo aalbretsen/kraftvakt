@@ -21,7 +21,7 @@ integrations.
 - The panel talks to the backend with own WebSocket commands, all
   `require_admin`.
 - The panel edits a local draft and saves the whole configuration at once.
-- The switches of appliances and chargers are added and removed when the
+- The entities of appliances and chargers are added and removed when the
   configuration is saved, without reloading the config entry (a reload would
   start the regulation). Registry entries of removed items are removed.
 - A charger is named after the device of its entity (the user's name for the
@@ -56,7 +56,8 @@ integrations.
 | `switch_board.py` | The positions of the user's switches for appliances and chargers, saved together with the configuration, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
-| `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
+| `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
+| `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
 
 ## Stored configuration
 
@@ -166,10 +167,14 @@ panel's translations.
 - The regulation switch has no stored position; it is the same function as
   start and stop in the panel, and stays off and logs when the configuration
   is incomplete.
-- Each appliance has an excluded switch, and each charger an excluded switch
-  and a window override switch, keyed by the item's id, with an entity id
-  from the slug of the item's name. Their positions are stored. The charger
-  switches are unavailable while charging is disabled.
+- Each appliance has an excluded switch, and each charger an excluded switch,
+  a window override switch and a binary sensor for charging allowed by
+  window, keyed by the item's id, with an entity id from the slug of the
+  item's name. The positions of the switches are stored. The charger
+  entities are unavailable while charging is disabled.
+- The charging allowed by window binary sensor computes the window from the
+  clock with the same function as the engine, updated by the switch board
+  and at every whole minute, since windows are in whole minutes.
 
 ## WebSocket API
 

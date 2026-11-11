@@ -17,6 +17,9 @@
       },
       "penalty_active": {
         "name": "Straff aktiv"
+      },
+      "charger_window_allowed": {
+        "name": "{charger} lading tillatt av ladetidsrom"
       }
     },
     "number": {

@@ -111,14 +111,20 @@ def override_expired(
     return charging_window_started(window, since, now, time_zone)
 
 
+def window_allows_charging(
+    window: ChargingWindow | None, override_active: bool, local_time: time
+) -> bool:
+    """Return whether the charging window, or its override, allows charging."""
+    return window is None or override_active or in_charging_window(window, local_time)
+
+
 def allowed_to_charge(
     charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
 ) -> bool:
     """Return whether the charger is allowed to charge."""
-    if reading.excluded:
-        return False
-    window = charger.charging_window
-    return window is None or override_active or in_charging_window(window, local_time)
+    return not reading.excluded and window_allows_charging(
+        charger.charging_window, override_active, local_time
+    )
 
 
 def window_overridden(

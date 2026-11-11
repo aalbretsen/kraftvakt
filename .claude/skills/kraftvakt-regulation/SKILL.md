@@ -286,6 +286,12 @@ All with entity category diagnostic:
   the waiting slot (an appliance or a charger's next ampere), so it is the
   real time left, a whole number of decision intervals after a decision. 0
   when nothing waits. Updated at each window, decision, start and stop.
+- Charging allowed by window (per charger): on while the charging window
+  allows charging, that is inside the window, while the override switch is
+  on, or always without a window. It does not consider the excluded switch.
+  It follows the clock, not the decisions, so it is right also while the
+  regulation is stopped, and it changes at the whole minute. Unavailable
+  while EV charging is disabled.
 - Waiting time next turn-on (calculated) (s): the waiting time the next
   turn-on gets from the curve, for the last regulation average and the limit
   in use, without the longer waiting time on persistent cycling. Unavailable

@@ -17,6 +17,9 @@
       },
       "penalty_active": {
         "name": "Penalty active"
+      },
+      "charger_window_allowed": {
+        "name": "{charger} charging allowed by window"
       }
     },
     "number": {

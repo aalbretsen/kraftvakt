@@ -297,6 +297,7 @@ All entities belong to the service device **Kraftvakt**.
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
+| `binary_sensor.kraftvakt_charger_<charger>_window_allowed` (‹charger› charging allowed by window) | Diagnostic. One per EV charger. On while the charging window allows charging: inside the charging window, while **‹charger› override charging window** is on, or always when the EV charger has no charging window. Follows the clock, also while the regulation is stopped. |
 
 The sensors are updated every time a regulation window closes. The sensors
 that depend on the averages are unavailable until the first regulation window
@@ -320,8 +321,8 @@ power limit in use.
 
 The appliance and EV charger switches can be used while the regulation runs
 and apply from the next decision. Their state is stored at once and kept over
-a restart. While EV charging control is off, the EV charger switches are
-unavailable, but their state is kept.
+a restart. While EV charging control is off, the EV charger switches and
+binary sensors are unavailable, but the state of the switches is kept.
 
 The entity IDs are the same in every language and are grouped by what they
 concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and
