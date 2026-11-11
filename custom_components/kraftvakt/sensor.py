@@ -70,7 +70,7 @@ def _waiting_time_remaining_s(runtime: KraftvaktRuntime) -> int:
     return max(0, round((ends_at - dt_util.utcnow()).total_seconds()))
 
 
-def _waiting_time_curve_s(runtime: KraftvaktRuntime) -> float | None:
+def _waiting_time_next_turn_on_s(runtime: KraftvaktRuntime) -> float | None:
     waiting_time = runtime.curve_waiting_time
     return None if waiting_time is None else waiting_time.total_seconds()
 
@@ -113,7 +113,9 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
     DurationSensorDescription(
         key="waiting_time_remaining", value_fn=_waiting_time_remaining_s
     ),
-    DurationSensorDescription(key="waiting_time_curve", value_fn=_waiting_time_curve_s),
+    DurationSensorDescription(
+        key="waiting_time_next_turn_on", value_fn=_waiting_time_next_turn_on_s
+    ),
 )
 
 

@@ -40,8 +40,8 @@
       "waiting_time_remaining": {
         "name": "Ventetid gjenstående"
       },
-      "waiting_time_curve": {
-        "name": "Ventetid etter kurven"
+      "waiting_time_next_turn_on": {
+        "name": "Ventetid neste innkobling (beregnet)"
       },
       "penalty_overconsumption": {
         "name": "Straff overforbruk"

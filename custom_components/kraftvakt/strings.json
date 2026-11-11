@@ -40,8 +40,8 @@
       "waiting_time_remaining": {
         "name": "Waiting time remaining"
       },
-      "waiting_time_curve": {
-        "name": "Waiting time from curve"
+      "waiting_time_next_turn_on": {
+        "name": "Waiting time next turn-on (calculated)"
       },
       "penalty_overconsumption": {
         "name": "Penalty overconsumption"

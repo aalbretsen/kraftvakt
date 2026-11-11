@@ -188,7 +188,7 @@ are the key.
 | Power free (`sensor`, power, W shown as kW, diagnostic) | `power_free` | Limit in use minus the regulation average. |
 | Regulation steps on (`sensor`, measurement, diagnostic) | `regulation_steps_on` | `RegulationEngine.slots_on`: appliances on plus fictive appliances on. |
 | Waiting time remaining (`sensor`, duration, s, diagnostic) | `waiting_time_remaining` | `runtime.waiting_ends_at` minus now, whole seconds, 0 when nothing waits. |
-| Waiting time from curve (`sensor`, duration, s, diagnostic) | `waiting_time_curve` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
+| Waiting time next turn-on (calculated) (`sensor`, duration, s, diagnostic) | `waiting_time_next_turn_on` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
 | Regulation (`switch`) | `regulation` | No stored position. Same function as start/stop in the panel. Stays off and logs when the configuration is incomplete. |
 | ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Entity id `switch.kraftvakt_charger_<slug of the charger name>_excluded`. Stored position. Unavailable while charging is disabled. |
 | ‹charger› override charging window (`switch`) | `charger_<id>_window_override` | Entity id `switch.kraftvakt_charger_<slug>_window_override`. Stored position, set back when it ends. Unavailable while charging is disabled. |

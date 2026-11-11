@@ -673,9 +673,9 @@ ENTITY_NAMES = {
         "Waiting time remaining",
         "Ventetid gjenstående",
     ),
-    "sensor.kraftvakt_waiting_time_curve": (
-        "Waiting time from curve",
-        "Ventetid etter kurven",
+    "sensor.kraftvakt_waiting_time_next_turn_on": (
+        "Waiting time next turn-on (calculated)",
+        "Ventetid neste innkobling (beregnet)",
     ),
     "binary_sensor.kraftvakt_penalty_active": ("Penalty active", "Straff aktiv"),
     "sensor.kraftvakt_penalty_overconsumption": (
@@ -854,13 +854,13 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     windows_to_wait = math.ceil(curve_waiting_s / WINDOW.total_seconds())
     assert windows_to_wait > 1
     assert state_of(hass, "sensor", "waiting_time_remaining") == "0"
-    assert state_of(hass, "sensor", "waiting_time_curve") == STATE_UNAVAILABLE
+    assert state_of(hass, "sensor", "waiting_time_next_turn_on") == STATE_UNAVAILABLE
     actions.clear()
 
     await advance(hass, freezer)
-    assert float(state_of(hass, "sensor", "waiting_time_curve")) == pytest.approx(
-        curve_waiting_s
-    )
+    assert float(
+        state_of(hass, "sensor", "waiting_time_next_turn_on")
+    ) == pytest.approx(curve_waiting_s)
     assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (
         windows_to_wait * WINDOW.total_seconds()
     )

@@ -213,7 +213,7 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 | `sensor.kraftvakt_power_free` (Effekt ledig) | Diagnostikk. Effektgrensen minus reguleringssnittet, i kW. Negativ over effektgrensen. Oppdateres hver gang et reguleringsvindu lukkes. |
 | **Ventetid** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Ventetid gjenstående) | Diagnostikk. Sekunder til avgjørelsen der apparatet eller ampere som venter, slås på, 0 når ingenting venter. Den regner til avgjørelsen, altså reell ventetid, og oppdateres hver gang et reguleringsvindu lukkes. |
-| `sensor.kraftvakt_waiting_time_curve` (Ventetid etter kurven) | Diagnostikk. Ventetiden i sekunder etter ventetidskurven ut fra siste reguleringssnitt, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Ventetid neste innkobling (beregnet)) | Diagnostikk. Ventetiden i sekunder som neste innkobling får, beregnet ut fra siste reguleringssnitt og innstillingene for ventetidskurven, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
 | **Straff** | |
 | `binary_sensor.kraftvakt_penalty_active` (Straff aktiv) | Diagnostikk. Er på mens en straffeperiode pågår. |
 | `sensor.kraftvakt_penalty_overconsumption` (Straff overforbruk) | Diagnostikk. Overforbruket i Wh fra siste avgjørelse, 0 når snittforbruket ikke er over effektgrensen. |

@@ -296,9 +296,12 @@ and names are grouped, see the `kraftvakt-backend` skill.
   ampere), so it is the real time left, a whole number of decision intervals
   after a decision. 0 when nothing waits. Updated at each window, decision,
   start and stop.
-- Waiting time from curve (s): waiting time at the limit × share of the
-  curve for the last regulation average and the limit in use, without the
-  longer waiting time on persistent cycling. Unavailable without an average.
+- Waiting time next turn-on (calculated) (s): the waiting time the next
+  turn-on gets, calculated as waiting time at the limit × share of the curve
+  for the last regulation average and the limit in use, without the longer
+  waiting time on persistent cycling. Unavailable without an average. Named
+  with the owner after what it is for, not after the curve, which the user
+  would have to remember from the settings.
 
 ## Variants
 
