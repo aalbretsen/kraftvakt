@@ -38,6 +38,8 @@ from .config_model import (
     Charger,
     Issue,
     KraftvaktConfig,
+)
+from .config_validation import (
     missing_items,
 )
 from .measurement import (

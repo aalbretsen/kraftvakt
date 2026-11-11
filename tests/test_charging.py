@@ -25,7 +25,12 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from custom_components.kraftvakt.config_model import Charger, KraftvaktConfig
+from custom_components.kraftvakt.config_model import (
+    Charger,
+)
+from custom_components.kraftvakt.config_reader import (
+    read_config,
+)
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.entity import item_name
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
@@ -413,7 +418,7 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     data["charging"]["chargers"] = [charger_data("c2", "input_boolean.carport")]
     board = entry.runtime_data.charger_switches
 
-    await board.async_update_config(KraftvaktConfig.from_dict(data))
+    await board.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
     assert switch_id(hass, "c1", "excluded") is None

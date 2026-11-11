@@ -16,8 +16,11 @@ from custom_components.kraftvakt.config_model import (
     Issue,
     KraftvaktConfig,
     PriorityEntry,
-    charger_switches_from_dict,
     charger_switches_to_dict,
+)
+from custom_components.kraftvakt.config_reader import (
+    read_charger_switches,
+    read_config,
 )
 from tests.config_examples import full_config_data
 
@@ -25,11 +28,11 @@ from tests.config_examples import full_config_data
 def test_full_config_round_trips() -> None:
     data = full_config_data()
 
-    assert KraftvaktConfig.from_dict(data).to_dict() == data
+    assert read_config(data).to_dict() == data
 
 
 def test_full_config_is_read_into_model() -> None:
-    config = KraftvaktConfig.from_dict(full_config_data())
+    config = read_config(full_config_data())
 
     appliance = config.appliances[0]
     assert appliance.turn_on == ActionConfig(ActionMode.DEFAULT)
@@ -47,17 +50,17 @@ def test_full_config_is_read_into_model() -> None:
 
 
 def test_empty_data_gives_default_config() -> None:
-    assert KraftvaktConfig.from_dict({}) == KraftvaktConfig()
+    assert read_config({}) == KraftvaktConfig()
 
 
 def test_default_config_round_trips() -> None:
     data = KraftvaktConfig().to_dict()
 
-    assert KraftvaktConfig.from_dict(data).to_dict() == data
+    assert read_config(data).to_dict() == data
 
 
 def test_missing_settings_get_defaults() -> None:
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {"appliances": [{"id": "a1"}], "charging": {"chargers": [{"id": "c1"}]}}
     )
 
@@ -71,7 +74,7 @@ def test_missing_settings_get_defaults() -> None:
 
 
 def test_empty_strings_count_as_not_set() -> None:
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {"general": {"power_sensor": ""}, "appliances": [{"id": "a1", "entity_id": ""}]}
     )
 
@@ -80,7 +83,7 @@ def test_empty_strings_count_as_not_set() -> None:
 
 
 def test_missing_ids_are_generated() -> None:
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {
             "appliances": [
                 {"variants": [{"label": "x", "condition": {"type": "template"}}]},
@@ -98,7 +101,7 @@ def test_missing_ids_are_generated() -> None:
 
 def test_custom_action_keeps_editor_normalization() -> None:
     steps = [{"action": "switch.turn_on", "target": {}, "data": {}, "metadata": {}}]
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {"appliances": [{"id": "a1", "turn_on": {"mode": "custom", "action": steps}}]}
     )
 
@@ -110,7 +113,7 @@ def test_custom_action_keeps_editor_normalization() -> None:
 
 def test_single_custom_action_step_becomes_list() -> None:
     step = {"action": "switch.turn_on"}
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {"appliances": [{"id": "a1", "turn_on": {"mode": "custom", "action": step}}]}
     )
 
@@ -118,15 +121,13 @@ def test_single_custom_action_step_becomes_list() -> None:
 
 
 def test_custom_action_without_steps_is_empty() -> None:
-    config = KraftvaktConfig.from_dict(
-        {"appliances": [{"id": "a1", "turn_on": {"mode": "custom"}}]}
-    )
+    config = read_config({"appliances": [{"id": "a1", "turn_on": {"mode": "custom"}}]})
 
     assert config.appliances[0].turn_on == ActionConfig(ActionMode.CUSTOM)
 
 
 def test_time_with_seconds_is_read() -> None:
-    config = KraftvaktConfig.from_dict(
+    config = read_config(
         {
             "charging": {
                 "chargers": [
@@ -145,7 +146,7 @@ def test_time_with_seconds_is_read() -> None:
 
 
 def test_whole_number_floats_are_read_as_integers() -> None:
-    config = KraftvaktConfig.from_dict({"general": {"regulation_window_s": 60.0}})
+    config = read_config({"general": {"regulation_window_s": 60.0}})
 
     assert config.general.regulation_window_s == 60
     assert isinstance(config.general.regulation_window_s, int)
@@ -153,7 +154,7 @@ def test_whole_number_floats_are_read_as_integers() -> None:
 
 def _issues(data: dict[str, Any]) -> list[Issue]:
     with pytest.raises(ConfigValidationError) as error:
-        KraftvaktConfig.from_dict(data)
+        read_config(data)
     return error.value.issues
 
 
@@ -296,18 +297,18 @@ def test_charger_switches_round_trip() -> None:
         "c2": {"excluded": False, "window_override": True},
     }
 
-    switches = charger_switches_from_dict(data)
+    switches = read_charger_switches(data)
 
     assert switches["c1"] == ChargerSwitches(excluded=True)
     assert charger_switches_to_dict(switches) == data
 
 
 def test_charger_switches_get_defaults() -> None:
-    assert charger_switches_from_dict({"c1": {}}) == {"c1": ChargerSwitches()}
+    assert read_charger_switches({"c1": {}}) == {"c1": ChargerSwitches()}
 
 
 def test_charger_switches_with_wrong_type_are_rejected() -> None:
     with pytest.raises(ConfigValidationError) as error:
-        charger_switches_from_dict({"c1": {"excluded": "on"}})
+        read_charger_switches({"c1": {"excluded": "on"}})
 
     assert error.value.issues == [Issue("invalid_type", "chargers", "c1", "excluded")]

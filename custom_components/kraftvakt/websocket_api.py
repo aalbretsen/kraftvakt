@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from datetime import datetime
 from functools import partial
 from typing import Any, Final
 
@@ -14,7 +12,6 @@ from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
 )
-from homeassistant.util import dt as dt_util
 
 from .actions import default_action_domains, default_action_issues
 from .config_model import (
@@ -25,13 +22,14 @@ from .config_model import (
     ConfigValidationError,
     GeneralConfig,
     KraftvaktConfig,
-    PriorityEntryType,
+)
+from .config_validation import (
     parse_config,
 )
 from .const import DOMAIN
 from .entity import item_name
-from .regulation.model import ApplianceSlotKey, ChargerSlotKey, Waiting
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
+from .status import status_snapshot
 
 ERR_NOT_LOADED: Final = "not_loaded"
 ERR_REGULATION_RUNNING: Final = "regulation_running"
@@ -197,122 +195,6 @@ def _send_status(
     )
 
 
-def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:
-    """Return how the regulation stands now, for the status page."""
-    config = runtime.config
-    averages = runtime.latest_averages
-    penalty = runtime.penalty
-    waiting = runtime.waiting
-    waiting_key = None if waiting is None else waiting.key
-    no_waiting = _waiting_fields(None, None)
-    waiting_fields = _waiting_fields(waiting, runtime.waiting_ends_at)
-    variant_labels = {
-        variant.id: variant.label
-        for appliance in config.appliances
-        for variant in appliance.variants
-    }
-    current_variant_labels = {
-        appliance_id: variant_labels[variant_id]
-        for appliance_id, variant_id in runtime.current_variants.items()
-        if variant_id is not None
-    }
-    positions = _current_positions(config, runtime.current_variants)
-    return {
-        "running": runtime.running,
-        "missing": [issue.to_dict() for issue in runtime.missing],
-        "safe_state": runtime.safe_state,
-        "penalty": {
-            "active": penalty.active,
-            "overconsumption_wh": penalty.overconsumption_wh,
-            "recovery_started": penalty.recovery_started,
-        },
-        "regulation_average_w": (
-            None if averages is None else averages.regulation_average_w
-        ),
-        "capacity_average_w": (
-            None if averages is None else averages.capacity_average_w
-        ),
-        "power_limit_w": runtime.power_limit_w,
-        "regulation_window_s": config.general.regulation_window_s,
-        "regulation_interval": config.general.regulation_interval,
-        "next_decision_at": _local_time(runtime.next_decision_at),
-        "appliances": [
-            {
-                "id": appliance.id,
-                "name": item_name(hass, appliance),
-                "on": appliance.id in runtime.appliances_on,
-                "variant": current_variant_labels.get(appliance.id),
-                **(
-                    waiting_fields
-                    if waiting_key == ApplianceSlotKey(appliance.id)
-                    else no_waiting
-                ),
-            }
-            for appliance in sorted(
-                config.appliances, key=lambda appliance: positions[appliance.id]
-            )
-        ],
-        "ev_charging_position": _ev_charging_position(config, positions),
-        "chargers": [
-            {
-                "id": charger.id,
-                "name": item_name(hass, charger),
-                "activated": status.fictive_on > 0,
-                "current_a": status.current_a,
-                "bypassed": status.bypassed,
-                "waiting": status.waiting,
-                "allowed": status.allowed,
-                "excluded": status.excluded,
-                "charging": status.charging,
-                "window_overridden": status.window_overridden,
-                "car_connected": status.car_connected,
-                **(
-                    waiting_fields
-                    if isinstance(waiting_key, ChargerSlotKey)
-                    and waiting_key.charger_id == charger.id
-                    else no_waiting
-                ),
-            }
-            for charger in _in_order(
-                config.charging.chargers, runtime.charging_priority
-            )
-            if (status := runtime.chargers.get(charger.id)) is not None
-        ],
-    }
-
-
-def _current_positions(
-    config: KraftvaktConfig, current_variants: Mapping[str, str | None]
-) -> dict[str, int]:
-    """The appliance itself counts as the current variant until the first decision."""
-    entries = [(entry.appliance_id, entry.variant_id) for entry in config.priority]
-    return {
-        appliance.id: _position(
-            entries, (appliance.id, current_variants.get(appliance.id))
-        )
-        for appliance in config.appliances
-    }
-
-
-def _ev_charging_position(
-    config: KraftvaktConfig, positions: Mapping[str, int]
-) -> int | None:
-    types = [entry.type for entry in config.priority]
-    if PriorityEntryType.EV_CHARGING not in types:
-        return None
-    ev_charging = types.index(PriorityEntryType.EV_CHARGING)
-    return sum(1 for position in positions.values() if position < ev_charging)
-
-
-def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:
-    return sorted(chargers, key=lambda charger: _position(priority, charger.id))
-
-
-def _position[T](items: Sequence[T], item: T) -> int:
-    """Return the position of the item, or a place after every item if missing."""
-    return items.index(item) if item in items else len(items)
-
-
 def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
@@ -363,22 +245,6 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
         for item in items
         if item.entity_id is not None
     }
-
-
-def _waiting_fields(
-    waiting: Waiting | None, ends_at: datetime | None
-) -> dict[str, str | None]:
-    if waiting is None or ends_at is None:
-        return {"waiting_since": None, "waiting_until": None, "waiting_ends_at": None}
-    return {
-        "waiting_since": _local_time(waiting.started_at),
-        "waiting_until": _local_time(waiting.until),
-        "waiting_ends_at": _local_time(ends_at),
-    }
-
-
-def _local_time(moment: datetime | None) -> str | None:
-    return None if moment is None else dt_util.as_local(moment).isoformat()
 
 
 def _send_regulation_running(

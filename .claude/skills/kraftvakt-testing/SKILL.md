@@ -9,7 +9,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 
 - Black box tests with the HA test harness are the main tool. They find more
   faults than unit tests.
-- Complex logic (`regulation/`, `measurement.py`, `config_model.py`) is also
+- Complex logic (`regulation/`, `measurement.py`, the configuration) is also
   proven by itself with unit tests. Error handling that is hard to reach from
   the outside is unit tested.
 - Aim for coverage, not every permutation. Every line of Kraftvakt and the

@@ -40,7 +40,7 @@ Code that mirrors the backend and must be kept in step with it:
 
 - the waiting time curve, the same as in `regulation/waiting.py`,
 - validation against the limits, what is missing and completing the priority
-  list, the same rules as in `config_model.py`,
+  list, the same rules as in `config_validation.py`,
 - the services of the default actions and the current they set, the same as
   the table in `actions.py` (the capabilities give only the domains),
 - the name of a charger that is not saved yet, the same rule as the backend,

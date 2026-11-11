@@ -11,11 +11,14 @@ from custom_components.kraftvakt.config_model import (
     KraftvaktConfig,
     Range,
 )
+from custom_components.kraftvakt.config_reader import (
+    read_config,
+)
 
 
 def test_stored_config_without_turn_on_margin_gets_the_default() -> None:
     """Configurations saved before the setting existed."""
-    config = KraftvaktConfig.from_dict({"general": {"power_limit_w": 8000}})
+    config = read_config({"general": {"power_limit_w": 8000}})
 
     assert config.general.turn_on_margin_w == 100
 

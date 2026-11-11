@@ -11,6 +11,11 @@ from custom_components.kraftvakt.config_model import (
     Issue,
     KraftvaktConfig,
     PriorityEntry,
+)
+from custom_components.kraftvakt.config_reader import (
+    read_config,
+)
+from custom_components.kraftvakt.config_validation import (
     parse_config,
     validate_config,
 )
@@ -22,7 +27,7 @@ type Mutation = Callable[[dict[str, Any]], None]
 def _issues_after(mutate: Mutation) -> list[Issue]:
     data = full_config_data()
     mutate(data)
-    return validate_config(KraftvaktConfig.from_dict(data))
+    return validate_config(read_config(data))
 
 
 def _set(path: str, value: Any) -> Mutation:

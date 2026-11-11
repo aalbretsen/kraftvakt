@@ -43,7 +43,9 @@ integrations.
 |---|---|
 | `__init__.py` | Setup, WebSocket commands, panel and static path, platforms. |
 | `config_flow.py` | Empty flow, single instance. |
-| `config_model.py` | Dataclasses, defaults and setting ranges (used for validation and sent to the panel), (de)serialization, validation, completeness. Parsing must run in the event loop, since templates are checked there. |
+| `config_model.py` | Dataclasses, defaults and setting ranges (used for validation and sent to the panel), serialization and issues. |
+| `config_reader.py` | Reads stored and received data into the model and collects type errors. |
+| `config_validation.py` | Validation and completeness. Parsing a configuration from the panel must run in the event loop, since templates are checked there. |
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
 | `conditions.py` | True/false from an entity or a template. |
@@ -51,13 +53,14 @@ integrations.
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
 | `charger_switches.py` | Charger switch positions, saved together with the configuration, and when the override was switched on (memory only). |
-| `websocket_api.py` | The WebSocket commands and the status snapshot. |
+| `websocket_api.py` | The WebSocket commands. |
+| `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 
 ## Stored configuration
 
-The format is defined by the dataclasses and their (de)serialization in
-`config_model.py`. Top-level sections:
+The format is defined by the dataclasses and their serialization in
+`config_model.py`, and by `config_reader.py`. Top-level sections:
 
 - `general`: the power sensor and every general setting, also those shown on
   the panel's Advanced page.
@@ -161,7 +164,7 @@ A saved configuration is used from the next start without a reload.
 
 ## Status snapshot
 
-Built in `websocket_api.py` and typed in the panel's `api.ts`; keep the two in
+Built in `status.py` and typed in the panel's `api.ts`; keep the two in
 step. Rules that are not obvious from the code:
 
 - Power in W and energy in Wh. Times are ISO 8601 in HA's time zone.

@@ -3,13 +3,18 @@
 from custom_components.kraftvakt.config_model import (
     Issue,
     KraftvaktConfig,
+)
+from custom_components.kraftvakt.config_reader import (
+    read_config,
+)
+from custom_components.kraftvakt.config_validation import (
     missing_items,
 )
 from tests.config_examples import full_config_data
 
 
 def _missing(data: dict) -> list[Issue]:
-    return missing_items(KraftvaktConfig.from_dict(data))
+    return missing_items(read_config(data))
 
 
 def test_full_config_is_complete() -> None:

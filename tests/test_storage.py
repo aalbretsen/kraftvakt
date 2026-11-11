@@ -8,7 +8,9 @@ from homeassistant.core import HomeAssistant
 from custom_components.kraftvakt.config_model import (
     ChargerSwitches,
     ConfigValidationError,
-    KraftvaktConfig,
+)
+from custom_components.kraftvakt.config_reader import (
+    read_config,
 )
 from custom_components.kraftvakt.storage import (
     STORAGE_KEY,
@@ -31,7 +33,7 @@ async def test_load_without_stored_data_gives_defaults(
 async def test_saved_data_survives_restart(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    config = KraftvaktConfig.from_dict(full_config_data())
+    config = read_config(full_config_data())
     switches = {"c1": ChargerSwitches(excluded=True, window_override=True)}
 
     await KraftvaktStorage(hass).async_save(StoredData(config, switches))
@@ -43,7 +45,7 @@ async def test_saved_data_survives_restart(
 async def test_stored_format_is_versioned_json(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    config = KraftvaktConfig.from_dict(full_config_data())
+    config = read_config(full_config_data())
 
     await KraftvaktStorage(hass).async_save(StoredData(config))
 
@@ -70,7 +72,7 @@ async def test_load_reads_stored_data(
 
     stored = await KraftvaktStorage(hass).async_load()
 
-    assert stored.config == KraftvaktConfig.from_dict(full_config_data())
+    assert stored.config == read_config(full_config_data())
     assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
 
 
@@ -81,7 +83,7 @@ async def test_switches_follow_configured_chargers(
     data["charging"]["chargers"].append(
         {**data["charging"]["chargers"][0], "id": "c2", "entity_id": "switch.charger_2"}
     )
-    config = KraftvaktConfig.from_dict(data)
+    config = read_config(data)
     switches = {"gone": ChargerSwitches(excluded=True)}
 
     await KraftvaktStorage(hass).async_save(StoredData(config, switches))

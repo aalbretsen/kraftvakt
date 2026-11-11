@@ -13,8 +13,11 @@ from .config_model import (
     ChargerSwitches,
     KraftvaktConfig,
     charger_switches_for,
-    charger_switches_from_dict,
     charger_switches_to_dict,
+)
+from .config_reader import (
+    read_charger_switches,
+    read_config,
 )
 from .const import DOMAIN
 
@@ -51,8 +54,8 @@ class KraftvaktStorage:
         data = await self._store.async_load()
         if data is None:
             return StoredData()
-        config = KraftvaktConfig.from_dict(data)
-        switches = charger_switches_from_dict(data.get("charger_switches") or {})
+        config = read_config(data)
+        switches = read_charger_switches(data.get("charger_switches") or {})
         return StoredData(config, charger_switches_for(config, switches))
 
     async def async_save(self, stored: StoredData) -> None:
