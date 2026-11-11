@@ -22,6 +22,9 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   integrations in the tests. The tests are part of the normal test run.
 - In a local Home Assistant, `config/custom_components/` is a real folder with
   one symlink to each integration.
+- `SIMULATOR.md` in the repository root describes the simulator for
+  developers, as `README.md` does for Kraftvakt. Keep it up to date with the
+  code; the README only links to it.
 - Code follows the same rules as Kraftvakt (`CLAUDE.md`): English code, HA
   standards, translations in `translations/en.json` and `nb.json`. There is no
   `strings.json`, because hassfest never reads the simulator.
