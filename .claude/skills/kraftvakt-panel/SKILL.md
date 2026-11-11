@@ -39,8 +39,10 @@ configure button) goes to the Appliances page.
 Code that mirrors the backend and must be kept in step with it:
 
 - the waiting time curve, the same as in `regulation/waiting.py`,
-- validation against the limits and what is missing, the same rules as in
-  `config_model.py`,
+- validation against the limits, what is missing and completing the priority
+  list, the same rules as in `config_model.py`,
+- the services of the default actions and the current they set, the same as
+  the table in `actions.py` (the capabilities give only the domains),
 - the name of a charger that is not saved yet, the same rule as the backend,
 - the types of the configuration and the status snapshot,
 - reading the power sensor in W or kW, the same units as the backend.
@@ -67,9 +69,12 @@ Code that mirrors the backend and must be kept in step with it:
   shown only while a list is empty (appliances on the Appliances page,
   chargers on the EV charging page). The owner chose this, because the user
   does not need to see it all the time.
-- Default is offered only for domains with a default action, and is chosen
-  when an entity with a default action is picked. A custom action starts as
-  the default action.
+- Default is offered only for domains with a default action. It is chosen
+  when an entity with a default action is picked and the action is not set,
+  and a default action becomes an empty custom action when the new entity has
+  none. A custom action starts as the default action.
+- The entity picker of an appliance or charger leaves out the entities that
+  other appliances and chargers use.
 - Set charging current also offers Entity: an entity picker limited to the
   domains with a default set-current action, with a helper telling which
   service runs. Required until an entity is chosen (settled with the owner).
@@ -80,7 +85,10 @@ Code that mirrors the backend and must be kept in step with it:
 - Missing items are not marked in a dialog until a new item has been added. A
   new variant starts as a template. Car connected is shown as required when
   only one charger may charge at a time.
-- Kraftvakt's own sensors are left out of the power sensor picker.
+- The power sensor picker offers sensors with device class power, without
+  Kraftvakt's own sensors.
+- While EV charging is disabled, the chargers can only be viewed, and one
+  charger at a time is hidden.
 - Configuration pages and dialogs show power in W.
 
 ### Advanced page
@@ -123,9 +131,12 @@ Code that mirrors the backend and must be kept in step with it:
 ### Status page
 
 - The status page shows everything in the status snapshot: averages against
-  the limit, next decision, safe state and penalty with what is left,
+  the limit, next decision, safe state and penalty with what is left and
+  whether recovery has started,
   appliances with variant and waiting, chargers with current and state.
   Power is shown in kW and energy in kWh.
+- While stopped, the regulation card lists what is missing, each with a link
+  to the page where it is fixed.
 - The regulation card's header holds the title, a chip for running or
   stopped, chips for safe state and penalty while active, and the next
   decision at the right end. Start and stop are in a footer under a divider,

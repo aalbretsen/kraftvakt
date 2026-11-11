@@ -24,7 +24,7 @@ the code holds them in one place (`config_model.py`).
 | Regulation window | 10–600 s, default 10 s. |
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
-| Average consumption | Sliding time-weighted average over exactly one hour back (the capacity window), not configurable. Used only for the penalty. |
+| Average consumption | Sliding time-weighted average over exactly one hour back (the capacity window), not configurable. The regulation uses it only for the penalty. |
 | Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
@@ -136,7 +136,8 @@ the status page and the average sensors show kW.
 - Only one slot is turned on or off per decision based on free power. Several
   may be switched off at once only when consumption must drop at once or
   switching does not change consumption: start and stop, safe state, penalty,
-  chargers not allowed to charge, bypassed chargers, variant switches.
+  chargers not allowed to charge, bypassed chargers, variant switches, and the
+  other charger deactivated when one is activated with one charger at a time.
 - Turn on only when the regulation average is under the limit minus the
   turn-on margin, and average plus power reserve is at most the limit. Switch
   off only when the average is above the limit. Between limit minus margin and
@@ -148,8 +149,10 @@ the status page and the average sensors show kW.
   the next decision. The margin is below the limit only, so the regulation
   never accepts being above it.
 - Fixed order: a slot is never turned on before all above it are on. Skipped:
-  entries that are not the current variant, chargers not allowed to charge,
-  bypassed and waiting chargers.
+  entries that are not the current variant, and the fictive appliances the EV
+  charging rules hold back: of chargers that are not allowed to charge, are
+  bypassed, are waiting or are not chosen when only one may charge, and all but
+  the first of a charger on trial.
 
 ## Waiting time
 
@@ -162,9 +165,10 @@ the status page and the average sensors show kW.
 - Curve: waiting time = waiting time at the limit × share(average / limit),
   recalculated at each decision while it runs. Why: an appliance should
   hardly wait while there is plenty of free power, and wait the whole time
-  only close to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is
-  the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half
-  the limit, slow at first, and 1 at the limit and above. n is the steepness,
+  only close to the limit. With u = average / limit and
+  x = clamp((u − 0.5) / 0.5, 0, 1), the share is the normalized Hill function
+  x^n · (1 + K) / (x^n + K): 0 at or below half the limit, slow at first, and
+  1 at the limit and above. n is the steepness,
   1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default 80, is the
   utilization in percent where the share is 80 %: with t = (pivot − 50) / 50,
   K = t^n · 0.2 / (0.8 − t^n), computed once per start. A pivot the curve
@@ -202,19 +206,19 @@ the status page and the average sensors show kW.
   state started. Everything is turned off at once, also chargers, with a
   turn-off command to every appliance in the configuration. Nothing is turned
   on while it lasts.
-- During a penalty only positive contributions count until the first regulation
-  average under the limit. From then on recovery counts net and does not stop
-  again.
+- During a penalty the overconsumption still counts net. Recovery has started
+  at the first regulation average under the limit after the penalty started;
+  the status shows whether it has.
 - The penalty ends only when the overconsumption is paid back (then the
   regulation starts again with everything off at that decision) or by a restart
   (stop, safe state, HA start, power limit change). The current variants are
   still evaluated during a penalty; they give no commands since everything is
   off.
-- Accepted by the owner: the start after a penalty resets the cycling counters like every
-  other start, so while the average consumption stays above limit plus
-  threshold, an appliance that pushes the average over the limit goes on and
-  off with the waiting time from the curve only, never the longer waiting time
-  on persistent cycling. The penalty should never be needed.
+- Accepted by the owner: the start after a penalty resets the cycling counters
+  like every other start, so while the average consumption stays above limit
+  plus threshold, an appliance that pushes the average over the limit goes on
+  and off with the waiting time from the curve only, never the longer waiting
+  time on persistent cycling. The penalty should never be needed.
 
 ## Safe state
 
@@ -228,8 +232,9 @@ the status page and the average sensors show kW.
 ## Start and stop
 
 - Every start turns off every appliance in the configuration, once per
-  appliance even with variants, and deactivates every charger. The current
-  variant is found at the first decision.
+  appliance even with variants, and deactivates every charger while EV
+  charging is enabled. The same holds wherever everything is turned off. The
+  current variant is found at the first decision.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends, when the power sensor is back after the safe state, and

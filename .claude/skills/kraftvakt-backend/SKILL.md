@@ -52,7 +52,7 @@ integrations.
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
 | `charger_switches.py` | Charger switch positions, saved together with the configuration, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands and the status snapshot. |
-| `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. |
+| `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 
 ## Stored configuration
 
@@ -171,6 +171,8 @@ step. Rules that are not obvious from the code:
   one until the next decision after the power limit entity changed it while
   running.
 - The next decision time is `null` while stopped.
+- The penalty part holds whether a penalty is active, the overconsumption and
+  whether recovery has started.
 - The waiting fields are set only for the appliance or charger that is next
   and waiting (for a charger: its next fictive appliance): when the waiting
   started, when the waiting time ends, and the decision that turns it on, the
