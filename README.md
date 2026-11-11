@@ -225,27 +225,21 @@ regulation starts.
 
 ### Actions
 
-For each action you can choose **Standard** when the domain of the entity has
-a standard action (for example `switch.turn_on` and `switch.turn_off`), or
-create a custom action with the action editor of Home Assistant, see
-[Template and action examples](#template-and-action-examples). For **Set
-charging current** you can also choose **Entity** and a `number` or
-`input_number` entity, which then gets the charging current as its value. A
-failed action is logged, and the regulation continues without retrying. An
+Every action can be a custom action, made with the action editor of Home
+Assistant, that does whatever the appliance or EV charger needs, see
+[Template and action examples](#template-and-action-examples). The panel
+also offers ready-made choices where the entity allows it:
+
+- **Standard** when the domain of the entity has a standard action, for
+  example `switch.turn_on` and `switch.turn_off`.
+- Actions specific to some device types, for example setting the HVAC mode or
+  the target temperature of a thermostat. The values are chosen in the panel
+  and checked against what the device supports.
+- **Entity** for **Set charging current**: a `number` or `input_number`
+  entity, which then gets the charging current as its value.
+
+A failed action is logged, and the regulation continues without retrying. An
 entity used by another appliance or EV charger cannot be chosen.
-
-For a thermostat (a `climate` entity), turning on and off can also be:
-
-- **HVAC mode:** `climate.set_hvac_mode` with one of the modes the thermostat
-  supports. It starts as heat for turning on and off for turning off, or auto
-  when the thermostat does not have that mode.
-- **Temperature:** `climate.set_temperature` with a target temperature,
-  without changing the HVAC mode.
-- **HVAC mode and temperature:** `climate.set_temperature` with both.
-
-The temperature starts at 0, so it must be set, within the range of the
-thermostat. The values are checked against the modes and the range the
-thermostat reports when the configuration is saved.
 
 ### Status page
 
