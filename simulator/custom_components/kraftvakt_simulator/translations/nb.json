@@ -64,6 +64,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "charging": {
+        "name": "Lader"
+      }
+    },
     "number": {
       "background_power": {
         "name": "Bakgrunnsforbruk"

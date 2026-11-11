@@ -87,10 +87,15 @@ class ActionMode(StrEnum):
 
 
 class ConditionType(StrEnum):
-    """How a true/false value is given."""
+    """How a true/false value is given.
+
+    `POWER_SENSOR` is true above a fixed power, and is offered only for
+    whether a charger is actively charging.
+    """
 
     ENTITY = "entity"
     TEMPLATE = "template"
+    POWER_SENSOR = "power_sensor"
 
 
 class PriorityEntryType(StrEnum):
@@ -129,7 +134,7 @@ class ActionConfig:
 
 @dataclass(frozen=True, slots=True)
 class Condition:
-    """A true/false value from a boolean entity or a template."""
+    """A true/false value from a boolean entity, a template or a power sensor."""
 
     type: ConditionType
     value: str
@@ -222,9 +227,9 @@ class Charger:
     set_current: ActionConfig | None = None
     min_current_a: int = 6
     max_current_a: int = 16
-    charge_power_sensor: str | None = None
     power_reserve_w: int = 4000
     car_connected: Condition | None = None
+    actively_charging: Condition | None = None
     charging_window: ChargingWindow | None = None
 
     def to_dict(self) -> dict[str, Any]:

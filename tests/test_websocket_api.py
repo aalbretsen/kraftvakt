@@ -494,7 +494,10 @@ async def test_saved_chargers_get_their_switches(
                     "mode": "custom",
                     "action": [{"action": "number.set_value"}],
                 },
-                "charge_power_sensor": "sensor.charger_power",
+                "actively_charging": {
+                    "type": "power_sensor",
+                    "value": "sensor.charger_power",
+                },
             }
         ],
     }
@@ -768,7 +771,10 @@ async def test_status_shows_the_chargers(
                     "mode": "custom",
                     "action": [{"action": "number.set_value"}],
                 },
-                "charge_power_sensor": "sensor.charger_power",
+                "actively_charging": {
+                    "type": "power_sensor",
+                    "value": "sensor.charger_power",
+                },
             }
         ],
     }
@@ -806,7 +812,10 @@ def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
         "activate": DEFAULT,
         "deactivate": DEFAULT,
         "set_current": {"mode": "custom", "action": [{"action": "number.set_value"}]},
-        "charge_power_sensor": f"sensor.{charger_id}_power",
+        "actively_charging": {
+            "type": "power_sensor",
+            "value": f"sensor.{charger_id}_power",
+        },
         **settings,
     }
 

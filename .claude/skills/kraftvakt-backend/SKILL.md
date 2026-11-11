@@ -48,7 +48,7 @@ integrations.
 | `config_validation.py` | Validation and completeness. Parsing a configuration from the panel must run in the event loop, since templates are checked there. |
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
-| `conditions.py` | True/false from an entity or a template. |
+| `conditions.py` | True/false from an entity or a template, and actively charging, which also takes a power sensor and counts missing evidence as charging. |
 | `actions.py` | The table of default actions, custom actions, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
@@ -70,15 +70,15 @@ The format is defined by the dataclasses and their serialization in
   one EV charging entry.
 - `charging`: enabled, one at a time, and the chargers, each with an id, its
   entity, activate, deactivate and set-current actions, min and max current,
-  charging power sensor, power reserve, an optional car connected condition
-  and an optional charging window.
+  power reserve, an optional car connected condition, actively charging and
+  an optional charging window.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script) or `entity`. A condition is
-an entity or a template. HA's action editor adds empty `data`; stored actions
-must tolerate that.
+an entity or a template; actively charging may also be a power sensor. HA's
+action editor adds empty `data`; stored actions must tolerate that.
 
 ## Validation and completeness
 

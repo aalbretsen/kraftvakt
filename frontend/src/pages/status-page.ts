@@ -43,7 +43,7 @@ interface Chip {
 const CHIP_ON: Chip = { kind: "on" };
 const CHIP_OFF: Chip = { kind: "off" };
 const CHIP_CHARGING: Chip = { kind: "on", icon: mdiLightningBolt };
-const CHIP_NO_POWER: Chip = { kind: "warning", icon: mdiPowerPlugOff };
+const CHIP_NOT_CHARGING: Chip = { kind: "warning", icon: mdiPowerPlugOff };
 const CHIP_NO_CAR: Chip = { kind: "warning", icon: mdiCarOff };
 const CHIP_QUEUED: Chip = { kind: "off", icon: mdiTimerSand };
 const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
@@ -454,7 +454,7 @@ export class KraftvaktStatusPage extends LitElement {
       return this.renderChip(CHIP_NO_CAR, "status.chip_no_car", "status.bypassed_no_car");
     }
     if (charger.bypassed) {
-      return this.renderChip(CHIP_NO_POWER, "status.chip_no_power", "status.bypassed");
+      return this.renderChip(CHIP_NOT_CHARGING, "status.chip_not_charging", "status.bypassed");
     }
     if (charger.waiting) {
       return this.renderChip(CHIP_QUEUED, "status.chip_queued", "status.waiting_charger");

@@ -119,13 +119,13 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
             missing += _missing_entity_and_actions(
                 "chargers", charger, ("activate", "deactivate", "set_current")
             )
-            if charger.charge_power_sensor is None:
+            if charger.actively_charging is None:
                 missing.append(
                     Issue(
-                        "missing_charge_power_sensor",
+                        "missing_actively_charging",
                         "chargers",
                         charger.id,
-                        "charge_power_sensor",
+                        "actively_charging",
                     )
                 )
             if config.charging.one_at_a_time and charger.car_connected is None:
@@ -172,9 +172,6 @@ def _charger_issues(charger: Charger) -> list[Issue]:
     issues = [
         *_entity_format_issues(location, "entity_id", charger.entity_id),
         *_entity_format_issues(
-            location, "charge_power_sensor", charger.charge_power_sensor
-        ),
-        *_entity_format_issues(
             location,
             "set_current",
             charger.set_current.entity_id if charger.set_current else None,
@@ -183,8 +180,10 @@ def _charger_issues(charger: Charger) -> list[Issue]:
     ]
     if charger.min_current_a > charger.max_current_a:
         issues.append(location.issue("min_current_above_max", "min_current_a"))
-    if charger.car_connected is not None:
-        issues += _condition_issues(location, "car_connected", charger.car_connected)
+    for field_name in ("car_connected", "actively_charging"):
+        condition = getattr(charger, field_name)
+        if condition is not None:
+            issues += _condition_issues(location, field_name, condition)
     window = charger.charging_window
     if window is not None:
         if window.start.second or window.end.second:
@@ -199,9 +198,9 @@ def _condition_issues(
 ) -> list[Issue]:
     if not condition.value.strip():
         return [location.issue("required", field_name)]
-    if condition.type is ConditionType.ENTITY:
-        return _entity_format_issues(location, field_name, condition.value)
-    return []
+    if condition.type is ConditionType.TEMPLATE:
+        return []
+    return _entity_format_issues(location, field_name, condition.value)
 
 
 def _entity_format_issues(
@@ -331,8 +330,10 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
                 variant.condition,
             )
     for charger in config.charging.chargers:
-        if charger.car_connected is not None:
-            yield "chargers", charger.id, "car_connected", charger.car_connected
+        for field_name in ("car_connected", "actively_charging"):
+            condition = getattr(charger, field_name)
+            if condition is not None:
+                yield "chargers", charger.id, field_name, condition
 
 
 def _missing_entity_and_actions(

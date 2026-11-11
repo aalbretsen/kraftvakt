@@ -32,7 +32,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from .actions import ActionRunner
-from .conditions import evaluate_condition
+from .conditions import evaluate_actively_charging, evaluate_condition
 from .config_model import (
     Charger,
     Issue,
@@ -550,18 +550,11 @@ class KraftvaktRuntime:
 
     def _charger_reading(self, charger: Charger) -> ChargerReading:
         switches = self._switch_board.charger_switches(charger.id)
-        power_state = (
-            self._hass.states.get(charger.charge_power_sensor)
-            if charger.charge_power_sensor
-            else None
-        )
         return ChargerReading(
-            charge_power_w=(
-                None
-                if power_state is None
-                else power_w(
-                    power_state.state,
-                    power_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT),
+            actively_charging=(
+                charger.actively_charging is None
+                or evaluate_actively_charging(
+                    self._hass, charger.actively_charging, charger.entity_id
                 )
             ),
             car_connected=(

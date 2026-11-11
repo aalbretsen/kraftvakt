@@ -40,7 +40,7 @@ def test_appliance_needs_entity_and_both_actions() -> None:
     ]
 
 
-def test_charger_needs_entity_actions_and_charge_power_sensor() -> None:
+def test_charger_needs_entity_actions_and_actively_charging() -> None:
     data = full_config_data()
     data["charging"]["chargers"].append(
         {"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}}
@@ -50,7 +50,7 @@ def test_charger_needs_entity_actions_and_charge_power_sensor() -> None:
         Issue("missing_entity", "chargers", "c2", "entity_id"),
         Issue("missing_action", "chargers", "c2", "deactivate"),
         Issue("missing_action", "chargers", "c2", "set_current"),
-        Issue("missing_charge_power_sensor", "chargers", "c2", "charge_power_sensor"),
+        Issue("missing_actively_charging", "chargers", "c2", "actively_charging"),
     ]
 
 

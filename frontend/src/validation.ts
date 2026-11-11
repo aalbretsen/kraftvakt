@@ -47,8 +47,8 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
 /** Return what is missing in one EV charger. */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
-  if (!charger.charge_power_sensor) {
-    missing.push({ code: "missing_charge_power_sensor", section: "chargers", target: charger.id, field: "charge_power_sensor" });
+  if (!charger.actively_charging) {
+    missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
   if (oneAtATime && !charger.car_connected) {
     missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
@@ -113,8 +113,11 @@ export function chargerErrors(charger: Charger, capabilities: Capabilities): Iss
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
   }
-  if (charger.car_connected) {
-    issues.push(...conditionIssues("chargers", charger.id, "car_connected", charger.car_connected));
+  for (const field of ["car_connected", "actively_charging"] as const) {
+    const condition = charger[field];
+    if (condition) {
+      issues.push(...conditionIssues("chargers", charger.id, field, condition));
+    }
   }
   const window = charger.charging_window;
   if (window && (!window.start || !window.end)) {

@@ -131,7 +131,12 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
         ("min_current_a", 1, None),
         ("min_current_a", 0, "out_of_range"),
         ("entity_id", "switch", "invalid_entity_id"),
-        ("charge_power_sensor", "Sensor.X", "invalid_entity_id"),
+        (
+            "actively_charging",
+            {"type": "power_sensor", "value": "Sensor.X"},
+            "invalid_entity_id",
+        ),
+        ("actively_charging", {"type": "power_sensor", "value": ""}, "required"),
         ("set_current", {"mode": "entity", "entity_id": "number.x"}, None),
         ("set_current", {"mode": "entity", "entity_id": "Number"}, "invalid_entity_id"),
     ],
@@ -251,7 +256,10 @@ def test_entity_is_unique_across_appliances_and_chargers() -> None:
 def test_entity_uniqueness_ignores_sensors_and_conditions() -> None:
     def mutate(data: dict[str, Any]) -> None:
         charger = data["charging"]["chargers"][0]
-        charger["charge_power_sensor"] = "sensor.han_power"
+        charger["actively_charging"] = {
+            "type": "power_sensor",
+            "value": "sensor.han_power",
+        }
         charger["car_connected"] = {"type": "entity", "value": "climate.bathroom"}
 
     assert _issues_after(mutate) == []

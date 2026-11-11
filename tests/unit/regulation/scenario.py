@@ -59,7 +59,7 @@ def reset_override(charger_id: str) -> list[Command]:
     return [ResetWindowOverride(charger_id)]
 
 
-IDLE_CHARGER = ChargerReading(charge_power_w=0)
+IDLE_CHARGER = ChargerReading(actively_charging=False)
 
 
 class Scenario:

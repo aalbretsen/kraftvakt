@@ -74,8 +74,10 @@ def charger(
         set_current=DEFAULT_ACTION,
         min_current_a=min_a,
         max_current_a=max_a,
-        charge_power_sensor=f"sensor.{charger_id}_power",
         power_reserve_w=reserve_w,
+        actively_charging=Condition(
+            ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"
+        ),
         charging_window=charging_window,
     )
 

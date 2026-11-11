@@ -46,7 +46,8 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 - An EV charger is 400 V three-phase with power factor 1:
   `P = √3 · 400 V · I`. It has a minimum and maximum current in whole
   amperes. It draws power only while charging is allowed, a car is connected
-  and the car is not fully charged.
+  and the car is not fully charged. Its charging binary sensor is on while it
+  draws power, so Kraftvakt's actively charging can be tested from an entity.
 - Heating devices and chargers have an unplugged switch. While it is on, the
   device uses no power whatever its other switches say, so a simulation can
   control which devices consume. A heater's cycle runs on while unplugged. The

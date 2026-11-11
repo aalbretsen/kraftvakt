@@ -9,7 +9,6 @@ from typing import Final
 
 from ..config_model import Charger, ChargingWindow
 
-ACTIVELY_CHARGING_ABOVE_W: Final = 100
 BYPASSED_AFTER_WINDOWS: Final = 2
 RETRY_PAUSES: Final = (
     timedelta(minutes=15),
@@ -22,10 +21,11 @@ RETRY_PAUSES: Final = (
 class ChargerReading:
     """What a decision knows about a charger.
 
-    None means that the value is not valid or not given.
+    None means that the value is not valid or not given. Actively charging
+    is true without evidence that the charger does not charge.
     """
 
-    charge_power_w: float | None = None
+    actively_charging: bool = True
     car_connected: bool | None = None
     excluded: bool = False
     window_override: bool = False
@@ -55,16 +55,6 @@ def fictive_appliance_count(charger: Charger) -> int:
 def charging_current(charger: Charger, fictive_on: int) -> int:
     """Return the current for the number of fictive appliances that are on."""
     return charger.min_current_a + max(fictive_on, 1) - 1
-
-
-def actively_charging(reading: ChargerReading) -> bool:
-    """Return whether the charger counts as actively charging.
-
-    Without a valid charging power there is no proof that the charger does not
-    charge, so it counts as charging, also when it is deactivated.
-    """
-    power_w = reading.charge_power_w
-    return power_w is None or power_w > ACTIVELY_CHARGING_ABOVE_W
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,7 +208,7 @@ class ChargingState:
         self.charging = {
             charger_id
             for charger_id in self.activated()
-            if actively_charging(readings.get(charger_id, ChargerReading()))
+            if readings.get(charger_id, ChargerReading()).actively_charging
         }
         newly_bypassed = self._update_bypassed(chargers, readings, now, window)
         self._update_priority(chargers, newly_bypassed)
@@ -281,7 +271,7 @@ class ChargingState:
         forever when only one may charge at a time.
         """
         activated_at = self.activated_at.get(charger_id)
-        charges = activated_at is not None and actively_charging(reading)
+        charges = activated_at is not None and reading.actively_charging
         if reading.car_connected is False or charges:
             self.rests.pop(charger_id, None)
         if reading.car_connected is False:
@@ -330,7 +320,7 @@ class ChargingState:
         self.on_trial = {
             charger_id
             for charger_id in self.may_charge
-            if not actively_charging(readings.get(charger_id, ChargerReading()))
+            if not readings.get(charger_id, ChargerReading()).actively_charging
         }
 
     def _select(
@@ -353,7 +343,7 @@ class ChargingState:
         charging = [
             charger_id
             for charger_id in eligible
-            if actively_charging(readings.get(charger_id, ChargerReading()))
+            if readings.get(charger_id, ChargerReading()).actively_charging
         ]
         if not charging:
             self.may_charge = set(eligible[:1])

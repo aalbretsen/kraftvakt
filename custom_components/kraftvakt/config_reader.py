@@ -62,6 +62,7 @@ def read_switches[T: ItemSwitches](
     return switches
 
 
+_BOOLEAN_CONDITIONS = (ConditionType.ENTITY, ConditionType.TEMPLATE)
 _TIME_PATTERN = re.compile(r"(\d{1,2}):(\d{2})(?::(\d{2}))?")
 
 
@@ -212,11 +213,13 @@ class ConfigReader:
             max_current_a=self._integer(
                 values, "max_current_a", defaults.max_current_a, location
             ),
-            charge_power_sensor=self._text(values, "charge_power_sensor", location),
             power_reserve_w=self._integer(
                 values, "power_reserve_w", defaults.power_reserve_w, location
             ),
             car_connected=self._condition(values, "car_connected", location),
+            actively_charging=self._condition(
+                values, "actively_charging", location, power_sensor_allowed=True
+            ),
             charging_window=self._charging_window(values, location),
         )
 
@@ -255,7 +258,12 @@ class ConfigReader:
         return None
 
     def _condition(
-        self, values: Mapping[str, Any], key: str, location: IssueLocation
+        self,
+        values: Mapping[str, Any],
+        key: str,
+        location: IssueLocation,
+        *,
+        power_sensor_allowed: bool = False,
     ) -> Condition | None:
         condition = values.get(key)
         if condition is None:
@@ -265,7 +273,8 @@ class ConfigReader:
             return None
         condition_type = condition.get("type")
         value = condition.get("value", "")
-        if condition_type not in tuple(ConditionType) or not isinstance(value, str):
+        allowed = tuple(ConditionType) if power_sensor_allowed else _BOOLEAN_CONDITIONS
+        if condition_type not in allowed or not isinstance(value, str):
             self.issues.append(location.issue("invalid_type", key))
             return None
         return Condition(ConditionType(condition_type), value)

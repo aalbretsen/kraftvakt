@@ -32,7 +32,12 @@ type SimulatorConfigEntry = ConfigEntry[SimulatedDevice]
 PLATFORMS: Final = {
     DeviceKind.HAN: [Platform.NUMBER, Platform.SENSOR],
     DeviceKind.HEATER: [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH],
-    DeviceKind.CHARGER: [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH],
+    DeviceKind.CHARGER: [
+        Platform.BINARY_SENSOR,
+        Platform.NUMBER,
+        Platform.SENSOR,
+        Platform.SWITCH,
+    ],
 }
 
 

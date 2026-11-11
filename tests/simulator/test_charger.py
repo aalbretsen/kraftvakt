@@ -21,6 +21,7 @@ FULLY_CHARGED = "switch.charger_car_fully_charged"
 UNPLUGGED = "switch.charger_unplugged"
 CURRENT = "number.charger_charging_current"
 CHARGING_POWER = "sensor.charger_charging_power"
+CHARGING = "binary_sensor.charger_charging"
 
 
 def restored_current(value: float) -> dict[str, Any]:
@@ -58,14 +59,17 @@ async def test_charger_draws_three_phase_power_for_a_charging_car(
 
     await call(hass, "switch", "turn_on", ALLOWED)
     assert power(hass, CHARGING_POWER) == 0
+    assert state(hass, CHARGING) == STATE_OFF
     await call(hass, "switch", "turn_on", CONNECTED)
     assert power(hass, CHARGING_POWER) == pytest.approx(4156.9, abs=0.1)
+    assert state(hass, CHARGING) == STATE_ON
 
     await call(hass, "number", "set_value", CURRENT, value=10)
     assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(10))
 
     await call(hass, "switch", "turn_on", FULLY_CHARGED)
     assert power(hass, CHARGING_POWER) == 0
+    assert state(hass, CHARGING) == STATE_OFF
     await call(hass, "switch", "turn_off", FULLY_CHARGED)
     await call(hass, "switch", "turn_off", ALLOWED)
     assert power(hass, CHARGING_POWER) == 0

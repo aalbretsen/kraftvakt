@@ -71,7 +71,10 @@ def kraftvakt_config() -> dict[str, Any]:
                     },
                     "min_current_a": 6,
                     "max_current_a": 16,
-                    "charge_power_sensor": CHARGING_POWER,
+                    "actively_charging": {
+                        "type": "power_sensor",
+                        "value": CHARGING_POWER,
+                    },
                     "car_connected": {
                         "type": "entity",
                         "value": "switch.garage_car_connected",

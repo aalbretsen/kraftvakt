@@ -2,11 +2,27 @@ import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { Condition } from "../api";
-import type { Localize } from "../localize";
+import { measuredPowerW, ownEntities } from "../entities";
+import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
 
 /** The domains whose entities are on or off, and so can be boolean entities. */
 const BOOLEAN_DOMAINS = ["binary_sensor", "input_boolean", "switch", "schedule"];
+
+/** The same limit as the backend uses for a power sensor. */
+const ACTIVELY_CHARGING_ABOVE_W = 100;
+
+/**
+ * What the field gives: a true/false condition, where missing evidence is
+ * false, or whether an EV charger is actively charging, where missing
+ * evidence counts as charging. The kind is also the prefix of its texts.
+ */
+export type ConditionKind = "condition" | "actively_charging";
+
+const TYPES: Record<ConditionKind, Condition["type"][]> = {
+  condition: ["entity", "template"],
+  actively_charging: ["power_sensor", "entity", "template"],
+};
 
 const PREVIEW_DELAY_MS = 500;
 
@@ -18,8 +34,8 @@ interface TemplateResult {
 }
 
 /**
- * A true/false value from a boolean entity or a template, with what
- * it gives now.
+ * A true/false value from a boolean entity, a template or a power sensor, with
+ * what it gives now, read as the backend reads it.
  *
  * The template is previewed with Home Assistant's `render_template`
  * subscription while the user writes. It gets `entity_id` and `entity`
@@ -40,6 +56,8 @@ export class KraftvaktConditionField extends LitElement {
 
   /** Whether the condition may be left out, like «car connected». */
   @property({ type: Boolean }) optional = false;
+
+  @property() kind: ConditionKind = "condition";
 
   @property() error?: string;
 
@@ -63,7 +81,7 @@ export class KraftvaktConditionField extends LitElement {
   }
 
   protected render() {
-    const type: ConditionType = this.value?.type ?? "none";
+    const type = this.shownType();
     return html`
       <ha-form
         .hass=${this.hass}
@@ -78,55 +96,93 @@ export class KraftvaktConditionField extends LitElement {
     `;
   }
 
+  /** The type shown: a required condition that is not set yet shows its first type. */
+  private shownType(): ConditionType {
+    return this.value?.type ?? (this.optional ? "none" : TYPES[this.kind][0]);
+  }
+
   private schema(type: ConditionType) {
-    const types: ConditionType[] = [...(this.optional ? ["none" as const] : []), "entity", "template"];
-    const options = types.map((value) => ({ value, label: this.localize(`condition.${value}`) }));
-    const valueField =
-      type === "entity"
-        ? [{ name: "value", required: true, selector: { entity: { filter: { domain: BOOLEAN_DOMAINS } } } }]
-        : type === "template"
-          ? [{ name: "value", required: true, selector: { template: {} } }]
-          : [];
-    return [{ name: "type", selector: { select: { mode: "list", options } } }, ...valueField];
+    const types: ConditionType[] = [...(this.optional ? ["none" as const] : []), ...TYPES[this.kind]];
+    const options = types.map((value) => ({ value, label: this.text(value) }));
+    return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
+  }
+
+  private valueField(type: ConditionType) {
+    switch (type) {
+      case "entity":
+        return [{ name: "value", required: true, selector: { entity: { filter: { domain: BOOLEAN_DOMAINS } } } }];
+      case "power_sensor":
+        return [
+          {
+            name: "value",
+            required: true,
+            selector: {
+              entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities(this.hass) },
+            },
+          },
+        ];
+      case "template":
+        return [{ name: "value", required: true, selector: { template: {} } }];
+      default:
+        return [];
+    }
   }
 
   private renderPreview() {
     if (!this.value?.value) {
       return nothing;
     }
-    if (this.value.type === "entity") {
-      return this.renderNow(this.hass.states[this.value.value]?.state === "on");
-    }
-    if (this.preview?.error !== undefined) {
+    if (this.value.type === "template" && this.preview?.error !== undefined) {
       return html`<div class="preview error">${this.localize("condition.error", { message: this.preview.error })}</div>`;
     }
-    if (!this.preview) {
+    if (this.value.type === "template" && !this.preview) {
       return nothing;
     }
-    const result = this.preview.result;
+    const evidence = this.evidence(this.value);
+    const value = this.kind === "actively_charging" ? evidence !== false : evidence === true;
     return html`
-      ${this.renderNow(result === true)}
-      ${typeof result === "boolean"
-        ? nothing
-        : html`<div class="warning">${this.localize("condition.not_boolean", { value: JSON.stringify(result) })}</div>`}
+      ${this.renderNow(value)}
+      ${this.value.type === "template" && evidence === null
+        ? html`<div class="warning">${this.text("not_boolean", { value: JSON.stringify(this.preview?.result) })}</div>`
+        : nothing}
     `;
   }
 
+  /** What the condition shows now, or null when it shows nothing valid. */
+  private evidence(condition: Condition): boolean | null {
+    switch (condition.type) {
+      case "template":
+        return typeof this.preview?.result === "boolean" ? this.preview.result : null;
+      case "power_sensor": {
+        const power = measuredPowerW(this.hass, condition.value);
+        return power === null ? null : power > ACTIVELY_CHARGING_ABOVE_W;
+      }
+      default: {
+        const state = this.hass.states[condition.value]?.state;
+        return state === "on" ? true : state === "off" ? false : null;
+      }
+    }
+  }
+
   private renderNow(value: boolean) {
-    const text = this.localize(value ? "condition.true" : "condition.false");
+    const text = this.text(value ? "true" : "false");
     return html`<div class="preview">${this.localize("condition.now", { value: "" })}<b>${text}</b></div>`;
   }
 
+  private text(key: string, params?: Record<string, string | number>): string {
+    return this.localize(`${this.kind}.${key}` as TranslationKey, params);
+  }
+
   private computeLabel = (field: { name: string }): string =>
-    field.name === "value" ? this.localize(`condition.${this.value?.type ?? "entity"}_label`) : "";
+    field.name === "value" ? this.text(`${this.shownType()}_label`) : "";
 
   private computeHelper = (field: { name: string }): string =>
-    field.name === "value" ? this.localize(`condition.${this.value?.type ?? "entity"}_helper`) : "";
+    field.name === "value" ? this.text(`${this.shownType()}_helper`) : "";
 
   private valueChanged(event: CustomEvent<{ value: { type: ConditionType; value?: string } }>): void {
     event.stopPropagation();
     const { type, value } = event.detail.value;
-    const sameType = type === this.value?.type;
+    const sameType = type === this.shownType();
     const condition: Condition | null = type === "none" ? null : { type, value: sameType ? (value ?? "") : "" };
     this.dispatchEvent(new CustomEvent("value-changed", { detail: { value: condition } }));
   }

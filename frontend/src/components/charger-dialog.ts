@@ -2,7 +2,7 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import type { Charger, Condition, Issue } from "../api";
-import { ownEntities } from "../entities";
+import type { TranslationKey } from "../localize";
 import { chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
 import { ItemDialog } from "./item-dialog";
@@ -46,46 +46,37 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           }),
       )}
       ${this.renderAction("set_current", issues, CURRENT_VARIABLES, true)}
-      ${this.renderSection("charger.measurement")}
-      ${this.renderForm(
-        [
-          {
-            name: "charge_power_sensor",
-            required: true,
-            selector: {
-              entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities(this.hass) },
-            },
-          },
-          this.numberField("power_reserve_w", "W", true),
-        ],
-        issues,
-        (value) =>
-          this.changeDraft({
-            charge_power_sensor: (value.charge_power_sensor as string | undefined) || null,
-            power_reserve_w: value.power_reserve_w as number,
-          }),
+      ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
+        this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
       )}
-      ${this.renderCarConnected(issues)} ${this.renderChargingWindow(issues)}
+      ${this.renderConditionGroup(
+        "car_connected",
+        this.oneAtATime ? "charger.car_connected_required" : "charger.car_connected_optional",
+        issues,
+      )}
+      ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
+      ${this.renderChargingWindow(issues)}
     `;
   }
 
-  private renderCarConnected(issues: Issue[]) {
-    const issue = issues.find((item) => item.field === "car_connected");
-    const label = this.oneAtATime ? "charger.car_connected_required" : "charger.car_connected_optional";
+  private renderConditionGroup(field: "car_connected" | "actively_charging", title: TranslationKey, issues: Issue[]) {
+    const issue = issues.find((item) => item.field === field);
+    const activelyCharging = field === "actively_charging";
     return html`
       <div class="group">
-        <div class="group-title">${this.localize(label)}</div>
-        <div class="info">${this.helper("car_connected")}</div>
+        <div class="group-title">${this.localize(title)}</div>
+        <div class="info">${this.helper(field)}</div>
         <kraftvakt-condition-field
           .hass=${this.hass}
           .localize=${this.localize}
-          .value=${this.draft.car_connected}
+          .value=${this.draft[field]}
           .entityId=${this.draft.entity_id}
-          optional
+          .kind=${activelyCharging ? "actively_charging" : "condition"}
+          .optional=${!activelyCharging}
           .error=${issue ? this.describe(issue) : undefined}
           .disabled=${this.locked}
           @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
-            this.changeDraft({ car_connected: event.detail.value })}
+            this.changeDraft({ [field]: event.detail.value })}
         ></kraftvakt-condition-field>
       </div>
     `;

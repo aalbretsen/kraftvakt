@@ -56,8 +56,8 @@ the status page and the average sensors show kW.
   what an appliance uses from changes in the total consumption.
 - It does not read or react to the state of appliances. It assumes each one is
   as Kraftvakt last told it. Switching appliances outside Kraftvakt can disturb
-  the regulation. Exception: for chargers it reads the charging power and
-  car connected.
+  the regulation. Exception: for chargers it reads actively charging and car
+  connected.
 - A failed action is logged and not retried. The regulation goes on as if it
   worked.
 - Only the current configuration is regulated. Removed appliances and chargers
@@ -77,7 +77,7 @@ the status page and the average sensors show kW.
   boolean true. Everything else is false, also unavailable entities and
   failing templates. Settings are named so that true means the thing is the
   case. Missing evidence means the regulation acts as if the thing is not the
-  case.
+  case. Exception: actively charging, see EV charging.
 
 ## Measurement
 
@@ -251,8 +251,8 @@ the status page and the average sensors show kW.
 - The regulation can only start when the configuration is complete: power
   sensor chosen; every appliance has entity, turn-on and turn-off action; with
   EV charging enabled, every charger has entity, activate, deactivate and
-  set-current actions and a charging power sensor, and also car connected when
-  only one charger may charge at a time.
+  set-current actions and actively charging, and also car connected when only
+  one charger may charge at a time.
 
 ## Power limit entity
 
@@ -336,8 +336,15 @@ All with entity category diagnostic:
   new current. Switching off: set the lower current, or for the last one set
   current to min and then deactivate. Every deactivation sets min current
   first. The set-current action always gets a current between min and max.
-- Actively charging: charging power > 100 W (not configurable), or an invalid
-  charging power, also when deactivated.
+- Actively charging: read at each decision, also when deactivated, from one
+  of a charging power sensor (> 100 W, not configurable, in W or kW), a
+  boolean entity or a template. Only evidence that it does not charge counts
+  as not charging: a valid power of at most 100 W, an entity that is `off`, or
+  a template that gives the boolean false. Everything else counts as
+  charging, also an unavailable sensor or entity and a failing template or one
+  that gives something else than a boolean. Why: it looks for evidence that
+  the car does not charge; a charger taken for idle while it charges could
+  cause overconsumption.
 - On trial: a charger that may charge but does not charge actively gets only
   its first fictive appliance, so it stays at the minimum current until it
   charges actively. Meanwhile the slots after it may be turned on. Why: a

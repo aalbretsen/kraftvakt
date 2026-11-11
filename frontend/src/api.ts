@@ -16,7 +16,8 @@ export interface Issue {
 }
 
 export interface Condition {
-  type: "entity" | "template";
+  /** A power sensor is only used for whether an EV charger is actively charging. */
+  type: "entity" | "template" | "power_sensor";
   value: string;
 }
 
@@ -74,9 +75,9 @@ export interface Charger {
   set_current: ActionConfig | null;
   min_current_a: number;
   max_current_a: number;
-  charge_power_sensor: string | null;
   power_reserve_w: number;
   car_connected: Condition | null;
+  actively_charging: Condition | null;
   charging_window: ChargingWindow | null;
 }
 

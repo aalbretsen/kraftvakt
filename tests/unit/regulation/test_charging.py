@@ -10,7 +10,6 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargerReading,
     ChargerStatus,
     ChargingState,
-    actively_charging,
     allowed_to_charge,
     charging_current,
     charging_window_started,
@@ -25,8 +24,8 @@ NIGHT = ChargingWindow(time(22, 0), time(6, 0))
 DAY = ChargingWindow(time(9, 0), time(15, 30))
 NOW = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 WINDOW = timedelta(minutes=1)
-CHARGING = ChargerReading(charge_power_w=7000)
-IDLE = ChargerReading(charge_power_w=0)
+CHARGING = ChargerReading(actively_charging=True)
+IDLE = ChargerReading(actively_charging=False)
 
 
 def charger(
@@ -50,21 +49,6 @@ def test_current_follows_the_fictive_appliances_that_are_on() -> None:
     assert charging_current(charger(), 4) == 9
     assert charging_current(charger(), 11) == 16
     assert charging_current(charger(), 0) == 6
-
-
-@pytest.mark.parametrize(
-    ("reading", "expected"),
-    [
-        (ChargerReading(charge_power_w=100), False),
-        (ChargerReading(charge_power_w=110), True),
-        (ChargerReading(charge_power_w=0), False),
-        (ChargerReading(charge_power_w=None), True),
-    ],
-)
-def test_actively_charging_above_100_watt_or_without_a_valid_value(
-    reading: ChargerReading, expected: bool
-) -> None:
-    assert actively_charging(reading) is expected
 
 
 @pytest.mark.parametrize(
@@ -392,7 +376,7 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
     evaluate(
         state,
         configured,
-        {"a": ChargerReading(charge_power_w=7000, car_connected=False), "b": IDLE},
+        {"a": ChargerReading(actively_charging=True, car_connected=False), "b": IDLE},
     )
 
     assert state.may_charge == {"b"}
@@ -409,8 +393,8 @@ def test_status_of_each_charger() -> None:
         state,
         configured,
         {
-            "a": ChargerReading(charge_power_w=7000, car_connected=True),
-            "b": ChargerReading(charge_power_w=0, excluded=True),
+            "a": ChargerReading(actively_charging=True, car_connected=True),
+            "b": ChargerReading(actively_charging=False, excluded=True),
         },
         allowed=("a",),
         overridden=("a",),

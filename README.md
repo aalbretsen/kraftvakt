@@ -100,8 +100,8 @@ whether it is on. It assumes the appliances are as Kraftvakt last set them. Do
 not turn regulated appliances on or off outside Kraftvakt. It can disturb the
 regulation, affect appliances with higher priority and trigger a penalty.
 Exclude the appliance from the regulation instead. EV chargers are the
-exception: Kraftvakt reads their charging power and whether a car is
-connected.
+exception: Kraftvakt reads whether they are actively charging and whether a
+car is connected.
 
 ## Starting and stopping
 
@@ -111,9 +111,9 @@ provided the configuration is complete:
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off,
 - when EV charging control is on, every EV charger has an entity, actions to
-  activate, deactivate and set the charging current, and a sensor for charging
-  power, and also **Car connected** when only one EV charger may charge at a
-  time.
+  activate, deactivate and set the charging current, and **Actively
+  charging**, and also **Car connected** when only one EV charger may charge
+  at a time.
 
 When Home Assistant starts, the regulation waits until Home Assistant has
 finished starting, so the integrations of the appliances are loaded. If the
@@ -143,14 +143,23 @@ order. An EV charger charges only when Kraftvakt has activated it, so a car
 that is connected does not start charging by itself. The charging current is
 set to the minimum before the EV charger is activated or deactivated.
 
-- The charging power is read at every decision. Above 100 W the EV charger
-  counts as actively charging, and so does an unavailable sensor.
+- **Actively charging** is read at every decision, from one of:
+  - a sensor for charging power: above 100 W counts as charging. It may
+    report W or kW,
+  - a boolean entity: off counts as not charging, on as charging,
+  - a template: the boolean value false counts as not charging, true as
+    charging.
+
+  Only evidence that the EV charger is not charging counts as not charging.
+  An unavailable sensor or entity, and a template that fails or gives
+  something else than true or false, count as charging, so an EV charger that
+  may be charging is never taken for idle.
 - An EV charger gets more than the minimum current only when it is actively
   charging. While it is being tried, the appliances below **EV charging** can
   be turned on.
-- An EV charger that draws no power, because no car is connected or because
-  it is not charging two regulation windows after it was activated, is
-  bypassed. It gets no more than the minimum current, stays activated if it
+- An EV charger that is not charging, because no car is connected or because
+  it is not actively charging two regulation windows after it was activated,
+  is bypassed. It gets no more than the minimum current, stays activated if it
   is, and does not stand in the way of other EV chargers.
 - An EV charger that is not charging rests before it is tried again: 15
   minutes the first time, then 30, and then 60 minutes each time the car still
@@ -199,8 +208,8 @@ regulation starts.
 - **EV charging:** EV charging control on or off, one EV charger at a time,
   and the EV chargers in charging priority. The dialog for an EV charger has
   the entity, the actions to activate, deactivate and set the charging
-  current, the minimum and maximum charging current, the sensor for charging
-  power, the power reserve, car connected, and the charging window. When EV
+  current, the minimum and maximum charging current, the power reserve, car
+  connected, actively charging, and the charging window. When EV
   charging control is off, the EV chargers are kept but can only be viewed.
 - **Advanced:**
   - **Waiting time curve:** two sliders, steepness and pivot point, with a
@@ -248,7 +257,7 @@ shows:
 - a label on each row: **Excluded**, **On** or **Off** for an appliance, and
   for an EV charger the most important of **First decision**, **Excluded**,
   the charging window (for example «22–06») when outside it, **No car
-  connected**, **No power draw**, **Queued**, **Override**, **Charging**,
+  connected**, **Not charging**, **Queued**, **Override**, **Charging**,
   **Activated** or **Deactivated**. Hover over a label or an icon for the full
   explanation,
 - a dashed line under the last entry that is on. Here the power is used up,
@@ -357,6 +366,17 @@ when it is `on`.
 ```jinja
 {{ states('sensor.garage_charger_status') in ['connected', 'charging', 'awaiting_start'] }}
 ```
+
+**Actively charging** from a sensor with the charging current the
+charger reports:
+
+```jinja
+{{ states('sensor.garage_charger_current') | float(0) > 1 }}
+```
+
+When the sensor is unavailable, `float(0)` gives 0 and the template gives
+false, so the EV charger counts as not charging. Leave out the default,
+`| float`, to let an unavailable sensor count as charging instead.
 
 **Turn on** an appliance by setting a temperature instead of turning it on:
 
@@ -522,7 +542,8 @@ device at a time with **Add device**:
   on or the cycle is changed. With the switch off, it uses nothing.
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has
   the switches **Charging allowed**, **Car connected** and **Car fully
-  charged**, **Charging current** (A) and the sensor **Charging power**. It
+  charged**, **Charging current** (A), the sensor **Charging power** and the
+  binary sensor **Charging**, on while it draws power. It
   draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging
   is allowed, a car is connected and the car is not fully charged.
 
@@ -547,7 +568,7 @@ the device is added):
 | Entity for allowed charging | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |
-| Sensor for charging power | `sensor.<charger>_charging_power` |
+| Actively charging | Charging power: `sensor.<charger>_charging_power`, or Entity: `binary_sensor.<charger>_charging` |
 | Car connected | `switch.<charger>_car_connected` |
 
 Change the background power and the switches for the car, and watch the

@@ -249,6 +249,19 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
         (
             {
                 "charging": {
+                    "chargers": [
+                        {
+                            "id": "c1",
+                            "car_connected": {"type": "power_sensor", "value": "x"},
+                        }
+                    ]
+                }
+            },
+            Issue("invalid_type", "chargers", "c1", "car_connected"),
+        ),
+        (
+            {
+                "charging": {
                     "chargers": [{"id": "c1", "charging_window": {"start": "22:00"}}]
                 }
             },

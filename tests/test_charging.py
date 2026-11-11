@@ -60,7 +60,7 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
         },
         "min_current_a": 6,
         "max_current_a": 8,
-        "charge_power_sensor": CHARGER_POWER,
+        "actively_charging": {"type": "power_sensor", "value": CHARGER_POWER},
         "power_reserve_w": 4000,
     }
 
@@ -228,6 +228,94 @@ async def test_charger_without_car_is_not_activated(
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}"]
+
+
+@pytest.mark.parametrize(
+    ("actively_charging", "entity_id", "idle", "charging", "attributes"),
+    [
+        (
+            {"type": "power_sensor", "value": CHARGER_POWER},
+            CHARGER_POWER,
+            "0.1",
+            "0.2",
+            {ATTR_UNIT_OF_MEASUREMENT: "kW"},
+        ),
+        (
+            {"type": "entity", "value": "binary_sensor.charger_charging"},
+            "binary_sensor.charger_charging",
+            STATE_OFF,
+            STATE_ON,
+            {},
+        ),
+        (
+            {
+                "type": "template",
+                "value": "{{ is_state('sensor.charger_status', 'charging') }}",
+            },
+            "sensor.charger_status",
+            "connected",
+            "charging",
+            {},
+        ),
+    ],
+)
+async def test_actively_charging_from_a_sensor_an_entity_or_a_template(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+    actively_charging: dict[str, str],
+    entity_id: str,
+    idle: str,
+    charging: str,
+    attributes: dict[str, str],
+) -> None:
+    """A charger that does not charge is bypassed, and gets more once it charges."""
+    config["charging"]["chargers"][0]["actively_charging"] = actively_charging
+    hass.states.async_set(entity_id, idle, attributes)
+    entry = await setup_kraftvakt()
+    actions.clear()
+
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"on {CHARGER}"]
+    assert entry.runtime_data.chargers["c1"].bypassed
+
+    hass.states.async_set(entity_id, charging, attributes)
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"on {CHARGER}", "current 7"]
+    assert not entry.runtime_data.chargers["c1"].bypassed
+
+
+@pytest.mark.parametrize(
+    "actively_charging",
+    [
+        {"type": "power_sensor", "value": CHARGER_POWER},
+        {"type": "entity", "value": "binary_sensor.charger_charging"},
+        {"type": "template", "value": "{{ states('sensor.gone') | float > 0 }}"},
+    ],
+)
+async def test_charger_without_evidence_counts_as_charging(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+    actively_charging: dict[str, str],
+) -> None:
+    config["charging"]["chargers"][0]["actively_charging"] = actively_charging
+    hass.states.async_set(CHARGER_POWER, STATE_UNAVAILABLE)
+    hass.states.async_set("binary_sensor.charger_charging", STATE_UNAVAILABLE)
+    entry = await setup_kraftvakt()
+    actions.clear()
+
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 8"]
+    assert not entry.runtime_data.chargers["c1"].bypassed
 
 
 async def test_excluded_switch_stops_charging_and_is_saved(

@@ -19,9 +19,9 @@ const CHARGER_FIELDS = [
   "set_current",
   "min_current_a",
   "max_current_a",
-  "charge_power_sensor",
   "power_reserve_w",
   "car_connected",
+  "actively_charging",
   "charging_window",
 ] as const;
 
@@ -126,6 +126,13 @@ export class KraftvaktChargingPage extends ConfigPage {
           : this.localize("charging.car_template"),
       );
     }
+    if (charger.actively_charging) {
+      details.push(
+        charger.actively_charging.type === "template"
+          ? this.localize("charging.charging_template")
+          : this.localize("charging.charging_from", { source: charger.actively_charging.value }),
+      );
+    }
     const issues = this.issues.filter((issue) => issue.section === "chargers" && issue.target === charger.id);
     return {
       key: charger.id,
@@ -176,9 +183,9 @@ export class KraftvaktChargingPage extends ConfigPage {
       set_current: null,
       min_current_a: defaults.min_current_a,
       max_current_a: defaults.max_current_a,
-      charge_power_sensor: null,
       power_reserve_w: defaults.power_reserve_w,
       car_connected: null,
+      actively_charging: null,
       charging_window: null,
     };
     this.editing = { charger, isNew: true };

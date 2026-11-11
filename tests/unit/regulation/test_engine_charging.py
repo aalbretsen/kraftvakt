@@ -19,7 +19,7 @@ from .scenario import (
 
 ABOVE_LIMIT = 10_500
 NO_CAR = {"car_connected": False}
-CHARGING = {"charge_power_w": 7000}
+CHARGING = {"actively_charging": True}
 
 
 def one_charger(**settings) -> Scenario:
@@ -210,7 +210,7 @@ def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
     scenario.turn_on("x")
     scenario.set_charger("c", **NO_CAR)
     assert scenario.decide(0) == []
-    scenario.set_charger("c", car_connected=None, charge_power_w=0)
+    scenario.set_charger("c", car_connected=None, actively_charging=False)
     assert scenario.decide(0) == activate("c")
     scenario.set_charger("c", **NO_CAR)
     scenario.decide(0)
@@ -342,7 +342,7 @@ def test_charging_charger_goes_first_and_the_other_waits() -> None:
     assert scenario.decide_many(0, 3) == [current("b", 7), [], []]
     assert scenario.engine.chargers["a"].waiting
 
-    scenario.set_charger("b", charge_power_w=0, car_connected=False)
+    scenario.set_charger("b", actively_charging=False, car_connected=False)
 
     assert scenario.decide(0) == (current("b", 6) + deactivate("b") + activate("a"))
     assert not scenario.engine.chargers["a"].waiting
@@ -356,18 +356,18 @@ def test_first_charger_in_the_current_priority_is_chosen() -> None:
     assert scenario.engine.chargers["b"].current_a is None
 
 
-def test_charger_without_charging_power_keeps_the_other_waiting() -> None:
+def test_charger_that_counts_as_charging_keeps_the_other_waiting() -> None:
     scenario = two_chargers(one_at_a_time=True)
-    scenario.set_charger("b", charge_power_w=None)
+    scenario.set_charger("b", actively_charging=True)
 
     assert scenario.decide(0) == activate("b")
     assert scenario.engine.chargers["a"].waiting
 
 
-def test_excluded_charger_without_charging_power_lets_the_other_charge() -> None:
+def test_excluded_charger_that_counts_as_charging_lets_the_other_charge() -> None:
     """Only a charger that is allowed to charge holds back the others."""
     scenario = two_chargers(one_at_a_time=True)
-    scenario.set_charger("b", charge_power_w=None, excluded=True)
+    scenario.set_charger("b", actively_charging=True, excluded=True)
 
     assert scenario.decide(0) == activate("a")
     assert not scenario.engine.chargers["a"].waiting

@@ -51,7 +51,7 @@
     "delayed_turn_on": "Delayed turn-on",
     "charging_at": "Charging at {current}A",
     "first_decision": "Waiting for the first decision",
-    "bypassed": "Bypassed: draws no power",
+    "bypassed": "Bypassed: not charging",
     "bypassed_no_car": "Bypassed: no car connected",
     "waiting_charger": "Waiting: another EV charger is charging",
     "excluded": "Excluded from the regulation",
@@ -62,7 +62,7 @@
     "activated_not_charging": "Activated, but not charging yet",
     "window_overridden": "The charging window is overridden",
     "chip_charging": "Charging",
-    "chip_no_power": "No power draw",
+    "chip_not_charging": "Not charging",
     "chip_no_car": "No car connected",
     "chip_queued": "Queued",
     "chip_excluded": "Excluded",
@@ -76,7 +76,7 @@
     "missing_power_sensor": "The power sensor is not chosen.",
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
-    "missing_charge_power_sensor": "{item}: the sensor for charging power is missing.",
+    "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing. It is required when only one EV charger may charge at a time.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
@@ -278,6 +278,20 @@
     "error": "Error: {message}",
     "not_boolean": "The template gives {value}, which is not true or false, so it counts as false."
   },
+  "actively_charging": {
+    "power_sensor": "Charging power",
+    "entity": "Entity",
+    "template": "Template",
+    "power_sensor_label": "Sensor for charging power",
+    "entity_label": "Boolean entity",
+    "template_label": "Template",
+    "power_sensor_helper": "Above 100 W, in W or kW, counts as charging. Unavailable counts as charging.",
+    "entity_helper": "Off counts as not charging. On and unavailable count as charging.",
+    "template_helper": "Only the boolean value false counts as not charging. Anything else, also an error, counts as charging. Variables: entity_id, entity.",
+    "true": "charging",
+    "false": "not charging",
+    "not_boolean": "The template gives {value}, which is not true or false, so it counts as charging."
+  },
   "charging": {
     "shared": "Shared settings",
     "enabled": "EV charging control",
@@ -295,7 +309,9 @@
     "window": "charging window {start}–{end}",
     "always_allowed": "always allowed to charge",
     "car_from": "car connected from {source}",
-    "car_template": "car connected from a template"
+    "car_template": "car connected from a template",
+    "charging_from": "actively charging from {source}",
+    "charging_template": "actively charging from a template"
   },
   "charger": {
     "add_title": "Add EV charger",
@@ -303,7 +319,7 @@
     "view_title": "EV charger",
     "allowed_charging": "Allowed charging",
     "charging_current": "Charging current",
-    "measurement": "Measurement",
+    "actively_charging": "Actively charging",
     "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
     "car_connected_required": "Car connected",
     "car_connected_optional": "Car connected (optional)",
@@ -329,16 +345,15 @@
       "set_current": {
         "label": "Set charging current"
       },
-      "charge_power_sensor": {
-        "label": "Sensor for charging power",
-        "helper": "Above 100 W counts as charging. Unavailable counts as charging."
-      },
       "power_reserve_w": {
         "label": "Power reserve",
         "helper": "The power the EV charger draws when charging starts at the minimum current. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
       },
       "car_connected": {
         "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
+      },
+      "actively_charging": {
+        "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is not charging, for example an unavailable entity or a template that fails, it counts as charging."
       },
       "charging_window": {
         "label": "Charging window (optional)",

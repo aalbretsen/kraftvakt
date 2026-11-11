@@ -51,7 +51,7 @@
     "delayed_turn_on": "Forsinket innkobling",
     "charging_at": "Lader med {current}A",
     "first_decision": "Venter på første avgjørelse",
-    "bypassed": "Forbigått: trekker ikke strøm",
+    "bypassed": "Forbigått: lader ikke",
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
     "waiting_charger": "Ventende: en annen elbillader lader",
     "excluded": "Utenfor regulering",
@@ -62,7 +62,7 @@
     "activated_not_charging": "Aktivert, men lader ikke ennå",
     "window_overridden": "Ladetidsrommet er overstyrt",
     "chip_charging": "Lader",
-    "chip_no_power": "Trekker ikke strøm",
+    "chip_not_charging": "Lader ikke",
     "chip_no_car": "Ingen bil tilkoblet",
     "chip_queued": "Ventende",
     "chip_excluded": "Utenfor regulering",
@@ -76,7 +76,7 @@
     "missing_power_sensor": "Effektsensor er ikke valgt.",
     "missing_entity": "{item}: entitet er ikke valgt.",
     "missing_action": "{item}: handling for å {action} mangler.",
-    "missing_charge_power_sensor": "{item}: sensor for ladeeffekt mangler.",
+    "missing_actively_charging": "{item}: «lader aktivt» mangler.",
     "missing_car_connected": "{item}: «bil tilkoblet» mangler. Den er påkrevd når bare én elbillader kan lade om gangen.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
@@ -278,6 +278,20 @@
     "error": "Feil: {message}",
     "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som usann."
   },
+  "actively_charging": {
+    "power_sensor": "Ladeeffekt",
+    "entity": "Entitet",
+    "template": "Mal",
+    "power_sensor_label": "Sensor for ladeeffekt",
+    "entity_label": "Boolsk entitet",
+    "template_label": "Mal",
+    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes som lading.",
+    "entity_helper": "Av regnes som ikke lading. På og utilgjengelig regnes som lading.",
+    "template_helper": "Bare den boolske verdien usann regnes som ikke lading. Alt annet, også en feil, regnes som lading. Variabler: entity_id, entity.",
+    "true": "lader",
+    "false": "lader ikke",
+    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som lading."
+  },
   "charging": {
     "shared": "Felles innstillinger",
     "enabled": "Billadestyring",
@@ -295,7 +309,9 @@
     "window": "ladetidsrom {start}–{end}",
     "always_allowed": "alltid lov til å lade",
     "car_from": "bil tilkoblet fra {source}",
-    "car_template": "bil tilkoblet fra mal"
+    "car_template": "bil tilkoblet fra mal",
+    "charging_from": "lader aktivt fra {source}",
+    "charging_template": "lader aktivt fra mal"
   },
   "charger": {
     "add_title": "Legg til elbillader",
@@ -303,7 +319,7 @@
     "view_title": "Elbillader",
     "allowed_charging": "Tillatt lading",
     "charging_current": "Ladestrøm",
-    "measurement": "Måling",
+    "actively_charging": "Lader aktivt",
     "minimum_first": "Ladestrømmen settes alltid til minste ladestrøm før elbilladeren aktiveres eller deaktiveres.",
     "car_connected_required": "Bil tilkoblet",
     "car_connected_optional": "Bil tilkoblet (valgfri)",
@@ -329,16 +345,15 @@
       "set_current": {
         "label": "Sett ladestrøm"
       },
-      "charge_power_sensor": {
-        "label": "Sensor for ladeeffekt",
-        "helper": "Over 100 W regnes som lading. Utilgjengelig regnes som lading."
-      },
       "power_reserve_w": {
         "label": "Effektreserve",
         "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
+      },
+      "actively_charging": {
+        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den ikke lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes den som ladende."
       },
       "charging_window": {
         "label": "Ladetidsrom (valgfritt)",

@@ -86,7 +86,10 @@ Code that mirrors the backend and must be kept in step with it:
   subscription, with `entity` as the frontend's state object. A result that is
   not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A
-  new variant starts as a template. Car connected is shown as required when
+  new variant starts as a template. Actively charging has no «not set» and
+  shows the charging power sensor until one is chosen; its preview reads the
+  value as the backend does, so missing evidence shows as charging. Car
+  connected is shown as required when
   only one charger may charge at a time.
 - The power sensor picker offers sensors with device class power, without
   Kraftvakt's own sensors.
@@ -182,7 +185,7 @@ Code that mirrors the backend and must be kept in step with it:
     excluded appliance is dimmed. A charger shows the first that
     holds of: first decision (before the first decision after a start),
     excluded, its charging window when it is not allowed to charge, no car
-    connected (bypassed and car connected is false), no power draw (bypassed
+    connected (bypassed and car connected is false), not charging (bypassed
     otherwise), queued (waiting), override (allowed only by the override
     while activated), charging, activated, deactivated. Excluded comes before
     bypassed, so a stale bypassed is not shown. No car connected is a state
