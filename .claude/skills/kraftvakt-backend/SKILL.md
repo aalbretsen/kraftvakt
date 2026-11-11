@@ -12,11 +12,12 @@ integrations.
 ## Decisions
 
 - The regulation logic in `regulation/` is pure Python without Home Assistant
-  imports. It takes a snapshot (`DecisionInput`) and returns an ordered list of
+  imports. It takes a snapshot of the inputs and returns an ordered list of
   commands. Time is passed in, never read from a clock.
 - The configuration is kept in its own `Store` (`.storage/kraftvakt.config`),
   written atomically, not in `config_entry.options`. The config entry is empty
-  and the config flow asks for nothing.
+  and the config flow asks for nothing. A stored configuration that cannot be
+  read stops the setup with an error and leaves the file alone.
 - The panel talks to the backend with own WebSocket commands, all
   `require_admin`.
 - The panel edits a local draft and saves the whole configuration at once.
@@ -25,229 +26,163 @@ integrations.
   Registry entries of removed chargers are removed.
 - A charger is named after the device of its entity (the user's name for the
   device first), and after the entity when it has no device; an appliance is
-  named after its entity. The status, `entity_names` and the charger switches
-  use the same names (`item_name()` in `entity.py`), and the panel mirrors it
-  for a charger that is not saved yet. Settled with the owner after the
-  exploratory test: the entity that allows charging often has a
-  name like «Garage Charging allowed».
+  named after its entity. The status, the entity names sent to the panel and
+  the charger switches use the same function for this, and the panel mirrors
+  it for a charger that is not saved yet. Settled with the owner: the entity
+  that allows charging often has a name made of the device name and a word
+  like "Charging allowed", which makes a poor name for the charger.
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
-  `config_panel_domain` in `panel_custom.async_register_panel`. The panel turns
-  `?config_entry=` into `/kraftvakt/appliances`.
+  `config_panel_domain` when the panel is registered.
+- The action lock is shared over reloads, so a new runtime's turn-off
+  commands wait until the previous runtime's actions are done.
 
 ## Modules
 
 | Module | Responsibility |
 |---|---|
-| `__init__.py` | Setup, WebSocket commands, panel and static path, platforms. A stored configuration that cannot be read raises `ConfigEntryError` (`unreadable_configuration`) and leaves the file alone. The action lock lives in `hass.data[DOMAIN]` so it is shared over reloads. |
+| `__init__.py` | Setup, WebSocket commands, panel and static path, platforms. |
 | `config_flow.py` | Empty flow, single instance. |
-| `config_model.py` | Dataclasses, defaults, `SETTING_RANGES` (used for validation and sent to the panel), (de)serialization, `parse_config()` (must run in the event loop, templates are checked there), `missing_items()`. |
-| `storage.py` | `KraftvaktStorage`: configuration and charger switch positions in one versioned file. |
-| `measurement.py` | `PowerAverager`: time-weighted windows, sliding hour, W/kW, fill at startup, averages unknown after two invalid closes (history kept). |
-| `conditions.py` | True/false from an entity or a template, with `entity_id` and `entity`. |
-| `actions.py` | Default action table, custom actions, `ActionRunner` (one command at a time under a lock, errors logged and not retried), `default_action_issues()`. |
-| `regulation/` | `engine.py` (`RegulationEngine`: `start`, `stop`, `decide`), `model.py`, `priority.py` (slots and fictive appliances), `waiting.py`, `penalty.py`, `charging.py`. |
-| `runtime.py` | `KraftvaktRuntime`: follows the power sensor, fills the hour before the start from the recorder's history in a background task (`recorder` is an `after_dependency`; skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG (averages, safe state, penalty, waiting, commands), runs commands in a background task, start/stop, starts when HA has started, safe state, status listeners, `async_save_config()`. |
-| `charger_switches.py` | `ChargerSwitchBoard`: switch positions, saving with the configuration, when the override was switched on (memory only). |
-| `websocket_api.py` | The commands below. |
+| `config_model.py` | Dataclasses, defaults and setting ranges (used for validation and sent to the panel), (de)serialization, validation, completeness. Parsing must run in the event loop, since templates are checked there. |
+| `storage.py` | Configuration and charger switch positions in one versioned file. |
+| `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
+| `conditions.py` | True/false from an entity or a template. |
+| `actions.py` | The table of default actions, custom actions, and the action runner (one command at a time under a lock, errors logged and not retried). |
+| `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
+| `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
+| `charger_switches.py` | Charger switch positions, saved together with the configuration, and when the override was switched on (memory only). |
+| `websocket_api.py` | The WebSocket commands and the status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. |
 
 ## Stored configuration
 
-```json
-{
-  "general": {
-    "power_sensor": "sensor.han_power",
-    "power_limit_w": 10000,
-    "turn_on_margin_w": 100,
-    "regulation_window_s": 10,
-    "regulation_interval": 1,
-    "wait_at_limit_s": 300,
-    "wait_curve_steepness": 6.0,
-    "wait_curve_pivot": 80,
-    "appliance_cycling_step_factor": 0.5,
-    "appliance_cycling_steps": 4,
-    "charger_cycling_step_factor": 1.0,
-    "charger_cycling_steps": 5,
-    "penalty_threshold_w": 100
-  },
-  "appliances": [
-    {
-      "id": "a1",
-      "entity_id": "switch.varmtvannsbereder",
-      "turn_on": { "mode": "default" },
-      "turn_off": { "mode": "custom", "action": [ { "action": "switch.turn_off", "target": { "entity_id": "{{ entity_id }}" } } ] },
-      "power_reserve_w": null,
-      "variants": [
-        { "id": "v1", "label": "Morgen", "condition": { "type": "template", "value": "{{ 5 <= now().hour < 8 }}" } }
-      ]
-    }
-  ],
-  "priority": [
-    { "type": "appliance", "appliance_id": "a1", "variant_id": "v1" },
-    { "type": "ev_charging" },
-    { "type": "appliance", "appliance_id": "a1", "variant_id": null }
-  ],
-  "charging": {
-    "enabled": false,
-    "one_at_a_time": true,
-    "chargers": [
-      {
-        "id": "c1",
-        "entity_id": "switch.lader_garasje",
-        "activate": { "mode": "default" },
-        "deactivate": { "mode": "default" },
-        "set_current": { "mode": "entity", "entity_id": "number.lader_garasje_strom" },
-        "min_current_a": 6,
-        "max_current_a": 16,
-        "charge_power_sensor": "sensor.lader_garasje_effekt",
-        "power_reserve_w": 4000,
-        "car_connected": { "type": "entity", "value": "binary_sensor.lader_garasje_bil" },
-        "charging_window": { "start": "22:00", "end": "06:00" }
-      }
-    ]
-  },
-  "charger_switches": { "c1": { "excluded": false, "window_override": false } }
-}
-```
+The format is defined by the dataclasses and their (de)serialization in
+`config_model.py`. Top-level sections:
+
+- `general`: the power sensor and every general setting, also those shown on
+  the panel's Advanced page.
+- `appliances`: each with an id, its entity, turn-on and turn-off actions, an
+  optional power reserve and its variants (id, label, condition).
+- `priority`: the priority list, with an entry per appliance and variant and
+  one EV charging entry.
+- `charging`: enabled, one at a time, and the chargers, each with an id, its
+  entity, activate, deactivate and set-current actions, min and max current,
+  charging power sensor, power reserve, an optional car connected condition
+  and an optional charging window.
+- `charger_switches`: the positions of the two switches per charger.
 
 IDs are short UUIDs, so entities can change without losing the place in the
-list. The action editor adds `data: {}`; stored actions must tolerate that.
+list. An action is `default`, `custom` (a script) or `entity`. A condition is
+an entity or a template. HA's action editor adds empty `data`; stored actions
+must tolerate that.
 
-Validation (an invalid configuration is not saved):
+## Validation and completeness
 
-- The priority list has exactly one entry per appliance and variant, and
-  `ev_charging` exactly once while charging is enabled. Missing entries are
-  added at the bottom. Duplicates, unknown entries and `ev_charging` while
-  disabled are rejected.
+An invalid configuration is not saved:
+
+- The priority list has exactly one entry per appliance and variant, and the
+  EV charging entry exactly once while charging is enabled. Missing entries
+  are added at the bottom. Duplicates, unknown entries and the EV charging
+  entry while disabled are rejected.
 - Labels are non-empty and unique per appliance.
 - The entity that identifies an appliance or charger is unique in the whole
   configuration. Sensors, conditions and actions may reuse entities.
-- `1 ≤ min_current_a ≤ max_current_a`, whole amperes. Charging window
-  start ≠ end, whole minutes.
-- Ranges and defaults from `SETTING_RANGES`.
-- Custom actions are checked with HA's script schema and templates for syntax.
-  Whether «default» exists for the entity's domain is checked by
-  `default_action_issues()` in `actions.py` (it cannot be called from
-  `parse_config()`). Type errors must be fixed before that check can run.
-- An action is `default`, `custom` or `entity`. `entity` is only allowed for
-  `set_current` (elsewhere it is `invalid_type`): it runs the default action
-  of the chosen `entity_id` instead of the charger's own entity, so it must
-  be a `number` or `input_number` (`unsupported_entity_domain` from
-  `default_action_issues()`, `invalid_entity_id` when malformed, and
-  `missing_action` while none is chosen). Settled with the owner: most
-  chargers have a number entity for the current, and a custom action for it
-  was needlessly hard.
+- `1 ≤ min ≤ max` current, whole amperes. Charging window start ≠ end, whole
+  minutes.
+- Settings are checked against the setting ranges in `config_model.py`.
+- Custom actions are checked with HA's script schema, templates for syntax.
+  Whether a default action exists for the entity's domain is checked
+  separately in `actions.py`, outside parsing; type errors must be fixed
+  before that check can run.
+- The `entity` action mode is only allowed for setting the charging current:
+  it runs the default action of the chosen entity instead of the charger's
+  own entity, so it must be a `number` or `input_number`. Settled with the
+  owner: most chargers have a number entity for the current, and a custom
+  action for it was needlessly hard.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
-  is not checked again. Settled with the owner after the exploratory test:
-  one type error hid every other error.
+  is not checked again. Settled with the owner: one type error hid every other
+  error.
 
 An incomplete configuration can be saved, but the regulation cannot start.
-Missing items and validation errors are issues:
-`{"code": "missing_action", "section": "appliances", "target": "a1", "field": "turn_on"}`.
-`section` is `general`, `appliances`, `priority`, `charging` or `chargers`,
-and a variant field is `variants.<id>.label`. Missing codes:
-`missing_power_sensor`, `missing_entity`, `missing_action`,
-`missing_charge_power_sensor`, `missing_car_connected`.
+Missing items and validation errors are both issues with a code, a section, a
+target (the id of the appliance or charger) and a field; a variant field is
+addressed through the variant's id. Every issue code needs a text in the
+panel's translations.
 
 ## Actions and templates
 
-| Domain | Turn on / activate | Turn off / deactivate | Set current |
-|---|---|---|---|
-| `switch`, `input_boolean`, `light`, `fan`, `climate`, `water_heater` | `<domain>.turn_on` | `<domain>.turn_off` | – |
-| `number`, `input_number` | – | – | `<domain>.set_value` with `value: {{ current }}` |
-
-The table is in one place in `actions.py` and is sent to the panel. The
-`entity` mode of the set-current action uses the same table for the chosen
-entity. All
-templates and actions get `entity_id` and `entity` (the state object of the
-appliance's or charger's entity, `none` when missing). The set-current action
-also gets `current`, `min_current` and `max_current`; `current` is clamped
-between min and max.
+- A default action exists for switch-like domains (turn on and off) and for
+  number-like domains (set value, for the charging current). The table is in
+  one place in `actions.py` and is sent to the panel, and the `entity` mode
+  uses the same table for the chosen entity.
+- All templates and actions get `entity_id` and `entity` (the state object of
+  the appliance's or charger's entity, `none` when missing). The set-current
+  action also gets `current`, `min_current` and `max_current`; `current` is
+  clamped between min and max.
 
 ## Entities
 
-All belong to one service device «Kraftvakt» and use `has_entity_name` and
-`translation_key`. Settled with the owner: the entity ids are technical,
-English in every language and grouped by prefix (`regulation_`, `power_`,
-`waiting_time_`, `penalty_`, `charger_`). `KraftvaktEntity` returns the
-object id (the key unless given) as `suggested_object_id`, which Home
-Assistant prefixes with the device name. The names are grouped the same way
-(«Effekt ledig», «Ventetid gjenstående»). The unique id and translation key
-are the key.
-
-| Entity | Unique ID | Notes |
-|---|---|---|
-| Power regulation average (`sensor`, power, W shown as kW) | `power_regulation_average` | Updated when a window closes. Unavailable without an average. |
-| Power hourly average (`sensor`, power, W shown as kW) | `power_hourly_average` | Same. |
-| Regulation safe state (`binary_sensor`, problem) | `regulation_safe_state` | On in the safe state. |
-| Power limit (`number`, power, W, box) | `power_limit` | The stored power limit. `async_set_power_limit()` in the runtime saves it at once (through the charger switch board, which saves configuration and switches together); while running, the runtime builds a new engine and starts it at the next decision when the engine's limit differs from the stored one. |
-| Penalty active (`binary_sensor`, problem, diagnostic) | `penalty_active` | On during a penalty period. |
-| Penalty overconsumption (`sensor`, energy, Wh, diagnostic) | `penalty_overconsumption` | 0 outside the overconsumption state. No state class: it is not a total. |
-| Power free (`sensor`, power, W shown as kW, diagnostic) | `power_free` | Limit in use minus the regulation average. |
-| Regulation steps on (`sensor`, measurement, diagnostic) | `regulation_steps_on` | `RegulationEngine.slots_on`: appliances on plus fictive appliances on. |
-| Waiting time remaining (`sensor`, duration, s, diagnostic) | `waiting_time_remaining` | `runtime.waiting_ends_at` minus now, whole seconds, 0 when nothing waits. |
-| Waiting time next turn-on (calculated) (`sensor`, duration, s, diagnostic) | `waiting_time_next_turn_on` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
-| Regulation (`switch`) | `regulation` | No stored position. Same function as start/stop in the panel. Stays off and logs when the configuration is incomplete. |
-| ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Entity id `switch.kraftvakt_charger_<slug of the charger name>_excluded`. Stored position. Unavailable while charging is disabled. |
-| ‹charger› override charging window (`switch`) | `charger_<id>_window_override` | Entity id `switch.kraftvakt_charger_<slug>_window_override`. Stored position, set back when it ends. Unavailable while charging is disabled. |
+- All belong to one service device, Kraftvakt, and use `has_entity_name` and
+  `translation_key`. The unique id and the translation key are the key.
+- Settled with the owner: the entity ids are technical, English in every
+  language, and grouped by prefix (`regulation_`, `power_`, `waiting_time_`,
+  `penalty_`, `charger_`). An entity suggests its object id (the key unless given),
+  which HA prefixes with the device name. The names are grouped the same way, in
+  every language.
+- The averages, power free and the power limit are power in W, shown as kW
+  for the sensors. The overconsumption is energy in Wh without a state class,
+  since it is not a total. The waiting times are durations in seconds.
+- The power limit entity saves at once, through the charger switch board so
+  configuration and switches are saved together. While running, the runtime
+  starts a new engine at the next decision when the engine's limit differs
+  from the stored one.
+- The regulation switch has no stored position; it is the same function as
+  start and stop in the panel, and stays off and logs when the configuration
+  is incomplete.
+- Each charger has an excluded switch and a window override switch, keyed by
+  the charger's id, with an entity id from the slug of the charger's name.
+  Their positions are stored, and they are unavailable while charging is
+  disabled.
 
 ## WebSocket API
 
-All commands require an administrator (HA's `unauthorized` otherwise).
-Commands that need the runtime fail with `not_loaded` when Kraftvakt is not
-loaded.
+All commands require an administrator. Commands that need the runtime fail
+with `not_loaded` when Kraftvakt is not loaded.
 
 | Command | In | Out |
 |---|---|---|
-| `kraftvakt/capabilities` | – | `{default_actions, limits, defaults}` |
-| `kraftvakt/config/get` | – | `{config, entity_names, missing}` |
-| `kraftvakt/config/save` | `config` | `{saved: true, config, missing}` or `{saved: false, errors}`. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
-| `kraftvakt/regulation/set_running` | `running` | `{running}`. Start refused with `config_incomplete`. |
-| `kraftvakt/status/subscribe` | – | Empty result, then status events: at once, at every window, decision, start, stop and save. Survives a reload (dispatcher signal). Events may arrive before the result of another command on the same connection. |
+| `kraftvakt/capabilities` | – | Default action domains per section and field, limits per field (`max: null` means no upper limit), and defaults. |
+| `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
+| `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
+| `kraftvakt/regulation/set_running` | `running` | The new state. Start refused with `config_incomplete`. |
+| `kraftvakt/status/subscribe` | – | Empty result, then status events: at once, at every window, decision, start, stop and save. Survives a reload. Events may arrive before the result of another command on the same connection. |
 
-`default_actions` gives, per section and field, the domains with a default
-action. `limits` gives `{min, max, step}` per field (`max: null` means no upper
-limit). The saved `config` has the priority list completed. A saved
-configuration is used from the next start without a reload.
+A saved configuration is used from the next start without a reload.
 
-Status snapshot:
+## Status snapshot
 
-```json
-{
-  "running": true,
-  "missing": [],
-  "safe_state": false,
-  "penalty": { "active": false, "overconsumption_wh": 0.0, "recovery_started": false },
-  "regulation_average_w": 7420.0,
-  "capacity_average_w": 8100.0,
-  "power_limit_w": 10000,
-  "regulation_window_s": 60,
-  "regulation_interval": 1,
-  "next_decision_at": "2026-11-07T12:01:00+01:00",
-  "appliances": [ { "id": "a1", "name": "Varmtvannsbereder", "on": true, "variant": "Morgen", "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ],
-  "ev_charging_position": 1,
-  "chargers": [ { "id": "c1", "name": "Lader garasje", "activated": true, "current_a": 9, "bypassed": false, "waiting": false, "allowed": true, "excluded": false, "charging": true, "window_overridden": false, "car_connected": true, "waiting_since": null, "waiting_until": null, "waiting_ends_at": null } ]
-}
-```
+Built in `websocket_api.py` and typed in the panel's `api.ts`; keep the two in
+step. Rules that are not obvious from the code:
 
-Times are ISO 8601 in HA's time zone. Averages are `null` until the first
-window. `power_limit_w` is the limit the regulation uses now, which lags the
-stored one until the next decision after the power limit entity changed it
-while running. `next_decision_at` is `null` while stopped. The waiting fields are set
-for the appliance or charger that is next and waiting (for a charger: its next
-fictive appliance): `waiting_since` when it started, `waiting_until` when the
-waiting time ends, and `waiting_ends_at` the decision that turns it on, the
-first at or after `waiting_until` (`runtime.waiting_ends_at`, from
-`first_decision_from()` in `runtime.py`). `variant` is the label of the current variant or `null`.
-Charger details are from the last decision; `allowed` is false and `excluded`
-is `null` before the first decision after a start. `charging` is true while
-the charger is activated and was actively charging at the last decision, and
-`window_overridden` while it was allowed to charge only because its charging
-window is overridden (outside the window, not excluded). `car_connected` is
-«car connected» at the last decision, `null` when it is not set or before the
-first decision. All three are for the panel's state chip. Appliances are sorted by the
-entry of their current variant, chargers by the current charging priority.
-`ev_charging_position` is the number of appliances whose current variant is
-placed before «EV charging», `null` while EV charging is disabled.
+- Power in W and energy in Wh. Times are ISO 8601 in HA's time zone.
+- Averages are `null` until the first window.
+- The power limit is the one the regulation uses now, which lags the stored
+  one until the next decision after the power limit entity changed it while
+  running.
+- The next decision time is `null` while stopped.
+- The waiting fields are set only for the appliance or charger that is next
+  and waiting (for a charger: its next fictive appliance): when the waiting
+  started, when the waiting time ends, and the decision that turns it on, the
+  first at or after the end of the waiting time.
+- An appliance's variant is the label of its current variant, or `null`.
+- Charger details are from the last decision. Before the first decision after
+  a start, a charger is not allowed and excluded is `null`. Charging is true
+  while the charger is activated and was actively charging at the last
+  decision. Window overridden is true while it was allowed to charge only
+  because of the override. Car connected is `null` when it is not set or
+  before the first decision.
+- Appliances are sorted by the entry of their current variant, chargers by the
+  current charging priority. The EV charging position is the number of
+  appliances whose current variant is placed before the EV charging entry,
+  `null` while EV charging is disabled.

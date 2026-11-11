@@ -11,45 +11,44 @@ month with the highest consumption. Kraftvakt keeps the average consumption
 over the last hour just below a power limit chosen by the user, by turning
 appliances that can wait on and off in priority order. Everything runs locally.
 
-This file is the specification. The original requirement document and the
-implementation plan have been removed. When a rule here is unclear, ask the
-owner instead of deciding.
+This file is the specification. When a rule here is unclear, ask the owner
+instead of deciding. Ranges and defaults below are settled with the owner;
+the code holds them in one place (`config_model.py`).
 
 ## Concepts
 
-| Term (Norwegian in the UI) | Meaning |
+| Term | Meaning |
 |---|---|
-| Power limit (effektgrense) | The highest allowed average power, 1000–50 000 W, default 10 000 W. The target the regulation keeps just below. |
-| Power sensor (effektsensor) | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
-| Regulation window (reguleringsvindu) | 10–600 s, default 10 s (settled with the owner, was 60 s). |
-| Regulation average (reguleringssnitt) | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
-| Regulation interval (reguleringsintervall) | 1x–4x the regulation window, default 1x. A decision is made every N windows. |
-| Capacity window / average consumption (snittforbruk) | Sliding time-weighted average over exactly one hour back, not configurable. Used only for the penalty. |
-| Decision (avgjørelse) | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
+| Power limit | The highest allowed average power, 1000–50 000 W, default 10 000 W. The target the regulation keeps just below. |
+| Power sensor | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
+| Regulation window | 10–600 s, default 10 s. |
+| Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
+| Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
+| Average consumption | Sliding time-weighted average over exactly one hour back (the capacity window), not configurable. Used only for the penalty. |
+| Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
 | Free power | Power limit minus regulation average. |
-| Turn-on margin (innkoblingsmargin) | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
-| Power reserve (effektreserve) | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
-| Waiting time (ventetid) | Time that must pass before an appliance is turned on. |
-| Waiting time curve (ventetidskurve) | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness (bratthet) and pivot point (vendepunkt). |
-| Appliance (apparat) | An entity Kraftvakt turns on and off with configurable actions. |
-| Priority list (prioritetsliste) | Sorted list of appliances, their variants and the «EV charging» entry. Top is highest priority, turned off last. |
+| Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
+| Power reserve | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
+| Waiting time | Time that must pass before an appliance is turned on. |
+| Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
+| Appliance | An entity Kraftvakt turns on and off with configurable actions. |
+| Priority list | Sorted list of appliances, their variants and the EV charging entry. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
-| Safe state (sikker tilstand) | Everything off and nothing turned on, because there is no valid power measurement. |
-| Penalty threshold (straffeterskel) | 0–10 000 W above the power limit, default 100 W (settled with the owner, was 1000 W). |
-| Overconsumption (overforbruk) | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
-| Penalty period (straffeperiode) | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
-| Fictive appliance (fiktivt apparat) | One ampere of an EV charger's current, treated by the regulation as an appliance. |
-| Bypassed charger (forbigått) | A charger that does not draw power and so must not stand in the way of others. |
-| Waiting charger (ventende) | With one charger at a time: a charger that may not charge because another is actively charging. |
-| Charging window (ladetidsrom) | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
+| Slot | An entry the regulation switches: the current variant of an appliance, or a fictive appliance. |
+| Safe state | Everything off and nothing turned on, because there is no valid power measurement. |
+| Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
+| Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
+| Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
+| Fictive appliance | One ampere of an EV charger's current, treated by the regulation as an appliance. |
+| Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |
+| Waiting charger | With one charger at a time: a charger that may not charge because another is actively charging. |
+| Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
 
-Resolution of settings: power in whole watts, the regulation window in whole
-seconds, the waiting time at the limit in whole seconds, currents in whole amperes.
-Settled with the owner: power settings are in W (they were kW with two
-decimals, same defaults), and so are the averages, the overconsumption (Wh)
-and everything inside the regulation. The status page and the average sensors
-still show kW. Saved configurations with the old `_kw` keys are not migrated.
+Resolution of settings: power in whole watts, the regulation window and the
+waiting time at the limit in whole seconds, currents in whole amperes. Power
+is in W everywhere inside the regulation and the configuration, energy in Wh;
+the status page and the average sensors show kW.
 
 ## Ground rules
 
@@ -58,21 +57,22 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - It does not read or react to the state of appliances. It assumes each one is
   as Kraftvakt last told it. Switching appliances outside Kraftvakt can disturb
   the regulation. Exception: for chargers it reads the charging power and
-  «car connected».
+  car connected.
 - A failed action is logged and not retried. The regulation goes on as if it
   worked.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
 - The configuration can only be changed while the regulation is stopped,
-  except the two switches per charger and the power limit (see «Power limit
-  entity»). Everything is off while stopped, so removed appliances are
+  except the two switches per charger and the power limit (see Power limit
+  entity). Everything is off while stopped, so removed appliances are
   already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, cycling counters,
   overconsumption, penalty, current charging priority, bypassed chargers,
-  current variants) starts again with defaults at every start: HA or
-  integration start, user start, after the safe state and after a penalty.
-  The configuration and the charger switch positions are kept over any restart.
-- True/false from HA (variant expressions, «car connected») is a boolean entity
+  rests, current variants) starts again with defaults at every start: HA or
+  integration start, user start, after the safe state, after a penalty and
+  after a change of the power limit. The configuration and the charger switch
+  positions are kept over any restart.
+- True/false from HA (variant expressions, car connected) is a boolean entity
   or a template. True only when the entity is `on` or the template gives the
   boolean true. Everything else is false, also unavailable entities and
   failing templates. Settings are named so that true means the thing is the
@@ -89,24 +89,24 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 - At startup (HA or integration start) the hour before is taken from HA's
   recorder history of the power sensor, read like live values (an invalid
   value keeps the last valid one in place, and the oldest valid value fills
-  the time before it). Settled with the owner, because filling the hour with
-  the first value after a restart made the average consumption far too low:
-  everything is turned off at start, so the first value is only the
-  background. Without a recorder or any valid history, the missing past is
-  filled with the first measured value. The regulation window is not affected: the first
-  one starts at startup. The time HA was down counts with the last value
-  recorded before it stopped.
+  the time before it). The time HA was down counts with the last value
+  recorded before it stopped. Without a recorder or any valid history, the
+  missing past is filled with the first measured value. The regulation window
+  is not affected: the first one starts at startup. Settled with the owner:
+  filling the hour with the first value after a restart made the average
+  consumption far too low, because everything is turned off at start and the
+  first value is only the background.
 - Validity is the state when a window closes. A gap inside a window is filled
   with the last valid value.
 - One window closing without a valid value is tolerated (the last valid value
   is used). Two in a row make the averages unknown: the average sensors become
   unavailable until a valid value comes, also while the regulation is stopped.
-  The history is kept, and the gap counts with the last valid value before
-  it, like the time HA was down. Settled with the owner after the exploratory
-  test: discarding the history and filling the hour with the
-  first value after the gap made the average consumption far too low (only the
-  background, since everything is off in the safe state) or far too high (a
-  value that lasted a millisecond while the appliances were turned off).
+  The history is kept, and the gap counts with the last valid value before it,
+  like the time HA was down. Settled with the owner: discarding the history
+  and filling the hour with the first value after the gap made the average
+  consumption far too low (only the background, since everything is off in
+  the safe state) or far too high (a short peak while the appliances were
+  turned off).
 - Before the first valid value there is no average. Windows without any
   measurement count as invalid.
 - Saving a configuration does not restart the averages. A new power sensor is
@@ -128,33 +128,31 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
      deactivate), newly bypassed chargers down to one fictive appliance,
      appliances that switch variant.
   7. Build the ordered slots (current variants, fictive appliances in place of
-     «EV charging»).
+     the EV charging entry).
   8. Above the limit: switch off the lowest priority slot that is on and not a
      bypassed charger's, without waiting, and cancel any waiting. When step 6
      switched something off at this decision, nothing more is switched off;
      the waiting is still cancelled and nothing is turned on. Settled with the
-     owner after the exploratory test: the average was measured
-     before the forced switch-off, so switching off one more was often too
-     much.
+     owner: the average was measured before the forced switch-off, so
+     switching off one more was often too much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
-- Only one appliance is turned on or off per decision based on free power.
-  Several may be switched off at once only when consumption must drop at once
-  or switching does not change consumption: start and stop, safe state,
-  penalty, chargers not allowed to charge, bypassed chargers, variant switches.
+- Only one slot is turned on or off per decision based on free power. Several
+  may be switched off at once only when consumption must drop at once or
+  switching does not change consumption: start and stop, safe state, penalty,
+  chargers not allowed to charge, bypassed chargers, variant switches.
 - Turn on only when the regulation average is under the limit minus the
   turn-on margin, and average plus power reserve is at most the limit. Switch
   off only when the average is above the limit. Between limit minus margin and
-  the limit, both included, nothing is turned on or off. Settled with the owner
-  after the exploratory test: commands run just after a window
-  closes, and a real meter reports the change only at its next update, so the
-  window after a decision still holds the consumption from before its
-  commands. Without a margin an average a hair under the limit turned on the
-  next appliance, only for one to be switched off at the next decision. The
-  margin is below the limit only, so the regulation never accepts being above
-  it.
-- Fixed order: an appliance is never turned on before all above it are on.
-  Skipped: entries that are not the current variant, chargers not allowed to
-  charge, bypassed and waiting chargers.
+  the limit, both included, nothing is turned on or off. Settled with the
+  owner: commands run just after a window closes, and a real meter reports
+  the change only at its next update, so the window after a decision still
+  holds the consumption from before its commands. Without a margin, an average
+  just under the limit turned on the next appliance, only for one to be
+  switched off at the next decision. The margin is below the limit only, so
+  the regulation never accepts being above it.
+- Fixed order: a slot is never turned on before all above it are on. Skipped:
+  entries that are not the current variant, chargers not allowed to charge,
+  bypassed and waiting chargers.
 
 ## Waiting time
 
@@ -163,51 +161,46 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   still hold. Waiting time 0 turns it on at the same decision. If the
   conditions fail, the waiting is cancelled and starts again later. Only the
   slot that is next can wait.
+- Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit),
-  recalculated at each decision while it runs. Settled with the owner,
-  replacing the linear time, which made appliances wait too long at low
-  utilization. With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1),
-  the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or
-  below half the limit, slow at first, and 1 at the limit and above. n is the
-  steepness, 1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default
-  80, is the utilization in percent where the share is 80 %: with
-  t = (pivot − 50) / 50, K = t^n · 0.2 / (0.8 − t^n), computed once per start.
-  A pivot the curve cannot reach at the steepness is capped silently to
-  t = 0.8^(1/n) × 0.999 (n 1.5 and pivot 95 give 80 % at about 93 %); the
-  setting keeps what the user chose. Pivot 50 gives K = 0: no waiting up to
-  half the limit and the whole waiting time above it. The test values of the
-  owner's specification are in `tests/unit/regulation/test_waiting.py`.
-  Waiting time at the limit is 0–600 s, default 300 s. Settled with the owner, replacing 0–10 min with
-  default 5 min. Saved configurations with the old `wait_at_limit_min` are not
-  migrated; the value falls back to the default.
+  recalculated at each decision while it runs. Settled with the owner, because
+  a linear waiting time made appliances wait too long at low utilization.
+  With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is
+  the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half
+  the limit, slow at first, and 1 at the limit and above. n is the steepness,
+  1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default 80, is the
+  utilization in percent where the share is 80 %: with t = (pivot − 50) / 50,
+  K = t^n · 0.2 / (0.8 − t^n), computed once per start. A pivot the curve
+  cannot reach at the steepness is capped silently just below
+  t = 0.8^(1/n); the setting keeps what the user chose. Pivot 50 gives K = 0:
+  no waiting up to half the limit and the whole waiting time above it. The
+  owner's test values for the curve are in the unit tests for waiting.
 - Persistent cycling: when the same slot is turned on again without any other
-  slot being switched in between, the counter grows. From the second time on
-  the waiting time is fixed, independent of the average:
-  min(cap, waiting at limit + step × (n − 2)). The step is a share of the
-  waiting time at the limit, 0.25, 0.5, 0.75 or 1, and the cap is the waiting
-  time at the limit plus a number of steps, 1–9. Both are set separately for
-  appliances (default 0.5 and 4: step 150 s and cap 900 s with 300 s at the
-  limit) and for fictive appliances (default 1 and 5: step 300 s and cap
-  1800 s). With waiting time 0 at the limit the step and the cap are 0, so
-  the waiting time does not grow; accepted by the owner. Settled with the
-  owner, replacing a step and a cap in seconds, which replaced fixed values,
-  because a share and a number of steps are easier to understand. The first
-  time again uses the curve. Any command for another slot, also forced
-  ones, resets the counter.
-- Kept as is after the exploratory test, to revisit if it shows
-  up in real use: two slots that alternate (A on, B on, B off, A off, A on …)
-  reset each other's counter, so their waiting time never grows. In the test
-  it came from the stale window after a decision with waiting time 0, which
-  the turn-on margin now prevents.
+  slot being switched in between, a counter grows. The first turn-on and the
+  first turn-on again use the curve. From the second turn-on again, the
+  waiting time is fixed, independent of the average:
+  min(cap, waiting at limit + step × (n − 2)), where n is the count of
+  turn-ons again. The step is a share of the waiting time at the limit, 0.25,
+  0.5, 0.75 or 1, and the cap is the waiting time at the limit plus a number
+  of steps, 1–9. Both are set separately for appliances (default 0.5 and 4)
+  and for fictive appliances (default 1 and 5). With waiting time 0 at the
+  limit, the step and the cap are 0, so the waiting time does not grow;
+  accepted by the owner. A share and a number of steps were chosen by the
+  owner because they are easier to understand than times in seconds. Any
+  command for another slot, also forced ones, resets the counter.
+- Kept as is, to revisit if it shows up in real use: two slots that alternate
+  (A on, B on, B off, A off, A on …) reset each other's counter, so their
+  waiting time never grows. In testing it came from the stale window after a
+  decision with waiting time 0, which the turn-on margin now prevents.
 
 ## Penalty
 
 - Overconsumption state: starts when the average consumption is above the limit
   at a decision, with overconsumption 0 at that decision. Every regulation
   average closed after it adds (average − limit) × window. It ends when the
-  overconsumption is ≤ 0 (rounding below 1e-6 Wh counts as 0), at the
-  earliest at the next decision. If the average consumption is still above the
-  limit, a new state starts at 0 at once.
+  overconsumption is ≤ 0 (rounding noise counts as 0), at the earliest at the
+  next decision. If the average consumption is still above the limit, a new
+  state starts at 0 at once.
 - A penalty starts when the average consumption is above limit + threshold and
   the overconsumption is > 0. With threshold 0 it starts one decision after the
   state started. Everything is turned off at once, also chargers, with a
@@ -218,22 +211,22 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   again.
 - The penalty ends only when the overconsumption is paid back (then the
   regulation starts again with everything off at that decision) or by a restart
-  (stop, safe state, HA start). The current variants are still evaluated during
-  a penalty; they give no commands since everything is off.
-- The start after a penalty resets the cycling counters like every other
-  start. Kept as is after the exploratory test: while the average
-  consumption stays above limit plus threshold, an appliance that pushes the
-  average over the limit goes on and off with the waiting time from the
-  curve only, never the longer waiting time on persistent cycling.
-  The penalty should never be needed.
+  (stop, safe state, HA start, power limit change). The current variants are
+  still evaluated during a penalty; they give no commands since everything is
+  off.
+- Kept as is: the start after a penalty resets the cycling counters like every
+  other start, so while the average consumption stays above limit plus
+  threshold, an appliance that pushes the average over the limit goes on and
+  off with the waiting time from the curve only, never the longer waiting time
+  on persistent cycling. The penalty should never be needed.
 
 ## Safe state
 
 - Entered at the first decision where the power sensor was invalid at the last
   two window closes. Every appliance and charger is turned off at once, and
-  nothing is turned on. The regulation safe state binary sensor is on.
-- When a valid value comes back, the averages are known again and the regulation
-  starts again with everything off at the first decision.
+  nothing is turned on. The safe state binary sensor is on.
+- When a valid value comes back, the averages are known again and the
+  regulation starts again with everything off at the first decision.
 - A sensor that never reports after startup also leads to the safe state.
 
 ## Start and stop
@@ -245,29 +238,27 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
   loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends, when the power sensor is back after the safe state, and
   at the next decision after the power limit was changed while it ran.
-  Confirmed by the owner: the regulation always tries to start when HA
-  restarts and when the integration is reloaded (for example after an
-  update).
-  If the user starts or stops before HA has finished starting, that wins.
+  Confirmed by the owner: the regulation always tries to start when HA starts
+  and when the integration is reloaded (for example after an update). If the
+  user starts or stops before HA has finished starting, that wins.
 - After a reload, the turn-off commands wait until the previous runtime's
-  actions are done (a lock shared over reloads).
+  actions are done.
 - The user stops and starts from the panel or the regulation switch; they are
   the same function. Stopping turns everything off at once and makes no more
   decisions.
-- The regulation starts by itself at HA/integration start, and can only be
-  started when the configuration is complete: power sensor chosen; every
-  appliance has entity, turn-on and turn-off action; with EV charging enabled,
-  every charger has entity, activate, deactivate and set-current actions and a
-  charging power sensor, and also «car connected» when only one charger may
-  charge at a time.
+- The regulation can only start when the configuration is complete: power
+  sensor chosen; every appliance has entity, turn-on and turn-off action; with
+  EV charging enabled, every charger has entity, activate, deactivate and
+  set-current actions and a charging power sensor, and also car connected when
+  only one charger may charge at a time.
 
 ## Power limit entity
 
 Settled with the owner, so automations can set the power limit:
 
-- A `number` entity in W (1000–50 000, whole watts, box mode), the same value
-  as the power limit in the panel. A new value is saved at once and rounded
-  to whole watts.
+- A `number` entity in whole watts with the same range as the setting, the
+  same value as the power limit in the panel. A new value is saved at once
+  and rounded to whole watts.
 - While stopped, the new limit is used from the next start.
 - While running, the regulation starts again with the new limit at the next
   decision instead of deciding, like the start after a penalty: everything is
@@ -279,35 +270,31 @@ Settled with the owner, so automations can set the power limit:
 
 ## Diagnostic entities
 
-Settled with the owner, all with entity category diagnostic. The entity ids
-and names are grouped, see the `kraftvakt-backend` skill.
+Settled with the owner, all with entity category diagnostic:
 
-- Penalty active (binary sensor, problem): on while a penalty period lasts.
-- Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside
-  the overconsumption state.
-- Power free (W shown as kW): the power limit in use minus the last
-  regulation average, negative above the limit. Unavailable without an
-  average.
+- Penalty active: on while a penalty period lasts.
+- Penalty overconsumption (Wh): the overconsumption at the last decision, 0
+  outside the overconsumption state.
+- Power free: the power limit in use minus the last regulation average,
+  negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of slots that are on, appliances and
-  fictive appliances (one per ampere) alike. Meant for a graph of how much
-  the regulation has switched on.
+  fictive appliances alike. Meant for a graph of how much the regulation has
+  switched on.
 - Waiting time remaining (s): the time from now to the decision that turns on
-  the waiting slot (`waiting_ends_at`, an appliance or a charger's next
-  ampere), so it is the real time left, a whole number of decision intervals
-  after a decision. 0 when nothing waits. Updated at each window, decision,
-  start and stop.
+  the waiting slot (an appliance or a charger's next ampere), so it is the
+  real time left, a whole number of decision intervals after a decision. 0
+  when nothing waits. Updated at each window, decision, start and stop.
 - Waiting time next turn-on (calculated) (s): the waiting time the next
-  turn-on gets, calculated as waiting time at the limit × share of the curve
-  for the last regulation average and the limit in use, without the longer
-  waiting time on persistent cycling. Unavailable without an average. Named
-  with the owner after what it is for, not after the curve, which the user
-  would have to remember from the settings.
+  turn-on gets from the curve, for the last regulation average and the limit
+  in use, without the longer waiting time on persistent cycling. Unavailable
+  without an average. Named with the owner after what it is for, not after
+  the curve, which the user would have to remember from the settings.
 
 ## Variants
 
 - Each ordinary appliance may have variants, sorted, each with a non-empty
   label unique for the appliance and an expression. Same actions and reserve as
-  the appliance. Not for chargers or «EV charging».
+  the appliance. Not for chargers or the EV charging entry.
 - Evaluated at each decision. When an appliance switches variant: it is off
   afterwards at the new place and comes on again the normal way. If it was off
   and its new place is above the lowest slot that is on, that lowest slot is
@@ -321,49 +308,47 @@ and names are grouped, see the `kraftvakt-backend` skill.
 - Enabled or disabled, default disabled. While disabled, chargers stay in the
   configuration but are not regulated, not required for completeness, and their
   switches are unavailable (positions kept).
-- «One charger at a time», default yes. Chargers are sorted in the configured
+- One charger at a time: default yes. Chargers are sorted in the configured
   charging priority.
 - Each charger is split into fictive appliances, one per ampere from min to max
   current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min +
   number on − 1. None on means deactivated. The fictive appliances sit at the
-  place of «EV charging».
+  place of the EV charging entry.
 - First fictive on: set current to min, then activate, and only the first has
-  the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new
-  current. Switching off: set the lower current, or for the last one set
+  the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the
+  new current. Switching off: set the lower current, or for the last one set
   current to min and then deactivate. Every deactivation sets min current
   first. The set-current action always gets a current between min and max.
 - Actively charging: charging power > 100 W (not configurable), or an invalid
   charging power, also when deactivated.
-- On trial (settled with the owner after the retest of the exploratory
-  test): a charger that may charge but does not charge actively gets
-  only its first fictive appliance, so it stays at the minimum current until
-  it charges actively. Meanwhile the slots after it may be turned on. Before,
-  a charger tried without a car that charged got more current during the two
-  windows before it was bypassed, and held back the appliances below
-  «EV charging». A car that starts slowly gets its second ampere a decision
-  later.
-- Bypassed: «car connected» is set and false, or not actively charging while
-  the first fictive appliance has been on for at least two windows. Evaluated at
-  each decision, ends as soon as neither holds. A bypassed charger keeps its
-  first fictive appliance and stays activated, gets no more, is not switched
-  off above the limit and does not stand in the way of others. When it becomes
-  bypassed, all fictive appliances but the first are switched off at once.
-- Rest (settled with the owner after the exploratory test): a
-  charger that becomes bypassed because it does not charge rests. It stays
-  bypassed while it rests, also after it is deactivated, and may be tried
-  again when the rest is over: 15 min the first time, then 30 min, then 60 min
-  each time it is tried and still does not charge. The rest ends at once, and
-  the next one is 15 min again, when «car connected» is false at a decision
-  (a car that is connected again is tried at once) or when the charger
-  charges actively while activated. Every start begins without rests. Without
-  it, two chargers with full cars took turns being activated forever when only
-  one may charge at a time, and the appliances below «EV charging» were never
-  turned on.
+- On trial, settled with the owner: a charger that may charge but does not
+  charge actively gets only its first fictive appliance, so it stays at the
+  minimum current until it charges actively. Meanwhile the slots after it may
+  be turned on. Otherwise a charger tried without a car got more current
+  before it was bypassed and held back the appliances below the EV charging
+  entry. A car that starts slowly gets its second ampere a decision later.
+- Bypassed: car connected is set and false, or not actively charging while
+  the first fictive appliance has been on for at least two windows. Evaluated
+  at each decision, ends as soon as neither holds. A bypassed charger keeps
+  its first fictive appliance and stays activated, gets no more, is not
+  switched off above the limit and does not stand in the way of others. When
+  it becomes bypassed, all fictive appliances but the first are switched off
+  at once.
+- Rest, settled with the owner: a charger that becomes bypassed because it
+  does not charge rests. It stays bypassed while it rests, also after it is
+  deactivated, and may be tried again when the rest is over: 15 min the first
+  time, then 30 min, then 60 min each time it is tried and still does not
+  charge. The rest ends at once, and the next one is the first again, when
+  car connected is false at a decision (a car that is connected again is
+  tried at once) or when the charger charges actively while activated. Every
+  start begins without rests. Without it, two chargers with full cars took
+  turns being activated forever when only one may charge at a time, and the
+  appliances below the EV charging entry were never turned on.
 - Current charging priority: equal to the configured one at each start.
   Newly bypassed chargers move to the back, keeping their order, and stay there
-  even after they stop being bypassed, until it is corrected: when a charger has
-  all its fictive appliances on, the priority is set to the configured order for
-  the chargers that are not bypassed, bypassed ones stay at the back.
+  even after they stop being bypassed, until it is corrected: when a charger
+  has all its fictive appliances on, the priority is set to the configured
+  order for the chargers that are not bypassed; bypassed ones stay at the back.
 - Several at once: the fictive appliances of all allowed, not bypassed
   chargers are interleaved: the first of each charger in current priority, then
   the second, and so on.
