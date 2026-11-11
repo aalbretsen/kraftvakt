@@ -1,6 +1,6 @@
 ---
 name: kraftvakt-testing
-description: How Kraftvakt is tested - the test layout, the scenario language for the regulation engine, conventions for black box tests with the Home Assistant test harness, the checks every commit must pass, how to test by hand against a local Home Assistant with the Kraftvakt simulator, updating the dependencies and making a release. Use when writing or changing tests, before committing, when testing the panel or the regulation by hand, when updating dependencies or when making a release.
+description: How Kraftvakt is tested - the test layout, the scenario language for the regulation engine, conventions for black box tests with the Home Assistant test harness, the checks every commit must pass, how to test by hand against a local Home Assistant with the Kraftvakt simulator, and updating the dependencies. Use when writing or changing tests, before committing, when testing the panel or the regulation by hand, or when updating dependencies.
 ---
 
 # Testing Kraftvakt
@@ -43,19 +43,6 @@ always fit together; the rest get their newest release. Afterwards install
 again, `nvm install`, run every check and rebuild the panel. Commit the
 dependency changes on their own. A new Home Assistant version also needs the
 panel tested by hand, see the `kraftvakt-panel` skill.
-
-## Releasing
-
-`uv run scripts/release.py <version>` on an up-to-date `main` with a clean
-working tree: it runs every check, sets the version, commits, tags
-`v<version>` and asks before pushing. The version is SemVer and lives in the
-Kraftvakt manifest, `pyproject.toml`, `frontend/package.json` and its lock
-file; the simulator keeps its own version. The pushed tag starts
-`release.yml`, which checks that every version matches the tag and creates a
-draft GitHub release, marked as a pre-release when the version has a
-pre-release part, since HACS reads that flag, not the version. The owner
-writes the release notes by hand and publishes the draft. Claude never runs
-the push.
 
 ## Layout
 
