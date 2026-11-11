@@ -13,7 +13,7 @@ from homeassistant.helpers.dispatcher import (
     async_dispatcher_send,
 )
 
-from .actions import default_action_domains, default_action_issues
+from .actions import default_action_issues, default_actions_by_field
 from .config_model import (
     SETTING_RANGES,
     Appliance,
@@ -213,7 +213,7 @@ def capabilities() -> dict[str, Any]:
     charging = ChargingConfig()
     charger = Charger(id="")
     return {
-        "default_actions": default_action_domains(),
+        "default_actions": default_actions_by_field(),
         "limits": {
             section: {name: value.to_dict() for name, value in ranges.items()}
             for section, ranges in SETTING_RANGES.items()

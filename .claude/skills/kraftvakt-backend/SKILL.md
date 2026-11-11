@@ -154,7 +154,7 @@ with `not_loaded` when Kraftvakt is not loaded.
 
 | Command | In | Out |
 |---|---|---|
-| `kraftvakt/capabilities` | – | Default action domains per section and field, limits per field (`max: null` means no upper limit), and defaults. |
+| `kraftvakt/capabilities` | – | The default action (domains, service and data) per section and field, limits per field (`max: null` means no upper limit), and defaults. |
 | `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
 | `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
 | `kraftvakt/regulation/set_running` | `running` | The new state. Start refused with `config_incomplete`. |

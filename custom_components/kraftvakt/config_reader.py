@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from dataclasses import fields
 from datetime import time
 from typing import Any
 
@@ -108,61 +109,28 @@ class ConfigReader:
     def _general(self, data: Any) -> GeneralConfig:
         location = IssueLocation("general")
         values = self._mapping(data, location, None)
-        defaults = GeneralConfig()
         return GeneralConfig(
-            power_sensor=self._text(values, "power_sensor", location),
-            power_limit_w=self._integer(
-                values, "power_limit_w", defaults.power_limit_w, location
-            ),
-            turn_on_margin_w=self._integer(
-                values, "turn_on_margin_w", defaults.turn_on_margin_w, location
-            ),
-            regulation_window_s=self._integer(
-                values, "regulation_window_s", defaults.regulation_window_s, location
-            ),
-            regulation_interval=self._integer(
-                values, "regulation_interval", defaults.regulation_interval, location
-            ),
-            wait_at_limit_s=self._integer(
-                values, "wait_at_limit_s", defaults.wait_at_limit_s, location
-            ),
-            wait_curve_steepness=self._number(
-                values,
-                "wait_curve_steepness",
-                defaults.wait_curve_steepness,
-                location,
-            ),
-            wait_curve_pivot=self._integer(
-                values, "wait_curve_pivot", defaults.wait_curve_pivot, location
-            ),
-            appliance_cycling_step_factor=self._number(
-                values,
-                "appliance_cycling_step_factor",
-                defaults.appliance_cycling_step_factor,
-                location,
-            ),
-            appliance_cycling_steps=self._integer(
-                values,
-                "appliance_cycling_steps",
-                defaults.appliance_cycling_steps,
-                location,
-            ),
-            charger_cycling_step_factor=self._number(
-                values,
-                "charger_cycling_step_factor",
-                defaults.charger_cycling_step_factor,
-                location,
-            ),
-            charger_cycling_steps=self._integer(
-                values,
-                "charger_cycling_steps",
-                defaults.charger_cycling_steps,
-                location,
-            ),
-            penalty_threshold_w=self._integer(
-                values, "penalty_threshold_w", defaults.penalty_threshold_w, location
-            ),
+            **{
+                setting.name: self._setting(
+                    values, setting.name, setting.default, location
+                )
+                for setting in fields(GeneralConfig)
+            }
         )
+
+    def _setting(
+        self,
+        values: Mapping[str, Any],
+        key: str,
+        default: Any,
+        location: IssueLocation,
+    ) -> Any:
+        """Read a setting as text, a whole number or a number, like its default."""
+        if default is None:
+            return self._text(values, key, location)
+        if isinstance(default, int):
+            return self._integer(values, key, default, location)
+        return self._number(values, key, default, location)
 
     def _appliance(self, data: Any) -> Appliance:
         values = self._mapping(data, IssueLocation("appliances"), None)

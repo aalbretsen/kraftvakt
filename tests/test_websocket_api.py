@@ -144,18 +144,23 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
 
     assert response["success"]
     result = response["result"]
-    assert result["default_actions"]["appliances"]["turn_on"] == [
-        "switch",
-        "input_boolean",
-        "light",
-        "fan",
-        "climate",
-        "water_heater",
-    ]
-    assert result["default_actions"]["chargers"]["set_current"] == [
-        "number",
-        "input_number",
-    ]
+    assert result["default_actions"]["appliances"]["turn_on"] == {
+        "domains": [
+            "switch",
+            "input_boolean",
+            "light",
+            "fan",
+            "climate",
+            "water_heater",
+        ],
+        "service": "turn_on",
+        "data": {},
+    }
+    assert result["default_actions"]["chargers"]["set_current"] == {
+        "domains": ["number", "input_number"],
+        "service": "set_value",
+        "data": {"value": "{{ current }}"},
+    }
     assert result["limits"]["general"]["power_limit_w"] == {
         "min": 1000,
         "max": 50_000,

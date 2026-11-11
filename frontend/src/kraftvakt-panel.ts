@@ -2,6 +2,7 @@ import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse, mdiTune } from
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { live } from "lit/directives/live.js";
+import { literal, html as staticHtml } from "lit/static-html.js";
 
 import {
   ERROR_NOT_LOADED,
@@ -37,6 +38,14 @@ const TAB_ICONS: Record<Page, string> = {
   appliances: mdiFormatListNumbered,
   charging: mdiCarElectric,
   advanced: mdiTune,
+};
+
+/** The element of each configuration page; they all get the same properties. */
+const CONFIG_PAGE_ELEMENTS = {
+  general: literal`kraftvakt-general-page`,
+  appliances: literal`kraftvakt-appliances-page`,
+  charging: literal`kraftvakt-charging-page`,
+  advanced: literal`kraftvakt-advanced-page`,
 };
 
 /** The Kraftvakt panel in the Home Assistant sidebar. */
@@ -214,64 +223,20 @@ export class KraftvaktPanel extends LitElement {
     issues: Issue[],
     locked: boolean,
   ) {
-    switch (page) {
-      case "general":
-        return html`
-          <kraftvakt-general-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .config=${config}
-            .entityNames=${this.config?.entity_names ?? {}}
-            .capabilities=${this.capabilities}
-            .issues=${issues}
-            .saveErrors=${this.saveErrors}
-            .locked=${locked}
-          ></kraftvakt-general-page>
-        `;
-      case "appliances":
-        return html`
-          <kraftvakt-appliances-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .config=${config}
-            .entityNames=${this.config?.entity_names ?? {}}
-            .capabilities=${this.capabilities}
-            .issues=${issues}
-            .saveErrors=${this.saveErrors}
-            .locked=${locked}
-          ></kraftvakt-appliances-page>
-        `;
-      case "charging":
-        return html`
-          <kraftvakt-charging-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .config=${config}
-            .entityNames=${this.config?.entity_names ?? {}}
-            .capabilities=${this.capabilities}
-            .issues=${issues}
-            .saveErrors=${this.saveErrors}
-            .locked=${locked}
-          ></kraftvakt-charging-page>
-        `;
-      case "advanced":
-        return html`
-          <kraftvakt-advanced-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .config=${config}
-            .entityNames=${this.config?.entity_names ?? {}}
-            .capabilities=${this.capabilities}
-            .issues=${issues}
-            .saveErrors=${this.saveErrors}
-            .locked=${locked}
-          ></kraftvakt-advanced-page>
-        `;
-    }
+    const tag = CONFIG_PAGE_ELEMENTS[page];
+    return staticHtml`
+      <${tag}
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .narrow=${this.narrow}
+        .config=${config}
+        .entityNames=${this.config?.entity_names ?? {}}
+        .capabilities=${this.capabilities}
+        .issues=${issues}
+        .saveErrors=${this.saveErrors}
+        .locked=${locked}
+      ></${tag}>
+    `;
   }
 
   private pageIssues(errors: Issue[]): Issue[] {

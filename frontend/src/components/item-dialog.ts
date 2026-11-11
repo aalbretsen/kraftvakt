@@ -5,7 +5,7 @@ import type { ActionConfig, Appliance, Capabilities, Charger, Issue } from "../a
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
-import { hasDefaultAction } from "../validation";
+import { defaultActionOf, hasDefaultAction } from "../validation";
 import "./action-field";
 
 type Item = Appliance | Charger;
@@ -85,19 +85,20 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
   }
 
-  /** An action field; `entityDomains` offers to give the action as an entity of those domains. */
-  protected renderAction(field: string, issues: Issue[], variables: string[], entityDomains: string[] = []) {
+  /** An action field; `entityAllowed` offers to give it as an entity with the same default action. */
+  protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false) {
     const issue = issues.find((item) => item.field === field);
+    const defaultAction = defaultActionOf(this.capabilities, this.section, field);
     return html`
       <kraftvakt-action-field
         .hass=${this.hass}
         .localize=${this.localize}
-        .field=${field}
         .label=${this.label(field)}
         .value=${(this.draft as unknown as Record<string, ActionConfig | null>)[field]}
         .entityId=${this.draft.entity_id}
+        .defaultAction=${defaultAction}
         .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, field, this.draft.entity_id)}
-        .entityDomains=${entityDomains}
+        .entityDomains=${entityAllowed ? defaultAction.domains : []}
         .variables=${variables}
         .error=${issue ? this.describe(issue) : undefined}
         .disabled=${this.locked}

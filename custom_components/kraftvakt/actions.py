@@ -52,6 +52,14 @@ class DefaultAction:
     service: str
     data: Mapping[str, str] = field(default_factory=dict)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return the default action as JSON-friendly data for the panel."""
+        return {
+            "domains": list(self.domains),
+            "service": self.service,
+            "data": dict(self.data),
+        }
+
 
 _ON_OFF_DOMAINS: Final = (
     "switch",
@@ -114,11 +122,11 @@ def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
     ]
 
 
-def default_action_domains() -> dict[str, dict[str, list[str]]]:
-    """Return the domains that have a default action, by section and field."""
+def default_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
+    """Return the default action of each action field, by section."""
     return {
         section: {
-            field_name: list(DEFAULT_ACTIONS[kind].domains)
+            field_name: DEFAULT_ACTIONS[kind].to_dict()
             for field_name, kind in fields.items()
         }
         for section, fields in (

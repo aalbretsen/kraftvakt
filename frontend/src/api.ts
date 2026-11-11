@@ -107,10 +107,17 @@ export interface Range {
   step: number;
 }
 
+/** The action used for the entity domains that have an obvious one. */
+export interface DefaultAction {
+  domains: string[];
+  service: string;
+  data: Record<string, string>;
+}
+
 export interface Capabilities {
   default_actions: {
-    appliances: Record<"turn_on" | "turn_off", string[]>;
-    chargers: Record<"activate" | "deactivate" | "set_current", string[]>;
+    appliances: Record<"turn_on" | "turn_off", DefaultAction>;
+    chargers: Record<"activate" | "deactivate" | "set_current", DefaultAction>;
   };
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
   defaults: {

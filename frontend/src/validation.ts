@@ -5,6 +5,7 @@ import type {
   Capabilities,
   Charger,
   Condition,
+  DefaultAction,
   Issue,
   KraftvaktConfig,
   Range,
@@ -55,6 +56,11 @@ export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[]
   return missing;
 }
 
+/** Return the default action of an action field. */
+export function defaultActionOf(capabilities: Capabilities, section: ActionSection, field: string): DefaultAction {
+  return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];
+}
+
 /** Return whether the domain of the entity has a default action for the field. */
 export function hasDefaultAction(
   capabilities: Capabilities,
@@ -62,8 +68,7 @@ export function hasDefaultAction(
   field: string,
   entityId: string | null,
 ): boolean {
-  const domains: string[] = (capabilities.default_actions[section] as Record<string, string[]>)[field] ?? [];
-  return entityId !== null && domains.includes(entityId.split(".")[0]);
+  return entityId !== null && defaultActionOf(capabilities, section, field).domains.includes(entityId.split(".")[0]);
 }
 
 /** Return the issues that belong to one appliance or charger. */

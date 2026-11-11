@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import time
-from enum import StrEnum
+from enum import Enum, StrEnum
 from typing import Any, Final
 
 
@@ -136,7 +136,7 @@ class Condition:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the condition as JSON-friendly data."""
-        return {"type": self.type.value, "value": self.value}
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,11 +149,7 @@ class Variant:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the variant as JSON-friendly data."""
-        return {
-            "id": self.id,
-            "label": self.label,
-            "condition": self.condition.to_dict(),
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,14 +165,7 @@ class Appliance:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the appliance as JSON-friendly data."""
-        return {
-            "id": self.id,
-            "entity_id": self.entity_id,
-            "turn_on": _optional_dict(self.turn_on),
-            "turn_off": _optional_dict(self.turn_off),
-            "power_reserve_w": self.power_reserve_w,
-            "variants": [variant.to_dict() for variant in self.variants],
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,19 +229,7 @@ class Charger:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the charger as JSON-friendly data."""
-        return {
-            "id": self.id,
-            "entity_id": self.entity_id,
-            "activate": _optional_dict(self.activate),
-            "deactivate": _optional_dict(self.deactivate),
-            "set_current": _optional_dict(self.set_current),
-            "min_current_a": self.min_current_a,
-            "max_current_a": self.max_current_a,
-            "charge_power_sensor": self.charge_power_sensor,
-            "power_reserve_w": self.power_reserve_w,
-            "car_connected": _optional_dict(self.car_connected),
-            "charging_window": _optional_dict(self.charging_window),
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,11 +242,7 @@ class ChargingConfig:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the charging settings as JSON-friendly data."""
-        return {
-            "enabled": self.enabled,
-            "one_at_a_time": self.one_at_a_time,
-            "chargers": [charger.to_dict() for charger in self.chargers],
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,21 +265,7 @@ class GeneralConfig:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the general parameters as JSON-friendly data."""
-        return {
-            "power_sensor": self.power_sensor,
-            "power_limit_w": self.power_limit_w,
-            "turn_on_margin_w": self.turn_on_margin_w,
-            "regulation_window_s": self.regulation_window_s,
-            "regulation_interval": self.regulation_interval,
-            "wait_at_limit_s": self.wait_at_limit_s,
-            "wait_curve_steepness": self.wait_curve_steepness,
-            "wait_curve_pivot": self.wait_curve_pivot,
-            "appliance_cycling_step_factor": self.appliance_cycling_step_factor,
-            "appliance_cycling_steps": self.appliance_cycling_steps,
-            "charger_cycling_step_factor": self.charger_cycling_step_factor,
-            "charger_cycling_steps": self.charger_cycling_steps,
-            "penalty_threshold_w": self.penalty_threshold_w,
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -320,12 +279,7 @@ class KraftvaktConfig:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the configuration as JSON-friendly data."""
-        return {
-            "general": self.general.to_dict(),
-            "appliances": [appliance.to_dict() for appliance in self.appliances],
-            "priority": [entry.to_dict() for entry in self.priority],
-            "charging": self.charging.to_dict(),
-        }
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -337,7 +291,7 @@ class ChargerSwitches:
 
     def to_dict(self) -> dict[str, bool]:
         """Return the switches as JSON-friendly data."""
-        return {"excluded": self.excluded, "window_override": self.window_override}
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -390,8 +344,22 @@ def charger_switches_to_dict(
     return {charger_id: state.to_dict() for charger_id, state in switches.items()}
 
 
-def _optional_dict(value: Any) -> Any:
-    return None if value is None else value.to_dict()
+def _fields_to_dict(item: Any) -> dict[str, Any]:
+    """Return the fields of a dataclass as JSON-friendly data."""
+    return {
+        attribute.name: _to_json(getattr(item, attribute.name))
+        for attribute in fields(item)
+    }
+
+
+def _to_json(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return [_to_json(item) for item in value]
+    if isinstance(value, Enum):
+        return value.value
+    if hasattr(value, "to_dict"):
+        return value.to_dict()
+    return value
 
 
 def _format_time(value: time) -> str:

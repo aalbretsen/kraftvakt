@@ -1,18 +1,9 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import type { ActionConfig } from "../api";
+import type { ActionConfig, DefaultAction } from "../api";
 import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
-
-/** The service of the default action for each field. */
-const DEFAULT_SERVICES: Record<string, string> = {
-  turn_on: "turn_on",
-  turn_off: "turn_off",
-  activate: "turn_on",
-  deactivate: "turn_off",
-  set_current: "set_value",
-};
 
 /**
  * An action as the default action for the entity, the default action of another
@@ -27,14 +18,14 @@ export class KraftvaktActionField extends LitElement {
 
   @property({ attribute: false }) localize!: Localize;
 
-  /** The name of the field in the configuration, like `turn_on`. */
-  @property() field = "";
-
   @property() label = "";
 
   @property({ attribute: false }) value: ActionConfig | null = null;
 
   @property({ attribute: false }) entityId: string | null = null;
+
+  /** The default action of the field, from the capabilities. */
+  @property({ attribute: false }) defaultAction?: DefaultAction;
 
   @property({ type: Boolean }) defaultAvailable = false;
 
@@ -117,12 +108,18 @@ export class KraftvaktActionField extends LitElement {
     if (!this.defaultAvailable || !this.entityId) {
       return [];
     }
-    const data = this.field === "set_current" ? { data: { value: "{{ current }}" } } : {};
-    return [{ action: this.defaultService(this.entityId), target: { entity_id: this.entityId }, ...data }];
+    const data = this.defaultAction?.data ?? {};
+    return [
+      {
+        action: this.defaultService(this.entityId),
+        target: { entity_id: this.entityId },
+        ...(Object.keys(data).length ? { data } : {}),
+      },
+    ];
   }
 
   private defaultService(entityId: string): string {
-    return `${entityId.split(".")[0]}.${DEFAULT_SERVICES[this.field]}`;
+    return `${entityId.split(".")[0]}.${this.defaultAction?.service}`;
   }
 
     static styles = css`
