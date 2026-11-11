@@ -221,7 +221,7 @@ Not available, do not use: `ha-textfield`, `ha-radio`, `ha-md-list`,
 - `ha-dialog` is built on `wa-dialog`: `open`, `header-title`, slot `footer`,
   event `closed`. When it closes itself, set `open` false on `closed`.
 - When the HA version in `requirements_dev.txt` is raised, test the panel by
-  hand against this list and update `.nvmrc` to the HA frontend's Node version.
+  hand against this list.
 
 ## Translations
 

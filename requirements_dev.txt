@@ -5,6 +5,7 @@
 # - homeassistant and the pytest packages: what pytest-homeassistant-custom-component requires
 # - home-assistant-frontend: the requirement in the HA frontend manifest for the same HA version
 # - ruff: the version in the HA core test requirements for the same HA version
+# Update them all with scripts/update_dependencies.py.
 # Dependabot proposes updates every week.
 
 homeassistant==2026.10.4

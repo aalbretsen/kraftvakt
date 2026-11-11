@@ -32,6 +32,18 @@ Node must be activated with nvm first, see the `kraftvakt-panel` skill.
 Setup: `uv venv --python 3.14 && uv pip install -r requirements_dev.txt`, and
 `npm ci` in `frontend/`.
 
+## Updating dependencies
+
+`uv run scripts/update_dependencies.py`, with Node active, updates every pin:
+the Python development dependencies, `pyproject.toml`'s Python, `.nvmrc`, the
+panel's packages and lock file, and the GitHub actions. Most versions follow
+one chain from the newest `pytest-homeassistant-custom-component`, so the
+test harness, Home Assistant, its frontend, ruff, Node, Lit and TypeScript
+always fit together; the rest get their newest release. Afterwards install
+again, `nvm install`, run every check and rebuild the panel. Commit the
+dependency changes on their own. A new Home Assistant version also needs the
+panel tested by hand, see the `kraftvakt-panel` skill.
+
 ## Layout
 
 - `tests/unit/`: unit tests. `tests/unit/regulation/` has the scenario tests

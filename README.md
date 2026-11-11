@@ -389,7 +389,8 @@ service and fields of your charger's integration:
 
 ## Development
 
-Requires Python 3.14.2 or newer, as Home Assistant 2026.10.4 does, and
+Requires Python in the version in `pyproject.toml`, the same as the Home
+Assistant version in `requirements_dev.txt` requires, and
 [uv](https://docs.astral.sh/uv/). The development dependencies are in
 `requirements_dev.txt`.
 
@@ -439,6 +440,27 @@ version from `manifest.json` in the URL, so the browser may use an old bundle
 after a new build. Reload the page without cache then. The texts of the panel
 are in `frontend/src/translations/` (English and Norwegian) and follow the
 language of the user in Home Assistant.
+
+### Dependencies
+
+Every dependency is pinned, and most follow Home Assistant:
+`pytest-homeassistant-custom-component` decides the version of Home Assistant
+and pytest, Home Assistant decides the frontend, ruff and Python, and the
+Home Assistant frontend decides Node, Lit, TypeScript and `@mdi/js`. The other
+build tools of the panel and the GitHub actions get their newest release.
+Update them all with Node active:
+
+```bash
+uv run scripts/update_dependencies.py
+```
+
+The script prints what changed. Then install again, activate the new Node,
+and run the checks and the panel build:
+
+```bash
+uv pip install -r requirements_dev.txt
+nvm install
+```
 
 ### Local Home Assistant
 
