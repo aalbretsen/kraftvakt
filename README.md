@@ -225,18 +225,10 @@ regulation starts.
 
 ### Actions
 
-Every action can be a custom action, made with the action editor of Home
-Assistant, that does whatever the appliance or EV charger needs, see
-[Template and action examples](#template-and-action-examples). The panel
-also offers ready-made choices where the entity allows it:
-
-- **Standard** when the domain of the entity has a standard action, for
-  example `switch.turn_on` and `switch.turn_off`.
-- Actions specific to some device types, for example setting the HVAC mode or
-  the target temperature of a thermostat. The values are chosen in the panel
-  and checked against what the device supports.
-- **Entity** for **Set charging current**: a `number` or `input_number`
-  entity, which then gets the charging current as its value.
+Actions are adopting to the domain of the entity. Standard domain actions if supported. Some
+devices have support for specific domain actions, like thermostats. Every action can also be a custom action, 
+made with the action editor of Home Assistant, that does whatever the appliance or EV charger needs, see
+[Template and action examples](#template-and-action-examples).
 
 A failed action is logged, and the regulation continues without retrying. An
 entity used by another appliance or EV charger cannot be chosen.
