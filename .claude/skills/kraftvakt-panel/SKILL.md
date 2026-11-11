@@ -87,8 +87,8 @@ Code that mirrors the backend and must be kept in step with it:
 
 - The last page in the menu, with the settings most users never change. Its
   settings belong to `general` in the stored configuration, so issues for
-  those fields send the user to it. Settled with the owner: the waiting time
-  at the power limit stays on the General page.
+  those fields send the user to it. The waiting time at the power limit is on
+  the General page (settled with the owner).
 - The owner wants little text: the user reads the curve and the result, not
   how it is computed.
 - First card, the waiting time curve: one line of text, sliders for steepness
@@ -98,15 +98,14 @@ Code that mirrors the backend and must be kept in step with it:
 - The card speaks of free power as a share of the power limit, not of
   utilization, since free power is the term the status page uses. The pivot
   slider shows free power, from 50 % at the left end to 1 % at the right; it
-  moves over the stored pivot and shows 100 minus it, so the stored value and
-  the regulation still use utilization.
+  moves over the stored pivot and shows 100 minus it; the stored value and the
+  regulation use utilization.
 - The table shows, for a range of free power from half the limit down to
   almost nothing, the free power in kW, the waiting time and the actual
   waiting time, rounded up to whole decision intervals since the slot is
   turned on at the first decision after the waiting time. The line of text
-  says why it is rounded. Times are minutes and whole seconds. No percent
-  rows (the owner found them redundant). Values come from the draft, with a
-  dash when a setting is not set.
+  says why it is rounded. Times are minutes and whole seconds. Values come
+  from the draft, with a dash when a setting is not set.
 - The graph has the waiting time in percent on the y-axis, so its shape does
   not change with the waiting time at the limit, and free power in kW on the
   x-axis, decreasing to 0 at the right so the waiting time grows to the right.
@@ -130,8 +129,8 @@ Code that mirrors the backend and must be kept in step with it:
 - The regulation card's header holds the title, a chip for running or
   stopped, chips for safe state and penalty while active, and the next
   decision at the right end. Start and stop are in a footer under a divider,
-  on every screen width; stop is a plain danger button, start a filled one.
-  The owner chose this over a switch or a small button in the header.
+  on every screen width; stop is a plain danger button, start a filled one
+  (settled with the owner).
 - While the power sensor is valid again but the safe state lasts until the
   next decision, the safe state banner is an info that the regulation starts
   again at the next decision, not the error that the sensor gives no valid
@@ -143,26 +142,23 @@ Code that mirrors the backend and must be kept in step with it:
 - A waiting slot shows an icon (a timer for an appliance, a plus for one more
   ampere) before a thin bar that empties smoothly from when the waiting
   started to the decision that turns the slot on, animated like the ring. What
-  it is and the time are a tooltip. The owner chose the smooth bar, because a
-  wait can span very many regulation windows; one block per window and a ring
-  were turned down. The waiting column is left out on a narrow screen.
+  it is and the time are a tooltip. The bar is smooth because a wait can span
+  very many regulation windows. The waiting column is left out on a narrow
+  screen.
 - The tiles are, from the left, consumption now, regulation average, average
   consumption and the power limit. Consumption now is the power sensor's
   state read in the panel, so it updates live. Under each average is the time
   it covers.
 - The meter is a bar for consumption now. Each other value is a triangle above
   the bar pointing down at it, in its own colour, and each tile has the same
-  triangle as swatch. There is no limit line, limit text or penalty zone (the
-  owner removed them); standing rectangles were tried for the markers and
-  turned down. Under the bar is a kW scale with readable ticks, reaching a bit
+  triangle as swatch. Nothing else is drawn on the meter (settled with the
+  owner). Under the bar is a kW scale with readable ticks, reaching a bit
   above the limit and every value.
 - Appliances and chargers share one full-width priority list card. The EV
   charging row has its own rank at the EV charging position, and the chargers
   are indented under it in the current charging priority. Every row is one
   line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip. Settled with the owner
-  after mockups of lanes across the row, charger tiles and badges on the icons
-  were turned down:
+  variant after it, current, waiting and state chip. Settled with the owner:
   - Icons instead of short texts, each with its sentence as a tooltip, and no
     legend. The EV charging row shows how many chargers are charging of all.
   - The current column has the current before one bar per ampere from min to
@@ -175,10 +171,10 @@ Code that mirrors the backend and must be kept in step with it:
     connected (bypassed and car connected is false), no power draw (bypassed
     otherwise), queued (waiting), override (allowed only by the override
     while activated), charging, activated, deactivated. Excluded comes before
-    bypassed, so a stale bypassed is not shown. No car connected was added by
-    the owner, because no power draw did not tell that the car was missing.
-  - A resting charger is shown as bypassed, without when it is tried again;
-    the owner chose not to add it to the status.
+    bypassed, so a stale bypassed is not shown. No car connected is a state
+    of its own, because the user needs to know that the car is missing.
+  - A resting charger is shown as bypassed, without when it is tried again
+    (settled with the owner).
   - A dashed cut-off line goes under the last entry that is on: an appliance,
     or the EV charging row while one of its chargers is activated and not
     bypassed. It is hidden when nothing or everything is on, so it always sits
@@ -190,8 +186,7 @@ Code that mirrors the backend and must be kept in step with it:
   colour for everything EV charging, and HA's active and inactive state
   colours for appliance icons. Each appliance shows its entity's icon, and
   what is off is dimmed. The safe state and penalty chips are in the alarm
-  colour and show only while active. The owner chose these over warning
-  colours near the limit.
+  colour and show only while active.
 
 ## Home Assistant components
 

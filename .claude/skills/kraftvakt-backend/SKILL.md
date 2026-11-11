@@ -98,11 +98,11 @@ An invalid configuration is not saved:
   it runs the default action of the chosen entity instead of the charger's
   own entity, so it must be a `number` or `input_number`. Settled with the
   owner: most chargers have a number entity for the current, and a custom
-  action for it was needlessly hard.
+  action for it is needlessly hard.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
-  is not checked again. Settled with the owner: one type error hid every other
-  error.
+  is not checked again. Why: the user sees every error at once, not one at a
+  time.
 
 An incomplete configuration can be saved, but the regulation cannot start.
 Missing items and validation errors are both issues with a code, a section, a

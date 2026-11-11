@@ -38,8 +38,8 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   minutes). It heats in a fixed cycle, the on part first. Its switch cuts the
   power: off consumes nothing. **The cycle restarts in its on part every time
   the switch is turned on**, and so also after a restart with a restored
-  switch. Settled with the owner after manual testing: the off part first made
-  a device switched on by Kraftvakt look like it used nothing.
+  switch. Why: a device that Kraftvakt turns on must draw power at once, as a
+  real one does.
 - Power, duty cycle and period are also number entities, changeable while HA
   runs. A change while the switch is on restarts the cycle in its on part; an
   unchanged value does nothing.

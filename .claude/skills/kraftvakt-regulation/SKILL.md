@@ -92,21 +92,18 @@ the status page and the average sensors show kW.
   the time before it). The time HA was down counts with the last value
   recorded before it stopped. Without a recorder or any valid history, the
   missing past is filled with the first measured value. The regulation window
-  is not affected: the first one starts at startup. Settled with the owner:
-  filling the hour with the first value after a restart made the average
-  consumption far too low, because everything is turned off at start and the
-  first value is only the background.
+  is not affected: the first one starts at startup. Why: everything is
+  turned off at start, so the first value after a restart is only the
+  background and cannot stand for the hour before.
 - Validity is the state when a window closes. A gap inside a window is filled
   with the last valid value.
 - One window closing without a valid value is tolerated (the last valid value
   is used). Two in a row make the averages unknown: the average sensors become
   unavailable until a valid value comes, also while the regulation is stopped.
   The history is kept, and the gap counts with the last valid value before it,
-  like the time HA was down. Settled with the owner: discarding the history
-  and filling the hour with the first value after the gap made the average
-  consumption far too low (only the background, since everything is off in
-  the safe state) or far too high (a short peak while the appliances were
-  turned off).
+  like the time HA was down. Why: the first value after the gap is only the
+  background (everything is off in the safe state) or a short peak while the
+  appliances are turned off, so it cannot stand for the time before.
 - Before the first valid value there is no average. Windows without any
   measurement count as invalid.
 - Saving a configuration does not restart the averages. A new power sensor is
@@ -132,9 +129,9 @@ the status page and the average sensors show kW.
   8. Above the limit: switch off the lowest priority slot that is on and not a
      bypassed charger's, without waiting, and cancel any waiting. When step 6
      switched something off at this decision, nothing more is switched off;
-     the waiting is still cancelled and nothing is turned on. Settled with the
-     owner: the average was measured before the forced switch-off, so
-     switching off one more was often too much.
+     the waiting is still cancelled and nothing is turned on. Why: the
+     average was measured before the forced switch-off, so switching off one
+     more would often be too much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
 - Only one slot is turned on or off per decision based on free power. Several
   may be switched off at once only when consumption must drop at once or
@@ -143,13 +140,13 @@ the status page and the average sensors show kW.
 - Turn on only when the regulation average is under the limit minus the
   turn-on margin, and average plus power reserve is at most the limit. Switch
   off only when the average is above the limit. Between limit minus margin and
-  the limit, both included, nothing is turned on or off. Settled with the
-  owner: commands run just after a window closes, and a real meter reports
-  the change only at its next update, so the window after a decision still
-  holds the consumption from before its commands. Without a margin, an average
-  just under the limit turned on the next appliance, only for one to be
-  switched off at the next decision. The margin is below the limit only, so
-  the regulation never accepts being above it.
+  the limit, both included, nothing is turned on or off. Why: commands run
+  just after a window closes, and a real meter reports the change only at its
+  next update, so the window after a decision still holds the consumption
+  from before its commands. The margin keeps an appliance from being turned on
+  on a stale average just under the limit, only for one to be switched off at
+  the next decision. The margin is below the limit only, so the regulation
+  never accepts being above it.
 - Fixed order: a slot is never turned on before all above it are on. Skipped:
   entries that are not the current variant, chargers not allowed to charge,
   bypassed and waiting chargers.
@@ -163,9 +160,9 @@ the status page and the average sensors show kW.
   slot that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit),
-  recalculated at each decision while it runs. Settled with the owner, because
-  a linear waiting time made appliances wait too long at low utilization.
-  With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is
+  recalculated at each decision while it runs. Why: an appliance should
+  hardly wait while there is plenty of free power, and wait the whole time
+  only close to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is
   the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half
   the limit, slow at first, and 1 at the limit and above. n is the steepness,
   1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default 80, is the
@@ -185,13 +182,12 @@ the status page and the average sensors show kW.
   of steps, 1–9. Both are set separately for appliances (default 0.5 and 4)
   and for fictive appliances (default 1 and 5). With waiting time 0 at the
   limit, the step and the cap are 0, so the waiting time does not grow;
-  accepted by the owner. A share and a number of steps were chosen by the
-  owner because they are easier to understand than times in seconds. Any
-  command for another slot, also forced ones, resets the counter.
-- Kept as is, to revisit if it shows up in real use: two slots that alternate
-  (A on, B on, B off, A off, A on …) reset each other's counter, so their
-  waiting time never grows. In testing it came from the stale window after a
-  decision with waiting time 0, which the turn-on margin now prevents.
+  accepted by the owner. The step is a share and the cap a number of steps
+  because that is easy to understand and follows the waiting time at the
+  limit. Any command for another slot, also forced ones, resets the counter.
+- Accepted by the owner, to revisit if it shows up in real use: two slots
+  that alternate (A on, B on, B off, A off, A on …) reset each other's
+  counter, so their waiting time never grows.
 
 ## Penalty
 
@@ -214,7 +210,7 @@ the status page and the average sensors show kW.
   (stop, safe state, HA start, power limit change). The current variants are
   still evaluated during a penalty; they give no commands since everything is
   off.
-- Kept as is: the start after a penalty resets the cycling counters like every
+- Accepted by the owner: the start after a penalty resets the cycling counters like every
   other start, so while the average consumption stays above limit plus
   threshold, an appliance that pushes the average over the limit goes on and
   off with the waiting time from the curve only, never the longer waiting time
@@ -287,8 +283,8 @@ Settled with the owner, all with entity category diagnostic:
 - Waiting time next turn-on (calculated) (s): the waiting time the next
   turn-on gets from the curve, for the last regulation average and the limit
   in use, without the longer waiting time on persistent cycling. Unavailable
-  without an average. Named with the owner after what it is for, not after
-  the curve, which the user would have to remember from the settings.
+  without an average. Named after what it is for, so the user does not need
+  to know the curve.
 
 ## Variants
 
@@ -321,12 +317,12 @@ Settled with the owner, all with entity category diagnostic:
   first. The set-current action always gets a current between min and max.
 - Actively charging: charging power > 100 W (not configurable), or an invalid
   charging power, also when deactivated.
-- On trial, settled with the owner: a charger that may charge but does not
+- On trial: a charger that may charge but does not
   charge actively gets only its first fictive appliance, so it stays at the
   minimum current until it charges actively. Meanwhile the slots after it may
-  be turned on. Otherwise a charger tried without a car got more current
-  before it was bypassed and held back the appliances below the EV charging
-  entry. A car that starts slowly gets its second ampere a decision later.
+  be turned on. Why: a charger that may have no car must not take more power
+  and hold back the appliances below the EV charging entry while it is tried.
+  A car that starts slowly gets its second ampere a decision later.
 - Bypassed: car connected is set and false, or not actively charging while
   the first fictive appliance has been on for at least two windows. Evaluated
   at each decision, ends as soon as neither holds. A bypassed charger keeps
@@ -334,16 +330,17 @@ Settled with the owner, all with entity category diagnostic:
   switched off above the limit and does not stand in the way of others. When
   it becomes bypassed, all fictive appliances but the first are switched off
   at once.
-- Rest, settled with the owner: a charger that becomes bypassed because it
+- Rest: a charger that becomes bypassed because it
   does not charge rests. It stays bypassed while it rests, also after it is
   deactivated, and may be tried again when the rest is over: 15 min the first
   time, then 30 min, then 60 min each time it is tried and still does not
   charge. The rest ends at once, and the next one is the first again, when
   car connected is false at a decision (a car that is connected again is
   tried at once) or when the charger charges actively while activated. Every
-  start begins without rests. Without it, two chargers with full cars took
-  turns being activated forever when only one may charge at a time, and the
-  appliances below the EV charging entry were never turned on.
+  start begins without rests. Why: without a rest, two chargers with full
+  cars would take turns being activated forever when only one may charge at a
+  time, and the appliances below the EV charging entry would never be turned
+  on.
 - Current charging priority: equal to the configured one at each start.
   Newly bypassed chargers move to the back, keeping their order, and stay there
   even after they stop being bypassed, until it is corrected: when a charger
