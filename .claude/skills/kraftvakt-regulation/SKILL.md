@@ -322,30 +322,29 @@ Settled with the owner, all with entity category diagnostic:
   first. The set-current action always gets a current between min and max.
 - Actively charging: charging power > 100 W (not configurable), or an invalid
   charging power, also when deactivated.
-- On trial: a charger that may charge but does not
-  charge actively gets only its first fictive appliance, so it stays at the
-  minimum current until it charges actively. Meanwhile the slots after it may
-  be turned on. Why: a charger that may have no car must not take more power
-  and hold back the appliances below the EV charging entry while it is tried.
-  A car that starts slowly gets its second ampere a decision later.
-- Bypassed: car connected is set and false, or not actively charging while
-  the first fictive appliance has been on for at least two windows. Evaluated
-  at each decision, ends as soon as neither holds. A bypassed charger keeps
-  its first fictive appliance and stays activated, gets no more, is not
-  switched off above the limit and does not stand in the way of others. When
-  it becomes bypassed, all fictive appliances but the first are switched off
-  at once.
-- Rest: a charger that becomes bypassed because it
-  does not charge rests. It stays bypassed while it rests, also after it is
-  deactivated, and may be tried again when the rest is over: 15 min the first
-  time, then 30 min, then 60 min each time it is tried and still does not
-  charge. The rest ends at once, and the next one is the first again, when
-  car connected is false at a decision (a car that is connected again is
-  tried at once) or when the charger charges actively while activated. Every
-  start begins without rests. Why: without a rest, two chargers with full
-  cars would take turns being activated forever when only one may charge at a
-  time, and the appliances below the EV charging entry would never be turned
-  on.
+- On trial: a charger that may charge but does not charge actively gets only
+  its first fictive appliance, so it stays at the minimum current until it
+  charges actively. Meanwhile the slots after it may be turned on. Why: a
+  charger that may have no car must not take more power and hold back the
+  appliances below the EV charging entry while it is tried. A car that starts
+  slowly gets its second ampere a decision later.
+- Bypassed: car connected is set and false, or not actively charging while the
+  first fictive appliance has been on for at least two windows. Evaluated at
+  each decision, ends as soon as neither holds. A bypassed charger keeps its
+  first fictive appliance if it has one and stays activated, gets no more, is
+  not switched off above the limit and does not stand in the way of others.
+  When it becomes bypassed, all fictive appliances but the first are switched
+  off at once.
+- Rest: a charger that becomes bypassed because it does not charge rests. It
+  stays bypassed while it rests, also after it is deactivated, and may be
+  tried again when the rest is over: 15 min the first time, then 30 min, then
+  60 min each time it is tried and still does not charge. The rest ends at
+  once, and the next one is the first again, when car connected is false at a
+  decision (a car that is connected again is tried at once) or when the
+  charger charges actively while activated. Every start begins without rests.
+  Why: without a rest, two chargers with full cars would take turns being
+  activated forever when only one may charge at a time, and the appliances
+  below the EV charging entry would never be turned on.
 - Current charging priority: equal to the configured one at each start.
   Newly bypassed chargers move to the back, keeping their order, and stay there
   even after they stop being bypassed, until it is corrected: when a charger

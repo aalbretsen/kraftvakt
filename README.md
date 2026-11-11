@@ -238,8 +238,8 @@ shows:
   and the consumption now. The bar shows the consumption now, with a marker
   for each average and for the power limit,
 - a ring that empties towards the next decision,
-- safe state and penalty periods, with the overconsumption left, when they
-  occur,
+- safe state and penalty periods when they occur, with the overconsumption
+  left and whether it has started to be recovered,
 - the priority list with the current variant of each appliance. The icon of
   an appliance that is on is yellow, as in Home Assistant. Under **EV
   charging**, the EV chargers are listed in the current charging priority with
