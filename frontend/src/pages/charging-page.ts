@@ -1,11 +1,10 @@
-import { mdiEvStation, mdiPlus } from "@mdi/js";
+import { mdiEvStation } from "@mdi/js";
 import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Charger, Issue } from "../api";
 import "../components/charger-dialog";
 import "../components/manual-control-warning";
-import "../components/sortable-list";
 import type { ListRow } from "../components/sortable-list";
 import { moveItem, newId } from "../draft";
 import { chargerName } from "../entities";
@@ -57,36 +56,21 @@ export class KraftvaktChargingPage extends ConfigPage {
 
   private renderChargers() {
     const charging = this.config.charging;
-    const locked = this.locked || !charging.enabled;
     return html`
-      <ha-card class=${charging.enabled ? "" : "disabled"}>
-        <div class="card-header">
-          <div class="heading">
-            <span>${this.localize("charging.chargers")}</span>
-            <span class="sub">${this.localize("charging.chargers_sub")}</span>
-          </div>
-          ${locked
-            ? nothing
-            : html`
-                <ha-button @click=${this.addCharger}>
-                  <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-                  ${this.localize("charging.add")}
-                </ha-button>
-              `}
-        </div>
-        ${charging.chargers.length === 0
-          ? html`<div class="empty">${this.localize("charging.empty")}</div>`
-          : html`
-              <kraftvakt-sortable-list
-                .localize=${this.localize}
-                .rows=${charging.chargers.map((charger) => this.row(charger))}
-                .locked=${locked}
-                @item-moved=${this.chargerMoved}
-                @open-row=${this.openRow}
-              ></kraftvakt-sortable-list>
-            `}
-        <div class="switches-info">${this.localize("charging.switches_info")}</div>
-      </ha-card>
+      ${this.renderListCard(
+        {
+          title: "charging.chargers",
+          sub: "charging.chargers_sub",
+          add: "charging.add",
+          empty: "charging.empty",
+          rows: charging.chargers.map((charger) => this.row(charger)),
+          locked: this.locked || !charging.enabled,
+          onAdd: this.addCharger,
+          onMoved: this.chargerMoved,
+          onOpen: this.openRow,
+        },
+        html`<div class="switches-info">${this.localize("charging.switches_info")}</div>`,
+      )}
       ${charging.chargers.length === 0
         ? html`
             <kraftvakt-manual-control-warning
@@ -100,9 +84,6 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   private renderDialog(charger: Charger, isNew: boolean) {
-    const usedEntities = [...this.config.appliances, ...this.config.charging.chargers]
-      .filter((item) => item.id !== charger.id && item.entity_id)
-      .map((item) => item.entity_id as string);
     return html`
       <kraftvakt-charger-dialog
         .hass=${this.hass}
@@ -111,7 +92,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         .item=${charger}
         .isNew=${isNew}
         .oneAtATime=${this.config.charging.one_at_a_time}
-        .usedEntities=${usedEntities}
+        .usedEntities=${this.entitiesUsedBesides(charger.id)}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
         .locked=${this.locked || !this.config.charging.enabled}
         @item-changed=${this.chargerChanged}
@@ -227,50 +208,17 @@ export class KraftvaktChargingPage extends ConfigPage {
     this.changeConfig({ ...this.config, charging: { ...this.config.charging, chargers } });
   }
 
-  static styles = css`
-    :host {
-      display: grid;
-      gap: 16px;
-    }
-    :host([narrow]) {
-      gap: 8px;
-    }
-    .card-content {
-      padding: 0 16px 16px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 12px 16px;
-    }
-    .heading {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 4px 12px;
-      font-size: var(--ha-font-size-xl, 20px);
-    }
-    .sub {
-      font-size: var(--ha-font-size-m, 14px);
-      color: var(--secondary-text-color);
-    }
-    .empty {
-      padding: 0 16px 16px;
-      color: var(--secondary-text-color);
-    }
-    .disabled kraftvakt-sortable-list {
-      opacity: 0.6;
-    }
-    .switches-info {
-      padding: 12px 16px;
-      border-top: 1px solid var(--divider-color);
-      font-size: var(--ha-font-size-s, 12px);
-      color: var(--secondary-text-color);
-    }
-  `;
+  static styles = [
+    ConfigPage.styles,
+    css`
+      .switches-info {
+        padding: 12px 16px;
+        border-top: 1px solid var(--divider-color);
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--secondary-text-color);
+      }
+    `,
+  ];
 }
 
 declare global {

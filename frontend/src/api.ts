@@ -197,6 +197,11 @@ export function isCommandError(error: unknown): error is CommandError {
   return typeof error === "object" && error !== null && "code" in error && "message" in error;
 }
 
+/** Return the message of an error from a command, or the error as text. */
+export function errorMessage(error: unknown): string {
+  return isCommandError(error) ? error.message : String(error);
+}
+
 export const fetchCapabilities = (hass: HomeAssistant) =>
   hass.callWS<Capabilities>({ type: "kraftvakt/capabilities" });
 

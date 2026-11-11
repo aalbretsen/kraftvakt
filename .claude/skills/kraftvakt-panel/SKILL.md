@@ -62,7 +62,12 @@ Code that mirrors the backend and must be kept in step with it:
   the status changes, since the power limit entity can change the stored
   limit at any time. A draft with unsaved changes is kept while stopped.
 - While the regulation runs, the configuration pages are locked and show a
-  banner with a button to stop the regulation, on one line.
+  banner with a button to stop the regulation, on one line. Forms and lists
+  are dimmed, add buttons are disabled and dialogs only show the item.
+- The configuration pages extend `ConfigPage`, which holds what they share:
+  the locked look, the list card with its add button, and the entities other
+  items use. The status page and the lock banner share the start and stop
+  button.
 - The warning against controlling regulated appliances outside Kraftvakt is
   shown only while a list is empty (appliances on the Appliances page,
   chargers on the EV charging page), since the user does not need to see it

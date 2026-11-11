@@ -1,11 +1,10 @@
-import { mdiEvStation, mdiPlus } from "@mdi/js";
-import { css, html, nothing } from "lit";
+import { mdiEvStation } from "@mdi/js";
+import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Appliance, Issue, PriorityEntry } from "../api";
 import "../components/appliance-dialog";
 import "../components/manual-control-warning";
-import "../components/sortable-list";
 import type { ListRow } from "../components/sortable-list";
 import { moveItem, newId, priorityKey } from "../draft";
 import { entityName } from "../entities";
@@ -24,29 +23,17 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   protected render() {
     const rows = this.config.priority.map((entry) => this.row(entry));
     return html`
-      <ha-card>
-        <div class="card-header">
-          <div class="heading">
-            <span>${this.localize("appliances.priority_title")}</span>
-            <span class="sub">${this.localize("appliances.priority_sub")}</span>
-          </div>
-          <ha-button .disabled=${this.locked} @click=${this.addAppliance}>
-            <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-            ${this.localize("appliances.add")}
-          </ha-button>
-        </div>
-        ${rows.length === 0
-          ? html`<div class="empty">${this.localize("appliances.empty")}</div>`
-          : html`
-              <kraftvakt-sortable-list
-                .localize=${this.localize}
-                .rows=${rows}
-                .locked=${this.locked}
-                @item-moved=${this.entryMoved}
-                @open-row=${this.openRow}
-              ></kraftvakt-sortable-list>
-            `}
-      </ha-card>
+      ${this.renderListCard({
+        title: "appliances.priority_title",
+        sub: "appliances.priority_sub",
+        add: "appliances.add",
+        empty: "appliances.empty",
+        rows,
+        locked: this.locked,
+        onAdd: this.addAppliance,
+        onMoved: this.entryMoved,
+        onOpen: this.openRow,
+      })}
       ${this.config.appliances.length === 0
         ? html`
             <kraftvakt-manual-control-warning
@@ -61,9 +48,6 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   }
 
   private renderDialog(appliance: Appliance, isNew: boolean) {
-    const usedEntities = [...this.config.appliances, ...this.config.charging.chargers]
-      .filter((item) => item.id !== appliance.id && item.entity_id)
-      .map((item) => item.entity_id as string);
     return html`
       <kraftvakt-appliance-dialog
         .hass=${this.hass}
@@ -71,7 +55,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
         .capabilities=${this.capabilities}
         .item=${appliance}
         .isNew=${isNew}
-        .usedEntities=${usedEntities}
+        .usedEntities=${this.entitiesUsedBesides(appliance.id)}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id)}
         .locked=${this.locked}
         @item-changed=${this.applianceChanged}
@@ -194,38 +178,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     navigateToPage("charging");
   }
 
-  static styles = css`
-    :host {
-      display: grid;
-      gap: 16px;
-    }
-    :host([narrow]) {
-      gap: 8px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 12px 16px;
-    }
-    .heading {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 4px 12px;
-      font-size: var(--ha-font-size-xl, 20px);
-    }
-    .sub {
-      font-size: var(--ha-font-size-m, 14px);
-      color: var(--secondary-text-color);
-    }
-    .empty {
-      padding: 0 16px 16px;
-      color: var(--secondary-text-color);
-    }
-  `;
+  static styles = ConfigPage.styles;
 }
 
 declare global {

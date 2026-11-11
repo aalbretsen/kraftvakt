@@ -7,6 +7,7 @@ import { literal, html as staticHtml } from "lit/static-html.js";
 import {
   ERROR_NOT_LOADED,
   ERROR_REGULATION_RUNNING,
+  errorMessage,
   fetchCapabilities,
   fetchConfig,
   isCommandError,
@@ -446,10 +447,6 @@ export class KraftvaktPanel extends LitElement {
       padding: 8px;
     }
   `;
-}
-
-function errorMessage(error: unknown): string {
-  return isCommandError(error) ? error.message : String(error);
 }
 
 declare global {

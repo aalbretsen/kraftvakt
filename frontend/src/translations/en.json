@@ -103,8 +103,7 @@
   },
   "locked": {
     "title": "The configuration is locked",
-    "text": "The regulation runs. Stop the regulation to change the configuration. When the regulation stops, all regulated appliances and EV chargers are turned off.",
-    "stop": "Stop regulation"
+    "text": "The regulation runs. Stop the regulation to change the configuration. When the regulation stops, all regulated appliances and EV chargers are turned off."
   },
   "warning": {
     "appliances_title": "Do not turn regulated appliances on or off outside Kraftvakt",

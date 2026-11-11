@@ -8,10 +8,8 @@ import {
   mdiEvStation,
   mdiFlash,
   mdiLightningBolt,
-  mdiPlay,
   mdiPlus,
   mdiPowerPlugOff,
-  mdiStop,
   mdiTimerOutline,
   mdiTimerSand,
 } from "@mdi/js";
@@ -19,15 +17,13 @@ import { LitElement, css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import {
-  ERROR_CONFIG_INCOMPLETE,
-  isCommandError,
-  setRunning,
   type ApplianceStatus,
   type ChargerStatus,
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
 import "../components/countdown";
+import "../components/running-button";
 import { measuredPowerW } from "../entities";
 import { formatClockTime, formatEnergy, formatNumber, formatPercent, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -113,8 +109,6 @@ export class KraftvaktStatusPage extends LitElement {
 
   @property({ attribute: false }) config?: ConfigResponse;
 
-  @state() private changingRunning = false;
-
   @state() private runningError?: string;
 
   protected render() {
@@ -157,27 +151,14 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   private renderStartStop(status: StatusSnapshot) {
-    if (status.running) {
-      return html`
-        <ha-button
-          variant="danger"
-          appearance="plain"
-          .disabled=${this.changingRunning}
-          @click=${() => this.changeRunning(false)}
-        >
-          <ha-svg-icon slot="start" .path=${mdiStop}></ha-svg-icon>
-          ${this.localize("status.stop")}
-        </ha-button>
-      `;
-    }
     return html`
-      <ha-button
-        .disabled=${this.changingRunning || status.missing.length > 0}
-        @click=${() => this.changeRunning(true)}
-      >
-        <ha-svg-icon slot="start" .path=${mdiPlay}></ha-svg-icon>
-        ${this.localize("status.start")}
-      </ha-button>
+      <kraftvakt-running-button
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .running=${status.running}
+        .disabled=${!status.running && status.missing.length > 0}
+        @running-error=${(event: CustomEvent<string | undefined>) => (this.runningError = event.detail)}
+      ></kraftvakt-running-button>
     `;
   }
 
@@ -538,22 +519,6 @@ export class KraftvaktStatusPage extends LitElement {
         </ul>
       </ha-alert>
     `;
-  }
-
-  /** Start or stop the regulation. The new status comes with the status subscription. */
-  private async changeRunning(running: boolean): Promise<void> {
-    this.changingRunning = true;
-    this.runningError = undefined;
-    try {
-      await setRunning(this.hass, running);
-    } catch (error) {
-      this.runningError =
-        isCommandError(error) && error.code === ERROR_CONFIG_INCOMPLETE
-          ? this.localize("status.start_refused")
-          : this.localize("panel.error", { message: isCommandError(error) ? error.message : String(error) });
-    } finally {
-      this.changingRunning = false;
-    }
   }
 
   private openPage(event: Event, page: Parameters<typeof navigateToPage>[0]): void {

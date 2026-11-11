@@ -119,26 +119,17 @@ export class GeneralSettingsPage extends ConfigPage {
     });
   };
 
-  static styles: CSSResultGroup = css`
-    :host {
-      display: grid;
-      gap: 16px;
-    }
-    :host([narrow]) {
-      gap: 8px;
-    }
-    /* HA's number field keeps its full text colour when disabled. */
-    :host([locked]) ha-form {
-      opacity: 0.6;
-    }
-    .card-content {
-      display: grid;
-      gap: 16px;
-      padding: 0 16px 16px;
-    }
-    .description {
-      margin: 0;
-      color: var(--secondary-text-color);
-    }
-  `;
+  static styles: CSSResultGroup = [
+    ConfigPage.styles,
+    css`
+      .card-content {
+        display: grid;
+        gap: 16px;
+      }
+      .description {
+        margin: 0;
+        color: var(--secondary-text-color);
+      }
+    `,
+  ];
 }

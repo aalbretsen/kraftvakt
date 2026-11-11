@@ -103,8 +103,7 @@
   },
   "locked": {
     "title": "Konfigurasjonen er låst",
-    "text": "Reguleringen kjører. Stopp reguleringen for å endre konfigurasjonen. Når reguleringen stoppes, slås alle regulerte apparater og elbilladere av.",
-    "stop": "Stopp regulering"
+    "text": "Reguleringen kjører. Stopp reguleringen for å endre konfigurasjonen. Når reguleringen stoppes, slås alle regulerte apparater og elbilladere av."
   },
   "warning": {
     "appliances_title": "Ikke slå regulerte apparater av eller på utenom Kraftvakt",

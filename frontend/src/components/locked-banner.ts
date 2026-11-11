@@ -1,9 +1,9 @@
-import { mdiLock, mdiStop } from "@mdi/js";
+import { mdiLock } from "@mdi/js";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { isCommandError, setRunning } from "../api";
 import type { Localize } from "../localize";
+import "./running-button";
 import type { HomeAssistant } from "../types";
 
 /**
@@ -18,8 +18,6 @@ export class KraftvaktLockedBanner extends LitElement {
 
   @property({ type: Boolean }) narrow = false;
 
-  @state() private stopping = false;
-
   @state() private error?: string;
 
   protected render() {
@@ -28,34 +26,22 @@ export class KraftvaktLockedBanner extends LitElement {
         <ha-svg-icon slot="icon" .path=${mdiLock}></ha-svg-icon>
         ${this.localize("locked.text")}
         ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
-        <ha-button slot="action" appearance="outlined" variant="danger" .disabled=${this.stopping} @click=${this.stop}>
-          <ha-svg-icon slot="start" .path=${mdiStop}></ha-svg-icon>
-          ${this.localize("locked.stop")}
-        </ha-button>
+        <kraftvakt-running-button
+          slot="action"
+          .hass=${this.hass}
+          .localize=${this.localize}
+          running
+          appearance="outlined"
+          @running-error=${(event: CustomEvent<string | undefined>) => (this.error = event.detail)}
+        ></kraftvakt-running-button>
       </ha-alert>
     `;
-  }
-
-  /** The status subscription unlocks the pages. */
-  private async stop(): Promise<void> {
-    this.stopping = true;
-    this.error = undefined;
-    try {
-      await setRunning(this.hass, false);
-    } catch (error) {
-      this.error = this.localize("panel.error", { message: isCommandError(error) ? error.message : String(error) });
-    } finally {
-      this.stopping = false;
-    }
   }
 
   static styles = css`
     :host {
       display: block;
       margin-bottom: 16px;
-    }
-    ha-button::part(base) {
-      white-space: nowrap;
     }
     .error {
       margin-top: 8px;
