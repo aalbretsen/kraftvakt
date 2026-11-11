@@ -515,14 +515,12 @@ ln -s ../../simulator/custom_components/kraftvakt_simulator config/custom_compon
 uv run hass -c config
 ```
 
+The simulator, for testing without a HAN port and real appliances, is
+described in [SIMULATOR.md](SIMULATOR.md).
+
 From the same machine you log in without a password at http://127.0.0.1:8123
 (`trusted_networks` for `127.0.0.1` and `::1` in `config/configuration.yaml`).
 Other machines require a password.
-
-### Simulator
-
-The simulator, for testing without a HAN port and real appliances, is
-described in [SIMULATOR.md](SIMULATOR.md).
 
 ### WebSocket API
 

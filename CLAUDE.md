@@ -5,9 +5,7 @@
 Kraftvakt is a Home Assistant custom integration that keeps the average consumption over the last hour just below 
 a power limit (the Norwegian capacity tariff), by turning appliances and EV chargers on and off in priority order.
 
-Python integration in `custom_components/kraftvakt/`, 
-panel in `frontend/` (Lit + TypeScript, committed bundle), 
-tests in `tests/`.
+Python integration in `custom_components/kraftvakt/`, panel in `frontend/` (Lit + TypeScript, committed bundle), tests in `tests/`.
 
 ## Skills
 Read the skill for the kind of task before starting:
