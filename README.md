@@ -11,24 +11,18 @@
 [![Validate](https://github.com/aalbretsen/kraftvakt/actions/workflows/validate.yml/badge.svg)](https://github.com/aalbretsen/kraftvakt/actions/workflows/validate.yml)
 [![CI](https://github.com/aalbretsen/kraftvakt/actions/workflows/ci.yml/badge.svg)](https://github.com/aalbretsen/kraftvakt/actions/workflows/ci.yml)
 
-Kraftvakt decides which power-hungry appliances may use power, in priority
-order, for example a water heater, heating cables and EV chargers. It is made
-for the Norwegian electricity market and keeps the average consumption over
-the last hour just below a chosen power limit, so you avoid a more expensive
-step in the capacity part of the grid tariff. Everything is set up in a panel
-in the sidebar. Kraftvakt runs entirely locally, without cloud services.
+Kraftvakt decides which power-hungry appliances may use power, in priority order, for example a water heater, 
+heating cables and EV chargers. It is made for the Norwegian electricity market and keeps the average consumption 
+over the last hour just below a chosen power limit, so you avoid a more expensive step in the capacity part of the 
+grid tariff. Everything is set up in a panel in the sidebar. Kraftvakt runs entirely locally, without cloud services.
 
-> **Status:** First version, being tried out. Measurement, regulation of
-> appliances with variants, EV charging, penalty, safe state and the panel are
-> in place and tested automatically and by hand against Home Assistant
-> 2026.10.4, but Kraftvakt has little experience from real use yet.
+> **Status:** Currently in beta with preview releases for testing
 
 ## Requirements
 
 - Home Assistant 2026.10 or newer
-- A sensor from another integration that measures the total power of the
-  house, typically from the HAN port of the electricity meter, with the device
-  class power. It may report W or kW. A sensor without a unit is read as W.
+- A sensor from another integration that measures the total power of the house, typically from the HAN port of the 
+- electricity meter, with the device class power. It may report W or kW. A sensor without a unit is read as W.
 
 ## Installation
 
@@ -40,16 +34,14 @@ in the sidebar. Kraftvakt runs entirely locally, without cloud services.
 
 ### Manual
 
-Copy `custom_components/kraftvakt` to `config/custom_components/` in Home
-Assistant and restart.
+Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assistant and restart.
 
 ## Setup
 
-1. Go to **Settings → Devices & services → Add integration**, search for
-   **Kraftvakt** and finish the setup. It has no settings.
-2. Open **Kraftvakt** in the sidebar, or press the cogwheel of the
-   integration, and set the power sensor, the power limit, the appliances and
-   any EV chargers.
+1. Go to **Settings → Devices & services → Add integration**, search for **Kraftvakt** and finish the setup. 
+   It has no settings.
+2. Open **Kraftvakt** in the sidebar, or press the cogwheel of the integration, and set the power sensor, 
+   the power limit, the appliances and any EV chargers.
 3. Press **Save**, go to **Status** and press **Start regulation**.
 
 ## How it works
