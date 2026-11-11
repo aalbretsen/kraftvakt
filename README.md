@@ -159,11 +159,10 @@ set to the minimum before the EV charger is activated or deactivated.
   does not charge. It stays bypassed while it rests. If the car is
   disconnected and connected again, or starts charging, it is tried at once.
 - When only one EV charger may charge at a time, an EV charger that is
-  actively charging may continue until it is done, and the others wait. **Car
-  connected** is then required for every EV charger. Without it, Kraftvakt
-  could only find a connected car by activating the EV charger, and EV
-  chargers without a car would be activated in turn. An EV charger that is
-  excluded or outside its charging window does not hold back the others.
+  actively charging may continue until it is done, and the others wait.
+  **Car connected** is then required for every EV charger. Without it,
+  Kraftvakt could only find a connected car by activating the EV charger, and
+  EV chargers without a car would be activated in turn.
 - Outside its charging window, an EV charger does not charge. The charging
   window can span midnight and follows the time zone of Home Assistant.
 - The switch **‹charger› override charging window** lets the EV charger

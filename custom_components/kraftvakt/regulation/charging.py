@@ -339,9 +339,7 @@ class ChargingState:
         """Decide which chargers may get fictive appliances turned on.
 
         With one charger at a time, a charger that charges actively goes first
-        and the others wait. Settled with the owner: only a charger that is
-        allowed to charge holds back the others, so a charger outside its
-        charging window without a valid charging power does not stop them.
+        and the others wait.
         """
         eligible = [
             charger_id

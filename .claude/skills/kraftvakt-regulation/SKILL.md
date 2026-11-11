@@ -355,10 +355,7 @@ Settled with the owner, all with entity category diagnostic:
   the second, and so on.
 - One at a time: an actively charging charger that is allowed to charge and
   not bypassed may go on charging, whatever the priority; others that want to
-  charge are waiting. Settled with the owner: a charger that is not allowed to
-  charge never holds back the others, also when it counts as actively
-  charging, so one outside its charging window with an invalid charging power
-  does not stop them. If several are actively charging, the activated one
+  charge are waiting. If several are actively charging, the activated one
   wins, otherwise the first in current priority. When none charges, the first
   allowed and not bypassed in current priority gets fictive appliances. Before
   a charger is activated, any other activated charger is deactivated at the
