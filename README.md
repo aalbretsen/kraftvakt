@@ -27,8 +27,8 @@ in the sidebar. Kraftvakt runs entirely locally, without cloud services.
 
 - Home Assistant 2026.10 or newer
 - A sensor from another integration that measures the total power of the
-  house, typically from the HAN port of the electricity meter. It may report
-  W or kW. A sensor without a unit is read as W.
+  house, typically from the HAN port of the electricity meter, with the device
+  class power. It may report W or kW. A sensor without a unit is read as W.
 
 ## Installation
 
@@ -123,12 +123,12 @@ stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt
 does not start, the integration shows an error, and the file is left
 unchanged.
 
-Every start turns all appliances off and deactivates all EV chargers at once.
-The regulation then turns them on one by one in priority order, with the first
-decision one full regulation interval after the start. The regulation also
-starts again with everything off when a penalty or the safe state ends, and at
-the next decision after the power limit is changed with the **Power limit**
-entity, see [Entities](#entities).
+Every start turns all appliances off at once, and deactivates all EV chargers
+when EV charging control is on. The regulation then turns them on one by one
+in priority order, with the first decision one full regulation interval after
+the start. The regulation also starts again with everything off when a penalty
+or the safe state ends, and at the next decision after the power limit is
+changed with the **Power limit** entity, see [Entities](#entities).
 
 The **Regulation** switch, and the button on the status page, stop and start
 the regulation. Stopping turns all appliances off, and nothing is turned on
@@ -152,8 +152,8 @@ set to the minimum before the EV charger is activated or deactivated.
   be turned on.
 - An EV charger that draws no power, because no car is connected or because
   it is not charging two regulation windows after it was activated, is
-  bypassed. It is held at the minimum current, stays activated, and does not
-  stand in the way of other EV chargers.
+  bypassed. It gets no more than the minimum current, stays activated if it
+  is, and does not stand in the way of other EV chargers.
 - An EV charger that is not charging rests before it is tried again: 15
   minutes the first time, then 30, and then 60 minutes each time the car still
   does not charge. It stays bypassed while it rests. If the car is
@@ -179,7 +179,8 @@ pages. Only administrators have access.
 Changes are collected in a draft. **Save** stores everything at once, and
 **Discard** goes back to what is stored. Errors are shown at the field, and
 nothing is saved until they are fixed. The panel asks before unsaved changes
-are discarded. The configuration can only be changed while the regulation is
+are discarded when you go to the status page, and the browser asks when the
+page is closed. The configuration can only be changed while the regulation is
 stopped. While it runs, the configuration pages are locked and show the
 **Stop regulation** button. A saved configuration is used the next time the
 regulation starts.
@@ -281,16 +282,18 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
-| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision, 0 when the average consumption is not above the power limit. |
+| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the average consumption went above it. 0 when there is none. |
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
 
 The sensors are updated every time a regulation window closes. The sensors
 that depend on the averages are unavailable until the first regulation window
-has closed, and during safe state. When the power sensor gives a valid value
-again, the measurements from before are kept, and the time without a valid
-value is counted with the last valid value before it.
+has closed, and after two regulation windows in a row closed without a valid
+value from the power sensor, also while the regulation is stopped. When the
+power sensor gives a valid value again, the measurements from before are kept,
+and the time without a valid value is counted with the last valid value before
+it.
 
 When Kraftvakt starts, the hour before is read from the history of the power
 sensor in the Home Assistant recorder, so the average consumption is right
@@ -313,7 +316,8 @@ The entity IDs are the same in every language and are grouped by what they
 concern: `regulation`, `power`, `waiting_time`, `penalty` and `charger`. The
 names shown follow the language of Home Assistant. ‹charger› is the name of
 the device the entity of the EV charger belongs to, or the name of the entity
-when it has no device, as it was when the EV charger was added.
+when it has no device. The entity ID keeps the name from when the EV charger
+was added.
 
 ## Template and action examples
 
