@@ -225,10 +225,10 @@ regulation starts.
 
 ### Actions
 
-Actions are adopting to the domain of the entity. Standard domain actions if supported. Some
-devices have support for specific domain actions, like thermostats. Every action can also be a custom action, 
-made with the action editor of Home Assistant, that does whatever the appliance or EV charger needs, see
-[Template and action examples](#template-and-action-examples).
+Actions adapt to the domain of the entity. A standard action is offered when
+the domain has one. Some device types also have specific actions of their own.
+Every action can also be a custom action, made with the action editor of Home
+Assistant, see [Template and action examples](#template-and-action-examples).
 
 A failed action is logged, and the regulation continues without retrying. An
 entity used by another appliance or EV charger cannot be chosen.
