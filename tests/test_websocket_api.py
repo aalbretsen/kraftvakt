@@ -161,6 +161,12 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
         "service": "set_value",
         "data": {"value": "{{ current }}"},
     }
+    assert (
+        result["domain_actions"]["appliances"]["turn_off"]["climate_hvac_mode"][
+            "service"
+        ]
+        == "set_hvac_mode"
+    )
     assert result["limits"]["general"]["power_limit_w"] == {
         "min": 1000,
         "max": 50_000,
@@ -384,6 +390,47 @@ async def test_invalid_configuration_is_not_saved(
     assert response["success"]
     assert response["result"] == {"saved": False, "errors": errors}
     assert stored_config(hass_storage) == before
+
+
+async def test_domain_action_values_are_checked_against_the_entity(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_storage: dict[str, Any],
+) -> None:
+    """A thermostat's HVAC mode must be one it supports."""
+    await switch_regulation(hass, "turn_off")
+    hass.states.async_set("climate.hall", "off", {"hvac_modes": ["off", "heat"]})
+    client = await hass_ws_client(hass)
+    changed = config_data()
+    changed["appliances"][1].update(
+        entity_id="climate.hall",
+        turn_on={
+            "mode": "domain",
+            "domain_action": "climate_hvac_mode",
+            "data": {"hvac_mode": "auto"},
+        },
+    )
+
+    response = await send(client, "kraftvakt/config/save", config=changed)
+
+    assert response["result"] == {
+        "saved": False,
+        "errors": [
+            {
+                "code": "unsupported_option",
+                "section": "appliances",
+                "target": "b",
+                "field": "turn_on.hvac_mode",
+            }
+        ],
+    }
+    changed["appliances"][1]["turn_on"]["data"]["hvac_mode"] = "heat"
+    response = await send(client, "kraftvakt/config/save", config=changed)
+    assert response["result"]["saved"]
+    assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {
+        "hvac_mode": "heat"
+    }
 
 
 async def test_incomplete_configuration_is_saved(

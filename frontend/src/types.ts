@@ -31,6 +31,8 @@ export interface HomeAssistant {
   entities: Record<string, EntityRegistryEntry>;
   devices: Record<string, DeviceRegistryEntry>;
   locale: { language: string };
+  config: { unit_system: { temperature: string } };
+  formatEntityState(stateObj: HassEntity, state?: string): string;
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;
   loadFragmentTranslation(fragment: string): Promise<unknown>;

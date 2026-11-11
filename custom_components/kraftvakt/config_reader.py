@@ -244,6 +244,16 @@ class ConfigReader:
                 and (entity_id is None or isinstance(entity_id, str))
             ):
                 return ActionConfig(ActionMode.ENTITY, entity_id=entity_id)
+            domain_action = action.get("domain_action")
+            data = action.get("data", {})
+            if (
+                action.get("mode") == ActionMode.DOMAIN
+                and isinstance(domain_action, str)
+                and isinstance(data, Mapping)
+            ):
+                return ActionConfig(
+                    ActionMode.DOMAIN, domain_action=domain_action, data=dict(data)
+                )
             if action.get("mode") == ActionMode.CUSTOM:
                 steps = action.get("action") or []
                 if isinstance(steps, Mapping):

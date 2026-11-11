@@ -187,11 +187,11 @@ export class KraftvaktPanel extends LitElement {
   }
 
   private renderConfigPage(page: Exclude<Page, "status">) {
-    if (!this.status || !this.config || !this.draft || !this.capabilities) {
+    if (!this.hass || !this.status || !this.config || !this.draft || !this.capabilities) {
       return "";
     }
     const locked = this.status.running;
-    const errors = locked ? [] : draftErrors(this.draft, this.capabilities);
+    const errors = locked ? [] : draftErrors(this.draft, this.capabilities, this.hass.states);
     const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
     const issues = locked ? [] : this.pageIssues(errors);
     return html`

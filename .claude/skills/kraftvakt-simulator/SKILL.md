@@ -44,11 +44,18 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   switch. Why: a device that Kraftvakt turns on must draw power at once, as a
   real one does.
 - A thermostat is a heating device whose climate entity takes the place of
-  the switch: off, heat and auto, with a target temperature. Heat and auto
-  both run the cycle and the temperatures change nothing, so the regulation
-  sees the same power as from a heating device. Turning it on returns to the
-  last heating mode (heat at first), as `climate.turn_on` does on real
-  thermostats, so Kraftvakt's default climate actions can be tested.
+  the switch, with the HVAC modes chosen in its settings (at least one of the
+  heating modes heat, heat/cool and auto) and a target temperature. It runs
+  the cycle in a heating mode while the target temperature is above the room
+  temperature, a setting that never changes by itself. With the default room
+  temperature (5 °C) it heats at any normal target, so the regulation sees
+  the same power as from a heating device. Turning it on returns to the last
+  heating mode (the first supported heating mode at first), as
+  `climate.turn_on` does on real thermostats. Why: Kraftvakt's default
+  climate actions and its thermostat actions (HVAC mode, temperature, or
+  both, and the fallbacks when a thermostat lacks heat or off) can be tested.
+  Turning off is offered only when off is one of its modes. It starts in off,
+  or in its first mode when off is not one of them.
 - Power, duty cycle and period are also number entities, changeable while HA
   runs. A change while the switch is on restarts the cycle in its on part; an
   unchanged value does nothing.
@@ -63,8 +70,8 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   HAN has no such switch: set its background power instead.
 - Entities that control the simulation and are not part of a real device have
   `EntityCategory.CONFIG`, so HA shows them under Configuration on the device
-  page: background power, heating power, duty cycle, period, car connected,
-  car fully charged and unplugged. Charging allowed, the charging current, the
+  page: background power, heating power, duty cycle, period, room
+  temperature, car connected, car fully charged and unplugged. Charging allowed, the charging current, the
   heater switch and the sensors are the device's own and stay main entities.
 - A heating device's switch and a thermostat's climate entity have the
   device's name. The other entities are
@@ -72,7 +79,7 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 - After a restart every entity gets its state back. The switches, the
   charging current (clamped to the current range) and a thermostat's mode and
   target temperature restore themselves. The settings that are numbers (background power, heating power,
-  duty cycle, period) are kept in the config entry data instead, so that
+  duty cycle, period, room temperature) are kept in the config entry data instead, so that
   reconfiguring the device changes them.
 - Every kind has a reconfigure flow with the same form as when it was added.
   It reloads the entry.

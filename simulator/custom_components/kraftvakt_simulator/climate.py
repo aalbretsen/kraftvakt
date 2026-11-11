@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Any
 
 from homeassistant.components.climate import (
     ATTR_HVAC_MODE,
@@ -24,7 +24,6 @@ from .devices import SimulatedThermostat
 from .entity import SimulatorEntity
 
 THERMOSTAT = EntityDescription(key="thermostat", name=None)
-HVAC_MODES: Final = (HVACMode.OFF, HVACMode.HEAT, HVACMode.AUTO)
 
 
 async def async_setup_entry(
@@ -39,25 +38,36 @@ async def async_setup_entry(
 class SimulatorThermostat(
     SimulatorEntity[SimulatedThermostat], ClimateEntity, RestoreEntity
 ):
-    """A thermostat with the modes off, heat and auto.
+    """A thermostat with the HVAC modes chosen in the settings.
 
-    It gets back its mode and target temperature after a restart.
+    It gets back its mode and target temperature after a restart. It can be
+    turned off only when off is one of its modes.
     """
 
-    _attr_supported_features = (
-        ClimateEntityFeature.TARGET_TEMPERATURE
-        | ClimateEntityFeature.TURN_ON
-        | ClimateEntityFeature.TURN_OFF
-    )
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 0.5
     _attr_min_temp = MIN_TARGET_TEMPERATURE
     _attr_max_temp = MAX_TARGET_TEMPERATURE
 
     @property
+    def supported_features(self) -> ClimateEntityFeature:
+        """Return the features, with turning off only when off is a mode."""
+        features = (
+            ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
+        )
+        if HVACMode.OFF in self.hvac_modes:
+            features |= ClimateEntityFeature.TURN_OFF
+        return features
+
+    @property
     def hvac_modes(self) -> list[HVACMode]:
-        """Return the modes: off, heat and auto."""
-        return list(HVAC_MODES)
+        """Return the modes chosen in the settings."""
+        return self.device.hvac_modes
+
+    @property
+    def current_temperature(self) -> float:
+        """Return the room temperature."""
+        return self.device.room_temperature
 
     @property
     def hvac_mode(self) -> HVACMode:
@@ -67,7 +77,7 @@ class SimulatorThermostat(
     @property
     def hvac_action(self) -> HVACAction:
         """Return heating while the device draws power, idle while it waits."""
-        if not self.device.is_on:
+        if self.device.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
         return HVACAction.HEATING if self.device.power_w > 0 else HVACAction.IDLE
 

@@ -91,3 +91,16 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     assert _missing(data) == [
         Issue("missing_car_connected", "chargers", "c1", "car_connected")
     ]
+
+
+def test_domain_action_needs_every_value_chosen() -> None:
+    data = full_config_data()
+    data["appliances"][0]["turn_on"] = {
+        "mode": "domain",
+        "domain_action": "climate_hvac_mode",
+        "data": {"hvac_mode": None},
+    }
+
+    assert _missing(data) == [
+        Issue("missing_action", "appliances", data["appliances"][0]["id"], "turn_on")
+    ]

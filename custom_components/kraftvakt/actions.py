@@ -5,9 +5,8 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Any, Final
 
 from homeassistant.core import Context, HomeAssistant, split_entity_id
@@ -17,6 +16,7 @@ from homeassistant.helpers.script import Script, async_validate_actions_config
 from .conditions import context_variables
 from .config_model import (
     ActionConfig,
+    ActionKind,
     ActionMode,
     Appliance,
     Charger,
@@ -24,6 +24,11 @@ from .config_model import (
     KraftvaktConfig,
 )
 from .const import DOMAIN
+from .domain_actions import (
+    domain_action_issues,
+    domain_action_steps,
+    domain_actions_for,
+)
 from .regulation.model import (
     ActivateCharger,
     Command,
@@ -34,14 +39,6 @@ from .regulation.model import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class ActionKind(StrEnum):
-    """What an action does."""
-
-    TURN_ON = "turn_on"
-    TURN_OFF = "turn_off"
-    SET_CURRENT = "set_current"
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,32 +105,38 @@ def default_action_steps(kind: ActionKind, entity_id: str) -> list[dict[str, Any
     return [step]
 
 
-def default_action_issues(config: KraftvaktConfig) -> list[Issue]:
-    """Return the default actions chosen for entities whose domain has none."""
-    return [
-        Issue(code, section, item.id, field_name)
-        for section, item, fields in _items_with_actions(config)
-        for field_name, kind in fields.items()
-        if (
-            code := _unavailable_default(
-                item.entity_id, getattr(item, field_name), kind
-            )
-        )
-    ]
+def action_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
+    """Return the actions that cannot run for the entity of their item.
+
+    A default action must exist for the domain of the entity, and a domain
+    action must belong to it, with values the entity supports.
+    """
+    issues = []
+    for section, item, fields in _items_with_actions(config):
+        for field_name, kind in fields.items():
+            action = getattr(item, field_name)
+            if action is None:
+                continue
+            if code := _unavailable_default(item.entity_id, action, kind):
+                issues.append(Issue(code, section, item.id, field_name))
+            if action.mode is ActionMode.DOMAIN and item.entity_id is not None:
+                issues += [
+                    Issue(code, section, item.id, _join(field_name, parameter))
+                    for parameter, code in domain_action_issues(
+                        kind, item.entity_id, action, hass.states.get(item.entity_id)
+                    )
+                ]
+    return issues
 
 
 def default_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
     """Return the default action of each action field, by section."""
-    return {
-        section: {
-            field_name: DEFAULT_ACTIONS[kind].to_dict()
-            for field_name, kind in fields.items()
-        }
-        for section, fields in (
-            ("appliances", APPLIANCE_ACTIONS),
-            ("chargers", CHARGER_ACTIONS),
-        )
-    }
+    return _by_field(lambda kind: DEFAULT_ACTIONS[kind].to_dict())
+
+
+def domain_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
+    """Return the domain actions each action field may be, by section."""
+    return _by_field(domain_actions_for)
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
@@ -238,6 +241,22 @@ class ActionRunner:
         return self._scripts[key]
 
 
+def _by_field(
+    describe: Callable[[ActionKind], dict[str, Any]],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    return {
+        section: {field_name: describe(kind) for field_name, kind in fields.items()}
+        for section, fields in (
+            ("appliances", APPLIANCE_ACTIONS),
+            ("chargers", CHARGER_ACTIONS),
+        )
+    }
+
+
+def _join(field_name: str, parameter: str | None) -> str:
+    return field_name if parameter is None else f"{field_name}.{parameter}"
+
+
 def _items_with_actions(
     config: KraftvaktConfig,
 ) -> Iterable[tuple[str, Appliance | Charger, Mapping[str, ActionKind]]]:
@@ -257,14 +276,14 @@ def _action_steps(
             return default_action_steps(kind, action.entity_id)
         case ActionMode.ENTITY:
             raise ValueError("the entity of the action is not chosen")
+        case ActionMode.DOMAIN:
+            return domain_action_steps(kind, entity_id, action)
     return copy.deepcopy(list(action.steps))
 
 
 def _unavailable_default(
-    entity_id: str | None, action: ActionConfig | None, kind: ActionKind
+    entity_id: str | None, action: ActionConfig, kind: ActionKind
 ) -> str | None:
-    if action is None:
-        return None
     match action.mode:
         case ActionMode.DEFAULT if entity_id is not None:
             code, target = "default_action_unavailable", entity_id

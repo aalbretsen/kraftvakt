@@ -49,7 +49,8 @@ integrations.
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
 | `conditions.py` | True/false from an entity or a template, and actively charging, which also takes a power sensor and counts missing evidence as charging. |
-| `actions.py` | The table of default actions, custom actions, and the action runner (one command at a time under a lock, errors logged and not retried). |
+| `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
+| `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
 | `switch_board.py` | The positions of the user's switches for appliances and chargers, saved together with the configuration, and when the override was switched on (memory only). |
@@ -76,7 +77,9 @@ The format is defined by the dataclasses and their serialization in
 - `charger_switches`: the positions of the two switches per charger.
 
 IDs are short UUIDs, so entities can change without losing the place in the
-list. An action is `default`, `custom` (a script) or `entity`. A condition is
+list. An action is `default`, `custom` (a script), `entity` or `domain` (the
+key of a domain action and a value per parameter, `null` while not chosen). A
+condition is
 an entity or a template; actively charging may also be a power sensor. HA's
 action editor adds empty `data`; stored actions must tolerate that.
 
@@ -120,6 +123,25 @@ panel's translations.
   number-like domains (set value, for the charging current). The table is in
   one place in `actions.py` and is sent to the panel, and the `entity` mode
   uses the same table for the chosen entity.
+- A domain action is a service of the entity's domain with values the user
+  chooses, such as the thermostat actions (HVAC mode, temperature, or both).
+  The panel renders the parameters from the table in `domain_actions.py` and
+  has no code per domain. The keys start with the domain.
+  - A domain action belongs to action kinds, not sections, so it is offered
+    wherever an action of that kind is, chargers included. Why: no special
+    cases per section.
+  - A parameter has a type (an option or a temperature) and names the
+    entity's attributes that hold its options and range. The default option
+    is the first preferred option for the action kind that the entity
+    supports, worked out in the panel; a number parameter has a fixed
+    default. The temperature defaults to 0, outside every thermostat's range,
+    so the user must set it.
+  - At save, the domain action must belong to the domain of the entity and
+    the action kind, every parameter must be present, and the values must be
+    of the right type and among the options or within the range the entity
+    reports. Without the entity's state, only the types are checked. A value
+    that is not chosen (`null`) is missing, not an error. Issues for a
+    parameter are addressed as `<field>.<parameter>`.
 - All templates and actions get `entity_id` and `entity` (the state object of
   the appliance's or charger's entity, `none` when missing). The set-current
   action also gets `current`, `min_current` and `max_current`; `current` is
@@ -156,7 +178,7 @@ with `not_loaded` when Kraftvakt is not loaded.
 
 | Command | In | Out |
 |---|---|---|
-| `kraftvakt/capabilities` | – | The default action (domains, service and data) per section and field, limits per field (`max: null` means no upper limit), and defaults. |
+| `kraftvakt/capabilities` | – | The default action (domains, service and data) and the domain actions (by key, with their parameters for the field's action kind) per section and field, limits per field (`max: null` means no upper limit), and defaults. |
 | `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
 | `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
 | `kraftvakt/regulation/set_running` | `running` | The new state. Start refused with `config_incomplete`. |

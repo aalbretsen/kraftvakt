@@ -10,19 +10,22 @@ import type {
   KraftvaktConfig,
   Range,
 } from "./api";
+import { availableDomainAction, parameterIssues } from "./domain-actions";
+import type { HassEntity } from "./types";
 
 type LimitSection = keyof Capabilities["limits"];
 type ActionSection = keyof Capabilities["default_actions"];
+type States = Record<string, HassEntity>;
 
 const APPLIANCE_ACTIONS = ["turn_on", "turn_off"] as const;
 const CHARGER_ACTIONS = ["activate", "deactivate", "set_current"] as const;
 
 /** Return the mistakes in the draft that stop it from being saved. */
-export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities): Issue[] {
+export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, states: States): Issue[] {
   return [
     ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true),
-    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities)),
-    ...config.charging.chargers.flatMap((charger) => chargerErrors(charger, capabilities)),
+    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, states)),
+    ...config.charging.chargers.flatMap((charger) => chargerErrors(charger, capabilities, states)),
   ];
 }
 
@@ -61,6 +64,24 @@ export function defaultActionOf(capabilities: Capabilities, section: ActionSecti
   return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];
 }
 
+/** Return whether the action, given as the default or a domain action, can run for the entity. */
+export function isActionAvailable(
+  capabilities: Capabilities,
+  section: ActionSection,
+  field: string,
+  entityId: string | null,
+  action: ActionConfig | null,
+): boolean {
+  switch (action?.mode) {
+    case "default":
+      return hasDefaultAction(capabilities, section, field, entityId);
+    case "domain":
+      return availableDomainAction(capabilities, section, field, entityId, action) !== undefined;
+    default:
+      return true;
+  }
+}
+
 /** Return whether the domain of the entity has a default action for the field. */
 export function hasDefaultAction(
   capabilities: Capabilities,
@@ -80,16 +101,17 @@ export function isMissingAction(action: ActionConfig | null): boolean {
   return (
     action === null ||
     (action.mode === "custom" && (action.action ?? []).length === 0) ||
-    (action.mode === "entity" && !action.entity_id)
+    (action.mode === "entity" && !action.entity_id) ||
+    (action.mode === "domain" && Object.values(action.data ?? {}).includes(null))
   );
 }
 
 /** Return the mistakes in one appliance and its variants. */
-export function applianceErrors(appliance: Appliance, capabilities: Capabilities): Issue[] {
+export function applianceErrors(appliance: Appliance, capabilities: Capabilities, states: States): Issue[] {
   const labels = appliance.variants.map((variant) => variant.label.trim());
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
-    ...defaultActionIssues("appliances", appliance, APPLIANCE_ACTIONS, capabilities),
+    ...actionIssues("appliances", appliance, APPLIANCE_ACTIONS, capabilities, states),
     ...appliance.variants.flatMap((variant, index) => {
       const prefix = `variants.${variant.id}.`;
       const issues: Issue[] = [];
@@ -104,11 +126,11 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
 }
 
 /** Return the mistakes in one EV charger. */
-export function chargerErrors(charger: Charger, capabilities: Capabilities): Issue[] {
+export function chargerErrors(charger: Charger, capabilities: Capabilities, states: States): Issue[] {
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
   const issues = [
     ...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true),
-    ...defaultActionIssues("chargers", charger, CHARGER_ACTIONS, capabilities),
+    ...actionIssues("chargers", charger, CHARGER_ACTIONS, capabilities, states),
   ];
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
@@ -161,21 +183,38 @@ function rangeCode(value: number, range: Range): string | undefined {
   return Math.abs(steps - Math.round(steps)) < 1e-6 ? undefined : "invalid_resolution";
 }
 
-function defaultActionIssues(
+/** The actions that cannot run for the entity of the item, as the backend checks them. */
+function actionIssues(
   section: ActionSection,
   item: Appliance | Charger,
   fields: readonly string[],
   capabilities: Capabilities,
+  states: States,
 ): Issue[] {
   const actions = item as unknown as Record<string, ActionConfig | null>;
-  return fields
-    .filter(
-      (field) =>
-        actions[field]?.mode === "default" &&
-        item.entity_id !== null &&
-        !hasDefaultAction(capabilities, section, field, item.entity_id),
-    )
-    .map((field) => ({ code: "default_action_unavailable", section, target: item.id, field }));
+  const entityId = item.entity_id;
+  if (entityId === null) {
+    return [];
+  }
+  return fields.flatMap((field): Issue[] => {
+    const action = actions[field];
+    const issue = (code: string, parameter?: string): Issue => ({
+      code,
+      section,
+      target: item.id,
+      field: parameter ? `${field}.${parameter}` : field,
+    });
+    if (!isActionAvailable(capabilities, section, field, entityId, action)) {
+      return [issue(action?.mode === "default" ? "default_action_unavailable" : "domain_action_unavailable")];
+    }
+    const domainAction = availableDomainAction(capabilities, section, field, entityId, action);
+    if (!domainAction) {
+      return [];
+    }
+    return Object.entries(parameterIssues(domainAction, action?.data ?? {}, states[entityId])).map(
+      ([parameter, code]) => issue(code, parameter),
+    );
+  });
 }
 
 function missingEntityAndActions(

@@ -39,17 +39,21 @@
       },
       "thermostat": {
         "title": "Simulert termostat",
-        "description": "Et varmeapparat styrt av en termostat med modusene av, varme og auto. I varme og auto varmer det i en fast syklus, uansett temperatur: først på i driftsandelen av perioden, så av. Syklusen starter på nytt hver gang modusen endres fra av, og når syklusen endres. Når den slås på, går den tilbake til den siste modusen den varmet i.",
+        "description": "Et varmeapparat styrt av en termostat med de valgte HVAC-modusene. I varme, varme/kjøling og auto varmer det i en fast syklus så lenge måltemperaturen er over romtemperaturen: først på i driftsandelen av perioden, så av. De andre modusene bruker ingenting. Syklusen starter på nytt hver gang det begynner å varme, og når syklusen endres. Når den slås på, går den tilbake til den siste varmemodusen.",
         "data": {
           "name": "Navn",
           "power_w": "Effekt",
           "duty_cycle_pct": "Driftsandel",
-          "period_min": "Periode"
+          "period_min": "Periode",
+          "hvac_modes": "HVAC-moduser",
+          "room_temperature": "Romtemperatur"
         },
         "data_description": {
           "power_w": "Effekt mens apparatet varmer.",
           "duty_cycle_pct": "Andelen av perioden apparatet varmer.",
-          "period_min": "Lengden på én syklus i minutter."
+          "period_min": "Lengden på én syklus i minutter.",
+          "hvac_modes": "Minst én varmemodus: varme, varme/kjøling eller auto.",
+          "room_temperature": "Temperaturen i rommet. Den endrer seg ikke av seg selv, men kan endres mens Home Assistant kjører."
         }
       },
       "charger": {
@@ -63,7 +67,8 @@
       }
     },
     "error": {
-      "max_below_min": "Største ladestrøm må være minst like stor som minste ladestrøm."
+      "max_below_min": "Største ladestrøm må være minst like stor som minste ladestrøm.",
+      "no_heating_mode": "Velg minst én varmemodus: varme, varme/kjøling eller auto."
     },
     "abort": {
       "single_han": "Det finnes allerede en simulert HAN.",
@@ -76,6 +81,17 @@
         "heating_cable": "Varmekabler",
         "water_heater": "Varmtvannsbereder",
         "panel_heater": "Panelovn"
+      }
+    },
+    "hvac_modes": {
+      "options": {
+        "off": "Av",
+        "heat": "Varme",
+        "cool": "Kjøling",
+        "heat_cool": "Varme/kjøling",
+        "auto": "Auto",
+        "dry": "Tørking",
+        "fan_only": "Bare vifte"
       }
     }
   },
@@ -100,6 +116,9 @@
       },
       "period": {
         "name": "Periode"
+      },
+      "room_temperature": {
+        "name": "Romtemperatur"
       }
     },
     "sensor": {

@@ -337,3 +337,33 @@ def test_switches_with_wrong_type_are_rejected() -> None:
         read_switches({"a1": {"excluded": "on"}}, ApplianceSwitches, "appliances")
 
     assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "excluded")]
+
+
+def test_domain_action_round_trips() -> None:
+    action = {
+        "mode": "domain",
+        "domain_action": "climate_hvac_mode_and_temperature",
+        "data": {"hvac_mode": "heat", "temperature": None},
+    }
+    config = read_config({"appliances": [{"id": "a1", "turn_on": action}]})
+
+    assert config.appliances[0].turn_on == ActionConfig(
+        ActionMode.DOMAIN,
+        domain_action="climate_hvac_mode_and_temperature",
+        data={"hvac_mode": "heat", "temperature": None},
+    )
+    assert config.to_dict()["appliances"][0]["turn_on"] == action
+
+
+@pytest.mark.parametrize(
+    "action",
+    [
+        {"mode": "domain", "data": {}},
+        {"mode": "domain", "domain_action": "climate_hvac_mode", "data": []},
+    ],
+)
+def test_malformed_domain_action_is_a_type_error(action: dict[str, Any]) -> None:
+    with pytest.raises(ConfigValidationError) as error:
+        read_config({"appliances": [{"id": "a1", "turn_on": action}]})
+
+    assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "turn_on")]

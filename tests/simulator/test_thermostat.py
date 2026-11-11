@@ -4,7 +4,11 @@ from datetime import timedelta
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.components.climate import HVACAction, HVACMode
+from homeassistant.components.climate import (
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
+)
 from homeassistant.core import HomeAssistant, State
 from pytest_homeassistant_custom_component.common import mock_restore_cache
 
@@ -15,6 +19,7 @@ from .conftest import AddDevice, advance, call, power, state
 CLIMATE = "climate.living_room"
 POWER = "sensor.living_room_power"
 HOUSE_POWER = "sensor.han_power"
+ROOM_TEMPERATURE = "number.living_room_room_temperature"
 
 
 def attribute(hass: HomeAssistant, name: str) -> object:
@@ -157,3 +162,64 @@ async def test_unplugged_thermostat_consumes_nothing(
     assert state(hass, CLIMATE) == HVACMode.HEAT
     assert attribute(hass, "hvac_action") == HVACAction.IDLE
     assert power(hass, POWER) == 0
+
+
+async def test_non_heating_modes_consume_nothing(
+    hass: HomeAssistant, add_device: AddDevice
+) -> None:
+    await add_device(
+        DeviceKind.THERMOSTAT, "Living room", hvac_modes=["off", "heat", "cool"]
+    )
+
+    await call(hass, "climate", "set_hvac_mode", CLIMATE, hvac_mode=HVACMode.COOL)
+
+    assert state(hass, CLIMATE) == HVACMode.COOL
+    assert attribute(hass, "hvac_action") == HVACAction.IDLE
+    assert power(hass, POWER) == 0
+
+
+async def test_thermostat_without_off_starts_in_its_first_mode(
+    hass: HomeAssistant, add_device: AddDevice
+) -> None:
+    """It cannot be turned off, and turning on goes to its first heating mode."""
+    await add_device(DeviceKind.THERMOSTAT, "Living room", hvac_modes=["cool", "auto"])
+
+    assert state(hass, CLIMATE) == HVACMode.COOL
+    assert attribute(hass, "hvac_modes") == ["cool", "auto"]
+    assert attribute(hass, "supported_features") == (
+        ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
+    )
+    await call(hass, "climate", "turn_on", CLIMATE)
+    assert state(hass, CLIMATE) == HVACMode.AUTO
+    assert power(hass, POWER) == 750
+
+
+async def test_thermostat_that_starts_in_a_heating_mode_heats(
+    hass: HomeAssistant, add_device: AddDevice
+) -> None:
+    await add_device(DeviceKind.THERMOSTAT, "Living room", hvac_modes=["heat"])
+
+    assert state(hass, CLIMATE) == HVACMode.HEAT
+    assert power(hass, POWER) == 750
+
+
+async def test_thermostat_heats_only_below_the_target_temperature(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
+) -> None:
+    """A target at or below the room temperature stops heating, above it heats."""
+    entry = await add_device(DeviceKind.THERMOSTAT, "Living room")
+    await call(hass, "climate", "set_hvac_mode", CLIMATE, hvac_mode=HVACMode.HEAT)
+    assert attribute(hass, "current_temperature") == 5
+
+    await call(hass, "climate", "set_temperature", CLIMATE, temperature=5)
+    assert attribute(hass, "hvac_action") == HVACAction.IDLE
+    assert power(hass, POWER) == 0
+
+    await advance(hass, freezer, timedelta(minutes=20))
+    await call(hass, "climate", "set_temperature", CLIMATE, temperature=22)
+    assert power(hass, POWER) == 750
+
+    await call(hass, "number", "set_value", ROOM_TEMPERATURE, value=22)
+    assert attribute(hass, "current_temperature") == 22
+    assert power(hass, POWER) == 0
+    assert entry.data["room_temperature"] == 22

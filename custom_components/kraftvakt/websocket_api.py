@@ -13,7 +13,7 @@ from homeassistant.helpers.dispatcher import (
     async_dispatcher_send,
 )
 
-from .actions import default_action_issues, default_actions_by_field
+from .actions import action_issues, default_actions_by_field, domain_actions_by_field
 from .config_model import (
     SETTING_RANGES,
     Appliance,
@@ -71,7 +71,7 @@ def websocket_capabilities(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Send the default actions, the limits and the defaults of the settings."""
+    """Send the actions per field, the limits and the defaults of the settings."""
     connection.send_result(msg["id"], capabilities())
 
 
@@ -119,7 +119,7 @@ async def websocket_save_config(
         _send_regulation_running(connection, msg)
         return
     try:
-        config = validated_config(msg["config"])
+        config = validated_config(hass, msg["config"])
     except ConfigValidationError as err:
         connection.send_result(
             msg["id"],
@@ -195,25 +195,27 @@ def _send_status(
     )
 
 
-def validated_config(data: dict[str, Any]) -> KraftvaktConfig:
+def validated_config(hass: HomeAssistant, data: dict[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
-    Also checks the default actions, which `parse_config()` cannot do. Raises
-    ConfigValidationError with every issue found.
+    Also checks that the actions can run for their entities, which
+    `parse_config()` cannot do. Raises ConfigValidationError with every issue
+    found.
     """
     config = parse_config(data)
-    if issues := default_action_issues(config):
+    if issues := action_issues(hass, config):
         raise ConfigValidationError(issues)
     return config
 
 
 def capabilities() -> dict[str, Any]:
-    """Return the default actions per field, and the limits and defaults."""
+    """Return the default and domain actions per field, the limits and defaults."""
     general = GeneralConfig()
     charging = ChargingConfig()
     charger = Charger(id="")
     return {
         "default_actions": default_actions_by_field(),
+        "domain_actions": domain_actions_by_field(),
         "limits": {
             section: {name: value.to_dict() for name, value in ranges.items()}
             for section, ranges in SETTING_RANGES.items()

@@ -74,16 +74,26 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
 }
 
 
+class ActionKind(StrEnum):
+    """What an action does."""
+
+    TURN_ON = "turn_on"
+    TURN_OFF = "turn_off"
+    SET_CURRENT = "set_current"
+
+
 class ActionMode(StrEnum):
     """How an action is given.
 
     `ENTITY` runs the default action of another entity, and is offered only for
-    setting the charging current.
+    setting the charging current. `DOMAIN` runs an action that belongs to the
+    domain of the entity, with values the user has chosen.
     """
 
     DEFAULT = "default"
     CUSTOM = "custom"
     ENTITY = "entity"
+    DOMAIN = "domain"
 
 
 class ConditionType(StrEnum):
@@ -110,26 +120,42 @@ class ActionConfig:
     """An action that turns something on or off or sets the charging current.
 
     A custom action keeps its steps exactly as the action editor produced them.
+    A domain action has the key of the domain action and a value per
+    parameter, `None` while the user has not chosen it.
     """
 
     mode: ActionMode
     steps: tuple[dict[str, Any], ...] = ()
     entity_id: str | None = None
+    domain_action: str | None = None
+    data: Mapping[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Return the action as JSON-friendly data."""
-        if self.mode is ActionMode.DEFAULT:
-            return {"mode": self.mode.value}
-        if self.mode is ActionMode.ENTITY:
-            return {"mode": self.mode.value, "entity_id": self.entity_id}
+        match self.mode:
+            case ActionMode.DEFAULT:
+                return {"mode": self.mode.value}
+            case ActionMode.ENTITY:
+                return {"mode": self.mode.value, "entity_id": self.entity_id}
+            case ActionMode.DOMAIN:
+                return {
+                    "mode": self.mode.value,
+                    "domain_action": self.domain_action,
+                    "data": dict(self.data),
+                }
         return {"mode": self.mode.value, "action": list(self.steps)}
 
     @property
     def is_missing(self) -> bool:
         """Return whether the action has nothing to run yet."""
-        if self.mode is ActionMode.CUSTOM:
-            return not self.steps
-        return self.mode is ActionMode.ENTITY and self.entity_id is None
+        match self.mode:
+            case ActionMode.CUSTOM:
+                return not self.steps
+            case ActionMode.ENTITY:
+                return self.entity_id is None
+            case ActionMode.DOMAIN:
+                return any(value is None for value in self.data.values())
+        return False
 
 
 @dataclass(frozen=True, slots=True)

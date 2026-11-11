@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.components.climate import HVACMode
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
     ConfigFlow,
@@ -15,6 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfPower,
+    UnitOfTemperature,
 )
 from homeassistant.helpers.selector import (
     NumberSelector,
@@ -30,19 +32,26 @@ from .const import (
     CONF_BACKGROUND_W,
     CONF_DUTY_CYCLE_PCT,
     CONF_HEATER_TYPE,
+    CONF_HVAC_MODES,
     CONF_KIND,
     CONF_MAX_CURRENT_A,
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_ROOM_TEMPERATURE,
+    DEFAULT_ROOM_TEMPERATURE,
     DOMAIN,
     MAX_BACKGROUND_W,
     MAX_CURRENT_A,
     MAX_HEATER_POWER_W,
     MAX_PERIOD_MIN,
+    MAX_ROOM_TEMPERATURE,
+    MIN_ROOM_TEMPERATURE,
+    TEMPERATURE_STEP,
     DeviceKind,
     HeaterType,
 )
+from .model import HEATING_MODES
 
 
 def whole_number(
@@ -92,7 +101,31 @@ SCHEMAS = {
         }
     ),
     DeviceKind.THERMOSTAT: vol.Schema(
-        {vol.Required(CONF_NAME): TextSelector(), **DUTY_CYCLE_FIELDS}
+        {
+            vol.Required(CONF_NAME): TextSelector(),
+            **DUTY_CYCLE_FIELDS,
+            vol.Required(
+                CONF_HVAC_MODES, default=[HVACMode.OFF, HVACMode.HEAT, HVACMode.AUTO]
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=list(HVACMode),
+                    multiple=True,
+                    translation_key=CONF_HVAC_MODES,
+                    mode=SelectSelectorMode.LIST,
+                )
+            ),
+            vol.Required(
+                CONF_ROOM_TEMPERATURE, default=DEFAULT_ROOM_TEMPERATURE
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_ROOM_TEMPERATURE,
+                    max=MAX_ROOM_TEMPERATURE,
+                    step=TEMPERATURE_STEP,
+                    mode=NumberSelectorMode.BOX,
+                    unit_of_measurement=UnitOfTemperature.CELSIUS,
+                )
+            ),
+        }
     ),
     DeviceKind.CHARGER: vol.Schema(
         {
@@ -115,6 +148,10 @@ def validate(kind: DeviceKind, user_input: dict[str, Any]) -> dict[str, str]:
         and user_input[CONF_MIN_CURRENT_A] > user_input[CONF_MAX_CURRENT_A]
     ):
         return {CONF_MAX_CURRENT_A: "max_below_min"}
+    if kind is DeviceKind.THERMOSTAT and not set(user_input[CONF_HVAC_MODES]) & set(
+        HEATING_MODES
+    ):
+        return {CONF_HVAC_MODES: "no_heating_mode"}
     return {}
 
 

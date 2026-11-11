@@ -22,10 +22,15 @@ export interface Condition {
 }
 
 export interface ActionConfig {
-  mode: "default" | "custom" | "entity";
+  mode: "default" | "custom" | "entity" | "domain";
   action?: Record<string, unknown>[];
   entity_id?: string | null;
+  /** The key of the domain action, and its value per parameter, null while not chosen. */
+  domain_action?: string;
+  data?: Record<string, ParameterValue>;
 }
+
+export type ParameterValue = string | number | null;
 
 export interface GeneralConfig {
   power_sensor: string | null;
@@ -115,11 +120,38 @@ export interface DefaultAction {
   data: Record<string, string>;
 }
 
+/**
+ * A value of a domain action. The options and the range are read from the
+ * attributes of the entity, when it has them.
+ */
+export interface ActionParameter {
+  name: string;
+  type: "option" | "temperature";
+  options_attribute: string | null;
+  /** The default option is the first of these the entity supports. */
+  preferred_options: string[];
+  min_attribute: string | null;
+  max_attribute: string | null;
+  step_attribute: string | null;
+  default: number | null;
+}
+
+/** A service of an entity domain, called for the entity with the chosen values. */
+export interface DomainAction {
+  domain: string;
+  service: string;
+  parameters: ActionParameter[];
+}
+
+type ActionFields<T> = {
+  appliances: Record<"turn_on" | "turn_off", T>;
+  chargers: Record<"activate" | "deactivate" | "set_current", T>;
+};
+
 export interface Capabilities {
-  default_actions: {
-    appliances: Record<"turn_on" | "turn_off", DefaultAction>;
-    chargers: Record<"activate" | "deactivate" | "set_current", DefaultAction>;
-  };
+  default_actions: ActionFields<DefaultAction>;
+  /** The domain actions of each field, by key. */
+  domain_actions: ActionFields<Record<string, DomainAction>>;
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
   defaults: {
     general: GeneralConfig;

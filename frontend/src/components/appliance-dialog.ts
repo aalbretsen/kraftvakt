@@ -21,7 +21,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected readonly actionFields = ["turn_on", "turn_off"] as const;
 
   protected errors(): Issue[] {
-    return applianceErrors(this.draft, this.capabilities);
+    return applianceErrors(this.draft, this.capabilities, this.hass.states);
   }
 
   protected missing(): Issue[] {

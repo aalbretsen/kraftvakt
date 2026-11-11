@@ -133,3 +133,15 @@ async def test_reconfiguring_shows_the_errors_of_the_kind(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "charger"
     assert result["errors"] == {"max_current_a": "max_below_min"}
+
+
+async def test_thermostat_needs_a_heating_mode(hass: HomeAssistant) -> None:
+    result = await start_flow(hass, DeviceKind.THERMOSTAT)
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"name": "Living room", **THERMOSTAT, "hvac_modes": ["off", "cool"]},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"hvac_modes": "no_heating_mode"}

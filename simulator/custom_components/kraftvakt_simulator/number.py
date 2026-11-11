@@ -19,14 +19,29 @@ from homeassistant.const import (
     EntityCategory,
     UnitOfElectricCurrent,
     UnitOfPower,
+    UnitOfTemperature,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SimulatorConfigEntry, kind_of
-from .const import MAX_BACKGROUND_W, MAX_HEATER_POWER_W, MAX_PERIOD_MIN, DeviceKind
-from .devices import SimulatedCharger, SimulatedDevice, SimulatedHan, SimulatedHeater
+from .const import (
+    MAX_BACKGROUND_W,
+    MAX_HEATER_POWER_W,
+    MAX_PERIOD_MIN,
+    MAX_ROOM_TEMPERATURE,
+    MIN_ROOM_TEMPERATURE,
+    TEMPERATURE_STEP,
+    DeviceKind,
+)
+from .devices import (
+    SimulatedCharger,
+    SimulatedDevice,
+    SimulatedHan,
+    SimulatedHeater,
+    SimulatedThermostat,
+)
 from .entity import SimulatorEntity
 
 
@@ -90,6 +105,21 @@ HEATER_NUMBERS: Final[tuple[SimulatorNumberDescription[SimulatedHeater], ...]] =
 )
 
 
+ROOM_TEMPERATURE: Final[SimulatorNumberDescription[SimulatedThermostat]] = (
+    SimulatorNumberDescription(
+        key="room_temperature",
+        translation_key="room_temperature",
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_min_value=MIN_ROOM_TEMPERATURE,
+        native_max_value=MAX_ROOM_TEMPERATURE,
+        native_step=TEMPERATURE_STEP,
+        value_fn=lambda thermostat: thermostat.room_temperature,
+        set_fn=lambda thermostat, value: thermostat.async_set_room_temperature(value),
+    )
+)
+
+
 def charging_current(charger: SimulatedCharger) -> NumberEntityDescription:
     """Return the description of the charging current, within the charger's range."""
     return NumberEntityDescription(
@@ -114,8 +144,10 @@ async def async_setup_entry(
     match kind_of(entry):
         case DeviceKind.HAN:
             descriptions: tuple[SimulatorNumberDescription, ...] = (BACKGROUND_POWER,)
-        case DeviceKind.HEATER | DeviceKind.THERMOSTAT:
+        case DeviceKind.HEATER:
             descriptions = HEATER_NUMBERS
+        case DeviceKind.THERMOSTAT:
+            descriptions = (*HEATER_NUMBERS, ROOM_TEMPERATURE)
         case DeviceKind.CHARGER:
             async_add_entities(
                 [ChargingCurrentNumber(entry, device, charging_current(device))]

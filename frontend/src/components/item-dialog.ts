@@ -2,10 +2,11 @@ import { LitElement, css, html, nothing, type CSSResultGroup, type PropertyValue
 import { property, state } from "lit/decorators.js";
 
 import type { ActionConfig, Appliance, Capabilities, Charger, Issue } from "../api";
+import { domainActionsFor } from "../domain-actions";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
-import { defaultActionOf, hasDefaultAction } from "../validation";
+import { defaultActionOf, hasDefaultAction, isActionAvailable } from "../validation";
 import "./action-field";
 
 type Item = Appliance | Charger;
@@ -88,6 +89,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   /** An action field; `entityAllowed` offers to give it as an entity with the same default action. */
   protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false) {
     const issue = issues.find((item) => item.field === field);
+    const parameterErrors = errorsByField(issues, `${field}.`, this.describe);
     const defaultAction = defaultActionOf(this.capabilities, this.section, field);
     return html`
       <kraftvakt-action-field
@@ -99,8 +101,10 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
         .defaultAction=${defaultAction}
         .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, field, this.draft.entity_id)}
         .entityDomains=${entityAllowed ? defaultAction.domains : []}
+        .domainActions=${domainActionsFor(this.capabilities, this.section, field, this.draft.entity_id)}
         .variables=${variables}
         .error=${issue ? this.describe(issue) : undefined}
+        .parameterErrors=${parameterErrors}
         .disabled=${this.locked}
         @value-changed=${(event: CustomEvent<{ value: ActionConfig | null }>) =>
           this.changeDraft({ [field]: event.detail.value } as Partial<T>)}
@@ -183,16 +187,16 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
 
   /**
    * Choose the default action when the new entity has one and no action is set,
-   * and a custom action when the default is no longer available.
+   * and a custom action when the default or domain action is not available for it.
    */
   private entityChanged(entityId: string | null): void {
     const actions = this.draft as unknown as Record<string, ActionConfig | null>;
     const changes: Record<string, unknown> = { entity_id: entityId };
     for (const field of this.actionFields) {
-      const available = hasDefaultAction(this.capabilities, this.section, field, entityId);
-      if (available && actions[field] === null) {
+      const action = actions[field];
+      if (action === null && hasDefaultAction(this.capabilities, this.section, field, entityId)) {
         changes[field] = { mode: "default" };
-      } else if (!available && actions[field]?.mode === "default" && entityId !== null) {
+      } else if (entityId !== null && !isActionAvailable(this.capabilities, this.section, field, entityId, action)) {
         changes[field] = { mode: "custom", action: [] };
       }
     }

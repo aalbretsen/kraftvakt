@@ -18,10 +18,11 @@ from .const import (
     CONF_DUTY_CYCLE_PCT,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_ROOM_TEMPERATURE,
     DEFAULT_TARGET_TEMPERATURE,
     DOMAIN,
 )
-from .model import ChargerState, DutyCycle
+from .model import HEATING_MODES, ChargerState, DutyCycle, thermostat_heats
 
 POWER_BOARD: HassKey[PowerBoard] = HassKey(DOMAIN)
 
@@ -282,10 +283,12 @@ class SimulatedHeater(PluggedInDevice):
 
 
 class SimulatedThermostat(SimulatedHeater):
-    """A heating device controlled by a thermostat with the modes off, heat and auto.
+    """A heating device controlled by a thermostat with a chosen set of HVAC modes.
 
-    It runs the duty cycle in heat and auto, whatever the temperatures. Turning
-    it on returns it to the last mode it heated in, heat at first.
+    It runs the duty cycle in a heating mode while the target temperature is
+    above the room temperature. The cycle starts again each time it starts
+    heating. Turning it on returns it to the last heating mode it was in, the
+    first supported heating mode at first.
     """
 
     def __init__(
@@ -294,36 +297,60 @@ class SimulatedThermostat(SimulatedHeater):
         consumer_id: str,
         cycle: DutyCycle,
         store_setting: StoreSetting,
+        hvac_modes: list[HVACMode],
+        room_temperature: float,
     ) -> None:
-        """Start in off with the default target temperature."""
+        """Start in off, or its first mode without off, at the default target."""
         super().__init__(hass, consumer_id, cycle, store_setting)
-        self.hvac_mode = HVACMode.OFF
+        self.hvac_modes = hvac_modes
+        self.room_temperature = room_temperature
+        self.hvac_mode = HVACMode.OFF if HVACMode.OFF in hvac_modes else hvac_modes[0]
         self.target_temperature = DEFAULT_TARGET_TEMPERATURE
-        self._last_heating_mode = HVACMode.HEAT
+        self._last_heating_mode = next(
+            mode for mode in hvac_modes if mode in HEATING_MODES
+        )
+
+    @callback
+    def async_start(self) -> None:
+        """Start heating if the first mode heats, and report the power."""
+        self._async_follow_thermostat()
+        super().async_start()
 
     @callback
     def async_set_hvac_mode(self, mode: HVACMode) -> None:
-        """Change the mode. Leaving off restarts the cycle."""
-        if mode != HVACMode.OFF:
+        """Change the mode."""
+        if mode in HEATING_MODES:
             self._last_heating_mode = mode
-        mode_changed = mode != self.hvac_mode
         self.hvac_mode = mode
-        heating_mode = mode != HVACMode.OFF
-        if heating_mode != self.is_on:
-            self.async_set_on(heating_mode)
-        elif mode_changed:
-            self._async_notify()
+        self._async_follow_thermostat()
 
     @callback
     def async_turn_on(self) -> None:
-        """Return to the last mode the thermostat heated in."""
+        """Return to the last heating mode."""
         self.async_set_hvac_mode(self._last_heating_mode)
 
     @callback
     def async_set_target_temperature(self, temperature: float) -> None:
-        """Change the target temperature. It does not change the power."""
+        """Change the target temperature."""
         self.target_temperature = temperature
-        self._async_notify()
+        self._async_follow_thermostat()
+
+    @callback
+    def async_set_room_temperature(self, temperature: float) -> None:
+        """Change the temperature in the room."""
+        self.room_temperature = temperature
+        self._store_setting(CONF_ROOM_TEMPERATURE, temperature)
+        self._async_follow_thermostat()
+
+    @callback
+    def _async_follow_thermostat(self) -> None:
+        heats = thermostat_heats(
+            self.hvac_mode, self.target_temperature, self.room_temperature
+        )
+        if heats != self.is_on:
+            self.async_set_on(heats)
+        else:
+            self._async_notify()
 
 
 class SimulatedCharger(PluggedInDevice):

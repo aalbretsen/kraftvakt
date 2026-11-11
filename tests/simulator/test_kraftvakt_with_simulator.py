@@ -23,6 +23,8 @@ HOUSE_POWER = "sensor.han_power"
 WATER_HEATER = "switch.water_heater"
 CHARGING_ALLOWED = "switch.garage_charging_allowed"
 CHARGING_POWER = "sensor.garage_charging_power"
+THERMOSTAT = "climate.hall"
+THERMOSTAT_POWER = "sensor.hall_power"
 
 
 def kraftvakt_config() -> dict[str, Any]:
@@ -101,6 +103,22 @@ async def regulate_until(
     assert condition()
 
 
+async def setup_kraftvakt(
+    hass: HomeAssistant, hass_storage: dict[str, Any], config: dict[str, Any]
+) -> None:
+    """Set up Kraftvakt with the configuration, which starts the regulation."""
+    hass_storage[STORAGE_KEY] = {
+        "version": STORAGE_VERSION,
+        "minor_version": 1,
+        "key": STORAGE_KEY,
+        "data": config,
+    }
+    entry = MockConfigEntry(domain=KRAFTVAKT)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+
 async def test_kraftvakt_regulates_the_simulated_devices(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
@@ -117,16 +135,7 @@ async def test_kraftvakt_regulates_the_simulated_devices(
     )
     await add_device(DeviceKind.CHARGER, "Garage")
     await call(hass, "switch", "turn_on", "switch.garage_car_connected")
-    hass_storage[STORAGE_KEY] = {
-        "version": STORAGE_VERSION,
-        "minor_version": 1,
-        "key": STORAGE_KEY,
-        "data": kraftvakt_config(),
-    }
-    entry = MockConfigEntry(domain=KRAFTVAKT)
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_kraftvakt(hass, hass_storage, kraftvakt_config())
 
     await regulate_until(
         hass,
@@ -147,3 +156,44 @@ async def test_kraftvakt_regulates_the_simulated_devices(
         ),
     )
     assert power(hass, HOUSE_POWER) == 9000
+
+
+async def test_kraftvakt_controls_a_thermostat_with_its_domain_actions(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+    add_device: AddDevice,
+) -> None:
+    """On sets heat and 22 °C, off sets 8 °C, below the room's 10 °C."""
+    await add_device(DeviceKind.HAN, "HAN", background_w=3000)
+    await add_device(
+        DeviceKind.THERMOSTAT,
+        "Hall",
+        power_w=2000,
+        duty_cycle_pct=100,
+        room_temperature=10,
+    )
+    config = kraftvakt_config()
+    config["charging"] = {"enabled": False}
+    config["priority"] = config["priority"][:1]
+    config["appliances"][0].update(
+        entity_id=THERMOSTAT,
+        turn_on={
+            "mode": "domain",
+            "domain_action": "climate_hvac_mode_and_temperature",
+            "data": {"hvac_mode": "heat", "temperature": 22},
+        },
+        turn_off={
+            "mode": "domain",
+            "domain_action": "climate_temperature",
+            "data": {"temperature": 8},
+        },
+    )
+    await setup_kraftvakt(hass, hass_storage, config)
+
+    await regulate_until(hass, freezer, lambda: power(hass, THERMOSTAT_POWER) > 0)
+    assert state(hass, THERMOSTAT) == "heat"
+
+    await call(hass, "number", "set_value", "number.han_background_power", value=9000)
+    await regulate_until(hass, freezer, lambda: power(hass, THERMOSTAT_POWER) == 0)
+    assert state(hass, THERMOSTAT) == "heat"

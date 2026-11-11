@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 from custom_components.kraftvakt.actions import (
     ActionKind,
     ActionRunner,
-    default_action_issues,
+    action_issues,
     default_action_steps,
     set_current_variables,
 )
@@ -99,7 +99,7 @@ def test_domains_without_default_action(kind: ActionKind, entity_id: str) -> Non
         default_action_steps(kind, entity_id)
 
 
-def test_default_actions_must_exist_for_the_domain() -> None:
+async def test_default_actions_must_exist_for_the_domain(hass: HomeAssistant) -> None:
     """A default action can only be chosen where the domain has one."""
     config = KraftvaktConfig(
         appliances=(
@@ -116,7 +116,7 @@ def test_default_actions_must_exist_for_the_domain() -> None:
         ),
     )
 
-    assert default_action_issues(config) == [
+    assert action_issues(hass, config) == [
         Issue("default_action_unavailable", "appliances", "a2", "turn_on"),
         Issue("default_action_unavailable", "appliances", "a3", "turn_on"),
         Issue("default_action_unavailable", "appliances", "a3", "turn_off"),
@@ -331,7 +331,7 @@ async def test_entity_action_without_entity_is_logged(
     assert "the entity of the action is not chosen" in caplog.text
 
 
-def test_chosen_entity_must_have_a_default_action() -> None:
+async def test_chosen_entity_must_have_a_default_action(hass: HomeAssistant) -> None:
     """Only number entities can be given to set the charging current."""
     config = KraftvaktConfig(
         charging=ChargingConfig(
@@ -351,6 +351,6 @@ def test_chosen_entity_must_have_a_default_action() -> None:
         )
     )
 
-    assert default_action_issues(config) == [
+    assert action_issues(hass, config) == [
         Issue("unsupported_entity_domain", "chargers", "c2", "set_current")
     ]

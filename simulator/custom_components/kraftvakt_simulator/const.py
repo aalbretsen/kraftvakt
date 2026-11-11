@@ -33,6 +33,8 @@ CONF_DUTY_CYCLE_PCT: Final = "duty_cycle_pct"
 CONF_PERIOD_MIN: Final = "period_min"
 CONF_MIN_CURRENT_A: Final = "min_current_a"
 CONF_MAX_CURRENT_A: Final = "max_current_a"
+CONF_HVAC_MODES: Final = "hvac_modes"
+CONF_ROOM_TEMPERATURE: Final = "room_temperature"
 
 MAX_BACKGROUND_W: Final = 50_000
 MAX_HEATER_POWER_W: Final = 20_000
@@ -41,3 +43,7 @@ MAX_CURRENT_A: Final = 63
 DEFAULT_TARGET_TEMPERATURE: Final = 21.0
 MIN_TARGET_TEMPERATURE: Final = 5.0
 MAX_TARGET_TEMPERATURE: Final = 30.0
+DEFAULT_ROOM_TEMPERATURE: Final = 5.0
+MIN_ROOM_TEMPERATURE: Final = -10.0
+MAX_ROOM_TEMPERATURE: Final = 30.0
+TEMPERATURE_STEP: Final = 0.5

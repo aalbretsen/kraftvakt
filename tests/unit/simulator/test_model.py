@@ -7,6 +7,7 @@ import pytest
 from custom_components.kraftvakt_simulator.model import (
     ChargerState,
     DutyCycle,
+    thermostat_heats,
     three_phase_power_w,
 )
 
@@ -91,3 +92,21 @@ def test_the_charger_draws_power_only_for_a_car_that_charges(
     )
 
     assert state.power_w == power_w
+
+
+@pytest.mark.parametrize(
+    ("hvac_mode", "target", "room", "heats"),
+    [
+        ("heat", 21, 5, True),
+        ("heat_cool", 21, 5, True),
+        ("auto", 21, 5, True),
+        ("heat", 21, 21, False),
+        ("off", 21, 5, False),
+        ("cool", 21, 5, False),
+        ("fan_only", 21, 5, False),
+    ],
+)
+def test_thermostat_heats_in_a_heating_mode_below_the_target(
+    hvac_mode: str, target: float, room: float, heats: bool
+) -> None:
+    assert thermostat_heats(hvac_mode, target, room) is heats

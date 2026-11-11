@@ -39,17 +39,21 @@
       },
       "thermostat": {
         "title": "Simulated thermostat",
-        "description": "A heating device controlled by a thermostat with the modes off, heat and auto. In heat and auto it heats in a fixed cycle, whatever the temperatures: first on for the duty cycle's share of the period, then off. The cycle starts again each time the mode changes from off, and when the cycle is changed. Turning it on returns it to the last mode it heated in.",
+        "description": "A heating device controlled by a thermostat with the chosen HVAC modes. In heat, heat/cool and auto it heats in a fixed cycle while the target temperature is above the room temperature: first on for the duty cycle's share of the period, then off. The other modes use nothing. The cycle starts again each time it starts heating, and when the cycle is changed. Turning it on returns it to the last heating mode.",
         "data": {
           "name": "Name",
           "power_w": "Power",
           "duty_cycle_pct": "Duty cycle",
-          "period_min": "Period"
+          "period_min": "Period",
+          "hvac_modes": "HVAC modes",
+          "room_temperature": "Room temperature"
         },
         "data_description": {
           "power_w": "Power while heating.",
           "duty_cycle_pct": "Share of the period the device heats.",
-          "period_min": "Length of one cycle in minutes."
+          "period_min": "Length of one cycle in minutes.",
+          "hvac_modes": "At least one heating mode: heat, heat/cool or auto.",
+          "room_temperature": "The temperature in the room. It does not change by itself, but can be changed while Home Assistant runs."
         }
       },
       "charger": {
@@ -63,7 +67,8 @@
       }
     },
     "error": {
-      "max_below_min": "The maximum current must be at least the minimum current."
+      "max_below_min": "The maximum current must be at least the minimum current.",
+      "no_heating_mode": "Choose at least one heating mode: heat, heat/cool or auto."
     },
     "abort": {
       "single_han": "There is already a simulated HAN.",
@@ -76,6 +81,17 @@
         "heating_cable": "Heating cable",
         "water_heater": "Water heater",
         "panel_heater": "Panel heater"
+      }
+    },
+    "hvac_modes": {
+      "options": {
+        "off": "Off",
+        "heat": "Heat",
+        "cool": "Cool",
+        "heat_cool": "Heat/cool",
+        "auto": "Auto",
+        "dry": "Dry",
+        "fan_only": "Fan only"
       }
     }
   },
@@ -100,6 +116,9 @@
       },
       "period": {
         "name": "Period"
+      },
+      "room_temperature": {
+        "name": "Room temperature"
       }
     },
     "sensor": {

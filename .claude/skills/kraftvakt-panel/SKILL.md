@@ -41,6 +41,8 @@ Code that mirrors the backend and must be kept in step with it:
 - the waiting time curve, the same as in `regulation/waiting.py`,
 - validation against the limits, what is missing and completing the priority
   list, the same rules as in `config_validation.py`,
+- the checks of default and domain actions against their entities, the same
+  as in `actions.py` and `domain_actions.py`,
 - the name of a charger that is not saved yet, the same rule as the backend,
 - the types of the configuration and the status snapshot,
 - reading the power sensor in W or kW, the same units as the backend.
@@ -78,6 +80,15 @@ Code that mirrors the backend and must be kept in step with it:
   none. A custom action starts as the default action.
 - The entity picker of an appliance or charger leaves out the entities that
   other appliances and chargers use.
+- The domain actions of the entity's domain are offered after Default, in
+  the order of the table. Choosing one fills each value with the one already
+  chosen for the parameter, or its default for the entity, so switching
+  between them keeps a chosen HVAC mode. The values are a second `ha-form`
+  under the choice: an option is a dropdown of the entity's options with
+  HA's names for the states, and a temperature is a number box in HA's
+  temperature unit with the entity's range as helper. A cleared value is
+  `null`. A domain action becomes an empty custom action when the entity
+  changes to one where it is not available.
 - Set charging current also offers Entity: an entity picker limited to the
   domains with a default set-current action, with a helper telling which
   service runs. Required until an entity is chosen.

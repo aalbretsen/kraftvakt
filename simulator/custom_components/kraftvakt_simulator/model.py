@@ -8,6 +8,7 @@ from datetime import timedelta
 from typing import Final
 
 LINE_VOLTAGE_V: Final = 400
+HEATING_MODES: Final = ("heat", "heat_cool", "auto")
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,11 @@ class DutyCycle:
         if position < self.on_duration:
             return self.on_duration - position
         return self.period - position
+
+
+def thermostat_heats(hvac_mode: str, target: float, room: float) -> bool:
+    """Return whether a thermostat in the mode calls for heat in the room."""
+    return hvac_mode in HEATING_MODES and target > room
 
 
 def three_phase_power_w(current_a: float) -> float:

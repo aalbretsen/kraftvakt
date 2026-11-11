@@ -234,6 +234,19 @@ charging current** you can also choose **Entity** and a `number` or
 failed action is logged, and the regulation continues without retrying. An
 entity used by another appliance or EV charger cannot be chosen.
 
+For a thermostat (a `climate` entity), turning on and off can also be:
+
+- **HVAC mode:** `climate.set_hvac_mode` with one of the modes the thermostat
+  supports. It starts as heat for turning on and off for turning off, or auto
+  when the thermostat does not have that mode.
+- **Temperature:** `climate.set_temperature` with a target temperature,
+  without changing the HVAC mode.
+- **HVAC mode and temperature:** `climate.set_temperature` with both.
+
+The temperature starts at 0, so it must be set, within the range of the
+thermostat. The values are checked against the modes and the range the
+thermostat reports when the configuration is saved.
+
 ### Status page
 
 The status page shows whether the regulation runs and has the button to start

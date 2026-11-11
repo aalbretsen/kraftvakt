@@ -212,6 +212,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(
                 "number.thermostat_heating_power",
                 "number.thermostat_duty_cycle",
                 "number.thermostat_period",
+                "number.thermostat_room_temperature",
                 "switch.thermostat_unplugged",
             ],
         ),

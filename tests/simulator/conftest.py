@@ -23,7 +23,13 @@ HEATER = {
     "duty_cycle_pct": 25,
     "period_min": 60,
 }
-THERMOSTAT = {"power_w": 750, "duty_cycle_pct": 25, "period_min": 60}
+THERMOSTAT = {
+    "power_w": 750,
+    "duty_cycle_pct": 25,
+    "period_min": 60,
+    "hvac_modes": ["off", "heat", "auto"],
+    "room_temperature": 5.0,
+}
 CHARGER = {"min_current_a": 6, "max_current_a": 16}
 SETTINGS = {
     DeviceKind.HAN: HAN,

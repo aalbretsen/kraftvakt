@@ -22,7 +22,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   @property({ type: Boolean }) oneAtATime = false;
 
   protected errors(): Issue[] {
-    return chargerErrors(this.draft, this.capabilities);
+    return chargerErrors(this.draft, this.capabilities, this.hass.states);
   }
 
   protected missing(): Issue[] {

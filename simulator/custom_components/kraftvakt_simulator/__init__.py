@@ -11,6 +11,7 @@ from datetime import timedelta
 from functools import partial
 from typing import Any, Final
 
+from homeassistant.components.climate import HVACMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -18,11 +19,13 @@ from homeassistant.core import HomeAssistant, callback
 from .const import (
     CONF_BACKGROUND_W,
     CONF_DUTY_CYCLE_PCT,
+    CONF_HVAC_MODES,
     CONF_KIND,
     CONF_MAX_CURRENT_A,
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_ROOM_TEMPERATURE,
     DeviceKind,
 )
 from .devices import (
@@ -99,7 +102,12 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
             )
         case DeviceKind.THERMOSTAT:
             return SimulatedThermostat(
-                hass, entry.entry_id, _duty_cycle(data), store_setting
+                hass,
+                entry.entry_id,
+                _duty_cycle(data),
+                store_setting,
+                [HVACMode(mode) for mode in data[CONF_HVAC_MODES]],
+                data[CONF_ROOM_TEMPERATURE],
             )
         case DeviceKind.CHARGER:
             return SimulatedCharger(

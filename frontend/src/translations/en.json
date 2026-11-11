@@ -128,6 +128,9 @@
     "invalid_template": "The template has a syntax error.",
     "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
     "unsupported_entity_domain": "The entity cannot be used. Choose a number entity.",
+    "domain_action_unavailable": "The action is not available for the entity. Choose another action.",
+    "unsupported_option": "The entity does not support this value.",
+    "outside_entity_range": "Outside the range of the entity.",
     "unknown": "Invalid value ({code})."
   },
   "dialog": {
@@ -257,12 +260,22 @@
     "default": "Standard",
     "custom": "Custom",
     "entity": "Entity",
+    "domain_actions": {
+      "climate_hvac_mode": "HVAC mode",
+      "climate_temperature": "Temperature",
+      "climate_hvac_mode_and_temperature": "HVAC mode and temperature"
+    },
     "default_runs": "Runs {service} for the entity.",
     "entity_runs": "Runs {service} for the chosen entity with the current as value.",
     "no_default": "The entity type has no standard action, so the action must be custom.",
     "choose_entity": "Choose the entity to use the standard action.",
     "choose_action_entity": "Choose the entity to set the value of.",
-    "variables": "Variables: {variables}."
+    "variables": "Variables: {variables}.",
+    "parameters": {
+      "hvac_mode": "HVAC mode",
+      "temperature": "Target temperature"
+    },
+    "parameter_range": "{min}–{max} {unit} for the entity."
   },
   "condition": {
     "none": "Not set",

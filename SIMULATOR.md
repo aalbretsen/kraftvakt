@@ -22,11 +22,15 @@ device at a time with **Add device**:
   off, over and over. The cycle starts again every time the switch is turned
   on or the cycle is changed. With the switch off, it uses nothing.
 - **Thermostat:** a heating device controlled by a thermostat, with the same
-  power, duty cycle and period, and a climate entity with the modes off, heat
-  and auto and a target temperature. In heat and auto it heats in the cycle,
-  whatever the temperatures, and in off it uses nothing. The cycle starts
-  again every time the mode changes from off. Turning it on returns it to the
-  last mode it heated in, heat at first.
+  power, duty cycle and period, the HVAC modes it supports (off, heat and auto
+  by default, at least one heating mode) and a room temperature (5 °C by
+  default). Its climate entity has the chosen modes and a target temperature.
+  In heat, heat/cool and auto it heats in the cycle while the target
+  temperature is above the room temperature; otherwise it uses nothing. The
+  cycle starts again every time it starts heating. Turning it on returns it
+  to the last heating mode, the first heating mode it supports at first. It
+  can only be turned off when off is one of its modes. It starts in off, or
+  in its first mode when off is not one of them.
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has
   the switches **Charging allowed**, **Car connected** and **Car fully
   charged**, **Charging current** (A), the sensor **Charging power** and the
@@ -42,7 +46,8 @@ unplugged.
 What controls the simulation and does not belong to a real device is under
 **Configuration** on the device page, and can be changed while Home Assistant
 runs: **Background power**, **Heating power**, **Duty cycle**, **Period**,
-**Car connected**, **Car fully charged** and **Unplugged**. The settings can
+**Room temperature**, **Car connected**, **Car fully charged** and
+**Unplugged**. The settings can
 be changed with **Reconfigure**. The switches, the charging current, and the
 mode and target temperature of a thermostat keep their state over a restart.
 
