@@ -12,11 +12,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "safe_state": {
-        "name": "Safe state"
+      "regulation_safe_state": {
+        "name": "Regulation safe state"
       },
-      "penalty": {
-        "name": "Penalty"
+      "penalty_active": {
+        "name": "Penalty active"
       }
     },
     "number": {
@@ -25,26 +25,26 @@
       }
     },
     "sensor": {
-      "regulation_average": {
-        "name": "Regulation average"
+      "regulation_steps_on": {
+        "name": "Regulation steps on"
       },
-      "capacity_average": {
-        "name": "Average consumption"
+      "power_regulation_average": {
+        "name": "Power regulation average"
       },
-      "free_power": {
-        "name": "Free power"
+      "power_hourly_average": {
+        "name": "Power hourly average"
       },
-      "overconsumption": {
-        "name": "Overconsumption"
+      "power_free": {
+        "name": "Power free"
       },
-      "steps_switched_on": {
-        "name": "Steps switched on"
+      "waiting_time_remaining": {
+        "name": "Waiting time remaining"
       },
-      "time_to_next_turn_on": {
-        "name": "Time to next turn-on"
-      },
-      "curve_waiting_time": {
+      "waiting_time_curve": {
         "name": "Waiting time from curve"
+      },
+      "penalty_overconsumption": {
+        "name": "Penalty overconsumption"
       }
     },
     "switch": {

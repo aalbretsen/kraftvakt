@@ -83,8 +83,8 @@ async def test_sensors_are_unavailable_before_the_first_average(
     set_power(hass, "2000")
     await setup_kraftvakt()
 
-    assert state_of(hass, "regulation_average") == STATE_UNAVAILABLE
-    assert state_of(hass, "capacity_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_hourly_average") == STATE_UNAVAILABLE
 
 
 async def test_sensors_show_the_averages_in_w(
@@ -98,14 +98,14 @@ async def test_sensors_show_the_averages_in_w(
     set_power(hass, "6", unit="kW")
     await advance(hass, freezer, timedelta(seconds=45))
 
-    for key in ("regulation_average", "capacity_average"):
+    for key in ("power_regulation_average", "power_hourly_average"):
         state = hass.states.get(entity_id(hass, key))
         assert state is not None
         assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kW"
         assert state.attributes[ATTR_DEVICE_CLASS] == "power"
         assert state.attributes["state_class"] == "measurement"
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(5.0)
-    assert float(state_of(hass, "capacity_average")) == pytest.approx(
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5.0)
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
         (2.0 * 3555 + 6.0 * 45) / 3600
     )
 
@@ -121,7 +121,7 @@ async def test_sensors_belong_to_the_service_device(
     assert device is not None
     assert device.name == "Kraftvakt"
     assert device.entry_type is dr.DeviceEntryType.SERVICE
-    for key in ("regulation_average", "capacity_average"):
+    for key in ("power_regulation_average", "power_hourly_average"):
         registry_entry = er.async_get(hass).async_get(entity_id(hass, key))
         assert registry_entry is not None
         assert registry_entry.device_id == device.id
@@ -139,10 +139,10 @@ async def test_sensors_are_updated_once_per_window(
 
     set_power(hass, "8000")
     await advance(hass, freezer, timedelta(seconds=15))
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(2.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2.0)
 
     await advance(hass, freezer, timedelta(seconds=15))
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(5.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5.0)
 
 
 async def test_capacity_average_over_a_whole_hour_of_updates(
@@ -158,8 +158,8 @@ async def test_capacity_average_over_a_whole_hour_of_updates(
         set_power(hass, "4000" if step % 2 else "2000")
     await advance(hass, freezer, timedelta(seconds=10))
 
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(3.0)
-    assert float(state_of(hass, "capacity_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3.0)
 
 
 async def test_sensors_follow_an_outage_of_the_power_sensor(
@@ -173,19 +173,19 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
 
     set_power(hass, "unavailable")
     await advance(hass, freezer, WINDOW)
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3.0)
 
     await advance(hass, freezer, WINDOW)
-    assert state_of(hass, "regulation_average") == STATE_UNAVAILABLE
-    assert state_of(hass, "capacity_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_hourly_average") == STATE_UNAVAILABLE
 
     await advance(hass, freezer, timedelta(seconds=40))
     set_power(hass, "1500")
     await advance(hass, freezer, timedelta(seconds=20))
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(
         (3.0 * 40 + 1.5 * 20) / 60
     )
-    assert float(state_of(hass, "capacity_average")) == pytest.approx(
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
         (3.0 * 3580 + 1.5 * 20) / 3600
     )
 
@@ -199,7 +199,7 @@ async def test_power_sensor_without_unit_is_read_as_watt(
 
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(2.5)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2.5)
 
 
 async def test_sensors_are_unavailable_without_power_sensor(
@@ -214,7 +214,7 @@ async def test_sensors_are_unavailable_without_power_sensor(
 
     await advance(hass, freezer, 3 * WINDOW)
 
-    assert state_of(hass, "regulation_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
 
 
 async def test_window_length_comes_from_the_configuration(
@@ -230,7 +230,7 @@ async def test_window_length_comes_from_the_configuration(
 
     await advance(hass, freezer, timedelta(seconds=20))
 
-    assert float(state_of(hass, "regulation_average")) == pytest.approx(1.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1.0)
 
 
 async def test_sensor_names_are_translated(
@@ -242,11 +242,11 @@ async def test_sensor_names_are_translated(
 
     names = {
         key: hass.states.get(entity_id(hass, key)).attributes[ATTR_FRIENDLY_NAME]
-        for key in ("regulation_average", "capacity_average")
+        for key in ("power_regulation_average", "power_hourly_average")
     }
     assert names == {
-        "regulation_average": "Kraftvakt Reguleringssnitt",
-        "capacity_average": "Kraftvakt Snittforbruk",
+        "power_regulation_average": "Kraftvakt Effekt reguleringssnitt",
+        "power_hourly_average": "Kraftvakt Effekt snittforbruk",
     }
 
 
@@ -260,4 +260,4 @@ async def test_unload_stops_the_sensors(
     await hass.async_block_till_done()
     await advance(hass, freezer, WINDOW)
 
-    assert state_of(hass, "regulation_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE

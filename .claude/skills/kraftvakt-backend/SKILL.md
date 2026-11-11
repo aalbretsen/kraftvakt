@@ -169,23 +169,29 @@ between min and max.
 ## Entities
 
 All belong to one service device «Kraftvakt» and use `has_entity_name` and
-`translation_key`.
+`translation_key`. Settled with the owner: the entity ids are technical,
+English in every language and grouped by prefix (`regulation_`, `power_`,
+`waiting_time_`, `penalty_`, `charger_`). `KraftvaktEntity` returns the
+object id (the key unless given) as `suggested_object_id`, which Home
+Assistant prefixes with the device name. The names are grouped the same way
+(«Effekt ledig», «Ventetid gjenstående»). The unique id and translation key
+are the key.
 
 | Entity | Unique ID | Notes |
 |---|---|---|
-| Regulation average (`sensor`, power, W shown as kW) | `regulation_average` | Updated when a window closes. Unavailable without an average. |
-| Average consumption (`sensor`, power, W shown as kW) | `capacity_average` | Same. |
-| Safe state (`binary_sensor`, problem) | `safe_state` | On in the safe state. |
+| Power regulation average (`sensor`, power, W shown as kW) | `power_regulation_average` | Updated when a window closes. Unavailable without an average. |
+| Power hourly average (`sensor`, power, W shown as kW) | `power_hourly_average` | Same. |
+| Regulation safe state (`binary_sensor`, problem) | `regulation_safe_state` | On in the safe state. |
 | Power limit (`number`, power, W, box) | `power_limit` | The stored power limit. `async_set_power_limit()` in the runtime saves it at once (through the charger switch board, which saves configuration and switches together); while running, the runtime builds a new engine and starts it at the next decision when the engine's limit differs from the stored one. |
-| Penalty (`binary_sensor`, problem, diagnostic) | `penalty` | On during a penalty period. |
-| Overconsumption (`sensor`, energy, Wh, diagnostic) | `overconsumption` | 0 outside the overconsumption state. No state class: it is not a total. |
-| Free power (`sensor`, power, W shown as kW, diagnostic) | `free_power` | Limit in use minus the regulation average. |
-| Steps switched on (`sensor`, measurement, diagnostic) | `steps_switched_on` | `RegulationEngine.slots_on`: appliances on plus fictive appliances on. |
-| Time to next turn-on (`sensor`, duration, s, diagnostic) | `time_to_next_turn_on` | `runtime.waiting_ends_at` minus now, whole seconds, 0 when nothing waits. |
-| Waiting time from curve (`sensor`, duration, s, diagnostic) | `curve_waiting_time` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
+| Penalty active (`binary_sensor`, problem, diagnostic) | `penalty_active` | On during a penalty period. |
+| Penalty overconsumption (`sensor`, energy, Wh, diagnostic) | `penalty_overconsumption` | 0 outside the overconsumption state. No state class: it is not a total. |
+| Power free (`sensor`, power, W shown as kW, diagnostic) | `power_free` | Limit in use minus the regulation average. |
+| Regulation steps on (`sensor`, measurement, diagnostic) | `regulation_steps_on` | `RegulationEngine.slots_on`: appliances on plus fictive appliances on. |
+| Waiting time remaining (`sensor`, duration, s, diagnostic) | `waiting_time_remaining` | `runtime.waiting_ends_at` minus now, whole seconds, 0 when nothing waits. |
+| Waiting time from curve (`sensor`, duration, s, diagnostic) | `waiting_time_curve` | `RegulationEngine.curve_waiting_time()` for the last regulation average. |
 | Regulation (`switch`) | `regulation` | No stored position. Same function as start/stop in the panel. Stays off and logs when the configuration is incomplete. |
-| ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Stored position. Unavailable while charging is disabled. |
-| ‹charger› override charging window (`switch`) | `charger_<id>_window_override` | Stored position, set back when it ends. Unavailable while charging is disabled. |
+| ‹charger› excluded from regulation (`switch`) | `charger_<id>_excluded` | Entity id `switch.kraftvakt_charger_<slug of the charger name>_excluded`. Stored position. Unavailable while charging is disabled. |
+| ‹charger› override charging window (`switch`) | `charger_<id>_window_override` | Entity id `switch.kraftvakt_charger_<slug>_window_override`. Stored position, set back when it ends. Unavailable while charging is disabled. |
 
 ## WebSocket API
 

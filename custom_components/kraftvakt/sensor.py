@@ -48,7 +48,7 @@ def _capacity_average_w(runtime: KraftvaktRuntime) -> float | None:
     return None if averages is None else averages.capacity_average_w
 
 
-def _free_power_w(runtime: KraftvaktRuntime) -> float | None:
+def _power_free_w(runtime: KraftvaktRuntime) -> float | None:
     average_w = _regulation_average_w(runtime)
     return None if average_w is None else runtime.power_limit_w - average_w
 
@@ -58,7 +58,7 @@ def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
     return penalty.overconsumption_wh if penalty.overconsuming else 0.0
 
 
-def _time_to_next_turn_on_s(runtime: KraftvaktRuntime) -> int:
+def _waiting_time_remaining_s(runtime: KraftvaktRuntime) -> int:
     """Return the seconds until the decision that ends the waiting time, or 0.
 
     It counts to the decision, since the slot is turned on at the first
@@ -70,7 +70,7 @@ def _time_to_next_turn_on_s(runtime: KraftvaktRuntime) -> int:
     return max(0, round((ends_at - dt_util.utcnow()).total_seconds()))
 
 
-def _curve_waiting_time_s(runtime: KraftvaktRuntime) -> float | None:
+def _waiting_time_curve_s(runtime: KraftvaktRuntime) -> float | None:
     waiting_time = runtime.curve_waiting_time
     return None if waiting_time is None else waiting_time.total_seconds()
 
@@ -87,15 +87,17 @@ class DurationSensorDescription(RegulationSensorDescription):
 
 
 SENSORS: tuple[RegulationSensorDescription, ...] = (
-    PowerSensorDescription(key="regulation_average", value_fn=_regulation_average_w),
-    PowerSensorDescription(key="capacity_average", value_fn=_capacity_average_w),
     PowerSensorDescription(
-        key="free_power",
+        key="power_regulation_average", value_fn=_regulation_average_w
+    ),
+    PowerSensorDescription(key="power_hourly_average", value_fn=_capacity_average_w),
+    PowerSensorDescription(
+        key="power_free",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_free_power_w,
+        value_fn=_power_free_w,
     ),
     RegulationSensorDescription(
-        key="overconsumption",
+        key="penalty_overconsumption",
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
@@ -103,15 +105,15 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
         value_fn=_overconsumption_wh,
     ),
     RegulationSensorDescription(
-        key="steps_switched_on",
+        key="regulation_steps_on",
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda runtime: runtime.slots_on,
     ),
     DurationSensorDescription(
-        key="time_to_next_turn_on", value_fn=_time_to_next_turn_on_s
+        key="waiting_time_remaining", value_fn=_waiting_time_remaining_s
     ),
-    DurationSensorDescription(key="curve_waiting_time", value_fn=_curve_waiting_time_s),
+    DurationSensorDescription(key="waiting_time_curve", value_fn=_waiting_time_curve_s),
 )
 
 

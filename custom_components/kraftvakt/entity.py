@@ -14,22 +14,37 @@ from .const import DOMAIN, NAME
 
 
 class KraftvaktEntity(Entity):
-    """An entity that belongs to the Kraftvakt service device."""
+    """An entity that belongs to the Kraftvakt service device.
+
+    Settled with the owner: the entity id comes from `object_id`, not from
+    the translated name, so it is the same in every language and groups the
+    entities, like `sensor.kraftvakt_waiting_time_remaining`.
+    """
 
     _attr_has_entity_name = True
     _attr_should_poll = False
 
     def __init__(
-        self, entry: ConfigEntry, key: str, translation_key: str | None = None
+        self,
+        entry: ConfigEntry,
+        key: str,
+        translation_key: str | None = None,
+        object_id: str | None = None,
     ) -> None:
-        """Identify the entity by `key`, also its translation key unless given."""
+        """Identify the entity by `key`, also its translation key and object id."""
         self._attr_unique_id = key
         self._attr_translation_key = translation_key or key
+        self._object_id = object_id or key
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=NAME,
             entry_type=DeviceEntryType.SERVICE,
         )
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Return the object id, prefixed with the device name by Home Assistant."""
+        return self._object_id
 
 
 def entity_name(hass: HomeAssistant, entity_id: str) -> str:

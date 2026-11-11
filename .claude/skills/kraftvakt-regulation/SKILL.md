@@ -231,7 +231,7 @@ still show kW. Saved configurations with the old `_kw` keys are not migrated.
 
 - Entered at the first decision where the power sensor was invalid at the last
   two window closes. Every appliance and charger is turned off at once, and
-  nothing is turned on. The safe state binary sensor is on.
+  nothing is turned on. The regulation safe state binary sensor is on.
 - When a valid value comes back, the averages are known again and the regulation
   starts again with everything off at the first decision.
 - A sensor that never reports after startup also leads to the safe state.
@@ -279,18 +279,19 @@ Settled with the owner, so automations can set the power limit:
 
 ## Diagnostic entities
 
-Settled with the owner, all with entity category diagnostic:
+Settled with the owner, all with entity category diagnostic. The entity ids
+and names are grouped, see the `kraftvakt-backend` skill.
 
-- Penalty (binary sensor, problem): on while a penalty period lasts.
-- Overconsumption (Wh): the overconsumption at the last decision, 0 outside
+- Penalty active (binary sensor, problem): on while a penalty period lasts.
+- Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside
   the overconsumption state.
-- Free power (W shown as kW): the power limit in use minus the last
+- Power free (W shown as kW): the power limit in use minus the last
   regulation average, negative above the limit. Unavailable without an
   average.
-- Steps switched on: the number of slots that are on, appliances and
+- Regulation steps on: the number of slots that are on, appliances and
   fictive appliances (one per ampere) alike. Meant for a graph of how much
   the regulation has switched on.
-- Time to next turn-on (s): the time from now to the decision that turns on
+- Waiting time remaining (s): the time from now to the decision that turns on
   the waiting slot (`waiting_ends_at`, an appliance or a charger's next
   ampere), so it is the real time left, a whole number of decision intervals
   after a decision. 0 when nothing waits. Updated at each window, decision,

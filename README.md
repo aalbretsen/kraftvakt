@@ -202,19 +202,24 @@ Alle entitetene hører til tjenesteenheten **Kraftvakt**.
 
 | Entitet | Beskrivelse |
 |---|---|
-| `sensor.kraftvakt_regulation_average` (Reguleringssnitt) | Gjennomsnittlig effekt i kW over siste reguleringsvindu. Oppdateres hver gang et vindu lukkes. |
-| `sensor.kraftvakt_average_consumption` (Snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
+| **Regulering** | |
 | `switch.kraftvakt_regulation` (Regulering) | Er på mens reguleringen kjører. Slå av for å stoppe reguleringen og på for å starte den igjen. |
-| `binary_sensor.kraftvakt_safe_state` (Sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
+| `binary_sensor.kraftvakt_regulation_safe_state` (Regulering sikker tilstand) | Er på mens reguleringen er i sikker tilstand fordi effektsensoren mangler gyldig verdi. Kan brukes som utløser i automasjoner for å varsle. |
+| `sensor.kraftvakt_regulation_steps_on` (Regulering innkoblede trinn) | Diagnostikk. Antall trinn som er på: hvert apparat er ett trinn, og hver ampere fra minste ladestrøm og opp er ett trinn for en elbillader. Viser hvor mye reguleringen har slått på, for eksempel i en graf. |
+| **Effekt** | |
 | `number.kraftvakt_power_limit` (Effektgrense) | Effektgrensen i W, den samme som i panelet. Kan settes fra en automasjon, også mens reguleringen kjører. Se under. |
-| `binary_sensor.kraftvakt_penalty` (Straff) | Diagnostikk. Er på mens en straffeperiode pågår. |
-| `sensor.kraftvakt_overconsumption` (Overforbruk) | Diagnostikk. Overforbruket i Wh fra siste avgjørelse, 0 når snittforbruket ikke er over effektgrensen. |
-| `sensor.kraftvakt_free_power` (Ledig effekt) | Diagnostikk. Effektgrensen minus reguleringssnittet, i kW. Negativ over effektgrensen. Oppdateres hver gang et reguleringsvindu lukkes. |
-| `sensor.kraftvakt_steps_switched_on` (Innkoblede trinn) | Diagnostikk. Antall trinn som er på: hvert apparat er ett trinn, og hver ampere fra minste ladestrøm og opp er ett trinn for en elbillader. Viser hvor mye reguleringen har slått på, for eksempel i en graf. |
-| `sensor.kraftvakt_time_to_next_turn_on` (Tid til neste innkobling) | Diagnostikk. Sekunder til avgjørelsen der apparatet eller ampere som venter, slås på, 0 når ingenting venter. Den regner til avgjørelsen, altså reell ventetid, og oppdateres hver gang et reguleringsvindu lukkes. |
-| `sensor.kraftvakt_waiting_time_from_curve` (Ventetid etter kurven) | Diagnostikk. Ventetiden i sekunder etter ventetidskurven ut fra siste reguleringssnitt, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
-| `switch.kraftvakt_<lader>_excluded_from_regulation` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
-| `switch.kraftvakt_<lader>_override_charging_window` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
+| `sensor.kraftvakt_power_regulation_average` (Effekt reguleringssnitt) | Gjennomsnittlig effekt i kW over siste reguleringsvindu. Oppdateres hver gang et vindu lukkes. |
+| `sensor.kraftvakt_power_hourly_average` (Effekt snittforbruk) | Gjennomsnittlig effekt i kW over siste time, glidende. Oppdateres hver gang et reguleringsvindu lukkes. |
+| `sensor.kraftvakt_power_free` (Effekt ledig) | Diagnostikk. Effektgrensen minus reguleringssnittet, i kW. Negativ over effektgrensen. Oppdateres hver gang et reguleringsvindu lukkes. |
+| **Ventetid** | |
+| `sensor.kraftvakt_waiting_time_remaining` (Ventetid gjenstående) | Diagnostikk. Sekunder til avgjørelsen der apparatet eller ampere som venter, slås på, 0 når ingenting venter. Den regner til avgjørelsen, altså reell ventetid, og oppdateres hver gang et reguleringsvindu lukkes. |
+| `sensor.kraftvakt_waiting_time_curve` (Ventetid etter kurven) | Diagnostikk. Ventetiden i sekunder etter ventetidskurven ut fra siste reguleringssnitt, uten økningen ved gjentatt innkobling. Utilgjengelig til første reguleringsvindu er lukket. |
+| **Straff** | |
+| `binary_sensor.kraftvakt_penalty_active` (Straff aktiv) | Diagnostikk. Er på mens en straffeperiode pågår. |
+| `sensor.kraftvakt_penalty_overconsumption` (Straff overforbruk) | Diagnostikk. Overforbruket i Wh fra siste avgjørelse, 0 når snittforbruket ikke er over effektgrensen. |
+| **Elbillader** | |
+| `switch.kraftvakt_charger_<lader>_excluded` (‹lader› utenfor regulering) | Én per elbillader. Slå på for å ta elbilladeren ut av reguleringen. Da lader bilen aldri. |
+| `switch.kraftvakt_charger_<lader>_window_override` (‹lader› overstyr ladetidsrom) | Én per elbillader. Slå på for å la elbilladeren lade utenfor ladetidsrommet. Slås av av seg selv når neste ladetidsrom har startet. |
 
 En ny verdi i **Effektgrense** lagres med en gang og vises i panelet. Er
 reguleringen stoppet, brukes den neste gang den startes. Kjører reguleringen,
@@ -224,11 +229,12 @@ avgjørelse gir én omstart, og er verdien satt tilbake til effektgrensen som
 brukes, skjer ingenting. Det samme gjelder en verdi som er lik den lagrede.
 Statussiden viser effektgrensen som brukes.
 
-‹lader› er navnet på enheten som entiteten til elbilladeren hører til, eller
-navnet på entiteten når den ikke hører til en enhet. Entitets-ID-ene over
-gjelder når Home Assistant er satt opp på engelsk. Med
-norsk språk får de norske navn, for eksempel `sensor.kraftvakt_reguleringssnitt`
-og `switch.kraftvakt_regulering`.
+Entitets-ID-ene er like uansett språk og er gruppert etter hva de gjelder:
+`regulation`, `power`, `waiting_time`, `penalty` og `charger`. Navnene som
+vises, følger språket i Home Assistant og er gruppert på samme måte. ‹lader›
+er navnet på enheten som entiteten til elbilladeren hører til, eller navnet på
+entiteten når den ikke hører til en enhet, slik det var da elbilladeren ble
+lagt til.
 
 Snittsensorene er utilgjengelige til første reguleringsvindu er lukket, og når
 effektsensoren har vært uten gyldig verdi da to vinduer på rad ble lukket.
@@ -267,7 +273,7 @@ Er konfigurasjonen ikke fullstendig, blir bryteren stående av, og forsøket
 skrives til loggen. Bryteren har ingen lagret stilling. Etter en omstart kjører
 reguleringen igjen.
 
-I sikker tilstand blir sensoren **Sikker tilstand** på. Når effektsensoren gir
+I sikker tilstand blir sensoren **Regulering sikker tilstand** på. Når effektsensoren gir
 en gyldig verdi igjen, starter reguleringen på nytt med alle apparater avslått.
 Går snittforbruket over effektgrensen pluss straffeterskelen, holdes alle
 apparater av til overforbruket er hentet inn, og så starter reguleringen på

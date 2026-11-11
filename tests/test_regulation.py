@@ -141,7 +141,7 @@ def regulation_switch(hass: HomeAssistant) -> str:
 
 
 def safe_state(hass: HomeAssistant) -> str:
-    state = hass.states.get(entity_id(hass, "binary_sensor", "safe_state"))
+    state = hass.states.get(entity_id(hass, "binary_sensor", "regulation_safe_state"))
     assert state is not None
     return state.state
 
@@ -437,21 +437,21 @@ async def test_penalty_turns_everything_off_until_paid_back(
     await advance(hass, freezer)
     actions.clear()
 
-    assert state_of(hass, "binary_sensor", "penalty") == STATE_OFF
-    assert state_of(hass, "sensor", "overconsumption") == "0.0"
+    assert state_of(hass, "binary_sensor", "penalty_active") == STATE_OFF
+    assert state_of(hass, "sensor", "penalty_overconsumption") == "0.0"
 
     await advance(hass, freezer)
     assert actions == ["off light.a", "off light.b"]
-    assert state_of(hass, "binary_sensor", "penalty") == STATE_ON
-    assert float(state_of(hass, "sensor", "overconsumption")) == pytest.approx(
+    assert state_of(hass, "binary_sensor", "penalty_active") == STATE_ON
+    assert float(state_of(hass, "sensor", "penalty_overconsumption")) == pytest.approx(
         2000 * 60 / 3600
     )
 
     set_power(hass, "5000")
     await advance(hass, freezer)
     assert actions == ["off light.a", "off light.b"] * 2
-    assert state_of(hass, "binary_sensor", "penalty") == STATE_OFF
-    assert state_of(hass, "sensor", "overconsumption") == "0.0"
+    assert state_of(hass, "binary_sensor", "penalty_active") == STATE_OFF
+    assert state_of(hass, "sensor", "penalty_overconsumption") == "0.0"
 
     await advance(hass, freezer)
     assert actions == [*["off light.a", "off light.b"] * 2, "on light.a"]
@@ -649,55 +649,59 @@ async def test_reload_waits_for_the_actions_of_the_old_regulation(
     assert recorded == ["on", "off"]
 
 
-@pytest.mark.parametrize(
-    ("language", "expected"),
-    [
-        (
-            "en",
-            {
-                "regulation": "Kraftvakt Regulation",
-                "safe_state": "Kraftvakt Safe state",
-                "penalty": "Kraftvakt Penalty",
-                "power_limit": "Kraftvakt Power limit",
-                "free_power": "Kraftvakt Free power",
-                "overconsumption": "Kraftvakt Overconsumption",
-                "steps_switched_on": "Kraftvakt Steps switched on",
-            },
-        ),
-        (
-            "nb",
-            {
-                "regulation": "Kraftvakt Regulering",
-                "safe_state": "Kraftvakt Sikker tilstand",
-                "penalty": "Kraftvakt Straff",
-                "power_limit": "Kraftvakt Effektgrense",
-                "free_power": "Kraftvakt Ledig effekt",
-                "overconsumption": "Kraftvakt Overforbruk",
-                "steps_switched_on": "Kraftvakt Innkoblede trinn",
-            },
-        ),
-    ],
-)
-async def test_entity_names_are_translated(
-    hass: HomeAssistant, setup_kraftvakt, language: str, expected: dict[str, str]
+ENTITY_NAMES = {
+    "switch.kraftvakt_regulation": ("Regulation", "Regulering"),
+    "binary_sensor.kraftvakt_regulation_safe_state": (
+        "Regulation safe state",
+        "Regulering sikker tilstand",
+    ),
+    "sensor.kraftvakt_regulation_steps_on": (
+        "Regulation steps on",
+        "Regulering innkoblede trinn",
+    ),
+    "number.kraftvakt_power_limit": ("Power limit", "Effektgrense"),
+    "sensor.kraftvakt_power_regulation_average": (
+        "Power regulation average",
+        "Effekt reguleringssnitt",
+    ),
+    "sensor.kraftvakt_power_hourly_average": (
+        "Power hourly average",
+        "Effekt snittforbruk",
+    ),
+    "sensor.kraftvakt_power_free": ("Power free", "Effekt ledig"),
+    "sensor.kraftvakt_waiting_time_remaining": (
+        "Waiting time remaining",
+        "Ventetid gjenstående",
+    ),
+    "sensor.kraftvakt_waiting_time_curve": (
+        "Waiting time from curve",
+        "Ventetid etter kurven",
+    ),
+    "binary_sensor.kraftvakt_penalty_active": ("Penalty active", "Straff aktiv"),
+    "sensor.kraftvakt_penalty_overconsumption": (
+        "Penalty overconsumption",
+        "Straff overforbruk",
+    ),
+}
+
+
+@pytest.mark.parametrize(("language", "index"), [("en", 0), ("nb", 1)])
+async def test_entity_ids_are_the_same_in_every_language(
+    hass: HomeAssistant, setup_kraftvakt, language: str, index: int
 ) -> None:
-    """English is the default, and Norwegian is translated."""
+    """The entity ids group the entities, and the names are translated."""
     hass.config.language = language
     await setup_kraftvakt()
 
     names = {
-        key: hass.states.get(entity_id(hass, platform, key)).attributes["friendly_name"]
-        for platform, key in (
-            ("switch", "regulation"),
-            ("binary_sensor", "safe_state"),
-            ("binary_sensor", "penalty"),
-            ("number", "power_limit"),
-            ("sensor", "free_power"),
-            ("sensor", "overconsumption"),
-            ("sensor", "steps_switched_on"),
-        )
+        entity.entity_id: hass.states.get(entity.entity_id).attributes["friendly_name"]
+        for entity in er.async_get(hass).entities.values()
+        if entity.platform == DOMAIN
     }
-    assert names == expected
+    assert names == {
+        entity_id: f"Kraftvakt {translated[index]}"
+        for entity_id, translated in ENTITY_NAMES.items()
+    }
 
 
 async def set_power_limit(hass: HomeAssistant, watt: float) -> None:
@@ -823,13 +827,13 @@ async def test_free_power_is_the_limit_minus_the_regulation_average(
 ) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
-    assert state_of(hass, "sensor", "free_power") == STATE_UNAVAILABLE
+    assert state_of(hass, "sensor", "power_free") == STATE_UNAVAILABLE
 
     await advance(hass, freezer)
     set_power(hass, "12500")
     await advance(hass, freezer)
 
-    state = hass.states.get(entity_id(hass, "sensor", "free_power"))
+    state = hass.states.get(entity_id(hass, "sensor", "power_free"))
     assert state is not None
     assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kW"
     assert float(state.state) == pytest.approx(-2.5)
@@ -849,20 +853,20 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     curve_waiting_s = 300 * WaitingCurve.from_settings(6, 80).share(0.9)
     windows_to_wait = math.ceil(curve_waiting_s / WINDOW.total_seconds())
     assert windows_to_wait > 1
-    assert state_of(hass, "sensor", "time_to_next_turn_on") == "0"
-    assert state_of(hass, "sensor", "curve_waiting_time") == STATE_UNAVAILABLE
+    assert state_of(hass, "sensor", "waiting_time_remaining") == "0"
+    assert state_of(hass, "sensor", "waiting_time_curve") == STATE_UNAVAILABLE
     actions.clear()
 
     await advance(hass, freezer)
-    assert float(state_of(hass, "sensor", "curve_waiting_time")) == pytest.approx(
+    assert float(state_of(hass, "sensor", "waiting_time_curve")) == pytest.approx(
         curve_waiting_s
     )
-    assert int(state_of(hass, "sensor", "time_to_next_turn_on")) == (
+    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (
         windows_to_wait * WINDOW.total_seconds()
     )
 
     await advance(hass, freezer)
-    assert int(state_of(hass, "sensor", "time_to_next_turn_on")) == (
+    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (
         (windows_to_wait - 1) * WINDOW.total_seconds()
     )
 

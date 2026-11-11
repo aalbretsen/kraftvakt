@@ -12,11 +12,11 @@
   },
   "entity": {
     "binary_sensor": {
-      "safe_state": {
-        "name": "Sikker tilstand"
+      "regulation_safe_state": {
+        "name": "Regulering sikker tilstand"
       },
-      "penalty": {
-        "name": "Straff"
+      "penalty_active": {
+        "name": "Straff aktiv"
       }
     },
     "number": {
@@ -25,26 +25,26 @@
       }
     },
     "sensor": {
-      "regulation_average": {
-        "name": "Reguleringssnitt"
+      "regulation_steps_on": {
+        "name": "Regulering innkoblede trinn"
       },
-      "capacity_average": {
-        "name": "Snittforbruk"
+      "power_regulation_average": {
+        "name": "Effekt reguleringssnitt"
       },
-      "free_power": {
-        "name": "Ledig effekt"
+      "power_hourly_average": {
+        "name": "Effekt snittforbruk"
       },
-      "overconsumption": {
-        "name": "Overforbruk"
+      "power_free": {
+        "name": "Effekt ledig"
       },
-      "steps_switched_on": {
-        "name": "Innkoblede trinn"
+      "waiting_time_remaining": {
+        "name": "Ventetid gjenstående"
       },
-      "time_to_next_turn_on": {
-        "name": "Tid til neste innkobling"
-      },
-      "curve_waiting_time": {
+      "waiting_time_curve": {
         "name": "Ventetid etter kurven"
+      },
+      "penalty_overconsumption": {
+        "name": "Straff overforbruk"
       }
     },
     "switch": {

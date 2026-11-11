@@ -160,7 +160,7 @@ async def use_switch(
 
 def steps_switched_on(hass: HomeAssistant) -> str:
     entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, "steps_switched_on"
+        "sensor", DOMAIN, "regulation_steps_on"
     )
     assert entity_id is not None
     state = hass.states.get(entity_id)
@@ -360,6 +360,13 @@ async def test_charger_switches_are_named_after_the_charger(
     """The name of the charger's entity identifies the switches."""
     await setup_kraftvakt()
 
+    assert (
+        switch_id(hass, "c1", "excluded") == "switch.kraftvakt_charger_garage_excluded"
+    )
+    assert (
+        switch_id(hass, "c1", "window_override")
+        == "switch.kraftvakt_charger_garage_window_override"
+    )
     excluded = hass.states.get(switch_id(hass, "c1", "excluded") or "")
     override = hass.states.get(switch_id(hass, "c1", "window_override") or "")
 

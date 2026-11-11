@@ -9,6 +9,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import slugify
 
 from .charger_switches import ChargerSwitchBoard
 from .const import DOMAIN
@@ -136,7 +137,10 @@ class ChargerSwitch(KraftvaktEntity, SwitchEntity):
     ) -> None:
         """Create the switch for the setting of the charger."""
         super().__init__(
-            entry, charger_switch_key(charger_id, setting), f"charger_{setting}"
+            entry,
+            charger_switch_key(charger_id, setting),
+            f"charger_{setting}",
+            f"charger_{slugify(charger_name)}_{setting}",
         )
         self._attr_translation_placeholders = {"charger": charger_name}
         self._board = board
