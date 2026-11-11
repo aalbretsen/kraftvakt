@@ -14,7 +14,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .charger_switches import ChargerSwitchBoard
 from .config_model import ConfigValidationError
 from .const import (
     DOMAIN,
@@ -27,6 +26,7 @@ from .const import (
 )
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 from .storage import KraftvaktStorage
+from .switch_board import SwitchBoard
 from .websocket_api import async_forward_status, async_register_commands
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -63,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
     runtime = KraftvaktRuntime(
         hass,
         stored.config,
-        ChargerSwitchBoard(hass, storage, stored),
+        SwitchBoard(hass, storage, stored),
         _action_lock(hass),
     )
     entry.runtime_data = runtime

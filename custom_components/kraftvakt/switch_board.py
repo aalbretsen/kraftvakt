@@ -1,4 +1,4 @@
-"""The user's switches for the chargers."""
+"""The user's switches for the appliances and the chargers."""
 
 from __future__ import annotations
 
@@ -9,17 +9,25 @@ from datetime import datetime
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.util import dt as dt_util
 
-from .config_model import ChargerSwitches, KraftvaktConfig, charger_switches_for
+from .config_model import (
+    ApplianceSwitches,
+    ChargerSwitches,
+    KraftvaktConfig,
+    appliance_switches_for,
+    charger_switches_for,
+)
 from .storage import KraftvaktStorage, StoredData
 
 type SwitchListener = Callable[[], None]
 
 
-class ChargerSwitchBoard:
-    """Keeps the positions of the charger switches and saves them at once.
+class SwitchBoard:
+    """Keeps the positions of the user's switches and saves them at once.
 
-    When the override of the charging window was switched on is kept only in
-    memory. After a restart, the first start of the regulation counts instead.
+    The configuration is saved through the board, so it is always saved
+    together with the switches. When the override of a charging window was
+    switched on is kept only in memory. After a restart, the first start of the
+    regulation counts instead.
     """
 
     def __init__(
@@ -29,7 +37,12 @@ class ChargerSwitchBoard:
         self._hass = hass
         self._storage = storage
         self._config = stored.config
-        self._switches = charger_switches_for(stored.config, stored.charger_switches)
+        self._appliance_switches = appliance_switches_for(
+            stored.config, stored.appliance_switches
+        )
+        self._charger_switches = charger_switches_for(
+            stored.config, stored.charger_switches
+        )
         self._override_switched_on_at: dict[str, datetime] = {}
         self._listeners: list[SwitchListener] = []
 
@@ -38,9 +51,13 @@ class ChargerSwitchBoard:
         """Return the configuration the switches belong to."""
         return self._config
 
-    def switches(self, charger_id: str) -> ChargerSwitches:
+    def appliance_switches(self, appliance_id: str) -> ApplianceSwitches:
+        """Return the positions of the switches for the appliance."""
+        return self._appliance_switches.get(appliance_id, ApplianceSwitches())
+
+    def charger_switches(self, charger_id: str) -> ChargerSwitches:
         """Return the positions of the switches for the charger."""
-        return self._switches.get(charger_id, ChargerSwitches())
+        return self._charger_switches.get(charger_id, ChargerSwitches())
 
     def override_switched_on_at(self, charger_id: str) -> datetime | None:
         """Return when the override was switched on, if it is on and known."""
@@ -49,11 +66,17 @@ class ChargerSwitchBoard:
     @callback
     def async_regulation_started(self, now: datetime) -> None:
         """Count overrides switched on before a restart from `now`."""
-        for charger_id, switches in self._switches.items():
+        for charger_id, switches in self._charger_switches.items():
             if switches.window_override:
                 self._override_switched_on_at.setdefault(charger_id, now)
 
-    async def async_set(
+    async def async_set_appliance(self, appliance_id: str, *, excluded: bool) -> None:
+        """Change the switches for the appliance and save them at once."""
+        self._appliance_switches[appliance_id] = ApplianceSwitches(excluded=excluded)
+        self._notify()
+        await self._async_save()
+
+    async def async_set_charger(
         self,
         charger_id: str,
         *,
@@ -61,25 +84,26 @@ class ChargerSwitchBoard:
         window_override: bool | None = None,
     ) -> None:
         """Change the switches for the charger and save them at once."""
-        self._apply(charger_id, excluded, window_override)
+        self._apply_charger(charger_id, excluded, window_override)
         await self._async_save()
 
     @callback
     def async_reset_window_override(self, charger_id: str) -> None:
         """Switch the override off when it has ended."""
-        self._apply(charger_id, None, False)
-        self._hass.async_create_task(
-            self._async_save(), "kraftvakt save charger switches"
-        )
+        self._apply_charger(charger_id, None, False)
+        self._hass.async_create_task(self._async_save(), "kraftvakt save switches")
 
     async def async_update_config(self, config: KraftvaktConfig) -> None:
         """Use a new configuration and save it with the switches."""
         self._config = config
-        self._switches = charger_switches_for(config, self._switches)
+        self._appliance_switches = appliance_switches_for(
+            config, self._appliance_switches
+        )
+        self._charger_switches = charger_switches_for(config, self._charger_switches)
         self._override_switched_on_at = {
             charger_id: switched_on_at
             for charger_id, switched_on_at in self._override_switched_on_at.items()
-            if charger_id in self._switches
+            if charger_id in self._charger_switches
         }
         self._notify()
         await self._async_save()
@@ -90,10 +114,10 @@ class ChargerSwitchBoard:
         self._listeners.append(listener)
         return lambda: self._listeners.remove(listener)
 
-    def _apply(
+    def _apply_charger(
         self, charger_id: str, excluded: bool | None, window_override: bool | None
     ) -> None:
-        current = self._switches[charger_id]
+        current = self._charger_switches[charger_id]
         updated = replace(
             current,
             excluded=current.excluded if excluded is None else excluded,
@@ -105,11 +129,13 @@ class ChargerSwitchBoard:
             self._override_switched_on_at[charger_id] = dt_util.utcnow()
         elif not updated.window_override:
             self._override_switched_on_at.pop(charger_id, None)
-        self._switches[charger_id] = updated
+        self._charger_switches[charger_id] = updated
         self._notify()
 
     async def _async_save(self) -> None:
-        await self._storage.async_save(StoredData(self._config, self._switches))
+        await self._storage.async_save(
+            StoredData(self._config, self._appliance_switches, self._charger_switches)
+        )
 
     def _notify(self) -> None:
         for listener in list(self._listeners):

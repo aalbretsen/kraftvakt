@@ -73,12 +73,16 @@ function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
 
 /**
  * Return the index of the entry the cut-off line goes under: the last entry
- * that is on. There is no line (-1) when nothing is on or everything is on.
- * «EV charging» is on while one of its EV chargers is activated and not bypassed.
+ * that is on. There is no line (-1) when nothing is on, or when only excluded
+ * appliances are below the last entry that is on. «EV charging» is on while
+ * one of its EV chargers is activated and not bypassed.
  */
 function cutOffIndex(entries: PriorityEntry[]): number {
   const last = entries.map((entry) => entry.on).lastIndexOf(true);
-  return last === entries.length - 1 ? -1 : last;
+  const regulatedBelow = entries
+    .slice(last + 1)
+    .some((entry) => entry.kind === "ev_charging" || !entry.appliance.excluded);
+  return last >= 0 && regulatedBelow ? last : -1;
 }
 
 /** Return «22» for «22:00», and the time as it is otherwise. */
@@ -311,7 +315,7 @@ export class KraftvaktStatusPage extends LitElement {
 
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     return html`
-      <div class="row ${appliance.on ? "" : "off"}">
+      <div class="row ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}">
         <span class="rank">${rank}</span>
         <div class="row-title">
           ${this.renderApplianceIcon(appliance)}<span class="name">${appliance.name}</span>
@@ -319,11 +323,18 @@ export class KraftvaktStatusPage extends LitElement {
         </div>
         <span></span>
         ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
-        ${appliance.on
-          ? this.renderChip(CHIP_ON, "status.on", "status.on")
-          : this.renderChip(CHIP_OFF, "status.off", "status.off")}
+        ${this.renderApplianceChip(appliance)}
       </div>
     `;
+  }
+
+  private renderApplianceChip(appliance: ApplianceStatus) {
+    if (appliance.excluded) {
+      return this.renderChip(CHIP_EXCLUDED, "status.chip_excluded", "status.excluded");
+    }
+    return appliance.on
+      ? this.renderChip(CHIP_ON, "status.on", "status.on")
+      : this.renderChip(CHIP_OFF, "status.off", "status.off");
   }
 
   /** The icon of the appliance's entity, coloured like Home Assistant colours a switch that is on. */
@@ -759,6 +770,9 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row.off .name {
       color: var(--secondary-text-color);
+    }
+    .row.excluded .row-title {
+      opacity: 0.5;
     }
     .row.charger .row-title {
       padding-inline-start: 24px;

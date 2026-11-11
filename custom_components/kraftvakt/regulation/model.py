@@ -28,6 +28,7 @@ class DecisionInput:
     power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
     chargers: Mapping[str, ChargerReading] = field(default_factory=dict)
+    excluded_appliances: frozenset[str] = frozenset()
     time_zone: tzinfo = UTC
 
 
@@ -130,6 +131,7 @@ class RegulationState:
     started_at: datetime | None = None
     appliances_on: set[str] = field(default_factory=set)
     current_variants: dict[str, str | None] = field(default_factory=dict)
+    excluded_appliances: frozenset[str] = frozenset()
     waiting: Waiting | None = None
     cycling: CyclingCounter = field(default_factory=CyclingCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)

@@ -8,6 +8,7 @@ import pytest
 from custom_components.kraftvakt.config_model import (
     ActionConfig,
     ActionMode,
+    ApplianceSwitches,
     ChargerSwitches,
     ChargingWindow,
     Condition,
@@ -16,11 +17,11 @@ from custom_components.kraftvakt.config_model import (
     Issue,
     KraftvaktConfig,
     PriorityEntry,
-    charger_switches_to_dict,
+    switches_to_dict,
 )
 from custom_components.kraftvakt.config_reader import (
-    read_charger_switches,
     read_config,
+    read_switches,
 )
 from tests.config_examples import full_config_data
 
@@ -297,18 +298,29 @@ def test_charger_switches_round_trip() -> None:
         "c2": {"excluded": False, "window_override": True},
     }
 
-    switches = read_charger_switches(data)
+    switches = read_switches(data, ChargerSwitches, "chargers")
 
     assert switches["c1"] == ChargerSwitches(excluded=True)
-    assert charger_switches_to_dict(switches) == data
+    assert switches_to_dict(switches) == data
 
 
-def test_charger_switches_get_defaults() -> None:
-    assert read_charger_switches({"c1": {}}) == {"c1": ChargerSwitches()}
+def test_appliance_switches_round_trip() -> None:
+    data = {"a1": {"excluded": True}, "a2": {"excluded": False}}
+
+    switches = read_switches(data, ApplianceSwitches, "appliances")
+
+    assert switches["a1"] == ApplianceSwitches(excluded=True)
+    assert switches_to_dict(switches) == data
 
 
-def test_charger_switches_with_wrong_type_are_rejected() -> None:
+def test_switches_get_defaults() -> None:
+    assert read_switches({"c1": {}}, ChargerSwitches, "chargers") == {
+        "c1": ChargerSwitches()
+    }
+
+
+def test_switches_with_wrong_type_are_rejected() -> None:
     with pytest.raises(ConfigValidationError) as error:
-        read_charger_switches({"c1": {"excluded": "on"}})
+        read_switches({"a1": {"excluded": "on"}}, ApplianceSwitches, "appliances")
 
-    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", "excluded")]
+    assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "excluded")]

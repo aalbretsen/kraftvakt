@@ -51,6 +51,9 @@
       "regulation": {
         "name": "Regulation"
       },
+      "appliance_excluded": {
+        "name": "{appliance} excluded from regulation"
+      },
       "charger_excluded": {
         "name": "{charger} excluded from regulation"
       },

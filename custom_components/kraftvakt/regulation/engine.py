@@ -108,6 +108,11 @@ class RegulationEngine:
         return frozenset(self._state.appliances_on)
 
     @property
+    def excluded_appliances(self) -> frozenset[str]:
+        """Return the ids of the appliances excluded at the last decision."""
+        return self._state.excluded_appliances
+
+    @property
     def current_variants(self) -> Mapping[str, str | None]:
         """Return the current variant of each appliance, None for the appliance."""
         return dict(self._state.current_variants)
@@ -171,9 +176,9 @@ class RegulationEngine:
         if penalty is PenaltyOutcome.STARTED:
             commands += self._hold_everything_off()
         if self._state.penalty.active:
-            return commands + self._switch_variants(decision.variant_conditions)
+            return commands + self._place_appliances(decision)
         forced = self._decide_chargers(decision, overrides_ended)
-        forced += self._switch_variants(decision.variant_conditions)
+        forced += self._place_appliances(decision)
         commands += forced
         if average > self._config.general.power_limit_w:
             return commands + self._switch_off_above_limit(forced_off=bool(forced))
@@ -275,31 +280,41 @@ class RegulationEngine:
             self._state.charging.set_fictive_on(charger_id, 0)
         return self._turn_off_everything()
 
-    def _switch_variants(self, variant_conditions: Mapping[str, bool]) -> list[Command]:
-        """Handle the appliances that switch variant.
+    def _place_appliances(self, decision: DecisionInput) -> list[Command]:
+        """Handle the appliances that are excluded, included again or switch variant.
 
-        The switch-offs are an exception to one slot per decision.
+        An excluded appliance that is on is switched off. An appliance that
+        comes to a new place, by switching variant or by being included again,
+        is off afterwards and gets room there. The switch-offs are an exception
+        to one slot per decision.
         """
-        previous = self._state.current_variants
+        previous_variants = self._state.current_variants
+        previous_excluded = self._state.excluded_appliances
         self._state.current_variants = {
-            appliance.id: current_variant(appliance, variant_conditions)
+            appliance.id: current_variant(appliance, decision.variant_conditions)
             for appliance in self._config.appliances
         }
-        switching = [
+        excluded = decision.excluded_appliances
+        self._state.excluded_appliances = excluded
+        moving = [
             appliance_id
             for appliance_id, variant in self._state.current_variants.items()
-            if appliance_id in previous and previous[appliance_id] != variant
+            if appliance_id in previous_variants
+            and (
+                previous_variants[appliance_id] != variant
+                or (appliance_id in previous_excluded and appliance_id not in excluded)
+            )
         ]
-        was_on = self._state.appliances_on & set(switching)
-        places = {slot.key: place for place, slot in enumerate(self._slots())}
+        was_on = self._state.appliances_on & set(moving)
         commands: list[Command] = []
-        for key in sorted(
-            map(ApplianceSlotKey, switching), key=lambda key: places[key]
-        ):
+        for appliance_id in sorted(excluded & self._state.appliances_on):
+            commands += self._switch(ApplianceSlotKey(appliance_id), turn_on=False)
+        places = {slot.key: place for place, slot in enumerate(self._slots())}
+        for key in sorted(map(ApplianceSlotKey, moving), key=lambda key: places[key]):
             if key.appliance_id in was_on:
                 if key.appliance_id in self._state.appliances_on:
                     commands += self._switch(key, turn_on=False)
-            else:
+            elif key.appliance_id not in excluded:
                 lowest_on = next(self._slots_on_lowest_first(), None)
                 if lowest_on is not None and places[key] < places[lowest_on.key]:
                     commands += self._switch(lowest_on.key, turn_on=False)
@@ -322,6 +337,7 @@ class RegulationEngine:
                 charging.bypassed,
                 self._fictive_appliance_cycling,
             ),
+            self._state.excluded_appliances,
         )
 
     def _slots_on_lowest_first(self) -> Iterator[Slot]:

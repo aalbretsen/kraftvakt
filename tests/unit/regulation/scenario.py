@@ -66,7 +66,8 @@ class Scenario:
     """Drives a started engine through decisions.
 
     Every charger reads as idle with a valid charging power until the test
-    changes it with `set_charger`.
+    changes it with `set_charger`, and no appliance is excluded until the test
+    changes it with `exclude`.
     """
 
     def __init__(
@@ -82,11 +83,16 @@ class Scenario:
         self.chargers = {
             charger.id: IDLE_CHARGER for charger in config.charging.chargers
         }
+        self.excluded_appliances: frozenset[str] = frozenset()
         self.start_commands = self.engine.start(self.now)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
         """Change what is read for the charger from now on."""
         self.chargers[charger_id] = replace(self.chargers[charger_id], **reading)
+
+    def exclude(self, *appliance_ids: str) -> None:
+        """Exclude exactly these appliances from now on."""
+        self.excluded_appliances = frozenset(appliance_ids)
 
     def decide(
         self,
@@ -121,6 +127,7 @@ class Scenario:
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
                 chargers=dict(self.chargers),
+                excluded_appliances=self.excluded_appliances,
                 time_zone=self.time_zone,
             )
         )

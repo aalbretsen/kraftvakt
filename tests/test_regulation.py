@@ -30,8 +30,10 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.kraftvakt.config_model import Issue
+from custom_components.kraftvakt.config_reader import read_config
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.regulation.waiting import WaitingCurve
+from custom_components.kraftvakt.status import status_snapshot
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
 POWER_SENSOR = "sensor.han_power"
@@ -682,6 +684,14 @@ ENTITY_NAMES = {
         "Penalty overconsumption",
         "Straff overforbruk",
     ),
+    "switch.kraftvakt_appliance_light_a_excluded": (
+        "light.a excluded from regulation",
+        "light.a utenfor regulering",
+    ),
+    "switch.kraftvakt_appliance_light_b_excluded": (
+        "light.b excluded from regulation",
+        "light.b utenfor regulering",
+    ),
 }
 
 
@@ -873,3 +883,131 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     for _ in range(windows_to_wait - 1):
         await advance(hass, freezer)
     assert actions == ["on light.a"]
+
+
+def excluded_switch(hass: HomeAssistant, appliance_id: str) -> str | None:
+    return er.async_get(hass).async_get_entity_id(
+        "switch", DOMAIN, f"appliance_{appliance_id}_excluded"
+    )
+
+
+async def exclude(hass: HomeAssistant, appliance_id: str, service: str) -> None:
+    await hass.services.async_call(
+        "switch",
+        service,
+        {"entity_id": excluded_switch(hass, appliance_id)},
+        blocking=True,
+    )
+
+
+async def test_excluded_appliance_is_switched_off_at_the_next_decision(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
+) -> None:
+    """It is skipped from then on, and no longer counted as on."""
+    set_power(hass, "2000")
+    entry = await setup_kraftvakt()
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    actions.clear()
+
+    await exclude(hass, "a", "turn_on")
+    assert actions == []
+    await advance(hass, freezer)
+
+    assert actions == ["off light.a"]
+    assert state_of(hass, "sensor", "regulation_steps_on") == "1"
+    assert [
+        (item["id"], item["on"], item["excluded"])
+        for item in status_snapshot(hass, entry.runtime_data)["appliances"]
+    ] == [("a", False, True), ("b", True, False)]
+
+
+async def test_appliance_included_again_gets_room(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
+) -> None:
+    """The appliance below is switched off, and comes on again after it."""
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    await exclude(hass, "a", "turn_on")
+    actions.clear()
+    await advance(hass, freezer)
+    assert actions == ["on light.b"]
+
+    await exclude(hass, "a", "turn_off")
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+
+    assert actions == ["on light.b", "off light.b", "on light.a", "on light.b"]
+
+
+async def test_excluded_switches_are_named_and_kept_over_a_reload(
+    hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
+) -> None:
+    """The positions are configuration, and the appliance names the switch."""
+    hass.states.async_set("light.a", STATE_OFF, {"friendly_name": "Water heater"})
+    entry = await setup_kraftvakt()
+    await exclude(hass, "a", "turn_on")
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    switch = excluded_switch(hass, "a")
+    assert switch == "switch.kraftvakt_appliance_water_heater_excluded"
+    state = hass.states.get(switch)
+    assert state is not None
+    assert state.state == STATE_ON
+    assert state.name == "Kraftvakt Water heater excluded from regulation"
+    assert hass_storage[STORAGE_KEY]["data"]["appliance_switches"] == {
+        "a": {"excluded": True},
+        "b": {"excluded": False},
+    }
+
+
+async def test_excluded_switches_follow_the_configuration_without_reload(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """Switches are added and removed with the appliances."""
+    entry = await setup_kraftvakt()
+    old_switch = excluded_switch(hass, "b")
+    data = {
+        **config,
+        "appliances": [appliance("a"), appliance("c")],
+        "priority": [
+            {"type": "appliance", "appliance_id": "a", "variant_id": None},
+            {"type": "appliance", "appliance_id": "c", "variant_id": None},
+        ],
+    }
+
+    await entry.runtime_data.switch_board.async_update_config(read_config(data))
+    await hass.async_block_till_done()
+
+    assert excluded_switch(hass, "b") is None
+    assert old_switch is not None
+    assert hass.states.get(old_switch) is None
+    assert state_of(hass, "switch", "appliance_c_excluded") == STATE_OFF
+    assert hass_storage[STORAGE_KEY]["data"]["appliance_switches"] == {
+        "a": {"excluded": False},
+        "c": {"excluded": False},
+    }
+
+
+async def test_switches_of_removed_appliances_are_removed_at_setup(
+    hass: HomeAssistant, actions, setup_kraftvakt
+) -> None:
+    """No orphaned switches remain in the entity registry."""
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    orphan = registry.async_get_or_create(
+        "switch", DOMAIN, "appliance_old_excluded", config_entry=entry
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert registry.async_get(orphan.entity_id) is None
+    assert excluded_switch(hass, "a") is not None

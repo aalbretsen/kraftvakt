@@ -75,6 +75,7 @@ def _appliance_status(
         "id": appliance.id,
         "name": item_name(hass, appliance),
         "on": appliance.id in runtime.appliances_on,
+        "excluded": appliance.id in runtime.excluded_appliances,
         "variant": None if variant is None else variant.label,
         **_waiting_fields(runtime, ApplianceSlotKey(appliance.id)),
     }

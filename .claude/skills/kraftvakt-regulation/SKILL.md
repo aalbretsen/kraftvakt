@@ -1,6 +1,6 @@
 ---
 name: kraftvakt-regulation
-description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants and EV charging. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or charger_switches.py, or when a question is about what the regulation should do.
+description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants, excluded appliances and EV charging. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or switch_board.py, or when a question is about what the regulation should do.
 ---
 
 # Kraftvakt regulation
@@ -62,16 +62,16 @@ the status page and the average sensors show kW.
   worked.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
-- The configuration can only be changed while the regulation is stopped,
-  except the two switches per charger and the power limit (see Power limit
-  entity). Everything is off while stopped, so removed appliances are
-  already off and new ones are controlled from the next start.
+- The configuration can only be changed while the regulation is stopped, except
+  the user's switches (one per appliance, two per charger) and the power limit
+  (see Power limit entity). Everything is off while stopped, so removed
+  appliances are already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, cycling counters,
   overconsumption, penalty, current charging priority, bypassed chargers,
-  rests, current variants) starts again with defaults at every start: HA or
-  integration start, user start, after the safe state, after a penalty and
-  after a change of the power limit. The configuration and the charger switch
-  positions are kept over any restart.
+  rests, current variants, excluded appliances) starts again with defaults at
+  every start: HA or integration start, user start, after the safe state, after
+  a penalty and after a change of the power limit. The configuration and the
+  switch positions are kept over any restart.
 - True/false from HA (variant expressions, car connected) is a boolean entity
   or a template. True only when the entity is `on` or the template gives the
   boolean true. Everything else is false, also unavailable entities and
@@ -123,7 +123,8 @@ the status page and the average sensors show kW.
   5. EV chargers: allowed, bypassed, current priority, waiting.
   6. Forced switch-offs: chargers not allowed to charge (all fictive off and
      deactivate), newly bypassed chargers down to one fictive appliance,
-     appliances that switch variant.
+     excluded appliances, appliances that switch variant or are included
+     again.
   7. Build the ordered slots (current variants, fictive appliances in place of
      the EV charging entry).
   8. Above the limit: switch off the lowest priority slot that is on and not a
@@ -136,8 +137,9 @@ the status page and the average sensors show kW.
 - Only one slot is turned on or off per decision based on free power. Several
   may be switched off at once only when consumption must drop at once or
   switching does not change consumption: start and stop, safe state, penalty,
-  chargers not allowed to charge, bypassed chargers, variant switches, and the
-  other charger deactivated when one is activated with one charger at a time.
+  chargers not allowed to charge, bypassed chargers, excluded appliances,
+  variant switches, appliances included again, and the other charger
+  deactivated when one is activated with one charger at a time.
 - Turn on only when the regulation average is under the limit minus the
   turn-on margin, and average plus power reserve is at most the limit. Switch
   off only when the average is above the limit. Between limit minus margin and
@@ -149,10 +151,10 @@ the status page and the average sensors show kW.
   the next decision. The margin is below the limit only, so the regulation
   never accepts being above it.
 - Fixed order: a slot is never turned on before all above it are on. Skipped:
-  entries that are not the current variant, and the fictive appliances the EV
-  charging rules hold back: of chargers that are not allowed to charge, are
-  bypassed, are waiting or are not chosen when only one may charge, and all but
-  the first of a charger on trial.
+  entries that are not the current variant, excluded appliances, and the
+  fictive appliances the EV charging rules hold back: of chargers that are not
+  allowed to charge, are bypassed, are waiting or are not chosen when only one
+  may charge, and all but the first of a charger on trial.
 
 ## Waiting time
 
@@ -300,8 +302,23 @@ All with entity category diagnostic:
   and its new place is above the lowest slot that is on, that lowest slot is
   switched off to give room. Its waiting time and cycling counter are reset.
 - Several switching at the same decision are handled one by one in the order of
-  their new place, highest first. One that must go off anyway can be the one
-  that gives room.
+  their new place, highest first, together with the appliances included again
+  (see Excluded appliances). One that must go off anyway can be the one that
+  gives room.
+
+## Excluded appliances
+
+- Excluded switch (per appliance, default off): while on, the appliance is
+  never turned on. It keeps its place in the priority list, and the
+  regulation passes it as if it was not there. Not for the EV charging entry;
+  chargers have their own switch.
+- Read at each decision. An excluded appliance that is on is switched off.
+- An appliance included again is handled like an appliance that switches
+  variant: if its place is above the lowest slot that is on, that lowest slot
+  is switched off to give room, and its waiting time and cycling counter are
+  reset. An excluded appliance that switches variant gives no room.
+- The switch can be used while the regulation runs, is saved at once, and
+  takes effect at the next decision. It does not restart the regulation.
 
 ## EV charging
 

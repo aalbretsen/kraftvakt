@@ -51,6 +51,9 @@
       "regulation": {
         "name": "Regulering"
       },
+      "appliance_excluded": {
+        "name": "{appliance} utenfor regulering"
+      },
       "charger_excluded": {
         "name": "{charger} utenfor regulering"
       },

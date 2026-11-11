@@ -6,6 +6,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.kraftvakt.config_model import (
+    ApplianceSwitches,
     ChargerSwitches,
     ConfigValidationError,
 )
@@ -34,12 +35,19 @@ async def test_saved_data_survives_restart(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
     config = read_config(full_config_data())
-    switches = {"c1": ChargerSwitches(excluded=True, window_override=True)}
+    saved = StoredData(
+        config,
+        appliance_switches={
+            "a1": ApplianceSwitches(excluded=True),
+            "a2": ApplianceSwitches(),
+        },
+        charger_switches={"c1": ChargerSwitches(excluded=True, window_override=True)},
+    )
 
-    await KraftvaktStorage(hass).async_save(StoredData(config, switches))
+    await KraftvaktStorage(hass).async_save(saved)
     stored = await KraftvaktStorage(hass).async_load()
 
-    assert stored == StoredData(config, switches)
+    assert stored == saved
 
 
 async def test_stored_format_is_versioned_json(
@@ -53,6 +61,7 @@ async def test_stored_format_is_versioned_json(
     assert stored["version"] == STORAGE_VERSION
     assert stored["data"] == {
         **full_config_data(),
+        "appliance_switches": {"a1": {"excluded": False}, "a2": {"excluded": False}},
         "charger_switches": {"c1": {"excluded": False, "window_override": False}},
     }
 
@@ -66,6 +75,7 @@ async def test_load_reads_stored_data(
         "key": STORAGE_KEY,
         "data": {
             **full_config_data(),
+            "appliance_switches": {"a2": {"excluded": True}},
             "charger_switches": {"c1": {"excluded": True, "window_override": False}},
         },
     }
@@ -73,6 +83,10 @@ async def test_load_reads_stored_data(
     stored = await KraftvaktStorage(hass).async_load()
 
     assert stored.config == read_config(full_config_data())
+    assert stored.appliance_switches == {
+        "a1": ApplianceSwitches(),
+        "a2": ApplianceSwitches(excluded=True),
+    }
     assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
 
 
@@ -86,7 +100,9 @@ async def test_switches_follow_configured_chargers(
     config = read_config(data)
     switches = {"gone": ChargerSwitches(excluded=True)}
 
-    await KraftvaktStorage(hass).async_save(StoredData(config, switches))
+    await KraftvaktStorage(hass).async_save(
+        StoredData(config, charger_switches=switches)
+    )
     stored = await KraftvaktStorage(hass).async_load()
 
     assert stored.charger_switches == {

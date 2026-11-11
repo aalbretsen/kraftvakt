@@ -81,6 +81,11 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   time at the power limit, the waiting time does not grow.
 - **Variants:** an appliance can have variants with another place in the
   priority list, for example a higher priority in the morning.
+- **Excluded appliance:** the switch **‹appliance› excluded from regulation**
+  takes an appliance out of the regulation. It keeps its place in the
+  priority list, but is passed as if it was not there, and is turned off at
+  the next decision if it is on. When it is included again while appliances
+  below it are on, the lowest of them is turned off to make room for it.
 - **Penalty:** when the average consumption goes above the power limit plus
   the penalty threshold, every appliance is kept off until the overconsumption
   is recovered, and the regulation then starts again. The penalty is a safety
@@ -93,9 +98,10 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 Kraftvakt does not know what an appliance actually uses, and does not read
 whether it is on. It assumes the appliances are as Kraftvakt last set them. Do
 not turn regulated appliances on or off outside Kraftvakt. It can disturb the
-regulation, affect appliances with higher priority and trigger a penalty. EV
-chargers are the exception: Kraftvakt reads their charging power and whether a
-car is connected.
+regulation, affect appliances with higher priority and trigger a penalty.
+Exclude the appliance from the regulation instead. EV chargers are the
+exception: Kraftvakt reads their charging power and whether a car is
+connected.
 
 ## Starting and stopping
 
@@ -233,21 +239,24 @@ shows:
 - safe state and penalty periods when they occur, with the overconsumption
   left and whether it has started to be recovered,
 - the priority list with the current variant of each appliance. The icon of
-  an appliance that is on is yellow, as in Home Assistant. Under **EV
-  charging**, the EV chargers are listed in the current charging priority with
-  the charging current and one mark per ampere from the minimum to the maximum
-  current, filled up to the current one. **EV charging** shows how many EV
+  an appliance that is on is yellow, as in Home Assistant, and an excluded
+  appliance is dimmed. Under **EV charging**, the EV chargers are listed in
+  the current charging priority with the charging current and one mark per
+  ampere from the minimum to the maximum current, filled up to the current
+  one. **EV charging** shows how many EV
   chargers are charging, for example «2 / 5»,
-- a label on each row: **On** or **Off** for an appliance, and for an EV
-  charger the most important of **First decision**, **Excluded**, the charging
-  window (for example «22–06») when outside it, **No car connected**, **No
-  power draw**, **Queued**, **Override**, **Charging**, **Activated** or
-  **Deactivated**. Hover over a label or an icon for the full explanation,
+- a label on each row: **Excluded**, **On** or **Off** for an appliance, and
+  for an EV charger the most important of **First decision**, **Excluded**,
+  the charging window (for example «22–06») when outside it, **No car
+  connected**, **No power draw**, **Queued**, **Override**, **Charging**,
+  **Activated** or **Deactivated**. Hover over a label or an icon for the full
+  explanation,
 - a dashed line under the last entry that is on. Here the power is used up,
   and what is below waits for free power. The line shows the free power and
   its share of the power limit, for example «5.00 kW (50 %) free». It is not
-  shown when everything is on or everything is off. **EV charging** counts as
-  on when an EV charger is activated and not bypassed,
+  shown when everything is off, or when everything that is not excluded is
+  on. **EV charging** counts as on when an EV charger is activated and not
+  bypassed,
 - a bar that empties evenly until the decision where the next appliance, or
   one more ampere, is turned on.
 
@@ -275,6 +284,8 @@ All entities belong to the service device **Kraftvakt**.
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the average consumption went above it. 0 when there is none. |
+| **Appliance** | |
+| `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on. |
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
@@ -299,17 +310,18 @@ penalty ends. Several changes before the next decision give one restart, and a
 value equal to the power limit in use does nothing. The status page shows the
 power limit in use.
 
-The EV charger switches can be used while the regulation runs and apply from
-the next decision. Their state is stored at once and kept over a restart.
-While EV charging control is off, they are unavailable, but their state is
-kept.
+The appliance and EV charger switches can be used while the regulation runs
+and apply from the next decision. Their state is stored at once and kept over
+a restart. While EV charging control is off, the EV charger switches are
+unavailable, but their state is kept.
 
 The entity IDs are the same in every language and are grouped by what they
-concern: `regulation`, `power`, `waiting_time`, `penalty` and `charger`. The
-names shown follow the language of Home Assistant. ‹charger› is the name of
-the device the entity of the EV charger belongs to, or the name of the entity
-when it has no device. The entity ID keeps the name from when the EV charger
-was added.
+concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and
+`charger`. The names shown follow the language of Home Assistant. ‹appliance›
+is the name of the entity of the appliance. ‹charger› is the name of the
+device the entity of the EV charger belongs to, or the name of the entity when
+it has no device. The entity ID keeps the name from when the appliance or EV
+charger was added.
 
 ## Template and action examples
 

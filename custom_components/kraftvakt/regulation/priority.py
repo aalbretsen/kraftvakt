@@ -30,6 +30,7 @@ def build_slots(
     appliances_on: Collection[str],
     cycling: CyclingSteps,
     charger_slots: Sequence[Slot] = (),
+    excluded_appliances: Collection[str] = (),
 ) -> list[Slot]:
     """Return the slots in priority order, highest priority first."""
     appliances = {appliance.id: appliance for appliance in config.appliances}
@@ -50,6 +51,7 @@ def build_slots(
                 is_on=appliance_id in appliances_on,
                 power_reserve_w=appliances[appliance_id].power_reserve_w,
                 cycling=cycling,
+                can_turn_on=appliance_id not in excluded_appliances,
             )
         )
     return slots

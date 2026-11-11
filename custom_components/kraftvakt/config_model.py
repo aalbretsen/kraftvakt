@@ -7,7 +7,7 @@ configuration and saving it.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, fields
 from datetime import time
 from enum import Enum, StrEnum
@@ -283,6 +283,17 @@ class KraftvaktConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class ApplianceSwitches:
+    """The user's switches for an appliance."""
+
+    excluded: bool = False
+
+    def to_dict(self) -> dict[str, bool]:
+        """Return the switches as JSON-friendly data."""
+        return _fields_to_dict(self)
+
+
+@dataclass(frozen=True, slots=True)
 class ChargerSwitches:
     """The user's switches for a charger."""
 
@@ -327,21 +338,34 @@ def new_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
+type ItemSwitches = ApplianceSwitches | ChargerSwitches
+
+
+def appliance_switches_for(
+    config: KraftvaktConfig, switches: Mapping[str, ApplianceSwitches]
+) -> dict[str, ApplianceSwitches]:
+    """Return the switches for exactly the appliances in the configuration."""
+    return _switches_for(config.appliances, switches, ApplianceSwitches())
+
+
 def charger_switches_for(
     config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]
 ) -> dict[str, ChargerSwitches]:
     """Return the switches for exactly the chargers in the configuration."""
-    return {
-        charger.id: switches.get(charger.id, ChargerSwitches())
-        for charger in config.charging.chargers
-    }
+    return _switches_for(config.charging.chargers, switches, ChargerSwitches())
 
 
-def charger_switches_to_dict(
-    switches: Mapping[str, ChargerSwitches],
+def switches_to_dict(
+    switches: Mapping[str, ItemSwitches],
 ) -> dict[str, dict[str, bool]]:
-    """Return the charger switches as JSON-friendly data."""
-    return {charger_id: state.to_dict() for charger_id, state in switches.items()}
+    """Return the switches of appliances or chargers as JSON-friendly data."""
+    return {item_id: state.to_dict() for item_id, state in switches.items()}
+
+
+def _switches_for[T: ItemSwitches](
+    items: Iterable[Appliance | Charger], switches: Mapping[str, T], default: T
+) -> dict[str, T]:
+    return {item.id: switches.get(item.id, default) for item in items}
 
 
 def _fields_to_dict(item: Any) -> dict[str, Any]:

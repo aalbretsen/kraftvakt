@@ -18,7 +18,6 @@ from .config_model import (
     ActionMode,
     Appliance,
     Charger,
-    ChargerSwitches,
     ChargingConfig,
     ChargingWindow,
     Condition,
@@ -27,6 +26,7 @@ from .config_model import (
     GeneralConfig,
     Issue,
     IssueLocation,
+    ItemSwitches,
     KraftvaktConfig,
     PriorityEntry,
     PriorityEntryType,
@@ -48,15 +48,15 @@ def read_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     return config
 
 
-def read_charger_switches(
-    data: Mapping[str, Any],
-) -> dict[str, ChargerSwitches]:
-    """Read the charger switches, keyed by charger id, from JSON-friendly data.
+def read_switches[T: ItemSwitches](
+    data: Mapping[str, Any], switch_type: type[T], section: str
+) -> dict[str, T]:
+    """Read the switches of appliances or chargers by id from JSON-friendly data.
 
     Raises ConfigValidationError if a value has the wrong type.
     """
     reader = ConfigReader()
-    switches = reader.charger_switches(data)
+    switches = reader.switches(data, switch_type, section)
     if reader.issues:
         raise ConfigValidationError(reader.issues)
     return switches
@@ -91,18 +91,21 @@ class ConfigReader:
             charging=self._charging(root.get("charging")),
         )
 
-    def charger_switches(self, data: Any) -> dict[str, ChargerSwitches]:
-        """Return the charger switches in the data, by charger id."""
-        location = IssueLocation("chargers")
+    def switches[T: ItemSwitches](
+        self, data: Any, switch_type: type[T], section: str
+    ) -> dict[str, T]:
+        """Return the switches in the data, by the id of the appliance or charger."""
         switches = {}
-        for charger_id, item in self._mapping(data, location, None).items():
-            charger_location = IssueLocation("chargers", str(charger_id))
-            values = self._mapping(item, charger_location, None)
-            switches[str(charger_id)] = ChargerSwitches(
-                excluded=self._bool(values, "excluded", False, charger_location),
-                window_override=self._bool(
-                    values, "window_override", False, charger_location
-                ),
+        for item_id, item in self._mapping(data, IssueLocation(section), None).items():
+            location = IssueLocation(section, str(item_id))
+            values = self._mapping(item, location, None)
+            switches[str(item_id)] = switch_type(
+                **{
+                    setting.name: self._bool(
+                        values, setting.name, setting.default, location
+                    )
+                    for setting in fields(switch_type)
+                }
             )
         return switches
 

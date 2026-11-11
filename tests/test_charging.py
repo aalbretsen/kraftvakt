@@ -416,7 +416,7 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     hass.states.async_set("input_boolean.carport", STATE_OFF)
     data = deepcopy(config)
     data["charging"]["chargers"] = [charger_data("c2", "input_boolean.carport")]
-    board = entry.runtime_data.charger_switches
+    board = entry.runtime_data.switch_board
 
     await board.async_update_config(read_config(data))
     await hass.async_block_till_done()

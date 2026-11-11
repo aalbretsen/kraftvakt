@@ -21,9 +21,9 @@ integrations.
 - The panel talks to the backend with own WebSocket commands, all
   `require_admin`.
 - The panel edits a local draft and saves the whole configuration at once.
-- Charger switches are added and removed when the configuration is saved,
-  without reloading the config entry (a reload would start the regulation).
-  Registry entries of removed chargers are removed.
+- The switches of appliances and chargers are added and removed when the
+  configuration is saved, without reloading the config entry (a reload would
+  start the regulation). Registry entries of removed items are removed.
 - A charger is named after the device of its entity (the user's name for the
   device first), and after the entity when it has no device; an appliance is
   named after its entity. The status, the entity names sent to the panel and
@@ -52,7 +52,7 @@ integrations.
 | `actions.py` | The table of default actions, custom actions, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
-| `charger_switches.py` | Charger switch positions, saved together with the configuration, and when the override was switched on (memory only). |
+| `switch_board.py` | The positions of the user's switches for appliances and chargers, saved together with the configuration, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. Sensors and binary sensors are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
@@ -72,6 +72,7 @@ The format is defined by the dataclasses and their serialization in
   entity, activate, deactivate and set-current actions, min and max current,
   charging power sensor, power reserve, an optional car connected condition
   and an optional charging window.
+- `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger.
 
 IDs are short UUIDs, so entities can change without losing the place in the
@@ -129,23 +130,24 @@ panel's translations.
 - All belong to one service device, Kraftvakt, and use `has_entity_name` and
   `translation_key`. The unique id and the translation key are the key.
 - The entity ids are technical, English in every language, and grouped by
-  prefix (`regulation_`, `power_`, `waiting_time_`, `penalty_`, `charger_`).
+  prefix (`regulation_`, `power_`, `waiting_time_`, `penalty_`, `appliance_`,
+  `charger_`).
   An entity suggests its object id (the key unless given), which HA prefixes
   with the device name. The names are grouped the same way, in every language.
 - The averages, power free and the power limit are power in W, shown as kW
   for the sensors. The overconsumption is energy in Wh without a state class,
   since it is not a total. The waiting times are durations in seconds.
-- The power limit entity saves at once, through the charger switch board so
+- The power limit entity saves at once, through the switch board so
   configuration and switches are saved together. While running, the runtime
   starts a new engine at the next decision when the engine's limit differs
   from the stored one.
 - The regulation switch has no stored position; it is the same function as
   start and stop in the panel, and stays off and logs when the configuration
   is incomplete.
-- Each charger has an excluded switch and a window override switch, keyed by
-  the charger's id, with an entity id from the slug of the charger's name.
-  Their positions are stored, and they are unavailable while charging is
-  disabled.
+- Each appliance has an excluded switch, and each charger an excluded switch
+  and a window override switch, keyed by the item's id, with an entity id
+  from the slug of the item's name. Their positions are stored. The charger
+  switches are unavailable while charging is disabled.
 
 ## WebSocket API
 
@@ -180,6 +182,8 @@ step. Rules that are not obvious from the code:
   started, when the waiting time ends, and the decision that turns it on, the
   first at or after the end of the waiting time.
 - An appliance's variant is the label of its current variant, or `null`.
+- An appliance is excluded when it was excluded at the last decision, so it
+  is false before the first decision after a start.
 - Charger details are from the last decision. Before the first decision after
   a start, a charger is not allowed and excluded is `null`. Charging is true
   while the charger is activated and was actively charging at the last

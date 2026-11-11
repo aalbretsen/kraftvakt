@@ -8,11 +8,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.kraftvakt.charger_switches import ChargerSwitchBoard
 from custom_components.kraftvakt.config_model import GeneralConfig, KraftvaktConfig
 from custom_components.kraftvakt.measurement import WindowAverages
 from custom_components.kraftvakt.runtime import KraftvaktRuntime
 from custom_components.kraftvakt.storage import KraftvaktStorage, StoredData
+from custom_components.kraftvakt.switch_board import SwitchBoard
 
 POWER_SENSOR = "sensor.han_power"
 WINDOW = timedelta(seconds=30)
@@ -43,7 +43,7 @@ def start_runtime(hass: HomeAssistant, closed_windows: list[WindowAverages]):
 
     def start(config: KraftvaktConfig) -> KraftvaktRuntime:
         storage = KraftvaktStorage(hass)
-        board = ChargerSwitchBoard(hass, storage, StoredData(config))
+        board = SwitchBoard(hass, storage, StoredData(config))
         runtime = KraftvaktRuntime(hass, config, board)
         runtime.async_add_window_listener(closed_windows.append)
         runtime.async_start()

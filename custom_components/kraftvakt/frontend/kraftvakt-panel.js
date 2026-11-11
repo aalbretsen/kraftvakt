@@ -845,7 +845,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
               >`)}
         </div>
       </div>
-    `}renderPriorityCard(e){const t=function(e){const t=e.appliances.map(e=>({kind:"appliance",appliance:e,on:e.on}));if(null!==e.ev_charging_position){const i=e.chargers,a=i.some(e=>e.activated&&!e.bypassed);t.splice(e.ev_charging_position,0,{kind:"ev_charging",chargers:i,on:a})}return t}(e),i=function(e){const t=e.map(e=>e.on).lastIndexOf(!0);return t===e.length-1?-1:t}(t);return X`
+    `}renderPriorityCard(e){const t=function(e){const t=e.appliances.map(e=>({kind:"appliance",appliance:e,on:e.on}));if(null!==e.ev_charging_position){const i=e.chargers,a=i.some(e=>e.activated&&!e.bypassed);t.splice(e.ev_charging_position,0,{kind:"ev_charging",chargers:i,on:a})}return t}(e),i=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"ev_charging"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(t);return X`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("status.priority_list")}</span>
@@ -858,7 +858,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
             </div>`}
       </ha-card>
     `}renderApplianceRow(e,t){return X`
-      <div class="row ${e.on?"":"off"}">
+      <div class="row ${e.on?"":"off"} ${e.excluded?"excluded":""}">
         <span class="rank">${t}</span>
         <div class="row-title">
           ${this.renderApplianceIcon(e)}<span class="name">${e.name}</span>
@@ -866,9 +866,9 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         </div>
         <span></span>
         ${this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at")}
-        ${e.on?this.renderChip(wi,"status.on","status.on"):this.renderChip($i,"status.off","status.off")}
+        ${this.renderApplianceChip(e)}
       </div>
-    `}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0,a=e.on?"on":"";return i?X`<ha-state-icon class="device-icon ${a}" .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:X`<ha-svg-icon class="device-icon ${a}" .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>`}renderEvCharging(e,i){const s=e.filter(e=>e.charging).length;return X`
+    `}renderApplianceChip(e){return e.excluded?this.renderChip(Ei,"status.chip_excluded","status.excluded"):e.on?this.renderChip(wi,"status.on","status.on"):this.renderChip($i,"status.off","status.off")}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0,a=e.on?"on":"";return i?X`<ha-state-icon class="device-icon ${a}" .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:X`<ha-svg-icon class="device-icon ${a}" .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>`}renderEvCharging(e,i){const s=e.filter(e=>e.charging).length;return X`
       <div class="row group">
         <span class="rank">${i}</span>
         <div class="row-title">
@@ -1168,6 +1168,9 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     }
     .row.off .name {
       color: var(--secondary-text-color);
+    }
+    .row.excluded .row-title {
+      opacity: 0.5;
     }
     .row.charger .row-title {
       padding-inline-start: 24px;

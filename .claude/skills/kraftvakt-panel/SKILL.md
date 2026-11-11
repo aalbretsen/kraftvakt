@@ -178,7 +178,8 @@ Code that mirrors the backend and must be kept in step with it:
     max, filled up to the current. The filled bars of a bypassed charger are
     hatched. On a narrow screen only the bars are shown.
   - The state chip has an icon and a word, with the whole sentence as a
-    tooltip. An appliance shows on or off. A charger shows the first that
+    tooltip. An appliance shows excluded, on or off, and the title of an
+    excluded appliance is dimmed. A charger shows the first that
     holds of: first decision (before the first decision after a start),
     excluded, its charging window when it is not allowed to charge, no car
     connected (bypassed and car connected is false), no power draw (bypassed
@@ -189,8 +190,9 @@ Code that mirrors the backend and must be kept in step with it:
   - A resting charger is shown as bypassed, without when it is tried again.
   - A dashed cut-off line goes under the last entry that is on: an appliance,
     or the EV charging row while one of its chargers is activated and not
-    bypassed. It is hidden when nothing or everything is on, so it always sits
-    between two entries. It shows the free power and its share of the power
+    bypassed. It is hidden when nothing is on, or when only excluded
+    appliances are below the last entry that is on, so something that can be
+    turned on is always below it. It shows the free power and its share of the power
     limit while that is above 0, and explains itself in a tooltip. By the
     fixed order nothing below the line is on.
 - Colours come from Home Assistant's theme variables, set once on `:host`:

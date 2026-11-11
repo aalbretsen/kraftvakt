@@ -132,6 +132,8 @@ export interface ApplianceStatus {
   id: string;
   name: string;
   on: boolean;
+  /** Excluded from the regulation at the last decision. */
+  excluded: boolean;
   variant: string | null;
   waiting_since: string | null;
   waiting_until: string | null;
