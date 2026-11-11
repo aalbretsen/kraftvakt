@@ -462,6 +462,24 @@ uv pip install -r requirements_dev.txt
 nvm install
 ```
 
+### Releasing
+
+Versions follow [SemVer](https://semver.org/). A release is made from an
+up-to-date `main` with a clean working tree and Node active:
+
+```bash
+uv run scripts/release.py 0.2.0
+```
+
+The script runs the checks, sets the version in `manifest.json`,
+`pyproject.toml` and the panel's `package.json` and lock file, commits, tags
+`v0.2.0`, and asks before it pushes `main` and the tag. The tag starts the
+release workflow, which checks the versions and creates a draft release on
+GitHub. Write the release notes there and publish it; HACS offers only
+published releases. A version with a pre-release part, like `0.2.0-beta.1`,
+becomes a GitHub pre-release, which HACS offers only to users who turn on
+pre-releases for Kraftvakt. The simulator is not part of a release.
+
 ### Local Home Assistant
 
 Run a local Home Assistant against the repository. `config/custom_components/`

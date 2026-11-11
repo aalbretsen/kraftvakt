@@ -1,23 +1,37 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
 
 permissions:
   contents: write
 
 jobs:
-  check-version:
-    name: Check that the manifest version matches the tag
+  draft-release:
+    name: Draft the GitHub release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Compare versions
+      - name: Check that the versions in the files match the tag
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          MANIFEST=$(jq -r .version custom_components/kraftvakt/manifest.json)
-          if [ "$TAG" != "$MANIFEST" ]; then
-            echo "::error::Tag $TAG does not match the manifest.json version $MANIFEST"
-            exit 1
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
+          for found in \
+            "$(jq -r .version custom_components/kraftvakt/manifest.json)" \
+            "$(jq -r .version frontend/package.json)" \
+            "$(jq -r .version frontend/package-lock.json)" \
+            "$(jq -r '.packages[""].version' frontend/package-lock.json)" \
+            "$(sed -n 's/^version = "\(.*\)"$/\1/p' pyproject.toml)"; do
+            if [ "$found" != "$VERSION" ]; then
+              echo "::error::The tag $GITHUB_REF_NAME does not match the version $found in the files"
+              exit 1
+            fi
+          done
+      - name: Create a draft release, a pre-release for a SemVer pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""
+          case "$GITHUB_REF_NAME" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "Kraftvakt ${GITHUB_REF_NAME#v}" --notes "" $PRERELEASE
