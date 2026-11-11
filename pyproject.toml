@@ -1,6 +1,6 @@
 [project]
 name = "kraftvakt"
-version = "0.3.0"
+version = "0.4.0"
 description = "Home Assistant custom integration for prioritized power management under the Norwegian capacity tariff"
 readme = "README.md"
 license = { text = "MIT" }
