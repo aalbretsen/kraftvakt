@@ -120,10 +120,10 @@ class PowerAverager:
     def close_window(self) -> WindowAverages:
         """Close the current regulation window and start the next one.
 
-        Settled with the owner: when the averages are unknown after two invalid
-        closes, the history is kept and the last valid measurement fills the gap.
-        The first measurement after the gap is only the background or a short
-        peak, so it cannot stand for the time before.
+        When the averages are unknown after two invalid closes, the history is
+        kept and the last valid measurement fills the gap. The first
+        measurement after the gap is only the background or a short peak, so it
+        cannot stand for the time before.
         """
         start, end = self._window_start, self.window_end
         self._window_start = end

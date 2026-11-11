@@ -1,6 +1,6 @@
 ---
 name: kraftvakt-regulation
-description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants and EV charging, including every rule settled with the owner. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or charger_switches.py, or when a question is about what the regulation should do.
+description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants and EV charging. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or charger_switches.py, or when a question is about what the regulation should do.
 ---
 
 # Kraftvakt regulation
@@ -12,8 +12,8 @@ over the last hour just below a power limit chosen by the user, by turning
 appliances that can wait on and off in priority order. Everything runs locally.
 
 This file is the specification. When a rule here is unclear, ask the owner
-instead of deciding. Ranges and defaults below are settled with the owner;
-the code holds them in one place (`config_model.py`).
+instead of deciding. The ranges and defaults below are part of the
+specification; the code holds them in one place (`config_model.py`).
 
 ## Concepts
 
@@ -163,35 +163,34 @@ the status page and the average sensors show kW.
   slot that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit),
-  recalculated at each decision while it runs. Why: an appliance should
-  hardly wait while there is plenty of free power, and wait the whole time
-  only close to the limit. With u = average / limit and
-  x = clamp((u − 0.5) / 0.5, 0, 1), the share is the normalized Hill function
-  x^n · (1 + K) / (x^n + K): 0 at or below half the limit, slow at first, and
-  1 at the limit and above. n is the steepness,
-  1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default 80, is the
-  utilization in percent where the share is 80 %: with t = (pivot − 50) / 50,
-  K = t^n · 0.2 / (0.8 − t^n), computed once per start. A pivot the curve
-  cannot reach at the steepness is capped silently just below
-  t = 0.8^(1/n); the setting keeps what the user chose. Pivot 50 gives K = 0:
-  no waiting up to half the limit and the whole waiting time above it. The
-  owner's test values for the curve are in the unit tests for waiting.
+  recalculated at each decision while it runs. Why: an appliance should hardly
+  wait while there is plenty of free power, and wait the whole time only close
+  to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1),
+  the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or
+  below half the limit, slow at first, and 1 at the limit and above. n is the
+  steepness, 1.5–9 in steps of 0.5, default 6. The pivot point, 50–99, default
+  80, is the utilization in percent where the share is 80 %: with t = (pivot −
+  50) / 50, K = t^n · 0.2 / (0.8 − t^n), computed once per start. A pivot the
+  curve cannot reach at the steepness is capped silently just below t =
+  0.8^(1/n); the setting keeps what the user chose. Pivot 50 gives K = 0: no
+  waiting up to half the limit and the whole waiting time above it. The test
+  values for the curve are in the unit tests for waiting.
 - Persistent cycling: when the same slot is turned on again without any other
   slot being switched in between, a counter grows. The first turn-on and the
   first turn-on again use the curve. From the second turn-on again, the
-  waiting time is fixed, independent of the average:
-  min(cap, waiting at limit + step × (n − 2)), where n is the count of
-  turn-ons again. The step is a share of the waiting time at the limit, 0.25,
-  0.5, 0.75 or 1, and the cap is the waiting time at the limit plus a number
-  of steps, 1–9. Both are set separately for appliances (default 0.5 and 4)
-  and for fictive appliances (default 1 and 5). With waiting time 0 at the
-  limit, the step and the cap are 0, so the waiting time does not grow;
-  accepted by the owner. The step is a share and the cap a number of steps
-  because that is easy to understand and follows the waiting time at the
-  limit. Any command for another slot, also forced ones, resets the counter.
-- Accepted by the owner, to revisit if it shows up in real use: two slots
-  that alternate (A on, B on, B off, A off, A on …) reset each other's
-  counter, so their waiting time never grows.
+  waiting time is fixed, independent of the average: min(cap, waiting at limit
+  + step × (n − 2)), where n is the count of turn-ons again. The step is a
+  share of the waiting time at the limit, 0.25, 0.5, 0.75 or 1, and the cap is
+  the waiting time at the limit plus a number of steps, 1–9. Both are set
+  separately for appliances (default 0.5 and 4) and for fictive appliances
+  (default 1 and 5). With waiting time 0 at the limit, the step and the cap
+  are 0, so the waiting time does not grow. The step is a share and the cap a
+  number of steps because that is easy to understand and follows the waiting
+  time at the limit. Any command for another slot, also forced ones, resets
+  the counter.
+- Known limitation, to revisit if it shows up in real use: two slots that
+  alternate (A on, B on, B off, A off, A on …) reset each other's counter, so
+  their waiting time never grows.
 
 ## Penalty
 
@@ -214,11 +213,11 @@ the status page and the average sensors show kW.
   (stop, safe state, HA start, power limit change). The current variants are
   still evaluated during a penalty; they give no commands since everything is
   off.
-- Accepted by the owner: the start after a penalty resets the cycling counters
-  like every other start, so while the average consumption stays above limit
-  plus threshold, an appliance that pushes the average over the limit goes on
-  and off with the waiting time from the curve only, never the longer waiting
-  time on persistent cycling. The penalty should never be needed.
+- The start after a penalty resets the cycling counters like every other
+  start, so while the average consumption stays above limit plus threshold, an
+  appliance that pushes the average over the limit goes on and off with the
+  waiting time from the curve only, never the longer waiting time on
+  persistent cycling. The penalty should never be needed.
 
 ## Safe state
 
@@ -238,10 +237,10 @@ the status page and the average sensors show kW.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends, when the power sensor is back after the safe state, and
-  at the next decision after the power limit was changed while it ran.
-  Confirmed by the owner: the regulation always tries to start when HA starts
-  and when the integration is reloaded (for example after an update). If the
-  user starts or stops before HA has finished starting, that wins.
+  at the next decision after the power limit was changed while it ran. The
+  regulation always tries to start when HA starts and when the integration is
+  reloaded (for example after an update). If the user starts or stops before
+  HA has finished starting, that wins.
 - After a reload, the turn-off commands wait until the previous runtime's
   actions are done.
 - The user stops and starts from the panel or the regulation switch; they are
@@ -255,7 +254,7 @@ the status page and the average sensors show kW.
 
 ## Power limit entity
 
-Settled with the owner, so automations can set the power limit:
+Automations can set the power limit with it:
 
 - A `number` entity in whole watts with the same range as the setting, the
   same value as the power limit in the panel. A new value is saved at once
@@ -271,7 +270,7 @@ Settled with the owner, so automations can set the power limit:
 
 ## Diagnostic entities
 
-Settled with the owner, all with entity category diagnostic:
+All with entity category diagnostic:
 
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0

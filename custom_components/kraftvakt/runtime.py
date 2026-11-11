@@ -338,9 +338,9 @@ class KraftvaktRuntime:
     async def async_set_power_limit(self, power_limit_w: int) -> None:
         """Save a new power limit, also while the regulation runs.
 
-        Settled with the owner: while it runs, the regulation starts again with the
-        new limit at the next decision, so several changes give one restart and a
-        limit changed back to the one in use gives none.
+        While it runs, the regulation starts again with the new limit at the
+        next decision, so several changes give one restart and a limit changed
+        back to the one in use gives none.
         """
         general = self._config.general
         if power_limit_w == general.power_limit_w:

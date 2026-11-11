@@ -33,9 +33,8 @@ class CyclingSteps:
 class WaitingCurve:
     """The share of the waiting time at the limit, by utilization of the limit.
 
-    A normalized Hill function, settled with the owner: no waiting up to half
-    the limit, then a slow start through 80 % at the pivot, and the whole
-    waiting time at the limit.
+    A normalized Hill function: no waiting up to half the limit, then a slow
+    start through 80 % at the pivot, and the whole waiting time at the limit.
     """
 
     steepness: float

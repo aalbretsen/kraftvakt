@@ -67,8 +67,8 @@ Code that mirrors the backend and must be kept in step with it:
   banner with a button to stop the regulation, on one line.
 - The warning against controlling regulated appliances outside Kraftvakt is
   shown only while a list is empty (appliances on the Appliances page,
-  chargers on the EV charging page). The owner chose this, because the user
-  does not need to see it all the time.
+  chargers on the EV charging page), since the user does not need to see it
+  all the time.
 - Default is offered only for domains with a default action. It is chosen
   when an entity with a default action is picked and the action is not set,
   and a default action becomes an empty custom action when the new entity has
@@ -77,7 +77,7 @@ Code that mirrors the backend and must be kept in step with it:
   other appliances and chargers use.
 - Set charging current also offers Entity: an entity picker limited to the
   domains with a default set-current action, with a helper telling which
-  service runs. Required until an entity is chosen (settled with the owner).
+  service runs. Required until an entity is chosen.
 - The boolean entity picker offers binary sensors, input booleans, switches
   and schedules. Templates are previewed with HA's `render_template`
   subscription, with `entity` as the frontend's state object. A result that is
@@ -96,9 +96,9 @@ Code that mirrors the backend and must be kept in step with it:
 - The last page in the menu, with the settings most users never change. Its
   settings belong to `general` in the stored configuration, so issues for
   those fields send the user to it. The waiting time at the power limit is on
-  the General page (settled with the owner).
-- The owner wants little text: the user reads the curve and the result, not
-  how it is computed.
+  the General page.
+- Little text: the user reads the curve and the result, not how it is
+  computed.
 - First card, the waiting time curve: one line of text, sliders for steepness
   and pivot point (no tooltip, the value as plain text beside it, no input box,
   no helper text), a table and a graph that follow the draft while the sliders
@@ -137,11 +137,10 @@ Code that mirrors the backend and must be kept in step with it:
   Power is shown in kW and energy in kWh.
 - While stopped, the regulation card lists what is missing, each with a link
   to the page where it is fixed.
-- The regulation card's header holds the title, a chip for running or
-  stopped, chips for safe state and penalty while active, and the next
-  decision at the right end. Start and stop are in a footer under a divider,
-  on every screen width; stop is a plain danger button, start a filled one
-  (settled with the owner).
+- The regulation card's header holds the title, a chip for running or stopped,
+  chips for safe state and penalty while active, and the next decision at the
+  right end. Start and stop are in a footer under a divider, on every screen
+  width; stop is a plain danger button, start a filled one.
 - While the power sensor is valid again but the safe state lasts until the
   next decision, the safe state banner is an info that the regulation starts
   again at the next decision, not the error that the sensor gives no valid
@@ -162,14 +161,14 @@ Code that mirrors the backend and must be kept in step with it:
   it covers.
 - The meter is a bar for consumption now. Each other value is a triangle above
   the bar pointing down at it, in its own colour, and each tile has the same
-  triangle as swatch. Nothing else is drawn on the meter (settled with the
-  owner). Under the bar is a kW scale with readable ticks, reaching a bit
-  above the limit and every value.
+  triangle as swatch. Nothing else is drawn on the meter. Under the bar is a
+  kW scale with readable ticks, reaching a bit above the limit and every
+  value.
 - Appliances and chargers share one full-width priority list card. The EV
   charging row has its own rank at the EV charging position, and the chargers
   are indented under it in the current charging priority. Every row is one
   line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip. Settled with the owner:
+  variant after it, current, waiting and state chip.
   - Icons instead of short texts, each with its sentence as a tooltip, and no
     legend. The EV charging row shows how many chargers are charging of all.
   - The current column has the current before one bar per ampere from min to
@@ -184,8 +183,7 @@ Code that mirrors the backend and must be kept in step with it:
     while activated), charging, activated, deactivated. Excluded comes before
     bypassed, so a stale bypassed is not shown. No car connected is a state
     of its own, because the user needs to know that the car is missing.
-  - A resting charger is shown as bypassed, without when it is tried again
-    (settled with the owner).
+  - A resting charger is shown as bypassed, without when it is tried again.
   - A dashed cut-off line goes under the last entry that is on: an appliance,
     or the EV charging row while one of its chargers is activated and not
     bypassed. It is hidden when nothing or everything is on, so it always sits

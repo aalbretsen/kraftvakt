@@ -332,8 +332,8 @@ class RegulationEngine:
     def _switch_off_above_limit(self, forced_off: bool) -> list[Command]:
         """Switch off the lowest priority slot that is on.
 
-        Settled with the owner: nothing more is switched off when the decision has
-        already forced something off, since the average was measured before that.
+        Nothing more is switched off when the decision has already forced
+        something off, since the average was measured before that.
         """
         self._state.waiting = None
         if forced_off:
@@ -361,9 +361,9 @@ class RegulationEngine:
     def _may_turn_on(self, slot: Slot, average_w: float) -> bool:
         """Return whether there is room to turn the slot on.
 
-        Settled with the owner: the average must be below the limit by the turn-on
-        margin, since the window after a decision still holds some of the
-        consumption from before its commands.
+        The average must be below the limit by the turn-on margin, since the
+        window after a decision still holds some of the consumption from before
+        its commands.
         """
         general = self._config.general
         limit_w = general.power_limit_w

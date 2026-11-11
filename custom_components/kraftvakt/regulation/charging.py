@@ -277,8 +277,8 @@ class ChargingState:
     ) -> bool:
         """Update the rest of the charger and return whether it is bypassed.
 
-        Settled with the owner: without a rest, two chargers with full cars take
-        turns being activated forever when only one may charge at a time.
+        Without a rest, two chargers with full cars take turns being activated
+        forever when only one may charge at a time.
         """
         activated_at = self.activated_at.get(charger_id)
         charges = activated_at is not None and actively_charging(reading)
@@ -324,8 +324,8 @@ class ChargingState:
     def _update_on_trial(self, readings: Mapping[str, ChargerReading]) -> None:
         """Find the chargers that may charge but do not charge actively.
 
-        Settled with the owner: a charger tried without a car that charges must
-        not get more current and hold back the appliances below «EV charging».
+        A charger tried without a car that charges must not get more current
+        and hold back the appliances below «EV charging».
         """
         self.on_trial = {
             charger_id

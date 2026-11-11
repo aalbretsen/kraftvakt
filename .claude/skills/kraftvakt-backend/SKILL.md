@@ -28,9 +28,9 @@ integrations.
   device first), and after the entity when it has no device; an appliance is
   named after its entity. The status, the entity names sent to the panel and
   the charger switches use the same function for this, and the panel mirrors
-  it for a charger that is not saved yet. Settled with the owner: the entity
-  that allows charging often has a name made of the device name and a word
-  like "Charging allowed", which makes a poor name for the charger.
+  it for a charger that is not saved yet. The entity that allows charging
+  often has a name made of the device name and a word like "Charging allowed",
+  which makes a poor name for the charger.
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
   `config_panel_domain` when the panel is registered.
@@ -95,10 +95,10 @@ An invalid configuration is not saved:
   separately in `actions.py`, outside parsing; type errors must be fixed
   before that check can run.
 - The `entity` action mode is only allowed for setting the charging current:
-  it runs the default action of the chosen entity instead of the charger's
-  own entity, so it must be a `number` or `input_number`. Settled with the
-  owner: most chargers have a number entity for the current, and a custom
-  action for it is needlessly hard.
+  it runs the default action of the chosen entity instead of the charger's own
+  entity, so it must be a `number` or `input_number`. Most chargers have a
+  number entity for the current, and a custom action for it is needlessly
+  hard.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
   is not checked again. Why: the user sees every error at once, not one at a
@@ -125,11 +125,10 @@ panel's translations.
 
 - All belong to one service device, Kraftvakt, and use `has_entity_name` and
   `translation_key`. The unique id and the translation key are the key.
-- Settled with the owner: the entity ids are technical, English in every
-  language, and grouped by prefix (`regulation_`, `power_`, `waiting_time_`,
-  `penalty_`, `charger_`). An entity suggests its object id (the key unless given),
-  which HA prefixes with the device name. The names are grouped the same way, in
-  every language.
+- The entity ids are technical, English in every language, and grouped by
+  prefix (`regulation_`, `power_`, `waiting_time_`, `penalty_`, `charger_`).
+  An entity suggests its object id (the key unless given), which HA prefixes
+  with the device name. The names are grouped the same way, in every language.
 - The averages, power free and the power limit are power in W, shown as kW
   for the sensors. The overconsumption is energy in Wh without a state class,
   since it is not a total. The waiting times are durations in seconds.

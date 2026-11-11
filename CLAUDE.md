@@ -10,7 +10,7 @@ tests in `tests/`.
 
 ## Skills
 Read the skill for the kind of task before starting:
-- `kraftvakt-regulation`: how the regulation must behave, and every rule settled with the owner. The specification of the integration.
+- `kraftvakt-regulation`: how the regulation must behave. The specification of the integration.
 - `kraftvakt-backend`: modules, stored configuration, validation, actions, entities and the WebSocket API.
 - `kraftvakt-panel`: the panel, the HA components it may use, and the build.
 - `kraftvakt-testing`: test layout and conventions, checks before commit, and manual testing against a local Home Assistant.

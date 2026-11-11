@@ -396,10 +396,9 @@ def new_id() -> str:
 def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     """Read and validate a configuration from the panel.
 
-    Raises ConfigValidationError with every issue found. Settled with the
-    owner: a value of the wrong type is read as the default, so the other rules
-    are still checked. Must be called from the event loop, since Home Assistant
-    validates templates there.
+    Raises ConfigValidationError with every issue found. A value of the wrong
+    type is read as the default, so the other rules are still checked. Must be
+    called from the event loop, since Home Assistant validates templates there.
     """
     reader = _Reader()
     config = _complete_priority(reader.config(data))

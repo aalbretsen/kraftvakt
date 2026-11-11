@@ -16,9 +16,9 @@ from .const import DOMAIN, NAME
 class KraftvaktEntity(Entity):
     """An entity that belongs to the Kraftvakt service device.
 
-    Settled with the owner: the entity id comes from `object_id`, not from
-    the translated name, so it is the same in every language and groups the
-    entities, like `sensor.kraftvakt_waiting_time_remaining`.
+    The entity id comes from `object_id`, not from the translated name, so it
+    is the same in every language and groups the entities, like
+    `sensor.kraftvakt_waiting_time_remaining`.
     """
 
     _attr_has_entity_name = True
@@ -60,8 +60,8 @@ def entity_name(hass: HomeAssistant, entity_id: str) -> str:
 def charger_name(hass: HomeAssistant, entity_id: str) -> str:
     """Return the name of a charger: its device's, or else its entity's.
 
-    Settled with the owner: the entity that allows charging often has a name
-    like «Garage Charging allowed».
+    The entity that allows charging often has a name like «Garage Charging
+    allowed», a poor name for the charger.
     """
     registry_entry = er.async_get(hass).async_get(entity_id)
     if registry_entry is not None and registry_entry.device_id is not None:
