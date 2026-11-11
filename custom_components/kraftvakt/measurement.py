@@ -122,8 +122,8 @@ class PowerAverager:
 
         Settled with the owner: when the averages are unknown after two invalid
         closes, the history is kept and the last valid measurement fills the gap.
-        Filling the hour with the first measurement after the gap makes the
-        average consumption far too low or too high.
+        The first measurement after the gap is only the background or a short
+        peak, so it cannot stand for the time before.
         """
         start, end = self._window_start, self.window_end
         self._window_start = end

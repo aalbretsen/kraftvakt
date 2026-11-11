@@ -19,7 +19,7 @@ export function ownEntities(hass: HomeAssistant): string[] {
     .map((entry) => entry.entity_id);
 }
 
-/** Return the power a power sensor measures now in kW, read as the backend reads it. */
+/** Return the power a power sensor measures now in W, read as the backend reads it. */
 export function measuredPowerW(hass: HomeAssistant, entityId: string): number | null {
   const entity = hass.states[entityId];
   const value = Number(entity?.state);

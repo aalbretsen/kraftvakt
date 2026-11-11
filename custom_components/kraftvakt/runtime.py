@@ -149,7 +149,7 @@ class KraftvaktRuntime:
 
     @property
     def penalty(self) -> PenaltyState:
-        """Return the overconsumption state and the penalty period (STR)."""
+        """Return the overconsumption state and the penalty period."""
         return self._engine.penalty
 
     @property

@@ -1,4 +1,4 @@
-"""Kraftvakt: prioritized power control for Home Assistant."""
+"""Kraftvakt: prioritized power management for Home Assistant."""
 
 from __future__ import annotations
 
