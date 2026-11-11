@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import urllib.request
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,7 @@ PYPI_RELEASE = "https://pypi.org/pypi/{name}/{version}/json"
 NPM_LATEST = "https://registry.npmjs.org/{name}/latest"
 GITHUB_RELEASE = "https://api.github.com/repos/{repository}/releases/latest"
 FRONTEND_MANIFEST = "homeassistant/components/frontend/manifest.json"
+ACTION_PIN = re.compile(r"(uses: )([\w.-]+/[\w.-]+)@(v[\d.]+)")
 
 
 def main() -> None:
@@ -130,21 +132,27 @@ def update_actions(changes: list[str]) -> None:
     A pin keeps its precision: `v7` follows the major version, `v10.3.3` the
     whole version. Actions on a branch are left as they are.
     """
-    pattern = re.compile(r"(uses: )([\w.-]+/[\w.-]+)@(v[\d.]+)")
     newest: dict[str, str] = {}
+    update = partial(update_action_pin, newest, changes)
     for workflow in sorted(WORKFLOWS.glob("*.yml")):
+        workflow.write_text(ACTION_PIN.sub(update, workflow.read_text()))
 
-        def update(match: re.Match[str]) -> str:
-            repository, current = match.group(2), match.group(3)
-            if repository not in newest:
-                tag = fetch_json(GITHUB_RELEASE.format(repository=repository))
-                newest[repository] = tag["tag_name"]
-            parts = current.count(".") + 1
-            version = ".".join(newest[repository].split(".")[:parts])
-            note_change(changes, repository, current, version)
-            return f"{match.group(1)}{repository}@{version}"
 
-        workflow.write_text(pattern.sub(update, workflow.read_text()))
+def update_action_pin(
+    newest: dict[str, str], changes: list[str], match: re.Match[str]
+) -> str:
+    """Return the pin of an action with its newest release, at the same precision.
+
+    `newest` keeps the releases already looked up.
+    """
+    repository, current = match.group(2), match.group(3)
+    if repository not in newest:
+        release = fetch_json(GITHUB_RELEASE.format(repository=repository))
+        newest[repository] = release["tag_name"]
+    parts = current.count(".") + 1
+    version = ".".join(newest[repository].split(".")[:parts])
+    note_change(changes, repository, current, version)
+    return f"{match.group(1)}{repository}@{version}"
 
 
 def requirement_pins(requirements: list[str]) -> dict[str, str]:

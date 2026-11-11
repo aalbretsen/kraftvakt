@@ -34,31 +34,55 @@ async def async_setup_entry(
     runtime = entry.runtime_data
     async_add_entities([RegulationSwitch(entry, runtime)])
     board = runtime.charger_switches
-    added: dict[str, list[ChargerSwitch]] = {}
+    _remove_orphaned_charger_switches(hass, entry, board)
+    charger_switches = ChargerSwitchEntities(hass, entry, async_add_entities)
+    charger_switches.async_follow_chargers()
+    entry.async_on_unload(
+        board.async_add_listener(charger_switches.async_follow_chargers)
+    )
+
+
+class ChargerSwitchEntities:
+    """Adds and removes the switches of the chargers as the configuration changes."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: KraftvaktConfigEntry,
+        async_add_entities: AddConfigEntryEntitiesCallback,
+    ) -> None:
+        """Create the switches for the chargers on the board of the entry."""
+        self._hass = hass
+        self._entry = entry
+        self._board = entry.runtime_data.charger_switches
+        self._async_add_entities = async_add_entities
+        self._added: dict[str, list[ChargerSwitch]] = {}
 
     @callback
-    def async_follow_chargers() -> None:
-        configured = {charger.id: charger for charger in board.config.charging.chargers}
-        registry = er.async_get(hass)
-        for charger_id in [key for key in added if key not in configured]:
-            for entity in added.pop(charger_id):
-                if entity.entity_id and registry.async_get(entity.entity_id):
-                    registry.async_remove(entity.entity_id)
+    def async_follow_chargers(self) -> None:
+        """Remove the switches of removed chargers and add those of new ones."""
+        configured = {
+            charger.id: charger for charger in self._board.config.charging.chargers
+        }
+        for charger_id in [key for key in self._added if key not in configured]:
+            self._remove(self._added.pop(charger_id))
         new_entities: list[ChargerSwitch] = []
         for charger_id, charger in configured.items():
-            if charger_id not in added:
-                name = item_name(hass, charger)
-                added[charger_id] = [
-                    ChargerSwitch(entry, board, charger_id, name, setting)
+            if charger_id not in self._added:
+                name = item_name(self._hass, charger)
+                self._added[charger_id] = [
+                    ChargerSwitch(self._entry, self._board, charger_id, name, setting)
                     for setting in CHARGER_SETTINGS
                 ]
-                new_entities += added[charger_id]
+                new_entities += self._added[charger_id]
         if new_entities:
-            async_add_entities(new_entities)
+            self._async_add_entities(new_entities)
 
-    _remove_orphaned_charger_switches(hass, entry, board)
-    async_follow_chargers()
-    entry.async_on_unload(board.async_add_listener(async_follow_chargers))
+    def _remove(self, entities: list[ChargerSwitch]) -> None:
+        registry = er.async_get(self._hass)
+        for entity in entities:
+            if entity.entity_id and registry.async_get(entity.entity_id):
+                registry.async_remove(entity.entity_id)
 
 
 def _remove_orphaned_charger_switches(

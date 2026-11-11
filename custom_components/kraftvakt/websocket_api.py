@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from functools import partial
 from typing import Any, Final
 
 import voluptuous as vol
@@ -176,18 +177,24 @@ def websocket_subscribe_status(
     """Send the status now and each time it may change."""
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
-
-    @callback
-    def send_status(runtime: KraftvaktRuntime) -> None:
-        connection.send_message(
-            websocket_api.event_message(msg["id"], status_snapshot(hass, runtime))
-        )
-
+    send_status = partial(_send_status, hass, connection, msg["id"])
     connection.subscriptions[msg["id"]] = async_dispatcher_connect(
         hass, SIGNAL_STATUS, send_status
     )
     connection.send_result(msg["id"])
     send_status(runtime)
+
+
+@callback
+def _send_status(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    subscription_id: int,
+    runtime: KraftvaktRuntime,
+) -> None:
+    connection.send_message(
+        websocket_api.event_message(subscription_id, status_snapshot(hass, runtime))
+    )
 
 
 def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str, Any]:

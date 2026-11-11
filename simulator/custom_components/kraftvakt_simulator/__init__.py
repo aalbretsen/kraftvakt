@@ -7,6 +7,7 @@ the Kraftvakt integration that users install.
 from __future__ import annotations
 
 from datetime import timedelta
+from functools import partial
 from typing import Final
 
 from homeassistant.config_entries import ConfigEntry
@@ -68,10 +69,7 @@ def platforms_of(entry: ConfigEntry) -> list[Platform]:
 def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
     """Create the simulated device from the config entry's settings."""
     data = entry.data
-
-    def store_setting(key: str, value: float) -> None:
-        hass.config_entries.async_update_entry(entry, data={**entry.data, key: value})
-
+    store_setting = partial(_store_setting, hass, entry)
     match kind_of(entry):
         case DeviceKind.HAN:
             return SimulatedHan(
@@ -91,3 +89,9 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
                 data[CONF_MIN_CURRENT_A],
                 data[CONF_MAX_CURRENT_A],
             )
+
+
+def _store_setting(
+    hass: HomeAssistant, entry: ConfigEntry, key: str, value: float
+) -> None:
+    hass.config_entries.async_update_entry(entry, data={**entry.data, key: value})
