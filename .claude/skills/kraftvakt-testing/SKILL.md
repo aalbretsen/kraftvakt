@@ -79,6 +79,9 @@ extend them rather than building engine inputs by hand.
   in a background task: use
   `hass.async_block_till_done(wait_background_tasks=True)`. A test with a
   service that blocks on purpose must not wait for it.
+- Each window close schedules the next, so close several windows one at a
+  time. A test that runs past the command repeat interval also gets the
+  repeated commands.
 - The test `hass` is running, so the regulation starts at setup. To test the
   start when HA has started, set `hass.set_state(CoreState.starting)` before
   setup and fire `EVENT_HOMEASSISTANT_STARTED` afterwards.

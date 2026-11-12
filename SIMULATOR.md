@@ -20,7 +20,8 @@ device at a time with **Add device**:
   sensor. While the switch is on, it heats in a fixed cycle that starts with
   the on part: 750 W, 25 % and 60 minutes give 15 minutes on and 45 minutes
   off, over and over. The cycle starts again every time the switch is turned
-  on or the cycle is changed. With the switch off, it uses nothing.
+  on from off or the cycle is changed; turning it on while it is on changes
+  nothing. With the switch off, it uses nothing.
 - **Thermostat:** a heating device controlled by a thermostat, with the same
   power, duty cycle and period, the HVAC modes it supports (off, heat and auto
   by default, at least one heating mode) and a room temperature (5 °C by

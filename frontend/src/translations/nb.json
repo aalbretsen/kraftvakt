@@ -107,7 +107,7 @@
   "warning": {
     "appliances_title": "Ikke slå regulerte apparater av eller på utenom Kraftvakt",
     "chargers_title": "Ikke slå elbilladere av eller på utenom Kraftvakt",
-    "text": "Manuell styring og automasjoner kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff."
+    "text": "Manuell styring og automasjoner kan forstyrre reguleringen, gå ut over apparater med høyere prioritet og utløse straff. Kraftvakt setter dem også tilbake når den gjentar kommandoene sine."
   },
   "errors": {
     "required": "Påkrevd.",

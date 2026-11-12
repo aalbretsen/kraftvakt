@@ -107,7 +107,7 @@
   "warning": {
     "appliances_title": "Do not turn regulated appliances on or off outside Kraftvakt",
     "chargers_title": "Do not turn EV chargers on or off outside Kraftvakt",
-    "text": "Manual control and automations can disturb the regulation, affect appliances with higher priority and trigger a penalty."
+    "text": "Manual control and automations can disturb the regulation, affect appliances with higher priority and trigger a penalty. Kraftvakt also sets them back when it repeats its commands."
   },
   "errors": {
     "required": "Required.",

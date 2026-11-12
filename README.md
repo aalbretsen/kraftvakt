@@ -112,8 +112,9 @@ whether it is on. It assumes the appliances are as Kraftvakt last set them,
 and repeats the command for that state now and then, in case an appliance has
 changed by itself, for example after a power outage on its circuit. Do
 not turn regulated appliances on or off outside Kraftvakt. It can disturb the
-regulation, affect appliances with higher priority and trigger a penalty.
-Exclude the appliance from the regulation instead. EV chargers are the
+regulation, affect appliances with higher priority and trigger a penalty, and
+the command repeat sets the appliance back. Exclude the appliance from the
+regulation instead. EV chargers are the
 exception: Kraftvakt reads whether they are actively charging and whether a
 car is connected.
 
@@ -330,9 +331,9 @@ All entities belong to the service device **Kraftvakt**.
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the average consumption went above it. 0 when there is none. |
 | **Appliance** | |
-| `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on. |
+| `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on and gets no repeated commands. |
 | **EV charger** | |
-| `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges. |
+| `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
 | `binary_sensor.kraftvakt_charger_<charger>_window_allowed` (‹charger› charging allowed by window) | Diagnostic. One per EV charger. On while the charging window allows charging: inside the charging window, while **‹charger› override charging window** is on, or always when the EV charger has no charging window. Follows the clock, also while the regulation is stopped. |
 
@@ -357,7 +358,8 @@ value equal to the power limit in use does nothing. The status page shows the
 power limit in use.
 
 The appliance and EV charger switches can be used while the regulation runs
-and apply from the next decision. Their state is stored at once and kept over
+and apply from the next decision. An excluded appliance or EV charger gets no
+repeated commands from the next regulation window. Their state is stored at once and kept over
 a restart. The entities of an EV charger do not depend on its group, and are
 kept when it is moved to another group.
 

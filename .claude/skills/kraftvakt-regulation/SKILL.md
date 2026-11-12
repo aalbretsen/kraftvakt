@@ -25,7 +25,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
 | Average consumption | Sliding time-weighted average over exactly one hour back (the capacity window), not configurable. The regulation uses it only for the penalty. |
-| Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
+| Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. The command repeat sends commands also between decisions, but only for the state the regulation has already set. |
 | Command repeat interval | 10–60 min, default 30 min. How long an appliance or charger may go without a command before the command for its state is sent again. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
@@ -361,7 +361,8 @@ All with entity category diagnostic:
   is switched off to give room, and its waiting time and cycling counter are
   reset. An excluded appliance that switches variant gives no room.
 - The switch can be used while the regulation runs, is saved at once, and
-  takes effect at the next decision. It does not restart the regulation.
+  takes effect at the next decision, for the command repeat at the next
+  window close. It does not restart the regulation.
 
 ## EV charging
 
@@ -447,4 +448,6 @@ All with entity category diagnostic:
   a charger without charging window. Switching it off stops charging outside
   the window like the window ending.
 - Both switches can be used while the regulation runs, are saved at once, and
-  take effect at the next decision. They do not restart the regulation.
+  take effect at the next decision; the excluded switch takes effect for the
+  command repeat at the next window close. They do not restart the
+  regulation.
