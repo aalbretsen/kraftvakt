@@ -161,15 +161,13 @@ def _current_positions(
 
 
 def _groups_in_order(config: KraftvaktConfig) -> list[ChargerGroup]:
-    """Return the enabled groups in the order of their entries."""
+    """Return the groups in the order of their entries."""
     entries = [
         entry.group_id
         for entry in config.priority
         if entry.type is PriorityEntryType.CHARGER_GROUP
     ]
-    return sorted(
-        config.enabled_charger_groups, key=lambda group: _position(entries, group.id)
-    )
+    return sorted(config.charger_groups, key=lambda group: _position(entries, group.id))
 
 
 def _charger_group_position(

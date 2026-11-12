@@ -64,11 +64,7 @@ function expectedPriority(config: KraftvaktConfig): PriorityEntry[] {
       (variant): PriorityEntry => ({ type: "appliance", appliance_id: appliance.id, variant_id: variant.id }),
     ),
   ]);
-  for (const group of config.charger_groups) {
-    if (group.enabled) {
-      entries.push({ type: "charger_group", group_id: group.id });
-    }
-  }
+  entries.push(...config.charger_groups.map((group): PriorityEntry => ({ type: "charger_group", group_id: group.id })));
   return entries;
 }
 

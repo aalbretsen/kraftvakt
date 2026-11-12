@@ -88,18 +88,11 @@ DEFAULT_GROUP = "ev"
 
 
 def charger_group(
-    group_id: str,
-    *chargers: Charger,
-    one_at_a_time: bool = True,
-    enabled: bool = True,
+    group_id: str, *chargers: Charger, one_at_a_time: bool = True
 ) -> ChargerGroup:
     """Return a group of the chargers, named after its id."""
     return ChargerGroup(
-        id=group_id,
-        name=group_id,
-        enabled=enabled,
-        one_at_a_time=one_at_a_time,
-        chargers=chargers,
+        id=group_id, name=group_id, one_at_a_time=one_at_a_time, chargers=chargers
     )
 
 
@@ -123,7 +116,6 @@ def make_config(
     charger_cycling: tuple[float, int] = (1.0, 5),
     chargers: tuple[Charger, ...] = (),
     one_at_a_time: bool = True,
-    charging_enabled: bool | None = None,
     groups: tuple[ChargerGroup, ...] = (),
 ) -> KraftvaktConfig:
     """Return a configuration with the appliances in the given priority order.
@@ -131,18 +123,15 @@ def make_config(
     An appliance given as a string has no reserve and no variants. The
     chargers are put in one group, ``"ev"``, before the `groups`. Without an
     explicit priority, the appliances come first in the given order, then the
-    group ``"ev"`` when there are chargers, and the variants last. The group
-    is enabled when there are chargers, unless `charging_enabled` says
-    otherwise.
+    group ``"ev"`` when there are chargers, and the variants last.
     """
     built = tuple(
         appliance(item) if isinstance(item, str) else item for item in appliances
     )
-    enabled = bool(chargers) if charging_enabled is None else charging_enabled
     if priority is None:
         priority = (
             *(item.id for item in built),
-            *(("ev",) if enabled else ()),
+            *(("ev",) if chargers else ()),
             *(f"{item.id}:{variant.id}" for item in built for variant in item.variants),
         )
     return KraftvaktConfig(
@@ -160,8 +149,10 @@ def make_config(
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),
         charger_groups=(
-            charger_group(
-                DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time, enabled=enabled
+            *(
+                (charger_group(DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time),)
+                if chargers
+                else ()
             ),
             *groups,
         ),

@@ -32,7 +32,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Waiting time | Time that must pass before an appliance is turned on. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
-| Priority list | Sorted list of appliances, their variants and an entry per enabled charger group. Top is highest priority, turned off last. |
+| Priority list | Sorted list of appliances, their variants and an entry per charger group. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list, and optionally its own actions. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
 | Slot | An entry the regulation switches: the current variant of an appliance, or a fictive appliance. |
@@ -238,8 +238,7 @@ energy in Wh; the status page shows kW.
 ## Start and stop
 
 - Every start turns off every appliance in the configuration, once per
-  appliance even with variants, and deactivates every charger in an enabled
-  group. The same holds wherever everything is turned off. The
+  appliance even with variants, and deactivates every charger. The same holds wherever everything is turned off. The
   current variant is found at the first decision, so a start uses the
   appliance's own turn-off action, and stop, the safe state and a penalty use
   the current variant's.
@@ -257,7 +256,7 @@ energy in Wh; the status page shows kW.
   decisions.
 - The regulation can only start when the configuration is complete: power
   sensor chosen; every appliance has entity, turn-on and turn-off action;
-  every charger in an enabled group has entity, activate, deactivate and
+  every charger has entity, activate, deactivate and
   set-current actions and actively charging, and also car connected when only
   one charger in its group may charge at a time.
 
@@ -297,8 +296,7 @@ All with entity category diagnostic:
   allows charging, that is inside the window, while the override switch is
   on, or always without a window. It does not consider the excluded switch.
   It follows the clock, not the decisions, so it is right also while the
-  regulation is stopped, and it changes at the whole minute. Unavailable
-  while the charger's group is disabled.
+  regulation is stopped, and it changes at the whole minute.
 - Waiting time next turn-on (calculated) (s): the waiting time the next
   turn-on gets from the curve, for the last regulation average and the limit
   in use, without the longer waiting time on persistent cycling. Unavailable
@@ -347,10 +345,8 @@ All with entity category diagnostic:
   nothing of the chargers of other groups. So two groups with one charger at a
   time may each have a charger charging at once. The waiting time on
   persistent cycling for fictive appliances is one setting for all groups.
-- A group is enabled or disabled, default disabled. While disabled, its
-  chargers stay in the configuration but are not regulated, not required for
-  completeness, and their switches are unavailable (positions kept), and the
-  group has no entry in the priority list.
+- Every group is regulated. Without groups there is no EV charging; to keep a
+  charger from charging for a while, the user excludes it.
 - One charger at a time: default yes. The chargers of a group are sorted in
   its configured charging priority.
 - Each charger is split into fictive appliances, one per ampere from min to max

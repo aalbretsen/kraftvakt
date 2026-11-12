@@ -335,12 +335,6 @@ def test_duplicate_priority_entry_is_rejected() -> None:
     ]
 
 
-def test_charger_group_entry_only_when_the_group_is_enabled() -> None:
-    assert _issues_after(_set("charger_groups.0.enabled", False)) == [
-        Issue("charger_group_disabled", "priority", "g1")
-    ]
-
-
 def test_entry_of_an_unknown_charger_group_is_rejected() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["priority"].append({"type": "charger_group", "group_id": "gone"})
@@ -391,17 +385,6 @@ def test_missing_priority_entries_are_reported() -> None:
     ]
 
 
-def test_disabled_chargers_are_still_validated() -> None:
-    def mutate(data: dict[str, Any]) -> None:
-        data["charger_groups"][0]["enabled"] = False
-        data["charger_groups"][0]["chargers"][0]["max_current_a"] = 1
-        data["priority"].remove({"type": "charger_group", "group_id": "g1"})
-
-    assert _issues_after(mutate) == [
-        Issue("min_current_above_max", "chargers", "c1", "min_current_a")
-    ]
-
-
 async def test_parse_config_accepts_full_config(hass: HomeAssistant) -> None:
     data = full_config_data()
 
@@ -429,7 +412,7 @@ async def test_parse_config_adds_missing_priority_entries_at_bottom(
     )
 
 
-async def test_parse_config_adds_enabled_charger_groups(hass: HomeAssistant) -> None:
+async def test_parse_config_adds_missing_charger_groups(hass: HomeAssistant) -> None:
     data = full_config_data()
     data["priority"].remove({"type": "charger_group", "group_id": "g1"})
 

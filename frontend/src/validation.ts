@@ -78,9 +78,7 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   }
   missing.push(...config.appliances.flatMap(missingInAppliance));
   for (const group of config.charger_groups) {
-    if (group.enabled) {
-      missing.push(...group.chargers.flatMap((charger) => missingInCharger(charger, group.one_at_a_time)));
-    }
+    missing.push(...group.chargers.flatMap((charger) => missingInCharger(charger, group.one_at_a_time)));
   }
   return missing;
 }

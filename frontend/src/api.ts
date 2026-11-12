@@ -102,7 +102,6 @@ export interface Charger {
 export interface ChargerGroup {
   id: string;
   name: string;
-  enabled: boolean;
   one_at_a_time: boolean;
   /** In the configured charging priority. */
   chargers: Charger[];
@@ -174,7 +173,7 @@ export interface Capabilities {
   defaults: {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
-    charger_groups: { enabled: boolean; one_at_a_time: boolean };
+    charger_groups: { one_at_a_time: boolean };
     chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number };
   };
 }
@@ -230,7 +229,7 @@ export interface StatusSnapshot {
   regulation_interval: number;
   next_decision_at: string | null;
   appliances: ApplianceStatus[];
-  /** The enabled groups in the order of their entries. */
+  /** The groups in the order of their entries. */
   charger_groups: ChargerGroupStatus[];
 }
 

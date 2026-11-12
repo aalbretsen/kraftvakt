@@ -115,8 +115,8 @@ provided the configuration is complete:
 
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off,
-- every EV charger in a group with EV charging control on has an entity,
-  actions to activate, deactivate and set the charging current, and
+- every EV charger has an entity, actions to activate, deactivate and set the
+  charging current, and
   **Actively charging**, and also **Car connected** when only one EV charger
   in its group may charge at a time.
 
@@ -126,8 +126,8 @@ stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt
 does not start, the integration shows an error, and the file is left
 unchanged.
 
-Every start turns all appliances off at once, and deactivates all EV chargers
-in groups with EV charging control on. The regulation then turns them on one by one
+Every start turns all appliances off at once, and deactivates all EV
+chargers. The regulation then turns them on one by one
 in priority order, with the first decision one full regulation interval after
 the start. The regulation also starts again with everything off when a penalty
 or the safe state ends, and at the next decision after the power limit is
@@ -143,17 +143,20 @@ regulation runs again after a restart.
 
 EV chargers are put in groups, for example one for the chargers in the garage
 and one for the chargers at the cabin. A group has a name, a place of its own
-in the priority list, and its own settings: EV charging control on or off, and
-one EV charger at a time. An EV charger is in one group. The rules below apply
-within each group, so two groups with one EV charger at a time can each have
-an EV charger charging. An installation from before groups gets one group
-named «EV chargers» with the EV chargers it had.
+in the priority list, and its own setting for one EV charger at a time. An EV
+charger is in one group. Without groups, Kraftvakt does not control EV
+chargers. To keep an EV charger from charging for a while, turn on its switch
+**‹charger› excluded from regulation**. The rules below apply within each
+group, so two groups with one EV charger at a time can each have an EV charger
+charging. An installation from before groups gets one group named «EV
+chargers» with the EV chargers it had, also when EV charging control was off,
+so those EV chargers are controlled after the update.
 
-When EV charging control is on for a group, Kraftvakt sets the charging
-current of each of its EV chargers one ampere at a time, by how much power is
-free. The place of the group in the priority list decides where its EV
-chargers are in the order. An EV charger charges only when Kraftvakt has activated it, so a car
-that is connected does not start charging by itself. The charging current is
+Kraftvakt sets the charging current of each EV charger one ampere at a time,
+by how much power is free. The place of the group in the priority list
+decides where its EV chargers are in the order. An EV charger charges only
+when Kraftvakt has activated it, so a car that is connected does not start
+charging by itself. The charging current is
 set to the minimum before the EV charger is activated or deactivated.
 
 - **Actively charging** is read at every decision, from one of:
@@ -221,17 +224,15 @@ regulation starts.
   appliance** to give a variant its own actions to turn the appliance on and
   off. The power reserve applies to every variant. A variant is configured
   in the dialog of its appliance; opening a variant's row only says so. Each
-  group of EV chargers with EV charging control on is in the list under its
-  name, and can be moved like an appliance.
-- **EV charging:** one card per group of EV chargers, with the name, EV
-  charging control on or off, one EV charger at a time, and the EV chargers in
-  charging priority. **Add group** adds a group, and a group without EV
+  group of EV chargers is in the list under its name, and can be moved like
+  an appliance.
+- **EV charging:** one card per group of EV chargers, with the name, one EV
+  charger at a time, and the EV chargers in charging priority. **Add group** adds a group, and a group without EV
   chargers can be deleted. Drag an EV charger to the list of another group to
   move it there. The dialog for an EV charger has the entity, the actions to
   activate, deactivate and set the charging current, the minimum and maximum
   charging current, the power reserve, car connected, actively charging, and
-  the charging window. When EV charging control is off for a group, its EV
-  chargers are kept but can only be viewed.
+  the charging window.
 - **Advanced:**
   - **Waiting time curve:** two sliders, steepness and pivot point, with a
     table and a curve showing how much of the waiting time an appliance waits
@@ -346,10 +347,8 @@ power limit in use.
 
 The appliance and EV charger switches can be used while the regulation runs
 and apply from the next decision. Their state is stored at once and kept over
-a restart. While EV charging control is off for a group, the switches and
-binary sensors of its EV chargers are unavailable, but the state of the
-switches is kept. The entities of an EV charger do not depend on its group,
-and are kept when it is moved to another group.
+a restart. The entities of an EV charger do not depend on its group, and are
+kept when it is moved to another group.
 
 The entity IDs are the same in every language and are grouped by what they
 concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and

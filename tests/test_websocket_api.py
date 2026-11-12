@@ -205,7 +205,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "penalty_threshold_w": 100,
         },
         "appliances": {"power_reserve_w": None},
-        "charger_groups": {"enabled": False, "one_at_a_time": True},
+        "charger_groups": {"one_at_a_time": True},
         "chargers": {"min_current_a": 6, "max_current_a": 16, "power_reserve_w": 4000},
     }
 
@@ -533,7 +533,6 @@ async def test_saved_chargers_get_their_switches(
         {
             "id": "g1",
             "name": "EV chargers",
-            "enabled": True,
             "one_at_a_time": False,
             "chargers": [
                 {
@@ -814,7 +813,6 @@ async def test_status_shows_the_chargers(
         {
             "id": "g1",
             "name": "EV chargers",
-            "enabled": True,
             "chargers": [
                 {
                     "id": "c1",
@@ -887,7 +885,6 @@ async def test_status_shows_the_chargers_in_the_current_priority(
         {
             "id": "g1",
             "name": "EV chargers",
-            "enabled": True,
             "chargers": [
                 charger(
                     "c1",
@@ -937,13 +934,11 @@ async def test_status_places_charger_groups_among_the_current_variants(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """A group moves when a variant moves an appliance above it. A disabled
-    group is left out."""
+    """A group moves when a variant moves an appliance above it."""
     config["charger_groups"] = [
         {
             "id": "g1",
             "name": "EV chargers",
-            "enabled": True,
             "one_at_a_time": False,
             "chargers": [charger("c1")],
         }
@@ -952,11 +947,9 @@ async def test_status_places_charger_groups_among_the_current_variants(
         {
             "id": "g2",
             "name": "Cabin",
-            "enabled": True,
             "one_at_a_time": False,
             "chargers": [charger("c2")],
         },
-        {"id": "g3", "name": "Carport", "chargers": [charger("c3")]},
     ]
     config["appliances"][1]["variants"] = [
         {

@@ -276,8 +276,8 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "priority"),
         ),
         (
-            {"charger_groups": [{"id": "g1", "enabled": "yes"}]},
-            Issue("invalid_type", "charger_groups", "g1", "enabled"),
+            {"charger_groups": [{"id": "g1", "one_at_a_time": "yes"}]},
+            Issue("invalid_type", "charger_groups", "g1", "one_at_a_time"),
         ),
         (
             {

@@ -114,7 +114,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
     for appliance in config.appliances:
         missing += _missing_entity_and_actions("appliances", appliance)
-    for group in config.enabled_charger_groups:
+    for group in config.charger_groups:
         for charger in group.chargers:
             missing += _missing_entity_and_actions("chargers", charger)
             if charger.actively_charging is None:
@@ -271,9 +271,7 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
         location = _priority_location(entry)
         if entry not in expected:
             issues.append(
-                location.issue(
-                    _unexpected_entry_code(config, entry), _priority_field(entry)
-                )
+                location.issue("unknown_priority_entry", _priority_field(entry))
             )
         elif count > 1:
             issues.append(
@@ -305,19 +303,9 @@ def _expected_priority(config: KraftvaktConfig) -> list[PriorityEntry]:
             for variant in appliance.variants
         ]
     expected += [
-        PriorityEntry.for_charger_group(group.id)
-        for group in config.enabled_charger_groups
+        PriorityEntry.for_charger_group(group.id) for group in config.charger_groups
     ]
     return expected
-
-
-def _unexpected_entry_code(config: KraftvaktConfig, entry: PriorityEntry) -> str:
-    """A group that is in the configuration but disabled has no entry."""
-    if entry.type is PriorityEntryType.CHARGER_GROUP and any(
-        group.id == entry.group_id for group in config.charger_groups
-    ):
-        return "charger_group_disabled"
-    return "unknown_priority_entry"
 
 
 def _priority_location(entry: PriorityEntry) -> IssueLocation:

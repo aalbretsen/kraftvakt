@@ -315,11 +315,8 @@
   "charging": {
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
-    "enabled": "Billadestyring",
-    "enabled_sub": "Når den er av, overlates elbilladerne i gruppen til seg selv og gruppen fjernes fra prioritetslisten.",
     "one_at_a_time": "Én elbillader om gangen",
     "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. Andre i gruppen venter.",
-    "disabled_info": "Billadestyring er av for denne gruppen. Elbilladerne beholdes, men Kraftvakt sender ingen kommandoer til dem.",
     "chargers_sub": "Ladeprioritering, høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
     "empty": "Ingen elbilladere ennå.",

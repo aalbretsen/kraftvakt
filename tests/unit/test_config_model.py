@@ -47,7 +47,6 @@ def test_charger_group_defaults() -> None:
     group = ChargerGroup(id="g1")
 
     assert group.name == ""
-    assert group.enabled is False
     assert group.one_at_a_time is True
     assert group.chargers == ()
 

@@ -28,10 +28,12 @@ const CHARGER_FIELDS = [
 /** EV chargers can be dragged between the lists of all groups. */
 const CHARGER_LISTS = "kraftvakt-chargers";
 
-/**
- * The groups of EV chargers, each with its settings and its chargers. The
- * chargers of a disabled group are kept but only shown.
- */
+const GROUP_SCHEMA = [
+  { name: "name", required: true, selector: { text: {} } },
+  { name: "one_at_a_time", selector: { boolean: {} } },
+];
+
+/** The groups of EV chargers, each with its settings and its chargers. */
 @customElement("kraftvakt-charging-page")
 export class KraftvaktChargingPage extends ConfigPage {
   @state() private editing?: { charger: Charger; groupId: string; isNew: boolean };
@@ -71,7 +73,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         add: this.localize("charging.add"),
         empty: this.localize("charging.empty"),
         rows: group.chargers.map((charger) => this.row(charger)),
-        locked: this.locked || !group.enabled,
+        locked: this.locked,
         group: CHARGER_LISTS,
         onAdd: () => this.addCharger(group),
         onMoved: (event) => this.chargerMoved(group, event),
@@ -92,7 +94,7 @@ export class KraftvaktChargingPage extends ConfigPage {
           <ha-form
             .hass=${this.hass}
             .data=${group}
-            .schema=${this.groupSchema(group)}
+            .schema=${GROUP_SCHEMA}
             .error=${this.formErrors("charger_groups", group.id)}
             .disabled=${this.locked}
             .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
@@ -100,7 +102,6 @@ export class KraftvaktChargingPage extends ConfigPage {
             .computeError=${(error: string) => error}
             @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
           ></ha-form>
-          ${group.enabled ? nothing : html`<ha-alert alert-type="info">${this.localize("charging.disabled_info")}</ha-alert>`}
         </div>
       `,
     );
@@ -118,21 +119,12 @@ export class KraftvaktChargingPage extends ConfigPage {
         .oneAtATime=${group?.one_at_a_time ?? false}
         .usedEntities=${this.entitiesUsedBesides(charger.id)}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
-        .locked=${this.locked || !group?.enabled}
+        .locked=${this.locked}
         @item-changed=${(event: CustomEvent<Charger>) => this.chargerChanged(groupId, event.detail)}
         @item-deleted=${this.chargerDeleted}
         @closed=${() => (this.editing = undefined)}
       ></kraftvakt-charger-dialog>
     `;
-  }
-
-  /** «One at a time» only matters while the group is enabled. */
-  private groupSchema(group: ChargerGroup) {
-    return [
-      { name: "name", required: true, selector: { text: {} } },
-      { name: "enabled", selector: { boolean: {} } },
-      ...(group.enabled ? [{ name: "one_at_a_time", selector: { boolean: {} } }] : []),
-    ];
   }
 
   private row(charger: Charger): ListRow {
@@ -178,15 +170,9 @@ export class KraftvaktChargingPage extends ConfigPage {
       : field;
   }
 
-  /** Enabling or disabling a group also adds or removes its entry in the priority list. */
   private groupChanged(group: ChargerGroup, event: CustomEvent<{ value: Partial<ChargerGroup> }>): void {
-    const { name, enabled, one_at_a_time } = event.detail.value;
-    this.changeGroup({
-      ...group,
-      name: name ?? "",
-      enabled: enabled ?? false,
-      one_at_a_time: one_at_a_time ?? group.one_at_a_time,
-    });
+    const { name, one_at_a_time } = event.detail.value;
+    this.changeGroup({ ...group, name: name ?? "", one_at_a_time: one_at_a_time ?? group.one_at_a_time });
   }
 
   /** A new group is named so that its name is not used by another group. */
@@ -287,10 +273,6 @@ export class KraftvaktChargingPage extends ConfigPage {
   static styles = [
     ConfigPage.styles,
     css`
-      .card-content ha-alert {
-        display: block;
-        margin-top: 8px;
-      }
       .no-groups {
         padding-top: 16px;
         color: var(--secondary-text-color);

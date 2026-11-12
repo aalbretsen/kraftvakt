@@ -64,7 +64,7 @@ class ItemEntity(KraftvaktEntity):
 
 
 class ChargerEntity(ItemEntity):
-    """An entity of a charger, unavailable while its group is disabled."""
+    """An entity of a charger."""
 
     kind = "charger"
 
@@ -72,11 +72,6 @@ class ChargerEntity(ItemEntity):
     def items(config: KraftvaktConfig) -> Sequence[Charger]:
         """Return the chargers in the configuration."""
         return config.chargers
-
-    @property
-    def available(self) -> bool:
-        """Return whether the group of the charger is enabled."""
-        return self._board.config.charger_enabled(self._item_id)
 
     def _charger(self) -> Charger | None:
         """Return the charger, None for a moment after it was removed."""

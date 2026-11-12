@@ -56,28 +56,43 @@ class _KraftvaktStore(Store[dict[str, Any]]):
 
 
 def _with_charger_groups(data: dict[str, Any]) -> dict[str, Any]:
-    """Make the earlier charging settings and chargers one group.
+    """Make the earlier chargers one group, regulated also if charging was disabled.
 
-    Charging settings that are not a mapping are kept as the group, so reading
-    them still fails and the stored file is left alone.
+    There is no group without chargers while charging was disabled. The group
+    takes the place of «EV charging» in the priority list, or the bottom
+    without it. Charging settings that are not a mapping are kept as the
+    group, so reading them still fails and the stored file is left alone.
     """
-    charging = data.get("charging", {})
-    group_id = new_id()
-    group = (
-        {"id": group_id, "name": MIGRATED_CHARGER_GROUP_NAME, **charging}
-        if isinstance(charging, dict)
-        else charging
-    )
-    priority = data.get("priority")
-    if isinstance(priority, list):
-        priority = [
-            {"type": "charger_group", "group_id": group_id}
-            if isinstance(entry, dict) and entry.get("type") == "ev_charging"
-            else entry
-            for entry in priority
-        ]
     migrated = {key: value for key, value in data.items() if key != "charging"}
-    return {**migrated, "priority": priority, "charger_groups": [group]}
+    charging = data.get("charging", {})
+    if not isinstance(charging, dict):
+        return {**migrated, "charger_groups": [charging]}
+    group_id = new_id()
+    group_entry = {"type": "charger_group", "group_id": group_id}
+    keeps_group = bool(charging.get("chargers")) or charging.get("enabled") is True
+    priority = data.get("priority", [])
+    if isinstance(priority, list):
+        place = next(
+            (index for index, entry in enumerate(priority) if _is_ev_charging(entry)),
+            len(priority),
+        )
+        priority = [entry for entry in priority if not _is_ev_charging(entry)]
+        if keeps_group:
+            priority.insert(place, group_entry)
+    group = {
+        "id": group_id,
+        "name": MIGRATED_CHARGER_GROUP_NAME,
+        **{key: value for key, value in charging.items() if key != "enabled"},
+    }
+    return {
+        **migrated,
+        "priority": priority,
+        "charger_groups": [group] if keeps_group else [],
+    }
+
+
+def _is_ev_charging(entry: Any) -> bool:
+    return isinstance(entry, dict) and entry.get("type") == "ev_charging"
 
 
 def _with_appliance_actions_map(data: dict[str, Any]) -> dict[str, Any]:

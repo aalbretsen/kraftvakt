@@ -49,18 +49,6 @@ def test_start_and_stop_deactivate_the_chargers() -> None:
     assert scenario.engine.stop() == off("x") + deactivate("c", 10)
 
 
-def test_chargers_are_left_alone_while_charging_is_disabled() -> None:
-    """Chargers are not part of the regulation."""
-    scenario = Scenario(
-        make_config("x", chargers=(charger("c"),), charging_enabled=False)
-    )
-    scenario.set_charger("c", **CHARGING)
-
-    assert scenario.start_commands == off("x")
-    assert scenario.decide_many(0, 3) == [on("x"), [], []]
-    assert scenario.engine.chargers == {}
-
-
 def test_current_increases_one_ampere_per_fictive_appliance() -> None:
     """The first one activates the charger."""
     scenario = one_charger()
@@ -497,13 +485,13 @@ def test_variant_switch_makes_room_by_switching_off_a_fictive_appliance() -> Non
     )
 
 
-def two_groups(*, g2_enabled: bool = True) -> Scenario:
+def two_groups() -> Scenario:
     """Return chargers a and b in their own groups, around appliance x."""
     return Scenario(
         make_config(
             "x",
             chargers=(charger("a", max_a=7),),
-            groups=(charger_group("g2", charger("b", max_a=7), enabled=g2_enabled),),
+            groups=(charger_group("g2", charger("b", max_a=7)),),
             priority=("ev", "x", "@g2"),
             wait_at_limit_s=0,
         )
@@ -531,12 +519,3 @@ def test_each_charger_group_has_its_own_place_and_one_at_a_time() -> None:
         deactivate("b"),
         off("x"),
     ]
-
-
-def test_chargers_of_a_disabled_group_are_left_alone() -> None:
-    scenario = two_groups(g2_enabled=False)
-    scenario.set_charger("b", **CHARGING)
-
-    assert scenario.start_commands == off("x") + deactivate("a")
-    assert scenario.decide_many(0, 3) == [activate("a"), on("x"), []]
-    assert set(scenario.engine.chargers) == {"a"}

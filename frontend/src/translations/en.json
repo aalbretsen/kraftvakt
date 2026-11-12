@@ -315,11 +315,8 @@
   "charging": {
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
-    "enabled": "EV charging control",
-    "enabled_sub": "When it is off, the EV chargers of the group are left to themselves and the group is removed from the priority list.",
     "one_at_a_time": "One EV charger at a time",
     "one_at_a_time_sub": "An EV charger that charges may continue until the car is full or disconnected. The others in the group wait.",
-    "disabled_info": "EV charging control is off for this group. Its EV chargers are kept, but Kraftvakt sends no commands to them.",
     "chargers_sub": "Charging priority, highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
     "empty": "No EV chargers yet.",

@@ -224,7 +224,6 @@ def capabilities() -> dict[str, Any]:
             "general": general.to_dict(),
             "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},
             "charger_groups": {
-                "enabled": group.enabled,
                 "one_at_a_time": group.one_at_a_time,
             },
             "chargers": {

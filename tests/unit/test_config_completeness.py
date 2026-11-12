@@ -61,12 +61,24 @@ def test_charging_current_entity_must_be_chosen() -> None:
     assert _missing(data) == [Issue("missing_action", "chargers", "c1", "set_current")]
 
 
-def test_chargers_do_not_count_while_charging_is_disabled() -> None:
+def test_chargers_of_every_group_count() -> None:
     data = full_config_data()
-    data["charger_groups"][0]["enabled"] = False
-    data["charger_groups"][0]["chargers"].append({"id": "c2"})
+    data["charger_groups"].append(
+        {
+            "id": "g2",
+            "name": "Cabin",
+            "one_at_a_time": False,
+            "chargers": [{"id": "c2"}],
+        }
+    )
 
-    assert _missing(data) == []
+    assert _missing(data) == [
+        Issue("missing_entity", "chargers", "c2", "entity_id"),
+        Issue("missing_action", "chargers", "c2", "activate"),
+        Issue("missing_action", "chargers", "c2", "deactivate"),
+        Issue("missing_action", "chargers", "c2", "set_current"),
+        Issue("missing_actively_charging", "chargers", "c2", "actively_charging"),
+    ]
 
 
 def test_optional_settings_are_not_required() -> None:

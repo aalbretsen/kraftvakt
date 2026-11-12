@@ -11,6 +11,7 @@ from custom_components.kraftvakt.config_model import (
     ChargerGroup,
     ChargerSwitches,
     ConfigValidationError,
+    PriorityEntry,
 )
 from custom_components.kraftvakt.config_reader import (
     read_config,
@@ -135,7 +136,9 @@ def version_2_data() -> dict[str, Any]:
     data = full_config_data()
     group = data.pop("charger_groups")[0]
     data["charging"] = {
-        key: group[key] for key in ("enabled", "one_at_a_time", "chargers")
+        "enabled": True,
+        "one_at_a_time": group["one_at_a_time"],
+        "chargers": group["chargers"],
     }
     data["priority"] = [
         {"type": "ev_charging"} if entry["type"] == "charger_group" else entry
@@ -167,7 +170,7 @@ async def test_version_2_puts_the_chargers_in_one_group(
     assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
 
 
-async def test_version_2_without_chargers_gets_an_empty_group(
+async def test_version_2_without_chargers_and_disabled_gets_no_group(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
     hass_storage[STORAGE_KEY] = {
@@ -178,9 +181,39 @@ async def test_version_2_without_chargers_gets_an_empty_group(
 
     stored = await KraftvaktStorage(hass).async_load()
 
-    group_id = stored.config.charger_groups[0].id
-    assert stored.config.charger_groups == (ChargerGroup(group_id, "EV chargers"),)
+    assert stored.config.charger_groups == ()
     assert stored.config.priority == ()
+
+
+async def test_version_2_enabled_without_chargers_keeps_an_empty_group(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    data = version_2_data()
+    data["charging"]["chargers"] = []
+    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    group = stored.config.charger_groups[0]
+    assert group == ChargerGroup(group.id, "EV chargers", one_at_a_time=False)
+    assert stored.config.priority[1] == PriorityEntry.for_charger_group(group.id)
+
+
+async def test_version_2_disabled_with_chargers_gets_a_regulated_group_last(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """The chargers were kept but not regulated, and are regulated now."""
+    data = version_2_data()
+    data["charging"]["enabled"] = False
+    data["priority"].remove({"type": "ev_charging"})
+    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    group = stored.config.charger_groups[0]
+    assert [charger.id for charger in group.chargers] == ["c1"]
+    assert stored.config.priority[-1] == PriorityEntry.for_charger_group(group.id)
+    assert len(stored.config.priority) == 4
 
 
 async def test_migration_leaves_unreadable_charging_to_the_reader(

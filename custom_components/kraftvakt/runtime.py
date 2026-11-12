@@ -543,7 +543,7 @@ class KraftvaktRuntime:
     def _charger_readings(self) -> dict[str, ChargerReading]:
         return {
             charger.id: self._charger_reading(charger)
-            for group in self._config.enabled_charger_groups
+            for group in self._config.charger_groups
             for charger in group.chargers
         }
 

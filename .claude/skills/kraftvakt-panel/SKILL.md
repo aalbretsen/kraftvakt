@@ -111,15 +111,12 @@ Code that mirrors the backend and must be kept in step with it:
 - The power sensor picker offers sensors with device class power, without
   Kraftvakt's own sensors.
 - The EV charging page has one card per charger group, with its name, its
-  settings and its chargers, and Add group under the cards. While a group is
-  disabled, its chargers can only be viewed, and one charger at a time is
-  hidden. A new group gets the first free name of «EV chargers», «EV
+  settings and its chargers, and Add group under the cards. A new group gets the first free name of «EV chargers», «EV
   chargers 2» and so on, so it has no error at once. A group can be deleted
   only when it has no chargers.
 - A charger moves to another group by dragging it to that group's list, with
   `ha-sortable`'s `group`, which puts the dragged row back so the lists follow
-  the draft. An empty list stays in view as a place to drop on. The list of
-  a disabled group takes no drops, since it can only be viewed.
+  the draft. An empty list stays in view as a place to drop on.
 - Configuration pages and dialogs show power in W.
 
 ### Advanced page

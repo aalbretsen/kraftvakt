@@ -341,7 +341,6 @@ class ChargerGroup:
 
     id: str
     name: str = ""
-    enabled: bool = False
     one_at_a_time: bool = True
     chargers: tuple[Charger, ...] = ()
 
@@ -387,19 +386,6 @@ class KraftvaktConfig:
         """Return the chargers of every group."""
         return tuple(
             charger for group in self.charger_groups for charger in group.chargers
-        )
-
-    @property
-    def enabled_charger_groups(self) -> tuple[ChargerGroup, ...]:
-        """Return the groups whose chargers are regulated."""
-        return tuple(group for group in self.charger_groups if group.enabled)
-
-    def charger_enabled(self, charger_id: str) -> bool:
-        """Return whether the charger is in a group whose chargers are regulated."""
-        return any(
-            charger.id == charger_id
-            for group in self.enabled_charger_groups
-            for charger in group.chargers
         )
 
     def items(self) -> Iterator[tuple[str, Appliance | Charger]]:

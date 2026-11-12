@@ -232,7 +232,6 @@ class ConfigReader:
         return ChargerGroup(
             id=group_id,
             name=self._text(values, "name", location) or "",
-            enabled=self._bool(values, "enabled", defaults.enabled, location),
             one_at_a_time=self._bool(
                 values, "one_at_a_time", defaults.one_at_a_time, location
             ),

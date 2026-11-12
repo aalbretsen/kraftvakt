@@ -51,7 +51,7 @@ class RegulationEngine:
     def __init__(self, config: KraftvaktConfig) -> None:
         """Create a stopped engine for the configuration."""
         self._config = config
-        self._groups = config.enabled_charger_groups
+        self._groups = config.charger_groups
         self._chargers: dict[str, Charger] = {
             charger.id: charger for group in self._groups for charger in group.chargers
         }

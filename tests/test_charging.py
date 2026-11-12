@@ -84,7 +84,6 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
             {
                 "id": "g1",
                 "name": "EV chargers",
-                "enabled": True,
                 "one_at_a_time": False,
                 "chargers": [charger_data()],
             }
@@ -594,50 +593,6 @@ async def test_charger_switches_are_named_after_the_charger(
     assert excluded.name == "Kraftvakt Garage excluded from regulation"
     assert override is not None
     assert override.name == "Kraftvakt Garage override charging window"
-
-
-async def test_charger_entities_are_unavailable_while_charging_is_disabled(
-    hass: HomeAssistant,
-    hass_storage: dict[str, Any],
-    actions,
-    config,
-    setup_kraftvakt,
-) -> None:
-    """The chargers are left alone and keep their switches."""
-    config["charger_groups"][0]["enabled"] = False
-    config["priority"] = []
-    config["charger_switches"] = {"c1": {"excluded": True, "window_override": False}}
-    await setup_kraftvakt()
-
-    assert switch_state(hass, "c1", "excluded") == STATE_UNAVAILABLE
-    assert switch_state(hass, "c1", "window_override") == STATE_UNAVAILABLE
-    assert window_sensor_state(hass, "c1") == STATE_UNAVAILABLE
-    assert actions == []
-    assert hass_storage[STORAGE_KEY]["data"]["charger_switches"] == {
-        "c1": {"excluded": True, "window_override": False}
-    }
-
-
-async def test_only_the_chargers_of_a_disabled_group_are_unavailable(
-    hass: HomeAssistant,
-    actions,
-    config,
-    setup_kraftvakt,
-) -> None:
-    config["charger_groups"].append(
-        {
-            "id": "g2",
-            "name": "Carport",
-            "enabled": False,
-            "chargers": [charger_data("c2", "input_boolean.carport")],
-        }
-    )
-    await setup_kraftvakt()
-
-    assert switch_state(hass, "c1", "excluded") == STATE_OFF
-    assert switch_state(hass, "c2", "excluded") == STATE_UNAVAILABLE
-    assert window_sensor_state(hass, "c2") == STATE_UNAVAILABLE
-    assert "off input_boolean.carport" not in actions
 
 
 async def test_charger_switches_follow_the_configuration_without_reload(

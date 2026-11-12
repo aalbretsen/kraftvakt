@@ -79,7 +79,6 @@ def full_config_data() -> dict[str, Any]:
             {
                 "id": "g1",
                 "name": "EV chargers",
-                "enabled": True,
                 "one_at_a_time": False,
                 "chargers": [
                     {
