@@ -378,14 +378,22 @@ export class KraftvaktStatusPage extends LitElement {
       : this.renderChip(CHIP_OFF, "status.off", "status.off");
   }
 
-  /** The icon of the appliance's entity, coloured like Home Assistant colours a switch that is on. */
+  /**
+   * The icon of the appliance's entity, coloured like Home Assistant colours a switch that is on,
+   * or a default icon when the entity has none that the panel can show.
+   */
   private renderApplianceIcon(appliance: ApplianceStatus) {
     const entityId = this.config?.config.appliances.find((item) => item.id === appliance.id)?.entity_id;
     const stateObj = entityId ? this.hass.states[entityId] : undefined;
-    const on = appliance.on ? "on" : "";
-    return stateObj
-      ? html`<ha-state-icon class="device-icon ${on}" .hass=${this.hass} .stateObj=${stateObj}></ha-state-icon>`
-      : html`<ha-svg-icon class="device-icon ${on}" .path=${mdiFlash}></ha-svg-icon>`;
+    // The slot is one icon wide: an icon from the entity fills it and pushes the default icon out of
+    // sight, while an icon Home Assistant cannot load (from an icon set that is not loaded) takes no
+    // width and leaves the default icon in view.
+    return html`
+      <span class="device-icon ${appliance.on ? "on" : ""}">
+        ${stateObj ? html`<ha-state-icon .hass=${this.hass} .stateObj=${stateObj}></ha-state-icon>` : nothing}
+        <ha-svg-icon .path=${mdiFlash}></ha-svg-icon>
+      </span>
+    `;
   }
 
   private renderEvCharging(chargers: ChargerStatus[], rank: number) {
@@ -776,7 +784,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .list {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(max-content, 1.3fr) ${unsafeCSS(WAITING_WIDTH)}px max-content;
+      grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) ${unsafeCSS(WAITING_WIDTH)}px max-content;
       column-gap: 12px;
     }
     .row {
@@ -813,7 +821,8 @@ export class KraftvaktStatusPage extends LitElement {
       padding-inline-start: 16px;
     }
     .rank {
-      text-align: center;
+      text-align: end;
+      font-variant-numeric: tabular-nums;
       color: var(--secondary-text-color);
     }
     .row > .chip {
@@ -940,7 +949,20 @@ export class KraftvaktStatusPage extends LitElement {
     .row-title ha-state-icon {
       flex: none;
       --mdc-icon-size: 20px;
+    }
+    .row-title ha-svg-icon,
+    .row-title .device-icon {
       color: var(--state-inactive-color, var(--secondary-text-color));
+    }
+    .row-title .device-icon > * {
+      color: inherit;
+    }
+    span.device-icon {
+      display: flex;
+      flex: none;
+      width: 20px;
+      height: 20px;
+      overflow: hidden;
     }
     .row-title .device-icon.on {
       color: var(--kraftvakt-on-color);

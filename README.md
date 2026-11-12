@@ -254,7 +254,9 @@ shows:
 - a ring that empties towards the next decision,
 - safe state and penalty periods when they occur, with the overconsumption
   left and whether it has started to be recovered,
-- the priority list with the current variant of each appliance. The icon of
+- the priority list with the current variant of each appliance. Each
+  appliance has the icon of its entity, or a default icon when the entity has
+  none that can be shown. The icon of
   an appliance that is on is yellow, as in Home Assistant, and an excluded
   appliance is dimmed. Under **EV charging**, the EV chargers are listed in
   the current charging priority with the charging current and one mark per

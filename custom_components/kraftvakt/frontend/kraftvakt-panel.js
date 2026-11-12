@@ -906,7 +906,12 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         ${this.renderWideOnly(this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at"))}
         ${this.renderApplianceChip(e)}
       </div>
-    `}renderRank(e){return this.renderWideOnly(Q`<span class="rank">${e??ee}</span>`)}renderWideOnly(e){return this.phone?ee:e}renderName(e){return Q`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(qi,"status.chip_excluded","status.excluded"):e.on?this.renderChip(Wi,"status.on","status.on"):this.renderChip(Fi,"status.off","status.off")}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0,a=e.on?"on":"";return i?Q`<ha-state-icon class="device-icon ${a}" .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:Q`<ha-svg-icon class="device-icon ${a}" .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>`}renderEvCharging(e,i){const s=e.filter(e=>e.charging).length;return Q`
+    `}renderRank(e){return this.renderWideOnly(Q`<span class="rank">${e??ee}</span>`)}renderWideOnly(e){return this.phone?ee:e}renderName(e){return Q`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(qi,"status.chip_excluded","status.excluded"):e.on?this.renderChip(Wi,"status.on","status.on"):this.renderChip(Fi,"status.off","status.off")}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0;return Q`
+      <span class="device-icon ${e.on?"on":""}">
+        ${i?Q`<ha-state-icon .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:ee}
+        <ha-svg-icon .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>
+      </span>
+    `}renderEvCharging(e,i){const s=e.filter(e=>e.charging).length;return Q`
       <div class="row group">
         ${this.renderRank(i)}
         <div class="row-title">
@@ -1176,7 +1181,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     }
     .list {
       display: grid;
-      grid-template-columns: 24px minmax(0, 2fr) minmax(max-content, 1.3fr) ${p(120)}px max-content;
+      grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) ${p(120)}px max-content;
       column-gap: 12px;
     }
     .row {
@@ -1213,7 +1218,8 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       padding-inline-start: 16px;
     }
     .rank {
-      text-align: center;
+      text-align: end;
+      font-variant-numeric: tabular-nums;
       color: var(--secondary-text-color);
     }
     .row > .chip {
@@ -1340,7 +1346,20 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     .row-title ha-state-icon {
       flex: none;
       --mdc-icon-size: 20px;
+    }
+    .row-title ha-svg-icon,
+    .row-title .device-icon {
       color: var(--state-inactive-color, var(--secondary-text-color));
+    }
+    .row-title .device-icon > * {
+      color: inherit;
+    }
+    span.device-icon {
+      display: flex;
+      flex: none;
+      width: 20px;
+      height: 20px;
+      overflow: hidden;
     }
     .row-title .device-icon.on {
       color: var(--kraftvakt-on-color);

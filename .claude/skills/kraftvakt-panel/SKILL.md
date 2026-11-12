@@ -190,7 +190,9 @@ Code that mirrors the backend and must be kept in step with it:
   charging row has its own rank at the EV charging position, and the chargers
   are indented under it in the current charging priority. Every row is one
   line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip. A name too long for
+  variant after it, current, waiting and state chip. The rank is right
+  aligned with digits of equal width, so ranks of one and two digits line
+  up. A name too long for
   its column is cut with an ellipsis and has the whole name as a tooltip;
   the variant is cut first, down to a few letters.
   - On a phone (a viewport at most 600 px wide, by a media query of its own,
@@ -225,7 +227,10 @@ Code that mirrors the backend and must be kept in step with it:
   the Energy dashboard's grid colour for the average consumption, a teal
   colour for everything EV charging, and HA's active and inactive state
   colours for appliance icons. Each appliance shows its entity's icon, and
-  what is off is dimmed. The safe state and penalty chips are in the alarm
+  what is off is dimmed. An appliance whose entity is missing, or whose icon
+  HA cannot show in the panel (an icon set that is not loaded renders
+  nothing), shows a default icon instead: the icon slot is one icon wide,
+  and the entity's icon pushes the default icon out of it. The safe state and penalty chips are in the alarm
   colour and show only while active.
 
 ## Home Assistant components
