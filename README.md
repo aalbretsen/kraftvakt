@@ -276,8 +276,10 @@ shows:
 - a bar that empties evenly until the decision where the next appliance, or
   one more ampere, is turned on.
 
-On a narrow screen, the bar for the next turn-on and the charging current in
-numbers are hidden.
+On a narrow screen, such as a phone, each row of the priority list only shows
+the icon, the name on one line and the label. The rank, the variant, the
+number of EV chargers charging, the charging current and the bar for the next
+turn-on are hidden.
 
 ## Entities
 

@@ -13,7 +13,7 @@ import {
   mdiTimerOutline,
   mdiTimerSand,
 } from "@mdi/js";
-import { LitElement, css, html, nothing, unsafeCSS } from "lit";
+import { LitElement, type TemplateResult, css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import {
@@ -316,16 +316,35 @@ export class KraftvaktStatusPage extends LitElement {
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     return html`
       <div class="row ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}">
-        <span class="rank">${rank}</span>
+        ${this.renderRank(rank)}
         <div class="row-title">
-          ${this.renderApplianceIcon(appliance)}<span class="name">${appliance.name}</span>
-          ${appliance.variant ? html`<span class="variant">${appliance.variant}</span>` : nothing}
+          ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
+          ${appliance.variant && !this.narrow ? html`<span class="variant">${appliance.variant}</span>` : nothing}
         </div>
-        <span></span>
-        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
+        ${this.renderWideOnly(html`<span></span>`)}
+        ${this.renderWideOnly(
+          this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at"),
+        )}
         ${this.renderApplianceChip(appliance)}
       </div>
     `;
+  }
+
+  /**
+   * The rank column. Like the other columns between the title and the chip,
+   * it is left out on a narrow screen, where a row is only icon, name and chip.
+   */
+  private renderRank(rank: number | null) {
+    return this.renderWideOnly(html`<span class="rank">${rank ?? nothing}</span>`);
+  }
+
+  private renderWideOnly(content: TemplateResult) {
+    return this.narrow ? nothing : content;
+  }
+
+  /** The name, on one line cut with an ellipsis on a narrow screen, with the whole name as a tooltip there. */
+  private renderName(name: string) {
+    return html`<span class="name" title=${this.narrow ? name : nothing}>${name}</span>`;
   }
 
   private renderApplianceChip(appliance: ApplianceStatus) {
@@ -351,31 +370,37 @@ export class KraftvaktStatusPage extends LitElement {
     const charging = chargers.filter((charger) => charger.charging).length;
     return html`
       <div class="row group">
-        <span class="rank">${rank}</span>
+        ${this.renderRank(rank)}
         <div class="row-title">
           <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
-          <span class="name">${this.localize("status.ev_charging")}</span>
-          ${chargers.length === 0 ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>` : nothing}
+          ${this.renderName(this.localize("status.ev_charging"))}
+          ${chargers.length === 0 && !this.narrow
+            ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>`
+            : nothing}
         </div>
-        ${chargers.length === 0
-          ? html`<span></span>`
-          : html`<span
-              class="charging-count"
-              title=${this.localize("status.chargers_charging", { charging, total: chargers.length })}
-            >
-              <ha-svg-icon .path=${mdiLightningBolt}></ha-svg-icon>${charging} / ${chargers.length}
-            </span>`}
+        ${this.renderWideOnly(
+          chargers.length === 0
+            ? html`<span></span>`
+            : html`<span
+                class="charging-count"
+                title=${this.localize("status.chargers_charging", { charging, total: chargers.length })}
+              >
+                <ha-svg-icon .path=${mdiLightningBolt}></ha-svg-icon>${charging} / ${chargers.length}
+              </span>`,
+        )}
       </div>
       ${chargers.map(
         (charger) => html`
           <div class="row charger ${charger.activated ? "" : "off"}">
-            <span class="rank"></span>
+            ${this.renderRank(null)}
             <div class="row-title">
               <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
-              <span class="name">${charger.name}</span>
+              ${this.renderName(charger.name)}
             </div>
-            ${this.renderAmperes(charger)}
-            ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
+            ${this.renderWideOnly(this.renderAmperes(charger))}
+            ${this.renderWideOnly(
+              this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at"),
+            )}
             ${this.renderChargerChip(charger)}
           </div>
         `,
@@ -383,19 +408,13 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /**
-   * An icon and a bar that empties from when the waiting started until the
-   * decision that ends it. Left out on a narrow screen.
-   */
+  /** An icon and a bar that empties from when the waiting started until the decision that ends it. */
   private renderWaiting(
     item: ApplianceStatus | ChargerStatus,
     icon: string,
     label: TranslationKey,
     endsAt: TranslationKey,
   ) {
-    if (this.narrow) {
-      return nothing;
-    }
     if (!item.waiting_since || !item.waiting_ends_at) {
       return html`<span></span>`;
     }
@@ -411,10 +430,7 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /**
-   * The current, and one bar per ampere from the minimum to the maximum,
-   * filled up to the current. The current is left out on a narrow screen.
-   */
+  /** The current, and one bar per ampere from the minimum to the maximum, filled up to the current. */
   private renderAmperes(charger: ChargerStatus) {
     const config = this.chargerConfig(charger);
     if (!config) {
@@ -425,11 +441,9 @@ export class KraftvaktStatusPage extends LitElement {
     const filled = charger.bypassed ? "on bypassed" : "on";
     return html`
       <span class="amperes">
-        ${this.narrow
-          ? nothing
-          : html`<span class="current ${charger.current_a === null ? "none" : ""}"
-              >${charger.current_a === null ? "–" : this.localize("status.amperes", { current: charger.current_a })}</span
-            >`}
+        <span class="current ${charger.current_a === null ? "none" : ""}"
+          >${charger.current_a === null ? "–" : this.localize("status.amperes", { current: charger.current_a })}</span
+        >
         <span class="ampere-steps ${steps > 16 ? "small" : ""}">
           ${Array.from({ length: steps }, (_, index) => html`<span class="ampere ${index < on ? filled : ""}"></span>`)}
         </span>
@@ -744,7 +758,7 @@ export class KraftvaktStatusPage extends LitElement {
       column-gap: 12px;
     }
     :host([narrow]) .list {
-      grid-template-columns: 20px minmax(0, 1fr) max-content max-content;
+      grid-template-columns: minmax(0, 1fr) max-content;
       column-gap: 8px;
     }
     .row {
@@ -896,19 +910,21 @@ export class KraftvaktStatusPage extends LitElement {
         rgba(127, 127, 127, 0.16) 2px 4px
       );
     }
-    :host([narrow]) .ampere-steps {
-      gap: 1px;
-    }
-    :host([narrow]) .ampere {
-      width: 2px;
-      height: 12px;
-    }
     .row-title {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 6px 10px;
       overflow-wrap: anywhere;
+    }
+    :host([narrow]) .row-title {
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+    :host([narrow]) .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .row-title ha-svg-icon,
     .row-title ha-state-icon {

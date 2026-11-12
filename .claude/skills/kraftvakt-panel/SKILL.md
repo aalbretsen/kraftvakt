@@ -176,8 +176,7 @@ Code that mirrors the backend and must be kept in step with it:
   ampere) before a thin bar that empties smoothly from when the waiting
   started to the decision that turns the slot on, animated like the ring. What
   it is and the time are a tooltip. The bar is smooth because a wait can span
-  very many regulation windows. The waiting column is left out on a narrow
-  screen.
+  very many regulation windows.
 - The tiles are, from the left, consumption now, regulation average, average
   consumption and the power limit. Consumption now is the power sensor's
   state read in the panel, so it updates live. Under each average is the time
@@ -191,12 +190,16 @@ Code that mirrors the backend and must be kept in step with it:
   charging row has its own rank at the EV charging position, and the chargers
   are indented under it in the current charging priority. Every row is one
   line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip.
+  variant after it, current, waiting and state chip. On a narrow screen a
+  row is only the icon, the name and the state chip: the name stays on one
+  line, cut with an ellipsis and with the whole name as a tooltip, and the
+  rank, the variant, the charger count, the current, the ampere bars, the
+  waiting and the text that there are no chargers are left out.
   - Icons instead of short texts, each with its sentence as a tooltip, and no
     legend. The EV charging row shows how many chargers are charging of all.
   - The current column has the current before one bar per ampere from min to
     max, filled up to the current. The filled bars of a bypassed charger are
-    hatched. On a narrow screen only the bars are shown.
+    hatched.
   - The state chip has an icon and a word, with the whole sentence as a
     tooltip. An appliance shows excluded, on or off, and the title of an
     excluded appliance is dimmed. A charger shows the first that
