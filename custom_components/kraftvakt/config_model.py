@@ -11,7 +11,6 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field, fields, replace
 from datetime import time
 from enum import Enum, StrEnum
-from types import MappingProxyType
 from typing import Any, Final
 
 
@@ -173,21 +172,6 @@ class Condition:
         return _fields_to_dict(self)
 
 
-@dataclass(frozen=True, slots=True)
-class Variant:
-    """An extra entry of an appliance in the priority list."""
-
-    id: str
-    label: str
-    condition: Condition
-
-    def to_dict(self) -> dict[str, Any]:
-        """Return the variant as JSON-friendly data."""
-        return _fields_to_dict(self)
-
-
-MAIN_ACTIONS: Final = "main"
-
 APPLIANCE_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {
     "turn_on": ActionKind.TURN_ON,
     "turn_off": ActionKind.TURN_OFF,
@@ -209,53 +193,61 @@ class ActionField:
     action: ActionConfig | None
 
 
-type ApplianceActions = Mapping[str, ActionConfig | None]
-"""Turn-on and turn-off actions by name, `None` while an action is not set."""
+@dataclass(frozen=True, slots=True)
+class Variant:
+    """An extra entry of an appliance in the priority list.
 
-NO_APPLIANCE_ACTIONS: Final[ApplianceActions] = MappingProxyType(
-    dict.fromkeys(APPLIANCE_ACTION_KINDS)
-)
+    `actions` holds only the actions the variant overrides, `None` while an
+    overridden action is not set.
+    """
+
+    id: str
+    label: str
+    condition: Condition
+    actions: Mapping[str, ActionConfig | None] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the variant as JSON-friendly data."""
+        return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class Appliance:
-    """A device that Kraftvakt turns on and off.
-
-    `actions` has both actions of the appliance under `MAIN_ACTIONS`, and
-    under the id of a variant the actions the variant overrides. A variant
-    uses the appliance's action for each action it does not override.
-    """
+    """A device that Kraftvakt turns on and off."""
 
     id: str
     entity_id: str | None = None
-    actions: Mapping[str, ApplianceActions] = field(
-        default_factory=lambda: {MAIN_ACTIONS: NO_APPLIANCE_ACTIONS}
-    )
+    turn_on: ActionConfig | None = None
+    turn_off: ActionConfig | None = None
     power_reserve_w: int | None = None
     variants: tuple[Variant, ...] = ()
 
-    def actions_key(self, variant_id: str | None, name: str) -> str:
-        """Return the key of the action `name` the variant, or the appliance, uses."""
-        if variant_id is not None and name in self.actions.get(variant_id, {}):
-            return variant_id
-        return MAIN_ACTIONS
+    def overriding_variant(self, variant_id: str | None, name: str) -> Variant | None:
+        """Return the variant if it overrides the action `name`."""
+        return next(
+            (
+                variant
+                for variant in self.variants
+                if variant.id == variant_id and name in variant.actions
+            ),
+            None,
+        )
 
     def action(self, variant_id: str | None, name: str) -> ActionConfig | None:
-        """Return the action `name` that the variant, or the appliance, uses."""
-        return self.actions.get(self.actions_key(variant_id, name), {}).get(name)
+        """Return the action `name` that the variant, or else the appliance, uses."""
+        variant = self.overriding_variant(variant_id, name)
+        return getattr(self, name) if variant is None else variant.actions[name]
 
     def action_fields(self) -> Iterator[ActionField]:
         """Return the actions of the appliance and those the variants override."""
-        own = [("", {**NO_APPLIANCE_ACTIONS, **self.actions.get(MAIN_ACTIONS, {})})]
-        own += [
-            (f"variants.{variant.id}.", self.actions[variant.id])
-            for variant in self.variants
-            if variant.id in self.actions
-        ]
-        for prefix, actions in own:
+        for name, kind in APPLIANCE_ACTION_KINDS.items():
+            yield ActionField(name, kind, getattr(self, name))
+        for variant in self.variants:
             for name, kind in APPLIANCE_ACTION_KINDS.items():
-                if name in actions:
-                    yield ActionField(f"{prefix}{name}", kind, actions[name])
+                if name in variant.actions:
+                    yield ActionField(
+                        f"variants.{variant.id}.{name}", kind, variant.actions[name]
+                    )
 
     def to_dict(self) -> dict[str, Any]:
         """Return the appliance as JSON-friendly data."""

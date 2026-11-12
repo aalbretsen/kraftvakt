@@ -122,7 +122,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                 f"variants.{variant.id}.condition",
             )
             for variant in appliance.variants
-            if not variant.condition.value.strip()
+            if not _is_set(variant.condition)
         ]
     for group in config.charger_groups:
         for charger in group.chargers:
@@ -131,7 +131,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                     Issue("missing_device", "chargers", charger.id, "device_id")
                 )
             missing += _missing_entity_and_actions("chargers", charger)
-            if charger.actively_charging is None:
+            if not _is_set(charger.actively_charging):
                 missing.append(
                     Issue(
                         "missing_actively_charging",
@@ -140,7 +140,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                         "actively_charging",
                     )
                 )
-            if group.one_at_a_time and charger.car_connected is None:
+            if group.one_at_a_time and not _is_set(charger.car_connected):
                 missing.append(
                     Issue(
                         "missing_car_connected", "chargers", charger.id, "car_connected"
@@ -175,10 +175,7 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
             issues.append(variant_location.issue("empty_label", "label"))
         elif labels[label] > 1:
             issues.append(variant_location.issue("duplicate_label", "label"))
-        if variant.condition.value.strip():
-            issues += _condition_issues(
-                variant_location, "condition", variant.condition
-            )
+        issues += _condition_issues(variant_location, "condition", variant.condition)
     return issues
 
 
@@ -209,9 +206,7 @@ def _charger_issues(charger: Charger) -> list[Issue]:
     if charger.min_current_a > charger.max_current_a:
         issues.append(location.issue("min_current_above_max", "min_current_a"))
     for field_name in ("car_connected", "actively_charging"):
-        condition = getattr(charger, field_name)
-        if condition is not None:
-            issues += _condition_issues(location, field_name, condition)
+        issues += _condition_issues(location, field_name, getattr(charger, field_name))
     window = charger.charging_window
     if window is not None:
         if window.start.second or window.end.second:
@@ -221,12 +216,19 @@ def _charger_issues(charger: Charger) -> list[Issue]:
     return issues
 
 
+def _is_set(condition: Condition | None) -> bool:
+    """Return whether the condition has a value; an empty one is missing."""
+    return condition is not None and bool(condition.value.strip())
+
+
 def _condition_issues(
-    location: IssueLocation, field_name: str, condition: Condition
+    location: IssueLocation, field_name: str, condition: Condition | None
 ) -> list[Issue]:
-    if not condition.value.strip():
-        return [location.issue("required", field_name)]
-    if condition.type is ConditionType.TEMPLATE:
+    if (
+        condition is None
+        or not _is_set(condition)
+        or condition.type is ConditionType.TEMPLATE
+    ):
         return []
     return _entity_format_issues(location, field_name, condition.value)
 

@@ -47,7 +47,8 @@ def appliance(
     return {
         "id": appliance_id,
         "entity_id": f"light.{appliance_id}",
-        "actions": {"main": {"turn_on": turn_on, "turn_off": DEFAULT}},
+        "turn_on": turn_on,
+        "turn_off": DEFAULT,
         **settings,
     }
 
@@ -340,7 +341,7 @@ async def test_incomplete_configuration_does_not_start(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """The switch stays off and the attempt is logged."""
-    del config["appliances"][1]["actions"]["main"]["turn_on"]
+    del config["appliances"][1]["turn_on"]
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     assert regulation_switch(hass) == STATE_OFF
@@ -555,12 +556,12 @@ async def test_variant_with_own_actions_is_switched_with_them(
             "id": "cool",
             "label": "Cool",
             "condition": {"type": "entity", "value": "input_boolean.cool"},
+            "actions": {
+                "turn_on": light_action("turn_on", "light.cool"),
+                "turn_off": light_action("turn_off", "light.cool"),
+            },
         }
     ]
-    config["appliances"][1]["actions"]["cool"] = {
-        "turn_on": light_action("turn_on", "light.cool"),
-        "turn_off": light_action("turn_off", "light.cool"),
-    }
     config["priority"].insert(
         1, {"type": "appliance", "appliance_id": "b", "variant_id": "cool"}
     )
@@ -625,7 +626,7 @@ async def test_custom_action_gets_the_entity_variables(
 ) -> None:
     """Custom actions run with `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "heat")
-    config["appliances"][0]["actions"]["main"]["turn_on"] = {
+    config["appliances"][0]["turn_on"] = {
         "mode": "custom",
         "action": [
             {
@@ -659,7 +660,7 @@ async def test_failed_action_does_not_stop_the_regulation(
         raise HomeAssistantError("no answer")
 
     hass.services.async_register("test", "fail", fail)
-    config["appliances"][0]["actions"]["main"]["turn_on"] = {
+    config["appliances"][0]["turn_on"] = {
         "mode": "custom",
         "action": [{"action": "test.fail"}],
     }

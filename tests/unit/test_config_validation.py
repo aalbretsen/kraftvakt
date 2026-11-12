@@ -140,7 +140,7 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
             {"type": "power_sensor", "value": "Sensor.X"},
             "invalid_entity_id",
         ),
-        ("actively_charging", {"type": "power_sensor", "value": ""}, "required"),
+        ("actively_charging", {"type": "power_sensor", "value": ""}, None),
         ("set_current", {"mode": "entity", "entity_id": "number.x"}, None),
         ("set_current", {"mode": "entity", "entity_id": "Number"}, "invalid_entity_id"),
     ],
@@ -207,8 +207,8 @@ def test_charging_window_across_midnight_is_valid() -> None:
     [
         ({"type": "entity", "value": "binary_sensor.car"}, None),
         ({"type": "entity", "value": "car"}, "invalid_entity_id"),
-        ({"type": "entity", "value": ""}, "required"),
-        ({"type": "template", "value": "  "}, "required"),
+        ({"type": "entity", "value": ""}, None),
+        ({"type": "template", "value": "  "}, None),
         ({"type": "template", "value": "{{ true }}"}, None),
     ],
 )
@@ -525,10 +525,8 @@ async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> Non
 
 async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["appliances"][0]["actions"]["main"]["turn_off"]["action"] = [
-        {"no_such_key": True}
-    ]
-    data["appliances"][0]["actions"]["v1"]["turn_on"] = {
+    data["appliances"][0]["turn_off"]["action"] = [{"no_such_key": True}]
+    data["appliances"][0]["variants"][0]["actions"]["turn_on"] = {
         "mode": "custom",
         "action": [{"delay": "lenge"}],
     }
@@ -548,7 +546,7 @@ async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
 
 async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None:
     data = full_config_data()
-    original = data["appliances"][0]["actions"]["main"]["turn_off"]["action"][0]
+    original = data["appliances"][0]["turn_off"]["action"][0]
 
     config = parse_config(data)
 

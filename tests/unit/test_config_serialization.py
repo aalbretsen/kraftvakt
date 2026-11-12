@@ -6,8 +6,6 @@ from typing import Any
 import pytest
 
 from custom_components.kraftvakt.config_model import (
-    MAIN_ACTIONS,
-    NO_APPLIANCE_ACTIONS,
     ActionConfig,
     ActionMode,
     ApplianceSwitches,
@@ -30,7 +28,7 @@ from tests.config_examples import full_config_data
 
 def main_actions(**actions: Any) -> dict[str, Any]:
     """Return appliance a1 with the actions of the appliance itself."""
-    return {"id": "a1", "actions": {MAIN_ACTIONS: actions}}
+    return {"id": "a1", **actions}
 
 
 def variant_data(variant_id: str) -> dict[str, Any]:
@@ -87,7 +85,7 @@ def test_missing_settings_get_defaults() -> None:
 
     appliance = config.appliances[0]
     assert appliance.entity_id is None
-    assert appliance.actions == {MAIN_ACTIONS: NO_APPLIANCE_ACTIONS}
+    assert (appliance.turn_on, appliance.turn_off) == (None, None)
     assert appliance.power_reserve_w is None
     charger = config.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
@@ -126,7 +124,7 @@ def test_custom_action_keeps_editor_normalization() -> None:
         {"appliances": [main_actions(turn_on={"mode": "custom", "action": steps})]}
     )
 
-    assert config.to_dict()["appliances"][0]["actions"]["main"]["turn_on"] == {
+    assert config.to_dict()["appliances"][0]["turn_on"] == {
         "mode": "custom",
         "action": steps,
     }
@@ -225,24 +223,25 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "appliances", "a1", "turn_on"),
         ),
         (
-            {"appliances": [{"id": "a1", "actions": []}]},
-            Issue("invalid_type", "appliances", "a1", "actions"),
+            {
+                "appliances": [
+                    {"id": "a1", "variants": [variant_data("v1") | {"actions": []}]}
+                ]
+            },
+            Issue("invalid_type", "appliances", "a1", "variants.v1.actions"),
         ),
         (
             {
                 "appliances": [
                     {
                         "id": "a1",
-                        "actions": {"v1": {"turn_off": "off"}},
-                        "variants": [variant_data("v1")],
+                        "variants": [
+                            variant_data("v1") | {"actions": {"turn_off": "off"}}
+                        ],
                     }
                 ]
             },
             Issue("invalid_type", "appliances", "a1", "variants.v1.turn_off"),
-        ),
-        (
-            {"appliances": [{"id": "a1", "variants": [{"id": "v1", "label": "x"}]}]},
-            Issue("required", "appliances", "a1", "variants.v1.condition"),
         ),
         (
             {
@@ -422,7 +421,7 @@ def test_domain_action_round_trips() -> None:
         domain_action="climate_hvac_mode_and_temperature",
         data={"hvac_mode": "heat", "temperature": None},
     )
-    assert config.to_dict()["appliances"][0]["actions"]["main"]["turn_on"] == action
+    assert config.to_dict()["appliances"][0]["turn_on"] == action
 
 
 @pytest.mark.parametrize(
@@ -439,44 +438,27 @@ def test_malformed_domain_action_is_a_type_error(action: dict[str, Any]) -> None
     assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "turn_on")]
 
 
-def test_actions_of_a_variant_that_does_not_exist_are_left_out() -> None:
-    default = {"turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}
-    config = read_config(
-        {
-            "appliances": [
-                {
-                    "id": "a1",
-                    "actions": {"main": default, "v1": default, "gone": default},
-                    "variants": [variant_data("v1"), variant_data("v2")],
-                }
-            ]
-        }
-    )
-
-    appliance = config.appliances[0]
-    assert set(appliance.actions) == {MAIN_ACTIONS, "v1"}
-    assert appliance.actions_key("v1", "turn_on") == "v1"
-    assert appliance.actions_key("v2", "turn_on") == MAIN_ACTIONS
-    assert appliance.actions_key(None, "turn_on") == MAIN_ACTIONS
-
-
 def test_variant_keeps_only_the_actions_it_overrides() -> None:
+    """An overridden action that is not set is kept as `None`."""
     default = {"mode": "default"}
     data = {
         "id": "a1",
-        "actions": {
-            "main": {"turn_on": default},
-            "v1": {"turn_off": default},
-            "v2": {},
-        },
-        "variants": [variant_data("v1"), variant_data("v2")],
+        "turn_on": default,
+        "variants": [
+            variant_data("v1") | {"actions": {"turn_off": default}},
+            variant_data("v2") | {"actions": {"turn_on": None}},
+            variant_data("v3"),
+        ],
     }
 
     appliance = read_config({"appliances": [data]}).appliances[0]
 
-    assert appliance.to_dict()["actions"] == {
-        "main": {"turn_on": default, "turn_off": None},
-        "v1": {"turn_off": default},
-    }
-    assert appliance.actions_key("v1", "turn_on") == MAIN_ACTIONS
-    assert appliance.actions_key("v1", "turn_off") == "v1"
+    assert [variant.to_dict()["actions"] for variant in appliance.variants] == [
+        {"turn_off": default},
+        {"turn_on": None},
+        {},
+    ]
+    assert appliance.action("v1", "turn_on") == ActionConfig(ActionMode.DEFAULT)
+    assert appliance.action("v1", "turn_off") == ActionConfig(ActionMode.DEFAULT)
+    assert appliance.action("v2", "turn_on") is None
+    assert appliance.action("gone", "turn_off") is None

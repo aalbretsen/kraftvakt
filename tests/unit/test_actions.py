@@ -16,7 +16,6 @@ from custom_components.kraftvakt.actions import (
     set_current_variables,
 )
 from custom_components.kraftvakt.config_model import (
-    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
@@ -52,7 +51,8 @@ def appliance(
     return Appliance(
         appliance_id,
         entity_id,
-        actions={MAIN_ACTIONS: {"turn_on": turn_on, "turn_off": turn_off}},
+        turn_on=turn_on,
+        turn_off=turn_off,
     )
 
 
@@ -115,11 +115,16 @@ async def test_actions_of_a_variant_are_checked_against_the_entity(
             Appliance(
                 "a1",
                 "sensor.x",
-                actions={
-                    MAIN_ACTIONS: {"turn_on": custom(), "turn_off": custom()},
-                    "v1": {"turn_on": DEFAULT, "turn_off": custom()},
-                },
-                variants=(Variant("v1", "V", Condition(ConditionType.TEMPLATE, "")),),
+                turn_on=custom(),
+                turn_off=custom(),
+                variants=(
+                    Variant(
+                        "v1",
+                        "V",
+                        Condition(ConditionType.TEMPLATE, ""),
+                        {"turn_on": DEFAULT, "turn_off": custom()},
+                    ),
+                ),
             ),
         )
     )
@@ -222,17 +227,21 @@ async def test_variant_with_own_actions_runs_them(hass: HomeAssistant) -> None:
             Appliance(
                 "a1",
                 "switch.a",
-                actions={
-                    MAIN_ACTIONS: {"turn_on": record("on"), "turn_off": record("off")},
-                    "cool": {
-                        "turn_on": record("cool on"),
-                        "turn_off": record("cool off"),
-                    },
-                    "eco": {"turn_on": record("eco on")},
-                },
+                turn_on=record("on"),
+                turn_off=record("off"),
                 variants=(
-                    Variant("cool", "Cool", Condition(ConditionType.TEMPLATE, "")),
-                    Variant("eco", "Eco", Condition(ConditionType.TEMPLATE, "")),
+                    Variant(
+                        "cool",
+                        "Cool",
+                        Condition(ConditionType.TEMPLATE, ""),
+                        {"turn_on": record("cool on"), "turn_off": record("cool off")},
+                    ),
+                    Variant(
+                        "eco",
+                        "Eco",
+                        Condition(ConditionType.TEMPLATE, ""),
+                        {"turn_on": record("eco on")},
+                    ),
                 ),
             ),
         )

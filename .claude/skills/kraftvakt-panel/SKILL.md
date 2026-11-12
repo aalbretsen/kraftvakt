@@ -101,11 +101,11 @@ Code that mirrors the backend and must be kept in step with it:
   override it, both off by default. Switched on, the action starts from what
   it had while the dialog is open, or else a copy of the appliance's. The
   variant dialog edits a copy of the whole appliance; its Delete removes the
-  variant and its actions with `item-changed`, since it changes the appliance.
-- Edit in the appliance dialog is disabled, with a hint, while the dialog has
-  changes or the appliance is new, because the variant dialog edits the
-  appliance as it is in the draft. Edit closes the appliance dialog and opens
-  the variant dialog when it has closed.
+  variant with `item-changed`, since it changes the appliance.
+- The variant dialog edits the appliance as it is in the draft, so Edit in
+  the appliance dialog first applies the dialog's changes as OK does, then
+  closes it and opens the variant dialog when it has closed. Edit is
+  disabled while the appliance dialog has errors.
 - A new entity adapts the actions of the appliance and every action a
   variant overrides the same way.
 - The domain actions of the entity's domain are offered after Default, in

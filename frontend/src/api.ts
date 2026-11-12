@@ -49,29 +49,22 @@ export interface GeneralConfig {
   command_repeat_interval_min: number;
 }
 
-export interface Variant {
-  id: string;
-  label: string;
-  condition: Condition;
-}
-
 export interface ApplianceActions {
   turn_on: ActionConfig | null;
   turn_off: ActionConfig | null;
 }
 
-/** The key of the appliance's own actions in `Appliance.actions`. */
-export const MAIN_ACTIONS = "main";
+export interface Variant {
+  id: string;
+  label: string;
+  condition: Condition;
+  /** Only the actions the variant overrides, null while one is not set. */
+  actions: Partial<ApplianceActions>;
+}
 
-export interface Appliance {
+export interface Appliance extends ApplianceActions {
   id: string;
   entity_id: string | null;
-  /**
-   * Both actions of the appliance under `MAIN_ACTIONS`, and under the id of a
-   * variant the actions the variant overrides. A variant uses the
-   * appliance's action for each action it does not override.
-   */
-  actions: Record<string, Partial<ApplianceActions>>;
   power_reserve_w: number | null;
   variants: Variant[];
 }

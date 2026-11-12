@@ -17,7 +17,6 @@ from .conditions import context_variables
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
     CHARGER_ACTION_KINDS,
-    MAIN_ACTIONS,
     ActionConfig,
     ActionKind,
     ActionMode,
@@ -176,20 +175,12 @@ class ActionRunner:
     async def _async_execute_command(self, command: Command) -> None:
         match command:
             case TurnOnAppliance(appliance_id, variant_id):
-                appliance = self._appliances[appliance_id]
-                await self._async_run(
-                    appliance,
-                    appliance.action(variant_id, "turn_on"),
-                    ActionKind.TURN_ON,
-                    actions_key=appliance.actions_key(variant_id, "turn_on"),
+                await self._async_run_appliance(
+                    appliance_id, variant_id, "turn_on", ActionKind.TURN_ON
                 )
             case TurnOffAppliance(appliance_id, variant_id):
-                appliance = self._appliances[appliance_id]
-                await self._async_run(
-                    appliance,
-                    appliance.action(variant_id, "turn_off"),
-                    ActionKind.TURN_OFF,
-                    actions_key=appliance.actions_key(variant_id, "turn_off"),
+                await self._async_run_appliance(
+                    appliance_id, variant_id, "turn_off", ActionKind.TURN_OFF
                 )
             case ActivateCharger(charger_id):
                 charger = self._chargers[charger_id]
@@ -206,17 +197,31 @@ class ActionRunner:
                     set_current_variables(charger, current),
                 )
 
+    async def _async_run_appliance(
+        self, appliance_id: str, variant_id: str | None, name: str, kind: ActionKind
+    ) -> None:
+        appliance = self._appliances[appliance_id]
+        variant = appliance.overriding_variant(variant_id, name)
+        await self._async_run(
+            appliance,
+            appliance.action(variant_id, name),
+            kind,
+            owner=appliance.id if variant is None else variant.id,
+        )
+
     async def _async_run(
         self,
         item: Appliance | Charger,
         action: ActionConfig | None,
         kind: ActionKind,
         variables: Mapping[str, Any] | None = None,
-        actions_key: str = MAIN_ACTIONS,
+        owner: str | None = None,
     ) -> None:
-        """`actions_key` tells apart the actions of the variants of an appliance."""
+        """`owner` is the variant that overrides the action, or else the item."""
         try:
-            script = await self._async_script(item.entity_id, action, kind, actions_key)
+            script = await self._async_script(
+                item.entity_id, action, kind, owner or item.id
+            )
             await script.async_run(
                 {**context_variables(self._hass, item.entity_id), **(variables or {})},
                 Context(),
@@ -229,11 +234,11 @@ class ActionRunner:
         entity_id: str | None,
         action: ActionConfig | None,
         kind: ActionKind,
-        actions_key: str,
+        owner: str,
     ) -> Script:
         if entity_id is None or action is None:
             raise ValueError("the action is not configured")
-        key = (entity_id, actions_key, kind)
+        key = (entity_id, owner, kind)
         if key not in self._scripts:
             steps = _action_steps(entity_id, action, kind)
             sequence = await async_validate_actions_config(

@@ -2,7 +2,7 @@ import { mdiEvStation } from "@mdi/js";
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { MAIN_ACTIONS, type Appliance, type Issue, type PriorityEntry, type Variant } from "../api";
+import type { Appliance, Issue, PriorityEntry, Variant } from "../api";
 import "../components/appliance-dialog";
 import "../components/manual-control-warning";
 import "../components/variant-dialog";
@@ -132,7 +132,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       key: priorityKey(entry),
       title: appliance ? this.applianceName(appliance) : "",
       tag: variant?.label,
-      details: appliance ? (variant ? this.variantDetails(appliance, variant) : this.applianceDetails(appliance)) : [],
+      details: appliance ? (variant ? this.variantDetails(variant) : this.applianceDetails(appliance)) : [],
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
       openable: true,
     };
@@ -159,12 +159,12 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     return details;
   }
 
-  private variantDetails(appliance: Appliance, variant: Variant): string[] {
+  private variantDetails(variant: Variant): string[] {
     const source =
       variant.condition.type === "entity"
         ? this.localize("appliances.variant_entity", { entity: variant.condition.value })
         : this.localize("appliances.variant_template");
-    const overridden = APPLIANCE_ACTIONS.filter((name) => isOverridden(appliance.actions[variant.id], name));
+    const overridden = APPLIANCE_ACTIONS.filter((name) => isOverridden(variant.actions, name));
     if (overridden.length === APPLIANCE_ACTIONS.length) {
       return [source, this.localize("appliances.variant_own_actions")];
     }
@@ -187,7 +187,8 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     const appliance: Appliance = {
       id: newId(),
       entity_id: null,
-      actions: { [MAIN_ACTIONS]: { turn_on: null, turn_off: null } },
+      turn_on: null,
+      turn_off: null,
       power_reserve_w: this.capabilities.defaults.appliances.power_reserve_w,
       variants: [],
     };

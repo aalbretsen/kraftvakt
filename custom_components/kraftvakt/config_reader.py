@@ -8,18 +8,16 @@ an issue and is read as its default.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping
-from dataclasses import fields, replace
+from collections.abc import Mapping
+from dataclasses import fields
 from datetime import time
 from typing import Any
 
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
-    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
-    ApplianceActions,
     Charger,
     ChargerGroup,
     ChargingWindow,
@@ -148,62 +146,34 @@ class ConfigReader:
         values = self._mapping(data, IssueLocation("appliances"), None)
         appliance_id = self._id(values, IssueLocation("appliances"))
         location = IssueLocation("appliances", appliance_id)
-        variants = tuple(
-            self._variant(item, appliance_id)
-            for item in self._list(values.get("variants"), location, "variants")
-        )
         return Appliance(
             id=appliance_id,
             entity_id=self._text(values, "entity_id", location),
-            actions=self._appliance_actions(values, location, variants),
+            turn_on=self._action(values, "turn_on", location),
+            turn_off=self._action(values, "turn_off", location),
             power_reserve_w=self._integer(values, "power_reserve_w", None, location),
-            variants=variants,
+            variants=tuple(
+                self._variant(item, appliance_id)
+                for item in self._list(values.get("variants"), location, "variants")
+            ),
         )
-
-    def _appliance_actions(
-        self,
-        values: Mapping[str, Any],
-        location: IssueLocation,
-        variants: tuple[Variant, ...],
-    ) -> dict[str, ApplianceActions]:
-        """Read both actions of the appliance and those the variants override.
-
-        Actions of variants that no longer exist, and variants that override
-        nothing, are left out.
-        """
-        data = self._mapping(values.get("actions"), location, "actions")
-        main = self._mapping(data.get(MAIN_ACTIONS), location, "actions")
-        actions = {
-            MAIN_ACTIONS: self._actions_of(main, APPLIANCE_ACTION_KINDS, location)
-        }
-        for variant in variants:
-            if data.get(variant.id) is not None:
-                variant_location = replace(location, prefix=f"variants.{variant.id}.")
-                own = self._mapping(data[variant.id], variant_location, "actions")
-                overridden = [name for name in APPLIANCE_ACTION_KINDS if name in own]
-                if overridden:
-                    actions[variant.id] = self._actions_of(
-                        own, overridden, variant_location
-                    )
-        return actions
-
-    def _actions_of(
-        self, values: Mapping[str, Any], names: Iterable[str], location: IssueLocation
-    ) -> ApplianceActions:
-        return {name: self._action(values, name, location) for name in names}
 
     def _variant(self, data: Any, appliance_id: str) -> Variant:
         appliance_location = IssueLocation("appliances", appliance_id)
         values = self._mapping(data, appliance_location, "variants")
         variant_id = self._id(values, appliance_location)
         location = IssueLocation("appliances", appliance_id, f"variants.{variant_id}.")
-        if values.get("condition") is None:
-            self.issues.append(location.issue("required", "condition"))
-        condition = self._condition(values, "condition", location)
+        actions = self._mapping(values.get("actions"), location, "actions")
         return Variant(
             id=variant_id,
             label=self._text(values, "label", location) or "",
-            condition=condition or Condition(ConditionType.TEMPLATE, ""),
+            condition=self._condition(values, "condition", location)
+            or Condition(ConditionType.TEMPLATE, ""),
+            actions={
+                name: self._action(actions, name, location)
+                for name in APPLIANCE_ACTION_KINDS
+                if name in actions
+            },
         )
 
     def _priority_entry(self, data: Any) -> PriorityEntry | None:

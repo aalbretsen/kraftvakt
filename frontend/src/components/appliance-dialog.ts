@@ -3,7 +3,7 @@ import { css, html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import { MAIN_ACTIONS, type ActionConfig, type Appliance, type ApplianceActions, type Issue, type Variant } from "../api";
+import type { Appliance, Issue, Variant } from "../api";
 import { moveItem, newId } from "../draft";
 import { APPLIANCE_ACTIONS, applianceErrors, missingInAppliance } from "../validation";
 import { ItemDialog } from "./item-dialog";
@@ -25,18 +25,19 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected readonly texts = "appliance";
 
   protected actionsForEntity(entityId: string | null): Partial<Appliance> {
-    const actions = Object.fromEntries(
-      Object.entries(this.draft.actions).map(([key, own]) => [
-        key,
-        Object.fromEntries(
-          Object.entries(own).map(([name, action]) => [
+    return {
+      turn_on: this.actionForEntity("turn_on", this.draft.turn_on, entityId),
+      turn_off: this.actionForEntity("turn_off", this.draft.turn_off, entityId),
+      variants: this.draft.variants.map((variant) => ({
+        ...variant,
+        actions: Object.fromEntries(
+          Object.entries(variant.actions).map(([name, action]) => [
             name,
-            this.actionForEntity(name, action as ActionConfig | null, entityId),
+            this.actionForEntity(name, action ?? null, entityId),
           ]),
         ),
-      ]),
-    );
-    return { actions };
+      })),
+    };
   }
 
   protected errors(): Issue[] {
@@ -58,20 +59,19 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   }
 
   private renderActions(issues: Issue[]) {
-    const actions = this.draft.actions[MAIN_ACTIONS];
     return APPLIANCE_ACTIONS.map((name) =>
       this.renderActionField(
-        { name, field: name, value: actions?.[name] ?? null },
+        { name, field: name, value: this.draft[name] },
         issues,
         APPLIANCE_ACTION_VARIABLES,
-        (value) => this.changeMainActions({ [name]: value }),
+        (value) => this.changeDraft({ [name]: value }),
       ),
     );
   }
 
   /** The variants, sorted in the order their expressions are evaluated. */
   private renderVariants(issues: Issue[]) {
-    const editable = this.locked || (!this.isNew && !this.hasChanges);
+    const editable = this.locked || this.errors().length === 0;
     return html`
       ${this.renderSection("appliance.variants")}
       <div class="info">${this.localize("appliance.variants_info")}</div>
@@ -84,9 +84,6 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
           )}
         </div>
       </ha-sortable>
-      ${this.draft.variants.length > 0 && !editable
-        ? html`<div class="hint">${this.localize("appliance.confirm_before_editing_variant")}</div>`
-        : nothing}
       ${this.locked
         ? nothing
         : html`
@@ -133,23 +130,18 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     `;
   }
 
-  private get hasChanges(): boolean {
-    return JSON.stringify(this.draft) !== JSON.stringify(this.item);
-  }
-
+  /** The variant dialog edits the appliance as it is in the draft, so the changes here are applied first. */
   private openVariant(id: string): void {
+    if (!this.locked) {
+      this.dispatchEvent(new CustomEvent("item-changed", { detail: this.draft }));
+    }
     this.dispatchEvent(new CustomEvent("variant-opened", { detail: id }));
     this.close();
   }
 
   private addVariant(): void {
-    const variant: Variant = { id: newId(), label: "", condition: { type: "template", value: "" } };
+    const variant: Variant = { id: newId(), label: "", condition: { type: "template", value: "" }, actions: {} };
     this.changeDraft({ variants: [...this.draft.variants, variant] });
-  }
-
-  private changeMainActions(changes: Partial<ApplianceActions>): void {
-    const main = { ...this.draft.actions[MAIN_ACTIONS], ...changes };
-    this.changeDraft({ actions: { ...this.draft.actions, [MAIN_ACTIONS]: main } });
   }
 
   private changeVariant(id: string, changes: Partial<Variant>): void {
@@ -181,10 +173,6 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
       }
       .handle {
         cursor: grab;
-        color: var(--secondary-text-color);
-      }
-      .hint {
-        font-size: var(--ha-font-size-s, 12px);
         color: var(--secondary-text-color);
       }
       .error {

@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { MAIN_ACTIONS, type ActionConfig, type Appliance, type ApplianceActions, type Condition, type Issue, type Variant } from "../api";
+import type { ActionConfig, Appliance, ApplianceActions, Condition, Issue, Variant } from "../api";
 import { APPLIANCE_ACTIONS, applianceErrors, isOverridden, missingInAppliance } from "../validation";
 import { APPLIANCE_ACTION_VARIABLES } from "./appliance-dialog";
 import "./condition-field";
@@ -47,9 +47,8 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
 
   /** Deleting the variant changes the appliance, so it fires `item-changed` without the variant. */
   protected delete(): void {
-    const { [this.variantId]: _removed, ...actions } = this.draft.actions;
     const variants = this.draft.variants.filter((variant) => variant.id !== this.variantId);
-    this.dispatchEvent(new CustomEvent("item-changed", { detail: { ...this.draft, variants, actions } }));
+    this.dispatchEvent(new CustomEvent("item-changed", { detail: { ...this.draft, variants } }));
     this.close();
   }
 
@@ -82,7 +81,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
 
   /** The switch to override the action, and the variant's own action while it is on. */
   private renderOverride(name: ApplianceAction, issues: Issue[]) {
-    const own = this.draft.actions[this.variantId];
+    const own = this.variant?.actions ?? {};
     const overridden = isOverridden(own, name);
     const switchName = `override_${name}`;
     return html`
@@ -97,7 +96,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
             { name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null },
             issues,
             APPLIANCE_ACTION_VARIABLES,
-            (value) => this.changeOwnActions({ ...own, [name]: value }),
+            (value) => this.changeVariant({ actions: { ...own, [name]: value } }),
           )
         : nothing}
     `;
@@ -116,29 +115,29 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
   }
 
   private changeCondition(condition: Condition): void {
-    this.changeDraft({
-      variants: this.draft.variants.map((variant) => (variant.id === this.variantId ? { ...variant, condition } : variant)),
-    });
+    this.changeVariant({ condition });
   }
 
   /** An overridden action starts from what it had in this dialog, or a copy of the appliance's. */
   private override(name: ApplianceAction, overridden: boolean): void {
-    const { [name]: action, ...others } = this.draft.actions[this.variantId] ?? {};
+    const { [name]: action, ...others } = this.variant?.actions ?? {};
     if (overridden) {
       const start = this.setAsideActions.has(name)
         ? this.setAsideActions.get(name)
-        : structuredClone(this.draft.actions[MAIN_ACTIONS]?.[name] ?? null);
-      this.changeOwnActions({ ...others, [name]: start ?? null });
+        : structuredClone(this.draft[name]);
+      this.changeVariant({ actions: { ...others, [name]: start ?? null } });
     } else {
       this.setAsideActions.set(name, action ?? null);
-      this.changeOwnActions(others);
+      this.changeVariant({ actions: others });
     }
   }
 
-  /** A variant that overrides no action has no entry in the actions. */
-  private changeOwnActions(own: Partial<ApplianceActions>): void {
-    const { [this.variantId]: _old, ...actions } = this.draft.actions;
-    this.changeDraft({ actions: Object.keys(own).length > 0 ? { ...actions, [this.variantId]: own } : actions });
+  private changeVariant(changes: Partial<Variant>): void {
+    this.changeDraft({
+      variants: this.draft.variants.map((variant) =>
+        variant.id === this.variantId ? { ...variant, ...changes } : variant,
+      ),
+    });
   }
 }
 

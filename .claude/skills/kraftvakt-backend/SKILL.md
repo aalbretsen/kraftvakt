@@ -71,13 +71,11 @@ The format is defined by the dataclasses and their serialization in
 
 - `general`: the power sensor and every general setting, also those shown on
   the panel's Advanced page.
-- `appliances`: each with an id, its entity, its actions, an optional power
-  reserve and its variants (id, label, condition). The actions are a map of
-  turn-on and turn-off actions: both of the appliance's under `main`, and
-  under a variant's id only the actions the variant overrides. A key that is
-  left out is not overridden; a key with `null` is overridden but not set,
-  and is missing. Actions of variants that no longer exist, and variant
-  entries without actions, are dropped when read.
+- `appliances`: each with an id, its entity, its turn-on and turn-off
+  actions, an optional power reserve and its variants (id, label, condition
+  and the actions it overrides). In a variant's actions, a key that is left
+  out is not overridden, and a key with `null` is overridden but not set, so
+  it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and
   an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its

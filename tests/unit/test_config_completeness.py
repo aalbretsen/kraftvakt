@@ -29,9 +29,7 @@ def test_default_config_misses_power_sensor() -> None:
 
 def test_appliance_needs_entity_and_both_actions() -> None:
     data = full_config_data()
-    data["appliances"].append(
-        {"id": "a3", "actions": {"main": {"turn_off": {"mode": "custom"}}}}
-    )
+    data["appliances"].append({"id": "a3", "turn_off": {"mode": "custom"}})
 
     assert _missing(data) == [
         Issue("missing_entity", "appliances", "a3", "entity_id"),
@@ -52,6 +50,19 @@ def test_charger_needs_device_entity_actions_and_actively_charging() -> None:
         Issue("missing_action", "chargers", "c2", "deactivate"),
         Issue("missing_action", "chargers", "c2", "set_current"),
         Issue("missing_actively_charging", "chargers", "c2", "actively_charging"),
+    ]
+
+
+def test_empty_charger_conditions_are_missing() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["one_at_a_time"] = True
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["actively_charging"] = {"type": "power_sensor", "value": ""}
+    charger["car_connected"] = {"type": "template", "value": " "}
+
+    assert _missing(data) == [
+        Issue("missing_actively_charging", "chargers", "c1", "actively_charging"),
+        Issue("missing_car_connected", "chargers", "c1", "car_connected"),
     ]
 
 
@@ -109,7 +120,7 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
 
 def test_domain_action_needs_every_value_chosen() -> None:
     data = full_config_data()
-    data["appliances"][0]["actions"]["main"]["turn_on"] = {
+    data["appliances"][0]["turn_on"] = {
         "mode": "domain",
         "domain_action": "climate_hvac_mode",
         "data": {"hvac_mode": None},
@@ -122,10 +133,10 @@ def test_domain_action_needs_every_value_chosen() -> None:
 
 def test_variant_needs_only_the_actions_it_overrides() -> None:
     data = full_config_data()
-    data["appliances"][0]["actions"]["v1"] = {"turn_on": {"mode": "default"}}
+    data["appliances"][0]["variants"][0]["actions"] = {"turn_on": {"mode": "default"}}
 
     assert _missing(data) == []
-    data["appliances"][0]["actions"]["v1"] = {"turn_off": None}
+    data["appliances"][0]["variants"][0]["actions"] = {"turn_off": None}
 
     assert _missing(data) == [
         Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")

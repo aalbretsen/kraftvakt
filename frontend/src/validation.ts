@@ -1,6 +1,5 @@
 /** Checks of the draft, so the user sees mistakes before saving. */
 import {
-  MAIN_ACTIONS,
   type ActionConfig,
   type Appliance,
   type ApplianceActions,
@@ -32,23 +31,18 @@ interface ActionEntry {
   action: ActionConfig | null;
 }
 
-const NO_ACTIONS: ApplianceActions = { turn_on: null, turn_off: null };
-
 /** Return the actions of the appliance and those the variants override, as the backend does. */
 function applianceActions(appliance: Appliance): ActionEntry[] {
-  const own: [string, Partial<ApplianceActions>][] = [
-    ["", { ...NO_ACTIONS, ...appliance.actions[MAIN_ACTIONS] }],
-    ...appliance.variants
-      .filter((variant) => appliance.actions[variant.id])
-      .map((variant): [string, Partial<ApplianceActions>] => [`variants.${variant.id}.`, appliance.actions[variant.id]]),
+  return [
+    ...APPLIANCE_ACTIONS.map((name) => ({ name, field: name, action: appliance[name] })),
+    ...appliance.variants.flatMap((variant) =>
+      APPLIANCE_ACTIONS.filter((name) => isOverridden(variant.actions, name)).map((name) => ({
+        name,
+        field: `variants.${variant.id}.${name}`,
+        action: variant.actions[name] ?? null,
+      })),
+    ),
   ];
-  return own.flatMap(([prefix, actions]) =>
-    APPLIANCE_ACTIONS.filter((name) => isOverridden(actions, name)).map((name) => ({
-      name,
-      field: `${prefix}${name}`,
-      action: actions[name] ?? null,
-    })),
-  );
 }
 
 /** Return whether the actions hold the action `name`, also when it is not set yet. */
@@ -98,7 +92,7 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   return [
     ...missingEntityAndActions("appliances", appliance, applianceActions(appliance)),
     ...appliance.variants
-      .filter((variant) => variant.condition.value.trim() === "")
+      .filter((variant) => !isSet(variant.condition))
       .map((variant) => applianceIssue(appliance, "missing_condition", `variants.${variant.id}.condition`)),
   ];
 }
@@ -109,10 +103,10 @@ export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[]
     ? []
     : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
   missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
-  if (!charger.actively_charging) {
+  if (!isSet(charger.actively_charging)) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
-  if (oneAtATime && !charger.car_connected) {
+  if (oneAtATime && !isSet(charger.car_connected)) {
     missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
   }
   return missing;
@@ -195,12 +189,6 @@ export function chargerErrors(charger: Charger, capabilities: Capabilities, hass
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
   }
-  for (const field of ["car_connected", "actively_charging"] as const) {
-    const condition = charger[field];
-    if (condition) {
-      issues.push(...conditionIssues("chargers", charger.id, field, condition));
-    }
-  }
   const window = charger.charging_window;
   if (window && (!window.start || !window.end)) {
     issues.push(issue("invalid_time", "charging_window"));
@@ -214,8 +202,9 @@ function applianceIssue(appliance: Appliance, code: string, field: string): Issu
   return { code, section: "appliances", target: appliance.id, field };
 }
 
-function conditionIssues(section: Issue["section"], target: string, field: string, condition: Condition): Issue[] {
-  return condition.value.trim() === "" ? [{ code: "required", section, target, field }] : [];
+/** An empty condition is missing, not a mistake. */
+function isSet(condition: Condition | null): boolean {
+  return condition !== null && condition.value.trim() !== "";
 }
 
 /** Optional settings that are not given are only checked when `required` is set. */

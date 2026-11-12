@@ -26,24 +26,16 @@ def full_config_data() -> dict[str, Any]:
             {
                 "id": "a1",
                 "entity_id": "switch.water_heater",
-                "actions": {
-                    "main": {
-                        "turn_on": {"mode": "default"},
-                        "turn_off": {
-                            "mode": "custom",
-                            "action": [
-                                {
-                                    "action": "switch.turn_off",
-                                    "target": {"entity_id": "{{ entity_id }}"},
-                                    "data": {},
-                                }
-                            ],
-                        },
-                    },
-                    "v1": {
-                        "turn_on": {"mode": "default"},
-                        "turn_off": {"mode": "default"},
-                    },
+                "turn_on": {"mode": "default"},
+                "turn_off": {
+                    "mode": "custom",
+                    "action": [
+                        {
+                            "action": "switch.turn_off",
+                            "target": {"entity_id": "{{ entity_id }}"},
+                            "data": {},
+                        }
+                    ],
                 },
                 "power_reserve_w": None,
                 "variants": [
@@ -54,18 +46,15 @@ def full_config_data() -> dict[str, Any]:
                             "type": "template",
                             "value": "{{ 5 <= now().hour < 8 }}",
                         },
+                        "actions": {"turn_off": {"mode": "default"}},
                     }
                 ],
             },
             {
                 "id": "a2",
                 "entity_id": "climate.bathroom",
-                "actions": {
-                    "main": {
-                        "turn_on": {"mode": "default"},
-                        "turn_off": {"mode": "default"},
-                    }
-                },
+                "turn_on": {"mode": "default"},
+                "turn_off": {"mode": "default"},
                 "power_reserve_w": 800,
                 "variants": [],
             },

@@ -43,7 +43,8 @@ def kraftvakt_config() -> dict[str, Any]:
             {
                 "id": "a1",
                 "entity_id": WATER_HEATER,
-                "actions": {"main": {"turn_on": DEFAULT, "turn_off": DEFAULT}},
+                "turn_on": DEFAULT,
+                "turn_off": DEFAULT,
             }
         ],
         "priority": [
@@ -184,7 +185,7 @@ async def test_kraftvakt_controls_a_thermostat_with_its_domain_actions(
     config["charger_groups"] = []
     config["priority"] = config["priority"][:1]
     config["appliances"][0]["entity_id"] = THERMOSTAT
-    config["appliances"][0]["actions"]["main"] = {
+    config["appliances"][0] |= {
         "turn_on": {
             "mode": "domain",
             "domain_action": "climate_hvac_mode_and_temperature",
