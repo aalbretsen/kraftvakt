@@ -62,6 +62,9 @@
       },
       "charger_window_override": {
         "name": "{charger} overstyr ladetidsrom"
+      },
+      "charger_finish_after_window": {
+        "name": "{charger} fullfør lading etter ladetidsrom"
       }
     }
   },

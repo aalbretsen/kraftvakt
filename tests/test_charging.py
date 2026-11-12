@@ -441,6 +441,73 @@ async def test_window_override_lets_the_charger_charge_until_the_window(
     assert actions[-2:] == ["current 6", f"off {CHARGER}"]
 
 
+def stored_finish_after_window(hass_storage: dict[str, Any]) -> bool:
+    data = hass_storage[STORAGE_KEY]["data"]
+    return data["charger_groups"][0]["chargers"][0]["finish_after_window"]
+
+
+async def test_charger_finishes_charging_after_the_window_when_switched_on(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """The switch is saved while the regulation runs and applies at once."""
+    await hass.config.async_set_time_zone("Europe/Oslo")
+    freezer.move_to("2026-11-07T11:50:00+00:00")
+    config["general"]["regulation_window_s"] = 600
+    config["charger_groups"][0]["chargers"][0]["charging_window"] = {
+        "start": "13:00",
+        "end": "13:20",
+    }
+    set_power(hass, CHARGER_POWER, "4100")
+    entry = await setup_kraftvakt()
+    runtime = entry.runtime_data
+    version = runtime.config_version
+    actions.clear()
+
+    await use_switch(hass, "c1", "finish_after_window", "turn_on")
+    assert runtime.running
+    assert switch_state(hass, "c1", "finish_after_window") == STATE_ON
+    assert stored_finish_after_window(hass_storage) is True
+    assert runtime.config_version == version + 1
+    for _ in range(4):
+        await advance(hass, freezer, timedelta(minutes=10))
+    assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 8"]
+    assert runtime.chargers["c1"].finishing
+
+    set_power(hass, CHARGER_POWER, "0")
+    await advance(hass, freezer, timedelta(minutes=10))
+    assert actions[-2:] == ["current 6", f"off {CHARGER}"]
+    actions.clear()
+    set_power(hass, CHARGER_POWER, "4100")
+    for _ in range(3):
+        await advance(hass, freezer, timedelta(minutes=10))
+    assert f"on {CHARGER}" not in actions
+
+
+async def test_finish_after_window_switch_saves_the_configuration_while_stopped(
+    hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
+) -> None:
+    """Setting it to what it is already saves nothing."""
+    entry = await setup_kraftvakt()
+    runtime = entry.runtime_data
+    runtime.async_stop_regulation()
+    await use_switch(hass, "c1", "finish_after_window", "turn_on")
+    version = runtime.config_version
+
+    await use_switch(hass, "c1", "finish_after_window", "turn_on")
+    assert runtime.config_version == version
+    await use_switch(hass, "c1", "finish_after_window", "turn_off")
+
+    assert switch_state(hass, "c1", "finish_after_window") == STATE_OFF
+    assert stored_finish_after_window(hass_storage) is False
+    assert runtime.config.chargers[0].finish_after_window is False
+    assert runtime.config_version == version + 1
+
+
 async def test_window_override_counts_from_the_switch_over_a_stop(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
@@ -626,6 +693,10 @@ async def test_charger_switches_are_named_after_the_charger(
     assert excluded.name == "Kraftvakt Garage excluded from regulation"
     assert override is not None
     assert override.name == "Kraftvakt Garage override charging window"
+    finish = hass.states.get(switch_id(hass, "c1", "finish_after_window") or "")
+    assert finish is not None
+    assert finish.entity_id == "switch.kraftvakt_charger_garage_finish_after_window"
+    assert finish.name == "Kraftvakt Garage finish charging after charging window"
 
 
 async def test_charger_switches_follow_the_configuration_without_reload(

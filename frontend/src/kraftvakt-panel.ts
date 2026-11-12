@@ -355,7 +355,7 @@ export class KraftvaktPanel extends LitElement {
     this.unsubscribeStatus = undefined;
   }
 
-  /** The power limit entity can change the power limit at any time. */
+  /** Entities, like the power limit, can change the stored configuration at any time. */
   private statusReceived(status: StatusSnapshot): void {
     const previous = this.status;
     this.status = status;
@@ -363,7 +363,7 @@ export class KraftvaktPanel extends LitElement {
     if (
       previous === undefined ||
       previous.running !== status.running ||
-      previous.power_limit_w !== status.power_limit_w ||
+      previous.config_version !== status.config_version ||
       JSON.stringify(previous.missing) !== JSON.stringify(status.missing)
     ) {
       this.loadConfig();

@@ -136,6 +136,9 @@ export class KraftvaktChargingPage extends ConfigPage {
         ? this.localize("charging.window", { ...charger.charging_window })
         : this.localize("charging.always_allowed"),
     ];
+    if (charger.charging_window && charger.finish_after_window) {
+      details.push(this.localize("charging.finishes_after_window"));
+    }
     if (charger.car_connected) {
       details.push(
         charger.car_connected.type === "entity"
@@ -232,6 +235,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       car_connected: null,
       actively_charging: null,
       charging_window: null,
+      finish_after_window: false,
     };
     this.editing = { charger, groupId: group.id, isNew: true };
   }

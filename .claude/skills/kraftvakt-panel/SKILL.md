@@ -60,9 +60,9 @@ Code that mirrors the backend and must be kept in step with it:
   page; the browser asks when the page is closed. HA sidebar navigation cannot
   be stopped. The draft is discarded when the regulation starts.
 - The configuration is fetched again at the first status, when the regulation
-  starts or stops, when what is missing changes, and when the power limit in
-  the status changes, since the power limit entity can change the stored
-  limit at any time. A draft with unsaved changes is kept while stopped.
+  starts or stops, when what is missing changes, and when the config version
+  in the status changes, since entities can change the stored configuration
+  at any time. A draft with unsaved changes is kept while stopped.
 - While the regulation runs, the configuration pages are locked and show a
   banner with a button to stop the regulation, on one line. Forms and lists
   are dimmed, add buttons are disabled and dialogs only show the item.
@@ -102,6 +102,9 @@ Code that mirrors the backend and must be kept in step with it:
   temperature unit with the entity's range as helper. A cleared value is
   `null`. A domain action becomes an empty custom action when the entity
   changes to one where it is not available.
+- Finish ongoing charging after the charging window is shown under the
+  times of the charging window, only while the charger has one. Its value is
+  kept when the window is removed, since it has no effect without one.
 - Set charging current also offers Entity: an entity picker limited to the
   domains with a default set-current action, with a helper telling which
   service runs. Required until an entity is chosen.
@@ -228,7 +231,8 @@ Code that mirrors the backend and must be kept in step with it:
     excluded, its charging window when it is not allowed to charge, no car
     connected (bypassed and car connected is false), not charging (bypassed
     otherwise), queued (waiting), override (allowed only by the override
-    while activated), charging, activated, deactivated. Excluded comes before
+    while activated), finishing (allowed only to finish ongoing charging
+    after the window), charging, activated, deactivated. Excluded comes before
     bypassed, so a stale bypassed is not shown. No car connected is a state
     of its own, because the user needs to know that the car is missing.
   - A resting charger is shown as bypassed, without when it is tried again.

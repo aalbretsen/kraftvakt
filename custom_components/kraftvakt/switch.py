@@ -15,6 +15,7 @@ from .config_model import Appliance, ItemSwitches, KraftvaktConfig
 from .entity import KraftvaktEntity
 from .item_entity import ChargerEntity, ItemEntity, async_setup_item_entities
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
+from .switch_board import SwitchBoard
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +28,11 @@ async def async_setup_entry(
     """Add the regulation switch and the switches of the configured items."""
     async_add_entities([RegulationSwitch(entry, entry.runtime_data)])
     async_setup_item_entities(
-        hass, entry, async_add_entities, "switch", (ApplianceSwitch, ChargerSwitch)
+        hass,
+        entry,
+        async_add_entities,
+        "switch",
+        (ApplianceSwitch, ChargerSwitch, ChargerConfigSwitch),
     )
 
 
@@ -122,3 +127,35 @@ class ChargerSwitch(ItemSwitch, ChargerEntity):
 
     async def _async_set(self, position: bool) -> None:
         await self._board.async_set_charger(self._item_id, **{self._setting: position})
+
+
+class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
+    """A setting of a charger in the configuration, also shown in the panel."""
+
+    settings = ("finish_after_window",)
+
+    def __init__(
+        self,
+        entry: KraftvaktConfigEntry,
+        board: SwitchBoard,
+        item_id: str,
+        name: str,
+        setting: str,
+    ) -> None:
+        """Create the switch for the setting of the charger."""
+        super().__init__(entry, board, item_id, name, setting)
+        self._runtime = entry.runtime_data
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return the stored setting, None just after the charger was removed."""
+        charger = self._charger()
+        return None if charger is None else getattr(charger, self._setting)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Save the setting on, also while the regulation runs."""
+        await self._runtime.async_set_finish_after_window(self._item_id, True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Save the setting off, also while the regulation runs."""
+        await self._runtime.async_set_finish_after_window(self._item_id, False)

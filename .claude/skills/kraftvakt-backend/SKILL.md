@@ -81,6 +81,7 @@ The format is defined by the dataclasses and their serialization in
   charging window. A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger.
+  Finish after window is a field of the charger, not a switch position.
 
 The store has a version. A change of the stored format raises it and adds a
 migration in `storage.py`, with tests, so stored configurations keep working
@@ -183,10 +184,15 @@ panel's translations.
   was registered with as its suggested unit, so a new display unit needs
   both the stored suggestion and the registered unit changed; a unit the user
   chose is kept.
-- The power limit entity saves at once, through the switch board so
-  configuration and switches are saved together. While running, the runtime
-  starts a new engine at the next decision when the engine's limit differs
-  from the stored one.
+- The power limit entity and the finish after window switch of each charger
+  change the stored configuration, also while running. They save at once,
+  through the switch board so configuration and switches are saved together.
+  While running, the runtime starts a new engine at the next decision when
+  the engine's limit differs from the stored one. Finish after window reaches
+  the engine in the charger readings, so it needs no restart.
+- The runtime counts every change of the stored configuration in a config
+  version, sent in the status, so the panel fetches the configuration again
+  when an entity has changed it.
 - The regulation switch has no stored position; it is the same function as
   start and stop in the panel, and stays off and logs when the configuration
   is incomplete.

@@ -60,6 +60,7 @@
     "chargers_charging": "{charging} of {total} EV chargers are charging",
     "activated_not_charging": "Activated, but not charging yet",
     "window_overridden": "The charging window is overridden",
+    "finishing_at": "Finishing the charging that went on when the charging window ended, at {current} A",
     "chip_charging": "Charging",
     "chip_not_charging": "Not charging",
     "chip_no_car": "No car connected",
@@ -67,6 +68,7 @@
     "chip_excluded": "Excluded",
     "chip_window": "{start}–{end}",
     "chip_override": "Override",
+    "chip_finishing": "Finishing",
     "chip_first_decision": "First decision",
     "free_power": "{power} kW ({share}) free",
     "power_runs_out": "The power runs out here. What is below waits for free power."
@@ -346,10 +348,11 @@
     "unnamed_group": "Group without a name",
     "delete_group": "Delete group",
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
-    "switches_info": "For each EV charger Kraftvakt makes two switches that can also be used while the regulation runs: «‹charger› excluded from regulation» and «‹charger› override charging window».",
+    "switches_info": "For each EV charger Kraftvakt makes three switches that can also be used while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› finish charging after charging window».",
     "currents": "{min}–{max} A",
     "reserve": "reserve {power} W",
     "window": "charging window {start}–{end}",
+    "finishes_after_window": "finishes ongoing charging after the window",
     "always_allowed": "always allowed to charge",
     "car_from": "car connected from {source}",
     "car_template": "car connected from a template",
@@ -407,6 +410,10 @@
       },
       "end": {
         "label": "End"
+      },
+      "finish_after_window": {
+        "label": "Finish ongoing charging after the charging window",
+        "helper": "An EV charger that is charging when the charging window ends may go on until it stops charging. Once it has stopped, it is not turned on again before the charging window starts."
       }
     }
   }

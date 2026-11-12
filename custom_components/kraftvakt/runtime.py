@@ -105,6 +105,7 @@ class KraftvaktRuntime:
         self._config = config
         self._switch_board = switch_board
         self._missing = missing_items(config)
+        self._config_version = 0
         self._engine = RegulationEngine(config)
         self._action_lock = action_lock or asyncio.Lock()
         self._actions = ActionRunner(hass, config, self._action_lock)
@@ -153,6 +154,11 @@ class KraftvaktRuntime:
     def penalty(self) -> PenaltyState:
         """Return the overconsumption state and the penalty period."""
         return self._engine.penalty
+
+    @property
+    def config_version(self) -> int:
+        """Return a number that changes each time the stored configuration changes."""
+        return self._config_version
 
     @property
     def power_limit_w(self) -> int:
@@ -331,6 +337,7 @@ class KraftvaktRuntime:
             raise RegulationRunningError
         previous = self._config
         self._config = config
+        self._config_version += 1
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
         self._actions = ActionRunner(self._hass, config, self._action_lock)
@@ -352,13 +359,36 @@ class KraftvaktRuntime:
         general = self._config.general
         if power_limit_w == general.power_limit_w:
             return
-        config = replace(
-            self._config, general=replace(general, power_limit_w=power_limit_w)
+        await self._async_change_config(
+            replace(self._config, general=replace(general, power_limit_w=power_limit_w))
         )
+
+    async def async_set_finish_after_window(
+        self, charger_id: str, finish_after_window: bool
+    ) -> None:
+        """Save whether the charger finishes ongoing charging after its window.
+
+        It can be changed while the regulation runs, and applies from the next
+        decision without a restart.
+        """
+        charger = next(
+            charger for charger in self._config.chargers if charger.id == charger_id
+        )
+        if charger.finish_after_window == finish_after_window:
+            return
+        await self._async_change_config(
+            self._config.with_charger(
+                replace(charger, finish_after_window=finish_after_window)
+            )
+        )
+
+    async def _async_change_config(self, config: KraftvaktConfig) -> None:
+        """Save a change made by an entity, also while the regulation runs."""
         if not self._engine.running:
             await self.async_save_config(config)
             return
         self._config = config
+        self._config_version += 1
         self._notify_status()
         await self._switch_board.async_update_config(config)
 
@@ -588,6 +618,7 @@ class KraftvaktRuntime:
             override_switched_on_at=self._switch_board.override_switched_on_at(
                 charger.id
             ),
+            finish_after_window=charger.finish_after_window,
         )
 
     def _execute(self, commands: Sequence[Command]) -> None:

@@ -60,6 +60,7 @@
     "chargers_charging": "{charging} av {total} elbilladere lader",
     "activated_not_charging": "Aktivert, men lader ikke ennå",
     "window_overridden": "Ladetidsrommet er overstyrt",
+    "finishing_at": "Fullfører ladingen som pågikk da ladetidsrommet sluttet, med {current} A",
     "chip_charging": "Lader",
     "chip_not_charging": "Lader ikke",
     "chip_no_car": "Ingen bil tilkoblet",
@@ -67,6 +68,7 @@
     "chip_excluded": "Utenfor regulering",
     "chip_window": "{start}–{end}",
     "chip_override": "Overstyrt",
+    "chip_finishing": "Fullfører",
     "chip_first_decision": "Første avgjørelse",
     "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt."
@@ -346,10 +348,11 @@
     "unnamed_group": "Gruppe uten navn",
     "delete_group": "Slett gruppe",
     "delete_group_not_empty": "Flytt eller slett elbilladerne for å slette gruppen.",
-    "switches_info": "For hver elbillader lager Kraftvakt to brytere som kan brukes også mens reguleringen kjører: «‹lader› utenfor regulering» og «‹lader› overstyr ladetidsrom».",
+    "switches_info": "For hver elbillader lager Kraftvakt tre brytere som kan brukes også mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› fullfør lading etter ladetidsrom».",
     "currents": "{min}–{max} A",
     "reserve": "reserve {power} W",
     "window": "ladetidsrom {start}–{end}",
+    "finishes_after_window": "fullfører pågående lading etter tidsrommet",
     "always_allowed": "alltid lov til å lade",
     "car_from": "bil tilkoblet fra {source}",
     "car_template": "bil tilkoblet fra mal",
@@ -407,6 +410,10 @@
       },
       "end": {
         "label": "Slutt"
+      },
+      "finish_after_window": {
+        "label": "Fullfør pågående lading etter ladetidsrommet",
+        "helper": "En elbillader som lader når ladetidsrommet slutter, kan fortsette til den slutter å lade. Når den har stoppet, slås den ikke på igjen før ladetidsrommet starter."
       }
     }
   }

@@ -102,10 +102,16 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
                 { name: "end", required: true, selector: { time: { no_second: true } } },
               ],
             },
+            { name: "finish_after_window", selector: { boolean: {} } },
           ]
         : []),
     ];
-    const data = { charging_window: window !== null, start: window?.start ?? "", end: window?.end ?? "" };
+    const data = {
+      charging_window: window !== null,
+      start: window?.start ?? "",
+      end: window?.end ?? "",
+      finish_after_window: this.draft.finish_after_window,
+    };
     return html`
       <div class="group">
         ${this.renderForm(
@@ -116,6 +122,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
               charging_window: value.charging_window
                 ? { start: wholeMinutes(value.start), end: wholeMinutes(value.end) }
                 : null,
+              finish_after_window: !!value.finish_after_window,
             }),
           data,
         )}

@@ -662,6 +662,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
 
     assert status == {
         "running": True,
+        "config_version": 0,
         "missing": [],
         "safe_state": False,
         "penalty": {
@@ -852,6 +853,7 @@ async def test_status_shows_the_chargers(
             "excluded": None,
             "charging": False,
             "window_overridden": False,
+            "finishing": False,
             "car_connected": None,
             "waiting_since": None,
             "waiting_until": None,

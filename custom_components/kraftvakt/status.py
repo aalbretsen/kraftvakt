@@ -36,6 +36,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     positions = _current_positions(config, runtime.current_variants)
     return {
         "running": runtime.running,
+        "config_version": runtime.config_version,
         "missing": [issue.to_dict() for issue in runtime.missing],
         "safe_state": runtime.safe_state,
         "penalty": {
@@ -119,6 +120,7 @@ def _charger_status(
         "excluded": status.excluded,
         "charging": status.charging,
         "window_overridden": status.window_overridden,
+        "finishing": status.finishing,
         "car_connected": status.car_connected,
         **_waiting_fields(runtime, charger.id),
     }

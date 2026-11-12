@@ -198,6 +198,16 @@ set to the minimum before the EV charger is activated or deactivated.
   EV chargers without a car would be activated in turn.
 - Outside its charging window, an EV charger does not charge. The charging
   window can span midnight and follows the time zone of Home Assistant.
+- With **Finish ongoing charging after the charging window**, off by default,
+  an EV charger that is charging when its charging window ends may go on
+  charging, regulated as before, until it stops. Charging has stopped at the
+  first decision where it is not actively charging, or when it is
+  deactivated for any reason, for example above the power limit, a
+  disconnected car, an excluded EV charger or a stopped regulation. It is then
+  not turned on again before the charging window starts. An EV charger that
+  is activated but not yet actively charging when the window ends is
+  deactivated. The setting is also the switch **‹charger› finish charging
+  after charging window**.
 - The switch **‹charger› override charging window** lets the EV charger
   charge outside the charging window until the next charging window has
   started, even if the regulation has been stopped or in safe state
@@ -246,7 +256,8 @@ regulation starts.
   move it there. The dialog for an EV charger has the entity, the actions to
   activate, deactivate and set the charging current, the minimum and maximum
   charging current, the power reserve, car connected, actively charging, and
-  the charging window.
+  the charging window with **Finish ongoing charging after the charging
+  window**.
 - **Advanced:**
   - **Waiting time curve:** two sliders, steepness and pivot point, with a
     table and a curve showing how much of the waiting time an appliance waits
@@ -295,7 +306,8 @@ shows:
 - a label on each row: **Excluded**, **On** or **Off** for an appliance, and
   for an EV charger the most important of **First decision**, **Excluded**,
   the charging window (for example «22–06») when outside it, **No car
-  connected**, **Not charging**, **Queued**, **Override**, **Charging**,
+  connected**, **Not charging**, **Queued**, **Override**, **Finishing**,
+  **Charging**,
   **Activated** or **Deactivated**. Hover over a label or an icon for the full
   explanation,
 - a dashed line under the last entry that is on. Here the power is used up,
@@ -339,6 +351,7 @@ All entities belong to the service device **Kraftvakt**.
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
+| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish ongoing charging after the charging window** in the panel. Can be changed while the regulation runs. |
 | `binary_sensor.kraftvakt_charger_<charger>_window_allowed` (‹charger› charging allowed by window) | Diagnostic. One per EV charger. On while the charging window allows charging: inside the charging window, while **‹charger› override charging window** is on, or always when the EV charger has no charging window. Follows the clock, also while the regulation is stopped. |
 
 The sensors are updated every time a regulation window closes. The sensors
@@ -362,9 +375,9 @@ value equal to the power limit in use does nothing. The status page shows the
 power limit in use.
 
 The appliance and EV charger switches can be used while the regulation runs
-and apply from the next decision. An excluded appliance or EV charger gets no
-repeated commands from the next regulation window. Their state is stored at once and kept over
-a restart. The entities of an EV charger do not depend on its group, and are
+and apply from the next decision, without restarting it. An excluded
+appliance or EV charger gets no repeated commands from the next regulation
+window. Their state is stored at once and kept over a restart. The entities of an EV charger do not depend on its group, and are
 kept when it is moved to another group.
 
 The entity IDs are the same in every language and are grouped by what they

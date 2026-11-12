@@ -15,6 +15,7 @@ from .charging import (
     ChargingState,
     allowed_to_charge,
     charging_current,
+    finishing_after_window,
     override_expired,
     window_overridden,
 )
@@ -304,7 +305,23 @@ class RegulationEngine:
             and charger_id not in overrides_ended
             for charger_id in self._chargers
         }
-        allowed = [
+        activated = {
+            charger_id
+            for group in self._groups
+            for charger_id in self._charging(group.id).activated()
+        }
+        finishing = [
+            charger.id
+            for charger in self._chargers.values()
+            if finishing_after_window(
+                charger,
+                readings[charger.id],
+                override_active[charger.id],
+                local_time,
+                charger.id in activated,
+            )
+        ]
+        allowed = finishing + [
             charger.id
             for charger in self._chargers.values()
             if allowed_to_charge(
@@ -329,6 +346,7 @@ class RegulationEngine:
                 timedelta(seconds=self._config.general.regulation_window_s),
                 group.one_at_a_time,
                 overridden,
+                finishing,
             )
             for charger_id in charging.activated():
                 if charger_id not in charging.allowed:

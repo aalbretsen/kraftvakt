@@ -30,6 +30,7 @@ class ChargerReading:
     excluded: bool = False
     window_override: bool = False
     override_switched_on_at: datetime | None = None
+    finish_after_window: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +45,7 @@ class ChargerStatus:
     excluded: bool | None = None
     charging: bool = False
     window_overridden: bool = False
+    finishing: bool = False
     car_connected: bool | None = None
 
 
@@ -127,6 +129,31 @@ def allowed_to_charge(
     )
 
 
+def finishing_after_window(
+    charger: Charger,
+    reading: ChargerReading,
+    override_active: bool,
+    local_time: time,
+    activated: bool,
+) -> bool:
+    """Return whether the charger may finish the charging it had when its window ended.
+
+    It must have stayed activated and actively charging at every decision
+    since, so a stop for any reason ends it until the window allows charging
+    again.
+    """
+    return (
+        reading.finish_after_window
+        and activated
+        and reading.actively_charging
+        and reading.car_connected is not False
+        and not reading.excluded
+        and not window_allows_charging(
+            charger.charging_window, override_active, local_time
+        )
+    )
+
+
 def window_overridden(
     charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
 ) -> bool:
@@ -154,6 +181,7 @@ class ChargingState:
     excluded: set[str] | None = None
     allowed: set[str] = field(default_factory=set)
     overridden: set[str] = field(default_factory=set)
+    finishing: set[str] = field(default_factory=set)
     charging: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
@@ -198,6 +226,7 @@ class ChargingState:
         window: timedelta,
         one_at_a_time: bool,
         overridden: Collection[str] = (),
+        finishing: Collection[str] = (),
     ) -> list[str]:
         """Evaluate the chargers at a decision and return the newly bypassed ones."""
         self.excluded = {
@@ -211,6 +240,7 @@ class ChargingState:
         }
         self.allowed = set(allowed)
         self.overridden = set(overridden)
+        self.finishing = set(finishing)
         self.charging = {
             charger_id
             for charger_id in self.activated()
@@ -239,6 +269,7 @@ class ChargingState:
                 charging=charger.id in self.charging
                 and bool(self.fictive_on.get(charger.id)),
                 window_overridden=charger.id in self.overridden,
+                finishing=charger.id in self.finishing,
                 car_connected=self.car_connected.get(charger.id),
             )
             for charger in chargers

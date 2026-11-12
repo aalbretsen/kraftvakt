@@ -316,7 +316,8 @@ All with entity category diagnostic:
   when nothing waits. Updated at each window, decision, start and stop.
 - Charging allowed by window (per charger): on while the charging window
   allows charging, that is inside the window, while the override switch is
-  on, or always without a window. It does not consider the excluded switch.
+  on, or always without a window. It does not consider the excluded switch
+  or finishing.
   It follows the clock, not the decisions, so it is right also while the
   regulation is stopped, and it changes at the whole minute.
 - Waiting time next turn-on (calculated) (s): the waiting time the next
@@ -430,9 +431,21 @@ All with entity category diagnostic:
   same decision (never more than one activated).
 - A charger charges only when the regulation has activated it, so a car that is
   connected to a deactivated charger never starts by itself.
-- Allowed to charge: not excluded, and no charging window, inside it, or with
-  an active override. A charger that is not allowed has all fictive appliances
-  switched off at once and is deactivated at the first decision.
+- Allowed to charge: not excluded, and no charging window, inside it, with
+  an active override, or finishing. A charger that is not allowed has all
+  fictive appliances switched off at once and is deactivated at the first
+  decision.
+- Finishing (per charger setting finish after window, default off): outside
+  the window, without an active override, a charger may go on while it is
+  activated, actively charging, not excluded and car connected is not false.
+  It is regulated as inside the window, so it may get and lose amperes. The
+  first decision where one of these does not hold ends it, and a deactivation
+  for any reason (the limit taking its last ampere, a stop, safe state,
+  penalty, a start) ends it too, since a deactivated charger is never allowed
+  outside the window. A charger on trial at the end of the window is not
+  actively charging, so it is deactivated. The setting is configuration, but
+  also a switch that may be changed while the regulation runs; it applies from
+  the next decision without a restart.
 - Excluded switch (per charger, default off): while on, the charger never
   charges.
 - Override switch (per charger, default off): allows charging outside the

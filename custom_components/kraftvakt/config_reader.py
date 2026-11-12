@@ -268,6 +268,9 @@ class ConfigReader:
                 values, "actively_charging", location, power_sensor_allowed=True
             ),
             charging_window=self._charging_window(values, location),
+            finish_after_window=self._bool(
+                values, "finish_after_window", defaults.finish_after_window, location
+            ),
         )
 
     def _action(

@@ -407,6 +407,59 @@ def test_charger_charges_only_inside_its_charging_window() -> None:
     ]
 
 
+def window_ending_scenario(**reading) -> Scenario:
+    """Return charger c, 6 A to 10 A, charging at 8 A when its window ends at 22:03."""
+    scenario = Scenario(
+        make_config(
+            chargers=(charger("c", max_a=10, window="22:00-22:03"),),
+            wait_at_limit_s=0,
+        ),
+        start=datetime(2026, 11, 7, 21, 58, tzinfo=UTC),
+    )
+    scenario.set_charger("c", **CHARGING, finish_after_window=True, **reading)
+    assert scenario.decide_many(0, 4) == [
+        [],
+        activate("c"),
+        current("c", 7),
+        current("c", 8),
+    ]
+    return scenario
+
+
+def test_charger_finishes_ongoing_charging_after_its_window() -> None:
+    """It is regulated as before, until it stops charging."""
+    scenario = window_ending_scenario()
+
+    assert scenario.decide(0) == current("c", 9)
+    assert scenario.engine.chargers["c"].finishing
+    assert scenario.engine.chargers["c"].allowed
+    assert scenario.decide(ABOVE_LIMIT) == current("c", 8)
+    scenario.set_charger("c", actively_charging=False)
+    assert scenario.decide(0) == deactivate("c")
+    assert not scenario.engine.chargers["c"].finishing
+
+
+def test_charger_is_not_turned_on_again_after_its_window() -> None:
+    """Whatever stopped it, here a disconnected car."""
+    scenario = window_ending_scenario()
+    scenario.set_charger("c", car_connected=False)
+
+    assert scenario.decide(0) == deactivate("c")
+    scenario.set_charger("c", car_connected=True)
+    assert scenario.decide_many(0, 3) == [[], [], []]
+    assert not scenario.engine.chargers["c"].allowed
+
+
+def test_charger_on_trial_when_its_window_ends_does_not_finish() -> None:
+    scenario = Scenario(
+        make_config(chargers=(charger("c", window="22:00-22:02"),), wait_at_limit_s=0),
+        start=datetime(2026, 11, 7, 21, 59, tzinfo=UTC),
+    )
+    scenario.set_charger("c", finish_after_window=True)
+
+    assert scenario.decide_many(0, 3) == [activate("c"), [], deactivate("c")]
+
+
 def test_override_allows_charging_until_the_next_window_starts() -> None:
     """The switch is set back when the override ends."""
     scenario = one_charger(max_a=6, window="22:00-22:05")

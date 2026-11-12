@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable, Iterator, Mapping
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, replace
 from datetime import time
 from enum import Enum, StrEnum
 from types import MappingProxyType
@@ -321,6 +321,7 @@ class Charger:
     car_connected: Condition | None = None
     actively_charging: Condition | None = None
     charging_window: ChargingWindow | None = None
+    finish_after_window: bool = False
 
     def action_fields(self) -> Iterator[ActionField]:
         """Return the actions of the charger."""
@@ -388,6 +389,20 @@ class KraftvaktConfig:
         return tuple(
             charger for group in self.charger_groups for charger in group.chargers
         )
+
+    def with_charger(self, charger: Charger) -> KraftvaktConfig:
+        """Return the configuration with the charger of the same id replaced."""
+        groups = tuple(
+            replace(
+                group,
+                chargers=tuple(
+                    charger if existing.id == charger.id else existing
+                    for existing in group.chargers
+                ),
+            )
+            for group in self.charger_groups
+        )
+        return replace(self, charger_groups=groups)
 
     def items(self) -> Iterator[tuple[str, Appliance | Charger]]:
         """Return the appliances and the chargers with the section they are in."""

@@ -97,6 +97,8 @@ export interface Charger {
   car_connected: Condition | null;
   actively_charging: Condition | null;
   charging_window: ChargingWindow | null;
+  /** Whether ongoing charging may finish after the charging window has ended. */
+  finish_after_window: boolean;
 }
 
 /** A named group of EV chargers with its own place in the priority list. */
@@ -205,6 +207,8 @@ export interface ChargerStatus {
   charging: boolean;
   /** Allowed to charge only because its charging window is overridden. */
   window_overridden: boolean;
+  /** Allowed to charge only to finish the charging it had when its charging window ended. */
+  finishing: boolean;
   /** «Car connected» at the last decision, null when it is not set or before the first decision. */
   car_connected: boolean | null;
   waiting_since: string | null;
@@ -216,6 +220,8 @@ export interface ChargerStatus {
 /** How the regulation stands now. Times are ISO 8601. */
 export interface StatusSnapshot {
   running: boolean;
+  /** Changes each time the stored configuration changes. */
+  config_version: number;
   missing: Issue[];
   safe_state: boolean;
   penalty: {

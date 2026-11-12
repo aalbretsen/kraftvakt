@@ -3,6 +3,7 @@ import {
   mdiCancel,
   mdiCarElectric,
   mdiCarOff,
+  mdiClockEnd,
   mdiClockFast,
   mdiClockOutline,
   mdiEvStation,
@@ -52,6 +53,7 @@ const CHIP_QUEUED: Chip = { kind: "off", icon: mdiTimerSand };
 const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
 const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
 const CHIP_OVERRIDE: Chip = { kind: "info", icon: mdiClockFast };
+const CHIP_FINISHING: Chip = { kind: "info", icon: mdiClockEnd };
 const CHIP_FIRST_DECISION: Chip = { kind: "off", icon: mdiTimerSand };
 
 /** An entry in the priority list: an appliance, or a group with its EV chargers. */
@@ -506,6 +508,10 @@ export class KraftvaktStatusPage extends LitElement {
     }
     if (charger.window_overridden && charger.activated) {
       return this.renderChip(CHIP_OVERRIDE, "status.chip_override", "status.window_overridden");
+    }
+    if (charger.finishing) {
+      const current = { current: charger.current_a ?? 0 };
+      return this.renderChip(CHIP_FINISHING, "status.chip_finishing", "status.finishing_at", {}, current);
     }
     if (charger.charging) {
       const current = { current: charger.current_a ?? 0 };
