@@ -20,7 +20,6 @@ from custom_components.kraftvakt.config_model import (
     ActionConfig,
     ActionMode,
     Appliance,
-    ApplianceActions,
     Charger,
     ChargerGroup,
     Condition,
@@ -53,7 +52,7 @@ def appliance(
     return Appliance(
         appliance_id,
         entity_id,
-        actions={MAIN_ACTIONS: ApplianceActions(turn_on, turn_off)},
+        actions={MAIN_ACTIONS: {"turn_on": turn_on, "turn_off": turn_off}},
     )
 
 
@@ -117,8 +116,8 @@ async def test_actions_of_a_variant_are_checked_against_the_entity(
                 "a1",
                 "sensor.x",
                 actions={
-                    MAIN_ACTIONS: ApplianceActions(custom(), custom()),
-                    "v1": ApplianceActions(DEFAULT, custom()),
+                    MAIN_ACTIONS: {"turn_on": custom(), "turn_off": custom()},
+                    "v1": {"turn_on": DEFAULT, "turn_off": custom()},
                 },
                 variants=(Variant("v1", "V", Condition(ConditionType.TEMPLATE, "")),),
             ),
@@ -224,8 +223,12 @@ async def test_variant_with_own_actions_runs_them(hass: HomeAssistant) -> None:
                 "a1",
                 "switch.a",
                 actions={
-                    MAIN_ACTIONS: ApplianceActions(record("on"), record("off")),
-                    "cool": ApplianceActions(record("cool on"), record("cool off")),
+                    MAIN_ACTIONS: {"turn_on": record("on"), "turn_off": record("off")},
+                    "cool": {
+                        "turn_on": record("cool on"),
+                        "turn_off": record("cool off"),
+                    },
+                    "eco": {"turn_on": record("eco on")},
                 },
                 variants=(
                     Variant("cool", "Cool", Condition(ConditionType.TEMPLATE, "")),
@@ -240,11 +243,18 @@ async def test_variant_with_own_actions_runs_them(hass: HomeAssistant) -> None:
             TurnOnAppliance("a1"),
             TurnOnAppliance("a1", "cool"),
             TurnOffAppliance("a1", "cool"),
+            TurnOnAppliance("a1", "eco"),
             TurnOffAppliance("a1", "eco"),
         ]
     )
 
-    assert [call.data["name"] for call in calls] == ["on", "cool on", "cool off", "off"]
+    assert [call.data["name"] for call in calls] == [
+        "on",
+        "cool on",
+        "cool off",
+        "eco on",
+        "off",
+    ]
 
 
 async def test_failed_action_is_logged_and_not_retried(

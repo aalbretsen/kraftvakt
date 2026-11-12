@@ -114,6 +114,16 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
     for appliance in config.appliances:
         missing += _missing_entity_and_actions("appliances", appliance)
+        missing += [
+            Issue(
+                "missing_condition",
+                "appliances",
+                appliance.id,
+                f"variants.{variant.id}.condition",
+            )
+            for variant in appliance.variants
+            if not variant.condition.value.strip()
+        ]
     for group in config.charger_groups:
         for charger in group.chargers:
             missing += _missing_entity_and_actions("chargers", charger)
@@ -161,7 +171,10 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
             issues.append(variant_location.issue("empty_label", "label"))
         elif labels[label] > 1:
             issues.append(variant_location.issue("duplicate_label", "label"))
-        issues += _condition_issues(variant_location, "condition", variant.condition)
+        if variant.condition.value.strip():
+            issues += _condition_issues(
+                variant_location, "condition", variant.condition
+            )
     return issues
 
 

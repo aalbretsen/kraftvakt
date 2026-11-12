@@ -67,11 +67,11 @@ export interface Appliance {
   id: string;
   entity_id: string | null;
   /**
-   * The actions of the appliance under `MAIN_ACTIONS`, and of each variant
-   * with its own actions under the id of the variant. A variant without an
-   * entry uses the actions of the appliance.
+   * Both actions of the appliance under `MAIN_ACTIONS`, and under the id of a
+   * variant the actions the variant overrides. A variant uses the
+   * appliance's action for each action it does not override.
    */
-  actions: Record<string, ApplianceActions>;
+  actions: Record<string, Partial<ApplianceActions>>;
   power_reserve_w: number | null;
   variants: Variant[];
 }

@@ -328,8 +328,9 @@ All with entity category diagnostic:
 
 - Each ordinary appliance may have variants, sorted, each with a non-empty
   label unique for the appliance and an expression. Same reserve as the
-  appliance. A variant uses the actions of the appliance, or its own turn-on
-  and turn-off actions. Every command for an appliance uses the actions of
+  appliance. A variant uses the actions of the appliance, or overrides the
+  turn-on action, the turn-off action or both; an action it does not override
+  is the appliance's. Every command for an appliance uses the actions of
   its current variant. Not for chargers or charger groups.
 - Evaluated at each decision. When an appliance switches variant: it is off
   afterwards at the new place and comes on again the normal way. It is sent

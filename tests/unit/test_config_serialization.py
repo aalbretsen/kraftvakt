@@ -7,9 +7,9 @@ import pytest
 
 from custom_components.kraftvakt.config_model import (
     MAIN_ACTIONS,
+    NO_APPLIANCE_ACTIONS,
     ActionConfig,
     ActionMode,
-    ApplianceActions,
     ApplianceSwitches,
     ChargerSwitches,
     ChargingWindow,
@@ -51,12 +51,11 @@ def test_full_config_is_read_into_model() -> None:
     config = read_config(full_config_data())
 
     appliance = config.appliances[0]
-    main = appliance.actions_for(None)
-    assert main.turn_on == ActionConfig(ActionMode.DEFAULT)
-    assert main.turn_off is not None
-    assert main.turn_off.mode is ActionMode.CUSTOM
-    morning = appliance.actions_for("v1")
-    assert morning.turn_off == ActionConfig(ActionMode.DEFAULT)
+    assert appliance.action(None, "turn_on") == ActionConfig(ActionMode.DEFAULT)
+    turn_off = appliance.action(None, "turn_off")
+    assert turn_off is not None
+    assert turn_off.mode is ActionMode.CUSTOM
+    assert appliance.action("v1", "turn_off") == ActionConfig(ActionMode.DEFAULT)
     assert appliance.variants[0].condition == Condition(
         ConditionType.TEMPLATE, "{{ 5 <= now().hour < 8 }}"
     )
@@ -88,7 +87,7 @@ def test_missing_settings_get_defaults() -> None:
 
     appliance = config.appliances[0]
     assert appliance.entity_id is None
-    assert appliance.actions == {MAIN_ACTIONS: ApplianceActions()}
+    assert appliance.actions == {MAIN_ACTIONS: NO_APPLIANCE_ACTIONS}
     assert appliance.power_reserve_w is None
     charger = config.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
@@ -139,7 +138,7 @@ def test_single_custom_action_step_becomes_list() -> None:
         {"appliances": [main_actions(turn_on={"mode": "custom", "action": step})]}
     )
 
-    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
+    assert config.appliances[0].action(None, "turn_on") == ActionConfig(
         ActionMode.CUSTOM, (step,)
     )
 
@@ -147,7 +146,7 @@ def test_single_custom_action_step_becomes_list() -> None:
 def test_custom_action_without_steps_is_empty() -> None:
     config = read_config({"appliances": [main_actions(turn_on={"mode": "custom"})]})
 
-    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
+    assert config.appliances[0].action(None, "turn_on") == ActionConfig(
         ActionMode.CUSTOM
     )
 
@@ -418,7 +417,7 @@ def test_domain_action_round_trips() -> None:
     }
     config = read_config({"appliances": [main_actions(turn_on=action)]})
 
-    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
+    assert config.appliances[0].action(None, "turn_on") == ActionConfig(
         ActionMode.DOMAIN,
         domain_action="climate_hvac_mode_and_temperature",
         data={"hvac_mode": "heat", "temperature": None},
@@ -456,6 +455,28 @@ def test_actions_of_a_variant_that_does_not_exist_are_left_out() -> None:
 
     appliance = config.appliances[0]
     assert set(appliance.actions) == {MAIN_ACTIONS, "v1"}
-    assert appliance.actions_key("v1") == "v1"
-    assert appliance.actions_key("v2") == MAIN_ACTIONS
-    assert appliance.actions_key(None) == MAIN_ACTIONS
+    assert appliance.actions_key("v1", "turn_on") == "v1"
+    assert appliance.actions_key("v2", "turn_on") == MAIN_ACTIONS
+    assert appliance.actions_key(None, "turn_on") == MAIN_ACTIONS
+
+
+def test_variant_keeps_only_the_actions_it_overrides() -> None:
+    default = {"mode": "default"}
+    data = {
+        "id": "a1",
+        "actions": {
+            "main": {"turn_on": default},
+            "v1": {"turn_off": default},
+            "v2": {},
+        },
+        "variants": [variant_data("v1"), variant_data("v2")],
+    }
+
+    appliance = read_config({"appliances": [data]}).appliances[0]
+
+    assert appliance.to_dict()["actions"] == {
+        "main": {"turn_on": default, "turn_off": None},
+        "v1": {"turn_off": default},
+    }
+    assert appliance.actions_key("v1", "turn_on") == MAIN_ACTIONS
+    assert appliance.actions_key("v1", "turn_off") == "v1"

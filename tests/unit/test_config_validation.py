@@ -221,12 +221,12 @@ def test_car_connected_condition(condition: dict[str, str], code: str | None) ->
     )
 
 
-def test_variant_condition_must_have_value() -> None:
+def test_empty_variant_condition_is_missing_not_an_error() -> None:
     issues = _issues_after(
-        _set("appliances.0.variants.0.condition", {"type": "template", "value": ""})
+        _set("appliances.0.variants.0.condition", {"type": "entity", "value": ""})
     )
 
-    assert issues == [Issue("required", "appliances", "a1", "variants.v1.condition")]
+    assert issues == []
 
 
 def test_variant_label_must_not_be_empty() -> None:
@@ -552,5 +552,5 @@ async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None
 
     config = parse_config(data)
 
-    assert config.appliances[0].actions_for(None).turn_off.steps[0] == original
+    assert config.appliances[0].action(None, "turn_off").steps[0] == original
     assert original["target"] == {"entity_id": "{{ entity_id }}"}

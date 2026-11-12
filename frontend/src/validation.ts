@@ -33,17 +33,26 @@ interface ActionEntry {
 
 const NO_ACTIONS: ApplianceActions = { turn_on: null, turn_off: null };
 
-/** Return the actions of the appliance and of the variants with their own, as the backend does. */
+/** Return the actions of the appliance and those the variants override, as the backend does. */
 function applianceActions(appliance: Appliance): ActionEntry[] {
-  const own: [string, ApplianceActions][] = [
-    ["", appliance.actions[MAIN_ACTIONS] ?? NO_ACTIONS],
+  const own: [string, Partial<ApplianceActions>][] = [
+    ["", { ...NO_ACTIONS, ...appliance.actions[MAIN_ACTIONS] }],
     ...appliance.variants
       .filter((variant) => appliance.actions[variant.id])
-      .map((variant): [string, ApplianceActions] => [`variants.${variant.id}.`, appliance.actions[variant.id]]),
+      .map((variant): [string, Partial<ApplianceActions>] => [`variants.${variant.id}.`, appliance.actions[variant.id]]),
   ];
   return own.flatMap(([prefix, actions]) =>
-    APPLIANCE_ACTIONS.map((name) => ({ name, field: `${prefix}${name}`, action: actions[name] })),
+    APPLIANCE_ACTIONS.filter((name) => isOverridden(actions, name)).map((name) => ({
+      name,
+      field: `${prefix}${name}`,
+      action: actions[name] ?? null,
+    })),
   );
+}
+
+/** Return whether the actions hold the action `name`, also when it is not set yet. */
+export function isOverridden(actions: Partial<ApplianceActions> | undefined, name: keyof ApplianceActions): boolean {
+  return actions?.[name] !== undefined;
 }
 
 function chargerActions(charger: Charger): ActionEntry[] {
@@ -83,9 +92,14 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   return missing;
 }
 
-/** Return what is missing in one appliance. */
+/** Return what is missing in one appliance and its variants. */
 export function missingInAppliance(appliance: Appliance): Issue[] {
-  return missingEntityAndActions("appliances", appliance, applianceActions(appliance));
+  return [
+    ...missingEntityAndActions("appliances", appliance, applianceActions(appliance)),
+    ...appliance.variants
+      .filter((variant) => variant.condition.value.trim() === "")
+      .map((variant) => applianceIssue(appliance, "missing_condition", `variants.${variant.id}.condition`)),
+  ];
 }
 
 /** Return what is missing in one EV charger. */
@@ -153,15 +167,15 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
     ...actionIssues("appliances", appliance, applianceActions(appliance), capabilities, states),
-    ...appliance.variants.flatMap((variant, index) => {
-      const prefix = `variants.${variant.id}.`;
-      const issues: Issue[] = [];
+    ...appliance.variants.flatMap((variant, index): Issue[] => {
+      const field = `variants.${variant.id}.label`;
       if (labels[index] === "") {
-        issues.push(applianceIssue(appliance, "empty_label", `${prefix}label`));
-      } else if (labels.filter((label) => label === labels[index]).length > 1) {
-        issues.push(applianceIssue(appliance, "duplicate_label", `${prefix}label`));
+        return [applianceIssue(appliance, "empty_label", field)];
       }
-      return [...issues, ...conditionIssues("appliances", appliance.id, `${prefix}condition`, variant.condition)];
+      if (labels.filter((label) => label === labels[index]).length > 1) {
+        return [applianceIssue(appliance, "duplicate_label", field)];
+      }
+      return [];
     }),
   ];
 }

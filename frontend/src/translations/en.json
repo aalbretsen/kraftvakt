@@ -75,6 +75,7 @@
     "missing_power_sensor": "The power sensor is not chosen.",
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
+    "missing_condition": "{item}: the expression is missing.",
     "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing. It is required when only one EV charger in the group may charge at a time.",
     "unknown": "{item}: {code}",
@@ -232,8 +233,8 @@
     "variant_entity": "Variant · entity {entity}",
     "variant_template": "Variant · template",
     "variant_own_actions": "own actions",
-    "variant_dialog_title": "Variant",
-    "variant_dialog_text": "«{label}» is a variant of {appliance} and is configured in the dialog of the appliance."
+    "variant_own_turn_on": "own action to turn on",
+    "variant_own_turn_off": "own action to turn off"
   },
   "appliance": {
     "add_title": "Add appliance",
@@ -241,8 +242,9 @@
     "view_title": "Appliance",
     "actions": "Actions",
     "variants": "Variants",
-    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list. A variant uses the actions of the appliance, or its own. The power reserve applies to every variant.",
+    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list. The expression and the actions of a variant are set when you edit the variant. The power reserve applies to every variant.",
     "add_variant": "Add variant",
+    "confirm_before_editing_variant": "Press OK and open the appliance again to edit a variant.",
     "remove_variant": "Remove variant",
     "delete": "Delete appliance",
     "fields": {
@@ -263,11 +265,23 @@
       "label": {
         "label": "Label"
       },
-      "use_main_actions": {
-        "label": "Use the actions of the appliance",
-        "helper": "Turn off to give the variant its own actions to turn the appliance on and off, for example another HVAC mode."
+      "condition": {
+        "label": "Expression"
+      },
+      "override_turn_on": {
+        "label": "Override the action to turn on",
+        "helper": "Off: the variant uses the appliance's action to turn on. On: the variant has its own, for example another HVAC mode."
+      },
+      "override_turn_off": {
+        "label": "Override the action to turn off",
+        "helper": "Off: the variant uses the appliance's action to turn off. On: the variant has its own."
       }
     }
+  },
+  "variant": {
+    "edit_title": "Edit variant {name}",
+    "view_title": "Variant {name}",
+    "condition": "Expression"
   },
   "action": {
     "default": "Standard",

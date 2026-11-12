@@ -79,12 +79,19 @@ Code that mirrors the backend and must be kept in step with it:
   none. A custom action starts as the default action.
 - The entity picker of an appliance or charger leaves out the entities that
   other appliances and chargers use.
-- A variant is configured in the dialog of its appliance. Its row in the
-  priority list opens a small dialog that only says so. In the appliance
-  dialog, each variant has a switch for using the actions of the appliance;
-  switched off, the variant shows its own actions, starting from what it had
-  while the dialog is open, or else a copy of the appliance's. A new entity
-  adapts the actions of the appliance and of every variant the same way.
+- The appliance dialog lists the variants by label, with drag, edit and
+  delete, and Add variant. What else is wrong or missing in a variant is
+  shown under its label. A variant's edit button, and its row in the priority
+  list, open the variant dialog: the expression and one switch per action to
+  override it, both off by default. Switched on, the action starts from what
+  it had while the dialog is open, or else a copy of the appliance's. The
+  variant dialog edits a copy of the whole appliance and has no Delete.
+- Edit in the appliance dialog is disabled, with a hint, while the dialog has
+  changes or the appliance is new, because the variant dialog edits the
+  appliance as it is in the draft. Edit closes the appliance dialog and opens
+  the variant dialog when it has closed.
+- A new entity adapts the actions of the appliance and every action a
+  variant overrides the same way.
 - The domain actions of the entity's domain are offered after Default, in
   the order of the table. Choosing one fills each value with the one already
   chosen for the parameter, or its default for the entity, so switching
@@ -102,7 +109,8 @@ Code that mirrors the backend and must be kept in step with it:
   subscription, with `entity` as the frontend's state object. A result that is
   not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A
-  new variant starts as a template. Actively charging has no «not set» and
+  new variant starts as an empty template, which is missing, not an error, so
+  the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set» and
   shows the charging power sensor until one is chosen; its preview reads the
   value as the backend does, so missing evidence shows as charging. Car
   connected is shown as required when only one charger in the group may

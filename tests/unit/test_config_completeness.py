@@ -118,10 +118,22 @@ def test_domain_action_needs_every_value_chosen() -> None:
     ]
 
 
-def test_variant_with_its_own_actions_needs_both() -> None:
+def test_variant_needs_only_the_actions_it_overrides() -> None:
     data = full_config_data()
     data["appliances"][0]["actions"]["v1"] = {"turn_on": {"mode": "default"}}
 
+    assert _missing(data) == []
+    data["appliances"][0]["actions"]["v1"] = {"turn_off": None}
+
     assert _missing(data) == [
         Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")
+    ]
+
+
+def test_variant_needs_a_condition() -> None:
+    data = full_config_data()
+    data["appliances"][0]["variants"][0]["condition"]["value"] = " "
+
+    assert _missing(data) == [
+        Issue("missing_condition", "appliances", "a1", "variants.v1.condition")
     ]

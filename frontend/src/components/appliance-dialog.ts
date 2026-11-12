@@ -1,34 +1,39 @@
-import { mdiDelete, mdiDragHorizontalVariant, mdiPlus } from "@mdi/js";
+import { mdiDelete, mdiDragHorizontalVariant, mdiEye, mdiPencil, mdiPlus } from "@mdi/js";
 import { css, html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import { MAIN_ACTIONS, type Appliance, type ApplianceActions, type Condition, type Issue, type Variant } from "../api";
+import { MAIN_ACTIONS, type ActionConfig, type Appliance, type ApplianceActions, type Issue, type Variant } from "../api";
 import { moveItem, newId } from "../draft";
 import { APPLIANCE_ACTIONS, applianceErrors, missingInAppliance } from "../validation";
-import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
-const ACTION_VARIABLES = ["entity_id", "entity"];
+export const APPLIANCE_ACTION_VARIABLES = ["entity_id", "entity"];
 
-/** Adds or edits one appliance. */
+/**
+ * Adds or edits one appliance, and lists its variants by label.
+ *
+ * A variant is configured in its own dialog, which edits the appliance as it
+ * is in the draft. «Edit» on a variant fires `variant-opened` with its id and
+ * closes this dialog. It is disabled while the appliance is new or this
+ * dialog has changes.
+ */
 @customElement("kraftvakt-appliance-dialog")
 export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected readonly section = "appliances";
 
   protected readonly texts = "appliance";
 
-  /** The own actions of variants switched to the appliance's, kept while the dialog is open. */
-  private setAsideActions = new Map<string, ApplianceActions>();
-
   protected actionsForEntity(entityId: string | null): Partial<Appliance> {
     const actions = Object.fromEntries(
       Object.entries(this.draft.actions).map(([key, own]) => [
         key,
-        {
-          turn_on: this.actionForEntity("turn_on", own.turn_on, entityId),
-          turn_off: this.actionForEntity("turn_off", own.turn_off, entityId),
-        },
+        Object.fromEntries(
+          Object.entries(own).map(([name, action]) => [
+            name,
+            this.actionForEntity(name, action as ActionConfig | null, entityId),
+          ]),
+        ),
       ]),
     );
     return { actions };
@@ -44,8 +49,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
 
   protected renderFields(issues: Issue[]) {
     return html`
-      ${this.renderEntity(issues)} ${this.renderSection("appliance.actions")}
-      ${this.renderActions(MAIN_ACTIONS, "", issues)}
+      ${this.renderEntity(issues)} ${this.renderSection("appliance.actions")} ${this.renderActions(issues)}
       ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
         this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
       )}
@@ -53,21 +57,21 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     `;
   }
 
-  /** The actions under `key` in the actions of the appliance; `prefix` is the start of their issue fields. */
-  private renderActions(key: string, prefix: string, issues: Issue[]) {
-    const actions = this.draft.actions[key];
+  private renderActions(issues: Issue[]) {
+    const actions = this.draft.actions[MAIN_ACTIONS];
     return APPLIANCE_ACTIONS.map((name) =>
       this.renderActionField(
-        { name, field: `${prefix}${name}`, value: actions?.[name] ?? null },
+        { name, field: name, value: actions?.[name] ?? null },
         issues,
-        ACTION_VARIABLES,
-        (value) => this.changeActions(key, { [name]: value }),
+        APPLIANCE_ACTION_VARIABLES,
+        (value) => this.changeMainActions({ [name]: value }),
       ),
     );
   }
 
   /** The variants, sorted in the order their expressions are evaluated. */
   private renderVariants(issues: Issue[]) {
+    const editable = this.locked || (!this.isNew && !this.hasChanges);
     return html`
       ${this.renderSection("appliance.variants")}
       <div class="info">${this.localize("appliance.variants_info")}</div>
@@ -76,10 +80,13 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
           ${repeat(
             this.draft.variants,
             (variant) => variant.id,
-            (variant, index) => this.renderVariant(variant, index, issues),
+            (variant) => this.renderVariant(variant, issues, editable),
           )}
         </div>
       </ha-sortable>
+      ${this.draft.variants.length > 0 && !editable
+        ? html`<div class="hint">${this.localize("appliance.confirm_before_editing_variant")}</div>`
+        : nothing}
       ${this.locked
         ? nothing
         : html`
@@ -93,19 +100,31 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     `;
   }
 
-  private renderVariant(variant: Variant, index: number, issues: Issue[]) {
+  /** The label of the variant, with what else is wrong or missing in the variant under it. */
+  private renderVariant(variant: Variant, issues: Issue[], editable: boolean) {
     const prefix = `variants.${variant.id}.`;
     const variantIssues = issues
       .filter((issue) => issue.field?.startsWith(prefix))
       .map((issue) => ({ ...issue, field: issue.field?.slice(prefix.length) }));
-    const conditionIssue = variantIssues.find((issue) => issue.field === "condition");
-    const ownActions = this.draft.actions[variant.id] !== undefined;
+    const otherIssues = variantIssues.filter((issue) => issue.field !== "label");
     return html`
       <div class="variant">
-        <div class="variant-header">
+        <div class="variant-row">
           ${this.locked ? nothing : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant}></ha-svg-icon>`}
-          <b>${index + 1}.</b>
-          <span class="spacer"></span>
+          <div class="label">
+            ${this.renderForm(
+              LABEL_SCHEMA,
+              variantIssues,
+              (value) => this.changeVariant(variant.id, { label: (value.label as string | undefined) ?? "" }),
+              variant,
+            )}
+          </div>
+          <ha-icon-button
+            .path=${this.locked ? mdiEye : mdiPencil}
+            .label=${this.localize(this.locked ? "list.view" : "list.edit")}
+            .disabled=${!editable}
+            @click=${() => this.openVariant(variant.id)}
+          ></ha-icon-button>
           ${this.locked
             ? nothing
             : html`
@@ -116,28 +135,20 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
                 ></ha-icon-button>
               `}
         </div>
-        ${this.renderForm(
-          LABEL_SCHEMA,
-          variantIssues,
-          (value) => this.changeVariant(variant.id, { label: (value.label as string | undefined) ?? "" }),
-          variant,
+        ${otherIssues.map(
+          (issue) => html`<div class="error">${this.label(issue.field ?? "")}: ${this.describe(issue)}</div>`,
         )}
-        <kraftvakt-condition-field
-          .hass=${this.hass}
-          .localize=${this.localize}
-          .value=${variant.condition}
-          .entityId=${this.draft.entity_id}
-          .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
-          .disabled=${this.locked}
-          @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
-            event.detail.value && this.changeVariant(variant.id, { condition: event.detail.value })}
-        ></kraftvakt-condition-field>
-        ${this.renderForm(USE_MAIN_ACTIONS_SCHEMA, [], (value) => this.useMainActions(variant.id, !!value.use_main_actions), {
-          use_main_actions: !ownActions,
-        })}
-        ${ownActions ? this.renderActions(variant.id, prefix, issues) : nothing}
       </div>
     `;
+  }
+
+  private get hasChanges(): boolean {
+    return JSON.stringify(this.draft) !== JSON.stringify(this.item);
+  }
+
+  private openVariant(id: string): void {
+    this.dispatchEvent(new CustomEvent("variant-opened", { detail: id }));
+    this.close();
   }
 
   private addVariant(): void {
@@ -150,22 +161,9 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     this.changeDraft({ variants: this.draft.variants.filter((variant) => variant.id !== id), actions });
   }
 
-  private changeActions(key: string, changes: Partial<ApplianceActions>): void {
-    this.changeDraft({ actions: { ...this.draft.actions, [key]: { ...this.draft.actions[key], ...changes } } });
-  }
-
-  /** A variant gets its own actions from those it had in this dialog, or a copy of the appliance's. */
-  private useMainActions(id: string, useMain: boolean): void {
-    const { [id]: own, ...others } = this.draft.actions;
-    if (useMain) {
-      if (own) {
-        this.setAsideActions.set(id, own);
-      }
-      this.changeDraft({ actions: others });
-    } else {
-      const actions = this.setAsideActions.get(id) ?? structuredClone(this.draft.actions[MAIN_ACTIONS]);
-      this.changeDraft({ actions: { ...this.draft.actions, [id]: actions } });
-    }
+  private changeMainActions(changes: Partial<ApplianceActions>): void {
+    const main = { ...this.draft.actions[MAIN_ACTIONS], ...changes };
+    this.changeDraft({ actions: { ...this.draft.actions, [MAIN_ACTIONS]: main } });
   }
 
   private changeVariant(id: string, changes: Partial<Variant>): void {
@@ -184,32 +182,35 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     css`
       .variants {
         display: grid;
-        gap: 12px;
-      }
-      .variant {
-        display: grid;
         gap: 8px;
-        padding: 8px 12px 12px;
-        border: 1px solid var(--divider-color);
-        border-radius: var(--ha-border-radius-md, 8px);
-        background: var(--card-background-color);
       }
-      .variant-header {
+      .variant-row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-height: 40px;
+        gap: 4px;
+      }
+      .label {
+        flex: 1;
+        min-width: 0;
       }
       .handle {
         cursor: grab;
         color: var(--secondary-text-color);
+      }
+      .hint {
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--secondary-text-color);
+      }
+      .error {
+        margin-top: 4px;
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--error-color);
       }
     `,
   ];
 }
 
 const LABEL_SCHEMA = [{ name: "label", required: true, selector: { text: {} } }];
-const USE_MAIN_ACTIONS_SCHEMA = [{ name: "use_main_actions", selector: { boolean: {} } }];
 
 declare global {
   interface HTMLElementTagNameMap {

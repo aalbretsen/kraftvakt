@@ -179,17 +179,17 @@ class ActionRunner:
                 appliance = self._appliances[appliance_id]
                 await self._async_run(
                     appliance,
-                    appliance.actions_for(variant_id).turn_on,
+                    appliance.action(variant_id, "turn_on"),
                     ActionKind.TURN_ON,
-                    actions_key=appliance.actions_key(variant_id),
+                    actions_key=appliance.actions_key(variant_id, "turn_on"),
                 )
             case TurnOffAppliance(appliance_id, variant_id):
                 appliance = self._appliances[appliance_id]
                 await self._async_run(
                     appliance,
-                    appliance.actions_for(variant_id).turn_off,
+                    appliance.action(variant_id, "turn_off"),
                     ActionKind.TURN_OFF,
-                    actions_key=appliance.actions_key(variant_id),
+                    actions_key=appliance.actions_key(variant_id, "turn_off"),
                 )
             case ActivateCharger(charger_id):
                 charger = self._chargers[charger_id]

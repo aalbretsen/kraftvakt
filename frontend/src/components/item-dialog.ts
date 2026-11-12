@@ -230,18 +230,23 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       return html`<ha-button @click=${this.close}>${this.localize("dialog.close")}</ha-button>`;
     }
     return html`
-      ${this.isNew
-        ? nothing
-        : html`<ha-button variant="danger" appearance="plain" @click=${this.delete}>
+      ${this.deletable
+        ? html`<ha-button variant="danger" appearance="plain" @click=${this.delete}>
             ${this.localize(`${this.texts}.delete`)}
-          </ha-button>`}
+          </ha-button>`
+        : nothing}
       <span class="spacer"></span>
       <ha-button appearance="plain" @click=${this.close}>${this.localize("dialog.cancel")}</ha-button>
       <ha-button .disabled=${hasErrors} @click=${this.confirm}>${this.localize("dialog.ok")}</ha-button>
     `;
   }
 
-  private get heading(): string {
+  /** Whether the dialog offers to delete the item. */
+  protected get deletable(): boolean {
+    return !this.isNew;
+  }
+
+  protected get heading(): string {
     if (this.locked) {
       return this.localize(`${this.texts}.view_title`);
     }
@@ -258,7 +263,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     this.close();
   }
 
-  private close(): void {
+  protected close(): void {
     this.open = false;
   }
 

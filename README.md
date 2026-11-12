@@ -82,8 +82,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   time at the power limit, the waiting time does not grow.
 - **Variants:** an appliance can have variants with another place in the
   priority list, for example a higher priority in the morning. A variant uses
-  the actions of the appliance, or its own, for example another HVAC mode for
-  a thermostat in summer. When the variant changes, the appliance is turned
+  the actions of the appliance, or overrides the action to turn on, to turn
+  off or both, for example with another HVAC mode for a thermostat in summer.
+  When the variant changes, the appliance is turned
   off with the turn-off action of the new variant, and comes on again the
   normal way. If it comes on again at the same decision, it only gets the
   turn-on action, so it is not switched off and on at once.
@@ -123,7 +124,8 @@ The regulation starts by itself when Home Assistant or the integration starts,
 provided the configuration is complete:
 
 - a power sensor is chosen,
-- every appliance has an entity and actions to turn it on and off,
+- every appliance has an entity and actions to turn it on and off, and every
+  variant an expression and the actions it overrides,
 - every EV charger has an entity, actions to activate, deactivate and set the
   charging current, and
   **Actively charging**, and also **Car connected** when only one EV charger
@@ -224,13 +226,17 @@ regulation starts.
 - **Appliances:** the priority list, with the most important appliance at the
   top. Drag the handle to change the order. **Add appliance** and the pencil
   open a dialog with the entity, the actions to turn it on and off, an
-  optional power reserve, and variants. A variant has a label and an
-  expression, either a boolean entity or a template, and is a separate entry
-  in the priority list. The top true expression applies. The current result
-  of a template is shown under it. Turn off **Use the actions of the
-  appliance** to give a variant its own actions to turn the appliance on and
-  off. The power reserve applies to every variant. A variant is configured
-  in the dialog of its appliance; opening a variant's row only says so. Each
+  optional power reserve, and the variants. The dialog lists the variants by
+  label: add, rename, delete, and drag them in the order their expressions
+  are evaluated. A variant is a separate entry in the priority list, and the
+  top true expression applies. The pencil of a variant, in the list of the
+  appliance or on its row in the priority list, opens the dialog of the
+  variant, with the expression, either a boolean entity or a template, and
+  the switches **Override the action to turn on** and **Override the action
+  to turn off**. The current result of a template is shown under it. From
+  the dialog of the appliance, a variant can only be opened when the dialog
+  has no changes; press OK and open the appliance again first. The power
+  reserve applies to every variant. Each
   group of EV chargers is in the list under its name, and can be moved like
   an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV

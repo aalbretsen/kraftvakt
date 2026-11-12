@@ -12,6 +12,7 @@ import { entityName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
+import { APPLIANCE_ACTIONS, isOverridden } from "../validation";
 import { ConfigPage } from "./config-page";
 
 const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
@@ -21,7 +22,10 @@ const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w",
 export class KraftvaktAppliancesPage extends ConfigPage {
   @state() private editing?: { appliance: Appliance; isNew: boolean };
 
-  @state() private viewingVariant?: { appliance: Appliance; variant: Variant };
+  @state() private editingVariant?: { appliance: Appliance; variantId: string };
+
+  /** The variant to edit when the appliance dialog has closed. */
+  private variantToOpen?: string;
 
   protected render() {
     const rows = this.config.priority.map((entry) => this.row(entry));
@@ -47,20 +51,23 @@ export class KraftvaktAppliancesPage extends ConfigPage {
           `
         : nothing}
       ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
-      ${this.viewingVariant ? this.renderVariantDialog(this.viewingVariant.appliance, this.viewingVariant.variant) : ""}
+      ${this.editingVariant ? this.renderVariantDialog(this.editingVariant.appliance, this.editingVariant.variantId) : ""}
     `;
   }
 
-  private renderVariantDialog(appliance: Appliance, variant: Variant) {
+  private renderVariantDialog(appliance: Appliance, variantId: string) {
     return html`
       <kraftvakt-variant-dialog
-        .heading=${this.localize("appliances.variant_dialog_title")}
-        .text=${this.localize("appliances.variant_dialog_text", {
-          label: variant.label,
-          appliance: this.applianceName(appliance),
-        })}
-        .closeText=${this.localize("dialog.close")}
-        @closed=${() => (this.viewingVariant = undefined)}
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .capabilities=${this.capabilities}
+        .item=${appliance}
+        .variantId=${variantId}
+        .applianceName=${this.applianceName(appliance)}
+        .saveErrors=${this.applianceSaveErrors(appliance)}
+        .locked=${this.locked}
+        @item-changed=${this.applianceChanged}
+        @closed=${() => (this.editingVariant = undefined)}
       ></kraftvakt-variant-dialog>
     `;
   }
@@ -74,13 +81,28 @@ export class KraftvaktAppliancesPage extends ConfigPage {
         .item=${appliance}
         .isNew=${isNew}
         .usedEntities=${this.entitiesUsedBesides(appliance.id)}
-        .saveErrors=${this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id)}
+        .saveErrors=${this.applianceSaveErrors(appliance)}
         .locked=${this.locked}
         @item-changed=${this.applianceChanged}
         @item-deleted=${this.applianceDeleted}
-        @closed=${() => (this.editing = undefined)}
+        @variant-opened=${(event: CustomEvent<string>) => (this.variantToOpen = event.detail)}
+        @closed=${this.applianceDialogClosed}
       ></kraftvakt-appliance-dialog>
     `;
+  }
+
+  private applianceSaveErrors(appliance: Appliance): Issue[] {
+    return this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id);
+  }
+
+  private applianceDialogClosed(): void {
+    const appliance = this.config.appliances.find((item) => item.id === this.editing?.appliance.id);
+    const variantId = this.variantToOpen;
+    this.editing = undefined;
+    this.variantToOpen = undefined;
+    if (appliance && variantId) {
+      this.editingVariant = { appliance, variantId };
+    }
   }
 
   private row(entry: PriorityEntry): ListRow {
@@ -142,7 +164,11 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       variant.condition.type === "entity"
         ? this.localize("appliances.variant_entity", { entity: variant.condition.value })
         : this.localize("appliances.variant_template");
-    return appliance.actions[variant.id] ? [source, this.localize("appliances.variant_own_actions")] : [source];
+    const overridden = APPLIANCE_ACTIONS.filter((name) => isOverridden(appliance.actions[variant.id], name));
+    if (overridden.length === APPLIANCE_ACTIONS.length) {
+      return [source, this.localize("appliances.variant_own_actions")];
+    }
+    return [source, ...overridden.map((name) => this.localize(`appliances.variant_own_${name}`))];
   }
 
   private fieldLabel(issue: Issue): string {
@@ -168,16 +194,14 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     this.editing = { appliance, isNew: true };
   }
 
-  /** A variant is configured in the dialog of its appliance, which its row tells. */
   private openRow(event: CustomEvent<string>): void {
     const entry = this.config.priority.find((item) => priorityKey(item) === event.detail);
     if (entry?.type !== "appliance") {
       return;
     }
     const appliance = this.config.appliances.find((item) => item.id === entry.appliance_id);
-    const variant = appliance?.variants.find((item) => item.id === entry.variant_id);
-    if (appliance && variant) {
-      this.viewingVariant = { appliance, variant };
+    if (appliance && entry.variant_id) {
+      this.editingVariant = { appliance, variantId: entry.variant_id };
     } else if (appliance) {
       this.editing = { appliance, isNew: false };
     }

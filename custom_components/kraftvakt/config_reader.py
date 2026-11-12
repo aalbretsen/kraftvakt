@@ -8,12 +8,13 @@ an issue and is read as its default.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import fields, replace
 from datetime import time
 from typing import Any
 
 from .config_model import (
+    APPLIANCE_ACTION_KINDS,
     MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
@@ -165,32 +166,31 @@ class ConfigReader:
         location: IssueLocation,
         variants: tuple[Variant, ...],
     ) -> dict[str, ApplianceActions]:
-        """Read the actions of the appliance and of the variants that have their own.
+        """Read both actions of the appliance and those the variants override.
 
-        Actions of variants that no longer exist are left out.
+        Actions of variants that no longer exist, and variants that override
+        nothing, are left out.
         """
         data = self._mapping(values.get("actions"), location, "actions")
+        main = self._mapping(data.get(MAIN_ACTIONS), location, "actions")
         actions = {
-            MAIN_ACTIONS: self._actions_of(
-                self._mapping(data.get(MAIN_ACTIONS), location, "actions"), location
-            )
+            MAIN_ACTIONS: self._actions_of(main, APPLIANCE_ACTION_KINDS, location)
         }
         for variant in variants:
             if data.get(variant.id) is not None:
                 variant_location = replace(location, prefix=f"variants.{variant.id}.")
-                actions[variant.id] = self._actions_of(
-                    self._mapping(data[variant.id], variant_location, "actions"),
-                    variant_location,
-                )
+                own = self._mapping(data[variant.id], variant_location, "actions")
+                overridden = [name for name in APPLIANCE_ACTION_KINDS if name in own]
+                if overridden:
+                    actions[variant.id] = self._actions_of(
+                        own, overridden, variant_location
+                    )
         return actions
 
     def _actions_of(
-        self, values: Mapping[str, Any], location: IssueLocation
+        self, values: Mapping[str, Any], names: Iterable[str], location: IssueLocation
     ) -> ApplianceActions:
-        return ApplianceActions(
-            turn_on=self._action(values, "turn_on", location),
-            turn_off=self._action(values, "turn_off", location),
-        )
+        return {name: self._action(values, name, location) for name in names}
 
     def _variant(self, data: Any, appliance_id: str) -> Variant:
         appliance_location = IssueLocation("appliances", appliance_id)

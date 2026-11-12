@@ -7,6 +7,7 @@ const ISSUE_TEXTS: Record<string, TranslationKey> = {
   missing_power_sensor: "missing.missing_power_sensor",
   missing_entity: "missing.missing_entity",
   missing_action: "missing.missing_action",
+  missing_condition: "missing.missing_condition",
   missing_actively_charging: "missing.missing_actively_charging",
   missing_car_connected: "missing.missing_car_connected",
 };
@@ -80,6 +81,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   missing_power_sensor: "errors.required",
   missing_entity: "errors.required",
   missing_action: "errors.required",
+  missing_condition: "errors.required",
   missing_actively_charging: "errors.required",
   missing_car_connected: "errors.car_connected_required",
   not_integer: "errors.not_integer",

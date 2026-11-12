@@ -67,9 +67,11 @@ The format is defined by the dataclasses and their serialization in
   the panel's Advanced page.
 - `appliances`: each with an id, its entity, its actions, an optional power
   reserve and its variants (id, label, condition). The actions are a map of
-  turn-on and turn-off actions: the appliance's under `main`, and those of
-  each variant with its own under the variant's id. Actions of variants that
-  no longer exist are dropped when read.
+  turn-on and turn-off actions: both of the appliance's under `main`, and
+  under a variant's id only the actions the variant overrides. A key that is
+  left out is not overridden; a key with `null` is overridden but not set,
+  and is missing. Actions of variants that no longer exist, and variant
+  entries without actions, are dropped when read.
 - `priority`: the priority list, with an entry per appliance and variant and
   an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its
@@ -122,6 +124,8 @@ An invalid configuration is not saved:
   is not checked again.
 
 An incomplete configuration can be saved, but the regulation cannot start.
+An empty variant expression is missing, not an error, since the variant is
+added in the appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a
 target (the id of the appliance or charger) and a field; a variant field is
 addressed through the variant's id, also the variant's own actions
@@ -154,7 +158,8 @@ panel's translations.
     that is not chosen (`null`) is missing, not an error. Issues for a
     parameter are addressed as `<field>.<parameter>`.
 - The commands for an appliance carry its current variant, and the action
-  runner runs the variant's own action or the appliance's.
+  runner runs the variant's action if it overrides it, otherwise the
+  appliance's.
 - All templates and actions get `entity_id` and `entity` (the state object of
   the appliance's or charger's entity, `none` when missing). The set-current
   action also gets `current`, `min_current` and `max_current`; `current` is
