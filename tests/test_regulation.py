@@ -923,8 +923,8 @@ async def test_free_power_is_the_limit_minus_the_regulation_average(
 
     state = hass.states.get(entity_id(hass, "sensor", "power_free"))
     assert state is not None
-    assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kW"
-    assert float(state.state) == pytest.approx(-2.5)
+    assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "W"
+    assert float(state.state) == pytest.approx(-2500)
 
 
 async def test_waiting_time_sensors_follow_the_waiting_time(

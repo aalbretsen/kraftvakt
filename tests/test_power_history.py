@@ -72,8 +72,8 @@ async def test_capacity_average_starts_from_the_recorded_history(
     await setup_kraftvakt(hass, hass_storage)
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(4.1)
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(8.0)
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(4100)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(8000)
 
 
 async def test_capacity_average_without_history_uses_the_first_measurement(
@@ -87,4 +87,4 @@ async def test_capacity_average_without_history_uses_the_first_measurement(
     await setup_kraftvakt(hass, hass_storage)
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3000)

@@ -12,10 +12,12 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import EntityCategory, UnitOfEnergy, UnitOfPower, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .const import DOMAIN
 from .entity import KraftvaktEntity
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
@@ -29,13 +31,12 @@ class RegulationSensorDescription(SensorEntityDescription):
 
 @dataclass(frozen=True, kw_only=True)
 class PowerSensorDescription(RegulationSensorDescription):
-    """Describes a sensor that shows a power in W, displayed in kW."""
+    """Describes a sensor that shows a power in W."""
 
     device_class: SensorDeviceClass = SensorDeviceClass.POWER
     state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     native_unit_of_measurement: str = UnitOfPower.WATT
-    suggested_unit_of_measurement: str = UnitOfPower.KILO_WATT
-    suggested_display_precision: int = 2
+    suggested_display_precision: int = 0
 
 
 def _regulation_average_w(runtime: KraftvaktRuntime) -> float | None:
@@ -117,6 +118,24 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
         key="waiting_time_next_turn_on", value_fn=_waiting_time_next_turn_on_s
     ),
 )
+
+
+@callback
+def async_show_power_in_watt(hass: HomeAssistant) -> None:
+    """Make the power sensors registered when they were shown in kW show W.
+
+    Home Assistant keeps the unit a sensor was registered with as its
+    suggested unit. A unit the user has chosen is kept.
+    """
+    registry = er.async_get(hass)
+    for description in SENSORS:
+        if not isinstance(description, PowerSensorDescription):
+            continue
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, description.key)
+        if entity_id is None:
+            continue
+        registry.async_update_entity_options(entity_id, "sensor.private", None)
+        registry.async_update_entity(entity_id, unit_of_measurement=UnitOfPower.WATT)
 
 
 async def async_setup_entry(

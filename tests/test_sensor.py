@@ -90,7 +90,7 @@ async def test_sensors_are_unavailable_before_the_first_average(
 async def test_sensors_show_the_averages_in_w(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """Both averages are power sensors in kW."""
+    """Both averages are power sensors in W."""
     set_power(hass, "2000")
     await setup_kraftvakt()
 
@@ -101,12 +101,12 @@ async def test_sensors_show_the_averages_in_w(
     for key in ("power_regulation_average", "power_hourly_average"):
         state = hass.states.get(entity_id(hass, key))
         assert state is not None
-        assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kW"
+        assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "W"
         assert state.attributes[ATTR_DEVICE_CLASS] == "power"
         assert state.attributes["state_class"] == "measurement"
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
     assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
-        (2.0 * 3555 + 6.0 * 45) / 3600
+        (2000 * 3555 + 6000 * 45) / 3600
     )
 
 
@@ -139,10 +139,10 @@ async def test_sensors_are_updated_once_per_window(
 
     set_power(hass, "8000")
     await advance(hass, freezer, timedelta(seconds=15))
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2000)
 
     await advance(hass, freezer, timedelta(seconds=15))
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
 
 
 async def test_capacity_average_over_a_whole_hour_of_updates(
@@ -158,8 +158,8 @@ async def test_capacity_average_over_a_whole_hour_of_updates(
         set_power(hass, "4000" if step % 2 else "2000")
     await advance(hass, freezer, timedelta(seconds=10))
 
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3.0)
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
+    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3000)
 
 
 async def test_sensors_follow_an_outage_of_the_power_sensor(
@@ -173,7 +173,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
 
     set_power(hass, "unavailable")
     await advance(hass, freezer, WINDOW)
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
 
     await advance(hass, freezer, WINDOW)
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
@@ -183,10 +183,10 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     set_power(hass, "1500")
     await advance(hass, freezer, timedelta(seconds=20))
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(
-        (3.0 * 40 + 1.5 * 20) / 60
+        (3000 * 40 + 1500 * 20) / 60
     )
     assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
-        (3.0 * 3580 + 1.5 * 20) / 3600
+        (3000 * 3580 + 1500 * 20) / 3600
     )
 
 
@@ -199,7 +199,7 @@ async def test_power_sensor_without_unit_is_read_as_watt(
 
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2.5)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2500)
 
 
 async def test_sensors_are_unavailable_without_power_sensor(
@@ -230,7 +230,7 @@ async def test_window_length_comes_from_the_configuration(
 
     await advance(hass, freezer, timedelta(seconds=20))
 
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1.0)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1000)
 
 
 async def test_sensor_names_are_translated(
@@ -261,3 +261,41 @@ async def test_unload_stops_the_sensors(
     await advance(hass, freezer, WINDOW)
 
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+
+
+async def test_power_sensors_registered_in_kw_show_w_after_the_migration(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, stored_general
+) -> None:
+    """Sensors registered while they were shown in kW show W, unless the user
+    chose the unit."""
+    entry = MockConfigEntry(domain=DOMAIN, version=1, minor_version=1)
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    for key in ("power_regulation_average", "power_hourly_average", "power_free"):
+        registered = registry.async_get_or_create(
+            "sensor", DOMAIN, key, config_entry=entry, unit_of_measurement="kW"
+        )
+        registry.async_update_entity_options(
+            registered.entity_id,
+            "sensor.private",
+            {"suggested_unit_of_measurement": "kW"},
+        )
+    registry.async_update_entity_options(
+        entity_id(hass, "power_free"), "sensor", {"unit_of_measurement": "kW"}
+    )
+    set_power(hass, "2000")
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await advance(hass, freezer, WINDOW)
+
+    assert entry.minor_version == 2
+    for key in ("power_regulation_average", "power_hourly_average"):
+        state = hass.states.get(entity_id(hass, key))
+        assert state is not None
+        assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "W"
+        assert float(state.state) == pytest.approx(2000)
+    power_free = hass.states.get(entity_id(hass, "power_free"))
+    assert power_free is not None
+    assert power_free.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kW"
+    assert float(power_free.state) == pytest.approx(8.0)

@@ -47,8 +47,8 @@ specification; the code holds them in one place (`config_model.py`).
 
 Resolution of settings: power in whole watts, the regulation window and the
 waiting time at the limit in whole seconds, currents in whole amperes. Power
-is in W everywhere inside the regulation and the configuration, energy in Wh;
-the status page and the average sensors show kW.
+is in W everywhere inside the regulation, the configuration and the entities,
+energy in Wh; the status page shows kW.
 
 ## Ground rules
 

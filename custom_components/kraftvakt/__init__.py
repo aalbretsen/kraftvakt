@@ -25,6 +25,7 @@ from .const import (
     STATIC_URL,
 )
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
+from .sensor import async_show_power_in_watt
 from .storage import KraftvaktStorage
 from .switch_board import SwitchBoard
 from .websocket_api import async_forward_status, async_register_commands
@@ -42,6 +43,18 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the WebSocket commands for the panel."""
     async_register_commands(hass)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
+    """Migrate the entities of an older config entry.
+
+    Minor version 2 shows the power sensors in W instead of kW. Home Assistant
+    refuses a newer major version before this is called.
+    """
+    if entry.minor_version < 2:
+        async_show_power_in_watt(hass)
+        hass.config_entries.async_update_entry(entry, minor_version=2)
     return True
 
 

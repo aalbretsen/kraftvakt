@@ -290,9 +290,9 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_regulation_steps_on` (Regulation steps on) | Diagnostic. The number of steps that are on: each appliance is one step, and each ampere of an EV charger, from the minimum current up, is one step. |
 | **Power** | |
 | `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs, see below. |
-| `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in kW. |
-| `sensor.kraftvakt_power_hourly_average` (Power hourly average) | The average consumption over the last hour in kW. |
-| `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in kW. Negative above the power limit. |
+| `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in W. |
+| `sensor.kraftvakt_power_hourly_average` (Power hourly average) | The average consumption over the last hour in W. |
+| `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on. |

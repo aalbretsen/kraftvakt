@@ -167,9 +167,15 @@ panel's translations.
   `charger_`).
   An entity suggests its object id (the key unless given), which HA prefixes
   with the device name. The names are grouped the same way, in every language.
-- The averages, power free and the power limit are power in W, shown as kW
-  for the sensors. The overconsumption is energy in Wh without a state class,
-  since it is not a total. The waiting times are durations in seconds.
+- The averages, power free and the power limit are power in W, also as
+  shown. The overconsumption is energy in Wh without a state class, since it
+  is not a total. The waiting times are durations in seconds.
+- The config entry has a minor version. A change that needs the registered
+  entities of existing installations changed raises it and migrates them in
+  `async_migrate_entry`, with tests. Home Assistant keeps the unit a sensor
+  was registered with as its suggested unit, so a new display unit needs
+  both the stored suggestion and the registered unit changed; a unit the user
+  chose is kept.
 - The power limit entity saves at once, through the switch board so
   configuration and switches are saved together. While running, the runtime
   starts a new engine at the next decision when the engine's limit differs
