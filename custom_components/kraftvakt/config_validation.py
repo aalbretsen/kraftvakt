@@ -17,6 +17,7 @@ from .config_model import (
     ActionConfig,
     Appliance,
     Charger,
+    ChargerGroup,
     Condition,
     ConditionType,
     ConfigValidationError,
@@ -66,14 +67,15 @@ def validate_config(config: KraftvaktConfig) -> list[Issue]:
         ),
         *(issue for item in config.appliances for issue in _appliance_issues(item)),
         *(
-            Issue("duplicate_id", "chargers", charger_id)
-            for charger_id in _duplicate_ids(config.charging.chargers)
+            Issue("duplicate_id", "charger_groups", group_id)
+            for group_id in _duplicate_ids(config.charger_groups)
         ),
+        *_charger_group_issues(config.charger_groups),
         *(
-            issue
-            for item in config.charging.chargers
-            for issue in _charger_issues(item)
+            Issue("duplicate_id", "chargers", charger_id)
+            for charger_id in _duplicate_ids(config.chargers)
         ),
+        *(issue for item in config.chargers for issue in _charger_issues(item)),
         *_unique_entity_issues(config),
         *_priority_issues(config),
     ]
@@ -112,8 +114,8 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
     for appliance in config.appliances:
         missing += _missing_entity_and_actions("appliances", appliance)
-    if config.charging.enabled:
-        for charger in config.charging.chargers:
+    for group in config.enabled_charger_groups:
+        for charger in group.chargers:
             missing += _missing_entity_and_actions("chargers", charger)
             if charger.actively_charging is None:
                 missing.append(
@@ -124,7 +126,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                         "actively_charging",
                     )
                 )
-            if config.charging.one_at_a_time and charger.car_connected is None:
+            if group.one_at_a_time and charger.car_connected is None:
                 missing.append(
                     Issue(
                         "missing_car_connected", "chargers", charger.id, "car_connected"
@@ -160,6 +162,19 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
         elif labels[label] > 1:
             issues.append(variant_location.issue("duplicate_label", "label"))
         issues += _condition_issues(variant_location, "condition", variant.condition)
+    return issues
+
+
+def _charger_group_issues(groups: Iterable[ChargerGroup]) -> list[Issue]:
+    names = Counter(group.name.strip() for group in groups)
+    issues = []
+    for group in groups:
+        location = IssueLocation("charger_groups", group.id)
+        name = group.name.strip()
+        if not name:
+            issues.append(location.issue("empty_name", "name"))
+        elif names[name] > 1:
+            issues.append(location.issue("duplicate_name", "name"))
     return issues
 
 
@@ -228,7 +243,9 @@ def _range_issues(
     return []
 
 
-def _duplicate_ids(items: Iterable[Appliance | Variant | Charger]) -> list[str]:
+def _duplicate_ids(
+    items: Iterable[Appliance | Variant | Charger | ChargerGroup],
+) -> list[str]:
     counts = Counter(item.id for item in items)
     return [item_id for item_id, count in counts.items() if count > 1]
 
@@ -236,7 +253,7 @@ def _duplicate_ids(items: Iterable[Appliance | Variant | Charger]) -> list[str]:
 def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
     owners = [
         *(("appliances", item.id, item.entity_id) for item in config.appliances),
-        *(("chargers", item.id, item.entity_id) for item in config.charging.chargers),
+        *(("chargers", item.id, item.entity_id) for item in config.chargers),
     ]
     counts = Counter(entity_id for _, _, entity_id in owners if entity_id)
     return [
@@ -253,12 +270,11 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
     for entry, count in counts.items():
         location = _priority_location(entry)
         if entry not in expected:
-            code = (
-                "ev_charging_disabled"
-                if entry.type is PriorityEntryType.EV_CHARGING
-                else "unknown_priority_entry"
+            issues.append(
+                location.issue(
+                    _unexpected_entry_code(config, entry), _priority_field(entry)
+                )
             )
-            issues.append(location.issue(code, _priority_field(entry)))
         elif count > 1:
             issues.append(
                 location.issue("duplicate_priority_entry", _priority_field(entry))
@@ -288,12 +304,25 @@ def _expected_priority(config: KraftvaktConfig) -> list[PriorityEntry]:
             PriorityEntry.for_appliance(appliance.id, variant.id)
             for variant in appliance.variants
         ]
-    if config.charging.enabled:
-        expected.append(PriorityEntry.ev_charging())
+    expected += [
+        PriorityEntry.for_charger_group(group.id)
+        for group in config.enabled_charger_groups
+    ]
     return expected
 
 
+def _unexpected_entry_code(config: KraftvaktConfig, entry: PriorityEntry) -> str:
+    """A group that is in the configuration but disabled has no entry."""
+    if entry.type is PriorityEntryType.CHARGER_GROUP and any(
+        group.id == entry.group_id for group in config.charger_groups
+    ):
+        return "charger_group_disabled"
+    return "unknown_priority_entry"
+
+
 def _priority_location(entry: PriorityEntry) -> IssueLocation:
+    if entry.type is PriorityEntryType.CHARGER_GROUP:
+        return IssueLocation("priority", entry.group_id)
     return IssueLocation("priority", entry.appliance_id)
 
 
@@ -320,7 +349,7 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
                 f"variants.{variant.id}.condition",
                 variant.condition,
             )
-    for charger in config.charging.chargers:
+    for charger in config.chargers:
         for field_name in ("car_connected", "actively_charging"):
             condition = getattr(charger, field_name)
             if condition is not None:

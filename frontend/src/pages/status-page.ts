@@ -18,12 +18,14 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import {
   type ApplianceStatus,
+  type ChargerGroupStatus,
   type ChargerStatus,
   type ConfigResponse,
   type StatusSnapshot,
 } from "../api";
 import "../components/countdown";
 import "../components/running-button";
+import { allChargers } from "../draft";
 import { measuredPowerW } from "../entities";
 import { formatClockTime, formatEnergy, formatNumber, formatPercent, formatPower } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
@@ -52,37 +54,36 @@ const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
 const CHIP_OVERRIDE: Chip = { kind: "info", icon: mdiClockFast };
 const CHIP_FIRST_DECISION: Chip = { kind: "off", icon: mdiTimerSand };
 
-/** An entry in the priority list: an appliance, or «EV charging» with its EV chargers. */
+/** An entry in the priority list: an appliance, or a group with its EV chargers. */
 type PriorityEntry =
   | { kind: "appliance"; appliance: ApplianceStatus; on: boolean }
-  | { kind: "ev_charging"; chargers: ChargerStatus[]; on: boolean };
+  | { kind: "charger_group"; group: ChargerGroupStatus; on: boolean };
 
-/** Return the entries of the priority list in order, with «EV charging» at its place. */
+/** Return the entries of the priority list in order, with each group of EV chargers at its place. */
 function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
   const entries: PriorityEntry[] = status.appliances.map((appliance) => ({
     kind: "appliance",
     appliance,
     on: appliance.on,
   }));
-  if (status.ev_charging_position !== null) {
-    const chargers = status.chargers;
-    const on = chargers.some((charger) => charger.activated && !charger.bypassed);
-    entries.splice(status.ev_charging_position, 0, { kind: "ev_charging", chargers, on });
-  }
+  status.charger_groups.forEach((group, placed) => {
+    const on = group.chargers.some((charger) => charger.activated && !charger.bypassed);
+    entries.splice(group.position + placed, 0, { kind: "charger_group", group, on });
+  });
   return entries;
 }
 
 /**
  * Return the index of the entry the cut-off line goes under: the last entry
  * that is on. There is no line (-1) when nothing is on, or when only excluded
- * appliances are below the last entry that is on. «EV charging» is on while
- * one of its EV chargers is activated and not bypassed.
+ * appliances are below the last entry that is on. A group is on while one of
+ * its EV chargers is activated and not bypassed.
  */
 function cutOffIndex(entries: PriorityEntry[]): number {
   const last = entries.map((entry) => entry.on).lastIndexOf(true);
   const regulatedBelow = entries
     .slice(last + 1)
-    .some((entry) => entry.kind === "ev_charging" || !entry.appliance.excluded);
+    .some((entry) => entry.kind === "charger_group" || !entry.appliance.excluded);
   return last >= 0 && regulatedBelow ? last : -1;
 }
 
@@ -324,7 +325,7 @@ export class KraftvaktStatusPage extends LitElement {
                 (entry, index) => html`
                   ${entry.kind === "appliance"
                     ? this.renderApplianceRow(entry.appliance, index + 1)
-                    : this.renderEvCharging(entry.chargers, index + 1)}
+                    : this.renderChargerGroup(entry.group, index + 1)}
                   ${index === cutAfter ? this.renderCutOff(status) : nothing}
                 `,
               )}
@@ -396,14 +397,15 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  private renderEvCharging(chargers: ChargerStatus[], rank: number) {
+  private renderChargerGroup(group: ChargerGroupStatus, rank: number) {
+    const chargers = group.chargers;
     const charging = chargers.filter((charger) => charger.charging).length;
     return html`
       <div class="row group">
         ${this.renderRank(rank)}
         <div class="row-title">
           <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
-          ${this.renderName(this.localize("status.ev_charging"))}
+          ${this.renderName(group.name)}
           ${chargers.length === 0 && !this.phone
             ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>`
             : nothing}
@@ -550,7 +552,7 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   private chargerConfig(charger: ChargerStatus) {
-    return this.config?.config.charging.chargers.find((item) => item.id === charger.id);
+    return this.config && allChargers(this.config.config).find((item) => item.id === charger.id);
   }
 
   private renderStopped(status: StatusSnapshot) {

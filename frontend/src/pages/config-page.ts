@@ -4,24 +4,27 @@ import { property } from "lit/decorators.js";
 
 import type { Capabilities, Issue, KraftvaktConfig } from "../api";
 import "../components/sortable-list";
-import type { ListRow } from "../components/sortable-list";
-import { fireDraftChanged } from "../draft";
+import type { ItemAdded, ListRow } from "../components/sortable-list";
+import { allChargers, fireDraftChanged } from "../draft";
 import { errorsByField, fieldErrorText } from "../issues";
-import type { Localize, TranslationKey } from "../localize";
+import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
 
-/** A card with a sortable list of items and a button that adds one. */
+/** A card with a sortable list of items and a button that adds one. The texts are translated. */
 export interface ListCard {
-  title: TranslationKey;
-  sub: TranslationKey;
-  add: TranslationKey;
-  empty: TranslationKey;
+  title: string;
+  sub: string;
+  add: string;
+  empty: string;
   rows: ListRow[];
   /** Locked lists can only be viewed: nothing can be added, moved or changed. */
   locked: boolean;
   onAdd: () => void;
   onMoved: (event: CustomEvent<{ oldIndex: number; newIndex: number }>) => void;
   onOpen: (event: CustomEvent<string>) => void;
+  /** Rows can be dragged between the lists of the same group, which then stay in view while empty. */
+  group?: string;
+  onAdded?: (event: CustomEvent<ItemAdded>) => void;
 }
 
 /**
@@ -65,33 +68,40 @@ export class ConfigPage extends LitElement {
 
   /** Return the entities other appliances and EV chargers than the item use, which it cannot use as well. */
   protected entitiesUsedBesides(itemId: string): string[] {
-    return [...this.config.appliances, ...this.config.charging.chargers]
+    return [...this.config.appliances, ...allChargers(this.config)]
       .filter((item) => item.id !== itemId && item.entity_id)
       .map((item) => item.entity_id as string);
   }
 
-  /** A sortable list of items in a card; `footer` goes at the bottom of the card. */
-  protected renderListCard(list: ListCard, footer: unknown = "") {
+  /**
+   * A sortable list of items in a card. `content` goes between the header and
+   * the list, and `footer` at the bottom of the card.
+   */
+  protected renderListCard(list: ListCard, footer: unknown = "", content: unknown = "") {
     return html`
       <ha-card class=${list.locked ? "locked" : ""}>
         <div class="card-header">
           <div class="heading">
-            <span>${this.localize(list.title)}</span>
-            <span class="sub">${this.localize(list.sub)}</span>
+            <span>${list.title}</span>
+            <span class="sub">${list.sub}</span>
           </div>
           <ha-button .disabled=${list.locked} @click=${list.onAdd}>
             <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-            ${this.localize(list.add)}
+            ${list.add}
           </ha-button>
         </div>
-        ${list.rows.length === 0
-          ? html`<div class="empty">${this.localize(list.empty)}</div>`
+        ${content}
+        ${list.rows.length === 0 && !list.group
+          ? html`<div class="empty">${list.empty}</div>`
           : html`
               <kraftvakt-sortable-list
                 .localize=${this.localize}
                 .rows=${list.rows}
                 .locked=${list.locked}
+                .group=${list.group}
+                .emptyText=${list.empty}
                 @item-moved=${list.onMoved}
+                @item-added=${list.onAdded}
                 @open-row=${list.onOpen}
               ></kraftvakt-sortable-list>
             `}

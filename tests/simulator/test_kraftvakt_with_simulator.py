@@ -47,42 +47,46 @@ def kraftvakt_config() -> dict[str, Any]:
         ],
         "priority": [
             {"type": "appliance", "appliance_id": "a1", "variant_id": None},
-            {"type": "ev_charging"},
+            {"type": "charger_group", "group_id": "g1"},
         ],
-        "charging": {
-            "enabled": True,
-            "one_at_a_time": True,
-            "chargers": [
-                {
-                    "id": "c1",
-                    "entity_id": CHARGING_ALLOWED,
-                    "activate": DEFAULT,
-                    "deactivate": DEFAULT,
-                    "set_current": {
-                        "mode": "custom",
-                        "action": [
-                            {
-                                "action": "number.set_value",
-                                "target": {
-                                    "entity_id": "number.garage_charging_current"
-                                },
-                                "data": {"value": "{{ current }}"},
-                            }
-                        ],
-                    },
-                    "min_current_a": 6,
-                    "max_current_a": 16,
-                    "actively_charging": {
-                        "type": "power_sensor",
-                        "value": CHARGING_POWER,
-                    },
-                    "car_connected": {
-                        "type": "entity",
-                        "value": "switch.garage_car_connected",
-                    },
-                }
-            ],
-        },
+        "charger_groups": [
+            {
+                "id": "g1",
+                "name": "EV chargers",
+                "enabled": True,
+                "one_at_a_time": True,
+                "chargers": [
+                    {
+                        "id": "c1",
+                        "entity_id": CHARGING_ALLOWED,
+                        "activate": DEFAULT,
+                        "deactivate": DEFAULT,
+                        "set_current": {
+                            "mode": "custom",
+                            "action": [
+                                {
+                                    "action": "number.set_value",
+                                    "target": {
+                                        "entity_id": "number.garage_charging_current"
+                                    },
+                                    "data": {"value": "{{ current }}"},
+                                }
+                            ],
+                        },
+                        "min_current_a": 6,
+                        "max_current_a": 16,
+                        "actively_charging": {
+                            "type": "power_sensor",
+                            "value": CHARGING_POWER,
+                        },
+                        "car_connected": {
+                            "type": "entity",
+                            "value": "switch.garage_car_connected",
+                        },
+                    }
+                ],
+            }
+        ],
     }
 
 
@@ -173,7 +177,7 @@ async def test_kraftvakt_controls_a_thermostat_with_its_domain_actions(
         room_temperature=10,
     )
     config = kraftvakt_config()
-    config["charging"] = {"enabled": False}
+    config["charger_groups"] = []
     config["priority"] = config["priority"][:1]
     config["appliances"][0]["entity_id"] = THERMOSTAT
     config["appliances"][0]["actions"]["main"] = {

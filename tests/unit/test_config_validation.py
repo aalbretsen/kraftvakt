@@ -144,29 +144,34 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
 def test_charger_settings(field: str, value: Any, code: str | None) -> None:
     expected = [] if code is None else [Issue(code, "chargers", "c1", field)]
 
-    assert _issues_after(_set(f"charging.chargers.0.{field}", value)) == expected
+    assert (
+        _issues_after(_set(f"charger_groups.0.chargers.0.{field}", value)) == expected
+    )
 
 
 def test_min_current_may_equal_max() -> None:
-    assert _issues_after(_set("charging.chargers.0.max_current_a", 6)) == []
+    assert _issues_after(_set("charger_groups.0.chargers.0.max_current_a", 6)) == []
 
 
 def test_max_current_must_be_at_least_one() -> None:
-    assert _issues_after(_set("charging.chargers.0.max_current_a", 0)) == [
+    assert _issues_after(_set("charger_groups.0.chargers.0.max_current_a", 0)) == [
         Issue("out_of_range", "chargers", "c1", "max_current_a"),
         Issue("min_current_above_max", "chargers", "c1", "min_current_a"),
     ]
 
 
 def test_min_current_above_max_is_rejected() -> None:
-    assert _issues_after(_set("charging.chargers.0.max_current_a", 5)) == [
+    assert _issues_after(_set("charger_groups.0.chargers.0.max_current_a", 5)) == [
         Issue("min_current_above_max", "chargers", "c1", "min_current_a")
     ]
 
 
 def test_charging_window_start_must_differ_from_end() -> None:
     issues = _issues_after(
-        _set("charging.chargers.0.charging_window", {"start": "22:00", "end": "22:00"})
+        _set(
+            "charger_groups.0.chargers.0.charging_window",
+            {"start": "22:00", "end": "22:00"},
+        )
     )
 
     assert issues == [
@@ -177,7 +182,7 @@ def test_charging_window_start_must_differ_from_end() -> None:
 def test_charging_window_in_whole_minutes() -> None:
     issues = _issues_after(
         _set(
-            "charging.chargers.0.charging_window",
+            "charger_groups.0.chargers.0.charging_window",
             {"start": "22:00:30", "end": "06:00"},
         )
     )
@@ -188,7 +193,9 @@ def test_charging_window_in_whole_minutes() -> None:
 def test_charging_window_across_midnight_is_valid() -> None:
     window = {"start": "23:30", "end": "00:15"}
 
-    assert _issues_after(_set("charging.chargers.0.charging_window", window)) == []
+    assert (
+        _issues_after(_set("charger_groups.0.chargers.0.charging_window", window)) == []
+    )
 
 
 @pytest.mark.parametrize(
@@ -205,7 +212,8 @@ def test_car_connected_condition(condition: dict[str, str], code: str | None) ->
     expected = [] if code is None else [Issue(code, "chargers", "c1", "car_connected")]
 
     assert (
-        _issues_after(_set("charging.chargers.0.car_connected", condition)) == expected
+        _issues_after(_set("charger_groups.0.chargers.0.car_connected", condition))
+        == expected
     )
 
 
@@ -244,7 +252,7 @@ def test_variant_labels_must_be_unique_per_appliance() -> None:
 def test_entity_is_unique_across_appliances_and_chargers() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["appliances"][1]["entity_id"] = "switch.water_heater"
-        data["charging"]["chargers"][0]["entity_id"] = "switch.water_heater"
+        data["charger_groups"][0]["chargers"][0]["entity_id"] = "switch.water_heater"
 
     assert _issues_after(mutate) == [
         Issue("duplicate_entity", "appliances", "a1", "entity_id"),
@@ -255,7 +263,7 @@ def test_entity_is_unique_across_appliances_and_chargers() -> None:
 
 def test_entity_uniqueness_ignores_sensors_and_conditions() -> None:
     def mutate(data: dict[str, Any]) -> None:
-        charger = data["charging"]["chargers"][0]
+        charger = data["charger_groups"][0]["chargers"][0]
         charger["actively_charging"] = {
             "type": "power_sensor",
             "value": "sensor.han_power",
@@ -279,8 +287,11 @@ def test_ids_must_be_unique() -> None:
         data["appliances"][0]["variants"].append(
             {**data["appliances"][0]["variants"][0], "label": "Evening"}
         )
-        data["charging"]["chargers"].append(
-            {**data["charging"]["chargers"][0], "entity_id": "switch.charger_2"}
+        data["charger_groups"][0]["chargers"].append(
+            {
+                **data["charger_groups"][0]["chargers"][0],
+                "entity_id": "switch.charger_2",
+            }
         )
         data["priority"] = [
             entry for entry in data["priority"] if entry.get("appliance_id") != "a2"
@@ -313,17 +324,60 @@ def test_priority_entry_for_unknown_appliance_is_rejected() -> None:
 
 def test_duplicate_priority_entry_is_rejected() -> None:
     def mutate(data: dict[str, Any]) -> None:
-        data["priority"] += [{"type": "ev_charging"}, data["priority"][0]]
+        data["priority"] += [
+            {"type": "charger_group", "group_id": "g1"},
+            data["priority"][0],
+        ]
 
     assert _issues_after(mutate) == [
         Issue("duplicate_priority_entry", "priority", "a1", "variants.v1"),
-        Issue("duplicate_priority_entry", "priority"),
+        Issue("duplicate_priority_entry", "priority", "g1"),
     ]
 
 
-def test_ev_charging_entry_only_when_charging_is_enabled() -> None:
-    assert _issues_after(_set("charging.enabled", False)) == [
-        Issue("ev_charging_disabled", "priority")
+def test_charger_group_entry_only_when_the_group_is_enabled() -> None:
+    assert _issues_after(_set("charger_groups.0.enabled", False)) == [
+        Issue("charger_group_disabled", "priority", "g1")
+    ]
+
+
+def test_entry_of_an_unknown_charger_group_is_rejected() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        data["priority"].append({"type": "charger_group", "group_id": "gone"})
+
+    assert _issues_after(mutate) == [
+        Issue("unknown_priority_entry", "priority", "gone")
+    ]
+
+
+def test_charger_group_name_is_required_and_unique() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        group = data["charger_groups"][0]
+        data["charger_groups"] += [
+            {**group, "id": "g2", "name": " EV chargers ", "chargers": []},
+            {**group, "id": "g3", "name": " ", "chargers": []},
+        ]
+        data["priority"] += [
+            {"type": "charger_group", "group_id": "g2"},
+            {"type": "charger_group", "group_id": "g3"},
+        ]
+
+    assert _issues_after(mutate) == [
+        Issue("duplicate_name", "charger_groups", "g1", "name"),
+        Issue("duplicate_name", "charger_groups", "g2", "name"),
+        Issue("empty_name", "charger_groups", "g3", "name"),
+    ]
+
+
+def test_ids_are_unique_across_charger_groups() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        group = data["charger_groups"][0]
+        charger = {**group["chargers"][0], "entity_id": "switch.charger_2"}
+        data["charger_groups"].append({**group, "name": "Cabin", "chargers": [charger]})
+
+    assert _issues_after(mutate) == [
+        Issue("duplicate_id", "charger_groups", "g1"),
+        Issue("duplicate_id", "chargers", "c1"),
     ]
 
 
@@ -333,15 +387,15 @@ def test_missing_priority_entries_are_reported() -> None:
 
     assert _issues_after(mutate) == [
         Issue("missing_priority_entry", "priority", "a1", "variants.v1"),
-        Issue("missing_priority_entry", "priority"),
+        Issue("missing_priority_entry", "priority", "g1"),
     ]
 
 
 def test_disabled_chargers_are_still_validated() -> None:
     def mutate(data: dict[str, Any]) -> None:
-        data["charging"]["enabled"] = False
-        data["charging"]["chargers"][0]["max_current_a"] = 1
-        data["priority"].remove({"type": "ev_charging"})
+        data["charger_groups"][0]["enabled"] = False
+        data["charger_groups"][0]["chargers"][0]["max_current_a"] = 1
+        data["priority"].remove({"type": "charger_group", "group_id": "g1"})
 
     assert _issues_after(mutate) == [
         Issue("min_current_above_max", "chargers", "c1", "min_current_a")
@@ -375,11 +429,11 @@ async def test_parse_config_adds_missing_priority_entries_at_bottom(
     )
 
 
-async def test_parse_config_adds_ev_charging_when_enabled(hass: HomeAssistant) -> None:
+async def test_parse_config_adds_enabled_charger_groups(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["priority"].remove({"type": "ev_charging"})
+    data["priority"].remove({"type": "charger_group", "group_id": "g1"})
 
-    assert parse_config(data).priority[-1] == PriorityEntry.ev_charging()
+    assert parse_config(data).priority[-1] == PriorityEntry.for_charger_group("g1")
 
 
 async def test_parse_config_accepts_incomplete_config(hass: HomeAssistant) -> None:
@@ -447,7 +501,7 @@ async def test_only_the_charging_current_may_be_given_as_an_entity(
     hass: HomeAssistant, field: str, action: dict[str, Any]
 ) -> None:
     data = full_config_data()
-    data["charging"]["chargers"][0][field] = action
+    data["charger_groups"][0]["chargers"][0][field] = action
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
@@ -458,17 +512,17 @@ async def test_only_the_charging_current_may_be_given_as_an_entity(
 async def test_charging_current_entity_is_kept(hass: HomeAssistant) -> None:
     data = full_config_data()
     action = {"mode": "entity", "entity_id": "number.charger_current"}
-    data["charging"]["chargers"][0]["set_current"] = action
+    data["charger_groups"][0]["chargers"][0]["set_current"] = action
 
     config = parse_config(data)
 
-    assert config.charging.chargers[0].to_dict()["set_current"] == action
+    assert config.chargers[0].to_dict()["set_current"] == action
 
 
 async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> None:
     data = full_config_data()
     data["appliances"][0]["variants"][0]["condition"]["value"] = "{{ 5 <= }}"
-    data["charging"]["chargers"][0]["car_connected"] = {
+    data["charger_groups"][0]["chargers"][0]["car_connected"] = {
         "type": "template",
         "value": "{% if %}",
     }
@@ -491,7 +545,9 @@ async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
         "mode": "custom",
         "action": [{"delay": "lenge"}],
     }
-    data["charging"]["chargers"][0]["set_current"]["action"] = [{"delay": "lenge"}]
+    data["charger_groups"][0]["chargers"][0]["set_current"]["action"] = [
+        {"delay": "lenge"}
+    ]
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)

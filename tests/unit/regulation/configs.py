@@ -1,7 +1,8 @@
 """Compact configurations for the regulation tests.
 
 Priority entries are written as ``"a"`` for appliance ``a`` itself and
-``"a:morning"`` for its variant ``morning``. ``"ev"`` is the EV charging entry.
+``"a:morning"`` for its variant ``morning``. ``"@g"`` is the entry of the group of
+chargers ``g``, and ``"ev"`` the entry of the group ``make_config`` makes.
 Charging windows are written as ``"22:00-06:00"``.
 """
 
@@ -14,7 +15,7 @@ from custom_components.kraftvakt.config_model import (
     Appliance,
     ApplianceActions,
     Charger,
-    ChargingConfig,
+    ChargerGroup,
     ChargingWindow,
     Condition,
     ConditionType,
@@ -83,10 +84,31 @@ def charger(
     )
 
 
+DEFAULT_GROUP = "ev"
+
+
+def charger_group(
+    group_id: str,
+    *chargers: Charger,
+    one_at_a_time: bool = True,
+    enabled: bool = True,
+) -> ChargerGroup:
+    """Return a group of the chargers, named after its id."""
+    return ChargerGroup(
+        id=group_id,
+        name=group_id,
+        enabled=enabled,
+        one_at_a_time=one_at_a_time,
+        chargers=chargers,
+    )
+
+
 def priority_entry(text: str) -> PriorityEntry:
-    """Return the priority entry written as ``"a"``, ``"a:variant"`` or ``"ev"``."""
+    """Return the entry written as ``"a"``, ``"a:variant"``, ``"@g"`` or ``"ev"``."""
     if text == "ev":
-        return PriorityEntry.ev_charging()
+        return PriorityEntry.for_charger_group(DEFAULT_GROUP)
+    if text.startswith("@"):
+        return PriorityEntry.for_charger_group(text[1:])
     appliance_id, _, variant_id = text.partition(":")
     return PriorityEntry.for_appliance(appliance_id, variant_id or None)
 
@@ -102,13 +124,16 @@ def make_config(
     chargers: tuple[Charger, ...] = (),
     one_at_a_time: bool = True,
     charging_enabled: bool | None = None,
+    groups: tuple[ChargerGroup, ...] = (),
 ) -> KraftvaktConfig:
     """Return a configuration with the appliances in the given priority order.
 
-    An appliance given as a string has no reserve and no variants. Without an
-    explicit priority, the appliances come first in the given order, then EV
-    charging when there are chargers, and the variants last. Charging is
-    enabled when there are chargers, unless `charging_enabled` says otherwise.
+    An appliance given as a string has no reserve and no variants. The
+    chargers are put in one group, ``"ev"``, before the `groups`. Without an
+    explicit priority, the appliances come first in the given order, then the
+    group ``"ev"`` when there are chargers, and the variants last. The group
+    is enabled when there are chargers, unless `charging_enabled` says
+    otherwise.
     """
     built = tuple(
         appliance(item) if isinstance(item, str) else item for item in appliances
@@ -134,7 +159,10 @@ def make_config(
         ),
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),
-        charging=ChargingConfig(
-            enabled=enabled, one_at_a_time=one_at_a_time, chargers=chargers
+        charger_groups=(
+            charger_group(
+                DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time, enabled=enabled
+            ),
+            *groups,
         ),
     )

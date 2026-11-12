@@ -138,4 +138,4 @@ class RegulationState:
     cycling: CyclingCounter = field(default_factory=CyclingCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False
-    charging: ChargingState = field(default_factory=ChargingState)
+    charging_groups: dict[str, ChargingState] = field(default_factory=dict)

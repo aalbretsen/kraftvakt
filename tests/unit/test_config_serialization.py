@@ -60,8 +60,8 @@ def test_full_config_is_read_into_model() -> None:
     assert appliance.variants[0].condition == Condition(
         ConditionType.TEMPLATE, "{{ 5 <= now().hour < 8 }}"
     )
-    assert config.priority[1] == PriorityEntry.ev_charging()
-    charger = config.charging.chargers[0]
+    assert config.priority[1] == PriorityEntry.for_charger_group("g1")
+    charger = config.chargers[0]
     assert charger.charging_window == ChargingWindow(time(22, 0), time(6, 0))
     assert charger.car_connected == Condition(
         ConditionType.ENTITY, "binary_sensor.garage_charger_car"
@@ -80,14 +80,17 @@ def test_default_config_round_trips() -> None:
 
 def test_missing_settings_get_defaults() -> None:
     config = read_config(
-        {"appliances": [{"id": "a1"}], "charging": {"chargers": [{"id": "c1"}]}}
+        {
+            "appliances": [{"id": "a1"}],
+            "charger_groups": [{"id": "g1", "chargers": [{"id": "c1"}]}],
+        }
     )
 
     appliance = config.appliances[0]
     assert appliance.entity_id is None
     assert appliance.actions == {MAIN_ACTIONS: ApplianceActions()}
     assert appliance.power_reserve_w is None
-    charger = config.charging.chargers[0]
+    charger = config.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
     assert charger.power_reserve_w == 4000
 
@@ -152,18 +155,21 @@ def test_custom_action_without_steps_is_empty() -> None:
 def test_time_with_seconds_is_read() -> None:
     config = read_config(
         {
-            "charging": {
-                "chargers": [
-                    {
-                        "id": "c1",
-                        "charging_window": {"start": "22:00:00", "end": "6:30:15"},
-                    }
-                ]
-            }
+            "charger_groups": [
+                {
+                    "id": "g1",
+                    "chargers": [
+                        {
+                            "id": "c1",
+                            "charging_window": {"start": "22:00:00", "end": "6:30:15"},
+                        }
+                    ],
+                }
+            ]
         }
     )
 
-    window = config.charging.chargers[0].charging_window
+    window = config.chargers[0].charging_window
     assert window == ChargingWindow(time(22, 0), time(6, 30, 15))
     assert window.to_dict() == {"start": "22:00", "end": "06:30:15"}
 
@@ -253,73 +259,108 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "appliances", "a1", "variants.v1.condition"),
         ),
         (
-            {"charging": {"chargers": [{"id": "c1", "car_connected": "sensor.x"}]}},
+            {
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [{"id": "c1", "car_connected": "sensor.x"}],
+                    }
+                ]
+            },
             Issue("invalid_type", "chargers", "c1", "car_connected"),
         ),
         ({"priority": [{"type": "appliance"}]}, Issue("invalid_type", "priority")),
         ({"priority": [{"type": "other"}]}, Issue("invalid_type", "priority")),
         (
-            {"charging": {"enabled": "yes"}},
-            Issue("invalid_type", "charging", None, "enabled"),
+            {"priority": [{"type": "charger_group"}]},
+            Issue("invalid_type", "priority"),
         ),
         (
-            {"charging": {"chargers": [{"id": "c1", "min_current_a": 6.5}]}},
+            {"charger_groups": [{"id": "g1", "enabled": "yes"}]},
+            Issue("invalid_type", "charger_groups", "g1", "enabled"),
+        ),
+        (
+            {
+                "charger_groups": [
+                    {"id": "g1", "chargers": [{"id": "c1", "min_current_a": 6.5}]}
+                ]
+            },
             Issue("not_integer", "chargers", "c1", "min_current_a"),
         ),
         (
             {
-                "charging": {
-                    "chargers": [
-                        {"id": "c1", "car_connected": {"type": "entity", "value": 1}}
-                    ]
-                }
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [
+                            {
+                                "id": "c1",
+                                "car_connected": {"type": "entity", "value": 1},
+                            }
+                        ],
+                    }
+                ]
             },
             Issue("invalid_type", "chargers", "c1", "car_connected"),
         ),
         (
             {
-                "charging": {
-                    "chargers": [
-                        {
-                            "id": "c1",
-                            "car_connected": {"type": "power_sensor", "value": "x"},
-                        }
-                    ]
-                }
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [
+                            {
+                                "id": "c1",
+                                "car_connected": {"type": "power_sensor", "value": "x"},
+                            }
+                        ],
+                    }
+                ]
             },
             Issue("invalid_type", "chargers", "c1", "car_connected"),
         ),
         (
             {
-                "charging": {
-                    "chargers": [{"id": "c1", "charging_window": {"start": "22:00"}}]
-                }
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [
+                            {"id": "c1", "charging_window": {"start": "22:00"}}
+                        ],
+                    }
+                ]
             },
             Issue("invalid_time", "chargers", "c1", "charging_window"),
         ),
         (
             {
-                "charging": {
-                    "chargers": [
-                        {
-                            "id": "c1",
-                            "charging_window": {"start": "24:00", "end": "06:00"},
-                        }
-                    ]
-                }
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [
+                            {
+                                "id": "c1",
+                                "charging_window": {"start": "24:00", "end": "06:00"},
+                            }
+                        ],
+                    }
+                ]
             },
             Issue("invalid_time", "chargers", "c1", "charging_window"),
         ),
         (
             {
-                "charging": {
-                    "chargers": [
-                        {
-                            "id": "c1",
-                            "charging_window": {"start": "kl 22", "end": "06:00"},
-                        }
-                    ]
-                }
+                "charger_groups": [
+                    {
+                        "id": "g1",
+                        "chargers": [
+                            {
+                                "id": "c1",
+                                "charging_window": {"start": "kl 22", "end": "06:00"},
+                            }
+                        ],
+                    }
+                ]
             },
             Issue("invalid_time", "chargers", "c1", "charging_window"),
         ),

@@ -42,7 +42,7 @@ def test_appliance_needs_entity_and_both_actions() -> None:
 
 def test_charger_needs_entity_actions_and_actively_charging() -> None:
     data = full_config_data()
-    data["charging"]["chargers"].append(
+    data["charger_groups"][0]["chargers"].append(
         {"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}}
     )
 
@@ -56,15 +56,15 @@ def test_charger_needs_entity_actions_and_actively_charging() -> None:
 
 def test_charging_current_entity_must_be_chosen() -> None:
     data = full_config_data()
-    data["charging"]["chargers"][0]["set_current"] = {"mode": "entity"}
+    data["charger_groups"][0]["chargers"][0]["set_current"] = {"mode": "entity"}
 
     assert _missing(data) == [Issue("missing_action", "chargers", "c1", "set_current")]
 
 
 def test_chargers_do_not_count_while_charging_is_disabled() -> None:
     data = full_config_data()
-    data["charging"]["enabled"] = False
-    data["charging"]["chargers"].append({"id": "c2"})
+    data["charger_groups"][0]["enabled"] = False
+    data["charger_groups"][0]["chargers"].append({"id": "c2"})
 
     assert _missing(data) == []
 
@@ -72,7 +72,7 @@ def test_chargers_do_not_count_while_charging_is_disabled() -> None:
 def test_optional_settings_are_not_required() -> None:
     data = full_config_data()
     data["appliances"][1]["power_reserve_w"] = None
-    charger = data["charging"]["chargers"][0]
+    charger = data["charger_groups"][0]["chargers"][0]
     charger["car_connected"] = None
     charger["charging_window"] = None
     del charger["min_current_a"]
@@ -85,8 +85,8 @@ def test_optional_settings_are_not_required() -> None:
 def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     """Otherwise chargers without a car take turns."""
     data = full_config_data()
-    data["charging"]["one_at_a_time"] = True
-    data["charging"]["chargers"][0]["car_connected"] = None
+    data["charger_groups"][0]["one_at_a_time"] = True
+    data["charger_groups"][0]["chargers"][0]["car_connected"] = None
 
     assert _missing(data) == [
         Issue("missing_car_connected", "chargers", "c1", "car_connected")

@@ -112,7 +112,7 @@ class PriorityEntryType(StrEnum):
     """Kind of entry in the priority list."""
 
     APPLIANCE = "appliance"
-    EV_CHARGING = "ev_charging"
+    CHARGER_GROUP = "charger_group"
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,6 +269,7 @@ class PriorityEntry:
     type: PriorityEntryType
     appliance_id: str | None = None
     variant_id: str | None = None
+    group_id: str | None = None
 
     @classmethod
     def for_appliance(
@@ -278,14 +279,14 @@ class PriorityEntry:
         return cls(PriorityEntryType.APPLIANCE, appliance_id, variant_id)
 
     @classmethod
-    def ev_charging(cls) -> PriorityEntry:
-        """Return the entry for EV charging."""
-        return cls(PriorityEntryType.EV_CHARGING)
+    def for_charger_group(cls, group_id: str) -> PriorityEntry:
+        """Return the entry for a group of chargers."""
+        return cls(PriorityEntryType.CHARGER_GROUP, group_id=group_id)
 
     def to_dict(self) -> dict[str, Any]:
         """Return the entry as JSON-friendly data."""
-        if self.type is PriorityEntryType.EV_CHARGING:
-            return {"type": self.type.value}
+        if self.type is PriorityEntryType.CHARGER_GROUP:
+            return {"type": self.type.value, "group_id": self.group_id}
         return {
             "type": self.type.value,
             "appliance_id": self.appliance_id,
@@ -332,15 +333,20 @@ class Charger:
 
 
 @dataclass(frozen=True, slots=True)
-class ChargingConfig:
-    """Settings shared by all chargers."""
+class ChargerGroup:
+    """A named group of chargers with its own place in the priority list.
 
+    The chargers are in the configured charging priority.
+    """
+
+    id: str
+    name: str = ""
     enabled: bool = False
     one_at_a_time: bool = True
     chargers: tuple[Charger, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the charging settings as JSON-friendly data."""
+        """Return the group as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
@@ -374,13 +380,33 @@ class KraftvaktConfig:
     general: GeneralConfig = field(default_factory=GeneralConfig)
     appliances: tuple[Appliance, ...] = ()
     priority: tuple[PriorityEntry, ...] = ()
-    charging: ChargingConfig = field(default_factory=ChargingConfig)
+    charger_groups: tuple[ChargerGroup, ...] = ()
+
+    @property
+    def chargers(self) -> tuple[Charger, ...]:
+        """Return the chargers of every group."""
+        return tuple(
+            charger for group in self.charger_groups for charger in group.chargers
+        )
+
+    @property
+    def enabled_charger_groups(self) -> tuple[ChargerGroup, ...]:
+        """Return the groups whose chargers are regulated."""
+        return tuple(group for group in self.charger_groups if group.enabled)
+
+    def charger_enabled(self, charger_id: str) -> bool:
+        """Return whether the charger is in a group whose chargers are regulated."""
+        return any(
+            charger.id == charger_id
+            for group in self.enabled_charger_groups
+            for charger in group.chargers
+        )
 
     def items(self) -> Iterator[tuple[str, Appliance | Charger]]:
         """Return the appliances and the chargers with the section they are in."""
         for appliance in self.appliances:
             yield "appliances", appliance
-        for charger in self.charging.chargers:
+        for charger in self.chargers:
             yield "chargers", charger
 
     def to_dict(self) -> dict[str, Any]:
@@ -440,7 +466,7 @@ class ConfigValidationError(ValueError):
 
 
 def new_id() -> str:
-    """Return a short unique id for an appliance, variant or charger."""
+    """Return a short unique id for an appliance, variant, charger or group."""
     return uuid.uuid4().hex[:12]
 
 
@@ -458,7 +484,7 @@ def charger_switches_for(
     config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]
 ) -> dict[str, ChargerSwitches]:
     """Return the switches for exactly the chargers in the configuration."""
-    return _switches_for(config.charging.chargers, switches, ChargerSwitches())
+    return _switches_for(config.chargers, switches, ChargerSwitches())
 
 
 def switches_to_dict(

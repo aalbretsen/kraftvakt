@@ -18,7 +18,7 @@ from custom_components.kraftvakt.config_model import (
     Appliance,
     ApplianceActions,
     Charger,
-    ChargingConfig,
+    ChargerGroup,
     Issue,
     KraftvaktConfig,
 )
@@ -210,15 +210,18 @@ async def test_domain_action_must_belong_to_the_entity(hass: HomeAssistant) -> N
                 "a2", actions={MAIN_ACTIONS: ApplianceActions(domain("unknown"))}
             ),
         ),
-        charging=ChargingConfig(
-            chargers=(
-                Charger(
-                    "c1",
-                    "climate.charger",
-                    activate=domain("climate_hvac_mode", hvac_mode="heat"),
-                    set_current=domain("climate_temperature", temperature=20),
+        charger_groups=(
+            ChargerGroup(
+                "g1",
+                chargers=(
+                    Charger(
+                        "c1",
+                        "climate.charger",
+                        activate=domain("climate_hvac_mode", hvac_mode="heat"),
+                        set_current=domain("climate_temperature", temperature=20),
+                    ),
                 ),
-            )
+            ),
         ),
     )
 
@@ -245,14 +248,17 @@ async def test_charger_can_be_activated_with_a_domain_action(
 ) -> None:
     modes = async_mock_service(hass, "climate", "set_hvac_mode")
     config = KraftvaktConfig(
-        charging=ChargingConfig(
-            chargers=(
-                Charger(
-                    "c1",
-                    "climate.charger",
-                    activate=domain("climate_hvac_mode", hvac_mode="heat"),
+        charger_groups=(
+            ChargerGroup(
+                "g1",
+                chargers=(
+                    Charger(
+                        "c1",
+                        "climate.charger",
+                        activate=domain("climate_hvac_mode", hvac_mode="heat"),
+                    ),
                 ),
-            )
+            ),
         )
     )
 

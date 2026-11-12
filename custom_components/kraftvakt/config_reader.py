@@ -20,7 +20,7 @@ from .config_model import (
     Appliance,
     ApplianceActions,
     Charger,
-    ChargingConfig,
+    ChargerGroup,
     ChargingWindow,
     Condition,
     ConditionType,
@@ -91,7 +91,12 @@ class ConfigReader:
                 for item in self._list(root.get("priority"), IssueLocation("priority"))
                 if (entry := self._priority_entry(item)) is not None
             ),
-            charging=self._charging(root.get("charging")),
+            charger_groups=tuple(
+                self._charger_group(item)
+                for item in self._list(
+                    root.get("charger_groups"), IssueLocation("charger_groups")
+                )
+            ),
         )
 
     def switches[T: ItemSwitches](
@@ -205,8 +210,12 @@ class ConfigReader:
         location = IssueLocation("priority")
         values = self._mapping(data, location, None)
         entry_type = values.get("type")
-        if entry_type == PriorityEntryType.EV_CHARGING:
-            return PriorityEntry.ev_charging()
+        if entry_type == PriorityEntryType.CHARGER_GROUP:
+            group_id = self._text(values, "group_id", location)
+            if group_id is None:
+                self.issues.append(location.issue("invalid_type"))
+                return None
+            return PriorityEntry.for_charger_group(group_id)
         appliance_id = self._text(values, "appliance_id", location)
         if entry_type != PriorityEntryType.APPLIANCE or appliance_id is None:
             self.issues.append(location.issue("invalid_type"))
@@ -215,17 +224,21 @@ class ConfigReader:
             appliance_id, self._text(values, "variant_id", location)
         )
 
-    def _charging(self, data: Any) -> ChargingConfig:
-        location = IssueLocation("charging")
-        values = self._mapping(data, location, None)
-        return ChargingConfig(
-            enabled=self._bool(values, "enabled", False, location),
-            one_at_a_time=self._bool(values, "one_at_a_time", True, location),
+    def _charger_group(self, data: Any) -> ChargerGroup:
+        values = self._mapping(data, IssueLocation("charger_groups"), None)
+        group_id = self._id(values, IssueLocation("charger_groups"))
+        location = IssueLocation("charger_groups", group_id)
+        defaults = ChargerGroup(id=group_id)
+        return ChargerGroup(
+            id=group_id,
+            name=self._text(values, "name", location) or "",
+            enabled=self._bool(values, "enabled", defaults.enabled, location),
+            one_at_a_time=self._bool(
+                values, "one_at_a_time", defaults.one_at_a_time, location
+            ),
             chargers=tuple(
                 self._charger(item)
-                for item in self._list(
-                    values.get("chargers"), IssueLocation("chargers")
-                )
+                for item in self._list(values.get("chargers"), location, "chargers")
             ),
         )
 

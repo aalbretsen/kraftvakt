@@ -2,7 +2,7 @@
  * The draft that the configuration pages edit. It is never changed in place:
  * each change makes a new configuration.
  */
-import type { KraftvaktConfig, PriorityEntry } from "./api";
+import type { Charger, KraftvaktConfig, PriorityEntry } from "./api";
 
 export const DRAFT_CHANGED = "draft-changed";
 
@@ -12,7 +12,7 @@ export function fireDraftChanged(element: HTMLElement, config: KraftvaktConfig):
 }
 
 /**
- * Return a short unique id for an appliance, variant or charger.
+ * Return a short unique id for an appliance, variant, charger or group of chargers.
  *
  * `crypto.randomUUID` needs a secure context, which Home Assistant on plain HTTP
  * in the local network is not, so the id is made from random bytes.
@@ -37,7 +37,7 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
 
 /** Return a key that identifies an entry in the priority list. */
 export function priorityKey(entry: PriorityEntry): string {
-  return entry.type === "ev_charging" ? "ev_charging" : `${entry.appliance_id}/${entry.variant_id ?? ""}`;
+  return entry.type === "charger_group" ? `group/${entry.group_id}` : `${entry.appliance_id}/${entry.variant_id ?? ""}`;
 }
 
 /** Return the configuration with exactly one priority entry per appliance and variant. */
@@ -64,8 +64,15 @@ function expectedPriority(config: KraftvaktConfig): PriorityEntry[] {
       (variant): PriorityEntry => ({ type: "appliance", appliance_id: appliance.id, variant_id: variant.id }),
     ),
   ]);
-  if (config.charging.enabled) {
-    entries.push({ type: "ev_charging" });
+  for (const group of config.charger_groups) {
+    if (group.enabled) {
+      entries.push({ type: "charger_group", group_id: group.id });
+    }
   }
   return entries;
+}
+
+/** Return the chargers of every group. */
+export function allChargers(config: KraftvaktConfig): Charger[] {
+  return config.charger_groups.flatMap((group) => group.chargers);
 }

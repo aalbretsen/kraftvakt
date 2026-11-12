@@ -163,7 +163,7 @@ class ActionRunner:
         """
         self._hass = hass
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
-        self._chargers = {charger.id: charger for charger in config.charging.chargers}
+        self._chargers = {charger.id: charger for charger in config.chargers}
         self._lock = lock or asyncio.Lock()
         self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
 

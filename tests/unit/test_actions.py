@@ -22,7 +22,7 @@ from custom_components.kraftvakt.config_model import (
     Appliance,
     ApplianceActions,
     Charger,
-    ChargingConfig,
+    ChargerGroup,
     Condition,
     ConditionType,
     Issue,
@@ -139,11 +139,14 @@ async def test_default_actions_must_exist_for_the_domain(hass: HomeAssistant) ->
             appliance("a3", "number.x"),
             Appliance("a4"),
         ),
-        charging=ChargingConfig(
-            chargers=(
-                charger("switch.charger"),
-                replace(charger("number.charger"), id="c2"),
-            )
+        charger_groups=(
+            ChargerGroup(
+                id="g1",
+                chargers=(
+                    charger("switch.charger"),
+                    replace(charger("number.charger"), id="c2"),
+                ),
+            ),
         ),
     )
 
@@ -345,7 +348,9 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
         }
     )
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
+        charger_groups=(
+            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
+        )
     )
 
     await ActionRunner(hass, config).async_execute(
@@ -372,7 +377,9 @@ async def test_charging_current_can_be_set_on_a_chosen_number_entity(
     values = async_mock_service(hass, "number", "set_value")
     set_current = ActionConfig(ActionMode.ENTITY, entity_id="number.charger_current")
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
+        charger_groups=(
+            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
+        )
     )
 
     await ActionRunner(hass, config).async_execute(
@@ -390,7 +397,9 @@ async def test_entity_action_without_entity_is_logged(
 ) -> None:
     set_current = ActionConfig(ActionMode.ENTITY)
     config = KraftvaktConfig(
-        charging=ChargingConfig(chargers=(charger("switch.charger", set_current),))
+        charger_groups=(
+            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
+        )
     )
 
     await ActionRunner(hass, config).async_execute([SetChargingCurrent("c1", 6)])
@@ -401,20 +410,26 @@ async def test_entity_action_without_entity_is_logged(
 async def test_chosen_entity_must_have_a_default_action(hass: HomeAssistant) -> None:
     """Only number entities can be given to set the charging current."""
     config = KraftvaktConfig(
-        charging=ChargingConfig(
-            chargers=(
-                charger(
-                    "switch.a", ActionConfig(ActionMode.ENTITY, entity_id="number.a")
-                ),
-                replace(
+        charger_groups=(
+            ChargerGroup(
+                id="g1",
+                chargers=(
                     charger(
-                        "switch.b",
-                        ActionConfig(ActionMode.ENTITY, entity_id="switch.b"),
+                        "switch.a",
+                        ActionConfig(ActionMode.ENTITY, entity_id="number.a"),
                     ),
-                    id="c2",
+                    replace(
+                        charger(
+                            "switch.b",
+                            ActionConfig(ActionMode.ENTITY, entity_id="switch.b"),
+                        ),
+                        id="c2",
+                    ),
+                    replace(
+                        charger("switch.c", ActionConfig(ActionMode.ENTITY)), id="c3"
+                    ),
                 ),
-                replace(charger("switch.c", ActionConfig(ActionMode.ENTITY)), id="c3"),
-            )
+            ),
         )
     )
 

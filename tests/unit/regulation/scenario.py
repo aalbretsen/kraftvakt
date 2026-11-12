@@ -89,9 +89,7 @@ class Scenario:
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone
-        self.chargers = {
-            charger.id: IDLE_CHARGER for charger in config.charging.chargers
-        }
+        self.chargers = {charger.id: IDLE_CHARGER for charger in config.chargers}
         self.excluded_appliances: frozenset[str] = frozenset()
         self.start_commands = self.engine.start(self.now)
 

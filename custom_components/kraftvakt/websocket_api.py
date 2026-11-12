@@ -18,7 +18,7 @@ from .config_model import (
     SETTING_RANGES,
     Appliance,
     Charger,
-    ChargingConfig,
+    ChargerGroup,
     ConfigValidationError,
     GeneralConfig,
     KraftvaktConfig,
@@ -211,7 +211,7 @@ def validated_config(hass: HomeAssistant, data: dict[str, Any]) -> KraftvaktConf
 def capabilities() -> dict[str, Any]:
     """Return the default and domain actions per field, the limits and defaults."""
     general = GeneralConfig()
-    charging = ChargingConfig()
+    group = ChargerGroup(id="")
     charger = Charger(id="")
     return {
         "default_actions": default_actions_by_field(),
@@ -223,9 +223,9 @@ def capabilities() -> dict[str, Any]:
         "defaults": {
             "general": general.to_dict(),
             "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},
-            "charging": {
-                "enabled": charging.enabled,
-                "one_at_a_time": charging.one_at_a_time,
+            "charger_groups": {
+                "enabled": group.enabled,
+                "one_at_a_time": group.one_at_a_time,
             },
             "chargers": {
                 "min_current_a": charger.min_current_a,
@@ -240,7 +240,7 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
     """Return the names of the appliances and chargers by their entities."""
     items: list[Appliance | Charger] = [
         *config.appliances,
-        *config.charging.chargers,
+        *config.chargers,
     ]
     return {
         item.entity_id: item_name(hass, item)

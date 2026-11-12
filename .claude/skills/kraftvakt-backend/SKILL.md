@@ -72,17 +72,20 @@ The format is defined by the dataclasses and their serialization in
   each variant with its own under the variant's id. Actions of variants that
   no longer exist are dropped when read.
 - `priority`: the priority list, with an entry per appliance and variant and
-  one EV charging entry.
-- `charging`: enabled, one at a time, and the chargers, each with an id, its
-  entity, activate, deactivate and set-current actions, min and max current,
-  power reserve, an optional car connected condition, actively charging and
-  an optional charging window.
+  an entry per enabled charger group.
+- `charger_groups`: each with an id, a name, enabled, one at a time, and its
+  chargers in charging priority, each with an id, its entity, activate,
+  deactivate and set-current actions, min and max current, power reserve, an
+  optional car connected condition, actively charging and an optional
+  charging window. A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger.
 
 The store has a version. A change of the stored format raises it and adds a
 migration in `storage.py`, with tests, since installations regulate homes
-with a stored configuration that must keep working after an update.
+with a stored configuration that must keep working after an update. The
+chargers from before charger groups became one group named «EV chargers»,
+in English whatever the language, since the name is the user's data.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script), `entity` or `domain` (the
@@ -95,11 +98,12 @@ action editor adds empty `data`; stored actions must tolerate that.
 
 An invalid configuration is not saved:
 
-- The priority list has exactly one entry per appliance and variant, and the
-  EV charging entry exactly once while charging is enabled. Missing entries
-  are added at the bottom. Duplicates, unknown entries and the EV charging
-  entry while disabled are rejected.
-- Labels are non-empty and unique per appliance.
+- The priority list has exactly one entry per appliance and variant, and one
+  per enabled charger group. Missing entries are added at the bottom.
+  Duplicates, unknown entries and the entry of a disabled group are rejected.
+- Labels are non-empty and unique per appliance. Group names are non-empty
+  and unique among the groups.
+- Charger ids are unique across all groups.
 - The entity that identifies an appliance or charger is unique in the whole
   configuration. Sensors, conditions and actions may reuse entities.
 - `1 ≤ min ≤ max` current, whole amperes. Charging window start ≠ end, whole
@@ -187,7 +191,8 @@ panel's translations.
   a window override switch and a binary sensor for charging allowed by
   window, keyed by the item's id, with an entity id from the slug of the
   item's name. The positions of the switches are stored. The charger
-  entities are unavailable while charging is disabled.
+  entities do not depend on the group, so moving a charger to another group
+  keeps them. They are unavailable while the charger's group is disabled.
 - The charging allowed by window binary sensor computes the window from the
   clock with the same function as the engine, updated by the switch board
   and at every whole minute, since windows are in whole minutes.
@@ -233,7 +238,8 @@ step. Rules that are not obvious from the code:
   decision. Window overridden is true while it was allowed to charge only
   because of the override. Car connected is `null` when it is not set or
   before the first decision.
-- Appliances are sorted by the entry of their current variant, chargers by the
-  current charging priority. The EV charging position is the number of
-  appliances whose current variant is placed before the EV charging entry,
-  `null` while EV charging is disabled.
+- Appliances are sorted by the entry of their current variant. The enabled
+  charger groups are listed in the order of their entries, each with its
+  position, the number of appliances whose current variant is placed before
+  the group's entry, and its chargers in the group's current charging
+  priority.

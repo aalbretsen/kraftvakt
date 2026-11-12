@@ -1,5 +1,6 @@
 """Tests for storage of the configuration and the charger switches."""
 
+import json
 from typing import Any
 
 import pytest
@@ -7,6 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from custom_components.kraftvakt.config_model import (
     ApplianceSwitches,
+    ChargerGroup,
     ChargerSwitches,
     ConfigValidationError,
 )
@@ -94,8 +96,12 @@ async def test_switches_follow_configured_chargers(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
     data = full_config_data()
-    data["charging"]["chargers"].append(
-        {**data["charging"]["chargers"][0], "id": "c2", "entity_id": "switch.charger_2"}
+    data["charger_groups"][0]["chargers"].append(
+        {
+            **data["charger_groups"][0]["chargers"][0],
+            "id": "c2",
+            "entity_id": "switch.charger_2",
+        }
     )
     config = read_config(data)
     switches = {"gone": ChargerSwitches(excluded=True)}
@@ -124,9 +130,75 @@ async def test_load_rejects_unreadable_data(
         await KraftvaktStorage(hass).async_load()
 
 
+def version_2_data() -> dict[str, Any]:
+    """The full configuration as version 2 stored it, without charger groups."""
+    data = full_config_data()
+    group = data.pop("charger_groups")[0]
+    data["charging"] = {
+        key: group[key] for key in ("enabled", "one_at_a_time", "chargers")
+    }
+    data["priority"] = [
+        {"type": "ev_charging"} if entry["type"] == "charger_group" else entry
+        for entry in data["priority"]
+    ]
+    return {**data, "charger_switches": {"c1": {"excluded": True}}}
+
+
+def with_group_id(data: dict[str, Any], group_id: str) -> dict[str, Any]:
+    """Return the full configuration with another id for its group."""
+    return json.loads(json.dumps(data).replace('"g1"', f'"{group_id}"'))
+
+
+async def test_version_2_puts_the_chargers_in_one_group(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """The group gets a new id and takes the place of «EV charging»."""
+    hass_storage[STORAGE_KEY] = {
+        "version": 2,
+        "key": STORAGE_KEY,
+        "data": version_2_data(),
+    }
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    group_id = stored.config.charger_groups[0].id
+    assert group_id != "g1"
+    assert stored.config == read_config(with_group_id(full_config_data(), group_id))
+    assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
+
+
+async def test_version_2_without_chargers_gets_an_empty_group(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 2,
+        "key": STORAGE_KEY,
+        "data": {"general": {"power_limit_w": 8000}},
+    }
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    group_id = stored.config.charger_groups[0].id
+    assert stored.config.charger_groups == (ChargerGroup(group_id, "EV chargers"),)
+    assert stored.config.priority == ()
+
+
+async def test_migration_leaves_unreadable_charging_to_the_reader(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 2,
+        "key": STORAGE_KEY,
+        "data": {"charging": "not a mapping"},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        await KraftvaktStorage(hass).async_load()
+
+
 def version_1_data() -> dict[str, Any]:
     """The full configuration as version 1 stored it, without variant actions."""
-    data = full_config_data()
+    data = version_2_data()
     for appliance in data["appliances"]:
         appliance.update(appliance.pop("actions")["main"])
     return {**data, "appliance_switches": {"a1": {"excluded": True}}}
@@ -147,7 +219,8 @@ async def test_version_1_gets_the_actions_of_the_appliance_in_a_map(
 
     stored = await KraftvaktStorage(hass).async_load()
 
-    assert stored.config == read_config(expected)
+    group_id = stored.config.charger_groups[0].id
+    assert stored.config == read_config(with_group_id(expected, group_id))
     assert stored.appliance_switches["a1"] == ApplianceSwitches(excluded=True)
 
 

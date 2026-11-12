@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from itertools import islice
 from typing import Final
 
-from ..config_model import Charger, KraftvaktConfig
+from ..config_model import Charger, ChargerGroup, KraftvaktConfig
 from .charging import (
     ChargerReading,
     ChargerStatus,
@@ -51,11 +51,13 @@ class RegulationEngine:
     def __init__(self, config: KraftvaktConfig) -> None:
         """Create a stopped engine for the configuration."""
         self._config = config
-        self._chargers: dict[str, Charger] = (
-            {charger.id: charger for charger in config.charging.chargers}
-            if config.charging.enabled
-            else {}
-        )
+        self._groups = config.enabled_charger_groups
+        self._chargers: dict[str, Charger] = {
+            charger.id: charger for group in self._groups for charger in group.chargers
+        }
+        self._group_of: dict[str, ChargerGroup] = {
+            charger.id: group for group in self._groups for charger in group.chargers
+        }
         general = config.general
         self._waiting_curve = WaitingCurve.from_settings(
             general.wait_curve_steepness, general.wait_curve_pivot
@@ -71,7 +73,7 @@ class RegulationEngine:
             general.charger_cycling_steps,
         )
         self._running = False
-        self._state = RegulationState()
+        self._state = RegulationState(charging_groups=self._new_charging_groups())
 
     @property
     def running(self) -> bool:
@@ -92,7 +94,8 @@ class RegulationEngine:
     def slots_on(self) -> int:
         """Return how many slots are on: appliances and fictive appliances."""
         return len(self._state.appliances_on) + sum(
-            self._state.charging.fictive_on.values()
+            sum(charging.fictive_on.values())
+            for charging in self._state.charging_groups.values()
         )
 
     def curve_waiting_time(self, average_w: float) -> timedelta:
@@ -135,24 +138,35 @@ class RegulationEngine:
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
-        return self._state.charging.status(list(self._chargers.values()))
+        return {
+            charger_id: status
+            for group in self._groups
+            for charger_id, status in self._charging(group.id)
+            .status(group.chargers)
+            .items()
+        }
 
     @property
-    def charging_priority(self) -> list[str]:
-        """Return the current charging priority, highest first."""
-        return list(self._state.charging.priority)
+    def charging_priorities(self) -> Mapping[str, list[str]]:
+        """Return the current charging priority of each group, highest first."""
+        return {
+            group_id: list(charging.priority)
+            for group_id, charging in self._state.charging_groups.items()
+        }
 
     def start(self, now: datetime) -> list[Command]:
         """Start the regulation with a new state and everything off."""
         self._running = True
-        self._state = RegulationState(started_at=now, charging=self._new_charging())
+        self._state = RegulationState(
+            started_at=now, charging_groups=self._new_charging_groups()
+        )
         return self._turn_off_everything()
 
     def stop(self) -> list[Command]:
         """Stop the regulation and turn everything off."""
         self._running = False
         commands = self._turn_off_everything()
-        self._state = RegulationState(charging=self._new_charging())
+        self._state = RegulationState(charging_groups=self._new_charging_groups())
         return commands
 
     def decide(self, decision: DecisionInput) -> list[Command]:
@@ -189,8 +203,18 @@ class RegulationEngine:
             return commands + self._switch_off_above_limit(forced_off)
         return commands + self._turn_on_next(decision.now, average)
 
-    def _new_charging(self) -> ChargingState:
-        return ChargingState.for_chargers(list(self._chargers.values()))
+    def _new_charging_groups(self) -> dict[str, ChargingState]:
+        return {
+            group.id: ChargingState.for_chargers(group.chargers)
+            for group in self._groups
+        }
+
+    def _charging(self, group_id: str) -> ChargingState:
+        return self._state.charging_groups[group_id]
+
+    def _charging_of(self, charger_id: str) -> ChargingState:
+        """Return the state of the group the charger is in."""
+        return self._charging(self._group_of[charger_id].id)
 
     def _turn_off_everything(self) -> list[Command]:
         """Turn every appliance off as its current variant does it.
@@ -227,7 +251,6 @@ class RegulationEngine:
         """Switch off what the chargers must, an exception to one slot per decision."""
         if not self._chargers:
             return []
-        charging = self._state.charging
         local_time = decision.now.astimezone(decision.time_zone).time()
         readings = {
             charger_id: decision.chargers.get(charger_id, ChargerReading())
@@ -252,22 +275,24 @@ class RegulationEngine:
                 charger, readings[charger.id], override_active[charger.id], local_time
             )
         ]
-        newly_bypassed = charging.evaluate(
-            list(self._chargers.values()),
-            readings,
-            allowed,
-            decision.now,
-            timedelta(seconds=self._config.general.regulation_window_s),
-            self._config.charging.one_at_a_time,
-            overridden,
-        )
         commands: list[Command] = []
-        for charger_id in charging.activated():
-            if charger_id not in charging.allowed:
-                commands += self._set_fictive_on(charger_id, 0)
-        for charger_id in newly_bypassed:
-            if charging.fictive_on[charger_id] > 1:
-                commands += self._set_fictive_on(charger_id, 1)
+        for group in self._groups:
+            charging = self._charging(group.id)
+            newly_bypassed = charging.evaluate(
+                group.chargers,
+                readings,
+                allowed,
+                decision.now,
+                timedelta(seconds=self._config.general.regulation_window_s),
+                group.one_at_a_time,
+                overridden,
+            )
+            for charger_id in charging.activated():
+                if charger_id not in charging.allowed:
+                    commands += self._set_fictive_on(charger_id, 0)
+            for charger_id in newly_bypassed:
+                if charging.fictive_on[charger_id] > 1:
+                    commands += self._set_fictive_on(charger_id, 1)
         return commands
 
     def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
@@ -288,7 +313,7 @@ class RegulationEngine:
         self._state.appliances_on.clear()
         self._state.waiting = None
         for charger_id in self._chargers:
-            self._state.charging.set_fictive_on(charger_id, 0)
+            self._charging_of(charger_id).set_fictive_on(charger_id, 0)
         return self._turn_off_everything()
 
     def _place_appliances(self, decision: DecisionInput) -> list[Command]:
@@ -341,21 +366,26 @@ class RegulationEngine:
         return commands
 
     def _slots(self) -> list[Slot]:
-        charging = self._state.charging
         return build_slots(
             self._config,
             self._state.current_variants,
             self._state.appliances_on,
             self._appliance_cycling,
-            fictive_slots(
-                [self._chargers[charger_id] for charger_id in charging.priority],
-                charging.fictive_on,
-                charging.may_charge,
-                charging.on_trial,
-                charging.bypassed,
-                self._fictive_appliance_cycling,
-            ),
+            {
+                group_id: self._fictive_slots(charging)
+                for group_id, charging in self._state.charging_groups.items()
+            },
             self._state.excluded_appliances,
+        )
+
+    def _fictive_slots(self, charging: ChargingState) -> list[Slot]:
+        return fictive_slots(
+            [self._chargers[charger_id] for charger_id in charging.priority],
+            charging.fictive_on,
+            charging.may_charge,
+            charging.on_trial,
+            charging.bypassed,
+            self._fictive_appliance_cycling,
         )
 
     def _slots_on_lowest_first(self) -> Iterator[Slot]:
@@ -453,11 +483,11 @@ class RegulationEngine:
         raise TypeError(f"Unknown slot {key!r}")
 
     def _deactivate_others(self, charger_id: str) -> list[Command]:
-        """Deactivate the other chargers, an exception to one slot per decision."""
-        if not self._config.charging.one_at_a_time:
+        """Deactivate the others in the group, an exception to one slot per decision."""
+        if not self._group_of[charger_id].one_at_a_time:
             return []
         commands: list[Command] = []
-        for other_id in self._state.charging.activated():
+        for other_id in self._charging_of(charger_id).activated():
             if other_id != charger_id:
                 commands += self._set_fictive_on(other_id, 0)
         return commands
@@ -465,7 +495,7 @@ class RegulationEngine:
     def _set_fictive_on(
         self, charger_id: str, count: int, now: datetime | None = None
     ) -> list[Command]:
-        charging = self._state.charging
+        charging = self._charging_of(charger_id)
         before = charging.fictive_on[charger_id]
         turn_on = count > before
         for index in range(min(before, count), max(before, count)):

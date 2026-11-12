@@ -1,6 +1,7 @@
 import { mdiDragHorizontalVariant, mdiEye, mdiPencil } from "@mdi/js";
 import { LitElement, css, html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import type { Localize } from "../localize";
@@ -18,11 +19,19 @@ export interface ListRow {
   openable: boolean;
 }
 
+/** A row dragged in from another list: its key and its new index. */
+export interface ItemAdded {
+  key: string;
+  index: number;
+}
+
 /**
  * A list the user sorts by dragging, with `ha-sortable`.
  *
- * Fires `item-moved` with the old and new index, and `open-row` with the key of
- * the row whose button was pressed. The list does not move the rows itself.
+ * Fires `item-moved` with the old and new index, `item-added` when a row is
+ * dragged in from another list of the same group, and `open-row` with the key
+ * of the row whose button was pressed. The list does not move the rows itself:
+ * `ha-sortable` puts a dragged row back, and the rows follow the new `rows`.
  * While it is locked, the rows cannot be moved, and the button only shows them.
  */
 @customElement("kraftvakt-sortable-list")
@@ -33,17 +42,34 @@ export class KraftvaktSortableList extends LitElement {
 
   @property({ type: Boolean }) locked = false;
 
+  /** Lists of the same group share their rows by dragging. Set before the list is first shown. */
+  @property() group?: string;
+
+  /** Shown in an empty list, which stays a place to drop rows on. Nothing but the rows may be in the list. */
+  @property() emptyText = "";
+
   protected render() {
     return html`
-      <ha-sortable handle-selector=".handle" .disabled=${this.locked} @item-moved=${this.itemMoved}>
-        <div class="list">${repeat(this.rows, (row) => row.key, (row, index) => this.renderRow(row, index))}</div>
+      <ha-sortable
+        handle-selector=".handle"
+        group=${ifDefined(this.group)}
+        .disabled=${this.locked}
+        @item-moved=${this.itemMoved}
+        @item-added=${this.itemAdded}
+        @item-removed=${this.itemRemoved}
+      >
+        <div class="list" data-empty=${this.emptyText}>${repeat(
+          this.rows,
+          (row) => row.key,
+          (row, index) => this.renderRow(row, index),
+        )}</div>
       </ha-sortable>
     `;
   }
 
   private renderRow(row: ListRow, index: number) {
     return html`
-      <div class="row">
+      <div class="row" data-key=${row.key}>
         ${this.locked
           ? nothing
           : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant} title=${this.localize("list.drag")}></ha-svg-icon>`}
@@ -72,9 +98,31 @@ export class KraftvaktSortableList extends LitElement {
     this.dispatchEvent(new CustomEvent("item-moved", { detail: event.detail }));
   }
 
+  private itemAdded(event: CustomEvent<{ index: number; item: HTMLElement }>): void {
+    event.stopPropagation();
+    const key = event.detail.item.dataset.key;
+    if (key !== undefined) {
+      this.dispatchEvent(new CustomEvent<ItemAdded>("item-added", { detail: { key, index: event.detail.index } }));
+    }
+  }
+
+  /** The list the row was dragged to moves it. */
+  private itemRemoved(event: Event): void {
+    event.stopPropagation();
+  }
+
   static styles = css`
     :host {
       display: block;
+    }
+    .list:empty {
+      min-height: 48px;
+    }
+    .list:empty::before {
+      content: attr(data-empty);
+      display: block;
+      padding: 0 16px 16px;
+      color: var(--secondary-text-color);
     }
     .row {
       display: flex;

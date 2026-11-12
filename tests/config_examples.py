@@ -71,44 +71,48 @@ def full_config_data() -> dict[str, Any]:
         ],
         "priority": [
             {"type": "appliance", "appliance_id": "a1", "variant_id": "v1"},
-            {"type": "ev_charging"},
+            {"type": "charger_group", "group_id": "g1"},
             {"type": "appliance", "appliance_id": "a2", "variant_id": None},
             {"type": "appliance", "appliance_id": "a1", "variant_id": None},
         ],
-        "charging": {
-            "enabled": True,
-            "one_at_a_time": False,
-            "chargers": [
-                {
-                    "id": "c1",
-                    "entity_id": "switch.garage_charger",
-                    "activate": {"mode": "default"},
-                    "deactivate": {"mode": "default"},
-                    "set_current": {
-                        "mode": "custom",
-                        "action": [
-                            {
-                                "action": "number.set_value",
-                                "target": {
-                                    "entity_id": "number.garage_charger_current"
-                                },
-                                "data": {"value": "{{ current }}"},
-                            }
-                        ],
-                    },
-                    "min_current_a": 6,
-                    "max_current_a": 32,
-                    "actively_charging": {
-                        "type": "power_sensor",
-                        "value": "sensor.garage_charger_power",
-                    },
-                    "power_reserve_w": 3000,
-                    "car_connected": {
-                        "type": "entity",
-                        "value": "binary_sensor.garage_charger_car",
-                    },
-                    "charging_window": {"start": "22:00", "end": "06:00"},
-                }
-            ],
-        },
+        "charger_groups": [
+            {
+                "id": "g1",
+                "name": "EV chargers",
+                "enabled": True,
+                "one_at_a_time": False,
+                "chargers": [
+                    {
+                        "id": "c1",
+                        "entity_id": "switch.garage_charger",
+                        "activate": {"mode": "default"},
+                        "deactivate": {"mode": "default"},
+                        "set_current": {
+                            "mode": "custom",
+                            "action": [
+                                {
+                                    "action": "number.set_value",
+                                    "target": {
+                                        "entity_id": "number.garage_charger_current"
+                                    },
+                                    "data": {"value": "{{ current }}"},
+                                }
+                            ],
+                        },
+                        "min_current_a": 6,
+                        "max_current_a": 32,
+                        "actively_charging": {
+                            "type": "power_sensor",
+                            "value": "sensor.garage_charger_power",
+                        },
+                        "power_reserve_w": 3000,
+                        "car_connected": {
+                            "type": "entity",
+                            "value": "binary_sensor.garage_charger_car",
+                        },
+                        "charging_window": {"start": "22:00", "end": "06:00"},
+                    }
+                ],
+            }
+        ],
     }

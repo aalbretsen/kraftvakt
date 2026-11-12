@@ -242,9 +242,9 @@ class KraftvaktRuntime:
         return self._engine.chargers
 
     @property
-    def charging_priority(self) -> list[str]:
-        """Return the current charging priority, highest first."""
-        return self._engine.charging_priority
+    def charging_priorities(self) -> Mapping[str, list[str]]:
+        """Return the current charging priority of each group, highest first."""
+        return self._engine.charging_priorities
 
     @callback
     def async_start(self) -> None:
@@ -541,11 +541,10 @@ class KraftvaktRuntime:
         )
 
     def _charger_readings(self) -> dict[str, ChargerReading]:
-        if not self._config.charging.enabled:
-            return {}
         return {
             charger.id: self._charger_reading(charger)
-            for charger in self._config.charging.chargers
+            for group in self._config.enabled_charger_groups
+            for charger in group.chargers
         }
 
     def _charger_reading(self, charger: Charger) -> ChargerReading:

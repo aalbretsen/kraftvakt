@@ -6,6 +6,7 @@ from custom_components.kraftvakt.config_model import (
     POWER_LIMIT_W,
     REGULATION_WINDOW_S,
     Charger,
+    ChargerGroup,
     ChargerSwitches,
     Issue,
     KraftvaktConfig,
@@ -39,9 +40,16 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.charger_cycling_steps == 5
     assert config.appliances == ()
     assert config.priority == ()
-    assert config.charging.enabled is False
-    assert config.charging.one_at_a_time is True
-    assert config.charging.chargers == ()
+    assert config.charger_groups == ()
+
+
+def test_charger_group_defaults() -> None:
+    group = ChargerGroup(id="g1")
+
+    assert group.name == ""
+    assert group.enabled is False
+    assert group.one_at_a_time is True
+    assert group.chargers == ()
 
 
 def test_charger_defaults() -> None:

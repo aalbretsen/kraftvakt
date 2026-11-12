@@ -16,13 +16,15 @@ from .config_model import (
     KraftvaktConfig,
     appliance_switches_for,
     charger_switches_for,
+    new_id,
     switches_to_dict,
 )
 from .config_reader import read_config, read_switches
 from .const import DOMAIN
 
 STORAGE_KEY: Final = f"{DOMAIN}.config"
-STORAGE_VERSION: Final = 2
+STORAGE_VERSION: Final = 3
+MIGRATED_CHARGER_GROUP_NAME: Final = "EV chargers"
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,10 +42,42 @@ class _KraftvaktStore(Store[dict[str, Any]]):
     async def _async_migrate_func(
         self, old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
     ) -> dict[str, Any]:
-        """Version 2 keeps the actions of an appliance in a map with its variants."""
+        """Migrate the stored data to the current version.
+
+        Version 2 keeps the actions of an appliance in a map with its variants.
+        Version 3 puts the chargers in groups, and the earlier chargers become
+        one group.
+        """
         if old_major_version < 2:
             old_data = _with_appliance_actions_map(old_data)
+        if old_major_version < 3:
+            old_data = _with_charger_groups(old_data)
         return old_data
+
+
+def _with_charger_groups(data: dict[str, Any]) -> dict[str, Any]:
+    """Make the earlier charging settings and chargers one group.
+
+    Charging settings that are not a mapping are kept as the group, so reading
+    them still fails and the stored file is left alone.
+    """
+    charging = data.get("charging", {})
+    group_id = new_id()
+    group = (
+        {"id": group_id, "name": MIGRATED_CHARGER_GROUP_NAME, **charging}
+        if isinstance(charging, dict)
+        else charging
+    )
+    priority = data.get("priority")
+    if isinstance(priority, list):
+        priority = [
+            {"type": "charger_group", "group_id": group_id}
+            if isinstance(entry, dict) and entry.get("type") == "ev_charging"
+            else entry
+            for entry in priority
+        ]
+    migrated = {key: value for key, value in data.items() if key != "charging"}
+    return {**migrated, "priority": priority, "charger_groups": [group]}
 
 
 def _with_appliance_actions_map(data: dict[str, Any]) -> dict[str, Any]:

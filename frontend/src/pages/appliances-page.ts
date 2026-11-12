@@ -27,10 +27,10 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     const rows = this.config.priority.map((entry) => this.row(entry));
     return html`
       ${this.renderListCard({
-        title: "appliances.priority_title",
-        sub: "appliances.priority_sub",
-        add: "appliances.add",
-        empty: "appliances.empty",
+        title: this.localize("appliances.priority_title"),
+        sub: this.localize("appliances.priority_sub"),
+        add: this.localize("appliances.add"),
+        empty: this.localize("appliances.empty"),
         rows,
         locked: this.locked,
         onAdd: this.addAppliance,
@@ -84,13 +84,14 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   }
 
   private row(entry: PriorityEntry): ListRow {
-    if (entry.type === "ev_charging") {
+    if (entry.type === "charger_group") {
+      const group = this.config.charger_groups.find((item) => item.id === entry.group_id);
       return {
         key: priorityKey(entry),
-        title: this.localize("appliances.ev_charging"),
+        title: group?.name ?? "",
         iconPath: mdiEvStation,
         details: [
-          html`${this.localize("appliances.ev_charging_sub", { count: this.config.charging.chargers.length })}
+          html`${this.localize("appliances.charger_group_sub", { count: group?.chargers.length ?? 0 })}
             <a href="${PANEL_PATH}/charging" @click=${this.openChargingPage}>${this.localize("tabs.charging")}</a>`,
         ],
         errors: [],

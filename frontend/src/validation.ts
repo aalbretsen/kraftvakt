@@ -6,12 +6,14 @@ import {
   type ApplianceActions,
   type Capabilities,
   type Charger,
+  type ChargerGroup,
   type Condition,
   type DefaultAction,
   type Issue,
   type KraftvaktConfig,
   type Range,
 } from "./api";
+import { allChargers } from "./draft";
 import { availableDomainAction, parameterIssues } from "./domain-actions";
 import type { HassEntity } from "./types";
 
@@ -53,8 +55,19 @@ export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities,
   return [
     ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true),
     ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, states)),
-    ...config.charging.chargers.flatMap((charger) => chargerErrors(charger, capabilities, states)),
+    ...chargerGroupErrors(config.charger_groups),
+    ...allChargers(config).flatMap((charger) => chargerErrors(charger, capabilities, states)),
   ];
+}
+
+/** Return the groups whose names are empty or used by another group. */
+function chargerGroupErrors(groups: ChargerGroup[]): Issue[] {
+  const names = groups.map((group) => group.name.trim());
+  return groups.flatMap((group, index): Issue[] => {
+    const name = names[index];
+    const code = !name ? "empty_name" : names.filter((other) => other === name).length > 1 ? "duplicate_name" : undefined;
+    return code ? [{ code, section: "charger_groups", target: group.id, field: "name" }] : [];
+  });
 }
 
 /** Return what is missing before the regulation can start, as the backend does. */
@@ -64,8 +77,10 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
     missing.push({ code: "missing_power_sensor", section: "general", field: "power_sensor" });
   }
   missing.push(...config.appliances.flatMap(missingInAppliance));
-  if (config.charging.enabled) {
-    missing.push(...config.charging.chargers.flatMap((charger) => missingInCharger(charger, config.charging.one_at_a_time)));
+  for (const group of config.charger_groups) {
+    if (group.enabled) {
+      missing.push(...group.chargers.flatMap((charger) => missingInCharger(charger, group.one_at_a_time)));
+    }
   }
   return missing;
 }

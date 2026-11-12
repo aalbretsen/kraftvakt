@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from custom_components.kraftvakt.regulation.charging import ChargerStatus
 from custom_components.kraftvakt.regulation.model import ActivateCharger
 
-from .configs import appliance, charger, make_config
+from .configs import appliance, charger, charger_group, make_config
 from .scenario import (
     START,
     Scenario,
@@ -228,7 +228,7 @@ def test_bypassed_charger_does_not_stand_in_the_way_one_at_a_time() -> None:
         [],
         deactivate("a") + activate("b"),
     ]
-    assert scenario.engine.charging_priority == ["b", "a"]
+    assert scenario.engine.charging_priorities["ev"] == ["b", "a"]
 
 
 def full_cars_after_both_were_tried() -> Scenario:
@@ -291,11 +291,11 @@ def test_current_priority_starts_as_configured_at_each_start() -> None:
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("a", **NO_CAR)
     scenario.decide(0)
-    assert scenario.engine.charging_priority == ["b", "a"]
+    assert scenario.engine.charging_priorities["ev"] == ["b", "a"]
 
     scenario.engine.start(scenario.now)
 
-    assert scenario.engine.charging_priority == ["a", "b"]
+    assert scenario.engine.charging_priorities["ev"] == ["a", "b"]
 
 
 def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() -> None:
@@ -305,12 +305,12 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
     scenario.set_charger("b", **CHARGING)
 
     assert scenario.decide_many(0, 3) == [activate("b"), current("b", 7), []]
-    assert scenario.engine.charging_priority == ["b", "a"]
+    assert scenario.engine.charging_priorities["ev"] == ["b", "a"]
 
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide(0) == activate("a")
-    assert scenario.engine.charging_priority == ["a", "b"]
+    assert scenario.engine.charging_priorities["ev"] == ["a", "b"]
     assert scenario.decide(ABOVE_LIMIT) == current("b", 6)
 
 
@@ -495,3 +495,48 @@ def test_variant_switch_makes_room_by_switching_off_a_fictive_appliance() -> Non
     assert scenario.decide(9900, true=("morning",)) == off("h:morning") + current(
         "c", 6
     )
+
+
+def two_groups(*, g2_enabled: bool = True) -> Scenario:
+    """Return chargers a and b in their own groups, around appliance x."""
+    return Scenario(
+        make_config(
+            "x",
+            chargers=(charger("a", max_a=7),),
+            groups=(charger_group("g2", charger("b", max_a=7), enabled=g2_enabled),),
+            priority=("ev", "x", "@g2"),
+            wait_at_limit_s=0,
+        )
+    )
+
+
+def test_each_charger_group_has_its_own_place_and_one_at_a_time() -> None:
+    """Activating b does not deactivate a, which is in another group."""
+    scenario = two_groups()
+    scenario.set_charger("a", **CHARGING)
+    scenario.set_charger("b", **CHARGING)
+
+    assert scenario.start_commands == off("x") + deactivate("a") + deactivate("b")
+    assert scenario.decide_many(0, 6) == [
+        activate("a"),
+        current("a", 7),
+        on("x"),
+        activate("b"),
+        current("b", 7),
+        [],
+    ]
+    assert scenario.engine.charging_priorities == {"ev": ["a"], "g2": ["b"]}
+    assert scenario.decide_many(ABOVE_LIMIT, 3) == [
+        current("b", 6),
+        deactivate("b"),
+        off("x"),
+    ]
+
+
+def test_chargers_of_a_disabled_group_are_left_alone() -> None:
+    scenario = two_groups(g2_enabled=False)
+    scenario.set_charger("b", **CHARGING)
+
+    assert scenario.start_commands == off("x") + deactivate("a")
+    assert scenario.decide_many(0, 3) == [activate("a"), on("x"), []]
+    assert set(scenario.engine.chargers) == {"a"}

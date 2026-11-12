@@ -106,7 +106,7 @@ def test_appliance_switched_off_is_turned_on_again() -> None:
     assert scenario.decide(8000) == on("b")
 
 
-def test_ev_charging_entry_takes_no_slot_yet() -> None:
+def test_charger_group_without_chargers_takes_no_slot() -> None:
     scenario = Scenario(no_waiting("a", "b", priority=("a", "ev", "b")))
 
     assert scenario.decide_many(1000, 2) == [on("a"), on("b")]

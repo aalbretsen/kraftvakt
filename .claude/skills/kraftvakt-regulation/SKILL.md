@@ -32,7 +32,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Waiting time | Time that must pass before an appliance is turned on. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
-| Priority list | Sorted list of appliances, their variants and the EV charging entry. Top is highest priority, turned off last. |
+| Priority list | Sorted list of appliances, their variants and an entry per enabled charger group. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list, and optionally its own actions. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
 | Slot | An entry the regulation switches: the current variant of an appliance, or a fictive appliance. |
@@ -40,9 +40,10 @@ specification; the code holds them in one place (`config_model.py`).
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
+| Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Fictive appliance | One ampere of an EV charger's current, treated by the regulation as an appliance. |
 | Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |
-| Waiting charger | With one charger at a time: a charger that may not charge because another is actively charging. |
+| Waiting charger | With one charger at a time: a charger that may not charge because another in its group is actively charging. |
 | Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
 
 Resolution of settings: power in whole watts, the regulation window and the
@@ -126,7 +127,7 @@ energy in Wh; the status page shows kW.
      excluded appliances, appliances that switch variant or are included
      again.
   7. Build the ordered slots (current variants, fictive appliances in place of
-     the EV charging entry).
+     the entry of their group).
   8. Above the limit: switch off the lowest priority slot that is on and not a
      bypassed charger's, without waiting, and cancel any waiting. When step 6
      switched off something that was on, nothing more is switched off;
@@ -237,8 +238,8 @@ energy in Wh; the status page shows kW.
 ## Start and stop
 
 - Every start turns off every appliance in the configuration, once per
-  appliance even with variants, and deactivates every charger while EV
-  charging is enabled. The same holds wherever everything is turned off. The
+  appliance even with variants, and deactivates every charger in an enabled
+  group. The same holds wherever everything is turned off. The
   current variant is found at the first decision, so a start uses the
   appliance's own turn-off action, and stop, the safe state and a penalty use
   the current variant's.
@@ -255,10 +256,10 @@ energy in Wh; the status page shows kW.
   the same function. Stopping turns everything off at once and makes no more
   decisions.
 - The regulation can only start when the configuration is complete: power
-  sensor chosen; every appliance has entity, turn-on and turn-off action; with
-  EV charging enabled, every charger has entity, activate, deactivate and
+  sensor chosen; every appliance has entity, turn-on and turn-off action;
+  every charger in an enabled group has entity, activate, deactivate and
   set-current actions and actively charging, and also car connected when only
-  one charger may charge at a time.
+  one charger in its group may charge at a time.
 
 ## Power limit entity
 
@@ -297,7 +298,7 @@ All with entity category diagnostic:
   on, or always without a window. It does not consider the excluded switch.
   It follows the clock, not the decisions, so it is right also while the
   regulation is stopped, and it changes at the whole minute. Unavailable
-  while EV charging is disabled.
+  while the charger's group is disabled.
 - Waiting time next turn-on (calculated) (s): the waiting time the next
   turn-on gets from the curve, for the last regulation average and the limit
   in use, without the longer waiting time on persistent cycling. Unavailable
@@ -310,7 +311,7 @@ All with entity category diagnostic:
   label unique for the appliance and an expression. Same reserve as the
   appliance. A variant uses the actions of the appliance, or its own turn-on
   and turn-off actions. Every command for an appliance uses the actions of
-  its current variant. Not for chargers or the EV charging entry.
+  its current variant. Not for chargers or charger groups.
 - Evaluated at each decision. When an appliance switches variant: it is off
   afterwards at the new place and comes on again the normal way. It is sent
   the turn-off action of the new variant also when it was off, since variants
@@ -328,7 +329,7 @@ All with entity category diagnostic:
 
 - Excluded switch (per appliance, default off): while on, the appliance is
   never turned on. It keeps its place in the priority list, and the
-  regulation passes it as if it was not there. Not for the EV charging entry;
+  regulation passes it as if it was not there. Not for charger groups;
   chargers have their own switch.
 - Read at each decision. An excluded appliance that is on is switched off.
 - An appliance included again is handled like an appliance that switches
@@ -340,15 +341,22 @@ All with entity category diagnostic:
 
 ## EV charging
 
-- Enabled or disabled, default disabled. While disabled, chargers stay in the
-  configuration but are not regulated, not required for completeness, and their
-  switches are unavailable (positions kept).
-- One charger at a time: default yes. Chargers are sorted in the configured
-  charging priority.
+- Chargers are in charger groups. Each group has a name, non-empty and unique
+  among the groups, its own entry in the priority list, and its own settings
+  below. Every rule in this section applies within a group: a group knows
+  nothing of the chargers of other groups. So two groups with one charger at a
+  time may each have a charger charging at once. The waiting time on
+  persistent cycling for fictive appliances is one setting for all groups.
+- A group is enabled or disabled, default disabled. While disabled, its
+  chargers stay in the configuration but are not regulated, not required for
+  completeness, and their switches are unavailable (positions kept), and the
+  group has no entry in the priority list.
+- One charger at a time: default yes. The chargers of a group are sorted in
+  its configured charging priority.
 - Each charger is split into fictive appliances, one per ampere from min to max
   current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min +
   number on − 1. None on means deactivated. The fictive appliances sit at the
-  place of the EV charging entry.
+  place of the entry of their group.
 - First fictive on: set current to min, then activate, and only the first has
   the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the
   new current. Switching off: set the lower current, or for the last one set
@@ -367,7 +375,7 @@ All with entity category diagnostic:
   its first fictive appliance, so it stays at the minimum current until it
   charges actively. Meanwhile the slots after it may be turned on. Why: a
   charger that may have no car must not take more power and hold back the
-  appliances below the EV charging entry while it is tried. A car that starts
+  appliances below the entry of its group while it is tried. A car that starts
   slowly gets its second ampere a decision later.
 - Bypassed: car connected is set and false, or not actively charging while the
   first fictive appliance has been on for at least two windows. Evaluated at
@@ -385,7 +393,7 @@ All with entity category diagnostic:
   charger charges actively while activated. Every start begins without rests.
   Why: without a rest, two chargers with full cars would take turns being
   activated forever when only one may charge at a time, and the appliances
-  below the EV charging entry would never be turned on.
+  below the entry of their group would never be turned on.
 - Current charging priority: equal to the configured one at each start.
   Newly bypassed chargers move to the back, keeping their order, and stay there
   even after they stop being bypassed, until it is corrected: when a charger

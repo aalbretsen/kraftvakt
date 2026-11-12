@@ -29,15 +29,20 @@ def build_slots(
     current_variants: Mapping[str, str | None],
     appliances_on: Collection[str],
     cycling: CyclingSteps,
-    charger_slots: Sequence[Slot] = (),
+    charger_slots: Mapping[str, Sequence[Slot]] | None = None,
     excluded_appliances: Collection[str] = (),
 ) -> list[Slot]:
-    """Return the slots in priority order, highest priority first."""
+    """Return the slots in priority order, highest priority first.
+
+    `charger_slots` has the fictive appliances of each group of chargers, by
+    the id of the group.
+    """
+    charger_slots = charger_slots or {}
     appliances = {appliance.id: appliance for appliance in config.appliances}
     slots: list[Slot] = []
     for entry in config.priority:
-        if entry.type is PriorityEntryType.EV_CHARGING:
-            slots.extend(charger_slots)
+        if entry.type is PriorityEntryType.CHARGER_GROUP:
+            slots.extend(charger_slots.get(entry.group_id or "", ()))
             continue
         appliance_id = entry.appliance_id
         if (

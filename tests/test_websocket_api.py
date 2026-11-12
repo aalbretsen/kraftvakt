@@ -205,7 +205,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "penalty_threshold_w": 100,
         },
         "appliances": {"power_reserve_w": None},
-        "charging": {"enabled": False, "one_at_a_time": True},
+        "charger_groups": {"enabled": False, "one_at_a_time": True},
         "chargers": {"min_current_a": 6, "max_current_a": 16, "power_reserve_w": 4000},
     }
 
@@ -345,18 +345,22 @@ async def test_runtime_refuses_a_new_configuration_while_running(
         ),
         (
             lambda data: data.update(
-                charging={
-                    "chargers": [
-                        {
-                            "id": "c1",
-                            "entity_id": "switch.charger",
-                            "set_current": {
-                                "mode": "entity",
-                                "entity_id": "switch.charger_current",
-                            },
-                        }
-                    ]
-                }
+                charger_groups=[
+                    {
+                        "id": "g1",
+                        "name": "EV chargers",
+                        "chargers": [
+                            {
+                                "id": "c1",
+                                "entity_id": "switch.charger",
+                                "set_current": {
+                                    "mode": "entity",
+                                    "entity_id": "switch.charger_current",
+                                },
+                            }
+                        ],
+                    }
+                ]
             ),
             [
                 {
@@ -525,26 +529,30 @@ async def test_saved_chargers_get_their_switches(
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
     changed = config_data()
-    changed["charging"] = {
-        "enabled": True,
-        "one_at_a_time": False,
-        "chargers": [
-            {
-                "id": "c1",
-                "entity_id": "switch.charger",
-                "activate": DEFAULT,
-                "deactivate": DEFAULT,
-                "set_current": {
-                    "mode": "custom",
-                    "action": [{"action": "number.set_value"}],
-                },
-                "actively_charging": {
-                    "type": "power_sensor",
-                    "value": "sensor.charger_power",
-                },
-            }
-        ],
-    }
+    changed["charger_groups"] = [
+        {
+            "id": "g1",
+            "name": "EV chargers",
+            "enabled": True,
+            "one_at_a_time": False,
+            "chargers": [
+                {
+                    "id": "c1",
+                    "entity_id": "switch.charger",
+                    "activate": DEFAULT,
+                    "deactivate": DEFAULT,
+                    "set_current": {
+                        "mode": "custom",
+                        "action": [{"action": "number.set_value"}],
+                    },
+                    "actively_charging": {
+                        "type": "power_sensor",
+                        "value": "sensor.charger_power",
+                    },
+                }
+            ],
+        }
+    ]
 
     response = await send(client, "kraftvakt/config/save", config=changed)
     await hass.async_block_till_done()
@@ -689,8 +697,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_ends_at": None,
             },
         ],
-        "ev_charging_position": None,
-        "chargers": [],
+        "charger_groups": [],
     }
 
     set_power(hass, "2000")
@@ -803,32 +810,38 @@ async def test_status_shows_the_chargers(
     hass_ws_client: WebSocketGenerator,
 ) -> None:
     """Whether each charger is activated, with its details."""
-    config["charging"] = {
-        "enabled": True,
-        "chargers": [
-            {
-                "id": "c1",
-                "entity_id": "input_boolean.charger",
-                "activate": DEFAULT,
-                "deactivate": DEFAULT,
-                "set_current": {
-                    "mode": "custom",
-                    "action": [{"action": "number.set_value"}],
-                },
-                "actively_charging": {
-                    "type": "power_sensor",
-                    "value": "sensor.charger_power",
-                },
-            }
-        ],
-    }
-    config["priority"].append({"type": "ev_charging"})
+    config["charger_groups"] = [
+        {
+            "id": "g1",
+            "name": "EV chargers",
+            "enabled": True,
+            "chargers": [
+                {
+                    "id": "c1",
+                    "entity_id": "input_boolean.charger",
+                    "activate": DEFAULT,
+                    "deactivate": DEFAULT,
+                    "set_current": {
+                        "mode": "custom",
+                        "action": [{"action": "number.set_value"}],
+                    },
+                    "actively_charging": {
+                        "type": "power_sensor",
+                        "value": "sensor.charger_power",
+                    },
+                }
+            ],
+        }
+    ]
+    config["priority"].append({"type": "charger_group", "group_id": "g1"})
     await setup_entry(hass)
     client = await hass_ws_client(hass)
 
     status = await subscribe_status(client)
 
-    assert status["chargers"] == [
+    group = status["charger_groups"][0]
+    assert (group["id"], group["name"], group["position"]) == ("g1", "EV chargers", 2)
+    assert group["chargers"] == [
         {
             "id": "c1",
             "name": "input_boolean.charger",
@@ -846,7 +859,6 @@ async def test_status_shows_the_chargers(
             "waiting_ends_at": None,
         }
     ]
-    assert status["ev_charging_position"] == 2
 
 
 def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
@@ -871,18 +883,24 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     hass_ws_client: WebSocketGenerator,
 ) -> None:
     """A bypassed charger is shown last, with whether its car is connected."""
-    config["charging"] = {
-        "enabled": True,
-        "chargers": [
-            charger(
-                "c1", car_connected={"type": "entity", "value": "binary_sensor.c1_car"}
-            ),
-            charger(
-                "c2", car_connected={"type": "entity", "value": "binary_sensor.c2_car"}
-            ),
-        ],
-    }
-    config["priority"].append({"type": "ev_charging"})
+    config["charger_groups"] = [
+        {
+            "id": "g1",
+            "name": "EV chargers",
+            "enabled": True,
+            "chargers": [
+                charger(
+                    "c1",
+                    car_connected={"type": "entity", "value": "binary_sensor.c1_car"},
+                ),
+                charger(
+                    "c2",
+                    car_connected={"type": "entity", "value": "binary_sensor.c2_car"},
+                ),
+            ],
+        }
+    ]
+    config["priority"].append({"type": "charger_group", "group_id": "g1"})
     hass.states.async_set("binary_sensor.c1_car", "off")
     hass.states.async_set("binary_sensor.c2_car", "on")
     for charger_id in ("c1", "c2"):
@@ -909,22 +927,37 @@ async def test_status_shows_the_chargers_in_the_current_priority(
             item["excluded"],
             item["car_connected"],
         )
-        for item in status["chargers"]
+        for item in status["charger_groups"][0]["chargers"]
     ] == [("c2", False, False, True, True), ("c1", True, True, False, False)]
 
 
-async def test_status_places_ev_charging_among_the_current_variants(
+async def test_status_places_charger_groups_among_the_current_variants(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """«EV charging» moves when a variant moves an appliance above it."""
-    config["charging"] = {
-        "enabled": True,
-        "one_at_a_time": False,
-        "chargers": [charger("c1")],
-    }
+    """A group moves when a variant moves an appliance above it. A disabled
+    group is left out."""
+    config["charger_groups"] = [
+        {
+            "id": "g1",
+            "name": "EV chargers",
+            "enabled": True,
+            "one_at_a_time": False,
+            "chargers": [charger("c1")],
+        }
+    ]
+    config["charger_groups"] += [
+        {
+            "id": "g2",
+            "name": "Cabin",
+            "enabled": True,
+            "one_at_a_time": False,
+            "chargers": [charger("c2")],
+        },
+        {"id": "g3", "name": "Carport", "chargers": [charger("c3")]},
+    ]
     config["appliances"][1]["variants"] = [
         {
             "id": "v1",
@@ -935,19 +968,25 @@ async def test_status_places_ev_charging_among_the_current_variants(
     config["priority"] = [
         {"type": "appliance", "appliance_id": "b", "variant_id": "v1"},
         {"type": "appliance", "appliance_id": "a", "variant_id": None},
-        {"type": "ev_charging"},
+        {"type": "charger_group", "group_id": "g1"},
         {"type": "appliance", "appliance_id": "b", "variant_id": None},
+        {"type": "charger_group", "group_id": "g2"},
     ]
     hass.states.async_set("sensor.c1_power", "0")
+    hass.states.async_set("sensor.c2_power", "0")
     set_power(hass, "1000")
     await setup_entry(hass)
     client = await hass_ws_client(hass)
     status = await subscribe_status(client)
     assert [item["id"] for item in status["appliances"]] == ["a", "b"]
-    assert status["ev_charging_position"] == 1
+    assert group_positions(status) == [("g1", 1), ("g2", 2)]
 
     await advance(hass, freezer)
     status = await next_status(client)
 
     assert [item["id"] for item in status["appliances"]] == ["b", "a"]
-    assert status["ev_charging_position"] == 2
+    assert group_positions(status) == [("g1", 2), ("g2", 2)]
+
+
+def group_positions(status: dict[str, Any]) -> list[tuple[str, int]]:
+    return [(group["id"], group["position"]) for group in status["charger_groups"]]

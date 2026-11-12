@@ -106,12 +106,20 @@ Code that mirrors the backend and must be kept in step with it:
   new variant starts as a template. Actively charging has no «not set» and
   shows the charging power sensor until one is chosen; its preview reads the
   value as the backend does, so missing evidence shows as charging. Car
-  connected is shown as required when
-  only one charger may charge at a time.
+  connected is shown as required when only one charger in the group may
+  charge at a time.
 - The power sensor picker offers sensors with device class power, without
   Kraftvakt's own sensors.
-- While EV charging is disabled, the chargers can only be viewed, and one
-  charger at a time is hidden.
+- The EV charging page has one card per charger group, with its name, its
+  settings and its chargers, and Add group under the cards. While a group is
+  disabled, its chargers can only be viewed, and one charger at a time is
+  hidden. A new group gets the first free name of «EV chargers», «EV
+  chargers 2» and so on, so it has no error at once. A group can be deleted
+  only when it has no chargers.
+- A charger moves to another group by dragging it to that group's list, with
+  `ha-sortable`'s `group`, which puts the dragged row back so the lists follow
+  the draft. An empty list stays in view as a place to drop on. The list of
+  a disabled group takes no drops, since it can only be viewed.
 - Configuration pages and dialogs show power in W.
 
 ### Advanced page
@@ -186,9 +194,10 @@ Code that mirrors the backend and must be kept in step with it:
   triangle as swatch. Nothing else is drawn on the meter. Under the bar is a
   kW scale with readable ticks, reaching a bit above the limit and every
   value.
-- Appliances and chargers share one full-width priority list card. The EV
-  charging row has its own rank at the EV charging position, and the chargers
-  are indented under it in the current charging priority. Every row is one
+- Appliances and chargers share one full-width priority list card. Each
+  charger group has a row with its name and its own rank at its position,
+  and its chargers are indented under it in the group's current charging
+  priority. Every row is one
   line, with columns that line up without headings: rank, name with the
   variant after it, current, waiting and state chip. The rank is right
   aligned with digits of equal width, so ranks of one and two digits line
@@ -201,7 +210,7 @@ Code that mirrors the backend and must be kept in step with it:
     the charger count, the current, the ampere bars, the waiting and the
     text that there are no chargers are left out.
   - Icons instead of short texts, each with its sentence as a tooltip, and no
-    legend. The EV charging row shows how many chargers are charging of all.
+    legend. A group's row shows how many of its chargers are charging of all.
   - The current column has the current before one bar per ampere from min to
     max, filled up to the current. The filled bars of a bypassed charger are
     hatched.
@@ -217,7 +226,7 @@ Code that mirrors the backend and must be kept in step with it:
     of its own, because the user needs to know that the car is missing.
   - A resting charger is shown as bypassed, without when it is tried again.
   - A dashed cut-off line goes under the last entry that is on: an appliance,
-    or the EV charging row while one of its chargers is activated and not
+    or a group's row while one of its chargers is activated and not
     bypassed. It is hidden when nothing is on, or when only excluded
     appliances are below the last entry that is on, so something that can be
     turned on is always below it. It shows the free power and its share of the power

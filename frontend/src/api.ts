@@ -10,7 +10,7 @@ import type { HomeAssistant } from "./types";
 /** A validation error or a missing setting. */
 export interface Issue {
   code: string;
-  section: "general" | "appliances" | "priority" | "charging" | "chargers";
+  section: "general" | "appliances" | "priority" | "charger_groups" | "chargers";
   target?: string;
   field?: string;
 }
@@ -77,7 +77,7 @@ export interface Appliance {
 
 export type PriorityEntry =
   | { type: "appliance"; appliance_id: string; variant_id: string | null }
-  | { type: "ev_charging" };
+  | { type: "charger_group"; group_id: string };
 
 export interface ChargingWindow {
   start: string;
@@ -98,15 +98,21 @@ export interface Charger {
   charging_window: ChargingWindow | null;
 }
 
+/** A named group of EV chargers with its own place in the priority list. */
+export interface ChargerGroup {
+  id: string;
+  name: string;
+  enabled: boolean;
+  one_at_a_time: boolean;
+  /** In the configured charging priority. */
+  chargers: Charger[];
+}
+
 export interface KraftvaktConfig {
   general: GeneralConfig;
   appliances: Appliance[];
   priority: PriorityEntry[];
-  charging: {
-    enabled: boolean;
-    one_at_a_time: boolean;
-    chargers: Charger[];
-  };
+  charger_groups: ChargerGroup[];
 }
 
 export interface ConfigResponse {
@@ -168,7 +174,7 @@ export interface Capabilities {
   defaults: {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
-    charging: { enabled: boolean; one_at_a_time: boolean };
+    charger_groups: { enabled: boolean; one_at_a_time: boolean };
     chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number };
   };
 }
@@ -224,8 +230,16 @@ export interface StatusSnapshot {
   regulation_interval: number;
   next_decision_at: string | null;
   appliances: ApplianceStatus[];
-  /** How many appliances come before «EV charging», null while EV charging is disabled. */
-  ev_charging_position: number | null;
+  /** The enabled groups in the order of their entries. */
+  charger_groups: ChargerGroupStatus[];
+}
+
+export interface ChargerGroupStatus {
+  id: string;
+  name: string;
+  /** How many appliances come before the group. */
+  position: number;
+  /** In the current charging priority. */
   chargers: ChargerStatus[];
 }
 

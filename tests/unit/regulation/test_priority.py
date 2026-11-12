@@ -67,17 +67,21 @@ def test_only_the_current_variant_gets_a_slot() -> None:
     ]
 
 
-def test_ev_charging_entry_is_replaced_by_charger_slots() -> None:
-    config = make_config("a", "b", priority=("a", "ev", "b"))
-    charger_slot = Slot(ApplianceSlotKey("charger"), False, 4.0, APPLIANCE_CYCLING)
+def test_each_charger_group_entry_is_replaced_by_its_charger_slots() -> None:
+    config = make_config("a", "b", priority=("a", "ev", "b", "@g2"))
+
+    def charger_slot(name: str) -> Slot:
+        return Slot(ApplianceSlotKey(name), False, 4.0, APPLIANCE_CYCLING)
 
     assert keys(build_slots(config, {}, (), APPLIANCE_CYCLING)) == ["a", "b"]
-    slots = build_slots(config, {}, (), APPLIANCE_CYCLING, charger_slots=[charger_slot])
-    assert keys(slots) == [
-        "a",
-        "charger",
-        "b",
-    ]
+    slots = build_slots(
+        config,
+        {},
+        (),
+        APPLIANCE_CYCLING,
+        charger_slots={"ev": [charger_slot("ev")], "g2": [charger_slot("g2")]},
+    )
+    assert keys(slots) == ["a", "ev", "b", "g2"]
 
 
 def charger(charger_id: str, min_a: int, max_a: int, reserve_w: int = 4000) -> Charger:

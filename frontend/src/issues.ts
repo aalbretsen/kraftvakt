@@ -1,4 +1,5 @@
 import type { Capabilities, ConfigResponse, Issue } from "./api";
+import { allChargers } from "./draft";
 import type { Localize, TranslationKey } from "./localize";
 import type { Page } from "./navigation";
 
@@ -22,7 +23,7 @@ const ISSUE_PAGES: Record<Issue["section"], Page> = {
   general: "general",
   appliances: "appliances",
   priority: "appliances",
-  charging: "charging",
+  charger_groups: "charging",
   chargers: "charging",
 };
 
@@ -62,7 +63,7 @@ function actionText(field: string | undefined, localize: Localize): string {
 
 /** The name of the appliance or charger, followed by the label of the variant the issue is about. */
 function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
-  const items = issue.section === "chargers" ? config?.config.charging.chargers : config?.config.appliances;
+  const items = issue.section === "chargers" ? config && allChargers(config.config) : config?.config.appliances;
   const item = items?.find((candidate) => candidate.id === issue.target);
   const entityId = item?.entity_id;
   const name = entityId
@@ -83,6 +84,8 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   not_integer: "errors.not_integer",
   invalid_entity_id: "errors.invalid_entity_id",
   empty_label: "errors.empty_label",
+  empty_name: "errors.empty_name",
+  duplicate_name: "errors.duplicate_name",
   duplicate_label: "errors.duplicate_label",
   min_current_above_max: "errors.min_current_above_max",
   invalid_time: "errors.invalid_time",

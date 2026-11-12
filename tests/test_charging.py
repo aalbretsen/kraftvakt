@@ -79,12 +79,16 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
             "penalty_threshold_w": 1000,
         },
         "appliances": [],
-        "priority": [{"type": "ev_charging"}],
-        "charging": {
-            "enabled": True,
-            "one_at_a_time": False,
-            "chargers": [charger_data()],
-        },
+        "priority": [{"type": "charger_group", "group_id": "g1"}],
+        "charger_groups": [
+            {
+                "id": "g1",
+                "name": "EV chargers",
+                "enabled": True,
+                "one_at_a_time": False,
+                "chargers": [charger_data()],
+            }
+        ],
     }
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
@@ -226,7 +230,7 @@ async def test_charger_without_car_is_not_activated(
     config,
     setup_kraftvakt,
 ) -> None:
-    config["charging"]["chargers"][0]["car_connected"] = {
+    config["charger_groups"][0]["chargers"][0]["car_connected"] = {
         "type": "entity",
         "value": CAR_CONNECTED,
     }
@@ -287,7 +291,7 @@ async def test_actively_charging_from_a_sensor_an_entity_or_a_template(
     attributes: dict[str, str],
 ) -> None:
     """A charger that does not charge is bypassed, and gets more once it charges."""
-    config["charging"]["chargers"][0]["actively_charging"] = actively_charging
+    config["charger_groups"][0]["chargers"][0]["actively_charging"] = actively_charging
     hass.states.async_set(entity_id, idle, attributes)
     entry = await setup_kraftvakt()
     actions.clear()
@@ -320,7 +324,7 @@ async def test_charger_without_evidence_counts_as_charging(
     setup_kraftvakt,
     actively_charging: dict[str, str],
 ) -> None:
-    config["charging"]["chargers"][0]["actively_charging"] = actively_charging
+    config["charger_groups"][0]["chargers"][0]["actively_charging"] = actively_charging
     hass.states.async_set(CHARGER_POWER, STATE_UNAVAILABLE)
     hass.states.async_set("binary_sensor.charger_charging", STATE_UNAVAILABLE)
     entry = await setup_kraftvakt()
@@ -374,7 +378,7 @@ async def test_window_override_lets_the_charger_charge_until_the_window(
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     config["general"]["regulation_window_s"] = 600
-    config["charging"]["chargers"][0]["charging_window"] = {
+    config["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
@@ -416,7 +420,7 @@ async def test_window_override_counts_from_the_switch_over_a_stop(
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     config["general"]["regulation_window_s"] = 600
-    config["charging"]["chargers"][0]["charging_window"] = {
+    config["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
@@ -455,7 +459,7 @@ async def test_window_sensor_follows_the_clock_and_the_override(
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:59:00+00:00")
     config["general"]["regulation_window_s"] = 600
-    config["charging"]["chargers"][0]["charging_window"] = {
+    config["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
@@ -512,7 +516,7 @@ async def test_window_sensor_follows_the_configuration_without_reload(
     entry = await setup_kraftvakt()
     board = entry.runtime_data.switch_board
     data = deepcopy(config)
-    data["charging"]["chargers"][0]["charging_window"] = {
+    data["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
@@ -522,7 +526,9 @@ async def test_window_sensor_follows_the_configuration_without_reload(
     assert window_sensor_state(hass, "c1") == STATE_OFF
 
     hass.states.async_set("input_boolean.carport", STATE_OFF)
-    data["charging"]["chargers"] = [charger_data("c2", "input_boolean.carport")]
+    data["charger_groups"][0]["chargers"] = [
+        charger_data("c2", "input_boolean.carport")
+    ]
     await board.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
@@ -598,7 +604,7 @@ async def test_charger_entities_are_unavailable_while_charging_is_disabled(
     setup_kraftvakt,
 ) -> None:
     """The chargers are left alone and keep their switches."""
-    config["charging"]["enabled"] = False
+    config["charger_groups"][0]["enabled"] = False
     config["priority"] = []
     config["charger_switches"] = {"c1": {"excluded": True, "window_override": False}}
     await setup_kraftvakt()
@@ -610,6 +616,28 @@ async def test_charger_entities_are_unavailable_while_charging_is_disabled(
     assert hass_storage[STORAGE_KEY]["data"]["charger_switches"] == {
         "c1": {"excluded": True, "window_override": False}
     }
+
+
+async def test_only_the_chargers_of_a_disabled_group_are_unavailable(
+    hass: HomeAssistant,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    config["charger_groups"].append(
+        {
+            "id": "g2",
+            "name": "Carport",
+            "enabled": False,
+            "chargers": [charger_data("c2", "input_boolean.carport")],
+        }
+    )
+    await setup_kraftvakt()
+
+    assert switch_state(hass, "c1", "excluded") == STATE_OFF
+    assert switch_state(hass, "c2", "excluded") == STATE_UNAVAILABLE
+    assert window_sensor_state(hass, "c2") == STATE_UNAVAILABLE
+    assert "off input_boolean.carport" not in actions
 
 
 async def test_charger_switches_follow_the_configuration_without_reload(
@@ -625,7 +653,9 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     old_switch = switch_id(hass, "c1", "excluded")
     hass.states.async_set("input_boolean.carport", STATE_OFF)
     data = deepcopy(config)
-    data["charging"]["chargers"] = [charger_data("c2", "input_boolean.carport")]
+    data["charger_groups"][0]["chargers"] = [
+        charger_data("c2", "input_boolean.carport")
+    ]
     board = entry.runtime_data.switch_board
 
     await board.async_update_config(read_config(data))
@@ -639,7 +669,10 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     assert stored_switches(hass_storage) == {
         "c2": {"excluded": False, "window_override": False}
     }
-    assert hass_storage[STORAGE_KEY]["data"]["charging"]["chargers"][0]["id"] == "c2"
+    assert (
+        hass_storage[STORAGE_KEY]["data"]["charger_groups"][0]["chargers"][0]["id"]
+        == "c2"
+    )
 
 
 async def test_switches_of_removed_chargers_are_removed_at_setup(

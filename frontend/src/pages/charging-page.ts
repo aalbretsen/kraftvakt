@@ -1,12 +1,12 @@
-import { mdiEvStation } from "@mdi/js";
+import { mdiDelete, mdiEvStation, mdiPlus } from "@mdi/js";
 import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import type { Charger, Issue } from "../api";
+import type { Charger, ChargerGroup, Issue } from "../api";
 import "../components/charger-dialog";
 import "../components/manual-control-warning";
-import type { ListRow } from "../components/sortable-list";
-import { moveItem, newId } from "../draft";
+import type { ItemAdded, ListRow } from "../components/sortable-list";
+import { allChargers, moveItem, newId } from "../draft";
 import { chargerName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
@@ -25,53 +25,31 @@ const CHARGER_FIELDS = [
   "charging_window",
 ] as const;
 
+/** EV chargers can be dragged between the lists of all groups. */
+const CHARGER_LISTS = "kraftvakt-chargers";
+
 /**
- * All configuration of EV charging. While it is disabled, the chargers are kept
- * but only shown.
+ * The groups of EV chargers, each with its settings and its chargers. The
+ * chargers of a disabled group are kept but only shown.
  */
 @customElement("kraftvakt-charging-page")
 export class KraftvaktChargingPage extends ConfigPage {
-  @state() private editing?: { charger: Charger; isNew: boolean };
+  @state() private editing?: { charger: Charger; groupId: string; isNew: boolean };
 
   protected render() {
-    const charging = this.config.charging;
+    const groups = this.config.charger_groups;
     return html`
-      <ha-card .header=${this.localize("charging.shared")}>
-        <div class="card-content">
-          <ha-form
-            .hass=${this.hass}
-            .data=${charging}
-            .schema=${this.sharedSchema}
-            .disabled=${this.locked}
-            .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
-            .computeHelper=${(field: { name: string }) => this.localize(`charging.${field.name}_sub` as TranslationKey)}
-            @value-changed=${this.sharedChanged}
-          ></ha-form>
-        </div>
-      </ha-card>
-      ${charging.enabled ? nothing : html`<ha-alert alert-type="info">${this.localize("charging.disabled_info")}</ha-alert>`}
-      ${this.renderChargers()} ${this.editing ? this.renderDialog(this.editing.charger, this.editing.isNew) : nothing}
-    `;
-  }
-
-  private renderChargers() {
-    const charging = this.config.charging;
-    return html`
-      ${this.renderListCard(
-        {
-          title: "charging.chargers",
-          sub: "charging.chargers_sub",
-          add: "charging.add",
-          empty: "charging.empty",
-          rows: charging.chargers.map((charger) => this.row(charger)),
-          locked: this.locked || !charging.enabled,
-          onAdd: this.addCharger,
-          onMoved: this.chargerMoved,
-          onOpen: this.openRow,
-        },
-        html`<div class="switches-info">${this.localize("charging.switches_info")}</div>`,
-      )}
-      ${charging.chargers.length === 0
+      ${groups.length === 0
+        ? html`<ha-card><div class="card-content no-groups">${this.localize("charging.no_groups")}</div></ha-card>`
+        : groups.map((group) => this.renderGroup(group))}
+      <div class="page-footer">
+        <ha-button .disabled=${this.locked} @click=${this.addGroup}>
+          <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+          ${this.localize("charging.add_group")}
+        </ha-button>
+      </div>
+      ${groups.length > 0 ? html`<div class="switches-info">${this.localize("charging.switches_info")}</div>` : nothing}
+      ${allChargers(this.config).length === 0
         ? html`
             <kraftvakt-manual-control-warning
               .localize=${this.localize}
@@ -80,10 +58,56 @@ export class KraftvaktChargingPage extends ConfigPage {
             ></kraftvakt-manual-control-warning>
           `
         : nothing}
+      ${this.editing ? this.renderDialog(this.editing.charger, this.editing.groupId, this.editing.isNew) : nothing}
     `;
   }
 
-  private renderDialog(charger: Charger, isNew: boolean) {
+  private renderGroup(group: ChargerGroup) {
+    const empty = group.chargers.length === 0;
+    return this.renderListCard(
+      {
+        title: group.name.trim() || this.localize("charging.unnamed_group"),
+        sub: this.localize("charging.chargers_sub"),
+        add: this.localize("charging.add"),
+        empty: this.localize("charging.empty"),
+        rows: group.chargers.map((charger) => this.row(charger)),
+        locked: this.locked || !group.enabled,
+        group: CHARGER_LISTS,
+        onAdd: () => this.addCharger(group),
+        onMoved: (event) => this.chargerMoved(group, event),
+        onAdded: (event) => this.chargerAdded(group, event),
+        onOpen: (event) => this.openRow(group, event),
+      },
+      html`
+        <div class="group-footer">
+          <span class="footer-text">${empty ? "" : this.localize("charging.delete_group_not_empty")}</span>
+          <ha-button variant="danger" appearance="plain" .disabled=${this.locked || !empty} @click=${() => this.deleteGroup(group)}>
+            <ha-svg-icon slot="start" .path=${mdiDelete}></ha-svg-icon>
+            ${this.localize("charging.delete_group")}
+          </ha-button>
+        </div>
+      `,
+      html`
+        <div class="card-content">
+          <ha-form
+            .hass=${this.hass}
+            .data=${group}
+            .schema=${this.groupSchema(group)}
+            .error=${this.formErrors("charger_groups", group.id)}
+            .disabled=${this.locked}
+            .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
+            .computeHelper=${(field: { name: string }) => this.localize(`charging.${field.name}_sub` as TranslationKey)}
+            .computeError=${(error: string) => error}
+            @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
+          ></ha-form>
+          ${group.enabled ? nothing : html`<ha-alert alert-type="info">${this.localize("charging.disabled_info")}</ha-alert>`}
+        </div>
+      `,
+    );
+  }
+
+  private renderDialog(charger: Charger, groupId: string, isNew: boolean) {
+    const group = this.config.charger_groups.find((item) => item.id === groupId);
     return html`
       <kraftvakt-charger-dialog
         .hass=${this.hass}
@@ -91,22 +115,23 @@ export class KraftvaktChargingPage extends ConfigPage {
         .capabilities=${this.capabilities}
         .item=${charger}
         .isNew=${isNew}
-        .oneAtATime=${this.config.charging.one_at_a_time}
+        .oneAtATime=${group?.one_at_a_time ?? false}
         .usedEntities=${this.entitiesUsedBesides(charger.id)}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
-        .locked=${this.locked || !this.config.charging.enabled}
-        @item-changed=${this.chargerChanged}
+        .locked=${this.locked || !group?.enabled}
+        @item-changed=${(event: CustomEvent<Charger>) => this.chargerChanged(groupId, event.detail)}
         @item-deleted=${this.chargerDeleted}
         @closed=${() => (this.editing = undefined)}
       ></kraftvakt-charger-dialog>
     `;
   }
 
-  /** «One at a time» only matters while EV charging is enabled. */
-  private get sharedSchema() {
+  /** «One at a time» only matters while the group is enabled. */
+  private groupSchema(group: ChargerGroup) {
     return [
+      { name: "name", required: true, selector: { text: {} } },
       { name: "enabled", selector: { boolean: {} } },
-      ...(this.config.charging.enabled ? [{ name: "one_at_a_time", selector: { boolean: {} } }] : []),
+      ...(group.enabled ? [{ name: "one_at_a_time", selector: { boolean: {} } }] : []),
     ];
   }
 
@@ -153,27 +178,61 @@ export class KraftvaktChargingPage extends ConfigPage {
       : field;
   }
 
-  /** Changing the shared settings also adds or removes «EV charging» in the priority list. */
-  private sharedChanged(event: CustomEvent<{ value: { enabled?: boolean; one_at_a_time?: boolean } }>): void {
-    const { enabled, one_at_a_time } = event.detail.value;
-    const charging = this.config.charging;
-    this.changeConfig({
-      ...this.config,
-      charging: {
-        ...charging,
-        enabled: enabled ?? false,
-        one_at_a_time: one_at_a_time ?? charging.one_at_a_time,
-      },
+  /** Enabling or disabling a group also adds or removes its entry in the priority list. */
+  private groupChanged(group: ChargerGroup, event: CustomEvent<{ value: Partial<ChargerGroup> }>): void {
+    const { name, enabled, one_at_a_time } = event.detail.value;
+    this.changeGroup({
+      ...group,
+      name: name ?? "",
+      enabled: enabled ?? false,
+      one_at_a_time: one_at_a_time ?? group.one_at_a_time,
     });
   }
 
-  private chargerMoved(event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
-    const { oldIndex, newIndex } = event.detail;
-    const charging = this.config.charging;
-    this.changeConfig({ ...this.config, charging: { ...charging, chargers: moveItem(charging.chargers, oldIndex, newIndex) } });
+  /** A new group is named so that its name is not used by another group. */
+  private addGroup(): void {
+    const groups = this.config.charger_groups;
+    const base = this.localize("charging.new_group_name");
+    const names = new Set(groups.map((group) => group.name.trim()));
+    let name = base;
+    for (let number = 2; names.has(name); number++) {
+      name = `${base} ${number}`;
+    }
+    const defaults = this.capabilities.defaults.charger_groups;
+    const group: ChargerGroup = { id: newId(), name, ...defaults, chargers: [] };
+    this.changeConfig({ ...this.config, charger_groups: [...groups, group] });
   }
 
-  private addCharger(): void {
+  private deleteGroup(group: ChargerGroup): void {
+    this.changeConfig({
+      ...this.config,
+      charger_groups: this.config.charger_groups.filter((item) => item.id !== group.id),
+    });
+  }
+
+  private chargerMoved(group: ChargerGroup, event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
+    const { oldIndex, newIndex } = event.detail;
+    this.changeGroup({ ...group, chargers: moveItem(group.chargers, oldIndex, newIndex) });
+  }
+
+  /** A charger dragged in from another group leaves that group. */
+  private chargerAdded(group: ChargerGroup, event: CustomEvent<ItemAdded>): void {
+    const { key, index } = event.detail;
+    const charger = allChargers(this.config).find((item) => item.id === key);
+    if (!charger) {
+      return;
+    }
+    const groups = this.config.charger_groups.map((item) => {
+      const chargers = item.chargers.filter((other) => other.id !== key);
+      if (item.id === group.id) {
+        chargers.splice(index, 0, charger);
+      }
+      return { ...item, chargers };
+    });
+    this.changeConfig({ ...this.config, charger_groups: groups });
+  }
+
+  private addCharger(group: ChargerGroup): void {
     const defaults = this.capabilities.defaults.chargers;
     const charger: Charger = {
       id: newId(),
@@ -188,39 +247,72 @@ export class KraftvaktChargingPage extends ConfigPage {
       actively_charging: null,
       charging_window: null,
     };
-    this.editing = { charger, isNew: true };
+    this.editing = { charger, groupId: group.id, isNew: true };
   }
 
-  private openRow(event: CustomEvent<string>): void {
-    const charger = this.config.charging.chargers.find((item) => item.id === event.detail);
+  private openRow(group: ChargerGroup, event: CustomEvent<string>): void {
+    const charger = group.chargers.find((item) => item.id === event.detail);
     if (charger) {
-      this.editing = { charger, isNew: false };
+      this.editing = { charger, groupId: group.id, isNew: false };
     }
   }
 
-  private chargerChanged(event: CustomEvent<Charger>): void {
-    const charger = event.detail;
-    const chargers = this.config.charging.chargers;
-    const exists = chargers.some((item) => item.id === charger.id);
-    this.changeChargers(
-      exists ? chargers.map((item) => (item.id === charger.id ? charger : item)) : [...chargers, charger],
-    );
+  private chargerChanged(groupId: string, charger: Charger): void {
+    const group = this.config.charger_groups.find((item) => item.id === groupId);
+    if (!group) {
+      return;
+    }
+    const exists = group.chargers.some((item) => item.id === charger.id);
+    this.changeGroup({
+      ...group,
+      chargers: exists
+        ? group.chargers.map((item) => (item.id === charger.id ? charger : item))
+        : [...group.chargers, charger],
+    });
   }
 
   private chargerDeleted(event: CustomEvent<string>): void {
-    this.changeChargers(this.config.charging.chargers.filter((item) => item.id !== event.detail));
+    const groups = this.config.charger_groups.map((group) => ({
+      ...group,
+      chargers: group.chargers.filter((item) => item.id !== event.detail),
+    }));
+    this.changeConfig({ ...this.config, charger_groups: groups });
   }
 
-  private changeChargers(chargers: Charger[]): void {
-    this.changeConfig({ ...this.config, charging: { ...this.config.charging, chargers } });
+  private changeGroup(group: ChargerGroup): void {
+    const groups = this.config.charger_groups.map((item) => (item.id === group.id ? group : item));
+    this.changeConfig({ ...this.config, charger_groups: groups });
   }
 
   static styles = [
     ConfigPage.styles,
     css`
-      .switches-info {
-        padding: 12px 16px;
+      .card-content ha-alert {
+        display: block;
+        margin-top: 8px;
+      }
+      .no-groups {
+        padding-top: 16px;
+        color: var(--secondary-text-color);
+      }
+      .group-footer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 8px 8px 16px;
         border-top: 1px solid var(--divider-color);
+      }
+      .footer-text {
+        flex: 1;
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--secondary-text-color);
+      }
+      .page-footer {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .switches-info {
+        padding: 0 16px;
         font-size: var(--ha-font-size-s, 12px);
         color: var(--secondary-text-color);
       }

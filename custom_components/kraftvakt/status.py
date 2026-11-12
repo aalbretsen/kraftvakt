@@ -9,7 +9,13 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .config_model import Appliance, Charger, KraftvaktConfig, PriorityEntryType
+from .config_model import (
+    Appliance,
+    Charger,
+    ChargerGroup,
+    KraftvaktConfig,
+    PriorityEntryType,
+)
 from .entity import item_name
 from .regulation.charging import ChargerStatus
 from .regulation.model import ApplianceSlotKey, ChargerSlotKey
@@ -53,12 +59,27 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
                 config.appliances, key=lambda appliance: positions[appliance.id]
             )
         ],
-        "ev_charging_position": _ev_charging_position(config, positions),
+        "charger_groups": [
+            _charger_group_status(hass, runtime, group, positions)
+            for group in _groups_in_order(config)
+        ],
+    }
+
+
+def _charger_group_status(
+    hass: HomeAssistant,
+    runtime: KraftvaktRuntime,
+    group: ChargerGroup,
+    positions: Mapping[str, int],
+) -> dict[str, Any]:
+    priority = runtime.charging_priorities.get(group.id, [])
+    return {
+        "id": group.id,
+        "name": group.name,
+        "position": _charger_group_position(runtime.config, group, positions),
         "chargers": [
             _charger_status(hass, runtime, charger, status)
-            for charger in _in_order(
-                config.charging.chargers, runtime.charging_priority
-            )
+            for charger in _in_order(group.chargers, priority)
             if (status := runtime.chargers.get(charger.id)) is not None
         ],
     }
@@ -139,14 +160,24 @@ def _current_positions(
     }
 
 
-def _ev_charging_position(
-    config: KraftvaktConfig, positions: Mapping[str, int]
-) -> int | None:
-    types = [entry.type for entry in config.priority]
-    if PriorityEntryType.EV_CHARGING not in types:
-        return None
-    ev_charging = types.index(PriorityEntryType.EV_CHARGING)
-    return sum(1 for position in positions.values() if position < ev_charging)
+def _groups_in_order(config: KraftvaktConfig) -> list[ChargerGroup]:
+    """Return the enabled groups in the order of their entries."""
+    entries = [
+        entry.group_id
+        for entry in config.priority
+        if entry.type is PriorityEntryType.CHARGER_GROUP
+    ]
+    return sorted(
+        config.enabled_charger_groups, key=lambda group: _position(entries, group.id)
+    )
+
+
+def _charger_group_position(
+    config: KraftvaktConfig, group: ChargerGroup, positions: Mapping[str, int]
+) -> int:
+    """Return how many appliances come before the entry of the group."""
+    entry = _position([entry.group_id for entry in config.priority], group.id)
+    return sum(1 for position in positions.values() if position < entry)
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:
