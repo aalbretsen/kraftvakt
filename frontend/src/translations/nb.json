@@ -245,7 +245,6 @@
     "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten. Uttrykket og handlingene til en variant settes når du redigerer varianten. Effektreserven gjelder for alle varianter.",
     "add_variant": "Legg til variant",
     "confirm_before_editing_variant": "Trykk OK og åpne apparatet igjen for å redigere en variant.",
-    "remove_variant": "Fjern variant",
     "delete": "Slett apparat",
     "fields": {
       "entity_id": {
@@ -281,7 +280,8 @@
   "variant": {
     "edit_title": "Rediger variant {name}",
     "view_title": "Variant {name}",
-    "condition": "Uttrykk"
+    "condition": "Uttrykk",
+    "delete": "Slett variant"
   },
   "action": {
     "default": "Standard",

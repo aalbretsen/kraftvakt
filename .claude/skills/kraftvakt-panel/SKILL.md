@@ -79,13 +79,14 @@ Code that mirrors the backend and must be kept in step with it:
   none. A custom action starts as the default action.
 - The entity picker of an appliance or charger leaves out the entities that
   other appliances and chargers use.
-- The appliance dialog lists the variants by label, with drag, edit and
-  delete, and Add variant. What else is wrong or missing in a variant is
+- The appliance dialog lists the variants by label, with drag and edit, and
+  Add variant. What else is wrong or missing in a variant is
   shown under its label. A variant's edit button, and its row in the priority
   list, open the variant dialog: the expression and one switch per action to
   override it, both off by default. Switched on, the action starts from what
   it had while the dialog is open, or else a copy of the appliance's. The
-  variant dialog edits a copy of the whole appliance and has no Delete.
+  variant dialog edits a copy of the whole appliance; its Delete removes the
+  variant and its actions with `item-changed`, since it changes the appliance.
 - Edit in the appliance dialog is disabled, with a hint, while the dialog has
   changes or the appliance is new, because the variant dialog edits the
   appliance as it is in the draft. Edit closes the appliance dialog and opens

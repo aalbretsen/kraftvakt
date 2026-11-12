@@ -1,4 +1,4 @@
-import { mdiDelete, mdiDragHorizontalVariant, mdiEye, mdiPencil, mdiPlus } from "@mdi/js";
+import { mdiDragHorizontalVariant, mdiEye, mdiPencil, mdiPlus } from "@mdi/js";
 import { css, html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -13,10 +13,10 @@ export const APPLIANCE_ACTION_VARIABLES = ["entity_id", "entity"];
 /**
  * Adds or edits one appliance, and lists its variants by label.
  *
- * A variant is configured in its own dialog, which edits the appliance as it
- * is in the draft. «Edit» on a variant fires `variant-opened` with its id and
- * closes this dialog. It is disabled while the appliance is new or this
- * dialog has changes.
+ * A variant is configured, and deleted, in its own dialog, which edits the
+ * appliance as it is in the draft. «Edit» on a variant fires
+ * `variant-opened` with its id and closes this dialog. It is disabled while
+ * the appliance is new or this dialog has changes.
  */
 @customElement("kraftvakt-appliance-dialog")
 export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
@@ -125,15 +125,6 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
             .disabled=${!editable}
             @click=${() => this.openVariant(variant.id)}
           ></ha-icon-button>
-          ${this.locked
-            ? nothing
-            : html`
-                <ha-icon-button
-                  .path=${mdiDelete}
-                  .label=${this.localize("appliance.remove_variant")}
-                  @click=${() => this.removeVariant(variant.id)}
-                ></ha-icon-button>
-              `}
         </div>
         ${otherIssues.map(
           (issue) => html`<div class="error">${this.label(issue.field ?? "")}: ${this.describe(issue)}</div>`,
@@ -154,11 +145,6 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   private addVariant(): void {
     const variant: Variant = { id: newId(), label: "", condition: { type: "template", value: "" } };
     this.changeDraft({ variants: [...this.draft.variants, variant] });
-  }
-
-  private removeVariant(id: string): void {
-    const { [id]: _removed, ...actions } = this.draft.actions;
-    this.changeDraft({ variants: this.draft.variants.filter((variant) => variant.id !== id), actions });
   }
 
   private changeMainActions(changes: Partial<ApplianceActions>): void {

@@ -245,7 +245,6 @@
     "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list. The expression and the actions of a variant are set when you edit the variant. The power reserve applies to every variant.",
     "add_variant": "Add variant",
     "confirm_before_editing_variant": "Press OK and open the appliance again to edit a variant.",
-    "remove_variant": "Remove variant",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
@@ -281,7 +280,8 @@
   "variant": {
     "edit_title": "Edit variant {name}",
     "view_title": "Variant {name}",
-    "condition": "Expression"
+    "condition": "Expression",
+    "delete": "Delete variant"
   },
   "action": {
     "default": "Standard",

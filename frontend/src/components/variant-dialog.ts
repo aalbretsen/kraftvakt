@@ -14,7 +14,7 @@ type ApplianceAction = keyof ApplianceActions;
  * overrides the appliance's action to turn on and to turn off.
  *
  * The dialog edits a copy of the appliance and fires `item-changed` with the
- * whole appliance.
+ * whole appliance, also when the variant is deleted.
  */
 @customElement("kraftvakt-variant-dialog")
 export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
@@ -41,8 +41,16 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
     return this.ofVariant(missingInAppliance(this.draft));
   }
 
-  protected get deletable(): boolean {
-    return false;
+  protected get deleteText(): string {
+    return this.localize("variant.delete");
+  }
+
+  /** Deleting the variant changes the appliance, so it fires `item-changed` without the variant. */
+  protected delete(): void {
+    const { [this.variantId]: _removed, ...actions } = this.draft.actions;
+    const variants = this.draft.variants.filter((variant) => variant.id !== this.variantId);
+    this.dispatchEvent(new CustomEvent("item-changed", { detail: { ...this.draft, variants, actions } }));
+    this.close();
   }
 
   protected get heading(): string {

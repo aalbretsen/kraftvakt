@@ -227,16 +227,17 @@ regulation starts.
   top. Drag the handle to change the order. **Add appliance** and the pencil
   open a dialog with the entity, the actions to turn it on and off, an
   optional power reserve, and the variants. The dialog lists the variants by
-  label: add, rename, delete, and drag them in the order their expressions
+  label: add and rename them, and drag them in the order their expressions
   are evaluated. A variant is a separate entry in the priority list, and the
   top true expression applies. The pencil of a variant, in the list of the
   appliance or on its row in the priority list, opens the dialog of the
   variant, with the expression, either a boolean entity or a template, and
   the switches **Override the action to turn on** and **Override the action
-  to turn off**. The current result of a template is shown under it. From
-  the dialog of the appliance, a variant can only be opened when the dialog
-  has no changes; press OK and open the appliance again first. The power
-  reserve applies to every variant. Each
+  to turn off**. The current result of a template is shown under it. A
+  variant is deleted in its own dialog. From the dialog of the appliance, a
+  variant can only be opened when the dialog has no changes; press OK and
+  open the appliance again first. The power reserve applies to every
+  variant. Each
   group of EV chargers is in the list under its name, and can be moved like
   an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV
