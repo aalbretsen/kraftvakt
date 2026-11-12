@@ -157,9 +157,7 @@ charger is in one group. Without groups, Kraftvakt does not control EV
 chargers. To keep an EV charger from charging for a while, turn on its switch
 **‹charger› excluded from regulation**. The rules below apply within each
 group, so two groups with one EV charger at a time can each have an EV charger
-charging. An installation from before groups gets one group named «EV
-chargers» with the EV chargers it had, also when EV charging control was off,
-so those EV chargers are controlled after the update.
+charging.
 
 Kraftvakt sets the charging current of each EV charger one ampere at a time,
 by how much power is free. The place of the group in the priority list
