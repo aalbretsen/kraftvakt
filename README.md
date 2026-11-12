@@ -58,7 +58,10 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   to turn an appliance on or off. When the regulation average is above the
   power limit, the lowest-priority appliance that is on is turned off. When
   power is free, the next appliance in the priority list is turned on, one at
-  a time and after a waiting time.
+  a time and after a waiting time. When the next appliance cannot be turned on
+  for lack of free power while appliances below it are on, for example after
+  a variant has moved it up, the lowest of them is turned off, one at each
+  decision, until it fits.
 - **Turn-on margin:** how far below the power limit the regulation average
   must be before an appliance is turned on, 100 W by default. The window right
   after a decision still holds some of the consumption from before it, and
@@ -188,7 +191,8 @@ set to the minimum before the EV charger is activated or deactivated.
   may be charging is never taken for idle.
 - An EV charger gets more than the minimum current only when it is actively
   charging. While it is being tried, the appliances below its group can be
-  turned on.
+  turned on. When it charges, or is tried again, they are turned off one at a
+  time while it needs room, see **Decisions**.
 - An EV charger that is not charging, because no car is connected or because
   it is not actively charging two regulation windows after it was activated,
   is bypassed. It gets no more than the minimum current, stays activated if it

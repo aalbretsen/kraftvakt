@@ -88,6 +88,47 @@ def test_switch_above_the_lowest_on_makes_room() -> None:
     assert scenario.decide(9000, true=("up",)) == on("c")
 
 
+def swim_spa_config(*, reserve_w: int | None = None):
+    """The spa moves from last to just below a when swimming."""
+    return make_config(
+        "a",
+        "b",
+        "c",
+        appliance("spa", reserve_w=reserve_w, variants=("swim",)),
+        priority=("a", "spa:swim", "b", "c", "spa"),
+        wait_at_limit_s=0,
+    )
+
+
+def test_room_is_made_one_slot_per_decision_until_the_variant_fits() -> None:
+    """Within the turn-on margin, the slots below are switched off one at a time.
+
+    Nothing more than the room is switched off at the decision of the switch,
+    and nothing above it is switched off.
+    """
+    scenario = Scenario(swim_spa_config())
+    scenario.turn_on("a", "b", "c")
+
+    assert scenario.decide_many(9950, 3, true=("swim",)) == [
+        off("spa:swim", "c"),
+        off("b"),
+        [],
+    ]
+    assert scenario.decide(9000, true=("swim",)) == on("spa:swim")
+    assert scenario.engine.appliances_on == {"a", "spa"}
+
+
+def test_room_is_made_for_the_power_reserve_of_the_switched_appliance() -> None:
+    scenario = Scenario(swim_spa_config(reserve_w=3000))
+    scenario.turn_on("a", "b", "c")
+
+    assert scenario.decide_many(8000, 2, true=("swim",)) == [
+        off("spa:swim", "c"),
+        off("b"),
+    ]
+    assert scenario.decide(7000, true=("swim",)) == on("spa:swim")
+
+
 def test_room_made_above_the_limit_is_enough_for_one_decision() -> None:
     """Making room is a switch-off, so nothing more is switched off for being
     above the limit at the same decision."""

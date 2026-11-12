@@ -99,7 +99,10 @@ extend them rather than building engine inputs by hand.
    with debug for Kraftvakt. No helpers or template sensors are needed: the
    simulator gives the power sensor, appliances and chargers.
 3. Start with `.venv/bin/hass -c <folder>` in the background (port 8123; check
-   first that it is free). Let it install its missing modules (do not use
+   first that it is free). On another port, set `http: server_port` and
+   confirm it within five minutes of the start with the WebSocket command
+   `http/config/promote`, or Home Assistant reverts to 8123 and restarts.
+   Let it install its missing modules (do not use
    `--skip-pip`). Onboard over REST (`/api/onboarding/users` with a random
    password, `/auth/token`, then the remaining steps). Keep the token in a
    file with mode 600 in the scratchpad, never in the output. After

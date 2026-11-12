@@ -138,6 +138,7 @@ energy in Wh; the status page shows kW.
      average was measured before the forced switch-off, so switching off one
      more would often be too much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
+     Without room for it, room is made below it instead (see Making room).
 - An appliance gets at most one command per decision, the last one. Turned
   off and on again at the same decision, it only gets the turn-on. Why:
   switching a device off and on at once wears its relays, for example in a
@@ -150,8 +151,9 @@ energy in Wh; the status page shows kW.
   deactivated when one is activated with one charger at a time.
 - Turn on only when the regulation average is under the limit minus the
   turn-on margin, and average plus power reserve is at most the limit. Switch
-  off only when the average is above the limit. Between limit minus margin and
-  the limit, both included, nothing is turned on or off. Why: commands run
+  off only when the average is above the limit, or to make room. Between limit
+  minus margin and the limit, both included, nothing is turned on, and nothing
+  is switched off except to make room. Why: commands run
   just after a window closes, and a real meter reports the change only at its
   next update, so the window after a decision still holds the consumption
   from before its commands. The margin keeps an appliance from being turned on
@@ -163,6 +165,17 @@ energy in Wh; the status page shows kW.
   fictive appliances the EV charging rules hold back: of chargers that are not
   allowed to charge, are bypassed, are waiting or are not chosen when only one
   may charge, and all but the first of a charger on trial.
+- Making room: when the first slot that is off and not skipped may not be
+  turned on for lack of room (the average is at or above the limit minus the
+  margin, or its reserve does not fit) while slots below it are on, the lowest
+  of them that is not a bypassed charger's is switched off, without waiting,
+  one per decision until it fits or none is left. Not at a decision where step
+  6 switched off something that was on, for the same reason as in step 8. Why:
+  by the fixed order the slots below cannot be turned on before it anyway, and
+  they would otherwise keep the power it waits for. Slots end up on below one
+  that is off after a variant switch or an appliance included again, and when
+  slots below a charger on trial were turned on before it charges or is tried
+  again.
 
 ## Waiting time
 
@@ -339,7 +352,8 @@ All with entity category diagnostic:
   may turn it off in different ways (for example a thermostat in heat or cool
   mode). The appliance itself is the variant before the first decision after
   a start. If it was off and its new place is above the lowest slot that is
-  on, that lowest slot is switched off to give room. Its waiting time and
+  on, that lowest slot is switched off to give room at once, and more room is
+  made at the next decisions if needed (see Making room). Its waiting time and
   cycling counter are reset.
 - Several switching at the same decision are handled one by one in the order of
   their new place, highest first, together with the appliances included again

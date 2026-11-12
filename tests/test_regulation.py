@@ -496,6 +496,44 @@ async def test_variant_condition_moves_the_appliance(
     assert actions == ["on light.b"]
 
 
+async def test_variant_moved_up_gets_room_until_it_is_turned_on(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """Within the turn-on margin, the appliances below the variant are switched
+    off one per decision until it can be turned on."""
+    config["appliances"].append(appliance("c"))
+    config["appliances"][1]["variants"] = [
+        {
+            "id": "swim",
+            "label": "Swim",
+            "condition": {"type": "entity", "value": "input_boolean.swim"},
+        }
+    ]
+    config["priority"] = [
+        {"type": "appliance", "appliance_id": "b", "variant_id": "swim"},
+        {"type": "appliance", "appliance_id": "a", "variant_id": None},
+        {"type": "appliance", "appliance_id": "c", "variant_id": None},
+        {"type": "appliance", "appliance_id": "b", "variant_id": None},
+    ]
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    await advance_windows(hass, freezer, 2)
+    set_power(hass, "9950")
+    await advance(hass, freezer)
+    actions.clear()
+
+    hass.states.async_set("input_boolean.swim", STATE_ON)
+    await advance_windows(hass, freezer, 3)
+    set_power(hass, "5000")
+    await advance(hass, freezer)
+
+    assert actions == ["off light.b", "off light.c", "off light.a", "on light.b"]
+
+
 def light_action(service: str, light: str) -> dict[str, Any]:
     return {
         "mode": "custom",

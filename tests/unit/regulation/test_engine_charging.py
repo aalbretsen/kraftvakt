@@ -170,6 +170,39 @@ def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
     assert scenario.engine.chargers["c"].current_a == 6
 
 
+def test_charger_that_starts_charging_makes_room_below() -> None:
+    """The appliance turned on below while the charger was tried is switched
+    off when the charger needs room for more current."""
+    scenario = Scenario(
+        make_config(
+            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0
+        )
+    )
+    scenario.decide_many(0, 2)
+
+    scenario.set_charger("c", **CHARGING)
+
+    assert scenario.decide_many(9950, 2) == [off("x"), []]
+    assert scenario.decide(9000) == current("c", 7)
+
+
+def test_bypassed_charger_keeps_its_current_when_room_is_made() -> None:
+    """Room is made only from slots that can be switched off."""
+    scenario = Scenario(
+        make_config(
+            appliance("d", variants=("up",)),
+            chargers=(charger("c"),),
+            priority=("d:up", "ev", "d"),
+            wait_at_limit_s=0,
+        )
+    )
+    assert scenario.decide_many(0, 3) == [activate("c"), on("d"), []]
+    assert scenario.engine.chargers["c"].bypassed
+
+    assert scenario.decide_many(9950, 2, true=("up",)) == [off("d:up"), []]
+    assert scenario.engine.chargers["c"].current_a == 6
+
+
 def test_bypassed_charger_starts_again_when_the_car_draws_power() -> None:
     """It is no longer bypassed and gets more current."""
     scenario = one_charger()
@@ -361,8 +394,12 @@ def test_excluded_charger_that_counts_as_charging_lets_the_other_charge() -> Non
     assert not scenario.engine.chargers["a"].waiting
 
 
-def test_new_car_waits_for_room_for_the_power_reserve() -> None:
-    """A new car is not activated until there is room for the power reserve."""
+def test_new_car_makes_room_for_the_power_reserve() -> None:
+    """A new car is not activated until there is room for the power reserve.
+
+    A was bypassed and is behind b, so the room comes from the amperes of b
+    after its first, which are below the first of a when interleaved.
+    """
     scenario = two_chargers(one_at_a_time=False, max_a=16)
     scenario.set_charger("a", **NO_CAR)
     scenario.set_charger("b", **CHARGING)
@@ -370,7 +407,7 @@ def test_new_car_waits_for_room_for_the_power_reserve() -> None:
 
     scenario.set_charger("a", car_connected=True)
 
-    assert scenario.decide_many(7000, 3) == [[], [], []]
+    assert scenario.decide_many(7000, 3) == [current("b", 7), current("b", 6), []]
     assert scenario.decide(5500) == activate("a")
 
 

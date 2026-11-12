@@ -242,10 +242,10 @@ class RegulationEngine:
         slots_on_before = self.slots_on
         commands += self._decide_chargers(decision, overrides_ended)
         commands += self._place_appliances(decision)
+        forced_off = self.slots_on < slots_on_before
         if average > self._config.general.power_limit_w:
-            forced_off = self.slots_on < slots_on_before
             return commands + self._switch_off_above_limit(forced_off)
-        return commands + self._turn_on_next(decision.now, average)
+        return commands + self._turn_on_next(decision.now, average, forced_off)
 
     def _new_charging_groups(self) -> dict[str, ChargingState]:
         return {
@@ -418,9 +418,7 @@ class RegulationEngine:
             ):
                 commands += self._switch(key, turn_on=False)
             if was_off and appliance_id not in excluded:
-                lowest_on = next(self._slots_on_lowest_first(), None)
-                if lowest_on is not None and places[key] < places[lowest_on.key]:
-                    commands += self._switch(lowest_on.key, turn_on=False)
+                commands += self._make_room_below(key)
             self._forget_waiting(key)
             self._state.cycling.reset(key)
         return commands
@@ -467,15 +465,43 @@ class RegulationEngine:
             commands += self._switch(slot.key, turn_on=False)
         return commands
 
-    def _turn_on_next(self, now: datetime, average_w: float) -> list[Command]:
+    def _make_room_below(self, key: Hashable) -> list[Command]:
+        """Switch off the lowest slot that is on below the slot, if any."""
+        slots = self._slots()
+        place = next(place for place, slot in enumerate(slots) if slot.key == key)
+        lowest_on = next(
+            (
+                slot
+                for slot in reversed(slots[place + 1 :])
+                if slot.is_on and slot.can_turn_off
+            ),
+            None,
+        )
+        if lowest_on is None:
+            return []
+        return self._switch(lowest_on.key, turn_on=False)
+
+    def _turn_on_next(
+        self, now: datetime, average_w: float, forced_off: bool
+    ) -> list[Command]:
+        """Turn on the next slot, or make room for it when there is none.
+
+        No room is made when the decision has already forced something off,
+        since the average was measured before that.
+        """
         commands: list[Command] = []
         for _ in range(SLOTS_PER_DECISION):
             candidate = next(
                 (slot for slot in self._slots() if not slot.is_on and slot.can_turn_on),
                 None,
             )
-            if candidate is None or not self._may_turn_on(candidate, average_w):
+            if candidate is None:
                 self._state.waiting = None
+                break
+            if not self._may_turn_on(candidate, average_w):
+                self._state.waiting = None
+                if not forced_off:
+                    commands += self._make_room_below(candidate.key)
                 break
             if not self._has_waited(candidate, now, average_w):
                 break
