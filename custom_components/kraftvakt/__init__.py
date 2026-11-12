@@ -25,8 +25,8 @@ from .const import (
     STATIC_URL,
 )
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
+from .settings import Settings
 from .storage import KraftvaktStorage
-from .switch_board import SwitchBoard
 from .websocket_api import async_forward_status, async_register_commands
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -61,10 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
             translation_placeholders={"issues": str(error)},
         ) from error
     runtime = KraftvaktRuntime(
-        hass,
-        stored.config,
-        SwitchBoard(hass, storage, stored),
-        _action_lock(hass),
+        hass, Settings(hass, storage, stored), _action_lock(hass)
     )
     entry.runtime_data = runtime
     entry.async_on_unload(runtime.async_shutdown)

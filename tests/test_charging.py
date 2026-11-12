@@ -615,14 +615,14 @@ async def test_window_sensor_follows_the_configuration_without_reload(
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     entry = await setup_kraftvakt()
-    board = entry.runtime_data.switch_board
+    settings = entry.runtime_data.settings
     data = deepcopy(config)
     data["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
 
-    await board.async_update_config(read_config(data))
+    await settings.async_update_config(read_config(data))
     await hass.async_block_till_done()
     assert window_sensor_state(hass, "c1") == STATE_OFF
 
@@ -630,7 +630,7 @@ async def test_window_sensor_follows_the_configuration_without_reload(
     data["charger_groups"][0]["chargers"] = [
         charger_data("c2", "input_boolean.carport")
     ]
-    await board.async_update_config(read_config(data))
+    await settings.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
     assert window_sensor_id(hass, "c1") is None
@@ -717,9 +717,9 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     data["charger_groups"][0]["chargers"] = [
         charger_data("c2", "input_boolean.carport")
     ]
-    board = entry.runtime_data.switch_board
+    settings = entry.runtime_data.settings
 
-    await board.async_update_config(read_config(data))
+    await settings.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
     assert switch_id(hass, "c1", "excluded") is None

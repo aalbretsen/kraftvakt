@@ -15,7 +15,7 @@ from .config_model import Appliance, ItemSwitches, KraftvaktConfig
 from .entity import KraftvaktEntity
 from .item_entity import ChargerEntity, ItemEntity, async_setup_item_entities
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
-from .switch_board import SwitchBoard
+from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,10 +109,10 @@ class ApplianceSwitch(ItemSwitch):
         return config.appliances
 
     def _positions(self) -> ItemSwitches:
-        return self._board.appliance_switches(self._item_id)
+        return self._settings.appliance_switches(self._item_id)
 
     async def _async_set(self, position: bool) -> None:
-        await self._board.async_set_appliance(
+        await self._settings.async_set_appliance(
             self._item_id, **{self._setting: position}
         )
 
@@ -123,10 +123,12 @@ class ChargerSwitch(ItemSwitch, ChargerEntity):
     settings = ("excluded", "window_override")
 
     def _positions(self) -> ItemSwitches:
-        return self._board.charger_switches(self._item_id)
+        return self._settings.charger_switches(self._item_id)
 
     async def _async_set(self, position: bool) -> None:
-        await self._board.async_set_charger(self._item_id, **{self._setting: position})
+        await self._settings.async_set_charger(
+            self._item_id, **{self._setting: position}
+        )
 
 
 class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
@@ -137,13 +139,13 @@ class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
     def __init__(
         self,
         entry: KraftvaktConfigEntry,
-        board: SwitchBoard,
+        settings: Settings,
         item_id: str,
         name: str,
         setting: str,
     ) -> None:
         """Create the switch for the setting of the charger."""
-        super().__init__(entry, board, item_id, name, setting)
+        super().__init__(entry, settings, item_id, name, setting)
         self._runtime = entry.runtime_data
 
     @property

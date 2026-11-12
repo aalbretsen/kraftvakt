@@ -21,19 +21,17 @@ from .storage import KraftvaktStorage, StoredData
 type SwitchListener = Callable[[], None]
 
 
-class SwitchBoard:
-    """Keeps the positions of the user's switches and saves them at once.
+class Settings:
+    """The stored configuration and the user's switches, saved together.
 
-    The configuration is saved through the board, so it is always saved
-    together with the switches. When the override of a charging window was
-    switched on is kept only in memory. After a restart, the first start of the
-    regulation counts instead.
+    When the override of a charging window was switched on is kept only in
+    memory. After a restart, the first start of the regulation counts instead.
     """
 
     def __init__(
         self, hass: HomeAssistant, storage: KraftvaktStorage, stored: StoredData
     ) -> None:
-        """Create the board from the stored configuration and switches."""
+        """Create the settings from what is stored."""
         self._hass = hass
         self._storage = storage
         self._config = stored.config
@@ -48,7 +46,7 @@ class SwitchBoard:
 
     @property
     def config(self) -> KraftvaktConfig:
-        """Return the configuration the switches belong to."""
+        """Return the stored configuration."""
         return self._config
 
     def appliance_switches(self, appliance_id: str) -> ApplianceSwitches:
@@ -74,7 +72,7 @@ class SwitchBoard:
         """Change the switches for the appliance and save them at once."""
         self._appliance_switches[appliance_id] = ApplianceSwitches(excluded=excluded)
         self._notify()
-        await self._async_save()
+        await self.async_save()
 
     async def async_set_charger(
         self,
@@ -85,16 +83,22 @@ class SwitchBoard:
     ) -> None:
         """Change the switches for the charger and save them at once."""
         self._apply_charger(charger_id, excluded, window_override)
-        await self._async_save()
+        await self.async_save()
 
     @callback
     def async_reset_window_override(self, charger_id: str) -> None:
         """Switch the override off when it has ended."""
         self._apply_charger(charger_id, None, False)
-        self._hass.async_create_task(self._async_save(), "kraftvakt save switches")
+        self._hass.async_create_task(self.async_save(), "kraftvakt save switches")
 
     async def async_update_config(self, config: KraftvaktConfig) -> None:
         """Use a new configuration and save it with the switches."""
+        self.async_use_config(config)
+        await self.async_save()
+
+    @callback
+    def async_use_config(self, config: KraftvaktConfig) -> None:
+        """Use a new configuration and keep the switches of its items; not saved yet."""
         self._config = config
         self._appliance_switches = appliance_switches_for(
             config, self._appliance_switches
@@ -106,7 +110,6 @@ class SwitchBoard:
             if charger_id in self._charger_switches
         }
         self._notify()
-        await self._async_save()
 
     @callback
     def async_add_listener(self, listener: SwitchListener) -> CALLBACK_TYPE:
@@ -132,7 +135,8 @@ class SwitchBoard:
         self._charger_switches[charger_id] = updated
         self._notify()
 
-    async def _async_save(self) -> None:
+    async def async_save(self) -> None:
+        """Save the configuration and the switches."""
         await self._storage.async_save(
             StoredData(self._config, self._appliance_switches, self._charger_switches)
         )

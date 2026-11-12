@@ -1,6 +1,6 @@
 ---
 name: kraftvakt-regulation
-description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants, excluded appliances and EV charging. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or switch_board.py, or when a question is about what the regulation should do.
+description: How Kraftvakt's regulation must behave - concepts, measurement and averages, decisions, waiting times, penalty, safe state, start and stop, variants, excluded appliances and EV charging. Use before changing or reviewing anything in regulation/, measurement.py, runtime.py or settings.py, or when a question is about what the regulation should do.
 ---
 
 # Kraftvakt regulation

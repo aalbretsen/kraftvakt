@@ -52,7 +52,7 @@ from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
 from .regulation.model import Command, DecisionInput, Waiting
 from .regulation.penalty import PenaltyState
-from .switch_board import SwitchBoard
+from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,18 +92,17 @@ class KraftvaktRuntime:
     def __init__(
         self,
         hass: HomeAssistant,
-        config: KraftvaktConfig,
-        switch_board: SwitchBoard,
+        settings: Settings,
         action_lock: asyncio.Lock | None = None,
     ) -> None:
-        """Create the runtime for the configuration and the user's switches.
+        """Create the runtime for the stored settings.
 
         Runtimes that share `action_lock` carry out their actions one at a
         time, so a new runtime after a reload waits for the actions of the old.
         """
         self._hass = hass
-        self._config = config
-        self._switch_board = switch_board
+        self._settings = settings
+        config = settings.config
         self._missing = missing_items(config)
         self._config_version = 0
         self._engine = RegulationEngine(config)
@@ -132,8 +131,8 @@ class KraftvaktRuntime:
 
     @property
     def config(self) -> KraftvaktConfig:
-        """Return the configuration the regulation uses."""
-        return self._config
+        """Return the stored configuration."""
+        return self._settings.config
 
     @property
     def missing(self) -> list[Issue]:
@@ -193,18 +192,18 @@ class KraftvaktRuntime:
             return None
         current_window_counts = self._averager.window_start >= started_at
         windows_left = (
-            self._config.general.regulation_interval
+            self.config.general.regulation_interval
             - self._windows_counted_since_decision()
             - current_window_counts
         )
         return self._averager.window_end + windows_left * timedelta(
-            seconds=self._config.general.regulation_window_s
+            seconds=self.config.general.regulation_window_s
         )
 
     @property
     def decision_interval(self) -> timedelta:
         """Return the time between two decisions."""
-        general = self._config.general
+        general = self.config.general
         return timedelta(
             seconds=general.regulation_window_s * general.regulation_interval
         )
@@ -229,9 +228,9 @@ class KraftvaktRuntime:
         return self._engine.curve_waiting_time(averages.regulation_average_w)
 
     @property
-    def switch_board(self) -> SwitchBoard:
-        """Return the user's switches for the appliances and the chargers."""
-        return self._switch_board
+    def settings(self) -> Settings:
+        """Return the stored configuration and the user's switches."""
+        return self._settings
 
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
@@ -312,7 +311,7 @@ class KraftvaktRuntime:
             return
         self._windows_since_decision.clear()
         self._execute(self._engine.stop())
-        self._engine = RegulationEngine(self._config)
+        self._engine = RegulationEngine(self.config)
         self._notify_status()
 
     async def async_save_config(self, config: KraftvaktConfig) -> None:
@@ -323,8 +322,8 @@ class KraftvaktRuntime:
         """
         if self._engine.running:
             raise RegulationRunningError
-        previous = self._config
-        self._config = config
+        previous = self.config
+        self._settings.async_use_config(config)
         self._config_version += 1
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
@@ -335,15 +334,15 @@ class KraftvaktRuntime:
         if config.general.power_sensor != previous.general.power_sensor:
             self._follow_power_sensor(dt_util.utcnow())
         self._notify_status()
-        await self._switch_board.async_update_config(config)
+        await self._settings.async_save()
 
     async def async_set_power_limit(self, power_limit_w: int) -> None:
         """Save a new power limit, used from the next decision also while running."""
-        general = self._config.general
+        general = self.config.general
         if power_limit_w == general.power_limit_w:
             return
         await self._async_change_config(
-            replace(self._config, general=replace(general, power_limit_w=power_limit_w))
+            replace(self.config, general=replace(general, power_limit_w=power_limit_w))
         )
 
     async def async_set_finish_after_window(
@@ -355,12 +354,13 @@ class KraftvaktRuntime:
         decision without a restart.
         """
         charger = next(
-            charger for charger in self._config.chargers if charger.id == charger_id
+            (charger for charger in self.config.chargers if charger.id == charger_id),
+            None,
         )
-        if charger.finish_after_window == finish_after_window:
+        if charger is None or charger.finish_after_window == finish_after_window:
             return
         await self._async_change_config(
-            self._config.with_charger(
+            self.config.with_charger(
                 replace(charger, finish_after_window=finish_after_window)
             )
         )
@@ -370,11 +370,11 @@ class KraftvaktRuntime:
         if not self._engine.running:
             await self.async_save_config(config)
             return
-        self._config = config
+        self._settings.async_use_config(config)
         self._config_version += 1
         self._engine.use_power_limit(config.general.power_limit_w)
         self._notify_status()
-        await self._switch_board.async_update_config(config)
+        await self._settings.async_save()
 
     @callback
     def async_add_window_listener(self, listener: WindowListener) -> CALLBACK_TYPE:
@@ -390,7 +390,7 @@ class KraftvaktRuntime:
 
     def _start_regulation(self, now: datetime) -> None:
         self._windows_since_decision.clear()
-        self._switch_board.async_regulation_started(now)
+        self._settings.async_regulation_started(now)
         self._execute(self._engine.start(now))
         self._notify_status()
 
@@ -398,7 +398,7 @@ class KraftvaktRuntime:
         if self._cancel_power_listener:
             self._cancel_power_listener()
             self._cancel_power_listener = None
-        power_sensor = self._config.general.power_sensor
+        power_sensor = self.config.general.power_sensor
         self._record_power(
             now, self._hass.states.get(power_sensor) if power_sensor else None
         )
@@ -408,7 +408,7 @@ class KraftvaktRuntime:
             )
 
     async def _async_add_power_history(self) -> None:
-        power_sensor = self._config.general.power_sensor
+        power_sensor = self.config.general.power_sensor
         if not power_sensor or "recorder" not in self._hass.config.components:
             return
         states = await get_instance(self._hass).async_add_executor_job(
@@ -420,7 +420,7 @@ class KraftvaktRuntime:
                 power_sensor,
             )
         )
-        if power_sensor == self._config.general.power_sensor:
+        if power_sensor == self.config.general.power_sensor:
             self._averager.add_history(
                 (state.last_changed, _power_of(state))
                 for state in states.get(power_sensor, [])
@@ -464,7 +464,7 @@ class KraftvaktRuntime:
         """
         return (
             self._windows_counted_since_decision()
-            >= self._config.general.regulation_interval
+            >= self.config.general.regulation_interval
         )
 
     def _windows_counted_since_decision(self) -> int:
@@ -495,7 +495,7 @@ class KraftvaktRuntime:
         self._windows_since_decision.clear()
         result = self._engine.decide(decision)
         for charger_id in result.ended_overrides:
-            self._switch_board.async_reset_window_override(charger_id)
+            self._settings.async_reset_window_override(charger_id)
         self._log_decision(decision, result.commands)
         self._execute(result.commands)
 
@@ -543,33 +543,33 @@ class KraftvaktRuntime:
             variant.id: evaluate_condition(
                 self._hass, variant.condition, appliance.entity_id
             )
-            for appliance in self._config.appliances
+            for appliance in self.config.appliances
             for variant in appliance.variants
         }
 
     def _excluded_appliances(self) -> frozenset[str]:
         return frozenset(
             appliance.id
-            for appliance in self._config.appliances
-            if self._switch_board.appliance_switches(appliance.id).excluded
+            for appliance in self.config.appliances
+            if self._settings.appliance_switches(appliance.id).excluded
         )
 
     def _excluded_chargers(self) -> frozenset[str]:
         return frozenset(
             charger.id
-            for charger in self._config.chargers
-            if self._switch_board.charger_switches(charger.id).excluded
+            for charger in self.config.chargers
+            if self._settings.charger_switches(charger.id).excluded
         )
 
     def _charger_readings(self) -> dict[str, ChargerReading]:
         return {
             charger.id: self._charger_reading(charger)
-            for group in self._config.charger_groups
+            for group in self.config.charger_groups
             for charger in group.chargers
         }
 
     def _charger_reading(self, charger: Charger) -> ChargerReading:
-        switches = self._switch_board.charger_switches(charger.id)
+        switches = self._settings.charger_switches(charger.id)
         return ChargerReading(
             actively_charging=(
                 charger.actively_charging is not None
@@ -586,9 +586,7 @@ class KraftvaktRuntime:
             ),
             excluded=switches.excluded,
             window_override=switches.window_override,
-            override_switched_on_at=self._switch_board.override_switched_on_at(
-                charger.id
-            ),
+            override_switched_on_at=self._settings.override_switched_on_at(charger.id),
             finish_after_window=charger.finish_after_window,
         )
 

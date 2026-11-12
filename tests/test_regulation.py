@@ -1104,7 +1104,7 @@ async def test_excluded_switches_follow_the_configuration_without_reload(
         ],
     }
 
-    await entry.runtime_data.switch_board.async_update_config(read_config(data))
+    await entry.runtime_data.settings.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
     assert excluded_switch(hass, "b") is None

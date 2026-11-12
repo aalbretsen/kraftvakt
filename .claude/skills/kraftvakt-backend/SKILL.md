@@ -58,7 +58,7 @@ integrations.
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, asks the engine for the repeated commands at every window, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
-| `switch_board.py` | The positions of the user's switches for appliances and chargers, saved together with the configuration, and when the override was switched on (memory only). |
+| `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
@@ -186,7 +186,7 @@ panel's translations.
   is not a total. The waiting times are durations in seconds.
 - The power limit entity and the finish after window switch of each charger
   change the stored configuration, also while running. They save at once,
-  through the switch board so configuration and switches are saved together.
+  through the settings, so configuration and switches are saved together.
   While running, the engine gets the new power limit for the next decision,
   and finish after window reaches it in the charger readings.
 - The runtime counts every change of the stored configuration in a config
@@ -202,7 +202,7 @@ panel's translations.
   entities do not depend on the group, so moving a charger to another group
   keeps them.
 - The charging allowed by window binary sensor computes the window from the
-  clock with the same function as the engine, updated by the switch board
+  clock with the same function as the engine, updated by the settings
   and at every whole minute, since windows are in whole minutes.
 
 ## WebSocket API
