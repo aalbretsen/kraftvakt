@@ -33,6 +33,7 @@ import type { HomeAssistant } from "../types";
 
 /** The width of the waiting column in pixels. */
 const WAITING_WIDTH = 120;
+const PHONE_MEDIA_QUERY = "(max-width: 600px)";
 
 /** How a chip looks: its colour and its icon, or a dot without one. */
 interface Chip {
@@ -114,6 +115,25 @@ export class KraftvaktStatusPage extends LitElement {
   @property({ attribute: false }) config?: ConfigResponse;
 
   @state() private runningError?: string;
+
+  @state() private phone = false;
+
+  private readonly phoneQuery = window.matchMedia(PHONE_MEDIA_QUERY);
+
+  private readonly onPhoneChange = () => {
+    this.phone = this.phoneQuery.matches;
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.onPhoneChange();
+    this.phoneQuery.addEventListener("change", this.onPhoneChange);
+  }
+
+  disconnectedCallback(): void {
+    this.phoneQuery.removeEventListener("change", this.onPhoneChange);
+    super.disconnectedCallback();
+  }
 
   protected render() {
     if (!this.status) {
@@ -319,7 +339,9 @@ export class KraftvaktStatusPage extends LitElement {
         ${this.renderRank(rank)}
         <div class="row-title">
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
-          ${appliance.variant && !this.narrow ? html`<span class="variant">${appliance.variant}</span>` : nothing}
+          ${appliance.variant && !this.phone
+            ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
+            : nothing}
         </div>
         ${this.renderWideOnly(html`<span></span>`)}
         ${this.renderWideOnly(
@@ -332,19 +354,19 @@ export class KraftvaktStatusPage extends LitElement {
 
   /**
    * The rank column. Like the other columns between the title and the chip,
-   * it is left out on a narrow screen, where a row is only icon, name and chip.
+   * it is left out on a phone, where a row is only icon, name and chip.
    */
   private renderRank(rank: number | null) {
     return this.renderWideOnly(html`<span class="rank">${rank ?? nothing}</span>`);
   }
 
   private renderWideOnly(content: TemplateResult) {
-    return this.narrow ? nothing : content;
+    return this.phone ? nothing : content;
   }
 
-  /** The name, on one line cut with an ellipsis on a narrow screen, with the whole name as a tooltip there. */
+  /** The name, on one line cut with an ellipsis when it is too long, with the whole name as a tooltip. */
   private renderName(name: string) {
-    return html`<span class="name" title=${this.narrow ? name : nothing}>${name}</span>`;
+    return html`<span class="name" title=${name}>${name}</span>`;
   }
 
   private renderApplianceChip(appliance: ApplianceStatus) {
@@ -374,7 +396,7 @@ export class KraftvaktStatusPage extends LitElement {
         <div class="row-title">
           <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
           ${this.renderName(this.localize("status.ev_charging"))}
-          ${chargers.length === 0 && !this.narrow
+          ${chargers.length === 0 && !this.phone
             ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>`
             : nothing}
         </div>
@@ -757,10 +779,6 @@ export class KraftvaktStatusPage extends LitElement {
       grid-template-columns: 24px minmax(0, 2fr) minmax(max-content, 1.3fr) ${unsafeCSS(WAITING_WIDTH)}px max-content;
       column-gap: 12px;
     }
-    :host([narrow]) .list {
-      grid-template-columns: minmax(0, 1fr) max-content;
-      column-gap: 8px;
-    }
     .row {
       grid-column: 1 / -1;
       display: grid;
@@ -800,9 +818,6 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .row > .chip {
       justify-self: start;
-    }
-    :host([narrow]) .row > .chip {
-      justify-self: end;
     }
     .chip ha-svg-icon {
       --mdc-icon-size: 16px;
@@ -913,15 +928,10 @@ export class KraftvaktStatusPage extends LitElement {
     .row-title {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 6px 10px;
-      overflow-wrap: anywhere;
-    }
-    :host([narrow]) .row-title {
-      flex-wrap: nowrap;
+      gap: 10px;
       min-width: 0;
     }
-    :host([narrow]) .name {
+    .name {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -943,11 +953,16 @@ export class KraftvaktStatusPage extends LitElement {
       font-weight: 500;
     }
     .row-sub {
+      flex: none;
       color: var(--secondary-text-color);
       font-size: var(--ha-font-size-s, 12px);
     }
     .variant {
-      display: inline-block;
+      flex: 0 1000 auto;
+      min-width: 3em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       padding: 0 8px;
       border-radius: 999px;
       font-size: var(--ha-font-size-s, 12px);
@@ -960,6 +975,15 @@ export class KraftvaktStatusPage extends LitElement {
     }
     ul.missing a {
       color: var(--primary-color);
+    }
+    @media ${unsafeCSS(PHONE_MEDIA_QUERY)} {
+      .list {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        column-gap: 8px;
+      }
+      .row > .chip {
+        justify-self: end;
+      }
     }
   `;
 }

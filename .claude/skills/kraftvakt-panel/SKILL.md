@@ -190,11 +190,14 @@ Code that mirrors the backend and must be kept in step with it:
   charging row has its own rank at the EV charging position, and the chargers
   are indented under it in the current charging priority. Every row is one
   line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip. On a narrow screen a
-  row is only the icon, the name and the state chip: the name stays on one
-  line, cut with an ellipsis and with the whole name as a tooltip, and the
-  rank, the variant, the charger count, the current, the ampere bars, the
-  waiting and the text that there are no chargers are left out.
+  variant after it, current, waiting and state chip. A name too long for
+  its column is cut with an ellipsis and has the whole name as a tooltip;
+  the variant is cut first, down to a few letters.
+  - On a phone (a viewport at most 600 px wide, by a media query of its own,
+    since a tablet that HA calls narrow still has room for every column) a
+    row is only the icon, the name and the state chip: the rank, the variant,
+    the charger count, the current, the ampere bars, the waiting and the
+    text that there are no chargers are left out.
   - Icons instead of short texts, each with its sentence as a tooltip, and no
     legend. The EV charging row shows how many chargers are charging of all.
   - The current column has the current before one bar per ampere from min to
