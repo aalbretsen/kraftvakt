@@ -13,7 +13,6 @@ class KraftvaktConfigFlow(ConfigFlow, domain=DOMAIN):
     """Set up Kraftvakt without any settings, which are made in the panel."""
 
     VERSION = 1
-    MINOR_VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

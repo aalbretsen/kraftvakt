@@ -89,14 +89,9 @@ The format is defined by the dataclasses and their serialization in
 - `charger_switches`: the positions of the two switches per charger.
   Finish after window is a field of the charger, not a switch position.
 
-The store has a version. A change of the stored format raises it and adds a
-migration in `storage.py`, with tests, so stored configurations keep working
-after an update. The migration to version 2 puts the chargers in one
-regulated group named «EV chargers», also when EV charging is disabled, and
-makes no group when it is disabled without chargers. The name is in English
-in every language, since it is the user's data. The migration to version 3
-gives each charger the device of its entity in the entity registry, or none,
-which is then missing.
+The store and the config entry are at version 1, without migrations. Before
+the first stable release, the stored format and the entities change without
+migrations, and installations are set up again from scratch.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script), `entity` or `domain` (the
@@ -189,12 +184,6 @@ panel's translations.
 - The averages, power free and the power limit are power in W, also as
   shown. The overconsumption is energy in Wh without a state class, since it
   is not a total. The waiting times are durations in seconds.
-- The config entry has a minor version. A change that needs the registered
-  entities of existing installations changed raises it and migrates them in
-  `async_migrate_entry`, with tests. Home Assistant keeps the unit a sensor
-  was registered with as its suggested unit, so a new display unit needs
-  both the stored suggestion and the registered unit changed; a unit the user
-  chose is kept.
 - The power limit entity and the finish after window switch of each charger
   change the stored configuration, also while running. They save at once,
   through the switch board so configuration and switches are saved together.

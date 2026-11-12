@@ -586,27 +586,6 @@ async def test_variant_with_own_actions_is_switched_with_them(
     assert actions == ["on light.cool", "off light.a", "off light.cool"]
 
 
-async def test_configuration_stored_by_version_1_is_regulated(
-    hass: HomeAssistant,
-    hass_storage: dict[str, Any],
-    freezer: FrozenDateTimeFactory,
-    actions,
-    config,
-    setup_kraftvakt,
-) -> None:
-    """The actions of an appliance stored by version 1 are still used."""
-    for item in config["appliances"]:
-        item.update(item.pop("actions")["main"])
-    hass_storage[STORAGE_KEY]["version"] = 1
-    set_power(hass, "2000")
-    await setup_kraftvakt()
-    actions.clear()
-
-    await advance(hass, freezer)
-
-    assert actions == ["on light.a"]
-
-
 async def test_template_condition_gets_the_appliance_entity(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
