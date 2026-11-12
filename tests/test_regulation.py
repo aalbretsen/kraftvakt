@@ -466,7 +466,8 @@ async def test_variant_condition_moves_the_appliance(
     setup_kraftvakt,
 ) -> None:
     """A true condition gives the variant's place in the list. The switch from
-    the appliance itself at the first decision gives a turn-off action."""
+    the appliance itself at the first decision gives no turn-off action, since
+    the appliance is turned on at the same decision."""
     config["appliances"][1]["variants"] = [
         {
             "id": "morning",
@@ -484,7 +485,7 @@ async def test_variant_condition_moves_the_appliance(
 
     await advance(hass, freezer)
 
-    assert actions == ["off light.b", "on light.b"]
+    assert actions == ["on light.b"]
 
 
 def light_action(service: str, light: str) -> dict[str, Any]:
@@ -530,18 +531,13 @@ async def test_variant_with_own_actions_is_switched_with_them(
 
     hass.states.async_set("input_boolean.cool", STATE_OFF)
     await advance(hass, freezer)
-    assert actions == ["off light.b", "on light.b"]
+    assert actions == ["on light.b"]
     actions.clear()
 
     hass.states.async_set("input_boolean.cool", STATE_ON)
     await advance(hass, freezer)
     await switch_regulation(hass, "turn_off")
-    assert actions == [
-        "off light.cool",
-        "on light.cool",
-        "off light.a",
-        "off light.cool",
-    ]
+    assert actions == ["on light.cool", "off light.a", "off light.cool"]
 
 
 async def test_configuration_stored_by_version_1_is_regulated(
@@ -593,7 +589,7 @@ async def test_template_condition_gets_the_appliance_entity(
 
     await advance(hass, freezer)
 
-    assert actions == ["off light.b", "on light.b"]
+    assert actions == ["on light.b"]
 
 
 async def test_custom_action_gets_the_entity_variables(

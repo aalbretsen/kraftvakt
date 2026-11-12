@@ -134,6 +134,10 @@ energy in Wh; the status page shows kW.
      average was measured before the forced switch-off, so switching off one
      more would often be too much.
   9. Turn on: only the first slot that is off and not skipped may be turned on.
+- An appliance gets at most one command per decision, the last one. Turned
+  off and on again at the same decision, it only gets the turn-on. Why:
+  switching a device off and on at once wears its relays, for example in a
+  thermostat.
 - Only one slot is turned on or off per decision based on free power. Several
   may be switched off at once only when consumption must drop at once or
   switching does not change consumption: start and stop, safe state, penalty,

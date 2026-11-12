@@ -157,6 +157,9 @@ class RegulationEngine:
 
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out."""
+        return _last_command_per_appliance(self._decide(decision))
+
+    def _decide(self, decision: DecisionInput) -> list[Command]:
         if not self._running:
             return []
         if self._state.safe_state:
@@ -485,3 +488,22 @@ class RegulationEngine:
     def _record_switch(self, key: Hashable, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.cycling.record(key, turn_on)
+
+
+def _last_command_per_appliance(commands: list[Command]) -> list[Command]:
+    """Keep only the last command for each appliance.
+
+    An appliance turned off and on again at the same decision only gets the
+    turn-on, since switching a device off and on at once wears its relays.
+    """
+    last = {
+        command.appliance_id: index
+        for index, command in enumerate(commands)
+        if isinstance(command, TurnOnAppliance | TurnOffAppliance)
+    }
+    return [
+        command
+        for index, command in enumerate(commands)
+        if not isinstance(command, TurnOnAppliance | TurnOffAppliance)
+        or last[command.appliance_id] == index
+    ]

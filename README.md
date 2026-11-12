@@ -84,7 +84,8 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   the actions of the appliance, or its own, for example another HVAC mode for
   a thermostat in summer. When the variant changes, the appliance is turned
   off with the turn-off action of the new variant, and comes on again the
-  normal way.
+  normal way. If it comes on again at the same decision, it only gets the
+  turn-on action, so it is not switched off and on at once.
 - **Excluded appliance:** the switch **‹appliance› excluded from regulation**
   takes an appliance out of the regulation. It keeps its place in the
   priority list, but is passed as if it was not there, and is turned off at
