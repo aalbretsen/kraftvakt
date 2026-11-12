@@ -191,7 +191,7 @@ export class KraftvaktPanel extends LitElement {
       return "";
     }
     const locked = this.status.running;
-    const errors = locked ? [] : draftErrors(this.draft, this.capabilities, this.hass.states);
+    const errors = locked ? [] : draftErrors(this.draft, this.capabilities, this.hass);
     const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
     const issues = locked ? [] : this.pageIssues(errors);
     return html`

@@ -2,12 +2,9 @@ import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { Condition } from "../api";
-import { measuredPowerW, ownEntities } from "../entities";
+import { BOOLEAN_DOMAINS, measuredPowerW, ownEntities } from "../entities";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
-
-/** The domains whose entities are on or off, and so can be boolean entities. */
-const BOOLEAN_DOMAINS = ["binary_sensor", "input_boolean", "switch", "schedule"];
 
 /** The same limit as the backend uses for a power sensor. */
 const ACTIVELY_CHARGING_ABOVE_W = 100;
@@ -21,7 +18,7 @@ export type ConditionKind = "condition" | "actively_charging";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
-  actively_charging: ["power_sensor", "entity", "template"],
+  actively_charging: ["entity", "power_sensor", "template"],
 };
 
 const PREVIEW_DELAY_MS = 500;
@@ -53,6 +50,9 @@ export class KraftvaktConditionField extends LitElement {
 
   /** The entity of the appliance or charger the condition belongs to. */
   @property({ attribute: false }) entityId: string | null = null;
+
+  /** The only entities that may be chosen, when they are limited. */
+  @property({ attribute: false }) includeEntities?: string[];
 
   /** Whether the condition may be left out, like «car connected». */
   @property({ type: Boolean }) optional = false;
@@ -110,14 +110,24 @@ export class KraftvaktConditionField extends LitElement {
   private valueField(type: ConditionType) {
     switch (type) {
       case "entity":
-        return [{ name: "value", required: true, selector: { entity: { filter: { domain: BOOLEAN_DOMAINS } } } }];
+        return [
+          {
+            name: "value",
+            required: true,
+            selector: { entity: { filter: { domain: BOOLEAN_DOMAINS }, include_entities: this.includeEntities } },
+          },
+        ];
       case "power_sensor":
         return [
           {
             name: "value",
             required: true,
             selector: {
-              entity: { filter: { domain: "sensor", device_class: "power" }, exclude_entities: ownEntities(this.hass) },
+              entity: {
+                filter: { domain: "sensor", device_class: "power" },
+                include_entities: this.includeEntities,
+                exclude_entities: ownEntities(this.hass),
+              },
             },
           },
         ];

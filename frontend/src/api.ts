@@ -87,6 +87,7 @@ export interface ChargingWindow {
 
 export interface Charger {
   id: string;
+  device_id: string | null;
   entity_id: string | null;
   activate: ActionConfig | null;
   deactivate: ActionConfig | null;

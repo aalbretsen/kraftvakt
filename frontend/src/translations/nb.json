@@ -75,6 +75,7 @@
   },
   "missing": {
     "missing_power_sensor": "Effektsensor er ikke valgt.",
+    "missing_device": "{item}: enheten er ikke valgt.",
     "missing_entity": "{item}: entitet er ikke valgt.",
     "missing_action": "{item}: handling for å {action} mangler.",
     "missing_condition": "{item}: uttrykket mangler.",
@@ -128,6 +129,8 @@
     "invalid_time": "Angi både start og slutt.",
     "window_start_equals_end": "Start og slutt kan ikke være like.",
     "duplicate_entity": "Entiteten brukes allerede av et annet apparat eller en elbillader.",
+    "unknown_device": "Enheten finnes ikke lenger i Home Assistant.",
+    "entity_not_on_device": "Entiteten hører ikke til elbilladerens enhet.",
     "invalid_action": "Home Assistant kan ikke lese handlingen.",
     "invalid_template": "Malen har en syntaksfeil.",
     "default_action_unavailable": "Entiteten har ingen standardhandling. Velg egendefinert handling.",
@@ -371,9 +374,13 @@
     "car_connected_optional": "Bil tilkoblet (valgfri)",
     "delete": "Slett elbillader",
     "fields": {
+      "device_id": {
+        "label": "Enhet",
+        "helper": "Elbilladeren i Home Assistant. Navnet blir elbilladerens navn, alle entiteter velges blant enhetens entiteter, og tomme felt fylles med entitetene den mest sannsynlig har."
+      },
       "entity_id": {
         "label": "Entitet for tillatt lading",
-        "helper": "Normalt laderens bryter for å tillate lading. Navnet i Home Assistant blir elbilladerens navn. Entiteten er tilgjengelig som entity_id og entity i maler og handlinger."
+        "helper": "Normalt laderens bryter for å tillate lading. Entiteten er tilgjengelig som entity_id og entity i maler og handlinger."
       },
       "activate": {
         "label": "Aktiver"

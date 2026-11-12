@@ -13,6 +13,7 @@ import type { TranslationKey } from "../localize";
 import { ConfigPage } from "./config-page";
 
 const CHARGER_FIELDS = [
+  "device_id",
   "entity_id",
   "activate",
   "deactivate",
@@ -156,9 +157,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const issues = this.issues.filter((issue) => issue.section === "chargers" && issue.target === charger.id);
     return {
       key: charger.id,
-      title: charger.entity_id
-        ? chargerName(this.hass, this.entityNames, charger.entity_id)
-        : this.localize("missing.charger_without_entity"),
+      title: chargerName(this.hass, this.entityNames, charger) ?? this.localize("missing.charger_without_entity"),
       iconPath: mdiEvStation,
       details,
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
@@ -225,6 +224,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const defaults = this.capabilities.defaults.chargers;
     const charger: Charger = {
       id: newId(),
+      device_id: null,
       entity_id: null,
       activate: null,
       deactivate: null,

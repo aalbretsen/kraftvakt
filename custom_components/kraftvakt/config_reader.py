@@ -248,6 +248,7 @@ class ConfigReader:
         defaults = Charger(id=charger_id)
         return Charger(
             id=charger_id,
+            device_id=self._text(values, "device_id", location),
             entity_id=self._text(values, "entity_id", location),
             activate=self._action(values, "activate", location),
             deactivate=self._action(values, "deactivate", location),

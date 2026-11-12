@@ -218,7 +218,7 @@ async def test_domain_action_must_belong_to_the_entity(hass: HomeAssistant) -> N
                 chargers=(
                     Charger(
                         "c1",
-                        "climate.charger",
+                        entity_id="climate.charger",
                         activate=domain("climate_hvac_mode", hvac_mode="heat"),
                         set_current=domain("climate_temperature", temperature=20),
                     ),
@@ -256,7 +256,7 @@ async def test_charger_can_be_activated_with_a_domain_action(
                 chargers=(
                     Charger(
                         "c1",
-                        "climate.charger",
+                        entity_id="climate.charger",
                         activate=domain("climate_hvac_mode", hvac_mode="heat"),
                     ),
                 ),

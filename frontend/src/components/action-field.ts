@@ -34,6 +34,9 @@ export class KraftvaktActionField extends LitElement {
   /** The domains of the entities the action may be given as, or none. */
   @property({ attribute: false }) entityDomains: string[] = [];
 
+  /** The only entities the action may be given as, when they are limited. */
+  @property({ attribute: false }) includeEntities?: string[];
+
   /** The domain actions available for the entity, by key. */
   @property({ attribute: false }) domainActions: Record<string, DomainAction> = {};
 
@@ -134,7 +137,14 @@ export class KraftvaktActionField extends LitElement {
     ];
     return [
       { name: "mode", selector: { select: { mode: "list", options } } },
-      ...(mode === "entity" ? [{ name: "entity_id", selector: { entity: { filter: { domain: this.entityDomains } } } }] : []),
+      ...(mode === "entity"
+        ? [
+            {
+              name: "entity_id",
+              selector: { entity: { filter: { domain: this.entityDomains }, include_entities: this.includeEntities } },
+            },
+          ]
+        : []),
       ...(mode === "custom" ? [{ name: "action", selector: { action: {} } }] : []),
     ];
   }

@@ -75,6 +75,7 @@
   },
   "missing": {
     "missing_power_sensor": "The power sensor is not chosen.",
+    "missing_device": "{item}: the device is not chosen.",
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
     "missing_condition": "{item}: the expression is missing.",
@@ -128,6 +129,8 @@
     "invalid_time": "Give both start and end.",
     "window_start_equals_end": "Start and end cannot be the same.",
     "duplicate_entity": "The entity is already used by another appliance or EV charger.",
+    "unknown_device": "The device no longer exists in Home Assistant.",
+    "entity_not_on_device": "The entity does not belong to the EV charger's device.",
     "invalid_action": "Home Assistant cannot read the action.",
     "invalid_template": "The template has a syntax error.",
     "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
@@ -371,9 +374,13 @@
     "car_connected_optional": "Car connected (optional)",
     "delete": "Delete EV charger",
     "fields": {
+      "device_id": {
+        "label": "Device",
+        "helper": "The EV charger in Home Assistant. Its name becomes the name of the EV charger, every entity is chosen among its entities, and the empty fields are filled with the entities it most likely has."
+      },
       "entity_id": {
         "label": "Entity for allowed charging",
-        "helper": "Normally the charger's switch for allowing charging. The name in Home Assistant becomes the name of the EV charger. The entity is available as entity_id and entity in templates and actions."
+        "helper": "Normally the charger's switch for allowing charging. The entity is available as entity_id and entity in templates and actions."
       },
       "activate": {
         "label": "Activate"

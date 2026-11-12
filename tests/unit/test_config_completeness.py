@@ -40,13 +40,14 @@ def test_appliance_needs_entity_and_both_actions() -> None:
     ]
 
 
-def test_charger_needs_entity_actions_and_actively_charging() -> None:
+def test_charger_needs_device_entity_actions_and_actively_charging() -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"].append(
         {"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}}
     )
 
     assert _missing(data) == [
+        Issue("missing_device", "chargers", "c2", "device_id"),
         Issue("missing_entity", "chargers", "c2", "entity_id"),
         Issue("missing_action", "chargers", "c2", "deactivate"),
         Issue("missing_action", "chargers", "c2", "set_current"),
@@ -73,6 +74,7 @@ def test_chargers_of_every_group_count() -> None:
     )
 
     assert _missing(data) == [
+        Issue("missing_device", "chargers", "c2", "device_id"),
         Issue("missing_entity", "chargers", "c2", "entity_id"),
         Issue("missing_action", "chargers", "c2", "activate"),
         Issue("missing_action", "chargers", "c2", "deactivate"),

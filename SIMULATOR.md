@@ -58,10 +58,11 @@ Home Assistant when the device is added):
 
 | Field in Kraftvakt | Value |
 |---|---|
+| Device | The EV charger device; choosing it fills in the fields below |
 | Entity for allowed charging | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |
-| Actively charging | Charging power: `sensor.<charger>_charging_power`, or Entity: `binary_sensor.<charger>_charging` |
+| Actively charging | Entity: `binary_sensor.<charger>_charging`, or Charging power: `sensor.<charger>_charging_power` |
 | Car connected | `switch.<charger>_car_connected` |
 
 Change the background power and the switches for the car, and watch the

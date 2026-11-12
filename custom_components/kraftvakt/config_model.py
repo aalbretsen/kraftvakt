@@ -311,6 +311,7 @@ class Charger:
     """An EV charger."""
 
     id: str
+    device_id: str | None = None
     entity_id: str | None = None
     activate: ActionConfig | None = None
     deactivate: ActionConfig | None = None
@@ -327,6 +328,21 @@ class Charger:
         """Return the actions of the charger."""
         for name, kind in CHARGER_ACTION_KINDS.items():
             yield ActionField(name, kind, getattr(self, name))
+
+    def device_entities(self) -> Iterator[tuple[str, str]]:
+        """Return each field and entity that must belong to the device."""
+        if self.entity_id is not None:
+            yield "entity_id", self.entity_id
+        if self.set_current is not None and self.set_current.entity_id is not None:
+            yield "set_current", self.set_current.entity_id
+        for field_name in ("car_connected", "actively_charging"):
+            condition = getattr(self, field_name)
+            if (
+                condition is not None
+                and condition.type is not ConditionType.TEMPLATE
+                and condition.value
+            ):
+                yield field_name, condition.value
 
     def to_dict(self) -> dict[str, Any]:
         """Return the charger as JSON-friendly data."""

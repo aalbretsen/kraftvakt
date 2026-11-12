@@ -7,6 +7,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -529,8 +530,40 @@ async def test_saved_chargers_get_their_switches(
     """The switches follow the saved chargers."""
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
-    changed = config_data()
-    changed["charger_groups"] = [
+    changed = config_with_charger(
+        register_device(hass, "switch.charger", "sensor.charger_power")
+    )
+
+    response = await send(client, "kraftvakt/config/save", config=changed)
+    await hass.async_block_till_done()
+
+    assert response["result"]["missing"] == []
+    assert entity_id(hass, "switch", "charger_c1_excluded") is not None
+    assert entity_id(hass, "switch", "charger_c1_window_override") is not None
+
+
+def register_device(hass: HomeAssistant, *entity_ids: str) -> str:
+    """Register the entities on a new device and return the id of the device."""
+    entry = MockConfigEntry(domain="test")
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", entity_ids[0])}
+    )
+    for entity_id in entity_ids:
+        domain, object_id = entity_id.split(".")
+        er.async_get(hass).async_get_or_create(
+            domain,
+            "test",
+            object_id,
+            suggested_object_id=object_id,
+            device_id=device.id,
+        )
+    return device.id
+
+
+def config_with_charger(device_id: str, **settings: Any) -> dict[str, Any]:
+    data = config_data()
+    data["charger_groups"] = [
         {
             "id": "g1",
             "name": "EV chargers",
@@ -538,6 +571,7 @@ async def test_saved_chargers_get_their_switches(
             "chargers": [
                 {
                     "id": "c1",
+                    "device_id": device_id,
                     "entity_id": "switch.charger",
                     "activate": DEFAULT,
                     "deactivate": DEFAULT,
@@ -549,17 +583,72 @@ async def test_saved_chargers_get_their_switches(
                         "type": "power_sensor",
                         "value": "sensor.charger_power",
                     },
+                    **settings,
                 }
             ],
         }
     ]
+    return data
+
+
+async def test_charger_entities_must_belong_to_its_device(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """Every entity the charger is given must be on the device; templates and
+    custom actions are not checked."""
+    await switch_regulation(hass, "turn_off")
+    client = await hass_ws_client(hass)
+    register_device(hass, "switch.charger", "sensor.charger_power")
+    other_device = register_device(
+        hass, "number.other_current", "binary_sensor.other_car"
+    )
+    changed = config_with_charger(
+        other_device,
+        set_current={"mode": "entity", "entity_id": "number.other_current"},
+        car_connected={"type": "entity", "value": "binary_sensor.other_car"},
+    )
 
     response = await send(client, "kraftvakt/config/save", config=changed)
-    await hass.async_block_till_done()
 
-    assert response["result"]["missing"] == []
-    assert entity_id(hass, "switch", "charger_c1_excluded") is not None
-    assert entity_id(hass, "switch", "charger_c1_window_override") is not None
+    assert response["result"] == {
+        "saved": False,
+        "errors": [
+            {
+                "code": "entity_not_on_device",
+                "section": "chargers",
+                "target": "c1",
+                "field": field,
+            }
+            for field in ("entity_id", "actively_charging")
+        ],
+    }
+
+
+async def test_charger_device_must_exist(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    await switch_regulation(hass, "turn_off")
+    client = await hass_ws_client(hass)
+
+    response = await send(
+        client, "kraftvakt/config/save", config=config_with_charger("removed")
+    )
+
+    assert response["result"] == {
+        "saved": False,
+        "errors": [
+            {
+                "code": "unknown_device",
+                "section": "chargers",
+                "target": "c1",
+                "field": "device_id",
+            }
+        ],
+    }
 
 
 def regulation_switch(hass: HomeAssistant) -> str:
@@ -865,6 +954,7 @@ async def test_status_shows_the_chargers(
 def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
     return {
         "id": charger_id,
+        "device_id": f"{charger_id}_device",
         "entity_id": f"input_boolean.{charger_id}",
         "activate": DEFAULT,
         "deactivate": DEFAULT,

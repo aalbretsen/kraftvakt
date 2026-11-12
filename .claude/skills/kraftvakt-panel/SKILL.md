@@ -79,6 +79,21 @@ Code that mirrors the backend and must be kept in step with it:
   none. A custom action starts as the default action.
 - The entity picker of an appliance or charger leaves out the entities that
   other appliances and chargers use.
+- The charger dialog starts with the device, required, and every entity
+  picker in it offers only the device's entities, none before a device is
+  chosen. The panel checks, as the backend does, that the device exists and
+  each entity belongs to it.
+- Choosing another device clears every entity field that is not on the new
+  device, then fills each empty field from the device in `charger-device.ts`,
+  and adapts the actions to the new entity as a new entity does. A field is
+  filled with the candidate of its type with the highest score from words in
+  its name and entity ID (English and Norwegian, without the device name,
+  which every entity has) and a likely device class or unit; a tie fills
+  nothing, and a word on a field's exclusion list rules a candidate out. For
+  the charger's own entity, the set-current entity and the charging power
+  sensor, the only candidate of the type is enough. An entity filled for one
+  field is not used for another. Actively charging prefers a boolean
+  charging entity and falls back to a power sensor.
 - The appliance dialog lists the variants by label, with drag and edit, and
   Add variant. What else is wrong or missing in a variant is
   shown under its label. A variant's edit button, and its row in the priority
@@ -114,8 +129,8 @@ Code that mirrors the backend and must be kept in step with it:
   not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A
   new variant starts as an empty template, which is missing, not an error, so
-  the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set» and
-  shows the charging power sensor until one is chosen; its preview reads the
+  the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set», offers
+  a boolean entity first and shows it until one is chosen; its preview reads the
   value as the backend does, so missing evidence shows as charging. Car
   connected is shown as required when only one charger in the group may
   charge at a time.

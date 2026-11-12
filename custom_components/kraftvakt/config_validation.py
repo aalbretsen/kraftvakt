@@ -126,6 +126,10 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         ]
     for group in config.charger_groups:
         for charger in group.chargers:
+            if charger.device_id is None:
+                missing.append(
+                    Issue("missing_device", "chargers", charger.id, "device_id")
+                )
             missing += _missing_entity_and_actions("chargers", charger)
             if charger.actively_charging is None:
                 missing.append(

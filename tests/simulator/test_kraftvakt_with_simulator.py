@@ -7,6 +7,7 @@ from typing import Any
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -137,7 +138,11 @@ async def test_kraftvakt_regulates_the_simulated_devices(
     )
     await add_device(DeviceKind.CHARGER, "Garage")
     await call(hass, "switch", "turn_on", "switch.garage_car_connected")
-    await setup_kraftvakt(hass, hass_storage, kraftvakt_config())
+    config = kraftvakt_config()
+    config["charger_groups"][0]["chargers"][0]["device_id"] = (
+        er.async_get(hass).async_get(CHARGING_ALLOWED).device_id
+    )
+    await setup_kraftvakt(hass, hass_storage, config)
 
     await regulate_until(
         hass,

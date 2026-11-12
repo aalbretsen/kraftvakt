@@ -46,6 +46,7 @@ WINDOW = timedelta(seconds=60)
 def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, Any]:
     return {
         "id": charger_id,
+        "device_id": f"{charger_id}_device",
         "entity_id": entity_id,
         "activate": {"mode": "default"},
         "deactivate": {"mode": "default"},
@@ -754,36 +755,34 @@ async def test_switches_of_removed_chargers_are_removed_at_setup(
     assert switch_id(hass, "c1", "excluded") is not None
 
 
-async def test_charger_name_when_the_entity_has_no_state(hass: HomeAssistant) -> None:
-    """The registry is used before the entity has a state."""
+async def test_charger_name_without_a_device(hass: HomeAssistant) -> None:
+    """The entity's name is used, from the registry before it has a state."""
     registry = er.async_get(hass)
     entry = registry.async_get_or_create(
         "switch", "test", "garage", original_name="Garage charger"
     )
 
-    assert item_name(hass, Charger("c1", entry.entity_id)) == "Garage charger"
-    assert item_name(hass, Charger("c1", "switch.unknown")) == "switch.unknown"
+    assert item_name(hass, Charger("c1", entity_id=entry.entity_id)) == (
+        "Garage charger"
+    )
+    assert item_name(hass, Charger("c1", entity_id="switch.unknown")) == (
+        "switch.unknown"
+    )
+    assert item_name(hass, Charger("c1", device_id="unknown")) == "c1"
     assert item_name(hass, Charger("c1")) == "c1"
 
 
 async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
-    """A name the user gave the device wins, and an entity without a device
-    keeps its own name."""
+    """A name the user gave the device wins."""
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Charger A"
     )
-    allowed = er.async_get(hass).async_get_or_create(
-        "switch",
-        "test",
-        "a_allowed",
-        device_id=device.id,
-        original_name="Charger A Charging allowed",
-    )
+    charger = Charger("c1", device_id=device.id, entity_id="switch.a_allowed")
 
-    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Charger A"
+    assert item_name(hass, charger) == "Charger A"
 
     dr.async_get(hass).async_update_device(device.id, name_by_user="Garage")
 
-    assert item_name(hass, Charger("c1", allowed.entity_id)) == "Garage"
+    assert item_name(hass, charger) == "Garage"

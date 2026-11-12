@@ -2,6 +2,7 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import type { Charger, Condition, Issue } from "../api";
+import { changesForDevice, deviceEntities } from "../charger-device";
 import type { TranslationKey } from "../localize";
 import { chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
@@ -28,7 +29,12 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   @property({ type: Boolean }) oneAtATime = false;
 
   protected errors(): Issue[] {
-    return chargerErrors(this.draft, this.capabilities, this.hass.states);
+    return chargerErrors(this.draft, this.capabilities, this.hass);
+  }
+
+  /** Every entity of the charger is one of its device's. */
+  protected get entityScope(): string[] {
+    return deviceEntities(this.hass, this.draft.device_id);
   }
 
   protected missing(): Issue[] {
@@ -37,7 +43,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected renderFields(issues: Issue[]) {
     return html`
-      ${this.renderEntity(issues)} ${this.renderSection("charger.allowed_charging")}
+      ${this.renderDevice(issues)} ${this.renderEntity(issues)} ${this.renderSection("charger.allowed_charging")}
       ${this.renderAction("activate", issues, ENTITY_VARIABLES)}
       ${this.renderAction("deactivate", issues, ENTITY_VARIABLES)}
       <div class="info">${this.localize("charger.minimum_first")}</div>
@@ -65,6 +71,22 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
+  private renderDevice(issues: Issue[]) {
+    return this.renderForm([{ name: "device_id", required: true, selector: { device: {} } }], issues, (value) =>
+      this.deviceChanged((value.device_id as string) || null),
+    );
+  }
+
+  /** A new device clears the entities that are not on it, and fills the empty fields with its likely entities. */
+  private deviceChanged(deviceId: string | null): void {
+    if (deviceId === this.draft.device_id) {
+      return;
+    }
+    const changes = changesForDevice(this.draft, deviceId, this.hass, this.capabilities, this.usedEntities);
+    this.changeDraft(changes);
+    this.entityChanged(changes.entity_id ?? null);
+  }
+
   private renderConditionGroup(field: "car_connected" | "actively_charging", title: TranslationKey, issues: Issue[]) {
     const issue = issues.find((item) => item.field === field);
     const activelyCharging = field === "actively_charging";
@@ -77,6 +99,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           .localize=${this.localize}
           .value=${this.draft[field]}
           .entityId=${this.draft.entity_id}
+          .includeEntities=${this.entityScope}
           .kind=${activelyCharging ? "actively_charging" : "condition"}
           .optional=${!activelyCharging}
           .error=${issue ? this.describe(issue) : undefined}

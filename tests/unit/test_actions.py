@@ -59,7 +59,7 @@ def appliance(
 def charger(entity_id: str, set_current: ActionConfig = DEFAULT) -> Charger:
     return Charger(
         "c1",
-        entity_id,
+        entity_id=entity_id,
         activate=DEFAULT,
         deactivate=DEFAULT,
         set_current=set_current,

@@ -126,8 +126,8 @@ provided the configuration is complete:
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every
   variant an expression and the actions it overrides,
-- every EV charger has an entity, actions to activate, deactivate and set the
-  charging current, and
+- every EV charger has a device, an entity, actions to activate, deactivate
+  and set the charging current, and
   **Actively charging**, and also **Car connected** when only one EV charger
   in its group may charge at a time.
 
@@ -160,6 +160,13 @@ chargers. To keep an EV charger from charging for a while, turn on its switch
 **‹charger› excluded from regulation**. The rules below apply within each
 group, so two groups with one EV charger at a time can each have an EV charger
 charging.
+
+An EV charger is a device in Home Assistant, and gets its name from it. Every
+entity Kraftvakt uses for it belongs to that device: the entity that is
+activated, the entity for the charging current, and the entities for car
+connected and actively charging. A value from another device, for example
+whether the car is connected from the car's own integration, is given as a
+template.
 
 Kraftvakt sets the charging current of each EV charger one ampere at a time,
 by how much power is free. The place of the group in the priority list
@@ -253,7 +260,12 @@ regulation starts.
 - **EV charging:** one card per group of EV chargers, with the name, one EV
   charger at a time, and the EV chargers in charging priority. **Add group** adds a group, and a group without EV
   chargers can be deleted. Drag an EV charger to the list of another group to
-  move it there. The dialog for an EV charger has the entity, the actions to
+  move it there. The dialog for an EV charger starts with the device of the
+  charger in Home Assistant, and every entity of the EV charger is chosen
+  among the entities of that device. Choosing the device fills the empty
+  fields with the entities the device most likely has for them, guessed from
+  their names and types, and clears the entities of the device chosen
+  before. Check what was filled in. Then come the entity, the actions to
   activate, deactivate and set the charging current, the minimum and maximum
   charging current, the power reserve, car connected, actively charging, and
   the charging window with **Finish ongoing charging after the charging
@@ -384,9 +396,8 @@ The entity IDs are the same in every language and are grouped by what they
 concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and
 `charger`. The names shown follow the language of Home Assistant. ‹appliance›
 is the name of the entity of the appliance. ‹charger› is the name of the
-device the entity of the EV charger belongs to, or the name of the entity when
-it has no device. The entity ID keeps the name from when the appliance or EV
-charger was added.
+device of the EV charger. The entity ID keeps the name from when the appliance
+or EV charger was added.
 
 ## Template and action examples
 

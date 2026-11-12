@@ -5,6 +5,9 @@ from typing import Any
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.kraftvakt.config_model import (
     ApplianceSwitches,
@@ -138,6 +141,8 @@ def version_1_data() -> dict[str, Any]:
     for appliance in data["appliances"]:
         appliance.update(appliance.pop("actions")["main"])
     group = data.pop("charger_groups")[0]
+    for charger in group["chargers"]:
+        del charger["device_id"]
     data["charging"] = {
         "enabled": True,
         "one_at_a_time": group["one_at_a_time"],
@@ -163,10 +168,12 @@ async def test_version_1_is_migrated_to_the_current_format(
 ) -> None:
     """The actions of each appliance become those of the appliance itself, and
     its variants use them. The chargers become one group with a new id, in the
-    place of «EV charging»."""
+    place of «EV charging», and get the device of their entity."""
     store_version_1(hass_storage, version_1_data())
+    device_id = register_entity_on_device(hass, "switch.garage_charger")
     expected = full_config_data()
     del expected["appliances"][0]["actions"]["v1"]
+    expected["charger_groups"][0]["chargers"][0]["device_id"] = device_id
 
     stored = await KraftvaktStorage(hass).async_load()
 
@@ -259,6 +266,73 @@ async def test_migration_leaves_unreadable_appliances_to_the_reader(
         "key": STORAGE_KEY,
         "data": {"appliances": appliances},
     }
+
+    with pytest.raises(ConfigValidationError):
+        await KraftvaktStorage(hass).async_load()
+
+
+def register_entity_on_device(hass: HomeAssistant, entity_id: str) -> str:
+    """Register the entity on a new device and return the id of the device."""
+    entry = MockConfigEntry(domain="test")
+    entry.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", entity_id)}
+    )
+    domain, object_id = entity_id.split(".")
+    er.async_get(hass).async_get_or_create(
+        domain,
+        "test",
+        object_id,
+        suggested_object_id=object_id,
+        device_id=device.id,
+    )
+    return device.id
+
+
+async def test_version_2_chargers_get_the_device_of_their_entity(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """A charger whose entity has no device, or no entity, gets none."""
+    device_id = register_entity_on_device(hass, "switch.garage_charger")
+    data = full_config_data()
+    group = data["charger_groups"][0]
+    group["chargers"][0].pop("device_id")
+    group["chargers"] += [
+        {"id": "c2", "entity_id": "switch.cabin_charger"},
+        {"id": "c3"},
+    ]
+    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    chargers = stored.config.charger_groups[0].chargers
+    assert [charger.device_id for charger in chargers] == [device_id, None, None]
+
+
+@pytest.mark.parametrize(
+    "charger_groups",
+    ["not a list", ["not a group"], [{"id": "g1", "chargers": ["not a charger"]}]],
+    ids=["text", "list of text", "chargers of text"],
+)
+async def test_migration_leaves_unreadable_chargers_to_the_reader(
+    hass: HomeAssistant, hass_storage: dict[str, Any], charger_groups: Any
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 2,
+        "key": STORAGE_KEY,
+        "data": {"charger_groups": charger_groups},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        await KraftvaktStorage(hass).async_load()
+
+
+async def test_migration_leaves_an_unreadable_entity_to_the_reader(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["entity_id"] = 7
+    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
 
     with pytest.raises(ConfigValidationError):
         await KraftvaktStorage(hass).async_load()

@@ -82,8 +82,19 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
+  /** The only entities the item's fields may use, when they are limited. */
+  protected get entityScope(): string[] | undefined {
+    return undefined;
+  }
+
   protected renderEntity(issues: Issue[]) {
-    const schema = [{ name: "entity_id", required: true, selector: { entity: { exclude_entities: this.usedEntities } } }];
+    const schema = [
+      {
+        name: "entity_id",
+        required: true,
+        selector: { entity: { include_entities: this.entityScope, exclude_entities: this.usedEntities } },
+      },
+    ];
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
   }
 
@@ -123,6 +134,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
         .defaultAction=${defaultAction}
         .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, name, this.draft.entity_id)}
         .entityDomains=${entityAllowed ? defaultAction.domains : []}
+        .includeEntities=${this.entityScope}
         .domainActions=${domainActionsFor(this.capabilities, this.section, name, this.draft.entity_id)}
         .variables=${variables}
         .error=${issue ? this.describe(issue) : undefined}
@@ -221,7 +233,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   protected describe = (issue: Issue): string =>
     fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
-  private entityChanged(entityId: string | null): void {
+  protected entityChanged(entityId: string | null): void {
     this.changeDraft({ entity_id: entityId, ...this.actionsForEntity(entityId) } as Partial<T>);
   }
 

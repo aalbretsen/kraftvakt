@@ -13,9 +13,10 @@ import {
   type KraftvaktConfig,
   type Range,
 } from "./api";
+import { chargerDeviceEntities } from "./charger-device";
 import { allChargers } from "./draft";
 import { availableDomainAction, parameterIssues } from "./domain-actions";
-import type { HassEntity } from "./types";
+import type { HassEntity, HomeAssistant } from "./types";
 
 type LimitSection = keyof Capabilities["limits"];
 type ActionSection = keyof Capabilities["default_actions"];
@@ -60,12 +61,12 @@ function chargerActions(charger: Charger): ActionEntry[] {
 }
 
 /** Return the mistakes in the draft that stop it from being saved. */
-export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, states: States): Issue[] {
+export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   return [
     ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true),
-    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, states)),
+    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, hass.states)),
     ...chargerGroupErrors(config.charger_groups),
-    ...allChargers(config).flatMap((charger) => chargerErrors(charger, capabilities, states)),
+    ...allChargers(config).flatMap((charger) => chargerErrors(charger, capabilities, hass)),
   ];
 }
 
@@ -104,7 +105,10 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
 
 /** Return what is missing in one EV charger. */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
-  const missing = missingEntityAndActions("chargers", charger, chargerActions(charger));
+  const missing: Issue[] = charger.device_id
+    ? []
+    : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
+  missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
   if (!charger.actively_charging) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
@@ -181,11 +185,12 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
 }
 
 /** Return the mistakes in one EV charger. */
-export function chargerErrors(charger: Charger, capabilities: Capabilities, states: States): Issue[] {
+export function chargerErrors(charger: Charger, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
   const issues = [
     ...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true),
-    ...actionIssues("chargers", charger, chargerActions(charger), capabilities, states),
+    ...actionIssues("chargers", charger, chargerActions(charger), capabilities, hass.states),
+    ...deviceIssues(charger, hass).map(([code, field]) => issue(code, field)),
   ];
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
@@ -281,4 +286,17 @@ function missingEntityAndActions(
       .filter(({ action }) => isMissingAction(action))
       .map(({ field }) => ({ code: "missing_action", section, target: item.id, field })),
   ];
+}
+
+/** Return a device that does not exist, or the fields whose entities are not on the charger's device. */
+function deviceIssues(charger: Charger, hass: HomeAssistant): [string, string][] {
+  if (!charger.device_id) {
+    return [];
+  }
+  if (!hass.devices?.[charger.device_id]) {
+    return [["unknown_device", "device_id"]];
+  }
+  return chargerDeviceEntities(charger)
+    .filter(([, entityId]) => hass.entities?.[entityId]?.device_id !== charger.device_id)
+    .map(([field]) => ["entity_not_on_device", field]);
 }

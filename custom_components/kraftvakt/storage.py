@@ -21,9 +21,10 @@ from .config_model import (
 )
 from .config_reader import read_config, read_switches
 from .const import DOMAIN
+from .devices import device_of_entity
 
 STORAGE_KEY: Final = f"{DOMAIN}.config"
-STORAGE_VERSION: Final = 2
+STORAGE_VERSION: Final = 3
 MIGRATED_CHARGER_GROUP_NAME: Final = "EV chargers"
 
 
@@ -45,11 +46,47 @@ class _KraftvaktStore(Store[dict[str, Any]]):
         """Migrate the stored data to the current version.
 
         Version 2 keeps the actions of an appliance in a map with its variants,
-        and the chargers in groups.
+        and the chargers in groups. Version 3 gives each charger a device.
         """
         if old_major_version < 2:
             old_data = _with_charger_groups(_with_appliance_actions_map(old_data))
+        if old_major_version < 3:
+            old_data = _with_charger_devices(self.hass, old_data)
         return old_data
+
+
+def _with_charger_devices(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+    """Give each charger the device of its entity, or none when it has none.
+
+    Data that is not of the expected shape is left to the reader.
+    """
+    groups = data.get("charger_groups")
+    if not isinstance(groups, list):
+        return data
+    return {
+        **data,
+        "charger_groups": [
+            {
+                **group,
+                "chargers": [
+                    _charger_with_device(hass, charger) for charger in group["chargers"]
+                ],
+            }
+            if isinstance(group, dict) and isinstance(group.get("chargers"), list)
+            else group
+            for group in groups
+        ],
+    }
+
+
+def _charger_with_device(hass: HomeAssistant, charger: Any) -> Any:
+    if not isinstance(charger, dict):
+        return charger
+    entity_id = charger.get("entity_id")
+    device_id = (
+        device_of_entity(hass, entity_id) if isinstance(entity_id, str) else None
+    )
+    return {**charger, "device_id": device_id}
 
 
 def _with_charger_groups(data: dict[str, Any]) -> dict[str, Any]:

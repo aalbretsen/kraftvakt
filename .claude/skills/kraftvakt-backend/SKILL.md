@@ -24,12 +24,17 @@ integrations.
 - The entities of appliances and chargers are added and removed when the
   configuration is saved, without reloading the config entry (a reload would
   start the regulation). Registry entries of removed items are removed.
-- A charger is named after the device of its entity (the user's name for the
-  device first), and after the entity when it has no device; an appliance is
-  named after its entity. The status, the entity names sent to the panel and
-  the charger switches use the same function for this, and the panel mirrors
-  it for a charger that is not saved yet. Why: the entity that allows
-  charging often has a name like «Garage Charging allowed».
+- A charger is a device in HA, stored as its `device_id`, and every entity
+  it names (its own, the set-current entity, and the car connected and
+  actively charging entities or power sensor) must belong to that device.
+  Templates and custom actions are not checked. Why: integrations group a
+  charger's entities as a device, and the panel picks them from it.
+- A charger is named after its device (the user's name for the device
+  first), and after its entity while the device is missing or unknown; an
+  appliance is named after its entity. The status, the entity names sent to
+  the panel and the charger switches use the same function for this, and the
+  panel mirrors it for a charger that is not saved yet. Why: the entity that
+  allows charging often has a name like «Garage Charging allowed».
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
   `config_panel_domain` when the panel is registered.
@@ -48,6 +53,7 @@ integrations.
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
 | `conditions.py` | True/false from an entity or a template, and actively charging, which also takes a power sensor and counts missing evidence as charging. |
+| `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
@@ -75,7 +81,7 @@ The format is defined by the dataclasses and their serialization in
 - `priority`: the priority list, with an entry per appliance and variant and
   an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its
-  chargers in charging priority, each with an id, its entity, activate,
+  chargers in charging priority, each with an id, its device, its entity, activate,
   deactivate and set-current actions, min and max current, power reserve, an
   optional car connected condition, actively charging and an optional
   charging window. A charger is nested in its group, so it cannot be in two.
@@ -88,7 +94,9 @@ migration in `storage.py`, with tests, so stored configurations keep working
 after an update. The migration to version 2 puts the chargers in one
 regulated group named «EV chargers», also when EV charging is disabled, and
 makes no group when it is disabled without chargers. The name is in English
-in every language, since it is the user's data.
+in every language, since it is the user's data. The migration to version 3
+gives each charger the device of its entity in the entity registry, or none,
+which is then missing.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script), `entity` or `domain` (the
@@ -115,7 +123,9 @@ An invalid configuration is not saved:
 - Custom actions are checked with HA's script schema, templates for syntax.
   Whether a default action exists for the entity's domain is checked
   separately in `actions.py`, outside parsing; type errors must be fixed
-  before that check can run.
+  before that check can run. That a charger's device exists and its entities
+  belong to it is checked the same way, against the registries, in
+  `devices.py`.
 - The `entity` action mode is only allowed for setting the charging current:
   it runs the default action of the chosen entity instead of the charger's own
   entity, so it must be a `number` or `input_number`. Why: most chargers have
@@ -125,6 +135,7 @@ An invalid configuration is not saved:
   is not checked again.
 
 An incomplete configuration can be saved, but the regulation cannot start.
+A charger without a device is missing, not an error.
 An empty variant expression is missing, not an error, since the variant is
 added in the appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a

@@ -84,6 +84,7 @@ def full_config_data() -> dict[str, Any]:
                 "chargers": [
                     {
                         "id": "c1",
+                        "device_id": "garage_charger",
                         "entity_id": "switch.garage_charger",
                         "activate": {"mode": "default"},
                         "deactivate": {"mode": "default"},

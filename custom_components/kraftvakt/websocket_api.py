@@ -27,6 +27,7 @@ from .config_validation import (
     parse_config,
 )
 from .const import DOMAIN
+from .devices import device_issues
 from .entity import item_name
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
 from .status import status_snapshot
@@ -203,7 +204,7 @@ def validated_config(hass: HomeAssistant, data: dict[str, Any]) -> KraftvaktConf
     found.
     """
     config = parse_config(data)
-    if issues := action_issues(hass, config):
+    if issues := action_issues(hass, config) + device_issues(hass, config):
         raise ConfigValidationError(issues)
     return config
 
