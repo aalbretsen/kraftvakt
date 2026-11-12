@@ -123,6 +123,14 @@ async def advance(
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
+async def advance_windows(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int
+) -> None:
+    """Close `count` windows, one at a time, since each schedules the next."""
+    for _ in range(count):
+        await advance(hass, freezer)
+
+
 def entity_id(hass: HomeAssistant, platform: str, key: str) -> str:
     found = er.async_get(hass).async_get_entity_id(platform, DOMAIN, key)
     assert found is not None
@@ -994,6 +1002,37 @@ async def test_excluded_appliance_is_switched_off_at_the_next_decision(
         (item["id"], item["on"], item["excluded"])
         for item in status_snapshot(hass, entry.runtime_data)["appliances"]
     ] == [("a", False, True), ("b", True, False)]
+
+
+async def test_commands_are_repeated_at_any_window(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """Decisions come every third window, and the commands of A and B are
+    repeated at windows between them. Excluded C is left alone."""
+    config["general"]["regulation_interval"] = 3
+    config["general"]["command_repeat_interval_min"] = 10
+    config["appliances"].append(appliance("c"))
+    config["priority"].append(
+        {"type": "appliance", "appliance_id": "c", "variant_id": None}
+    )
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    await exclude(hass, "c", "turn_on")
+    actions.clear()
+
+    await advance_windows(hass, freezer, 3)
+    assert actions == ["on light.a"]
+    set_power(hass, "9950")
+    await advance_windows(hass, freezer, 6)
+    assert actions == ["on light.a"]
+    await advance(hass, freezer)
+    assert actions == ["on light.a", "off light.b"]
+    await advance_windows(hass, freezer, 3)
+    assert actions == ["on light.a", "off light.b", "on light.a"]
 
 
 async def test_appliance_included_again_gets_room(

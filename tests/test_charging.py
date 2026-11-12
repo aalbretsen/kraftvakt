@@ -142,6 +142,14 @@ async def advance(
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
+async def advance_windows(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int
+) -> None:
+    """Close `count` windows, one at a time, since each schedules the next."""
+    for _ in range(count):
+        await advance(hass, freezer)
+
+
 def switch_id(hass: HomeAssistant, charger_id: str, setting: str) -> str | None:
     return er.async_get(hass).async_get_entity_id(
         "switch", DOMAIN, f"charger_{charger_id}_{setting}"
@@ -363,6 +371,31 @@ async def test_excluded_switch_stops_charging_and_is_saved(
     await use_switch(hass, "c1", "excluded", "turn_off")
     await advance(hass, freezer)
     assert actions[2:] == ["current 6", f"on {CHARGER}"]
+
+
+async def test_charger_current_is_repeated_until_the_charger_is_excluded(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config,
+    actions,
+    setup_kraftvakt,
+) -> None:
+    """An excluded charger gets no repeated commands."""
+    config["general"]["command_repeat_interval_min"] = 10
+    set_power(hass, CHARGER_POWER, "4100")
+    await setup_kraftvakt()
+    await advance_windows(hass, freezer, 3)
+    assert actions[-1] == "current 8"
+    actions.clear()
+
+    await advance_windows(hass, freezer, 9)
+    assert actions == []
+    await advance(hass, freezer)
+    assert actions == ["current 8"]
+
+    await use_switch(hass, "c1", "excluded", "turn_on")
+    await advance_windows(hass, freezer, 20)
+    assert actions == ["current 8", "current 6", f"off {CHARGER}"]
 
 
 async def test_window_override_lets_the_charger_charge_until_the_window(

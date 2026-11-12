@@ -139,6 +139,23 @@ class Scenario:
             )
         )
 
+    def repeat(self, after: timedelta) -> list[Command]:
+        """Repeat the commands that are due `after` the previous decision or repeat.
+
+        The appliances excluded with `exclude` and the chargers read as excluded
+        are left out.
+        """
+        self.now += after
+        return self.engine.repeat_commands(
+            self.now,
+            self.excluded_appliances,
+            frozenset(
+                charger_id
+                for charger_id, reading in self.chargers.items()
+                if reading.excluded
+            ),
+        )
+
     def decide_many(
         self,
         average_w: float,

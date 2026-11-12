@@ -52,7 +52,7 @@ integrations.
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, slots and fictive appliances, waiting, penalty and charging. |
-| `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
+| `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, asks the engine for the repeated commands at every window, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
 | `switch_board.py` | The positions of the user's switches for appliances and chargers, saved together with the configuration, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |

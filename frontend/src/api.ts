@@ -46,6 +46,7 @@ export interface GeneralConfig {
   charger_cycling_step_factor: number;
   charger_cycling_steps: number;
   penalty_threshold_w: number;
+  command_repeat_interval_min: number;
 }
 
 export interface Variant {

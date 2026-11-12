@@ -26,6 +26,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
 | Average consumption | Sliding time-weighted average over exactly one hour back (the capacity window), not configurable. The regulation uses it only for the penalty. |
 | Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. |
+| Command repeat interval | 10–60 min, default 30 min. How long an appliance or charger may go without a command before the command for its state is sent again. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
 | Power reserve | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
@@ -56,11 +57,12 @@ energy in Wh; the status page shows kW.
 - Kraftvakt only decides whether an appliance may be on. It never estimates
   what an appliance uses from changes in the total consumption.
 - It does not read or react to the state of appliances. It assumes each one is
-  as Kraftvakt last told it. Switching appliances outside Kraftvakt can disturb
+  as Kraftvakt last told it, and repeats that command now and then (see
+  Command repeat). Switching appliances outside Kraftvakt can disturb
   the regulation. Exception: for chargers it reads actively charging and car
   connected.
 - A failed action is logged and not retried. The regulation goes on as if it
-  worked.
+  worked. The command repeat sends the command for the state again later.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
 - The configuration can only be changed while the regulation is stopped, except
@@ -69,7 +71,8 @@ energy in Wh; the status page shows kW.
   appliances are already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, cycling counters,
   overconsumption, penalty, current charging priority, bypassed chargers,
-  rests, current variants, excluded appliances) starts again with defaults at
+  rests, current variants, excluded appliances, when each appliance and
+  charger last got a command) starts again with defaults at
   every start: HA or integration start, user start, after the safe state, after
   a penalty and after a change of the power limit. The configuration and the
   switch positions are kept over any restart.
@@ -259,6 +262,29 @@ energy in Wh; the status page shows kW.
   every charger has entity, activate, deactivate and
   set-current actions and actively charging, and also car connected when only
   one charger in its group may charge at a time.
+
+## Command repeat
+
+- An appliance or charger can change state without Kraftvakt, for example
+  after a power outage on its circuit or a fault in the device. The regulation
+  keeps when each appliance and charger last got a command; a start commands
+  every one of them.
+- When a window closes while the regulation runs, also in the safe state and
+  during a penalty, each appliance and charger that has had no command for the
+  command repeat interval gets the command for the state the regulation has
+  set: an appliance the turn-on or turn-off action of its current variant, an
+  activated charger only the set-current action with its current, and a
+  deactivated charger min current and deactivate. At a decision it comes after
+  the decision's commands, so what got a command at the decision is not
+  repeated. It is checked at every window, not only at decisions, so a long
+  regulation interval does not delay it.
+- A repeat is not a switch: it leaves waiting times and cycling counters alone
+  and does not count against one slot per decision.
+- Excluded appliances and chargers get no repeat, by the position of the
+  switch when the window closes, so the user can control them by hand. They
+  still get the commands the regulation sends them otherwise, such as the
+  turn-off when they are excluded and at start and stop.
+- Nothing is repeated while the regulation is stopped.
 
 ## Power limit entity
 

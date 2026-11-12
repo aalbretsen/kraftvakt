@@ -128,7 +128,11 @@ class Waiting:
 
 @dataclass(slots=True)
 class RegulationState:
-    """What the regulation keeps track of while it runs."""
+    """What the regulation keeps track of while it runs.
+
+    `appliances_commanded_at` and `chargers_commanded_at` hold when each
+    appliance and charger was last sent a command.
+    """
 
     started_at: datetime | None = None
     appliances_on: set[str] = field(default_factory=set)
@@ -139,3 +143,5 @@ class RegulationState:
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False
     charging_groups: dict[str, ChargingState] = field(default_factory=dict)
+    appliances_commanded_at: dict[str, datetime] = field(default_factory=dict)
+    chargers_commanded_at: dict[str, datetime] = field(default_factory=dict)

@@ -195,6 +195,10 @@
       "charger_cycling_steps": {
         "label": "Number of steps",
         "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
+      },
+      "command_repeat_interval_min": {
+        "label": "Command repeat interval",
+        "helper": "How long an appliance or EV charger may go without a command before its last command is sent again. {min}–{max} min, default {default} min."
       }
     }
   },
@@ -208,7 +212,9 @@
     "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one step each time until the number of steps is reached. For the first two, the table shows the waiting time at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
     "appliances": "Appliances",
-    "chargers": "EV chargers"
+    "chargers": "EV chargers",
+    "command_repeat": "Command repeat",
+    "command_repeat_info": "An appliance can change state without Kraftvakt, for example when its circuit breaker trips and comes back, or because of a fault in the device. The regulation therefore sends the command for the state it has set again when an appliance or EV charger has not had a command for this long. Appliances and EV chargers excluded from the regulation are left alone."
   },
   "list": {
     "drag": "Drag to change the order",

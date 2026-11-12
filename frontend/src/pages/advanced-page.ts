@@ -46,11 +46,14 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
   wait_curve_pivot: true,
 };
 
-/** The waiting time curve and the waiting time when the same slot is turned on again and again. */
+/**
+ * The waiting time curve, the waiting time when the same slot is turned on
+ * again and again, and how often commands are repeated.
+ */
 @customElement("kraftvakt-advanced-page")
 export class KraftvaktAdvancedPage extends GeneralSettingsPage {
   protected render() {
-    return html`${this.renderWaitCurveCard()} ${this.renderCyclingCard()}`;
+    return html`${this.renderWaitCurveCard()} ${this.renderCyclingCard()} ${this.renderCommandRepeatCard()}`;
   }
 
   private renderWaitCurveCard() {
@@ -72,6 +75,17 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
           <p class="description">${this.localize("advanced.cycling_info")}</p>
           ${this.renderCyclingSection("advanced.appliances", "appliance_cycling_step_factor", "appliance_cycling_steps")}
           ${this.renderCyclingSection("advanced.chargers", "charger_cycling_step_factor", "charger_cycling_steps")}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  private renderCommandRepeatCard() {
+    return html`
+      <ha-card .header=${this.localize("advanced.command_repeat")}>
+        <div class="card-content">
+          <p class="description">${this.localize("advanced.command_repeat_info")}</p>
+          ${this.renderForm([this.numberField("command_repeat_interval_min")])}
         </div>
       </ha-card>
     `;

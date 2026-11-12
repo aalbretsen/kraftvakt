@@ -99,9 +99,18 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   regulation windows in a row closed, every appliance is kept off. A single
   missing value is tolerated. When the sensor gives a valid value again, the
   regulation starts again.
+- **Command repeat:** an appliance or EV charger that has had no command for
+  the command repeat interval, 30 minutes by default, gets the command for the
+  state Kraftvakt has set again: on or off for an appliance, the charging
+  current for an activated EV charger, and deactivate for one that is
+  deactivated. It is checked every time a regulation window closes while the
+  regulation runs, also in the safe state and during a penalty. Excluded
+  appliances and EV chargers get no repeated commands.
 
 Kraftvakt does not know what an appliance actually uses, and does not read
-whether it is on. It assumes the appliances are as Kraftvakt last set them. Do
+whether it is on. It assumes the appliances are as Kraftvakt last set them,
+and repeats the command for that state now and then, in case an appliance has
+changed by itself, for example after a power outage on its circuit. Do
 not turn regulated appliances on or off outside Kraftvakt. It can disturb the
 regulation, affect appliances with higher priority and trigger a penalty.
 Exclude the appliance from the regulation instead. EV chargers are the
@@ -244,6 +253,7 @@ regulation starts.
   - **Waiting time on repeated turn-on:** step (× 0.25, × 0.5, × 0.75 or × 1)
     and number of steps (1–9), for appliances and for EV chargers, each with a
     table of the waiting time for each turn-on in a row.
+  - **Command repeat:** the command repeat interval, 10–60 minutes.
 
 ### Actions
 
@@ -252,7 +262,8 @@ the domain has one. Some device types also have specific actions of their own.
 Every action can also be a custom action, made with the action editor of Home
 Assistant, see [Template and action examples](#template-and-action-examples).
 
-A failed action is logged, and the regulation continues without retrying. An
+A failed action is logged, and the regulation continues without retrying. The
+command repeat sends it again later. An
 entity used by another appliance or EV charger cannot be chosen.
 
 ### Status page

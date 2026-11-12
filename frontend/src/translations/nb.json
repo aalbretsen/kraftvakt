@@ -195,6 +195,10 @@
       "charger_cycling_steps": {
         "label": "Antall steg",
         "helper": "Hvor mange ganger ventetiden øker. {min}–{max}, standard {default}."
+      },
+      "command_repeat_interval_min": {
+        "label": "Intervall for gjentatt kommando",
+        "helper": "Hvor lenge et apparat eller en elbillader kan gå uten kommando før den siste kommandoen sendes på nytt. {min}–{max} min, standard {default} min."
       }
     }
   },
@@ -208,7 +212,9 @@
     "cycling_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og den øker med ett steg hver gang til antall steg er nådd. For de to første viser tabellen ventetiden ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
     "appliances": "Apparater",
-    "chargers": "Elbilladere"
+    "chargers": "Elbilladere",
+    "command_repeat": "Gjentatt kommando",
+    "command_repeat_info": "Et apparat kan endre tilstand uten Kraftvakt, for eksempel når sikringen går og kommer tilbake, eller på grunn av en feil i enheten. Reguleringen sender derfor kommandoen for tilstanden den har satt på nytt når et apparat eller en elbillader ikke har fått kommando på så lenge. Apparater og elbilladere som er utenfor regulering, får være i fred."
   },
   "list": {
     "drag": "Dra for å endre rekkefølgen",

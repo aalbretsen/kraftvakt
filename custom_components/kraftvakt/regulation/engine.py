@@ -160,7 +160,7 @@ class RegulationEngine:
         self._state = RegulationState(
             started_at=now, charging_groups=self._new_charging_groups()
         )
-        return self._turn_off_everything()
+        return self._record_commands(self._turn_off_everything(), now)
 
     def stop(self) -> list[Command]:
         """Stop the regulation and turn everything off."""
@@ -171,7 +171,54 @@ class RegulationEngine:
 
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out."""
-        return _last_command_per_appliance(self._decide(decision))
+        commands = _last_command_per_appliance(self._decide(decision))
+        return self._record_commands(commands, decision.now)
+
+    def repeat_commands(
+        self,
+        now: datetime,
+        excluded_appliances: frozenset[str],
+        excluded_chargers: frozenset[str],
+    ) -> list[Command]:
+        """Return the command for the current state again where it is due.
+
+        An appliance or charger that has had no command for the repeat
+        interval gets the command for the state the regulation has set, in
+        case it changed by itself, for example after a power outage. A
+        charger that is activated gets its current, and one that is
+        deactivated is deactivated again. A repeat is not a switch, so it
+        leaves waiting times and cycling counters alone. Excluded appliances
+        and chargers are left alone.
+        """
+        if not self._running:
+            return []
+        due_at = now - timedelta(
+            minutes=self._config.general.command_repeat_interval_min
+        )
+        state = self._state
+        commands: list[Command] = []
+        for appliance in self._config.appliances:
+            appliance_id = appliance.id
+            if (
+                appliance_id in excluded_appliances
+                or state.appliances_commanded_at[appliance_id] > due_at
+            ):
+                continue
+            variant_id = state.current_variants.get(appliance_id)
+            if appliance_id in state.appliances_on:
+                commands.append(TurnOnAppliance(appliance_id, variant_id))
+            else:
+                commands.append(TurnOffAppliance(appliance_id, variant_id))
+        for charger in self._chargers.values():
+            if (
+                charger.id in excluded_chargers
+                or state.chargers_commanded_at[charger.id] > due_at
+            ):
+                continue
+            commands += self._charger_commands(
+                charger, self._charging_of(charger.id).fictive_on[charger.id]
+            )
+        return self._record_commands(commands, now)
 
     def _decide(self, decision: DecisionInput) -> list[Command]:
         if not self._running:
@@ -513,6 +560,20 @@ class RegulationEngine:
         ]
         if count == 0:
             commands.append(DeactivateCharger(charger.id))
+        return commands
+
+    def _record_commands(self, commands: list[Command], now: datetime) -> list[Command]:
+        """Note when each appliance and charger in the commands got a command."""
+        for command in commands:
+            match command:
+                case TurnOnAppliance(appliance_id) | TurnOffAppliance(appliance_id):
+                    self._state.appliances_commanded_at[appliance_id] = now
+                case (
+                    ActivateCharger(charger_id)
+                    | DeactivateCharger(charger_id)
+                    | SetChargingCurrent(charger_id)
+                ):
+                    self._state.chargers_commanded_at[charger_id] = now
         return commands
 
     def _record_switch(self, key: Hashable, turn_on: bool) -> None:

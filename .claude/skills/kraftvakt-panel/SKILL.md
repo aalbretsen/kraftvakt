@@ -154,6 +154,9 @@ Code that mirrors the backend and must be kept in step with it:
   for every time after it, with the waiting time and the actual waiting time.
   The first two follow the curve and show the waiting time at the pivot point,
   which the text says. Dropdowns keep their values as numbers in the draft.
+- Third card, command repeat: a short text on why commands are repeated and
+  that excluded appliances and chargers are left alone, and the interval in
+  minutes.
 - Tables are left out on a narrow screen.
 
 ### Status page

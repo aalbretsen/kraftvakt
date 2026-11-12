@@ -203,6 +203,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "charger_cycling_step_factor": 1.0,
             "charger_cycling_steps": 5,
             "penalty_threshold_w": 100,
+            "command_repeat_interval_min": 30,
         },
         "appliances": {"power_reserve_w": None},
         "charger_groups": {"one_at_a_time": True},

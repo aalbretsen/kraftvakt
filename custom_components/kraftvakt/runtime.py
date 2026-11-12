@@ -439,6 +439,7 @@ class KraftvaktRuntime:
             self._windows_since_decision.append(averages)
             if self._decision_is_due():
                 self._decide_or_restart(averages)
+            self._repeat_commands(averages.end)
         self._notify_status()
 
     def _decision_is_due(self) -> bool:
@@ -519,6 +520,18 @@ class KraftvaktRuntime:
             commands or "none",
         )
 
+    def _repeat_commands(self, now: datetime) -> None:
+        commands = self._engine.repeat_commands(
+            now, self._excluded_appliances(), self._excluded_chargers()
+        )
+        if commands:
+            _LOGGER.debug(
+                "Commands repeated at %s: %s",
+                dt_util.as_local(now).isoformat(timespec="seconds"),
+                commands,
+            )
+            self._execute(commands)
+
     def _power_sensor_lost(self) -> bool:
         return len(self._recent_windows) == self._recent_windows.maxlen and not any(
             window.sensor_valid for window in self._recent_windows
@@ -538,6 +551,13 @@ class KraftvaktRuntime:
             appliance.id
             for appliance in self._config.appliances
             if self._switch_board.appliance_switches(appliance.id).excluded
+        )
+
+    def _excluded_chargers(self) -> frozenset[str]:
+        return frozenset(
+            charger.id
+            for charger in self._config.chargers
+            if self._switch_board.charger_switches(charger.id).excluded
         )
 
     def _charger_readings(self) -> dict[str, ChargerReading]:

@@ -20,6 +20,7 @@ def full_config_data() -> dict[str, Any]:
             "charger_cycling_step_factor": 0.25,
             "charger_cycling_steps": 9,
             "penalty_threshold_w": 500,
+            "command_repeat_interval_min": 45,
         },
         "appliances": [
             {

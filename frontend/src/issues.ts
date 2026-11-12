@@ -35,6 +35,7 @@ const ADVANCED_FIELDS = new Set([
   "appliance_cycling_steps",
   "charger_cycling_step_factor",
   "charger_cycling_steps",
+  "command_repeat_interval_min",
 ]);
 
 /** Return the page where the issue is fixed. */
