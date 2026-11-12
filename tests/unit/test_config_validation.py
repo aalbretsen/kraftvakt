@@ -484,7 +484,13 @@ async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> Non
 
 async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["appliances"][0]["turn_off"]["action"] = [{"no_such_key": True}]
+    data["appliances"][0]["actions"]["main"]["turn_off"]["action"] = [
+        {"no_such_key": True}
+    ]
+    data["appliances"][0]["actions"]["v1"]["turn_on"] = {
+        "mode": "custom",
+        "action": [{"delay": "lenge"}],
+    }
     data["charging"]["chargers"][0]["set_current"]["action"] = [{"delay": "lenge"}]
 
     with pytest.raises(ConfigValidationError) as error:
@@ -492,15 +498,16 @@ async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
 
     assert error.value.issues == [
         Issue("invalid_action", "appliances", "a1", "turn_off"),
+        Issue("invalid_action", "appliances", "a1", "variants.v1.turn_on"),
         Issue("invalid_action", "chargers", "c1", "set_current"),
     ]
 
 
 async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None:
     data = full_config_data()
-    original = data["appliances"][0]["turn_off"]["action"][0]
+    original = data["appliances"][0]["actions"]["main"]["turn_off"]["action"][0]
 
     config = parse_config(data)
 
-    assert config.appliances[0].turn_off.steps[0] == original
+    assert config.appliances[0].actions_for(None).turn_off.steps[0] == original
     assert original["target"] == {"entity_id": "{{ entity_id }}"}

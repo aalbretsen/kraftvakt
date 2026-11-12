@@ -80,7 +80,11 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   steps, at most 1800 s), where each ampere counts on its own. With no waiting
   time at the power limit, the waiting time does not grow.
 - **Variants:** an appliance can have variants with another place in the
-  priority list, for example a higher priority in the morning.
+  priority list, for example a higher priority in the morning. A variant uses
+  the actions of the appliance, or its own, for example another HVAC mode for
+  a thermostat in summer. When the variant changes, the appliance is turned
+  off with the turn-off action of the new variant, and comes on again the
+  normal way.
 - **Excluded appliance:** the switch **‹appliance› excluded from regulation**
   takes an appliance out of the regulation. It keeps its place in the
   priority list, but is passed as if it was not there, and is turned off at
@@ -203,7 +207,10 @@ regulation starts.
   optional power reserve, and variants. A variant has a label and an
   expression, either a boolean entity or a template, and is a separate entry
   in the priority list. The top true expression applies. The current result
-  of a template is shown under it. When EV charging control is on, **EV
+  of a template is shown under it. Turn off **Use the actions of the
+  appliance** to give a variant its own actions to turn the appliance on and
+  off. The power reserve applies to every variant. A variant is configured
+  in the dialog of its appliance; opening a variant's row only says so. When EV charging control is on, **EV
   charging** is in the list and can be moved like an appliance.
 - **EV charging:** EV charging control on or off, one EV charger at a time,
   and the EV chargers in charging priority. The dialog for an EV charger has

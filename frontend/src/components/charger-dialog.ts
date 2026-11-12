@@ -17,7 +17,13 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected readonly texts = "charger";
 
-  protected readonly actionFields = ["activate", "deactivate", "set_current"] as const;
+  protected actionsForEntity(entityId: string | null): Partial<Charger> {
+    return {
+      activate: this.actionForEntity("activate", this.draft.activate, entityId),
+      deactivate: this.actionForEntity("deactivate", this.draft.deactivate, entityId),
+      set_current: this.actionForEntity("set_current", this.draft.set_current, entityId),
+    };
+  }
 
   @property({ type: Boolean }) oneAtATime = false;
 

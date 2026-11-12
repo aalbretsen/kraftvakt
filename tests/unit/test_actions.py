@@ -16,13 +16,18 @@ from custom_components.kraftvakt.actions import (
     set_current_variables,
 )
 from custom_components.kraftvakt.config_model import (
+    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
+    ApplianceActions,
     Charger,
     ChargingConfig,
+    Condition,
+    ConditionType,
     Issue,
     KraftvaktConfig,
+    Variant,
 )
 from custom_components.kraftvakt.regulation.model import (
     ActivateCharger,
@@ -45,7 +50,11 @@ def appliance(
     turn_on: ActionConfig = DEFAULT,
     turn_off: ActionConfig = DEFAULT,
 ) -> Appliance:
-    return Appliance(appliance_id, entity_id, turn_on=turn_on, turn_off=turn_off)
+    return Appliance(
+        appliance_id,
+        entity_id,
+        actions={MAIN_ACTIONS: ApplianceActions(turn_on, turn_off)},
+    )
 
 
 def charger(entity_id: str, set_current: ActionConfig = DEFAULT) -> Charger:
@@ -97,6 +106,28 @@ def test_number_domains_set_the_current_by_default(domain: str) -> None:
 def test_domains_without_default_action(kind: ActionKind, entity_id: str) -> None:
     with pytest.raises(ValueError, match="no default action"):
         default_action_steps(kind, entity_id)
+
+
+async def test_actions_of_a_variant_are_checked_against_the_entity(
+    hass: HomeAssistant,
+) -> None:
+    config = KraftvaktConfig(
+        appliances=(
+            Appliance(
+                "a1",
+                "sensor.x",
+                actions={
+                    MAIN_ACTIONS: ApplianceActions(custom(), custom()),
+                    "v1": ApplianceActions(DEFAULT, custom()),
+                },
+                variants=(Variant("v1", "V", Condition(ConditionType.TEMPLATE, "")),),
+            ),
+        )
+    )
+
+    assert action_issues(hass, config) == [
+        Issue("default_action_unavailable", "appliances", "a1", "variants.v1.turn_on")
+    ]
 
 
 async def test_default_actions_must_exist_for_the_domain(hass: HomeAssistant) -> None:
@@ -175,6 +206,42 @@ async def test_custom_actions_get_the_entity_variables(hass: HomeAssistant) -> N
         {"entity": "switch.a", "mode": "eco"},
         {"entity": "switch.a", "mode": "comfort"},
     ]
+
+
+async def test_variant_with_own_actions_runs_them(hass: HomeAssistant) -> None:
+    """A variant without its own actions uses those of the appliance."""
+    calls = async_mock_service(hass, "test", "record")
+
+    def record(name: str) -> ActionConfig:
+        return custom({"action": "test.record", "data": {"name": name}})
+
+    config = KraftvaktConfig(
+        appliances=(
+            Appliance(
+                "a1",
+                "switch.a",
+                actions={
+                    MAIN_ACTIONS: ApplianceActions(record("on"), record("off")),
+                    "cool": ApplianceActions(record("cool on"), record("cool off")),
+                },
+                variants=(
+                    Variant("cool", "Cool", Condition(ConditionType.TEMPLATE, "")),
+                    Variant("eco", "Eco", Condition(ConditionType.TEMPLATE, "")),
+                ),
+            ),
+        )
+    )
+
+    await ActionRunner(hass, config).async_execute(
+        [
+            TurnOnAppliance("a1"),
+            TurnOnAppliance("a1", "cool"),
+            TurnOffAppliance("a1", "cool"),
+            TurnOffAppliance("a1", "eco"),
+        ]
+    )
+
+    assert [call.data["name"] for call in calls] == ["on", "cool on", "cool off", "off"]
 
 
 async def test_failed_action_is_logged_and_not_retried(

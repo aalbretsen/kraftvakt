@@ -49,7 +49,8 @@ def test_included_again_above_the_lowest_on_makes_room() -> None:
 
 
 def test_excluded_appliance_that_switches_variant_makes_no_room() -> None:
-    """D moves above C, but is never turned on, so C stays on."""
+    """D moves above C, but is never turned on, so C stays on. D gets the
+    turn-off action of its new variant."""
     scenario = Scenario(
         make_config(
             "a",
@@ -63,7 +64,7 @@ def test_excluded_appliance_that_switches_variant_makes_no_room() -> None:
     scenario.exclude("d")
     scenario.turn_on("a", "b", "c")
 
-    assert scenario.decide(9000, true=("up",)) == []
+    assert scenario.decide(9000, true=("up",)) == off("d:up")
     assert scenario.engine.appliances_on == {"a", "b", "c"}
 
 

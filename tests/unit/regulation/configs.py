@@ -8,9 +8,11 @@ Charging windows are written as ``"22:00-06:00"``.
 from datetime import time
 
 from custom_components.kraftvakt.config_model import (
+    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
+    ApplianceActions,
     Charger,
     ChargingConfig,
     ChargingWindow,
@@ -37,8 +39,7 @@ def appliance(
     return Appliance(
         id=appliance_id,
         entity_id=f"switch.{appliance_id}",
-        turn_on=DEFAULT_ACTION,
-        turn_off=DEFAULT_ACTION,
+        actions={MAIN_ACTIONS: ApplianceActions(DEFAULT_ACTION, DEFAULT_ACTION)},
         power_reserve_w=reserve_w,
         variants=tuple(
             Variant(

@@ -157,7 +157,8 @@ def test_stop_and_start_end_the_penalty() -> None:
 
 
 def test_current_variant_is_found_during_the_penalty() -> None:
-    """The current variant is found at each decision, also in a penalty."""
+    """The current variant is found at each decision, also in a penalty, and
+    a switch gives the turn-off action of the new variant."""
     scenario = Scenario(
         no_waiting(
             appliance("heater", variants=("morning",)),
@@ -168,7 +169,9 @@ def test_current_variant_is_found_during_the_penalty() -> None:
     scenario.turn_on("b", "heater")
     start_penalty(scenario)
 
-    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD, true=("morning",)) == []
+    assert scenario.decide(5000, capacity=ABOVE_THRESHOLD, true=("morning",)) == off(
+        "heater:morning"
+    )
     assert scenario.engine.current_variants == {"heater": "morning", "b": None}
 
 

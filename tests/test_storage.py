@@ -122,3 +122,80 @@ async def test_load_rejects_unreadable_data(
 
     with pytest.raises(ConfigValidationError):
         await KraftvaktStorage(hass).async_load()
+
+
+def version_1_data() -> dict[str, Any]:
+    """The full configuration as version 1 stored it, without variant actions."""
+    data = full_config_data()
+    for appliance in data["appliances"]:
+        appliance.update(appliance.pop("actions")["main"])
+    return {**data, "appliance_switches": {"a1": {"excluded": True}}}
+
+
+async def test_version_1_gets_the_actions_of_the_appliance_in_a_map(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    """The actions of each appliance become those of the appliance itself, and
+    its variants use them."""
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "key": STORAGE_KEY,
+        "data": version_1_data(),
+    }
+    expected = full_config_data()
+    del expected["appliances"][0]["actions"]["v1"]
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    assert stored.config == read_config(expected)
+    assert stored.appliance_switches["a1"] == ApplianceSwitches(excluded=True)
+
+
+async def test_migrated_data_is_saved_as_the_new_version(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "key": STORAGE_KEY,
+        "data": version_1_data(),
+    }
+    storage = KraftvaktStorage(hass)
+
+    await storage.async_save(await storage.async_load())
+
+    stored = hass_storage[STORAGE_KEY]
+    assert stored["version"] == STORAGE_VERSION
+    assert "turn_on" not in stored["data"]["appliances"][0]
+    assert stored["data"]["appliances"][1]["actions"] == {
+        "main": {"turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}
+    }
+
+
+@pytest.mark.parametrize(
+    "appliances", ["not a list", ["not an appliance"]], ids=["text", "list of text"]
+)
+async def test_migration_leaves_unreadable_appliances_to_the_reader(
+    hass: HomeAssistant, hass_storage: dict[str, Any], appliances: Any
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "key": STORAGE_KEY,
+        "data": {"appliances": appliances},
+    }
+
+    with pytest.raises(ConfigValidationError):
+        await KraftvaktStorage(hass).async_load()
+
+
+async def test_version_1_without_appliances_is_read(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "key": STORAGE_KEY,
+        "data": {"general": {"power_limit_w": 8000}},
+    }
+
+    stored = await KraftvaktStorage(hass).async_load()
+
+    assert stored.config.general.power_limit_w == 8000

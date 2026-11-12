@@ -492,4 +492,6 @@ def test_variant_switch_makes_room_by_switching_off_a_fictive_appliance() -> Non
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 7)
 
-    assert scenario.decide(9900, true=("morning",)) == current("c", 6)
+    assert scenario.decide(9900, true=("morning",)) == off("h:morning") + current(
+        "c", 6
+    )

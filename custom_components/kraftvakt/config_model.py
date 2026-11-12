@@ -7,7 +7,7 @@ configuration and saving it.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field, fields
 from datetime import time
 from enum import Enum, StrEnum
@@ -183,16 +183,79 @@ class Variant:
         return _fields_to_dict(self)
 
 
+MAIN_ACTIONS: Final = "main"
+
+APPLIANCE_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {
+    "turn_on": ActionKind.TURN_ON,
+    "turn_off": ActionKind.TURN_OFF,
+}
+
+CHARGER_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {
+    "activate": ActionKind.TURN_ON,
+    "deactivate": ActionKind.TURN_OFF,
+    "set_current": ActionKind.SET_CURRENT,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ActionField:
+    """An action of an appliance or a charger, with the field issues address."""
+
+    field: str
+    kind: ActionKind
+    action: ActionConfig | None
+
+
+@dataclass(frozen=True, slots=True)
+class ApplianceActions:
+    """The actions that turn an appliance on and off."""
+
+    turn_on: ActionConfig | None = None
+    turn_off: ActionConfig | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the actions as JSON-friendly data."""
+        return _fields_to_dict(self)
+
+
 @dataclass(frozen=True, slots=True)
 class Appliance:
-    """A device that Kraftvakt turns on and off."""
+    """A device that Kraftvakt turns on and off.
+
+    `actions` has the actions of the appliance under `MAIN_ACTIONS`, and the
+    actions of each variant that has its own under the id of the variant. A
+    variant without its own actions uses those of the appliance.
+    """
 
     id: str
     entity_id: str | None = None
-    turn_on: ActionConfig | None = None
-    turn_off: ActionConfig | None = None
+    actions: Mapping[str, ApplianceActions] = field(
+        default_factory=lambda: {MAIN_ACTIONS: ApplianceActions()}
+    )
     power_reserve_w: int | None = None
     variants: tuple[Variant, ...] = ()
+
+    def actions_key(self, variant_id: str | None) -> str:
+        """Return the key of the actions the variant uses, or the appliance."""
+        if variant_id is not None and variant_id in self.actions:
+            return variant_id
+        return MAIN_ACTIONS
+
+    def actions_for(self, variant_id: str | None) -> ApplianceActions:
+        """Return the actions the variant uses, or the appliance itself."""
+        return self.actions.get(self.actions_key(variant_id), ApplianceActions())
+
+    def action_fields(self) -> Iterator[ActionField]:
+        """Return the actions of the appliance and of the variants with their own."""
+        own = [("", self.actions.get(MAIN_ACTIONS, ApplianceActions()))]
+        own += [
+            (f"variants.{variant.id}.", self.actions[variant.id])
+            for variant in self.variants
+            if variant.id in self.actions
+        ]
+        for prefix, actions in own:
+            for name, kind in APPLIANCE_ACTION_KINDS.items():
+                yield ActionField(f"{prefix}{name}", kind, getattr(actions, name))
 
     def to_dict(self) -> dict[str, Any]:
         """Return the appliance as JSON-friendly data."""
@@ -258,6 +321,11 @@ class Charger:
     actively_charging: Condition | None = None
     charging_window: ChargingWindow | None = None
 
+    def action_fields(self) -> Iterator[ActionField]:
+        """Return the actions of the charger."""
+        for name, kind in CHARGER_ACTION_KINDS.items():
+            yield ActionField(name, kind, getattr(self, name))
+
     def to_dict(self) -> dict[str, Any]:
         """Return the charger as JSON-friendly data."""
         return _fields_to_dict(self)
@@ -307,6 +375,13 @@ class KraftvaktConfig:
     appliances: tuple[Appliance, ...] = ()
     priority: tuple[PriorityEntry, ...] = ()
     charging: ChargingConfig = field(default_factory=ChargingConfig)
+
+    def items(self) -> Iterator[tuple[str, Appliance | Charger]]:
+        """Return the appliances and the chargers with the section they are in."""
+        for appliance in self.appliances:
+            yield "appliances", appliance
+        for charger in self.charging.chargers:
+            yield "chargers", charger
 
     def to_dict(self) -> dict[str, Any]:
         """Return the configuration as JSON-friendly data."""
@@ -410,6 +485,8 @@ def _fields_to_dict(item: Any) -> dict[str, Any]:
 def _to_json(value: Any) -> Any:
     if isinstance(value, tuple):
         return [_to_json(item) for item in value]
+    if isinstance(value, Mapping):
+        return {key: _to_json(item) for key, item in value.items()}
     if isinstance(value, Enum):
         return value.value
     if hasattr(value, "to_dict"):

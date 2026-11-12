@@ -29,8 +29,7 @@ def appliance(appliance_id: str, **settings: Any) -> dict[str, Any]:
     return {
         "id": appliance_id,
         "entity_id": f"light.{appliance_id}",
-        "turn_on": DEFAULT,
-        "turn_off": DEFAULT,
+        "actions": {"main": {"turn_on": DEFAULT, "turn_off": DEFAULT}},
         **settings,
     }
 
@@ -217,7 +216,7 @@ async def test_config_get_gives_configuration_names_and_missing(
     hass_ws_client: WebSocketGenerator,
 ) -> None:
     """The configuration with entity names and what is missing."""
-    config["appliances"][1]["turn_off"] = None
+    config["appliances"][1]["actions"]["main"]["turn_off"] = None
     hass.states.async_set("light.a", "off", {"friendly_name": "Water heater"})
     config_entry = MockConfigEntry(domain=DOMAIN)
     config_entry.add_to_hass(hass)
@@ -403,14 +402,12 @@ async def test_domain_action_values_are_checked_against_the_entity(
     hass.states.async_set("climate.hall", "off", {"hvac_modes": ["off", "heat"]})
     client = await hass_ws_client(hass)
     changed = config_data()
-    changed["appliances"][1].update(
-        entity_id="climate.hall",
-        turn_on={
-            "mode": "domain",
-            "domain_action": "climate_hvac_mode",
-            "data": {"hvac_mode": "auto"},
-        },
-    )
+    changed["appliances"][1]["entity_id"] = "climate.hall"
+    changed["appliances"][1]["actions"]["main"]["turn_on"] = {
+        "mode": "domain",
+        "domain_action": "climate_hvac_mode",
+        "data": {"hvac_mode": "auto"},
+    }
 
     response = await send(client, "kraftvakt/config/save", config=changed)
 
@@ -425,12 +422,12 @@ async def test_domain_action_values_are_checked_against_the_entity(
             }
         ],
     }
-    changed["appliances"][1]["turn_on"]["data"]["hvac_mode"] = "heat"
+    changed["appliances"][1]["actions"]["main"]["turn_on"]["data"]["hvac_mode"] = "heat"
     response = await send(client, "kraftvakt/config/save", config=changed)
     assert response["result"]["saved"]
-    assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {
-        "hvac_mode": "heat"
-    }
+    assert stored_config(hass_storage)["appliances"][1]["actions"]["main"]["turn_on"][
+        "data"
+    ] == {"hvac_mode": "heat"}
 
 
 async def test_incomplete_configuration_is_saved(

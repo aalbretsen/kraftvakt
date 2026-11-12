@@ -12,9 +12,11 @@ from custom_components.kraftvakt.actions import (
     domain_actions_by_field,
 )
 from custom_components.kraftvakt.config_model import (
+    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
+    ApplianceActions,
     Charger,
     ChargingConfig,
     Issue,
@@ -41,7 +43,13 @@ def thermostat(
     turn_on: ActionConfig, turn_off: ActionConfig, entity_id: str = "climate.hall"
 ) -> KraftvaktConfig:
     return KraftvaktConfig(
-        appliances=(Appliance("a1", entity_id, turn_on=turn_on, turn_off=turn_off),)
+        appliances=(
+            Appliance(
+                "a1",
+                entity_id,
+                actions={MAIN_ACTIONS: ApplianceActions(turn_on, turn_off)},
+            ),
+        )
     )
 
 
@@ -191,10 +199,16 @@ async def test_domain_action_must_belong_to_the_entity(hass: HomeAssistant) -> N
             Appliance(
                 "a1",
                 "switch.a",
-                turn_on=domain("climate_hvac_mode", hvac_mode="heat"),
-                turn_off=domain("unknown"),
+                actions={
+                    MAIN_ACTIONS: ApplianceActions(
+                        domain("climate_hvac_mode", hvac_mode="heat"),
+                        domain("unknown"),
+                    )
+                },
             ),
-            Appliance("a2", turn_on=domain("unknown")),
+            Appliance(
+                "a2", actions={MAIN_ACTIONS: ApplianceActions(domain("unknown"))}
+            ),
         ),
         charging=ChargingConfig(
             chargers=(

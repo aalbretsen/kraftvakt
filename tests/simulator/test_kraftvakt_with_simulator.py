@@ -42,8 +42,7 @@ def kraftvakt_config() -> dict[str, Any]:
             {
                 "id": "a1",
                 "entity_id": WATER_HEATER,
-                "turn_on": DEFAULT,
-                "turn_off": DEFAULT,
+                "actions": {"main": {"turn_on": DEFAULT, "turn_off": DEFAULT}},
             }
         ],
         "priority": [
@@ -176,19 +175,19 @@ async def test_kraftvakt_controls_a_thermostat_with_its_domain_actions(
     config = kraftvakt_config()
     config["charging"] = {"enabled": False}
     config["priority"] = config["priority"][:1]
-    config["appliances"][0].update(
-        entity_id=THERMOSTAT,
-        turn_on={
+    config["appliances"][0]["entity_id"] = THERMOSTAT
+    config["appliances"][0]["actions"]["main"] = {
+        "turn_on": {
             "mode": "domain",
             "domain_action": "climate_hvac_mode_and_temperature",
             "data": {"hvac_mode": "heat", "temperature": 22},
         },
-        turn_off={
+        "turn_off": {
             "mode": "domain",
             "domain_action": "climate_temperature",
             "data": {"temperature": 8},
         },
-    )
+    }
     await setup_kraftvakt(hass, hass_storage, config)
 
     await regulate_until(hass, freezer, lambda: power(hass, THERMOSTAT_POWER) > 0)

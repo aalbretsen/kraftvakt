@@ -224,7 +224,10 @@
     "power_reserve": "effektreserve {power} W",
     "variant_count": "varianter: {count}",
     "variant_entity": "Variant · entitet {entity}",
-    "variant_template": "Variant · mal"
+    "variant_template": "Variant · mal",
+    "variant_own_actions": "egne handlinger",
+    "variant_dialog_title": "Variant",
+    "variant_dialog_text": "«{label}» er en variant av {appliance} og konfigureres i dialogen til apparatet."
   },
   "appliance": {
     "add_title": "Legg til apparat",
@@ -232,7 +235,7 @@
     "view_title": "Apparat",
     "actions": "Handlinger",
     "variants": "Varianter",
-    "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten.",
+    "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten. En variant bruker handlingene til apparatet, eller egne. Effektreserven gjelder for alle varianter.",
     "add_variant": "Legg til variant",
     "remove_variant": "Fjern variant",
     "delete": "Slett apparat",
@@ -253,6 +256,10 @@
       },
       "label": {
         "label": "Merkelapp"
+      },
+      "use_main_actions": {
+        "label": "Bruk handlingene til apparatet",
+        "helper": "Slå av for å gi varianten egne handlinger for å slå apparatet på og av, for eksempel en annen HVAC-modus."
       }
     }
   },

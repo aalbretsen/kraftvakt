@@ -30,7 +30,7 @@ def test_default_config_misses_power_sensor() -> None:
 def test_appliance_needs_entity_and_both_actions() -> None:
     data = full_config_data()
     data["appliances"].append(
-        {"id": "a3", "turn_off": {"mode": "custom", "action": []}}
+        {"id": "a3", "actions": {"main": {"turn_off": {"mode": "custom"}}}}
     )
 
     assert _missing(data) == [
@@ -95,7 +95,7 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
 
 def test_domain_action_needs_every_value_chosen() -> None:
     data = full_config_data()
-    data["appliances"][0]["turn_on"] = {
+    data["appliances"][0]["actions"]["main"]["turn_on"] = {
         "mode": "domain",
         "domain_action": "climate_hvac_mode",
         "data": {"hvac_mode": None},
@@ -103,4 +103,13 @@ def test_domain_action_needs_every_value_chosen() -> None:
 
     assert _missing(data) == [
         Issue("missing_action", "appliances", data["appliances"][0]["id"], "turn_on")
+    ]
+
+
+def test_variant_with_its_own_actions_needs_both() -> None:
+    data = full_config_data()
+    data["appliances"][0]["actions"]["v1"] = {"turn_on": {"mode": "default"}}
+
+    assert _missing(data) == [
+        Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")
     ]

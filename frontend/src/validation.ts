@@ -1,14 +1,16 @@
 /** Checks of the draft, so the user sees mistakes before saving. */
-import type {
-  ActionConfig,
-  Appliance,
-  Capabilities,
-  Charger,
-  Condition,
-  DefaultAction,
-  Issue,
-  KraftvaktConfig,
-  Range,
+import {
+  MAIN_ACTIONS,
+  type ActionConfig,
+  type Appliance,
+  type ApplianceActions,
+  type Capabilities,
+  type Charger,
+  type Condition,
+  type DefaultAction,
+  type Issue,
+  type KraftvaktConfig,
+  type Range,
 } from "./api";
 import { availableDomainAction, parameterIssues } from "./domain-actions";
 import type { HassEntity } from "./types";
@@ -17,8 +19,34 @@ type LimitSection = keyof Capabilities["limits"];
 type ActionSection = keyof Capabilities["default_actions"];
 type States = Record<string, HassEntity>;
 
-const APPLIANCE_ACTIONS = ["turn_on", "turn_off"] as const;
+export const APPLIANCE_ACTIONS = ["turn_on", "turn_off"] as const;
 const CHARGER_ACTIONS = ["activate", "deactivate", "set_current"] as const;
+
+/** An action of an appliance or a charger: its name, the field issues address, and its value. */
+interface ActionEntry {
+  name: string;
+  field: string;
+  action: ActionConfig | null;
+}
+
+const NO_ACTIONS: ApplianceActions = { turn_on: null, turn_off: null };
+
+/** Return the actions of the appliance and of the variants with their own, as the backend does. */
+function applianceActions(appliance: Appliance): ActionEntry[] {
+  const own: [string, ApplianceActions][] = [
+    ["", appliance.actions[MAIN_ACTIONS] ?? NO_ACTIONS],
+    ...appliance.variants
+      .filter((variant) => appliance.actions[variant.id])
+      .map((variant): [string, ApplianceActions] => [`variants.${variant.id}.`, appliance.actions[variant.id]]),
+  ];
+  return own.flatMap(([prefix, actions]) =>
+    APPLIANCE_ACTIONS.map((name) => ({ name, field: `${prefix}${name}`, action: actions[name] })),
+  );
+}
+
+function chargerActions(charger: Charger): ActionEntry[] {
+  return CHARGER_ACTIONS.map((name) => ({ name, field: name, action: charger[name] }));
+}
 
 /** Return the mistakes in the draft that stop it from being saved. */
 export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, states: States): Issue[] {
@@ -44,12 +72,12 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
 
 /** Return what is missing in one appliance. */
 export function missingInAppliance(appliance: Appliance): Issue[] {
-  return missingEntityAndActions("appliances", appliance, APPLIANCE_ACTIONS);
+  return missingEntityAndActions("appliances", appliance, applianceActions(appliance));
 }
 
 /** Return what is missing in one EV charger. */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
-  const missing = missingEntityAndActions("chargers", charger, CHARGER_ACTIONS);
+  const missing = missingEntityAndActions("chargers", charger, chargerActions(charger));
   if (!charger.actively_charging) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
@@ -111,7 +139,7 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
   const labels = appliance.variants.map((variant) => variant.label.trim());
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
-    ...actionIssues("appliances", appliance, APPLIANCE_ACTIONS, capabilities, states),
+    ...actionIssues("appliances", appliance, applianceActions(appliance), capabilities, states),
     ...appliance.variants.flatMap((variant, index) => {
       const prefix = `variants.${variant.id}.`;
       const issues: Issue[] = [];
@@ -130,7 +158,7 @@ export function chargerErrors(charger: Charger, capabilities: Capabilities, stat
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
   const issues = [
     ...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true),
-    ...actionIssues("chargers", charger, CHARGER_ACTIONS, capabilities, states),
+    ...actionIssues("chargers", charger, chargerActions(charger), capabilities, states),
   ];
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
@@ -187,27 +215,25 @@ function rangeCode(value: number, range: Range): string | undefined {
 function actionIssues(
   section: ActionSection,
   item: Appliance | Charger,
-  fields: readonly string[],
+  entries: ActionEntry[],
   capabilities: Capabilities,
   states: States,
 ): Issue[] {
-  const actions = item as unknown as Record<string, ActionConfig | null>;
   const entityId = item.entity_id;
   if (entityId === null) {
     return [];
   }
-  return fields.flatMap((field): Issue[] => {
-    const action = actions[field];
+  return entries.flatMap(({ name, field, action }): Issue[] => {
     const issue = (code: string, parameter?: string): Issue => ({
       code,
       section,
       target: item.id,
       field: parameter ? `${field}.${parameter}` : field,
     });
-    if (!isActionAvailable(capabilities, section, field, entityId, action)) {
+    if (!isActionAvailable(capabilities, section, name, entityId, action)) {
       return [issue(action?.mode === "default" ? "default_action_unavailable" : "domain_action_unavailable")];
     }
-    const domainAction = availableDomainAction(capabilities, section, field, entityId, action);
+    const domainAction = availableDomainAction(capabilities, section, name, entityId, action);
     if (!domainAction) {
       return [];
     }
@@ -220,13 +246,12 @@ function actionIssues(
 function missingEntityAndActions(
   section: "appliances" | "chargers",
   item: Appliance | Charger,
-  fields: readonly string[],
+  entries: ActionEntry[],
 ): Issue[] {
-  const actions = item as unknown as Record<string, ActionConfig | null>;
   return [
     ...(item.entity_id ? [] : [{ code: "missing_entity", section, target: item.id, field: "entity_id" }]),
-    ...fields
-      .filter((field) => isMissingAction(actions[field]))
-      .map((field) => ({ code: "missing_action", section, target: item.id, field })),
+    ...entries
+      .filter(({ action }) => isMissingAction(action))
+      .map(({ field }) => ({ code: "missing_action", section, target: item.id, field })),
   ];
 }

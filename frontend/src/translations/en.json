@@ -224,7 +224,10 @@
     "power_reserve": "power reserve {power} W",
     "variant_count": "variants: {count}",
     "variant_entity": "Variant · entity {entity}",
-    "variant_template": "Variant · template"
+    "variant_template": "Variant · template",
+    "variant_own_actions": "own actions",
+    "variant_dialog_title": "Variant",
+    "variant_dialog_text": "«{label}» is a variant of {appliance} and is configured in the dialog of the appliance."
   },
   "appliance": {
     "add_title": "Add appliance",
@@ -232,7 +235,7 @@
     "view_title": "Appliance",
     "actions": "Actions",
     "variants": "Variants",
-    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list.",
+    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list. A variant uses the actions of the appliance, or its own. The power reserve applies to every variant.",
     "add_variant": "Add variant",
     "remove_variant": "Remove variant",
     "delete": "Delete appliance",
@@ -253,6 +256,10 @@
       },
       "label": {
         "label": "Label"
+      },
+      "use_main_actions": {
+        "label": "Use the actions of the appliance",
+        "helper": "Turn off to give the variant its own actions to turn the appliance on and off, for example another HVAC mode."
       }
     }
   },

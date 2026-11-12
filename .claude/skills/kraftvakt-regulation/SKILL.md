@@ -33,7 +33,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
 | Priority list | Sorted list of appliances, their variants and the EV charging entry. Top is highest priority, turned off last. |
-| Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list. |
+| Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list, and optionally its own actions. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
 | Slot | An entry the regulation switches: the current variant of an appliance, or a fictive appliance. |
 | Safe state | Everything off and nothing turned on, because there is no valid power measurement. |
@@ -129,7 +129,7 @@ the status page and the average sensors show kW.
      the EV charging entry).
   8. Above the limit: switch off the lowest priority slot that is on and not a
      bypassed charger's, without waiting, and cancel any waiting. When step 6
-     switched something off at this decision, nothing more is switched off;
+     switched off something that was on, nothing more is switched off;
      the waiting is still cancelled and nothing is turned on. Why: the
      average was measured before the forced switch-off, so switching off one
      more would often be too much.
@@ -213,8 +213,8 @@ the status page and the average sensors show kW.
 - The penalty ends only when the overconsumption is paid back (then the
   regulation starts again with everything off at that decision) or by a restart
   (stop, safe state, HA start, power limit change). The current variants are
-  still evaluated during a penalty; they give no commands since everything is
-  off.
+  still evaluated during a penalty; a switch gives only the turn-off action of
+  the new variant, since everything is off.
 - The start after a penalty resets the cycling counters like every other
   start, so while the average consumption stays above limit plus threshold, an
   appliance that pushes the average over the limit goes on and off with the
@@ -235,7 +235,9 @@ the status page and the average sensors show kW.
 - Every start turns off every appliance in the configuration, once per
   appliance even with variants, and deactivates every charger while EV
   charging is enabled. The same holds wherever everything is turned off. The
-  current variant is found at the first decision.
+  current variant is found at the first decision, so a start uses the
+  appliance's own turn-off action, and stop, the safe state and a penalty use
+  the current variant's.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends, when the power sensor is back after the safe state, and
@@ -301,12 +303,18 @@ All with entity category diagnostic:
 ## Variants
 
 - Each ordinary appliance may have variants, sorted, each with a non-empty
-  label unique for the appliance and an expression. Same actions and reserve as
-  the appliance. Not for chargers or the EV charging entry.
+  label unique for the appliance and an expression. Same reserve as the
+  appliance. A variant uses the actions of the appliance, or its own turn-on
+  and turn-off actions. Every command for an appliance uses the actions of
+  its current variant. Not for chargers or the EV charging entry.
 - Evaluated at each decision. When an appliance switches variant: it is off
-  afterwards at the new place and comes on again the normal way. If it was off
-  and its new place is above the lowest slot that is on, that lowest slot is
-  switched off to give room. Its waiting time and cycling counter are reset.
+  afterwards at the new place and comes on again the normal way. It is sent
+  the turn-off action of the new variant also when it was off, since variants
+  may turn it off in different ways (for example a thermostat in heat or cool
+  mode). The appliance itself is the variant before the first decision after
+  a start. If it was off and its new place is above the lowest slot that is
+  on, that lowest slot is switched off to give room. Its waiting time and
+  cycling counter are reset.
 - Several switching at the same decision are handled one by one in the order of
   their new place, highest first, together with the appliances included again
   (see Excluded appliances). One that must go off anyway can be the one that

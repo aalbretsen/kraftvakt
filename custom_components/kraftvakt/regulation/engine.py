@@ -151,8 +151,9 @@ class RegulationEngine:
     def stop(self) -> list[Command]:
         """Stop the regulation and turn everything off."""
         self._running = False
+        commands = self._turn_off_everything()
         self._state = RegulationState(charging=self._new_charging())
-        return self._turn_off_everything()
+        return commands
 
     def decide(self, decision: DecisionInput) -> list[Command]:
         """Make one decision and return the commands to carry out."""
@@ -177,19 +178,26 @@ class RegulationEngine:
             commands += self._hold_everything_off()
         if self._state.penalty.active:
             return commands + self._place_appliances(decision)
-        forced = self._decide_chargers(decision, overrides_ended)
-        forced += self._place_appliances(decision)
-        commands += forced
+        slots_on_before = self.slots_on
+        commands += self._decide_chargers(decision, overrides_ended)
+        commands += self._place_appliances(decision)
         if average > self._config.general.power_limit_w:
-            return commands + self._switch_off_above_limit(forced_off=bool(forced))
+            forced_off = self.slots_on < slots_on_before
+            return commands + self._switch_off_above_limit(forced_off)
         return commands + self._turn_on_next(decision.now, average)
 
     def _new_charging(self) -> ChargingState:
         return ChargingState.for_chargers(list(self._chargers.values()))
 
     def _turn_off_everything(self) -> list[Command]:
+        """Turn every appliance off as its current variant does it.
+
+        Before the first decision after a start, that is as the appliance does it.
+        """
+        current_variants = self._state.current_variants
         commands: list[Command] = [
-            TurnOffAppliance(appliance.id) for appliance in self._config.appliances
+            TurnOffAppliance(appliance.id, current_variants.get(appliance.id))
+            for appliance in self._config.appliances
         ]
         for charger in self._chargers.values():
             commands += self._charger_commands(charger, 0)
@@ -285,8 +293,11 @@ class RegulationEngine:
 
         An excluded appliance that is on is switched off. An appliance that
         comes to a new place, by switching variant or by being included again,
-        is off afterwards and gets room there. The switch-offs are an exception
-        to one slot per decision.
+        is off afterwards and gets room there. An appliance that switches
+        variant is sent the turn-off action of the new variant also when it was
+        off, since the variants may turn it off in different ways. Before the
+        first decision after a start, the appliance itself is the variant. The
+        switch-offs are an exception to one slot per decision.
         """
         previous_variants = self._state.current_variants
         previous_excluded = self._state.excluded_appliances
@@ -299,11 +310,8 @@ class RegulationEngine:
         moving = [
             appliance_id
             for appliance_id, variant in self._state.current_variants.items()
-            if appliance_id in previous_variants
-            and (
-                previous_variants[appliance_id] != variant
-                or (appliance_id in previous_excluded and appliance_id not in excluded)
-            )
+            if previous_variants.get(appliance_id) != variant
+            or (appliance_id in previous_excluded and appliance_id not in excluded)
         ]
         was_on = self._state.appliances_on & set(moving)
         commands: list[Command] = []
@@ -311,10 +319,17 @@ class RegulationEngine:
             commands += self._switch(ApplianceSlotKey(appliance_id), turn_on=False)
         places = {slot.key: place for place, slot in enumerate(self._slots())}
         for key in sorted(map(ApplianceSlotKey, moving), key=lambda key: places[key]):
-            if key.appliance_id in was_on:
-                if key.appliance_id in self._state.appliances_on:
-                    commands += self._switch(key, turn_on=False)
-            elif key.appliance_id not in excluded:
+            appliance_id = key.appliance_id
+            was_off = appliance_id not in was_on
+            switched_variant = (
+                previous_variants.get(appliance_id)
+                != self._state.current_variants[appliance_id]
+            )
+            if appliance_id in self._state.appliances_on or (
+                was_off and switched_variant
+            ):
+                commands += self._switch(key, turn_on=False)
+            if was_off and appliance_id not in excluded:
                 lowest_on = next(self._slots_on_lowest_first(), None)
                 if lowest_on is not None and places[key] < places[lowest_on.key]:
                     commands += self._switch(lowest_on.key, turn_on=False)
@@ -418,11 +433,12 @@ class RegulationEngine:
         match key:
             case ApplianceSlotKey(appliance_id):
                 self._record_switch(key, turn_on)
+                variant_id = self._state.current_variants.get(appliance_id)
                 if turn_on:
                     self._state.appliances_on.add(appliance_id)
-                    return [TurnOnAppliance(appliance_id)]
+                    return [TurnOnAppliance(appliance_id, variant_id)]
                 self._state.appliances_on.discard(appliance_id)
-                return [TurnOffAppliance(appliance_id)]
+                return [TurnOffAppliance(appliance_id, variant_id)]
             case ChargerSlotKey(charger_id, index):
                 commands = (
                     self._deactivate_others(charger_id)

@@ -34,16 +34,18 @@ class DecisionInput:
 
 @dataclass(frozen=True, slots=True)
 class TurnOnAppliance:
-    """Run the action that turns the appliance on."""
+    """Run the action that turns the appliance on, as its variant does it."""
 
     appliance_id: str
+    variant_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class TurnOffAppliance:
-    """Run the action that turns the appliance off."""
+    """Run the action that turns the appliance off, as its variant does it."""
 
     appliance_id: str
+    variant_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

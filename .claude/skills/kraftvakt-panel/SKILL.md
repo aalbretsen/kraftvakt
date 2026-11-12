@@ -80,6 +80,12 @@ Code that mirrors the backend and must be kept in step with it:
   none. A custom action starts as the default action.
 - The entity picker of an appliance or charger leaves out the entities that
   other appliances and chargers use.
+- A variant is configured in the dialog of its appliance. Its row in the
+  priority list opens a small dialog that only says so. In the appliance
+  dialog, each variant has a switch for using the actions of the appliance;
+  switched off, the variant shows its own actions, starting from what it had
+  while the dialog is open, or else a copy of the appliance's. A new entity
+  adapts the actions of the appliance and of every variant the same way.
 - The domain actions of the entity's domain are offered after Default, in
   the order of the table. Choosing one fills each value with the one already
   chosen for the parameter, or its default for the entity, so switching

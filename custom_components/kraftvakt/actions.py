@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final
 
@@ -15,6 +15,9 @@ from homeassistant.helpers.script import Script, async_validate_actions_config
 
 from .conditions import context_variables
 from .config_model import (
+    APPLIANCE_ACTION_KINDS,
+    CHARGER_ACTION_KINDS,
+    MAIN_ACTIONS,
     ActionConfig,
     ActionKind,
     ActionMode,
@@ -75,17 +78,6 @@ DEFAULT_ACTIONS: Final[Mapping[ActionKind, DefaultAction]] = {
     ),
 }
 
-APPLIANCE_ACTIONS: Final[Mapping[str, ActionKind]] = {
-    "turn_on": ActionKind.TURN_ON,
-    "turn_off": ActionKind.TURN_OFF,
-}
-
-CHARGER_ACTIONS: Final[Mapping[str, ActionKind]] = {
-    "activate": ActionKind.TURN_ON,
-    "deactivate": ActionKind.TURN_OFF,
-    "set_current": ActionKind.SET_CURRENT,
-}
-
 
 def default_action_steps(kind: ActionKind, entity_id: str) -> list[dict[str, Any]]:
     """Return the script steps of the default action for the entity.
@@ -112,18 +104,21 @@ def action_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
     action must belong to it, with values the entity supports.
     """
     issues = []
-    for section, item, fields in _items_with_actions(config):
-        for field_name, kind in fields.items():
-            action = getattr(item, field_name)
+    for section, item in config.items():
+        for action_field in item.action_fields():
+            action, field_name = action_field.action, action_field.field
             if action is None:
                 continue
-            if code := _unavailable_default(item.entity_id, action, kind):
+            if code := _unavailable_default(item.entity_id, action, action_field.kind):
                 issues.append(Issue(code, section, item.id, field_name))
             if action.mode is ActionMode.DOMAIN and item.entity_id is not None:
                 issues += [
                     Issue(code, section, item.id, _join(field_name, parameter))
                     for parameter, code in domain_action_issues(
-                        kind, item.entity_id, action, hass.states.get(item.entity_id)
+                        action_field.kind,
+                        item.entity_id,
+                        action,
+                        hass.states.get(item.entity_id),
                     )
                 ]
     return issues
@@ -170,7 +165,7 @@ class ActionRunner:
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
         self._chargers = {charger.id: charger for charger in config.charging.chargers}
         self._lock = lock or asyncio.Lock()
-        self._scripts: dict[tuple[str, ActionKind], Script] = {}
+        self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
 
     async def async_execute(self, commands: Sequence[Command]) -> None:
         """Run the actions for the commands, in order, after any earlier ones."""
@@ -180,13 +175,21 @@ class ActionRunner:
 
     async def _async_execute_command(self, command: Command) -> None:
         match command:
-            case TurnOnAppliance(appliance_id):
-                appliance = self._appliances[appliance_id]
-                await self._async_run(appliance, appliance.turn_on, ActionKind.TURN_ON)
-            case TurnOffAppliance(appliance_id):
+            case TurnOnAppliance(appliance_id, variant_id):
                 appliance = self._appliances[appliance_id]
                 await self._async_run(
-                    appliance, appliance.turn_off, ActionKind.TURN_OFF
+                    appliance,
+                    appliance.actions_for(variant_id).turn_on,
+                    ActionKind.TURN_ON,
+                    actions_key=appliance.actions_key(variant_id),
+                )
+            case TurnOffAppliance(appliance_id, variant_id):
+                appliance = self._appliances[appliance_id]
+                await self._async_run(
+                    appliance,
+                    appliance.actions_for(variant_id).turn_off,
+                    ActionKind.TURN_OFF,
+                    actions_key=appliance.actions_key(variant_id),
                 )
             case ActivateCharger(charger_id):
                 charger = self._chargers[charger_id]
@@ -209,9 +212,11 @@ class ActionRunner:
         action: ActionConfig | None,
         kind: ActionKind,
         variables: Mapping[str, Any] | None = None,
+        actions_key: str = MAIN_ACTIONS,
     ) -> None:
+        """`actions_key` tells apart the actions of the variants of an appliance."""
         try:
-            script = await self._async_script(item.entity_id, action, kind)
+            script = await self._async_script(item.entity_id, action, kind, actions_key)
             await script.async_run(
                 {**context_variables(self._hass, item.entity_id), **(variables or {})},
                 Context(),
@@ -220,11 +225,15 @@ class ActionRunner:
             _LOGGER.error("Could not %s %s: %s", kind, item.entity_id, err)
 
     async def _async_script(
-        self, entity_id: str | None, action: ActionConfig | None, kind: ActionKind
+        self,
+        entity_id: str | None,
+        action: ActionConfig | None,
+        kind: ActionKind,
+        actions_key: str,
     ) -> Script:
         if entity_id is None or action is None:
             raise ValueError("the action is not configured")
-        key = (entity_id, kind)
+        key = (entity_id, actions_key, kind)
         if key not in self._scripts:
             steps = _action_steps(entity_id, action, kind)
             sequence = await async_validate_actions_config(
@@ -247,23 +256,14 @@ def _by_field(
     return {
         section: {field_name: describe(kind) for field_name, kind in fields.items()}
         for section, fields in (
-            ("appliances", APPLIANCE_ACTIONS),
-            ("chargers", CHARGER_ACTIONS),
+            ("appliances", APPLIANCE_ACTION_KINDS),
+            ("chargers", CHARGER_ACTION_KINDS),
         )
     }
 
 
 def _join(field_name: str, parameter: str | None) -> str:
     return field_name if parameter is None else f"{field_name}.{parameter}"
-
-
-def _items_with_actions(
-    config: KraftvaktConfig,
-) -> Iterable[tuple[str, Appliance | Charger, Mapping[str, ActionKind]]]:
-    for appliance in config.appliances:
-        yield "appliances", appliance, APPLIANCE_ACTIONS
-    for charger in config.charging.chargers:
-        yield "chargers", charger, CHARGER_ACTIONS
 
 
 def _action_steps(

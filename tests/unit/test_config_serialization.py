@@ -6,8 +6,10 @@ from typing import Any
 import pytest
 
 from custom_components.kraftvakt.config_model import (
+    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
+    ApplianceActions,
     ApplianceSwitches,
     ChargerSwitches,
     ChargingWindow,
@@ -26,6 +28,19 @@ from custom_components.kraftvakt.config_reader import (
 from tests.config_examples import full_config_data
 
 
+def main_actions(**actions: Any) -> dict[str, Any]:
+    """Return appliance a1 with the actions of the appliance itself."""
+    return {"id": "a1", "actions": {MAIN_ACTIONS: actions}}
+
+
+def variant_data(variant_id: str) -> dict[str, Any]:
+    return {
+        "id": variant_id,
+        "label": variant_id,
+        "condition": {"type": "template", "value": "{{ true }}"},
+    }
+
+
 def test_full_config_round_trips() -> None:
     data = full_config_data()
 
@@ -36,9 +51,12 @@ def test_full_config_is_read_into_model() -> None:
     config = read_config(full_config_data())
 
     appliance = config.appliances[0]
-    assert appliance.turn_on == ActionConfig(ActionMode.DEFAULT)
-    assert appliance.turn_off is not None
-    assert appliance.turn_off.mode is ActionMode.CUSTOM
+    main = appliance.actions_for(None)
+    assert main.turn_on == ActionConfig(ActionMode.DEFAULT)
+    assert main.turn_off is not None
+    assert main.turn_off.mode is ActionMode.CUSTOM
+    morning = appliance.actions_for("v1")
+    assert morning.turn_off == ActionConfig(ActionMode.DEFAULT)
     assert appliance.variants[0].condition == Condition(
         ConditionType.TEMPLATE, "{{ 5 <= now().hour < 8 }}"
     )
@@ -67,7 +85,7 @@ def test_missing_settings_get_defaults() -> None:
 
     appliance = config.appliances[0]
     assert appliance.entity_id is None
-    assert appliance.turn_on is None
+    assert appliance.actions == {MAIN_ACTIONS: ApplianceActions()}
     assert appliance.power_reserve_w is None
     charger = config.charging.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
@@ -103,10 +121,10 @@ def test_missing_ids_are_generated() -> None:
 def test_custom_action_keeps_editor_normalization() -> None:
     steps = [{"action": "switch.turn_on", "target": {}, "data": {}, "metadata": {}}]
     config = read_config(
-        {"appliances": [{"id": "a1", "turn_on": {"mode": "custom", "action": steps}}]}
+        {"appliances": [main_actions(turn_on={"mode": "custom", "action": steps})]}
     )
 
-    assert config.to_dict()["appliances"][0]["turn_on"] == {
+    assert config.to_dict()["appliances"][0]["actions"]["main"]["turn_on"] == {
         "mode": "custom",
         "action": steps,
     }
@@ -115,16 +133,20 @@ def test_custom_action_keeps_editor_normalization() -> None:
 def test_single_custom_action_step_becomes_list() -> None:
     step = {"action": "switch.turn_on"}
     config = read_config(
-        {"appliances": [{"id": "a1", "turn_on": {"mode": "custom", "action": step}}]}
+        {"appliances": [main_actions(turn_on={"mode": "custom", "action": step})]}
     )
 
-    assert config.appliances[0].turn_on == ActionConfig(ActionMode.CUSTOM, (step,))
+    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
+        ActionMode.CUSTOM, (step,)
+    )
 
 
 def test_custom_action_without_steps_is_empty() -> None:
-    config = read_config({"appliances": [{"id": "a1", "turn_on": {"mode": "custom"}}]})
+    config = read_config({"appliances": [main_actions(turn_on={"mode": "custom"})]})
 
-    assert config.appliances[0].turn_on == ActionConfig(ActionMode.CUSTOM)
+    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
+        ActionMode.CUSTOM
+    )
 
 
 def test_time_with_seconds_is_read() -> None:
@@ -182,28 +204,36 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
         ({"appliances": {}}, Issue("invalid_type", "appliances")),
         ({"appliances": ["a1"]}, Issue("invalid_type", "appliances")),
         (
-            {"appliances": [{"id": "a1", "turn_on": {"mode": "magic"}}]},
+            {"appliances": [main_actions(turn_on={"mode": "magic"})]},
             Issue("invalid_type", "appliances", "a1", "turn_on"),
         ),
         (
-            {"appliances": [{"id": "a1", "turn_on": "switch.turn_on"}]},
+            {"appliances": [main_actions(turn_on="switch.turn_on")]},
             Issue("invalid_type", "appliances", "a1", "turn_on"),
+        ),
+        (
+            {"appliances": [main_actions(turn_on={"mode": "custom", "action": "x"})]},
+            Issue("invalid_type", "appliances", "a1", "turn_on"),
+        ),
+        (
+            {"appliances": [main_actions(turn_on={"mode": "custom", "action": ["x"]})]},
+            Issue("invalid_type", "appliances", "a1", "turn_on"),
+        ),
+        (
+            {"appliances": [{"id": "a1", "actions": []}]},
+            Issue("invalid_type", "appliances", "a1", "actions"),
         ),
         (
             {
                 "appliances": [
-                    {"id": "a1", "turn_on": {"mode": "custom", "action": "x"}}
+                    {
+                        "id": "a1",
+                        "actions": {"v1": {"turn_off": "off"}},
+                        "variants": [variant_data("v1")],
+                    }
                 ]
             },
-            Issue("invalid_type", "appliances", "a1", "turn_on"),
-        ),
-        (
-            {
-                "appliances": [
-                    {"id": "a1", "turn_on": {"mode": "custom", "action": ["x"]}}
-                ]
-            },
-            Issue("invalid_type", "appliances", "a1", "turn_on"),
+            Issue("invalid_type", "appliances", "a1", "variants.v1.turn_off"),
         ),
         (
             {"appliances": [{"id": "a1", "variants": [{"id": "v1", "label": "x"}]}]},
@@ -345,14 +375,14 @@ def test_domain_action_round_trips() -> None:
         "domain_action": "climate_hvac_mode_and_temperature",
         "data": {"hvac_mode": "heat", "temperature": None},
     }
-    config = read_config({"appliances": [{"id": "a1", "turn_on": action}]})
+    config = read_config({"appliances": [main_actions(turn_on=action)]})
 
-    assert config.appliances[0].turn_on == ActionConfig(
+    assert config.appliances[0].actions_for(None).turn_on == ActionConfig(
         ActionMode.DOMAIN,
         domain_action="climate_hvac_mode_and_temperature",
         data={"hvac_mode": "heat", "temperature": None},
     )
-    assert config.to_dict()["appliances"][0]["turn_on"] == action
+    assert config.to_dict()["appliances"][0]["actions"]["main"]["turn_on"] == action
 
 
 @pytest.mark.parametrize(
@@ -364,6 +394,27 @@ def test_domain_action_round_trips() -> None:
 )
 def test_malformed_domain_action_is_a_type_error(action: dict[str, Any]) -> None:
     with pytest.raises(ConfigValidationError) as error:
-        read_config({"appliances": [{"id": "a1", "turn_on": action}]})
+        read_config({"appliances": [main_actions(turn_on=action)]})
 
     assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "turn_on")]
+
+
+def test_actions_of_a_variant_that_does_not_exist_are_left_out() -> None:
+    default = {"turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}
+    config = read_config(
+        {
+            "appliances": [
+                {
+                    "id": "a1",
+                    "actions": {"main": default, "v1": default, "gone": default},
+                    "variants": [variant_data("v1"), variant_data("v2")],
+                }
+            ]
+        }
+    )
+
+    appliance = config.appliances[0]
+    assert set(appliance.actions) == {MAIN_ACTIONS, "v1"}
+    assert appliance.actions_key("v1") == "v1"
+    assert appliance.actions_key("v2") == MAIN_ACTIONS
+    assert appliance.actions_key(None) == MAIN_ACTIONS

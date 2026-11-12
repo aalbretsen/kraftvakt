@@ -2,9 +2,10 @@ import { mdiEvStation } from "@mdi/js";
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import type { Appliance, Issue, PriorityEntry } from "../api";
+import { MAIN_ACTIONS, type Appliance, type Issue, type PriorityEntry, type Variant } from "../api";
 import "../components/appliance-dialog";
 import "../components/manual-control-warning";
+import "../components/variant-dialog";
 import type { ListRow } from "../components/sortable-list";
 import { moveItem, newId, priorityKey } from "../draft";
 import { entityName } from "../entities";
@@ -19,6 +20,8 @@ const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w",
 @customElement("kraftvakt-appliances-page")
 export class KraftvaktAppliancesPage extends ConfigPage {
   @state() private editing?: { appliance: Appliance; isNew: boolean };
+
+  @state() private viewingVariant?: { appliance: Appliance; variant: Variant };
 
   protected render() {
     const rows = this.config.priority.map((entry) => this.row(entry));
@@ -44,6 +47,21 @@ export class KraftvaktAppliancesPage extends ConfigPage {
           `
         : nothing}
       ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
+      ${this.viewingVariant ? this.renderVariantDialog(this.viewingVariant.appliance, this.viewingVariant.variant) : ""}
+    `;
+  }
+
+  private renderVariantDialog(appliance: Appliance, variant: Variant) {
+    return html`
+      <kraftvakt-variant-dialog
+        .heading=${this.localize("appliances.variant_dialog_title")}
+        .text=${this.localize("appliances.variant_dialog_text", {
+          label: variant.label,
+          appliance: this.applianceName(appliance),
+        })}
+        .closeText=${this.localize("dialog.close")}
+        @closed=${() => (this.viewingVariant = undefined)}
+      ></kraftvakt-variant-dialog>
     `;
   }
 
@@ -91,7 +109,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       key: priorityKey(entry),
       title: appliance ? this.applianceName(appliance) : "",
       tag: variant?.label,
-      details: appliance ? (variant ? [this.variantSource(variant.condition)] : this.applianceDetails(appliance)) : [],
+      details: appliance ? (variant ? this.variantDetails(appliance, variant) : this.applianceDetails(appliance)) : [],
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
       openable: true,
     };
@@ -118,10 +136,12 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     return details;
   }
 
-  private variantSource(condition: Appliance["variants"][number]["condition"]): string {
-    return condition.type === "entity"
-      ? this.localize("appliances.variant_entity", { entity: condition.value })
-      : this.localize("appliances.variant_template");
+  private variantDetails(appliance: Appliance, variant: Variant): string[] {
+    const source =
+      variant.condition.type === "entity"
+        ? this.localize("appliances.variant_entity", { entity: variant.condition.value })
+        : this.localize("appliances.variant_template");
+    return appliance.actions[variant.id] ? [source, this.localize("appliances.variant_own_actions")] : [source];
   }
 
   private fieldLabel(issue: Issue): string {
@@ -140,20 +160,24 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     const appliance: Appliance = {
       id: newId(),
       entity_id: null,
-      turn_on: null,
-      turn_off: null,
+      actions: { [MAIN_ACTIONS]: { turn_on: null, turn_off: null } },
       power_reserve_w: this.capabilities.defaults.appliances.power_reserve_w,
       variants: [],
     };
     this.editing = { appliance, isNew: true };
   }
 
-  /** A variant opens its appliance. */
+  /** A variant is configured in the dialog of its appliance, which its row tells. */
   private openRow(event: CustomEvent<string>): void {
     const entry = this.config.priority.find((item) => priorityKey(item) === event.detail);
-    const appliance =
-      entry?.type === "appliance" ? this.config.appliances.find((item) => item.id === entry.appliance_id) : undefined;
-    if (appliance) {
+    if (entry?.type !== "appliance") {
+      return;
+    }
+    const appliance = this.config.appliances.find((item) => item.id === entry.appliance_id);
+    const variant = appliance?.variants.find((item) => item.id === entry.variant_id);
+    if (appliance && variant) {
+      this.viewingVariant = { appliance, variant };
+    } else if (appliance) {
       this.editing = { appliance, isNew: false };
     }
   }

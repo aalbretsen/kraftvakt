@@ -9,14 +9,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from dataclasses import fields
+from dataclasses import fields, replace
 from datetime import time
 from typing import Any
 
 from .config_model import (
+    MAIN_ACTIONS,
     ActionConfig,
     ActionMode,
     Appliance,
+    ApplianceActions,
     Charger,
     ChargingConfig,
     ChargingWindow,
@@ -140,16 +142,49 @@ class ConfigReader:
         values = self._mapping(data, IssueLocation("appliances"), None)
         appliance_id = self._id(values, IssueLocation("appliances"))
         location = IssueLocation("appliances", appliance_id)
+        variants = tuple(
+            self._variant(item, appliance_id)
+            for item in self._list(values.get("variants"), location, "variants")
+        )
         return Appliance(
             id=appliance_id,
             entity_id=self._text(values, "entity_id", location),
+            actions=self._appliance_actions(values, location, variants),
+            power_reserve_w=self._integer(values, "power_reserve_w", None, location),
+            variants=variants,
+        )
+
+    def _appliance_actions(
+        self,
+        values: Mapping[str, Any],
+        location: IssueLocation,
+        variants: tuple[Variant, ...],
+    ) -> dict[str, ApplianceActions]:
+        """Read the actions of the appliance and of the variants that have their own.
+
+        Actions of variants that no longer exist are left out.
+        """
+        data = self._mapping(values.get("actions"), location, "actions")
+        actions = {
+            MAIN_ACTIONS: self._actions_of(
+                self._mapping(data.get(MAIN_ACTIONS), location, "actions"), location
+            )
+        }
+        for variant in variants:
+            if data.get(variant.id) is not None:
+                variant_location = replace(location, prefix=f"variants.{variant.id}.")
+                actions[variant.id] = self._actions_of(
+                    self._mapping(data[variant.id], variant_location, "actions"),
+                    variant_location,
+                )
+        return actions
+
+    def _actions_of(
+        self, values: Mapping[str, Any], location: IssueLocation
+    ) -> ApplianceActions:
+        return ApplianceActions(
             turn_on=self._action(values, "turn_on", location),
             turn_off=self._action(values, "turn_off", location),
-            power_reserve_w=self._integer(values, "power_reserve_w", None, location),
-            variants=tuple(
-                self._variant(item, appliance_id)
-                for item in self._list(values.get("variants"), location, "variants")
-            ),
         )
 
     def _variant(self, data: Any, appliance_id: str) -> Variant:

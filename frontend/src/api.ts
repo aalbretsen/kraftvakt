@@ -54,11 +54,23 @@ export interface Variant {
   condition: Condition;
 }
 
+export interface ApplianceActions {
+  turn_on: ActionConfig | null;
+  turn_off: ActionConfig | null;
+}
+
+/** The key of the appliance's own actions in `Appliance.actions`. */
+export const MAIN_ACTIONS = "main";
+
 export interface Appliance {
   id: string;
   entity_id: string | null;
-  turn_on: ActionConfig | null;
-  turn_off: ActionConfig | null;
+  /**
+   * The actions of the appliance under `MAIN_ACTIONS`, and of each variant
+   * with its own actions under the id of the variant. A variant without an
+   * entry uses the actions of the appliance.
+   */
+  actions: Record<string, ApplianceActions>;
   power_reserve_w: number | null;
   variants: Variant[];
 }

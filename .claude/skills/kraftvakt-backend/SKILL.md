@@ -66,8 +66,11 @@ The format is defined by the dataclasses and their serialization in
 
 - `general`: the power sensor and every general setting, also those shown on
   the panel's Advanced page.
-- `appliances`: each with an id, its entity, turn-on and turn-off actions, an
-  optional power reserve and its variants (id, label, condition).
+- `appliances`: each with an id, its entity, its actions, an optional power
+  reserve and its variants (id, label, condition). The actions are a map of
+  turn-on and turn-off actions: the appliance's under `main`, and those of
+  each variant with its own under the variant's id. Actions of variants that
+  no longer exist are dropped when read.
 - `priority`: the priority list, with an entry per appliance and variant and
   one EV charging entry.
 - `charging`: enabled, one at a time, and the chargers, each with an id, its
@@ -76,6 +79,10 @@ The format is defined by the dataclasses and their serialization in
   an optional charging window.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger.
+
+The store has a version. A change of the stored format raises it and adds a
+migration in `storage.py`, with tests, since installations regulate homes
+with a stored configuration that must keep working after an update.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script), `entity` or `domain` (the
@@ -115,7 +122,8 @@ An invalid configuration is not saved:
 An incomplete configuration can be saved, but the regulation cannot start.
 Missing items and validation errors are both issues with a code, a section, a
 target (the id of the appliance or charger) and a field; a variant field is
-addressed through the variant's id. Every issue code needs a text in the
+addressed through the variant's id, also the variant's own actions
+(`variants.<id>.turn_on`). Every issue code needs a text in the
 panel's translations.
 
 ## Actions and templates
@@ -143,6 +151,8 @@ panel's translations.
     reports. Without the entity's state, only the types are checked. A value
     that is not chosen (`null`) is missing, not an error. Issues for a
     parameter are addressed as `<field>.<parameter>`.
+- The commands for an appliance carry its current variant, and the action
+  runner runs the variant's own action or the appliance's.
 - All templates and actions get `entity_id` and `entity` (the state object of
   the appliance's or charger's entity, `none` when missing). The set-current
   action also gets `current`, `min_current` and `max_current`; `current` is

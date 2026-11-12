@@ -111,14 +111,10 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
     if config.general.power_sensor is None:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
     for appliance in config.appliances:
-        missing += _missing_entity_and_actions(
-            "appliances", appliance, ("turn_on", "turn_off")
-        )
+        missing += _missing_entity_and_actions("appliances", appliance)
     if config.charging.enabled:
         for charger in config.charging.chargers:
-            missing += _missing_entity_and_actions(
-                "chargers", charger, ("activate", "deactivate", "set_current")
-            )
+            missing += _missing_entity_and_actions("chargers", charger)
             if charger.actively_charging is None:
                 missing.append(
                     Issue(
@@ -308,16 +304,11 @@ def _priority_field(entry: PriorityEntry) -> str | None:
 def _custom_actions(
     config: KraftvaktConfig,
 ) -> Iterable[tuple[str, str, str, ActionConfig]]:
-    for appliance in config.appliances:
-        for field_name in ("turn_on", "turn_off"):
-            action = getattr(appliance, field_name)
+    for section, item in config.items():
+        for action_field in item.action_fields():
+            action = action_field.action
             if action is not None and action.steps:
-                yield "appliances", appliance.id, field_name, action
-    for charger in config.charging.chargers:
-        for field_name in ("activate", "deactivate", "set_current"):
-            action = getattr(charger, field_name)
-            if action is not None and action.steps:
-                yield "chargers", charger.id, field_name, action
+                yield section, item.id, action_field.field, action
 
 
 def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condition]]:
@@ -336,14 +327,14 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
                 yield "chargers", charger.id, field_name, condition
 
 
-def _missing_entity_and_actions(
-    section: str, item: Appliance | Charger, action_fields: tuple[str, ...]
-) -> list[Issue]:
+def _missing_entity_and_actions(section: str, item: Appliance | Charger) -> list[Issue]:
     missing = []
     if item.entity_id is None:
         missing.append(Issue("missing_entity", section, item.id, "entity_id"))
-    for field_name in action_fields:
-        action = getattr(item, field_name)
+    for action_field in item.action_fields():
+        action = action_field.action
         if action is None or action.is_missing:
-            missing.append(Issue("missing_action", section, item.id, field_name))
+            missing.append(
+                Issue("missing_action", section, item.id, action_field.field)
+            )
     return missing

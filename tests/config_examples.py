@@ -25,16 +25,24 @@ def full_config_data() -> dict[str, Any]:
             {
                 "id": "a1",
                 "entity_id": "switch.water_heater",
-                "turn_on": {"mode": "default"},
-                "turn_off": {
-                    "mode": "custom",
-                    "action": [
-                        {
-                            "action": "switch.turn_off",
-                            "target": {"entity_id": "{{ entity_id }}"},
-                            "data": {},
-                        }
-                    ],
+                "actions": {
+                    "main": {
+                        "turn_on": {"mode": "default"},
+                        "turn_off": {
+                            "mode": "custom",
+                            "action": [
+                                {
+                                    "action": "switch.turn_off",
+                                    "target": {"entity_id": "{{ entity_id }}"},
+                                    "data": {},
+                                }
+                            ],
+                        },
+                    },
+                    "v1": {
+                        "turn_on": {"mode": "default"},
+                        "turn_off": {"mode": "default"},
+                    },
                 },
                 "power_reserve_w": None,
                 "variants": [
@@ -51,8 +59,12 @@ def full_config_data() -> dict[str, Any]:
             {
                 "id": "a2",
                 "entity_id": "climate.bathroom",
-                "turn_on": {"mode": "default"},
-                "turn_off": {"mode": "default"},
+                "actions": {
+                    "main": {
+                        "turn_on": {"mode": "default"},
+                        "turn_off": {"mode": "default"},
+                    }
+                },
                 "power_reserve_w": 800,
                 "variants": [],
             },

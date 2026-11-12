@@ -53,7 +53,8 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   /** The first part of the keys of the dialog's texts. */
   protected abstract readonly texts: "appliance" | "charger";
 
-  protected abstract readonly actionFields: readonly string[];
+  /** Return the changes that keep the actions working with a new entity, see `actionForEntity`. */
+  protected abstract actionsForEntity(entityId: string | null): Partial<T>;
 
   /** The mistakes in the item that stop the dialog from being confirmed. */
   protected abstract errors(): Issue[];
@@ -86,30 +87,65 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
   }
 
-  /** An action field; `entityAllowed` offers to give it as an entity with the same default action. */
+  /** One of the item's own action fields; `entityAllowed` offers to give it as an entity with the same default action. */
   protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false) {
+    return this.renderActionField(
+      { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field] },
+      issues,
+      variables,
+      (value) => this.changeDraft({ [field]: value } as Partial<T>),
+      entityAllowed,
+    );
+  }
+
+  /**
+   * An action field. `name` is the field in the capabilities and the texts,
+   * and `field` the field the issues address.
+   */
+  protected renderActionField(
+    action: { name: string; field: string; value: ActionConfig | null },
+    issues: Issue[],
+    variables: string[],
+    changed: (value: ActionConfig | null) => void,
+    entityAllowed = false,
+  ) {
+    const { name, field } = action;
     const issue = issues.find((item) => item.field === field);
     const parameterErrors = errorsByField(issues, `${field}.`, this.describe);
-    const defaultAction = defaultActionOf(this.capabilities, this.section, field);
+    const defaultAction = defaultActionOf(this.capabilities, this.section, name);
     return html`
       <kraftvakt-action-field
         .hass=${this.hass}
         .localize=${this.localize}
-        .label=${this.label(field)}
-        .value=${(this.draft as unknown as Record<string, ActionConfig | null>)[field]}
+        .label=${this.label(name)}
+        .value=${action.value}
         .entityId=${this.draft.entity_id}
         .defaultAction=${defaultAction}
-        .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, field, this.draft.entity_id)}
+        .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, name, this.draft.entity_id)}
         .entityDomains=${entityAllowed ? defaultAction.domains : []}
-        .domainActions=${domainActionsFor(this.capabilities, this.section, field, this.draft.entity_id)}
+        .domainActions=${domainActionsFor(this.capabilities, this.section, name, this.draft.entity_id)}
         .variables=${variables}
         .error=${issue ? this.describe(issue) : undefined}
         .parameterErrors=${parameterErrors}
         .disabled=${this.locked}
-        @value-changed=${(event: CustomEvent<{ value: ActionConfig | null }>) =>
-          this.changeDraft({ [field]: event.detail.value } as Partial<T>)}
+        @value-changed=${(event: CustomEvent<{ value: ActionConfig | null }>) => changed(event.detail.value)}
       ></kraftvakt-action-field>
     `;
+  }
+
+  /**
+   * Return the action to use with a new entity: the default action when the
+   * entity has one and no action is set, and a custom action when the default
+   * or domain action is not available for it.
+   */
+  protected actionForEntity(name: string, action: ActionConfig | null, entityId: string | null): ActionConfig | null {
+    if (action === null && hasDefaultAction(this.capabilities, this.section, name, entityId)) {
+      return { mode: "default" };
+    }
+    if (entityId !== null && !isActionAvailable(this.capabilities, this.section, name, entityId, action)) {
+      return { mode: "custom", action: [] };
+    }
+    return action;
   }
 
   protected renderForm(
@@ -185,22 +221,8 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   protected describe = (issue: Issue): string =>
     fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
-  /**
-   * Choose the default action when the new entity has one and no action is set,
-   * and a custom action when the default or domain action is not available for it.
-   */
   private entityChanged(entityId: string | null): void {
-    const actions = this.draft as unknown as Record<string, ActionConfig | null>;
-    const changes: Record<string, unknown> = { entity_id: entityId };
-    for (const field of this.actionFields) {
-      const action = actions[field];
-      if (action === null && hasDefaultAction(this.capabilities, this.section, field, entityId)) {
-        changes[field] = { mode: "default" };
-      } else if (entityId !== null && !isActionAvailable(this.capabilities, this.section, field, entityId, action)) {
-        changes[field] = { mode: "custom", action: [] };
-      }
-    }
-    this.changeDraft(changes as Partial<T>);
+    this.changeDraft({ entity_id: entityId, ...this.actionsForEntity(entityId) } as Partial<T>);
   }
 
   private renderButtons(hasErrors: boolean) {

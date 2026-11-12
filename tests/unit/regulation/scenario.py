@@ -29,14 +29,23 @@ START = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 DECISION_INTERVAL = timedelta(minutes=1)
 
 
-def on(*appliance_ids: str) -> list[Command]:
-    """Return the commands that turn the appliances on, in the given order."""
-    return [TurnOnAppliance(appliance_id) for appliance_id in appliance_ids]
+def on(*appliances: str) -> list[Command]:
+    """Return the commands that turn the appliances on, in the given order.
+
+    ``"a"`` is appliance ``a`` as it turns itself on, ``"a:morning"`` as its
+    variant ``morning`` does it.
+    """
+    return [TurnOnAppliance(*_appliance_and_variant(text)) for text in appliances]
 
 
-def off(*appliance_ids: str) -> list[Command]:
-    """Return the commands that turn the appliances off, in the given order."""
-    return [TurnOffAppliance(appliance_id) for appliance_id in appliance_ids]
+def off(*appliances: str) -> list[Command]:
+    """Return the commands that turn the appliances off, written as for `on`."""
+    return [TurnOffAppliance(*_appliance_and_variant(text)) for text in appliances]
+
+
+def _appliance_and_variant(text: str) -> tuple[str, str | None]:
+    appliance_id, _, variant_id = text.partition(":")
+    return appliance_id, variant_id or None
 
 
 def activate(charger_id: str, min_a: int = 6) -> list[Command]:

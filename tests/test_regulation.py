@@ -47,8 +47,7 @@ def appliance(
     return {
         "id": appliance_id,
         "entity_id": f"light.{appliance_id}",
-        "turn_on": turn_on,
-        "turn_off": DEFAULT,
+        "actions": {"main": {"turn_on": turn_on, "turn_off": DEFAULT}},
         **settings,
     }
 
@@ -333,7 +332,7 @@ async def test_incomplete_configuration_does_not_start(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """The switch stays off and the attempt is logged."""
-    del config["appliances"][1]["turn_on"]
+    del config["appliances"][1]["actions"]["main"]["turn_on"]
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     assert regulation_switch(hass) == STATE_OFF
@@ -367,7 +366,7 @@ async def test_each_decision_is_logged_for_debugging(
     assert (
         "regulation average 2000 W, average consumption 2000 W, sensor valid True, "
         "safe state False, penalty False (0.0 Wh), waiting None, "
-        "commands [TurnOnAppliance(appliance_id='a')]"
+        "commands [TurnOnAppliance(appliance_id='a', variant_id=None)]"
     ) in caplog.text
 
 
@@ -466,7 +465,8 @@ async def test_variant_condition_moves_the_appliance(
     config,
     setup_kraftvakt,
 ) -> None:
-    """A true condition gives the variant's place in the list."""
+    """A true condition gives the variant's place in the list. The switch from
+    the appliance itself at the first decision gives a turn-off action."""
     config["appliances"][1]["variants"] = [
         {
             "id": "morning",
@@ -484,7 +484,85 @@ async def test_variant_condition_moves_the_appliance(
 
     await advance(hass, freezer)
 
-    assert actions == ["on light.b"]
+    assert actions == ["off light.b", "on light.b"]
+
+
+def light_action(service: str, light: str) -> dict[str, Any]:
+    return {
+        "mode": "custom",
+        "action": [{"action": f"light.{service}", "target": {"entity_id": [light]}}],
+    }
+
+
+async def test_variant_with_own_actions_is_switched_with_them(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """Every switch of variant runs an action of the new variant, and stop
+    turns the appliance off as its current variant does it."""
+    config["appliances"][1]["variants"] = [
+        {
+            "id": "cool",
+            "label": "Cool",
+            "condition": {"type": "entity", "value": "input_boolean.cool"},
+        }
+    ]
+    config["appliances"][1]["actions"]["cool"] = {
+        "turn_on": light_action("turn_on", "light.cool"),
+        "turn_off": light_action("turn_off", "light.cool"),
+    }
+    config["priority"].insert(
+        1, {"type": "appliance", "appliance_id": "b", "variant_id": "cool"}
+    )
+    hass.states.async_set("input_boolean.cool", STATE_ON)
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    assert actions == ["off light.a", "off light.b"]
+    actions.clear()
+
+    await advance(hass, freezer)
+    await advance(hass, freezer)
+    assert actions == ["off light.cool", "on light.a", "on light.cool"]
+    actions.clear()
+
+    hass.states.async_set("input_boolean.cool", STATE_OFF)
+    await advance(hass, freezer)
+    assert actions == ["off light.b", "on light.b"]
+    actions.clear()
+
+    hass.states.async_set("input_boolean.cool", STATE_ON)
+    await advance(hass, freezer)
+    await switch_regulation(hass, "turn_off")
+    assert actions == [
+        "off light.cool",
+        "on light.cool",
+        "off light.a",
+        "off light.cool",
+    ]
+
+
+async def test_configuration_stored_by_version_1_is_regulated(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """The actions of an appliance stored by version 1 are still used."""
+    for item in config["appliances"]:
+        item.update(item.pop("actions")["main"])
+    hass_storage[STORAGE_KEY]["version"] = 1
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    actions.clear()
+
+    await advance(hass, freezer)
+
+    assert actions == ["on light.a"]
 
 
 async def test_template_condition_gets_the_appliance_entity(
@@ -515,7 +593,7 @@ async def test_template_condition_gets_the_appliance_entity(
 
     await advance(hass, freezer)
 
-    assert actions == ["on light.b"]
+    assert actions == ["off light.b", "on light.b"]
 
 
 async def test_custom_action_gets_the_entity_variables(
@@ -526,7 +604,7 @@ async def test_custom_action_gets_the_entity_variables(
 ) -> None:
     """Custom actions run with `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "heat")
-    config["appliances"][0]["turn_on"] = {
+    config["appliances"][0]["actions"]["main"]["turn_on"] = {
         "mode": "custom",
         "action": [
             {
@@ -560,7 +638,7 @@ async def test_failed_action_does_not_stop_the_regulation(
         raise HomeAssistantError("no answer")
 
     hass.services.async_register("test", "fail", fail)
-    config["appliances"][0]["turn_on"] = {
+    config["appliances"][0]["actions"]["main"]["turn_on"] = {
         "mode": "custom",
         "action": [{"action": "test.fail"}],
     }

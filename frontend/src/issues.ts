@@ -48,19 +48,29 @@ export function pageForIssue(issue: Issue): Page {
 export function describeIssue(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
   const params = {
     item: itemName(issue, config, localize),
-    action: issue.field && ACTION_TEXTS[issue.field] ? localize(ACTION_TEXTS[issue.field]) : (issue.field ?? ""),
+    action: actionText(issue.field, localize),
     code: issue.code,
   };
   return localize(ISSUE_TEXTS[issue.code] ?? "missing.unknown", params);
 }
 
+/** The last part of the field names the action, also for the actions of a variant. */
+function actionText(field: string | undefined, localize: Localize): string {
+  const name = field?.split(".").at(-1) ?? "";
+  return ACTION_TEXTS[name] ? localize(ACTION_TEXTS[name]) : (field ?? "");
+}
+
+/** The name of the appliance or charger, followed by the label of the variant the issue is about. */
 function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
   const items = issue.section === "chargers" ? config?.config.charging.chargers : config?.config.appliances;
-  const entityId = items?.find((item) => item.id === issue.target)?.entity_id;
-  if (entityId) {
-    return config?.entity_names[entityId] ?? entityId;
-  }
-  return localize(issue.section === "chargers" ? "missing.charger_without_entity" : "missing.appliance_without_entity");
+  const item = items?.find((candidate) => candidate.id === issue.target);
+  const entityId = item?.entity_id;
+  const name = entityId
+    ? (config?.entity_names[entityId] ?? entityId)
+    : localize(issue.section === "chargers" ? "missing.charger_without_entity" : "missing.appliance_without_entity");
+  const variantId = issue.field?.startsWith("variants.") ? issue.field.split(".")[1] : undefined;
+  const variant = item && "variants" in item ? item.variants.find((candidate) => candidate.id === variantId) : undefined;
+  return variant ? `${name} «${variant.label}»` : name;
 }
 
 const ERROR_TEXTS: Record<string, TranslationKey> = {
