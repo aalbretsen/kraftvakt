@@ -47,6 +47,8 @@ REPEAT_INCREMENT_FACTOR = Range(0.25, 1, 0.25)
 REPEAT_INCREMENTS = Range(1, 9, 1)
 PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
 COMMAND_REPEAT_INTERVAL_MIN = Range(10, 60, 1)
+ACTION_TIMEOUT_S = Range(10, 3600, 1)
+POWER_SENSOR_TIMEOUT_S = Range(10, 3600, 1)
 APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
 CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
 CHARGING_CURRENT_A = Range(1, None, 1)
@@ -66,6 +68,8 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "charger_repeat_increments": REPEAT_INCREMENTS,
         "penalty_threshold_w": PENALTY_THRESHOLD_W,
         "command_repeat_interval_min": COMMAND_REPEAT_INTERVAL_MIN,
+        "action_timeout_s": ACTION_TIMEOUT_S,
+        "power_sensor_timeout_s": POWER_SENSOR_TIMEOUT_S,
     },
     "appliances": {"power_reserve_w": APPLIANCE_POWER_RESERVE_W},
     "chargers": {
@@ -376,6 +380,8 @@ class GeneralConfig:
     charger_repeat_increments: int = 5
     penalty_threshold_w: int = 100
     command_repeat_interval_min: int = 30
+    action_timeout_s: int = 60
+    power_sensor_timeout_s: int = 300
 
     def to_dict(self) -> dict[str, Any]:
         """Return the general parameters as JSON-friendly data."""

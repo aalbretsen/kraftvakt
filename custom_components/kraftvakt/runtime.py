@@ -19,6 +19,7 @@ from homeassistant.core import (
     CoreState,
     Event,
     EventStateChangedData,
+    EventStateReportedData,
     HomeAssistant,
     State,
     callback,
@@ -27,6 +28,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import (
     async_track_point_in_utc_time,
     async_track_state_change_event,
+    async_track_state_report_event,
 )
 from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
@@ -119,7 +121,7 @@ class KraftvaktRuntime:
         self._windows_since_decision: list[WindowAverages] = []
         self._window_listeners: list[WindowListener] = []
         self._status_listeners: list[StatusListener] = []
-        self._cancel_power_listener: CALLBACK_TYPE | None = None
+        self._cancel_power_listeners: list[CALLBACK_TYPE] = []
         self._cancel_window_timer: CALLBACK_TYPE | None = None
         self._cancel_start_when_started: CALLBACK_TYPE | None = None
         self._history_task: asyncio.Task[None] | None = None
@@ -286,9 +288,7 @@ class KraftvaktRuntime:
         if self._cancel_window_timer:
             self._cancel_window_timer()
             self._cancel_window_timer = None
-        if self._cancel_power_listener:
-            self._cancel_power_listener()
-            self._cancel_power_listener = None
+        self._stop_following_power_sensor()
 
     @callback
     def async_start_regulation(self) -> None:
@@ -395,17 +395,38 @@ class KraftvaktRuntime:
         self._notify_status()
 
     def _follow_power_sensor(self, now: datetime) -> None:
-        if self._cancel_power_listener:
-            self._cancel_power_listener()
-            self._cancel_power_listener = None
+        self._stop_following_power_sensor()
         power_sensor = self.config.general.power_sensor
         self._record_power(
             now, self._hass.states.get(power_sensor) if power_sensor else None
         )
         if power_sensor:
-            self._cancel_power_listener = async_track_state_change_event(
-                self._hass, power_sensor, self._async_power_changed
-            )
+            self._cancel_power_listeners = [
+                async_track_state_change_event(
+                    self._hass, power_sensor, self._async_power_changed
+                ),
+                async_track_state_report_event(
+                    self._hass, power_sensor, self._async_power_changed
+                ),
+            ]
+
+    def _stop_following_power_sensor(self) -> None:
+        for cancel in self._cancel_power_listeners:
+            cancel()
+        self._cancel_power_listeners = []
+
+    def _invalidate_silent_power_sensor(self) -> None:
+        """Count the power sensor as invalid when it has not reported for the timeout.
+
+        A report of an unchanged value counts, since a HAN reader reports often
+        also when the power does not change.
+        """
+        power_sensor = self.config.general.power_sensor
+        state = self._hass.states.get(power_sensor) if power_sensor else None
+        timeout = timedelta(seconds=self.config.general.power_sensor_timeout_s)
+        window_end = self._averager.window_end
+        if state is not None and window_end - state.last_reported > timeout:
+            self._averager.add_measurement(window_end, None)
 
     async def _async_add_power_history(self) -> None:
         power_sensor = self.config.general.power_sensor
@@ -427,7 +448,9 @@ class KraftvaktRuntime:
             )
 
     @callback
-    def _async_power_changed(self, event: Event[EventStateChangedData]) -> None:
+    def _async_power_changed(
+        self, event: Event[EventStateChangedData] | Event[EventStateReportedData]
+    ) -> None:
         self._record_power(event.time_fired, event.data["new_state"])
 
     def _record_power(self, when: datetime, state: State | None) -> None:
@@ -443,6 +466,7 @@ class KraftvaktRuntime:
 
     @callback
     def _async_window_ended(self, _now: datetime) -> None:
+        self._invalidate_silent_power_sensor()
         averages = self._averager.close_window()
         self._latest_averages = averages
         self._recent_windows.append(averages)

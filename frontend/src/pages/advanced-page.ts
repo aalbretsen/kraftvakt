@@ -52,7 +52,10 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
 @customElement("kraftvakt-advanced-page")
 export class KraftvaktAdvancedPage extends GeneralSettingsPage {
   protected render() {
-    return html`${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}`;
+    return html`
+      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
+      ${this.renderTimeoutsCard()}
+    `;
   }
 
   private renderWaitCurveCard() {
@@ -85,6 +88,17 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         <div class="card-content">
           <p class="description">${this.localize("advanced.command_repeat_info")}</p>
           ${this.renderForm([this.numberField("command_repeat_interval_min")])}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  private renderTimeoutsCard() {
+    return html`
+      <ha-card .header=${this.localize("advanced.timeouts")}>
+        <div class="card-content">
+          <p class="description">${this.localize("advanced.timeouts_info")}</p>
+          ${this.renderForm([this.numberField("action_timeout_s"), this.numberField("power_sensor_timeout_s")])}
         </div>
       </ha-card>
     `;

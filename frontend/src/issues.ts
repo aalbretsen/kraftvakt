@@ -38,6 +38,8 @@ const ADVANCED_FIELDS = new Set([
   "charger_repeat_increment_factor",
   "charger_repeat_increments",
   "command_repeat_interval_min",
+  "action_timeout_s",
+  "power_sensor_timeout_s",
 ]);
 
 /** Return the page where the issue is fixed. */

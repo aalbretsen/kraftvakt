@@ -47,6 +47,8 @@ export interface GeneralConfig {
   charger_repeat_increments: number;
   penalty_threshold_w: number;
   command_repeat_interval_min: number;
+  action_timeout_s: number;
+  power_sensor_timeout_s: number;
 }
 
 export interface ApplianceActions {

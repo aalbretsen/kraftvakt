@@ -19,6 +19,8 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   wait_at_limit_s: "s",
   penalty_threshold_w: "W",
   command_repeat_interval_min: "min",
+  action_timeout_s: "s",
+  power_sensor_timeout_s: "s",
 };
 
 /** Fields chosen from a list, which works with text values. */

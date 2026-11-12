@@ -145,8 +145,8 @@ def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
 class ActionRunner:
     """Carries out the commands from the regulation engine, one at a time.
 
-    A failed action is logged and not retried, and the rest of the commands
-    still run.
+    A failed action, also one stopped by the action timeout, is logged and not
+    retried, and the rest of the commands still run.
     """
 
     def __init__(
@@ -164,6 +164,7 @@ class ActionRunner:
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
         self._chargers = {charger.id: charger for charger in config.chargers}
         self._lock = lock or asyncio.Lock()
+        self._timeout_s = config.general.action_timeout_s
         self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
 
     async def async_execute(self, commands: Sequence[Command]) -> None:
@@ -222,9 +223,20 @@ class ActionRunner:
             script = await self._async_script(
                 item.entity_id, action, kind, owner or item.id
             )
-            await script.async_run(
-                {**context_variables(self._hass, item.entity_id), **(variables or {})},
-                Context(),
+            async with asyncio.timeout(self._timeout_s):
+                await script.async_run(
+                    {
+                        **context_variables(self._hass, item.entity_id),
+                        **(variables or {}),
+                    },
+                    Context(),
+                )
+        except TimeoutError:
+            _LOGGER.error(
+                "Could not %s %s: no answer within %s s",
+                kind,
+                item.entity_id,
+                self._timeout_s,
             )
         except Exception as err:  # The regulation goes on regardless.
             _LOGGER.error("Could not %s %s: %s", kind, item.entity_id, err)

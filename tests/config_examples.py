@@ -21,6 +21,8 @@ def full_config_data() -> dict[str, Any]:
             "charger_repeat_increments": 9,
             "penalty_threshold_w": 500,
             "command_repeat_interval_min": 45,
+            "action_timeout_s": 90,
+            "power_sensor_timeout_s": 120,
         },
         "appliances": [
             {

@@ -205,6 +205,14 @@
       "command_repeat_interval_min": {
         "label": "Intervall for gjentatt kommando",
         "helper": "Hvor lenge et apparat eller en elbillader kan gå uten kommando før den siste kommandoen sendes på nytt. {min}–{max} min, standard {default} min."
+      },
+      "action_timeout_s": {
+        "label": "Tidsavbrudd for handling",
+        "helper": "Hvor lenge en handling kan ta før den stoppes og regnes som feilet. {min}–{max} s, standard {default} s."
+      },
+      "power_sensor_timeout_s": {
+        "label": "Tidsavbrudd for effektsensor",
+        "helper": "Hvor lenge effektsensoren kan gå uten å rapportere før den regnes som ugyldig. En HAN-leser rapporterer vanligvis hvert 10. sekund. {min}–{max} s, standard {default} s."
       }
     }
   },
@@ -220,7 +228,9 @@
     "appliances": "Apparater",
     "chargers": "Elbilladere",
     "command_repeat": "Gjentatt kommando",
-    "command_repeat_info": "Et apparat kan endre tilstand uten Kraftvakt, for eksempel når sikringen går og kommer tilbake, eller på grunn av en feil i enheten. Reguleringen sender derfor kommandoen for tilstanden den har satt på nytt når et apparat eller en elbillader ikke har fått kommando på så lenge. Apparater og elbilladere som er utenfor regulering, får være i fred."
+    "command_repeat_info": "Et apparat kan endre tilstand uten Kraftvakt, for eksempel når sikringen går og kommer tilbake, eller på grunn av en feil i enheten. Reguleringen sender derfor kommandoen for tilstanden den har satt på nytt når et apparat eller en elbillader ikke har fått kommando på så lenge. Apparater og elbilladere som er utenfor regulering, får være i fred.",
+    "timeouts": "Tidsavbrudd",
+    "timeouts_info": "En handling som ikke blir ferdig, holder igjen kommandoene etter den, også de som slår av apparater. En effektsensor som har sluttet å rapportere, kan vise en gammel verdi som om den var gyldig."
   },
   "list": {
     "drag": "Dra for å endre rekkefølgen",

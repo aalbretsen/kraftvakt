@@ -261,3 +261,25 @@ async def test_unload_stops_the_sensors(
     await advance(hass, freezer, WINDOW)
 
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+
+
+async def test_power_sensor_that_stops_reporting_makes_the_averages_unknown(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    stored_general: dict[str, Any],
+    setup_kraftvakt,
+) -> None:
+    """A report of an unchanged value counts, and makes the sensor valid again."""
+    stored_general["power_sensor_timeout_s"] = 90
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+
+    await advance(hass, freezer, WINDOW)
+    await advance(hass, freezer, WINDOW)
+    assert state_of(hass, "power_regulation_average") == "2000.0"
+    await advance(hass, freezer, WINDOW)
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+
+    set_power(hass, "2000")
+    await advance(hass, freezer, WINDOW)
+    assert state_of(hass, "power_regulation_average") == "2000.0"

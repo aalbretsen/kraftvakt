@@ -28,6 +28,8 @@ specification; the code holds them in one place (`config_model.py`).
 | Tariff average | Time-weighted average of the power sensor over the tariff window. The regulation uses it only for the penalty. |
 | Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. The command repeat sends commands also between decisions, but only for the state the regulation has already set. |
 | Command repeat interval | 10–60 min, default 30 min. How long an appliance or charger may go without a command before the command for its state is sent again. |
+| Action timeout | 10–3600 s, default 60 s. How long an action may run before it is stopped and counts as failed. Why: the actions run one at a time, so one that never finishes would hold back every later command, also the turn-offs. |
+| Power sensor timeout | 10–3600 s, default 300 s. How long the power sensor may go without reporting, also an unchanged value, before it counts as invalid. Why: a HAN reader that loses its connection may keep its last value. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
 | Power reserve | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
@@ -62,7 +64,7 @@ energy in Wh; the status page shows kW.
   Command repeat). Switching appliances outside Kraftvakt can disturb
   the regulation. Exception: for chargers it reads actively charging and car
   connected.
-- A failed action is logged and not retried. The regulation goes on as if it
+- A failed action, also one stopped by the action timeout, is logged and not retried. The regulation goes on as if it
   worked. The command repeat sends the command for the state again later.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
@@ -100,7 +102,8 @@ energy in Wh; the status page shows kW.
   is not affected: the first one starts at startup. Why: everything is
   turned off at start, so the first value after a restart is only the
   background and cannot stand for the hour before.
-- Validity is the state when a window closes. A gap inside a window is filled
+- Validity is the state when a window closes. A power sensor that has not
+  reported for the power sensor timeout is invalid. A gap inside a window is filled
   with the last valid value.
 - One window closing without a valid value is tolerated (the last valid value
   is used). Two in a row make the averages unknown: the average sensors become

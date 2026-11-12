@@ -2,11 +2,16 @@
 
 import asyncio
 from dataclasses import replace
+from datetime import timedelta
 
 import pytest
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
-from pytest_homeassistant_custom_component.common import async_mock_service
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    async_fire_time_changed,
+    async_mock_service,
+)
 
 from custom_components.kraftvakt.actions import (
     ActionKind,
@@ -23,6 +28,7 @@ from custom_components.kraftvakt.config_model import (
     ChargerGroup,
     Condition,
     ConditionType,
+    GeneralConfig,
     Issue,
     KraftvaktConfig,
     Variant,
@@ -292,6 +298,34 @@ async def test_failed_action_is_logged_and_not_retried(
     assert len(failures) == 1
     assert len(turned_off) == 1
     assert "Could not turn_on switch.a: device offline" in caplog.text
+
+
+async def test_action_without_answer_is_stopped_by_the_timeout(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The next commands run when the timeout has stopped the action."""
+    turned_off = async_mock_service(hass, "switch", "turn_off")
+    config = KraftvaktConfig(
+        general=GeneralConfig(action_timeout_s=10),
+        appliances=(
+            appliance("a1", "switch.a", turn_on=custom({"delay": "01:00:00"})),
+            appliance("a2", "switch.b"),
+        ),
+    )
+    execution = asyncio.ensure_future(
+        ActionRunner(hass, config).async_execute(
+            [TurnOnAppliance("a1"), TurnOffAppliance("a2")]
+        )
+    )
+    for _ in range(10):
+        await asyncio.sleep(0)
+    assert turned_off == []
+
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=11))
+    await execution
+
+    assert len(turned_off) == 1
+    assert "Could not turn_on switch.a: no answer within 10 s" in caplog.text
 
 
 @pytest.mark.parametrize(

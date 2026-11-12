@@ -139,7 +139,11 @@ def set_power(hass: HomeAssistant, entity_id: str, watt: str) -> None:
 async def advance(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW
 ) -> None:
+    """Move time on, with the power sensors reporting as a HAN reader does."""
     freezer.tick(delta)
+    for sensor in (POWER_SENSOR, CHARGER_POWER):
+        if state := hass.states.get(sensor):
+            hass.states.async_set(sensor, state.state, state.attributes)
     async_fire_time_changed(hass)
     await hass.async_block_till_done(wait_background_tasks=True)
 

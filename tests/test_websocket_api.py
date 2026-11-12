@@ -206,6 +206,8 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "charger_repeat_increments": 5,
             "penalty_threshold_w": 100,
             "command_repeat_interval_min": 30,
+            "action_timeout_s": 60,
+            "power_sensor_timeout_s": 300,
         },
         "appliances": {"power_reserve_w": None},
         "charger_groups": {"one_at_a_time": True},

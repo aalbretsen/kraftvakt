@@ -205,6 +205,14 @@
       "command_repeat_interval_min": {
         "label": "Command repeat interval",
         "helper": "How long an appliance or EV charger may go without a command before its last command is sent again. {min}–{max} min, default {default} min."
+      },
+      "action_timeout_s": {
+        "label": "Action timeout",
+        "helper": "How long an action may take before it is stopped and counts as failed. {min}–{max} s, default {default} s."
+      },
+      "power_sensor_timeout_s": {
+        "label": "Power sensor timeout",
+        "helper": "How long the power sensor may go without reporting before it counts as invalid. A HAN reader usually reports every 10 seconds. {min}–{max} s, default {default} s."
       }
     }
   },
@@ -220,7 +228,9 @@
     "appliances": "Appliances",
     "chargers": "EV chargers",
     "command_repeat": "Command repeat",
-    "command_repeat_info": "An appliance can change state without Kraftvakt, for example when its circuit breaker trips and comes back, or because of a fault in the device. The regulation therefore sends the command for the state it has set again when an appliance or EV charger has not had a command for this long. Appliances and EV chargers excluded from the regulation are left alone."
+    "command_repeat_info": "An appliance can change state without Kraftvakt, for example when its circuit breaker trips and comes back, or because of a fault in the device. The regulation therefore sends the command for the state it has set again when an appliance or EV charger has not had a command for this long. Appliances and EV chargers excluded from the regulation are left alone.",
+    "timeouts": "Timeouts",
+    "timeouts_info": "An action that does not finish holds back the commands after it, also those that turn appliances off. A power sensor that has stopped reporting can show an old value as if it were valid."
   },
   "list": {
     "drag": "Drag to change the order",
