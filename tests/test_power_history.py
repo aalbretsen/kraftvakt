@@ -1,4 +1,4 @@
-"""Black box tests of the capacity average filled from the recorder at startup."""
+"""Black box tests of the tariff average filled from the recorder at startup."""
 
 from datetime import timedelta
 from typing import Any
@@ -52,7 +52,7 @@ async def record_power(
     await async_wait_recording_done(hass)
 
 
-async def test_capacity_average_starts_from_the_recorded_history(
+async def test_tariff_average_starts_from_the_recorded_history(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     hass_storage: dict[str, Any],
@@ -72,11 +72,11 @@ async def test_capacity_average_starts_from_the_recorded_history(
     await setup_kraftvakt(hass, hass_storage)
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(4100)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(4100)
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(8000)
 
 
-async def test_capacity_average_without_history_uses_the_first_measurement(
+async def test_tariff_average_without_history_uses_the_first_measurement(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     hass_storage: dict[str, Any],
@@ -87,4 +87,4 @@ async def test_capacity_average_without_history_uses_the_first_measurement(
     await setup_kraftvakt(hass, hass_storage)
     await advance(hass, freezer, WINDOW)
 
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3000)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(3000)

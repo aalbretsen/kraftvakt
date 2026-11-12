@@ -84,7 +84,7 @@ async def test_sensors_are_unavailable_before_the_first_average(
     await setup_kraftvakt()
 
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
-    assert state_of(hass, "power_hourly_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_tariff_average") == STATE_UNAVAILABLE
 
 
 async def test_sensors_show_the_averages_in_w(
@@ -98,14 +98,14 @@ async def test_sensors_show_the_averages_in_w(
     set_power(hass, "6", unit="kW")
     await advance(hass, freezer, timedelta(seconds=45))
 
-    for key in ("power_regulation_average", "power_hourly_average"):
+    for key in ("power_regulation_average", "power_tariff_average"):
         state = hass.states.get(entity_id(hass, key))
         assert state is not None
         assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "W"
         assert state.attributes[ATTR_DEVICE_CLASS] == "power"
         assert state.attributes["state_class"] == "measurement"
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(
         (2000 * 3555 + 6000 * 45) / 3600
     )
 
@@ -121,7 +121,7 @@ async def test_sensors_belong_to_the_service_device(
     assert device is not None
     assert device.name == "Kraftvakt"
     assert device.entry_type is dr.DeviceEntryType.SERVICE
-    for key in ("power_regulation_average", "power_hourly_average"):
+    for key in ("power_regulation_average", "power_tariff_average"):
         registry_entry = er.async_get(hass).async_get(entity_id(hass, key))
         assert registry_entry is not None
         assert registry_entry.device_id == device.id
@@ -145,10 +145,10 @@ async def test_sensors_are_updated_once_per_window(
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
 
 
-async def test_capacity_average_over_a_whole_hour_of_updates(
+async def test_tariff_average_over_a_whole_hour_of_updates(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """The capacity average is right through the whole hour when the sensor
+    """The tariff average is right through the whole hour when the sensor
     updates every 10 seconds."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -159,7 +159,7 @@ async def test_capacity_average_over_a_whole_hour_of_updates(
     await advance(hass, freezer, timedelta(seconds=10))
 
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(3000)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(3000)
 
 
 async def test_sensors_follow_an_outage_of_the_power_sensor(
@@ -177,7 +177,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
 
     await advance(hass, freezer, WINDOW)
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
-    assert state_of(hass, "power_hourly_average") == STATE_UNAVAILABLE
+    assert state_of(hass, "power_tariff_average") == STATE_UNAVAILABLE
 
     await advance(hass, freezer, timedelta(seconds=40))
     set_power(hass, "1500")
@@ -185,7 +185,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(
         (3000 * 40 + 1500 * 20) / 60
     )
-    assert float(state_of(hass, "power_hourly_average")) == pytest.approx(
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(
         (3000 * 3580 + 1500 * 20) / 3600
     )
 
@@ -242,11 +242,11 @@ async def test_sensor_names_are_translated(
 
     names = {
         key: hass.states.get(entity_id(hass, key)).attributes[ATTR_FRIENDLY_NAME]
-        for key in ("power_regulation_average", "power_hourly_average")
+        for key in ("power_regulation_average", "power_tariff_average")
     }
     assert names == {
         "power_regulation_average": "Kraftvakt Effekt reguleringssnitt",
-        "power_hourly_average": "Kraftvakt Effekt snittforbruk",
+        "power_tariff_average": "Kraftvakt Effekt tariffsnitt",
     }
 
 

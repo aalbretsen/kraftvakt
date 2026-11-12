@@ -197,7 +197,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
         number: {
           min: range.min ?? undefined,
           max: range.max ?? undefined,
-          step: range.step,
+          step: range.resolution,
           mode: "box",
           unit_of_measurement: unit,
         },

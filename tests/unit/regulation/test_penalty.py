@@ -28,7 +28,7 @@ def overconsuming_state() -> PenaltyState:
 
 
 def test_no_overconsumption_at_or_under_the_limit() -> None:
-    """The state starts only when the capacity average is above the limit."""
+    """The state starts only when the tariff average is above the limit."""
     state = PenaltyState()
 
     assert state.decide(LIMITS, 10000, (12000,)) is PenaltyOutcome.NONE
@@ -87,7 +87,7 @@ def test_rounding_errors_count_as_paid_back() -> None:
 
 
 def test_overconsumption_state_starts_again_at_once() -> None:
-    """A new state starts at 0 if the capacity average is still above."""
+    """A new state starts at 0 if the tariff average is still above."""
     state = overconsuming_state()
 
     state.decide(LIMITS, 10500, (9000,))
@@ -97,7 +97,7 @@ def test_overconsumption_state_starts_again_at_once() -> None:
 
 
 def test_penalty_starts_above_limit_plus_threshold() -> None:
-    """The capacity average must exceed limit plus threshold."""
+    """The tariff average must exceed limit plus threshold."""
     state = overconsuming_state()
 
     assert state.decide(LIMITS, 11000, (12000,)) is PenaltyOutcome.NONE
@@ -134,7 +134,7 @@ def test_penalty_lasts_until_the_overconsumption_is_paid_back() -> None:
     assert state == PenaltyState()
 
 
-def test_penalty_does_not_end_when_the_capacity_average_falls() -> None:
+def test_penalty_does_not_end_when_the_tariff_average_falls() -> None:
     """Only paying back the overconsumption ends the penalty."""
     state = overconsuming_state()
     state.decide(LIMITS, 12000, (14000,))

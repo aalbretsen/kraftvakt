@@ -18,7 +18,7 @@ from .config_model import (
 )
 from .entity import item_name
 from .regulation.charging import ChargerStatus
-from .regulation.model import ApplianceSlotKey, ChargerSlotKey
+from .regulation.model import AmpereStepKey, ApplianceStepKey
 from .runtime import KraftvaktRuntime
 
 NO_WAITING: Mapping[str, None] = {
@@ -47,9 +47,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         "regulation_average_w": (
             None if averages is None else averages.regulation_average_w
         ),
-        "capacity_average_w": (
-            None if averages is None else averages.capacity_average_w
-        ),
+        "tariff_average_w": (None if averages is None else averages.tariff_average_w),
         "power_limit_w": runtime.power_limit_w,
         "regulation_window_s": config.general.regulation_window_s,
         "regulation_interval": config.general.regulation_interval,
@@ -99,7 +97,7 @@ def _appliance_status(
         "on": appliance.id in runtime.appliances_on,
         "excluded": appliance.id in runtime.excluded_appliances,
         "variant": None if variant is None else variant.label,
-        **_waiting_fields(runtime, ApplianceSlotKey(appliance.id)),
+        **_waiting_fields(runtime, ApplianceStepKey(appliance.id)),
     }
 
 
@@ -112,7 +110,7 @@ def _charger_status(
     return {
         "id": charger.id,
         "name": item_name(hass, charger),
-        "activated": status.fictive_on > 0,
+        "activated": status.ampere_steps_on > 0,
         "current_a": status.current_a,
         "bypassed": status.bypassed,
         "waiting": status.waiting,
@@ -127,19 +125,19 @@ def _charger_status(
 
 
 def _waiting_fields(
-    runtime: KraftvaktRuntime, waiting_for: ApplianceSlotKey | str
+    runtime: KraftvaktRuntime, waiting_for: ApplianceStepKey | str
 ) -> Mapping[str, str | None]:
-    """Return when the waiting started and ends, for the slot that waits.
+    """Return when the waiting started and ends, for the step that waits.
 
-    `waiting_for` is the slot of an appliance, or the id of a charger whose
-    next fictive appliance waits.
+    `waiting_for` is the step of an appliance, or the id of a charger whose
+    next ampere step waits.
     """
     waiting = runtime.waiting
     ends_at = runtime.waiting_ends_at
     if waiting is None or ends_at is None:
         return NO_WAITING
     key = waiting.key
-    waiting_charger = key.charger_id if isinstance(key, ChargerSlotKey) else None
+    waiting_charger = key.charger_id if isinstance(key, AmpereStepKey) else None
     if key != waiting_for and waiting_charger != waiting_for:
         return NO_WAITING
     return {

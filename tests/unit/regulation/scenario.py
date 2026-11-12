@@ -116,7 +116,7 @@ class Scenario:
 
         `sensor_valid` and `sensor_lost` tell how the power sensor was when the
         last windows closed, by default valid.
-        `capacity` is the capacity average, well under the limit unless given.
+        `capacity` is the tariff average, well under the limit unless given.
         `averages` are the regulation averages since the previous decision, by
         default only `average_w`. `true` lists the variants whose conditions
         are true.
@@ -128,7 +128,7 @@ class Scenario:
             DecisionInput(
                 now=self.now,
                 regulation_average_w=average_w,
-                capacity_average_w=None if average_w is None else capacity,
+                tariff_average_w=None if average_w is None else capacity,
                 regulation_averages_w=averages,
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,

@@ -42,9 +42,9 @@ def _regulation_average_w(runtime: KraftvaktRuntime) -> float | None:
     return None if averages is None else averages.regulation_average_w
 
 
-def _capacity_average_w(runtime: KraftvaktRuntime) -> float | None:
+def _tariff_average_w(runtime: KraftvaktRuntime) -> float | None:
     averages = runtime.latest_averages
-    return None if averages is None else averages.capacity_average_w
+    return None if averages is None else averages.tariff_average_w
 
 
 def _power_free_w(runtime: KraftvaktRuntime) -> float | None:
@@ -60,7 +60,7 @@ def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
 def _waiting_time_remaining_s(runtime: KraftvaktRuntime) -> int:
     """Return the seconds until the decision that ends the waiting time, or 0.
 
-    It counts to the decision, since the slot is turned on at the first
+    It counts to the decision, since the step is turned on at the first
     decision after the waiting time.
     """
     ends_at = runtime.waiting_ends_at
@@ -89,7 +89,7 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
     PowerSensorDescription(
         key="power_regulation_average", value_fn=_regulation_average_w
     ),
-    PowerSensorDescription(key="power_hourly_average", value_fn=_capacity_average_w),
+    PowerSensorDescription(key="power_tariff_average", value_fn=_tariff_average_w),
     PowerSensorDescription(
         key="power_free",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -107,7 +107,7 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
         key="regulation_steps_on",
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda runtime: runtime.slots_on,
+        value_fn=lambda runtime: runtime.steps_on,
     ),
     DurationSensorDescription(
         key="waiting_time_remaining", value_fn=_waiting_time_remaining_s

@@ -255,7 +255,7 @@ def _range_issues(
 ) -> list[Issue]:
     if not value_range.contains(value):
         return [location.issue("out_of_range", field_name)]
-    if not value_range.matches_step(value):
+    if not value_range.matches_resolution(value):
         return [location.issue("invalid_resolution", field_name)]
     return []
 

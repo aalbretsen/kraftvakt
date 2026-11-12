@@ -170,22 +170,22 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
     assert result["limits"]["general"]["power_limit_w"] == {
         "min": 1000,
         "max": 50_000,
-        "step": 1,
+        "resolution": 1,
     }
     assert result["limits"]["general"]["turn_on_margin_w"] == {
         "min": 1,
         "max": 1000,
-        "step": 1,
+        "resolution": 1,
     }
     assert result["limits"]["general"]["wait_curve_steepness"] == {
         "min": 1.5,
         "max": 9,
-        "step": 0.5,
+        "resolution": 0.5,
     }
-    assert result["limits"]["general"]["charger_cycling_step_factor"] == {
+    assert result["limits"]["general"]["charger_repeat_increment_factor"] == {
         "min": 0.25,
         "max": 1,
-        "step": 0.25,
+        "resolution": 0.25,
     }
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
     assert result["limits"]["chargers"]["power_reserve_w"]["max"] == 5000
@@ -199,10 +199,10 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
             "wait_at_limit_s": 300,
             "wait_curve_steepness": 6.0,
             "wait_curve_pivot": 80,
-            "appliance_cycling_step_factor": 0.5,
-            "appliance_cycling_steps": 4,
-            "charger_cycling_step_factor": 1.0,
-            "charger_cycling_steps": 5,
+            "appliance_repeat_increment_factor": 0.5,
+            "appliance_repeat_increments": 4,
+            "charger_repeat_increment_factor": 1.0,
+            "charger_repeat_increments": 5,
             "penalty_threshold_w": 100,
             "command_repeat_interval_min": 30,
         },
@@ -760,7 +760,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
             "recovery_started": False,
         },
         "regulation_average_w": None,
-        "capacity_average_w": None,
+        "tariff_average_w": None,
         "power_limit_w": 10000,
         "regulation_window_s": 60,
         "regulation_interval": 1,
@@ -795,7 +795,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
     status = await next_status(client)
 
     assert status["regulation_average_w"] == pytest.approx(2000)
-    assert status["capacity_average_w"] == pytest.approx(2000)
+    assert status["tariff_average_w"] == pytest.approx(2000)
     assert status["next_decision_at"] == local(started + 2 * WINDOW)
     assert [item["on"] for item in status["appliances"]] == [True, False]
 

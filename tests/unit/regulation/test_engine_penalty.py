@@ -175,8 +175,8 @@ def test_current_variant_is_found_during_the_penalty() -> None:
     assert scenario.engine.current_variants == {"heater": "morning", "b": None}
 
 
-def test_no_penalty_without_a_capacity_average() -> None:
-    """Overconsumption is only counted from a capacity average."""
+def test_no_penalty_without_a_tariff_average() -> None:
+    """Overconsumption is only counted from a tariff average."""
     engine = RegulationEngine(no_waiting("a"))
     engine.start(START)
 

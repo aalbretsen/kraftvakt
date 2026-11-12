@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from itertools import pairwise
 from typing import Final
 
-CAPACITY_WINDOW: Final = timedelta(hours=1)
+TARIFF_WINDOW: Final = timedelta(hours=1)
 CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN: Final = 2
 
 _W_PER_UNIT: Final[dict[str | None, float]] = {None: 1.0, "W": 1.0, "kW": 1000.0}
@@ -40,7 +40,7 @@ class WindowAverages:
     start: datetime
     end: datetime
     regulation_average_w: float | None
-    capacity_average_w: float | None
+    tariff_average_w: float | None
     sensor_valid: bool
 
 
@@ -139,12 +139,12 @@ class PowerAverager:
         ):
             return WindowAverages(start, end, None, None, self._sensor_valid)
 
-        self._forget_steps_before(end - CAPACITY_WINDOW)
+        self._forget_steps_before(end - TARIFF_WINDOW)
         return WindowAverages(
             start,
             end,
             regulation_average_w=self._average(start, end),
-            capacity_average_w=self._average(end - CAPACITY_WINDOW, end),
+            tariff_average_w=self._average(end - TARIFF_WINDOW, end),
             sensor_valid=self._sensor_valid,
         )
 

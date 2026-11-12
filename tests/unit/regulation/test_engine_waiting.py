@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import pytest
 
-from custom_components.kraftvakt.regulation.model import ApplianceSlotKey
+from custom_components.kraftvakt.regulation.model import ApplianceStepKey
 
 from .configs import appliance, make_config
 from .scenario import Scenario, off, on
@@ -18,7 +18,7 @@ def test_appliance_is_turned_on_after_the_waiting_time() -> None:
     started = scenario.now
     waiting = scenario.engine.waiting
     assert waiting is not None
-    assert (waiting.key, waiting.started_at) == (ApplianceSlotKey("a"), started)
+    assert (waiting.key, waiting.started_at) == (ApplianceStepKey("a"), started)
     assert waiting.until - started == pytest.approx(timedelta(minutes=4))
     assert scenario.decide_many(8000, 4) == [[], [], [], on("a")]
     assert scenario.now - started == timedelta(minutes=4)

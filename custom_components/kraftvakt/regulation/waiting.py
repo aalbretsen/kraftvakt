@@ -1,4 +1,4 @@
-"""Waiting time before a slot is turned on."""
+"""Waiting time before a step is turned on."""
 
 from __future__ import annotations
 
@@ -7,26 +7,29 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Final
 
-PERSISTENT_CYCLING_FROM: Final = 2
+GROWTH_FROM_REPEAT: Final = 2
 WAITING_STARTS_AT_UTILIZATION: Final = 0.5
 SHARE_AT_PIVOT: Final = 0.8
 PIVOT_CAP_FACTOR: Final = 0.999
 
 
 @dataclass(frozen=True, slots=True)
-class CyclingSteps:
-    """How the waiting time grows on persistent cycling."""
+class RepeatedTurnOnGrowth:
+    """How the waiting time grows on repeated turn-on."""
 
-    step: timedelta
+    increment: timedelta
     cap: timedelta
 
     @classmethod
     def from_waiting_at_limit(
-        cls, wait_at_limit_s: float, step_factor: float, steps: int
-    ) -> CyclingSteps:
-        """Return the steps as a share of the waiting time at the limit."""
-        step = timedelta(seconds=wait_at_limit_s * step_factor)
-        return cls(step=step, cap=timedelta(seconds=wait_at_limit_s) + step * steps)
+        cls, wait_at_limit_s: float, increment_factor: float, increments: int
+    ) -> RepeatedTurnOnGrowth:
+        """Return the growth, with the increment a share of the waiting at the limit."""
+        increment = timedelta(seconds=wait_at_limit_s * increment_factor)
+        return cls(
+            increment=increment,
+            cap=timedelta(seconds=wait_at_limit_s) + increment * increments,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,12 +66,13 @@ def _above_start(utilization: float) -> float:
     return min(1.0, max(0.0, (utilization - WAITING_STARTS_AT_UTILIZATION) / span))
 
 
-def cycling_waiting_time(
-    reon_number: int, wait_at_limit: timedelta, steps: CyclingSteps
+def repeated_turn_on_waiting_time(
+    repeat: int, wait_at_limit: timedelta, growth: RepeatedTurnOnGrowth
 ) -> timedelta:
-    """Return the fixed waiting time on persistent cycling."""
-    growth = steps.step * (reon_number - PERSISTENT_CYCLING_FROM)
-    return min(steps.cap, wait_at_limit + growth)
+    """Return the fixed waiting time on repeated turn-on."""
+    return min(
+        growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT)
+    )
 
 
 def waiting_time(
@@ -76,44 +80,44 @@ def waiting_time(
     limit_w: float,
     wait_at_limit: timedelta,
     curve: WaitingCurve,
-    reon_number: int,
-    steps: CyclingSteps,
+    repeat: int,
+    growth: RepeatedTurnOnGrowth,
 ) -> timedelta:
-    """Return the waiting time before a slot is turned on.
+    """Return the waiting time before a step is turned on.
 
-    `reon_number` is the count from `CyclingCounter.upcoming_reon_number()`.
+    `repeat` is the count from `RepeatedTurnOnCounter.upcoming_repeat()`.
     """
-    if reon_number >= PERSISTENT_CYCLING_FROM:
-        return cycling_waiting_time(reon_number, wait_at_limit, steps)
+    if repeat >= GROWTH_FROM_REPEAT:
+        return repeated_turn_on_waiting_time(repeat, wait_at_limit, growth)
     return wait_at_limit * curve.share(average_w / limit_w)
 
 
-class CyclingCounter:
-    """Counts how many times the same slot is turned on again.
+class RepeatedTurnOnCounter:
+    """Counts how many times the same step is turned on again.
 
-    Every command the regulation sends for another slot, forced or not, ends
+    Every command the regulation sends for another step, forced or not, ends
     the count.
     """
 
     def __init__(self) -> None:
         """Start without any count."""
         self._last_key: Hashable | None = None
-        self._reons = 0
+        self._repeats = 0
 
     def record(self, key: Hashable, turned_on: bool) -> None:
-        """Record that the regulation turned the slot on or off."""
+        """Record that the regulation turned the step on or off."""
         if key != self._last_key:
             self._last_key = key
-            self._reons = 0
+            self._repeats = 0
         elif turned_on:
-            self._reons += 1
+            self._repeats += 1
 
-    def upcoming_reon_number(self, key: Hashable) -> int:
-        """Return the count the slot gets if it is turned on next, 0 if not again."""
-        return self._reons + 1 if key == self._last_key else 0
+    def upcoming_repeat(self, key: Hashable) -> int:
+        """Return the count the step gets if it is turned on next, 0 if not again."""
+        return self._repeats + 1 if key == self._last_key else 0
 
     def reset(self, key: Hashable) -> None:
-        """Forget the count for the slot."""
+        """Forget the count for the step."""
         if key == self._last_key:
             self._last_key = None
-            self._reons = 0
+            self._repeats = 0

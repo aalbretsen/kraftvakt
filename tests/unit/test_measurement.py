@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from custom_components.kraftvakt.measurement import (
-    CAPACITY_WINDOW,
+    TARIFF_WINDOW,
     PowerAverager,
     WindowAverages,
     power_w,
@@ -91,7 +91,7 @@ def test_new_window_length_applies_from_the_next_window() -> None:
     assert (first.start, first.end) == (at(0), at(60))
     assert (second.start, second.end) == (at(60), at(90))
     assert second.regulation_average_w == pytest.approx((10 * 2.0 + 20 * 5.0) / 30)
-    assert second.capacity_average_w == pytest.approx((3580 * 2.0 + 20 * 5.0) / 3600)
+    assert second.tariff_average_w == pytest.approx((3580 * 2.0 + 20 * 5.0) / 3600)
 
 
 def test_first_measurement_fills_both_windows_backwards() -> None:
@@ -102,7 +102,7 @@ def test_first_measurement_fills_both_windows_backwards() -> None:
     averages = averager.close_window()
 
     assert averages.regulation_average_w == 4.0
-    assert averages.capacity_average_w == 4.0
+    assert averages.tariff_average_w == 4.0
     assert averages.sensor_valid
 
 
@@ -131,25 +131,25 @@ def test_regulation_windows_do_not_overlap() -> None:
     assert second.regulation_average_w == pytest.approx(3.0)
 
 
-def test_capacity_average_slides_over_the_last_hour() -> None:
-    """The capacity average covers exactly one hour back in time."""
+def test_tariff_average_slides_over_the_last_hour() -> None:
+    """The tariff average covers exactly one hour back in time."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(0), 10.0)
     averager.add_measurement(at(30 * 60), 0.0)
 
-    assert close_windows_until(averager, at(30 * 60)).capacity_average_w == 10.0
-    assert close_windows_until(
-        averager, at(60 * 60)
-    ).capacity_average_w == pytest.approx(5.0)
-    assert close_windows_until(
-        averager, at(75 * 60)
-    ).capacity_average_w == pytest.approx(2.5)
-    assert close_windows_until(averager, at(90 * 60)).capacity_average_w == 0.0
-    assert close_windows_until(averager, at(5 * 3600)).capacity_average_w == 0.0
+    assert close_windows_until(averager, at(30 * 60)).tariff_average_w == 10.0
+    assert close_windows_until(averager, at(60 * 60)).tariff_average_w == pytest.approx(
+        5.0
+    )
+    assert close_windows_until(averager, at(75 * 60)).tariff_average_w == pytest.approx(
+        2.5
+    )
+    assert close_windows_until(averager, at(90 * 60)).tariff_average_w == 0.0
+    assert close_windows_until(averager, at(5 * 3600)).tariff_average_w == 0.0
 
 
 def test_capacity_window_does_not_depend_on_the_window_length() -> None:
-    """The capacity window is one hour also when 3600 s is not a multiple of
+    """The tariff window is one hour also when 3600 s is not a multiple of
     the regulation window."""
     window = timedelta(seconds=70)
     averager = PowerAverager(window, START)
@@ -160,7 +160,7 @@ def test_capacity_window_does_not_depend_on_the_window_length() -> None:
         averages = averager.close_window()
         end_s = (averages.end - START).total_seconds()
         seconds_with_power = min(3600, max(0, 3700 - end_s))
-        assert averages.capacity_average_w == pytest.approx(
+        assert averages.tariff_average_w == pytest.approx(
             6.0 * seconds_with_power / 3600
         )
 
@@ -203,16 +203,16 @@ def expected_average(
 @pytest.mark.parametrize("interval_s", [1, 10, 30, 47])
 def test_averages_are_correct_for_any_update_rate(interval_s: int) -> None:
     """The averages are correct whether the sensor updates every second, every
-    10 seconds or less often, through the whole capacity window."""
+    10 seconds or less often, through the whole tariff window."""
     for averages in run_with_updates_every(interval_s, changing_power):
         assert averages.regulation_average_w == pytest.approx(
             expected_average(interval_s, changing_power, averages.start, averages.end)
         )
-        assert averages.capacity_average_w == pytest.approx(
+        assert averages.tariff_average_w == pytest.approx(
             expected_average(
                 interval_s,
                 changing_power,
-                averages.end - CAPACITY_WINDOW,
+                averages.end - TARIFF_WINDOW,
                 averages.end,
             )
         )
@@ -226,7 +226,7 @@ def test_update_rate_does_not_change_the_result() -> None:
     assert len(every_second) == len(every_ten_seconds) == 160
     for one, ten in zip(every_second, every_ten_seconds, strict=True):
         assert one.regulation_average_w == pytest.approx(ten.regulation_average_w)
-        assert one.capacity_average_w == pytest.approx(ten.capacity_average_w)
+        assert one.tariff_average_w == pytest.approx(ten.tariff_average_w)
 
 
 def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
@@ -238,7 +238,7 @@ def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
     averages = averager.close_window()
 
     assert averages.regulation_average_w == 3.0
-    assert averages.capacity_average_w == 3.0
+    assert averages.tariff_average_w == 3.0
     assert not averages.sensor_valid
 
 
@@ -287,7 +287,7 @@ def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
     assert second == WindowAverages(at(60), at(120), None, None, sensor_valid=False)
     assert third == WindowAverages(at(120), at(180), None, None, sensor_valid=False)
     assert fourth.regulation_average_w == pytest.approx((9.0 * 20 + 2.0 * 40) / 60)
-    assert fourth.capacity_average_w == pytest.approx(
+    assert fourth.tariff_average_w == pytest.approx(
         (9.0 * 3600 - 9.0 * 40 + 2.0 * 40) / 3600
     )
     assert fourth.sensor_valid
@@ -306,7 +306,7 @@ def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
 
     averages = close_windows_until(averager, at(3780))
 
-    assert averages.capacity_average_w == pytest.approx(
+    assert averages.tariff_average_w == pytest.approx(
         (7.0 * 3540.5 + 3.0 * 59.5) / 3600, abs=1e-4
     )
 
@@ -347,7 +347,7 @@ def test_late_measurement_never_changes_a_closed_window() -> None:
     averages = averager.close_window()
 
     assert averages.regulation_average_w == 8.0
-    assert averages.capacity_average_w == pytest.approx((2.0 * 3540 + 8.0 * 60) / 3600)
+    assert averages.tariff_average_w == pytest.approx((2.0 * 3540 + 8.0 * 60) / 3600)
 
 
 def test_latest_measurement_at_the_same_time_wins() -> None:
@@ -367,7 +367,7 @@ def test_long_run_keeps_only_the_last_hour() -> None:
         if averager.window_end <= at(second + 1):
             averages = averager.close_window()
 
-    assert math.isclose(averages.capacity_average_w or 0, 0.5, rel_tol=1e-3)
+    assert math.isclose(averages.tariff_average_w or 0, 0.5, rel_tol=1e-3)
     assert len(averager._steps) <= 3600 + 2
 
 
@@ -388,7 +388,7 @@ def test_history_fills_the_hour_before_the_first_measurement() -> None:
     )
     averages = averager.close_window()
 
-    assert averages.capacity_average_w == pytest.approx((2.0 * 49 + 6.0 * 11) / 60)
+    assert averages.tariff_average_w == pytest.approx((2.0 * 49 + 6.0 * 11) / 60)
     assert averages.regulation_average_w == 6.0
 
 
@@ -398,7 +398,7 @@ def test_history_without_a_measurement_since_the_start_holds_its_last_value() ->
     averager.add_history([(at(-60 * 60), 1.0), (at(-15 * 60), 5.0)])
     averages = averager.close_window()
 
-    assert averages.capacity_average_w == pytest.approx((1.0 * 44 + 5.0 * 16) / 60)
+    assert averages.tariff_average_w == pytest.approx((1.0 * 44 + 5.0 * 16) / 60)
     assert averages.regulation_average_w == 5.0
     assert not averages.sensor_valid
 
@@ -409,4 +409,4 @@ def test_empty_history_keeps_the_first_measurement_filling_backwards() -> None:
 
     averager.add_history([(at(-5 * 60), None)])
 
-    assert averager.close_window().capacity_average_w == 4.0
+    assert averager.close_window().tariff_average_w == 4.0

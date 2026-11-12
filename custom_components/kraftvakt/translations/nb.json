@@ -34,8 +34,8 @@
       "power_regulation_average": {
         "name": "Effekt reguleringssnitt"
       },
-      "power_hourly_average": {
-        "name": "Effekt snittforbruk"
+      "power_tariff_average": {
+        "name": "Effekt tariffsnitt"
       },
       "power_free": {
         "name": "Effekt ledig"

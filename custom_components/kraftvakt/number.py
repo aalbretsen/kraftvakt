@@ -32,7 +32,7 @@ class PowerLimitNumber(KraftvaktEntity, NumberEntity):
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_native_min_value = POWER_LIMIT_W.minimum
     _attr_native_max_value = POWER_LIMIT_W.maximum
-    _attr_native_step = POWER_LIMIT_W.step
+    _attr_native_step = POWER_LIMIT_W.resolution
     _attr_mode = NumberMode.BOX
 
     def __init__(self, entry: KraftvaktConfigEntry, runtime: KraftvaktRuntime) -> None:

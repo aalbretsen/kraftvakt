@@ -24,7 +24,7 @@ export class KraftvaktGeneralPage extends GeneralSettingsPage {
       ${this.renderCard(
         "general.penalty",
         [this.numberField("penalty_threshold_w")],
-        html`<ha-alert alert-type="info">${this.localize("general.capacity_window_info")}</ha-alert>`,
+        html`<ha-alert alert-type="info">${this.localize("general.tariff_window_info")}</ha-alert>`,
       )}
     `;
   }

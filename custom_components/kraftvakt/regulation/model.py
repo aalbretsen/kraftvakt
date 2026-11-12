@@ -8,7 +8,7 @@ from datetime import UTC, datetime, tzinfo
 
 from .charging import ChargerReading, ChargingState
 from .penalty import PenaltyState
-from .waiting import CyclingCounter, CyclingSteps
+from .waiting import RepeatedTurnOnCounter, RepeatedTurnOnGrowth
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,7 +22,7 @@ class DecisionInput:
 
     now: datetime
     regulation_average_w: float | None
-    capacity_average_w: float | None
+    tariff_average_w: float | None
     regulation_averages_w: Sequence[float]
     power_sensor_valid: bool
     power_sensor_lost: bool
@@ -88,37 +88,37 @@ type Command = (
 
 
 @dataclass(frozen=True, slots=True)
-class ApplianceSlotKey:
-    """Identifies the slot of an appliance, whichever variant is current."""
+class ApplianceStepKey:
+    """Identifies the step of an appliance, whichever variant is current."""
 
     appliance_id: str
 
 
 @dataclass(frozen=True, slots=True)
-class ChargerSlotKey:
-    """Identifies a fictive appliance of a charger, counted from 0."""
+class AmpereStepKey:
+    """Identifies a ampere step of a charger, counted from 0."""
 
     charger_id: str
     index: int
 
 
 @dataclass(frozen=True, slots=True)
-class Slot:
+class Step:
     """A place in the order the regulation turns things on and off."""
 
     key: Hashable
     is_on: bool
     power_reserve_w: float | None
-    cycling: CyclingSteps
+    growth: RepeatedTurnOnGrowth
     can_turn_on: bool = True
     can_turn_off: bool = True
 
 
 @dataclass(frozen=True, slots=True)
 class Waiting:
-    """A waiting time that runs before the slot may be turned on.
+    """A waiting time that runs before the step may be turned on.
 
-    The slot is turned on at the first decision at or after `until`.
+    The step is turned on at the first decision at or after `until`.
     """
 
     key: Hashable
@@ -139,7 +139,7 @@ class RegulationState:
     current_variants: dict[str, str | None] = field(default_factory=dict)
     excluded_appliances: frozenset[str] = frozenset()
     waiting: Waiting | None = None
-    cycling: CyclingCounter = field(default_factory=CyclingCounter)
+    repeats: RepeatedTurnOnCounter = field(default_factory=RepeatedTurnOnCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False
     charging_groups: dict[str, ChargingState] = field(default_factory=dict)

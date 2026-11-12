@@ -11,9 +11,9 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargerStatus,
     ChargingState,
     allowed_to_charge,
+    ampere_step_count,
     charging_current,
     charging_window_started,
-    fictive_appliance_count,
     in_charging_window,
     override_expired,
     window_overridden,
@@ -38,13 +38,13 @@ def oslo(hour: int, minute: int = 0, day: int = 7) -> datetime:
     return datetime(2026, 11, day, hour, minute, tzinfo=OSLO)
 
 
-def test_one_fictive_appliance_per_ampere() -> None:
-    """6 A to 16 A gives 11 fictive appliances."""
-    assert fictive_appliance_count(charger(min_a=6, max_a=16)) == 11
-    assert fictive_appliance_count(charger(min_a=6, max_a=6)) == 1
+def test_one_ampere_step_per_ampere() -> None:
+    """6 A to 16 A gives 11 ampere steps."""
+    assert ampere_step_count(charger(min_a=6, max_a=16)) == 11
+    assert ampere_step_count(charger(min_a=6, max_a=6)) == 1
 
 
-def test_current_follows_the_fictive_appliances_that_are_on() -> None:
+def test_current_follows_the_ampere_steps_that_are_on() -> None:
     """Four on gives 9 A, and a deactivated charger gets the minimum."""
     assert charging_current(charger(), 4) == 9
     assert charging_current(charger(), 11) == 16
@@ -175,7 +175,7 @@ def test_priority_starts_as_configured() -> None:
     state = ChargingState.for_chargers(chargers("a", "b"))
 
     assert state.priority == ["a", "b"]
-    assert state.fictive_on == {"a": 0, "b": 0}
+    assert state.ampere_steps_on == {"a": 0, "b": 0}
     assert state.activated() == []
 
 
@@ -194,10 +194,10 @@ def test_charger_without_car_is_bypassed() -> None:
 
 
 def test_charger_that_does_not_draw_power_is_bypassed_after_two_windows() -> None:
-    """The first fictive appliance must have been on two windows."""
+    """The first ampere step must have been on two windows."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("a", 1, NOW)
+    state.set_ampere_steps_on("a", 1, NOW)
 
     assert evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW) == []
     assert evaluate(state, configured, {"a": CHARGING}, now=NOW + 2 * WINDOW) == []
@@ -210,7 +210,7 @@ def test_charger_without_valid_charging_power_is_bypassed_only_without_car() -> 
     """An invalid charging power counts as charging."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("a", 1, NOW)
+    state.set_ampere_steps_on("a", 1, NOW)
     later = NOW + 5 * WINDOW
 
     assert evaluate(state, configured, {"a": ChargerReading()}, now=later) == []
@@ -223,10 +223,10 @@ def test_charger_that_did_not_charge_rests_also_when_deactivated() -> None:
     """It may be tried again after 15 minutes."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("a", 1, NOW)
+    state.set_ampere_steps_on("a", 1, NOW)
     bypassed_at = NOW + 2 * WINDOW
     evaluate(state, configured, {"a": IDLE}, now=bypassed_at)
-    state.set_fictive_on("a", 0)
+    state.set_ampere_steps_on("a", 0)
 
     evaluate(state, configured, {"a": IDLE}, now=bypassed_at + timedelta(minutes=14))
     assert state.bypassed == {"a"}
@@ -238,7 +238,7 @@ def test_rest_ends_when_the_charger_charges_or_the_car_is_disconnected() -> None
     """The next rest is the first again."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("a", 1, NOW)
+    state.set_ampere_steps_on("a", 1, NOW)
     later = NOW + 2 * WINDOW
     evaluate(state, configured, {"a": IDLE}, now=later)
     evaluate(state, configured, {"a": IDLE}, now=later + timedelta(minutes=15))
@@ -284,7 +284,7 @@ def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
     assert state.priority == ["d", "b", "a", "c"]
 
 
-def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() -> None:
+def test_priority_is_corrected_when_a_charger_has_all_ampere_steps_on() -> None:
     """Bypassed chargers stay at the back."""
     configured = [charger("a"), charger("b"), charger("c", min_a=6, max_a=7)]
     state = ChargingState.for_chargers(configured)
@@ -294,7 +294,7 @@ def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() ->
     evaluate(state, configured, {"a": IDLE, "b": no_car, "c": IDLE})
     assert state.priority == ["c", "a", "b"]
 
-    state.set_fictive_on("c", 2, NOW)
+    state.set_ampere_steps_on("c", 2, NOW)
     evaluate(state, configured, {"a": IDLE, "b": no_car, "c": CHARGING})
 
     assert state.priority == ["a", "c", "b"]
@@ -357,12 +357,12 @@ def test_one_at_a_time_the_activated_one_of_several_charging_goes_first() -> Non
     """Then the first in the current priority."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("c", 3, NOW)
+    state.set_ampere_steps_on("c", 3, NOW)
 
     evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING})
     assert state.may_charge == {"c"}
 
-    state.set_fictive_on("c", 0)
+    state.set_ampere_steps_on("c", 0)
     evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING})
     assert state.may_charge == {"b"}
     assert state.waiting == {"a", "c"}
@@ -388,7 +388,7 @@ def test_status_of_each_charger() -> None:
     state = ChargingState.for_chargers(configured)
     assert state.status(configured)["a"].excluded is None
     assert state.status(configured)["a"].car_connected is None
-    state.set_fictive_on("a", 4, NOW)
+    state.set_ampere_steps_on("a", 4, NOW)
     evaluate(
         state,
         configured,
@@ -422,10 +422,10 @@ def test_charging_needs_an_activated_charger() -> None:
     """A charger is not charging once it is deactivated, nor before it is."""
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
-    state.set_fictive_on("a", 1, NOW)
+    state.set_ampere_steps_on("a", 1, NOW)
     evaluate(state, configured, {"a": CHARGING, "b": CHARGING})
 
-    state.set_fictive_on("a", 0)
+    state.set_ampere_steps_on("a", 0)
 
     assert not state.status(configured)["a"].charging
     assert not state.status(configured)["b"].charging
@@ -435,4 +435,4 @@ def test_activating_needs_the_time() -> None:
     state = ChargingState.for_chargers(chargers("a"))
 
     with pytest.raises(ValueError, match="time"):
-        state.set_fictive_on("a", 1)
+        state.set_ampere_steps_on("a", 1)

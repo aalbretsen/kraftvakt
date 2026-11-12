@@ -24,10 +24,10 @@ const UNITS: Partial<Record<GeneralField, string>> = {
 /** Fields chosen from a list, which works with text values. */
 const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set([
   "regulation_interval",
-  "appliance_cycling_step_factor",
-  "appliance_cycling_steps",
-  "charger_cycling_step_factor",
-  "charger_cycling_steps",
+  "appliance_repeat_increment_factor",
+  "appliance_repeat_increments",
+  "charger_repeat_increment_factor",
+  "charger_repeat_increments",
 ]);
 
 /**
@@ -61,7 +61,7 @@ export class GeneralSettingsPage extends ConfigPage {
         number: {
           min: range.min ?? undefined,
           max: range.max ?? undefined,
-          step: range.step,
+          step: range.resolution,
           mode: "box",
           unit_of_measurement: UNITS[name],
         },
@@ -73,7 +73,7 @@ export class GeneralSettingsPage extends ConfigPage {
   protected selectField(name: GeneralField, label: (value: number) => string): FormField {
     const range = this.range(name);
     const options = [];
-    for (let value = range.min ?? range.step; value <= (range.max ?? value); value += range.step) {
+    for (let value = range.min ?? range.resolution; value <= (range.max ?? value); value += range.resolution) {
       options.push({ value: String(value), label: label(value) });
     }
     return { name, required: true, selector: { select: { mode: "dropdown", options } } };

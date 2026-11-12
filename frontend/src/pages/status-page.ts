@@ -204,11 +204,11 @@ export class KraftvaktStatusPage extends LitElement {
           this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
         )}
         ${this.renderStat(
-          "capacity-average",
-          "status.capacity_average",
-          formatPower(language, status.capacity_average_w),
+          "tariff-average",
+          "status.tariff_average",
+          formatPower(language, status.tariff_average_w),
           this.localize("status.average_over_hour"),
-          overLimit(status.capacity_average_w),
+          overLimit(status.tariff_average_w),
         )}
         ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_w))}
       </div>
@@ -272,9 +272,9 @@ export class KraftvaktStatusPage extends LitElement {
     const kilowatt = (watt: number | null) => (watt === null ? null : watt / 1000);
     const limit = status.power_limit_w / 1000;
     const powerNow = kilowatt(powerNowW);
-    const capacityAverage = kilowatt(status.capacity_average_w);
+    const tariffAverage = kilowatt(status.tariff_average_w);
     const regulationAverage = kilowatt(status.regulation_average_w);
-    const values = [powerNow, capacityAverage, regulationAverage];
+    const values = [powerNow, tariffAverage, regulationAverage];
     const { step, end } = meterScale(Math.max(limit * 1.2, ...values.map((value) => value ?? 0)));
     const percent = (value: number) => `${(100 * Math.min(value, end)) / end}%`;
     const language = this.hass.language;
@@ -293,7 +293,7 @@ export class KraftvaktStatusPage extends LitElement {
       <div class="meter">
         <div class="markers">
           ${marker("power-limit", "status.power_limit", limit)}
-          ${marker("capacity-average", "status.capacity_average", capacityAverage)}
+          ${marker("tariff-average", "status.tariff_average", tariffAverage)}
           ${marker("regulation-average", "status.regulation_average", regulationAverage)}
         </div>
         <div class="bar">
@@ -716,7 +716,7 @@ export class KraftvaktStatusPage extends LitElement {
       border-inline: 5px solid transparent;
       border-top: 7px solid var(--marker-color);
     }
-    .capacity-average {
+    .tariff-average {
       --marker-color: var(--kraftvakt-grid-color);
     }
     .regulation-average {

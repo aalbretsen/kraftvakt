@@ -5,15 +5,17 @@ from datetime import timedelta
 import pytest
 
 from custom_components.kraftvakt.regulation.waiting import (
-    CyclingCounter,
-    CyclingSteps,
+    RepeatedTurnOnCounter,
+    RepeatedTurnOnGrowth,
     WaitingCurve,
     waiting_time,
 )
 
 FIVE_MINUTES = timedelta(minutes=5)
 DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
-APPLIANCE_CYCLING = CyclingSteps(step=timedelta(minutes=2), cap=timedelta(minutes=15))
+APPLIANCE_GROWTH = RepeatedTurnOnGrowth(
+    increment=timedelta(minutes=2), cap=timedelta(minutes=15)
+)
 UTILIZATIONS = (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
 
 
@@ -61,97 +63,101 @@ def test_whole_waiting_time_above_the_limit() -> None:
     assert DEFAULT_CURVE.share(1.4) == pytest.approx(1)
 
 
-def test_waiting_time_follows_the_curve_until_persistent_cycling() -> None:
-    """The first time a slot is turned on again, the curve still applies."""
-    for reon_number in (0, 1):
+def test_waiting_time_follows_the_curve_until_repeated_turn_on() -> None:
+    """The first time a step is turned on again, the curve still applies."""
+    for repeat in (0, 1):
         assert waiting_time(
-            8000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, APPLIANCE_CYCLING
+            8000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH
         ) == pytest.approx(FIVE_MINUTES * 0.8)
 
 
-def test_waiting_time_on_persistent_cycling_for_appliances() -> None:
+def test_waiting_time_on_repeated_turn_on_for_appliances() -> None:
     """5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
     minutes = [
         waiting_time(
-            1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, APPLIANCE_CYCLING
+            1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH
         )
         / timedelta(minutes=1)
-        for reon_number in range(2, 10)
+        for repeat in range(2, 10)
     ]
 
     assert minutes == [5, 7, 9, 11, 13, 15, 15, 15]
 
 
-def test_cycling_steps_are_parameters() -> None:
-    """Chargers use other steps and another cap."""
-    steps = CyclingSteps(step=timedelta(minutes=5), cap=timedelta(minutes=30))
+def test_growth_are_parameters() -> None:
+    """Chargers use another increment and another cap."""
+    growth = RepeatedTurnOnGrowth(
+        increment=timedelta(minutes=5), cap=timedelta(minutes=30)
+    )
     minutes = [
-        waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, reon_number, steps)
+        waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, growth)
         / timedelta(minutes=1)
-        for reon_number in range(2, 9)
+        for repeat in range(2, 9)
     ]
 
     assert minutes == [5, 10, 15, 20, 25, 30, 30]
 
 
 @pytest.mark.parametrize(
-    ("wait_at_limit_s", "factor", "steps", "step_s", "cap_s"),
+    ("wait_at_limit_s", "factor", "increments", "increment_s", "cap_s"),
     [(300, 0.5, 4, 150, 900), (300, 1.0, 4, 300, 1500), (0, 0.25, 9, 0, 0)],
 )
-def test_cycling_steps_from_the_waiting_time_at_the_limit(
-    wait_at_limit_s: int, factor: float, steps: int, step_s: int, cap_s: int
+def test_growth_from_the_waiting_time_at_the_limit(
+    wait_at_limit_s: int, factor: float, increments: int, increment_s: int, cap_s: int
 ) -> None:
-    """The step is a share of the waiting time at the limit.
+    """The increment is a share of the waiting time at the limit.
 
-    The cap is the given number of steps above the waiting time at the limit.
+    The cap is the given number of increments above the waiting time at the limit.
     """
-    cycling = CyclingSteps.from_waiting_at_limit(wait_at_limit_s, factor, steps)
+    growth = RepeatedTurnOnGrowth.from_waiting_at_limit(
+        wait_at_limit_s, factor, increments
+    )
 
-    assert cycling == CyclingSteps(
-        step=timedelta(seconds=step_s), cap=timedelta(seconds=cap_s)
+    assert growth == RepeatedTurnOnGrowth(
+        increment=timedelta(seconds=increment_s), cap=timedelta(seconds=cap_s)
     )
 
 
 def test_counter_counts_slot_turned_on_again() -> None:
-    counter = CyclingCounter()
+    counter = RepeatedTurnOnCounter()
 
-    assert counter.upcoming_reon_number("a") == 0
+    assert counter.upcoming_repeat("a") == 0
     counter.record("a", turned_on=True)
-    assert counter.upcoming_reon_number("a") == 1
+    assert counter.upcoming_repeat("a") == 1
     counter.record("a", turned_on=False)
-    assert counter.upcoming_reon_number("a") == 1
+    assert counter.upcoming_repeat("a") == 1
     counter.record("a", turned_on=True)
     counter.record("a", turned_on=False)
-    assert counter.upcoming_reon_number("a") == 2
+    assert counter.upcoming_repeat("a") == 2
 
 
 def test_counter_starting_with_turn_off_counts_the_next_turn_on() -> None:
-    counter = CyclingCounter()
+    counter = RepeatedTurnOnCounter()
 
     counter.record("a", turned_on=False)
 
-    assert counter.upcoming_reon_number("a") == 1
+    assert counter.upcoming_repeat("a") == 1
 
 
 def test_command_for_another_slot_ends_the_count() -> None:
-    """The increase is reset as soon as another slot is switched."""
-    counter = CyclingCounter()
+    """The increase is reset as soon as another step is switched."""
+    counter = RepeatedTurnOnCounter()
     for turned_on in (True, False, True, False):
         counter.record("a", turned_on)
 
     counter.record("b", turned_on=False)
 
-    assert counter.upcoming_reon_number("a") == 0
-    assert counter.upcoming_reon_number("b") == 1
+    assert counter.upcoming_repeat("a") == 0
+    assert counter.upcoming_repeat("b") == 1
 
 
 def test_reset_forgets_only_the_given_slot() -> None:
-    counter = CyclingCounter()
+    counter = RepeatedTurnOnCounter()
     for turned_on in (True, False, True, False):
         counter.record("a", turned_on)
 
     counter.reset("b")
-    assert counter.upcoming_reon_number("a") == 2
+    assert counter.upcoming_repeat("a") == 2
 
     counter.reset("a")
-    assert counter.upcoming_reon_number("a") == 0
+    assert counter.upcoming_repeat("a") == 0

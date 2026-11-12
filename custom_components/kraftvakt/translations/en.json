@@ -34,8 +34,8 @@
       "power_regulation_average": {
         "name": "Power regulation average"
       },
-      "power_hourly_average": {
-        "name": "Power hourly average"
+      "power_tariff_average": {
+        "name": "Power tariff average"
       },
       "power_free": {
         "name": "Power free"

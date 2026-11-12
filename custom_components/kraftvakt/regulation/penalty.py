@@ -42,7 +42,7 @@ class PenaltyState:
     def decide(
         self,
         limits: PenaltyLimits,
-        capacity_average_w: float,
+        tariff_average_w: float,
         regulation_averages_w: Sequence[float],
     ) -> PenaltyOutcome:
         """Count the overconsumption and decide on the penalty at a decision."""
@@ -55,10 +55,10 @@ class PenaltyState:
                     return PenaltyOutcome.ENDED
         if self.active:
             return PenaltyOutcome.ONGOING
-        if not self.overconsuming and capacity_average_w > limits.power_limit_w:
+        if not self.overconsuming and tariff_average_w > limits.power_limit_w:
             self.overconsuming = True
         if (
-            capacity_average_w > limits.power_limit_w + limits.threshold_w
+            tariff_average_w > limits.power_limit_w + limits.threshold_w
             and self.overconsumption_wh > PAID_BACK_TOLERANCE_WH
         ):
             self.active = True

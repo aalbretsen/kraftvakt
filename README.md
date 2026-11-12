@@ -47,9 +47,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 ## How it works
 
-- **Power limit:** the highest allowed average consumption, for example
+- **Power limit:** the highest allowed tariff average, for example
   10,000 W. It matches the step of the capacity tariff you want to stay below.
-- **Average consumption:** the moving average of the power sensor over the
+- **Tariff average:** the moving average of the power sensor over the
   last hour. This is what the grid company measures, and what is kept below
   the power limit.
 - **Regulation average:** the average of the power sensor over a short
@@ -96,7 +96,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   priority list, but is passed as if it was not there, and is turned off at
   the next decision if it is on. When it is included again while appliances
   below it are on, the lowest of them is turned off to make room for it.
-- **Penalty:** when the average consumption goes above the power limit plus
+- **Penalty:** when the tariff average goes above the power limit plus
   the penalty threshold, every appliance is kept off until the overconsumption
   is recovered, and the regulation then starts again. The penalty is a safety
   valve and should normally never happen.
@@ -305,7 +305,7 @@ and stop it. If the configuration is not complete, it lists what is missing,
 with a link to the page where it is fixed. While the regulation runs, it also
 shows:
 
-- the average consumption and the regulation average against the power limit,
+- the tariff average and the regulation average against the power limit,
   and the consumption now. The bar shows the consumption now, with a marker
   for each average and for the power limit,
 - a ring that empties towards the next decision,
@@ -354,14 +354,14 @@ All entities belong to the service device **Kraftvakt**.
 | **Power** | |
 | `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs, see below. |
 | `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in W. |
-| `sensor.kraftvakt_power_hourly_average` (Power hourly average) | The average consumption over the last hour in W. |
+| `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average over the last hour in W. |
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
-| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the average consumption went above it. 0 when there is none. |
+| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |
 | **Appliance** | |
 | `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on and gets no repeated commands. |
 | **EV charger** | |
@@ -379,7 +379,7 @@ and the time without a valid value is counted with the last valid value before
 it.
 
 When Kraftvakt starts, the hour before is read from the history of the power
-sensor in the Home Assistant recorder, so the average consumption is right
+sensor in the Home Assistant recorder, so the tariff average is right
 also just after a restart. The time Home Assistant was down is counted with
 the last value before it stopped. Without history, the first measurement is
 used back in time.

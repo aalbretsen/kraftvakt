@@ -41,10 +41,10 @@ export interface GeneralConfig {
   wait_at_limit_s: number;
   wait_curve_steepness: number;
   wait_curve_pivot: number;
-  appliance_cycling_step_factor: number;
-  appliance_cycling_steps: number;
-  charger_cycling_step_factor: number;
-  charger_cycling_steps: number;
+  appliance_repeat_increment_factor: number;
+  appliance_repeat_increments: number;
+  charger_repeat_increment_factor: number;
+  charger_repeat_increments: number;
   penalty_threshold_w: number;
   command_repeat_interval_min: number;
 }
@@ -131,7 +131,7 @@ export type SaveResponse =
 export interface Range {
   min: number | null;
   max: number | null;
-  step: number;
+  resolution: number;
 }
 
 /** The action used for the entity domains that have an obvious one. */
@@ -231,7 +231,7 @@ export interface StatusSnapshot {
     recovery_started: boolean;
   };
   regulation_average_w: number | null;
-  capacity_average_w: number | null;
+  tariff_average_w: number | null;
   power_limit_w: number;
   regulation_window_s: number;
   regulation_interval: number;

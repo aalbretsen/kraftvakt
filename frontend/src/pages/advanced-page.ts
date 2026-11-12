@@ -6,9 +6,9 @@ import { waitingCurve } from "../wait-curve";
 import { GeneralSettingsPage } from "./general-settings-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
-type CyclingTitle = "advanced.appliances" | "advanced.chargers";
-type CyclingFactorField = "appliance_cycling_step_factor" | "charger_cycling_step_factor";
-type CyclingStepsField = "appliance_cycling_steps" | "charger_cycling_steps";
+type RepeatTitle = "advanced.appliances" | "advanced.chargers";
+type RepeatFactorField = "appliance_repeat_increment_factor" | "charger_repeat_increment_factor";
+type RepeatIncrementsField = "appliance_repeat_increments" | "charger_repeat_increments";
 type TableRow = "advanced.free_power_kw" | "advanced.waiting_minutes" | "advanced.actual_waiting_minutes";
 
 const CURVE_FIELDS: CurveField[] = ["wait_curve_steepness", "wait_curve_pivot"];
@@ -52,7 +52,7 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
 @customElement("kraftvakt-advanced-page")
 export class KraftvaktAdvancedPage extends GeneralSettingsPage {
   protected render() {
-    return html`${this.renderWaitCurveCard()} ${this.renderCyclingCard()} ${this.renderCommandRepeatCard()}`;
+    return html`${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}`;
   }
 
   private renderWaitCurveCard() {
@@ -67,13 +67,13 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     `;
   }
 
-  private renderCyclingCard() {
+  private renderRepeatedTurnOnCard() {
     return html`
-      <ha-card .header=${this.localize("advanced.cycling")}>
+      <ha-card .header=${this.localize("advanced.repeated_turn_on")}>
         <div class="card-content">
-          <p class="description">${this.localize("advanced.cycling_info")}</p>
-          ${this.renderCyclingSection("advanced.appliances", "appliance_cycling_step_factor", "appliance_cycling_steps")}
-          ${this.renderCyclingSection("advanced.chargers", "charger_cycling_step_factor", "charger_cycling_steps")}
+          <p class="description">${this.localize("advanced.repeated_turn_on_info")}</p>
+          ${this.renderRepeatedTurnOnSection("advanced.appliances", "appliance_repeat_increment_factor", "appliance_repeat_increments")}
+          ${this.renderRepeatedTurnOnSection("advanced.chargers", "charger_repeat_increment_factor", "charger_repeat_increments")}
         </div>
       </ha-card>
     `;
@@ -90,7 +90,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
     `;
   }
 
-  private renderCyclingSection(title: CyclingTitle, factorField: CyclingFactorField, stepsField: CyclingStepsField) {
+  private renderRepeatedTurnOnSection(title: RepeatTitle, factorField: RepeatFactorField, stepsField: RepeatIncrementsField) {
     const language = this.hass.language;
     return html`
       <h3>${this.localize(title)}</h3>
@@ -98,7 +98,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`),
         this.selectField(stepsField, (steps) => String(steps)),
       ])}
-      ${this.narrow ? nothing : this.renderCyclingTable(this.config.general[factorField], this.config.general[stepsField])}
+      ${this.narrow ? nothing : this.renderRepeatedTurnOnTable(this.config.general[factorField], this.config.general[stepsField])}
     `;
   }
 
@@ -107,7 +107,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
    * follow the curve, shown at the pivot point. The last column holds for every
    * turn-on after it.
    */
-  private renderCyclingTable(factor: number, steps: number) {
+  private renderRepeatedTurnOnTable(factor: number, steps: number) {
     const general = this.config.general;
     const waitAtLimit = general.wait_at_limit_s as number | null;
     const decisionInterval = this.decisionInterval;
@@ -159,7 +159,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
         aria-label=${label}
         .min=${range.min}
         .max=${range.max}
-        .step=${range.step}
+        .step=${range.resolution}
         .value=${value}
         .withTooltip=${false}
         ?disabled=${this.locked}

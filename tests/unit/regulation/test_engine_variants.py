@@ -63,7 +63,7 @@ def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
 
 def test_switch_of_an_appliance_that_is_off_does_not_stop_the_switch_off() -> None:
     """The turn-off action of the new variant does not lower the consumption,
-    so the lowest slot that is on is still switched off above the limit."""
+    so the lowest step that is on is still switched off above the limit."""
     scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
     scenario.turn_on("b")
 
@@ -101,7 +101,7 @@ def swim_spa_config(*, reserve_w: int | None = None):
 
 
 def test_room_is_made_one_slot_per_decision_until_the_variant_fits() -> None:
-    """Within the turn-on margin, the slots below are switched off one at a time.
+    """Within the turn-on margin, the steps below are switched off one at a time.
 
     Nothing more than the room is switched off at the decision of the switch,
     and nothing above it is switched off.

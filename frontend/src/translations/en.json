@@ -23,12 +23,12 @@
     "safe_state_title": "Safe state",
     "safe_state_text": "The power sensor {sensor} gives no valid measurement. All regulated appliances and EV chargers are turned off. The regulation starts again by itself when the sensor gives a valid value again.",
     "penalty_title": "Penalty period",
-    "penalty_text": "The average consumption has been above the power limit. All regulated appliances and EV chargers are kept off until the overconsumption is recovered.",
+    "penalty_text": "The tariff average has been above the power limit. All regulated appliances and EV chargers are kept off until the overconsumption is recovered.",
     "overconsumption_left": "Overconsumption left: {energy} kWh",
     "recovery_started": "recovery has started",
     "recovery_not_started": "recovery has not started",
     "regulation_average": "Regulation average",
-    "capacity_average": "Average consumption",
+    "tariff_average": "Tariff average",
     "average_over_seconds": "over {seconds} s",
     "average_over_hour": "over 1 hour",
     "power_now": "Consumption now",
@@ -118,7 +118,7 @@
     "car_connected_required": "Required when only one EV charger in the group may charge at a time.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
-    "invalid_resolution": "Must be in steps of {step}.",
+    "invalid_resolution": "Must be a multiple of {resolution}.",
     "not_integer": "Must be a whole number.",
     "invalid_entity_id": "Not a valid entity ID.",
     "empty_label": "The label cannot be empty.",
@@ -149,7 +149,7 @@
     "measurement": "Measurement",
     "regulation": "Regulation",
     "penalty": "Penalty",
-    "capacity_window_info": "The capacity window is fixed at one hour and cannot be changed.",
+    "tariff_window_info": "The tariff window is fixed at one hour.",
     "interval_option": "{count} × the regulation window",
     "fields": {
       "power_sensor": {
@@ -162,7 +162,7 @@
       },
       "power_limit_w": {
         "label": "Power limit",
-        "helper": "The highest allowed average consumption per hour. {min}–{max} W, default {default} W."
+        "helper": "The highest allowed tariff average. {min}–{max} W, default {default} W."
       },
       "turn_on_margin_w": {
         "label": "Turn-on margin",
@@ -178,7 +178,7 @@
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
-        "helper": "How much the average consumption may exceed the power limit before a penalty starts. {min}–{max} W, default {default} W."
+        "helper": "How much the tariff average may exceed the power limit before a penalty starts. {min}–{max} W, default {default} W."
       },
       "wait_curve_steepness": {
         "label": "Steepness"
@@ -186,20 +186,20 @@
       "wait_curve_pivot": {
         "label": "Pivot point"
       },
-      "appliance_cycling_step_factor": {
-        "label": "Step",
+      "appliance_repeat_increment_factor": {
+        "label": "Increment",
         "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
       },
-      "appliance_cycling_steps": {
-        "label": "Number of steps",
+      "appliance_repeat_increments": {
+        "label": "Number of increments",
         "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
       },
-      "charger_cycling_step_factor": {
-        "label": "Step",
+      "charger_repeat_increment_factor": {
+        "label": "Increment",
         "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
       },
-      "charger_cycling_steps": {
-        "label": "Number of steps",
+      "charger_repeat_increments": {
+        "label": "Number of increments",
         "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
       },
       "command_repeat_interval_min": {
@@ -214,8 +214,8 @@
     "free_power_kw": "Free power kW",
     "waiting_minutes": "Waiting time min:s",
     "actual_waiting_minutes": "Actual waiting time min:s",
-    "cycling": "Waiting time on repeated turn-on",
-    "cycling_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one step each time until the number of steps is reached. For the first two, the table shows the waiting time at the pivot point.",
+    "repeated_turn_on": "Waiting time on repeated turn-on",
+    "repeated_turn_on_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one increment each time until the number of increments is reached. For the first two, the table shows the waiting time at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
     "appliances": "Appliances",
     "chargers": "EV chargers",

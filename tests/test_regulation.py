@@ -765,9 +765,9 @@ ENTITY_NAMES = {
         "Power regulation average",
         "Effekt reguleringssnitt",
     ),
-    "sensor.kraftvakt_power_hourly_average": (
-        "Power hourly average",
-        "Effekt snittforbruk",
+    "sensor.kraftvakt_power_tariff_average": (
+        "Power tariff average",
+        "Effekt tariffsnitt",
     ),
     "sensor.kraftvakt_power_free": ("Power free", "Effekt ledig"),
     "sensor.kraftvakt_waiting_time_remaining": (

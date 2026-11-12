@@ -1,4 +1,4 @@
-"""Scenario tests for increasing waiting time on persistent cycling."""
+"""Scenario tests for increasing waiting time on repeated turn-on."""
 
 from datetime import timedelta
 
@@ -13,7 +13,7 @@ def minutes_until_on(scenario: Scenario, appliance_id: str) -> float:
     """Decide without load until the appliance is on and return the waiting time.
 
     Without load, the waiting time from the curve is 0, so only persistent
-    cycling makes the regulation wait.
+    repeated turn-on makes the regulation wait.
     """
     assert scenario.decide(NO_LOAD) in ([], on(appliance_id))
     waiting_started = scenario.now
@@ -28,7 +28,7 @@ def cycle(scenario: Scenario, appliance_id: str) -> float:
     return minutes_until_on(scenario, appliance_id)
 
 
-def test_waiting_time_grows_on_persistent_cycling() -> None:
+def test_waiting_time_grows_on_repeated_turn_on() -> None:
     """From the second time on again: 5, 7.5, 10, 12.5 and then 15 minutes.
 
     Decisions come every minute, so half minutes are turned on at the next.
@@ -44,7 +44,7 @@ def test_waiting_time_grows_on_persistent_cycling() -> None:
 def test_waiting_time_grows_with_the_configured_step_and_cap() -> None:
     """Steps of a quarter of 4 minutes, 3 steps: 4, 5, 6 and then 7 minutes."""
     scenario = Scenario(
-        make_config("a", wait_at_limit_s=240, appliance_cycling=(0.25, 3))
+        make_config("a", wait_at_limit_s=240, appliance_repeat=(0.25, 3))
     )
     scenario.turn_on("a")
 
@@ -81,7 +81,7 @@ def test_restart_resets_the_increase() -> None:
     assert cycle(scenario, "a") == 5
 
 
-def test_persistent_cycling_still_needs_room_under_the_limit() -> None:
+def test_repeated_turn_on_still_needs_room_under_the_limit() -> None:
     """The appliance still needs room under the limit while the waiting runs."""
     scenario = Scenario(make_config("a"))
     scenario.turn_on("a")

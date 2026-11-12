@@ -1,4 +1,4 @@
-"""Rules for the EV chargers, one fictive appliance per ampere."""
+"""Rules for the EV chargers, one ampere step per ampere."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ class ChargerReading:
 class ChargerStatus:
     """How a charger stands after the last decision."""
 
-    fictive_on: int
+    ampere_steps_on: int
     current_a: int | None
     allowed: bool
     bypassed: bool
@@ -49,14 +49,14 @@ class ChargerStatus:
     car_connected: bool | None = None
 
 
-def fictive_appliance_count(charger: Charger) -> int:
-    """Return the number of fictive appliances, one per whole ampere."""
+def ampere_step_count(charger: Charger) -> int:
+    """Return the number of ampere steps, one per whole ampere."""
     return charger.max_current_a - charger.min_current_a + 1
 
 
-def charging_current(charger: Charger, fictive_on: int) -> int:
-    """Return the current for the number of fictive appliances that are on."""
-    return charger.min_current_a + max(fictive_on, 1) - 1
+def charging_current(charger: Charger, ampere_steps_on: int) -> int:
+    """Return the current for the number of ampere steps that are on."""
+    return charger.min_current_a + max(ampere_steps_on, 1) - 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,11 +172,11 @@ class ChargingState:
     """What the regulation keeps track of for the chargers while it runs.
 
     A charger on trial may charge but does not charge actively, so it may only
-    get its first fictive appliance.
+    get its first ampere step.
     """
 
     priority: list[str] = field(default_factory=list)
-    fictive_on: dict[str, int] = field(default_factory=dict)
+    ampere_steps_on: dict[str, int] = field(default_factory=dict)
     activated_at: dict[str, datetime] = field(default_factory=dict)
     excluded: set[str] | None = None
     allowed: set[str] = field(default_factory=set)
@@ -195,27 +195,27 @@ class ChargingState:
         """Return the state at a start, with the configured priority."""
         return cls(
             priority=[charger.id for charger in chargers],
-            fictive_on={charger.id: 0 for charger in chargers},
+            ampere_steps_on={charger.id: 0 for charger in chargers},
         )
 
     def activated(self) -> list[str]:
-        """Return the chargers with at least one fictive appliance on."""
-        return [charger_id for charger_id, on in self.fictive_on.items() if on]
+        """Return the chargers with at least one ampere step on."""
+        return [charger_id for charger_id, on in self.ampere_steps_on.items() if on]
 
-    def set_fictive_on(
+    def set_ampere_steps_on(
         self, charger_id: str, count: int, now: datetime | None = None
     ) -> None:
-        """Record how many fictive appliances of the charger are on.
+        """Record how many ampere steps of the charger are on.
 
         `now` is needed only when the charger is activated.
         """
         if count == 0:
             self.activated_at.pop(charger_id, None)
-        elif not self.fictive_on.get(charger_id):
+        elif not self.ampere_steps_on.get(charger_id):
             if now is None:
                 raise ValueError("The time is needed to activate a charger")
             self.activated_at[charger_id] = now
-        self.fictive_on[charger_id] = count
+        self.ampere_steps_on[charger_id] = count
 
     def evaluate(
         self,
@@ -256,10 +256,10 @@ class ChargingState:
         """Return how each charger stands after the last decision."""
         return {
             charger.id: ChargerStatus(
-                fictive_on=self.fictive_on.get(charger.id, 0),
+                ampere_steps_on=self.ampere_steps_on.get(charger.id, 0),
                 current_a=(
-                    charging_current(charger, self.fictive_on[charger.id])
-                    if self.fictive_on.get(charger.id)
+                    charging_current(charger, self.ampere_steps_on[charger.id])
+                    if self.ampere_steps_on.get(charger.id)
                     else None
                 ),
                 allowed=charger.id in self.allowed,
@@ -267,7 +267,7 @@ class ChargingState:
                 waiting=charger.id in self.waiting,
                 excluded=None if self.excluded is None else charger.id in self.excluded,
                 charging=charger.id in self.charging
-                and bool(self.fictive_on.get(charger.id)),
+                and bool(self.ampere_steps_on.get(charger.id)),
                 window_overridden=charger.id in self.overridden,
                 finishing=charger.id in self.finishing,
                 car_connected=self.car_connected.get(charger.id),
@@ -329,7 +329,7 @@ class ChargingState:
         """Move newly bypassed chargers to the back until a charger is full.
 
         The configured order comes back for the chargers that are not bypassed
-        when a charger has all its fictive appliances on.
+        when a charger has all its ampere steps on.
         """
         self.priority = [
             charger_id
@@ -337,7 +337,7 @@ class ChargingState:
             if charger_id not in newly_bypassed
         ] + list(newly_bypassed)
         if any(
-            self.fictive_on.get(charger.id) == fictive_appliance_count(charger)
+            self.ampere_steps_on.get(charger.id) == ampere_step_count(charger)
             for charger in chargers
         ):
             self.priority = [
@@ -363,7 +363,7 @@ class ChargingState:
     def _select(
         self, readings: Mapping[str, ChargerReading], one_at_a_time: bool
     ) -> None:
-        """Decide which chargers may get fictive appliances turned on.
+        """Decide which chargers may get ampere steps turned on.
 
         With one charger at a time, a charger that charges actively goes first
         and the others wait.
@@ -386,7 +386,11 @@ class ChargingState:
             self.may_charge = set(eligible[:1])
             return
         selected = next(
-            (charger_id for charger_id in charging if self.fictive_on.get(charger_id)),
+            (
+                charger_id
+                for charger_id in charging
+                if self.ampere_steps_on.get(charger_id)
+            ),
             charging[0],
         )
         self.may_charge = {selected}

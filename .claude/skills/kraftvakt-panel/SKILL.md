@@ -165,7 +165,7 @@ Code that mirrors the backend and must be kept in step with it:
   regulation use utilization.
 - The table shows, for a range of free power from half the limit down to
   almost nothing, the free power in kW, the waiting time and the actual
-  waiting time, rounded up to whole decision intervals since the slot is
+  waiting time, rounded up to whole decision intervals since the step is
   turned on at the first decision after the waiting time. The line of text
   says why it is rounded. Times are minutes and whole seconds. Values come
   from the draft, with a dash when a setting is not set.
@@ -207,9 +207,9 @@ Code that mirrors the backend and must be kept in step with it:
   empties over one decision interval, animated by the browser (Web Animations
   API) so it needs no clock; the time is a tooltip. On a narrow screen only
   the ring is shown.
-- A waiting slot shows an icon (a timer for an appliance, a plus for one more
+- A waiting step shows an icon (a timer for an appliance, a plus for one more
   ampere) before a thin bar that empties smoothly from when the waiting
-  started to the decision that turns the slot on, animated like the ring. What
+  started to the decision that turns the step on, animated like the ring. What
   it is and the time are a tooltip. The bar is smooth because a wait can span
   very many regulation windows.
 - The tiles are, from the left, consumption now, regulation average, average
@@ -259,12 +259,12 @@ Code that mirrors the backend and must be kept in step with it:
     power limit while that is above 0, and explains itself in a tooltip. By the
     fixed order nothing below the line is on.
 - Colours come from Home Assistant's theme variables, set once on `:host`:
-  the Energy dashboard's grid colour for the average consumption, a teal
+  the Energy dashboard's grid colour for the tariff average, a teal
   colour for everything EV charging, and HA's active and inactive state
   colours for appliance icons. Each appliance shows its entity's icon, and
   what is off is dimmed. An appliance whose entity is missing, or whose icon
   HA cannot show in the panel (an icon set that is not loaded renders
-  nothing), shows a default icon instead: the icon slot is one icon wide,
+  nothing), shows a default icon instead: the icon step is one icon wide,
   and the entity's icon pushes the default icon out of it. The safe state and
   penalty chips are in the alarm colour and show only while active.
 
@@ -289,7 +289,7 @@ Not available, do not use: `ha-textfield`, `ha-radio`, `ha-md-list`,
 - Wait for `customElements.whenDefined("ha-form")` before the first render.
 - The action editor needs `hass.loadFragmentTranslation("config")`, otherwise
   its labels are empty.
-- `ha-dialog` is built on `wa-dialog`: `open`, `header-title`, slot `footer`,
+- `ha-dialog` is built on `wa-dialog`: `open`, `header-title`, step `footer`,
   event `closed`. When it closes itself, set `open` false on `closed`.
 - When the HA version in `requirements_dev.txt` is raised, test the panel by
   hand against this list.

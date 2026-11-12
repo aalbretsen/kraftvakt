@@ -239,8 +239,8 @@ function rangeCode(value: number, range: Range): string | undefined {
   if ((range.min !== null && value < range.min) || (range.max !== null && value > range.max)) {
     return "out_of_range";
   }
-  const steps = value / range.step;
-  return Math.abs(steps - Math.round(steps)) < 1e-6 ? undefined : "invalid_resolution";
+  const multiple = value / range.resolution;
+  return Math.abs(multiple - Math.round(multiple)) < 1e-6 ? undefined : "invalid_resolution";
 }
 
 /** The actions that cannot run for the entity of the item, as the backend checks them. */

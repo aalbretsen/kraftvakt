@@ -49,7 +49,7 @@ def test_start_and_stop_deactivate_the_chargers() -> None:
     assert scenario.engine.stop() == off("x") + deactivate("c", 10)
 
 
-def test_current_increases_one_ampere_per_fictive_appliance() -> None:
+def test_current_increases_one_ampere_per_ampere_step() -> None:
     """The first one activates the charger."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
@@ -61,7 +61,7 @@ def test_current_increases_one_ampere_per_fictive_appliance() -> None:
         [],
     ]
     assert scenario.engine.chargers["c"] == ChargerStatus(
-        fictive_on=3,
+        ampere_steps_on=3,
         current_a=8,
         allowed=True,
         bypassed=False,
@@ -71,7 +71,7 @@ def test_current_increases_one_ampere_per_fictive_appliance() -> None:
     )
 
 
-def test_only_the_first_fictive_appliance_needs_the_power_reserve() -> None:
+def test_only_the_first_ampere_step_needs_the_power_reserve() -> None:
     scenario = one_charger(reserve_w=4000)
     scenario.set_charger("c", **CHARGING)
 
@@ -80,7 +80,7 @@ def test_only_the_first_fictive_appliance_needs_the_power_reserve() -> None:
     assert scenario.decide(9890) == current("c", 7)
 
 
-def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
+def test_current_decreases_one_ampere_per_ampere_step() -> None:
     """The last one deactivates the charger."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
@@ -95,7 +95,7 @@ def test_current_decreases_one_ampere_per_fictive_appliance() -> None:
     assert scenario.engine.chargers["c"].current_a is None
 
 
-def test_fictive_appliances_cycle_with_their_own_steps() -> None:
+def test_ampere_steps_have_their_own_growth() -> None:
     """5, 10, 15, 20, 25 and then 30 minutes."""
     scenario = Scenario(
         make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300)
@@ -112,13 +112,13 @@ def test_fictive_appliances_cycle_with_their_own_steps() -> None:
     assert waits == [0, 5, 10, 15, 20, 25, 30, 30]
 
 
-def test_fictive_appliances_cycle_with_the_configured_step_and_cap() -> None:
+def test_ampere_steps_grow_with_the_configured_increment_and_cap() -> None:
     """Steps of half of 4 minutes, 2 steps: 4, 6 and then 8 minutes."""
     scenario = Scenario(
         make_config(
             chargers=(charger("c", max_a=6),),
             wait_at_limit_s=240,
-            charger_cycling=(0.5, 2),
+            charger_repeat=(0.5, 2),
         )
     )
     scenario.set_charger("c", **CHARGING)
@@ -134,7 +134,7 @@ def test_fictive_appliances_cycle_with_the_configured_step_and_cap() -> None:
 
 
 def test_several_chargers_take_turns() -> None:
-    """The first fictive appliance of each charger, then the second."""
+    """The first ampere step of each charger, then the second."""
     scenario = two_chargers(one_at_a_time=False)
     scenario.set_charger("a", **CHARGING)
     scenario.set_charger("b", **CHARGING)
@@ -187,7 +187,7 @@ def test_charger_that_starts_charging_makes_room_below() -> None:
 
 
 def test_bypassed_charger_keeps_its_current_when_room_is_made() -> None:
-    """Room is made only from slots that can be switched off."""
+    """Room is made only from steps that can be switched off."""
     scenario = Scenario(
         make_config(
             appliance("d", variants=("up",)),
@@ -319,7 +319,7 @@ def test_current_priority_starts_as_configured_at_each_start() -> None:
     assert scenario.engine.charging_priorities["ev"] == ["a", "b"]
 
 
-def test_priority_is_corrected_when_a_charger_has_all_fictive_appliances_on() -> None:
+def test_priority_is_corrected_when_a_charger_has_all_ampere_steps_on() -> None:
     """A charger that gets a car moves up again when another has all on."""
     scenario = two_chargers(one_at_a_time=False)
     scenario.set_charger("a", **NO_CAR)
@@ -412,7 +412,7 @@ def test_new_car_makes_room_for_the_power_reserve() -> None:
 
 
 def test_excluded_charger_stops_at_once_and_never_charges() -> None:
-    """All fictive appliances off at once."""
+    """All ampere steps off at once."""
     scenario = one_charger()
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 8)
@@ -553,13 +553,13 @@ def test_penalty_and_safe_state_deactivate_the_chargers() -> None:
     scenario.charge("c", 8)
 
     assert scenario.decide(0, sensor_lost=True) == deactivate("c")
-    assert scenario.engine.chargers["c"].fictive_on == 0
+    assert scenario.engine.chargers["c"].ampere_steps_on == 0
     assert scenario.decide(0) == deactivate("c")
     assert scenario.decide(0) == activate("c")
 
 
-def test_variant_switch_makes_room_by_switching_off_a_fictive_appliance() -> None:
-    """The lowest slot that is on may be a fictive appliance."""
+def test_variant_switch_makes_room_by_switching_off_a_ampere_step() -> None:
+    """The lowest step that is on may be a ampere step."""
     scenario = Scenario(
         make_config(
             appliance("h", variants=("morning",)),

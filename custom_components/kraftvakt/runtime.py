@@ -42,8 +42,8 @@ from .config_validation import (
     missing_items,
 )
 from .measurement import (
-    CAPACITY_WINDOW,
     CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN,
+    TARIFF_WINDOW,
     PowerAverager,
     WindowAverages,
     power_w,
@@ -170,9 +170,9 @@ class KraftvaktRuntime:
         return self._engine.power_limit_w
 
     @property
-    def slots_on(self) -> int:
+    def steps_on(self) -> int:
         """Return how many appliances and amperes of the chargers are on."""
-        return self._engine.slots_on
+        return self._engine.steps_on
 
     @property
     def appliances_on(self) -> frozenset[str]:
@@ -191,7 +191,7 @@ class KraftvaktRuntime:
 
     @property
     def waiting(self) -> Waiting | None:
-        """Return the waiting time that runs for the next slot, if any."""
+        """Return the waiting time that runs for the next step, if any."""
         return self._engine.waiting
 
     @property
@@ -431,7 +431,7 @@ class KraftvaktRuntime:
             partial(
                 history.state_changes_during_period,
                 self._hass,
-                self._created_at - CAPACITY_WINDOW,
+                self._created_at - TARIFF_WINDOW,
                 self._created_at,
                 power_sensor,
             )
@@ -510,7 +510,7 @@ class KraftvaktRuntime:
         decision = DecisionInput(
             now=averages.end,
             regulation_average_w=averages.regulation_average_w,
-            capacity_average_w=averages.capacity_average_w,
+            tariff_average_w=averages.tariff_average_w,
             regulation_averages_w=[
                 window.regulation_average_w
                 for window in self._windows_since_decision
@@ -539,7 +539,7 @@ class KraftvaktRuntime:
             "commands %s",
             dt_util.as_local(decision.now).isoformat(timespec="seconds"),
             _rounded(decision.regulation_average_w),
-            _rounded(decision.capacity_average_w),
+            _rounded(decision.tariff_average_w),
             decision.power_sensor_valid,
             self._engine.safe_state,
             penalty.active,

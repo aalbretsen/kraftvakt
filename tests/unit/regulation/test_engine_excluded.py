@@ -1,6 +1,6 @@
 """Scenario tests for appliances the user excludes from the regulation."""
 
-from custom_components.kraftvakt.regulation.model import ApplianceSlotKey
+from custom_components.kraftvakt.regulation.model import ApplianceStepKey
 
 from .configs import appliance, make_config
 from .scenario import Scenario, off, on
@@ -23,7 +23,7 @@ def test_excluding_an_appliance_that_is_on_switches_it_off() -> None:
 
     assert scenario.decide(5000) == off("b")
     assert scenario.engine.appliances_on == {"a", "c"}
-    assert scenario.engine.slots_on == 2
+    assert scenario.engine.steps_on == 2
 
 
 def test_excluding_above_the_limit_switches_off_nothing_more() -> None:
@@ -73,13 +73,13 @@ def test_waiting_moves_to_the_next_when_the_waiting_appliance_is_excluded() -> N
     scenario = Scenario(make_config("a", "b"))
     scenario.decide(9000)
     assert scenario.engine.waiting is not None
-    assert scenario.engine.waiting.key == ApplianceSlotKey("a")
+    assert scenario.engine.waiting.key == ApplianceStepKey("a")
     scenario.exclude("a")
 
     scenario.decide(9000)
 
     assert scenario.engine.waiting is not None
-    assert scenario.engine.waiting.key == ApplianceSlotKey("b")
+    assert scenario.engine.waiting.key == ApplianceStepKey("b")
     assert scenario.engine.waiting.started_at == scenario.now
 
 

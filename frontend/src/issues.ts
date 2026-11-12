@@ -33,10 +33,10 @@ const ISSUE_PAGES: Record<Issue["section"], Page> = {
 const ADVANCED_FIELDS = new Set([
   "wait_curve_steepness",
   "wait_curve_pivot",
-  "appliance_cycling_step_factor",
-  "appliance_cycling_steps",
-  "charger_cycling_step_factor",
-  "charger_cycling_steps",
+  "appliance_repeat_increment_factor",
+  "appliance_repeat_increments",
+  "charger_repeat_increment_factor",
+  "charger_repeat_increments",
   "command_repeat_interval_min",
 ]);
 
@@ -129,7 +129,7 @@ export function fieldErrorText(
       : localize("errors.out_of_range", { min: number(range.min), max: number(range.max) });
   }
   if (issue.code === "invalid_resolution" && range) {
-    return localize("errors.invalid_resolution", { step: number(range.step) });
+    return localize("errors.invalid_resolution", { resolution: number(range.resolution) });
   }
   return localize(ERROR_TEXTS[issue.code] ?? "errors.unknown", { code: issue.code });
 }

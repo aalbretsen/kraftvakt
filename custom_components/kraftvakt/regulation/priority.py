@@ -1,13 +1,13 @@
-"""The order of slots built from the priority list."""
+"""The order of steps built from the priority list."""
 
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
 
 from ..config_model import Appliance, Charger, KraftvaktConfig, PriorityEntryType
-from .charging import fictive_appliance_count
-from .model import ApplianceSlotKey, ChargerSlotKey, Slot
-from .waiting import CyclingSteps
+from .charging import ampere_step_count
+from .model import AmpereStepKey, ApplianceStepKey, Step
+from .waiting import RepeatedTurnOnGrowth
 
 
 def current_variant(
@@ -24,25 +24,25 @@ def current_variant(
     )
 
 
-def build_slots(
+def build_steps(
     config: KraftvaktConfig,
     current_variants: Mapping[str, str | None],
     appliances_on: Collection[str],
-    cycling: CyclingSteps,
-    charger_slots: Mapping[str, Sequence[Slot]] | None = None,
+    growth: RepeatedTurnOnGrowth,
+    charger_slots: Mapping[str, Sequence[Step]] | None = None,
     excluded_appliances: Collection[str] = (),
-) -> list[Slot]:
-    """Return the slots in priority order, highest priority first.
+) -> list[Step]:
+    """Return the steps in priority order, highest priority first.
 
-    `charger_slots` has the fictive appliances of each group of chargers, by
+    `charger_slots` has the ampere steps of each group of chargers, by
     the id of the group.
     """
     charger_slots = charger_slots or {}
     appliances = {appliance.id: appliance for appliance in config.appliances}
-    slots: list[Slot] = []
+    steps: list[Step] = []
     for entry in config.priority:
         if entry.type is PriorityEntryType.CHARGER_GROUP:
-            slots.extend(charger_slots.get(entry.group_id or "", ()))
+            steps.extend(charger_slots.get(entry.group_id or "", ()))
             continue
         appliance_id = entry.appliance_id
         if (
@@ -50,39 +50,39 @@ def build_slots(
             or current_variants.get(appliance_id) != entry.variant_id
         ):
             continue
-        slots.append(
-            Slot(
-                key=ApplianceSlotKey(appliance_id),
+        steps.append(
+            Step(
+                key=ApplianceStepKey(appliance_id),
                 is_on=appliance_id in appliances_on,
                 power_reserve_w=appliances[appliance_id].power_reserve_w,
-                cycling=cycling,
+                growth=growth,
                 can_turn_on=appliance_id not in excluded_appliances,
             )
         )
-    return slots
+    return steps
 
 
-def fictive_slots(
+def ampere_steps(
     chargers: Sequence[Charger],
-    fictive_on: Mapping[str, int],
+    ampere_steps_on: Mapping[str, int],
     may_charge: Collection[str],
     on_trial: Collection[str],
     bypassed: Collection[str],
-    cycling: CyclingSteps,
-) -> list[Slot]:
-    """Return the fictive appliances of the chargers, interleaved."""
-    rounds = max(map(fictive_appliance_count, chargers), default=0)
+    growth: RepeatedTurnOnGrowth,
+) -> list[Step]:
+    """Return the ampere steps of the chargers, interleaved."""
+    rounds = max(map(ampere_step_count, chargers), default=0)
     return [
-        Slot(
-            key=ChargerSlotKey(charger.id, index),
-            is_on=index < fictive_on.get(charger.id, 0),
+        Step(
+            key=AmpereStepKey(charger.id, index),
+            is_on=index < ampere_steps_on.get(charger.id, 0),
             power_reserve_w=charger.power_reserve_w if index == 0 else None,
-            cycling=cycling,
+            growth=growth,
             can_turn_on=charger.id in may_charge
             and (index == 0 or charger.id not in on_trial),
             can_turn_off=charger.id not in bypassed,
         )
         for index in range(rounds)
         for charger in chargers
-        if index < fictive_appliance_count(charger)
+        if index < ampere_step_count(charger)
     ]

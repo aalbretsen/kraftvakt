@@ -21,20 +21,20 @@ class Range:
 
     minimum: float
     maximum: float | None
-    step: float
+    resolution: float
 
     def contains(self, value: float) -> bool:
         """Return whether the value lies within the range."""
         return value >= self.minimum and (self.maximum is None or value <= self.maximum)
 
-    def matches_step(self, value: float) -> bool:
-        """Return whether the value is a whole multiple of the step."""
-        steps = value / self.step
-        return abs(steps - round(steps)) < 1e-6
+    def matches_resolution(self, value: float) -> bool:
+        """Return whether the value is a whole multiple of the resolution."""
+        multiple = value / self.resolution
+        return abs(multiple - round(multiple)) < 1e-6
 
     def to_dict(self) -> dict[str, float | None]:
         """Return the range as JSON-friendly data for the panel."""
-        return {"min": self.minimum, "max": self.maximum, "step": self.step}
+        return {"min": self.minimum, "max": self.maximum, "resolution": self.resolution}
 
 
 POWER_LIMIT_W = Range(1000, 50_000, 1)
@@ -44,8 +44,8 @@ REGULATION_INTERVAL = Range(1, 4, 1)
 WAIT_AT_LIMIT_S = Range(0, 600, 1)
 WAIT_CURVE_STEEPNESS = Range(1.5, 9, 0.5)
 WAIT_CURVE_PIVOT = Range(50, 99, 1)
-CYCLING_STEP_FACTOR = Range(0.25, 1, 0.25)
-CYCLING_STEPS = Range(1, 9, 1)
+REPEAT_INCREMENT_FACTOR = Range(0.25, 1, 0.25)
+REPEAT_INCREMENTS = Range(1, 9, 1)
 PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
 COMMAND_REPEAT_INTERVAL_MIN = Range(10, 60, 1)
 APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
@@ -61,10 +61,10 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "wait_at_limit_s": WAIT_AT_LIMIT_S,
         "wait_curve_steepness": WAIT_CURVE_STEEPNESS,
         "wait_curve_pivot": WAIT_CURVE_PIVOT,
-        "appliance_cycling_step_factor": CYCLING_STEP_FACTOR,
-        "appliance_cycling_steps": CYCLING_STEPS,
-        "charger_cycling_step_factor": CYCLING_STEP_FACTOR,
-        "charger_cycling_steps": CYCLING_STEPS,
+        "appliance_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
+        "appliance_repeat_increments": REPEAT_INCREMENTS,
+        "charger_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
+        "charger_repeat_increments": REPEAT_INCREMENTS,
         "penalty_threshold_w": PENALTY_THRESHOLD_W,
         "command_repeat_interval_min": COMMAND_REPEAT_INTERVAL_MIN,
     },
@@ -378,10 +378,10 @@ class GeneralConfig:
     wait_at_limit_s: int = 300
     wait_curve_steepness: float = 6.0
     wait_curve_pivot: int = 80
-    appliance_cycling_step_factor: float = 0.5
-    appliance_cycling_steps: int = 4
-    charger_cycling_step_factor: float = 1.0
-    charger_cycling_steps: int = 5
+    appliance_repeat_increment_factor: float = 0.5
+    appliance_repeat_increments: int = 4
+    charger_repeat_increment_factor: float = 1.0
+    charger_repeat_increments: int = 5
     penalty_threshold_w: int = 100
     command_repeat_interval_min: int = 30
 
