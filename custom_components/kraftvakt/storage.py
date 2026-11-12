@@ -23,7 +23,7 @@ from .config_reader import read_config, read_switches
 from .const import DOMAIN
 
 STORAGE_KEY: Final = f"{DOMAIN}.config"
-STORAGE_VERSION: Final = 3
+STORAGE_VERSION: Final = 2
 MIGRATED_CHARGER_GROUP_NAME: Final = "EV chargers"
 
 
@@ -44,14 +44,12 @@ class _KraftvaktStore(Store[dict[str, Any]]):
     ) -> dict[str, Any]:
         """Migrate the stored data to the current version.
 
-        Version 2 keeps the actions of an appliance in a map with its variants.
-        Version 3 puts the chargers in groups, and the earlier chargers become
-        one group.
+        Version 2 keeps the actions of an appliance in a map with its variants,
+        and puts the chargers in groups, where the earlier chargers become one
+        group.
         """
         if old_major_version < 2:
-            old_data = _with_appliance_actions_map(old_data)
-        if old_major_version < 3:
-            old_data = _with_charger_groups(old_data)
+            old_data = _with_charger_groups(_with_appliance_actions_map(old_data))
         return old_data
 
 

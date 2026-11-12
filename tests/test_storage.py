@@ -131,9 +131,12 @@ async def test_load_rejects_unreadable_data(
         await KraftvaktStorage(hass).async_load()
 
 
-def version_2_data() -> dict[str, Any]:
-    """The full configuration as version 2 stored it, without charger groups."""
+def version_1_data() -> dict[str, Any]:
+    """The full configuration as version 1 stored it: without variant actions,
+    and with the chargers in the charging settings instead of groups."""
     data = full_config_data()
+    for appliance in data["appliances"]:
+        appliance.update(appliance.pop("actions")["main"])
     group = data.pop("charger_groups")[0]
     data["charging"] = {
         "enabled": True,
@@ -144,53 +147,55 @@ def version_2_data() -> dict[str, Any]:
         {"type": "ev_charging"} if entry["type"] == "charger_group" else entry
         for entry in data["priority"]
     ]
-    return {**data, "charger_switches": {"c1": {"excluded": True}}}
+    return {
+        **data,
+        "appliance_switches": {"a1": {"excluded": True}},
+        "charger_switches": {"c1": {"excluded": True}},
+    }
 
 
-def with_group_id(data: dict[str, Any], group_id: str) -> dict[str, Any]:
-    """Return the full configuration with another id for its group."""
-    return json.loads(json.dumps(data).replace('"g1"', f'"{group_id}"'))
+def store_version_1(hass_storage: dict[str, Any], data: dict[str, Any]) -> None:
+    hass_storage[STORAGE_KEY] = {"version": 1, "key": STORAGE_KEY, "data": data}
 
 
-async def test_version_2_puts_the_chargers_in_one_group(
+async def test_version_1_is_migrated_to_the_current_format(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    """The group gets a new id and takes the place of «EV charging»."""
-    hass_storage[STORAGE_KEY] = {
-        "version": 2,
-        "key": STORAGE_KEY,
-        "data": version_2_data(),
-    }
+    """The actions of each appliance become those of the appliance itself, and
+    its variants use them. The chargers become one group with a new id, in the
+    place of «EV charging»."""
+    store_version_1(hass_storage, version_1_data())
+    expected = full_config_data()
+    del expected["appliances"][0]["actions"]["v1"]
 
     stored = await KraftvaktStorage(hass).async_load()
 
     group_id = stored.config.charger_groups[0].id
     assert group_id != "g1"
-    assert stored.config == read_config(with_group_id(full_config_data(), group_id))
+    expected = json.loads(json.dumps(expected).replace('"g1"', f'"{group_id}"'))
+    assert stored.config == read_config(expected)
+    assert stored.appliance_switches["a1"] == ApplianceSwitches(excluded=True)
     assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
 
 
-async def test_version_2_without_chargers_and_disabled_gets_no_group(
+async def test_version_1_without_chargers_and_disabled_gets_no_group(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    hass_storage[STORAGE_KEY] = {
-        "version": 2,
-        "key": STORAGE_KEY,
-        "data": {"general": {"power_limit_w": 8000}},
-    }
+    store_version_1(hass_storage, {"general": {"power_limit_w": 8000}})
 
     stored = await KraftvaktStorage(hass).async_load()
 
+    assert stored.config.general.power_limit_w == 8000
     assert stored.config.charger_groups == ()
     assert stored.config.priority == ()
 
 
-async def test_version_2_enabled_without_chargers_keeps_an_empty_group(
+async def test_version_1_enabled_without_chargers_keeps_an_empty_group(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    data = version_2_data()
+    data = version_1_data()
     data["charging"]["chargers"] = []
-    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
+    store_version_1(hass_storage, data)
 
     stored = await KraftvaktStorage(hass).async_load()
 
@@ -199,14 +204,14 @@ async def test_version_2_enabled_without_chargers_keeps_an_empty_group(
     assert stored.config.priority[1] == PriorityEntry.for_charger_group(group.id)
 
 
-async def test_version_2_disabled_with_chargers_gets_a_regulated_group_last(
+async def test_version_1_disabled_with_chargers_gets_a_regulated_group_last(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
     """The chargers were kept but not regulated, and are regulated now."""
-    data = version_2_data()
+    data = version_1_data()
     data["charging"]["enabled"] = False
     data["priority"].remove({"type": "ev_charging"})
-    hass_storage[STORAGE_KEY] = {"version": 2, "key": STORAGE_KEY, "data": data}
+    store_version_1(hass_storage, data)
 
     stored = await KraftvaktStorage(hass).async_load()
 
@@ -216,55 +221,10 @@ async def test_version_2_disabled_with_chargers_gets_a_regulated_group_last(
     assert len(stored.config.priority) == 4
 
 
-async def test_migration_leaves_unreadable_charging_to_the_reader(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
-    hass_storage[STORAGE_KEY] = {
-        "version": 2,
-        "key": STORAGE_KEY,
-        "data": {"charging": "not a mapping"},
-    }
-
-    with pytest.raises(ConfigValidationError):
-        await KraftvaktStorage(hass).async_load()
-
-
-def version_1_data() -> dict[str, Any]:
-    """The full configuration as version 1 stored it, without variant actions."""
-    data = version_2_data()
-    for appliance in data["appliances"]:
-        appliance.update(appliance.pop("actions")["main"])
-    return {**data, "appliance_switches": {"a1": {"excluded": True}}}
-
-
-async def test_version_1_gets_the_actions_of_the_appliance_in_a_map(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
-    """The actions of each appliance become those of the appliance itself, and
-    its variants use them."""
-    hass_storage[STORAGE_KEY] = {
-        "version": 1,
-        "key": STORAGE_KEY,
-        "data": version_1_data(),
-    }
-    expected = full_config_data()
-    del expected["appliances"][0]["actions"]["v1"]
-
-    stored = await KraftvaktStorage(hass).async_load()
-
-    group_id = stored.config.charger_groups[0].id
-    assert stored.config == read_config(with_group_id(expected, group_id))
-    assert stored.appliance_switches["a1"] == ApplianceSwitches(excluded=True)
-
-
 async def test_migrated_data_is_saved_as_the_new_version(
     hass: HomeAssistant, hass_storage: dict[str, Any]
 ) -> None:
-    hass_storage[STORAGE_KEY] = {
-        "version": 1,
-        "key": STORAGE_KEY,
-        "data": version_1_data(),
-    }
+    store_version_1(hass_storage, version_1_data())
     storage = KraftvaktStorage(hass)
 
     await storage.async_save(await storage.async_load())
@@ -275,6 +235,17 @@ async def test_migrated_data_is_saved_as_the_new_version(
     assert stored["data"]["appliances"][1]["actions"] == {
         "main": {"turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}
     }
+    assert "charging" not in stored["data"]
+    assert stored["data"]["charger_groups"][0]["name"] == "EV chargers"
+
+
+async def test_migration_leaves_unreadable_charging_to_the_reader(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    store_version_1(hass_storage, {"charging": "not a mapping"})
+
+    with pytest.raises(ConfigValidationError):
+        await KraftvaktStorage(hass).async_load()
 
 
 @pytest.mark.parametrize(
@@ -291,17 +262,3 @@ async def test_migration_leaves_unreadable_appliances_to_the_reader(
 
     with pytest.raises(ConfigValidationError):
         await KraftvaktStorage(hass).async_load()
-
-
-async def test_version_1_without_appliances_is_read(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
-    hass_storage[STORAGE_KEY] = {
-        "version": 1,
-        "key": STORAGE_KEY,
-        "data": {"general": {"power_limit_w": 8000}},
-    }
-
-    stored = await KraftvaktStorage(hass).async_load()
-
-    assert stored.config.general.power_limit_w == 8000
