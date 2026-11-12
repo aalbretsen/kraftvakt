@@ -946,7 +946,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
               >`)}
         </div>
       </div>
-    `}renderPriorityCard(e){const t=function(e){const t=e.appliances.map(e=>({kind:"appliance",appliance:e,on:e.on}));return e.charger_groups.forEach((e,i)=>{const a=e.chargers.some(e=>e.activated&&!e.bypassed);t.splice(e.position+i,0,{kind:"charger_group",group:e,on:a})}),t}(e),i=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(t);return Y`
+    `}renderPriorityCard(e){const t=function(e){return e.priority.map(e=>"appliance"===e.type?{kind:"appliance",appliance:e,on:e.on}:{kind:"charger_group",group:e,on:e.chargers.some(e=>e.activated&&!e.bypassed)})}(e),i=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(t);return Y`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("status.priority_list")}</span>

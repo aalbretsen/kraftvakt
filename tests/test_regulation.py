@@ -1009,7 +1009,7 @@ async def test_excluded_appliance_is_switched_off_at_the_next_decision(
     assert state_of(hass, "sensor", "regulation_steps_on") == "1"
     assert [
         (item["id"], item["on"], item["excluded"])
-        for item in status_snapshot(hass, entry.runtime_data)["appliances"]
+        for item in status_snapshot(hass, entry.runtime_data)["priority"]
     ] == [("a", False, True), ("b", True, False)]
 
 

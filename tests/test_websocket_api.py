@@ -765,8 +765,9 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "regulation_window_s": 60,
         "regulation_interval": 1,
         "next_decision_at": local(started + WINDOW),
-        "appliances": [
+        "priority": [
             {
+                "type": "appliance",
                 "id": "a",
                 "name": "Water heater",
                 "on": False,
@@ -777,6 +778,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_ends_at": None,
             },
             {
+                "type": "appliance",
                 "id": "b",
                 "name": "light.b",
                 "on": False,
@@ -787,7 +789,6 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_ends_at": None,
             },
         ],
-        "charger_groups": [],
     }
 
     set_power(hass, "2000")
@@ -797,7 +798,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
     assert status["regulation_average_w"] == pytest.approx(2000)
     assert status["tariff_average_w"] == pytest.approx(2000)
     assert status["next_decision_at"] == local(started + 2 * WINDOW)
-    assert [item["on"] for item in status["appliances"]] == [True, False]
+    assert [item["on"] for item in appliance_rows(status)] == [True, False]
 
 
 async def test_status_shows_the_variant_and_the_waiting_time(
@@ -823,20 +824,20 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     await setup_entry(hass)
     client = await hass_ws_client(hass)
     status = await subscribe_status(client)
-    assert [item["id"] for item in status["appliances"]] == ["a", "b"]
+    assert [item["id"] for item in appliance_rows(status)] == ["a", "b"]
 
     await advance(hass, freezer)
     status = await next_status(client)
 
-    assert [item["id"] for item in status["appliances"]] == ["b", "a"]
-    assert status["appliances"][0]["variant"] == "Morning"
-    assert status["appliances"][0]["waiting_since"] == local(started + WINDOW)
-    waiting_until = dt_util.parse_datetime(status["appliances"][0]["waiting_until"])
+    assert [item["id"] for item in appliance_rows(status)] == ["b", "a"]
+    assert appliance_rows(status)[0]["variant"] == "Morning"
+    assert appliance_rows(status)[0]["waiting_since"] == local(started + WINDOW)
+    waiting_until = dt_util.parse_datetime(appliance_rows(status)[0]["waiting_until"])
     assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(
         75.4758, abs=1e-3
     )
-    assert status["appliances"][0]["waiting_ends_at"] == local(started + 3 * WINDOW)
-    assert status["appliances"][1]["waiting_until"] is None
+    assert appliance_rows(status)[0]["waiting_ends_at"] == local(started + 3 * WINDOW)
+    assert appliance_rows(status)[1]["waiting_until"] is None
 
 
 async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(
@@ -928,8 +929,12 @@ async def test_status_shows_the_chargers(
 
     status = await subscribe_status(client)
 
-    group = status["charger_groups"][0]
-    assert (group["id"], group["name"], group["position"]) == ("g1", "EV chargers", 2)
+    group = status["priority"][2]
+    assert (group["type"], group["id"], group["name"]) == (
+        "charger_group",
+        "g1",
+        "EV chargers",
+    )
     assert group["chargers"] == [
         {
             "id": "c1",
@@ -1006,7 +1011,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
 
     assert [
         (item["id"], item["state"], item["bypassed"])
-        for item in status["charger_groups"][0]["chargers"]
+        for item in status["priority"][-1]["chargers"]
     ] == [("c2", "excluded", False), ("c1", "no_car", True)]
 
 
@@ -1053,15 +1058,17 @@ async def test_status_places_charger_groups_among_the_current_variants(
     await setup_entry(hass)
     client = await hass_ws_client(hass)
     status = await subscribe_status(client)
-    assert [item["id"] for item in status["appliances"]] == ["a", "b"]
-    assert group_positions(status) == [("g1", 1), ("g2", 2)]
+    assert row_ids(status) == ["a", "g1", "b", "g2"]
 
     await advance(hass, freezer)
     status = await next_status(client)
 
-    assert [item["id"] for item in status["appliances"]] == ["b", "a"]
-    assert group_positions(status) == [("g1", 2), ("g2", 2)]
+    assert row_ids(status) == ["b", "a", "g1", "g2"]
 
 
-def group_positions(status: dict[str, Any]) -> list[tuple[str, int]]:
-    return [(group["id"], group["position"]) for group in status["charger_groups"]]
+def row_ids(status: dict[str, Any]) -> list[str]:
+    return [row["id"] for row in status["priority"]]
+
+
+def appliance_rows(status: dict[str, Any]) -> list[dict[str, Any]]:
+    return [row for row in status["priority"] if row["type"] == "appliance"]

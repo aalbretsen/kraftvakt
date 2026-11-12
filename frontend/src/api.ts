@@ -183,6 +183,7 @@ export interface Capabilities {
 }
 
 export interface ApplianceStatus {
+  type: "appliance";
   id: string;
   name: string;
   on: boolean;
@@ -242,16 +243,14 @@ export interface StatusSnapshot {
   regulation_window_s: number;
   regulation_interval: number;
   next_decision_at: string | null;
-  appliances: ApplianceStatus[];
-  /** The groups in the order of their entries. */
-  charger_groups: ChargerGroupStatus[];
+  /** The priority list, with each appliance at the entry of its current variant. */
+  priority: (ApplianceStatus | ChargerGroupStatus)[];
 }
 
 export interface ChargerGroupStatus {
+  type: "charger_group";
   id: string;
   name: string;
-  /** How many appliances come before the group. */
-  position: number;
   /** In the current charging priority. */
   chargers: ChargerStatus[];
 }

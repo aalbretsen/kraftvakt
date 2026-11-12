@@ -247,8 +247,6 @@ step. Rules that are not obvious from the code:
   of its own, because the user needs to know that the car is missing.
   Charging is true while the charger is activated and was actively charging
   at the last decision.
-- Appliances are sorted by the entry of their current variant. The charger
-  groups are listed in the order of their entries, each with its
-  position, the number of appliances whose current variant is placed before
-  the group's entry, and its chargers in the group's current charging
-  priority.
+- The priority list has one row per appliance, at the entry of its current
+  variant, and one per charger group, with its chargers in the group's
+  current charging priority.

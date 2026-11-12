@@ -77,18 +77,17 @@ type PriorityEntry =
   | { kind: "appliance"; appliance: ApplianceStatus; on: boolean }
   | { kind: "charger_group"; group: ChargerGroupStatus; on: boolean };
 
-/** Return the entries of the priority list in order, with each group of EV chargers at its place. */
+/** Return the entries of the priority list, each with whether it is on. */
 function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
-  const entries: PriorityEntry[] = status.appliances.map((appliance) => ({
-    kind: "appliance",
-    appliance,
-    on: appliance.on,
-  }));
-  status.charger_groups.forEach((group, placed) => {
-    const on = group.chargers.some((charger) => charger.activated && !charger.bypassed);
-    entries.splice(group.position + placed, 0, { kind: "charger_group", group, on });
-  });
-  return entries;
+  return status.priority.map((row) =>
+    row.type === "appliance"
+      ? { kind: "appliance", appliance: row, on: row.on }
+      : {
+          kind: "charger_group",
+          group: row,
+          on: row.chargers.some((charger) => charger.activated && !charger.bypassed),
+        },
+  );
 }
 
 /**
