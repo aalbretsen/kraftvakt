@@ -63,6 +63,8 @@ integrations.
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
+| `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, and an entity of an appliance or charger no longer exists. |
+| `diagnostics.py` | The diagnostics: configuration, status, the last decisions and the last failed actions, kept in memory by the runtime. |
 
 ## Stored configuration
 
@@ -191,8 +193,14 @@ panel's translations.
   version, sent in the status, so the panel fetches the configuration again
   when an entity has changed it.
 - The regulation switch has no stored position; it is the same function as
-  start and stop in the panel, and stays off and logs when the configuration
-  is incomplete.
+  start and stop in the panel. With an incomplete configuration, turning it
+  on raises a translated `ServiceValidationError` and it stays off.
+- Repair issues are only for problems in the configuration, never for an
+  entity that is merely unavailable, since that is often a cloud service that
+  is down. The regulation that could not start is reported when HA or the
+  integration starts and cleared at any start. Removed entities are looked
+  for at every start of the regulation and after every failed action.
+- The waiting time next turn-on sensor is disabled by default.
 - Each appliance has an excluded switch, and each charger an excluded switch,
   a window override switch and a binary sensor for charging allowed by
   window, keyed by the item's id, with an entity id from the slug of the

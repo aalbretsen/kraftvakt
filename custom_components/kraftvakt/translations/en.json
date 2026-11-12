@@ -68,7 +68,20 @@
       }
     }
   },
+  "issues": {
+    "regulation_not_started": {
+      "title": "The Kraftvakt regulation is not running",
+      "description": "The regulation could not start because the configuration is not complete. Open Kraftvakt in the sidebar, complete the configuration and start the regulation."
+    },
+    "missing_entity": {
+      "title": "An entity used by Kraftvakt no longer exists",
+      "description": "{entity_id}, used by an appliance or an EV charger in Kraftvakt, no longer exists in Home Assistant. Choose another entity in the Kraftvakt panel, or remove the appliance or EV charger."
+    }
+  },
   "exceptions": {
+    "config_incomplete": {
+      "message": "The regulation cannot start before the configuration is complete. {count} settings are missing; see Kraftvakt in the sidebar."
+    },
     "unreadable_configuration": {
       "message": "The stored configuration in .storage/kraftvakt.config cannot be read ({issues}). Kraftvakt is not started, and the file is left unchanged."
     }

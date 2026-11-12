@@ -15,6 +15,8 @@ from .config_model import POWER_LIMIT_W
 from .entity import KraftvaktEntity
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

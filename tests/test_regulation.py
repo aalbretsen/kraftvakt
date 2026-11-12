@@ -20,14 +20,20 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import CoreState, HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
     async_mock_service,
 )
+from pytest_homeassistant_custom_component.components.diagnostics import (
+    get_diagnostics_for_config_entry,
+)
+from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.kraftvakt.config_model import Issue
 from custom_components.kraftvakt.config_reader import read_config
@@ -344,7 +350,7 @@ async def test_incomplete_configuration_does_not_start(
     setup_kraftvakt,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """The switch stays off and the attempt is logged."""
+    """It is a repair issue, and the switch gives an error and stays off."""
     del config["appliances"][1]["turn_on"]
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
@@ -352,35 +358,57 @@ async def test_incomplete_configuration_does_not_start(
     assert entry.runtime_data.missing == [
         Issue("missing_action", "appliances", "b", "turn_on")
     ]
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "regulation_not_started")
 
-    await switch_regulation(hass, "turn_on")
+    with pytest.raises(ServiceValidationError) as error:
+        await switch_regulation(hass, "turn_on")
     await advance(hass, freezer)
 
+    assert error.value.translation_key == "config_incomplete"
     assert regulation_switch(hass) == STATE_OFF
     assert actions == []
-    assert "The configuration is not complete: missing_action" in caplog.text
+
+    config["appliances"][1]["turn_on"] = DEFAULT
+    await entry.runtime_data.async_save_config(read_config(config))
+    await switch_regulation(hass, "turn_on")
+
+    assert regulation_switch(hass) == STATE_ON
+    assert not ir.async_get(hass).async_get_issue(DOMAIN, "regulation_not_started")
 
 
-async def test_each_decision_is_logged_for_debugging(
+async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
     hass: HomeAssistant,
+    hass_client: ClientSessionGenerator,
     freezer: FrozenDateTimeFactory,
     actions,
     setup_kraftvakt,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """The log tells what each decision was based on, not only the commands."""
+    """They tell what each decision was based on, not only the commands."""
     caplog.set_level(logging.DEBUG, logger="custom_components.kraftvakt.runtime")
+    assert await async_setup_component(hass, "diagnostics", {})
     set_power(hass, "2000")
-    await setup_kraftvakt()
+    entry = await setup_kraftvakt()
 
     await advance(hass, freezer)
 
-    assert f"Decision at {dt_util.now().isoformat(timespec='seconds')}:" in caplog.text
-    assert (
-        "regulation average 2000 W, average consumption 2000 W, sensor valid True, "
-        "safe state False, penalty False (0.0 Wh), waiting None, "
-        "commands [TurnOnAppliance(appliance_id='a', variant_id=None)]"
-    ) in caplog.text
+    diagnostics = await get_diagnostics_for_config_entry(hass, hass_client, entry)
+    assert diagnostics["recent_decisions"] == [
+        {
+            "time": dt_util.now().isoformat(timespec="seconds"),
+            "regulation_average_w": 2000,
+            "tariff_average_w": 2000,
+            "power_sensor_valid": True,
+            "safe_state": False,
+            "penalty_active": False,
+            "overconsumption_wh": 0.0,
+            "waiting": None,
+            "commands": ["TurnOnAppliance(appliance_id='a', variant_id=None)"],
+        }
+    ]
+    assert diagnostics["config"]["appliances"][0]["id"] == "a"
+    assert diagnostics["status"]["running"]
+    assert "Decision: {'time': " in caplog.text
 
 
 async def test_safe_state_when_the_power_sensor_is_lost(
@@ -669,7 +697,7 @@ async def test_failed_action_does_not_stop_the_regulation(
         "action": [{"action": "test.fail"}],
     }
     set_power(hass, "2000")
-    await setup_kraftvakt()
+    entry = await setup_kraftvakt()
     actions.clear()
 
     await advance(hass, freezer)
@@ -678,6 +706,10 @@ async def test_failed_action_does_not_stop_the_regulation(
     assert len(attempts) == 1
     assert actions == ["on light.b"]
     assert "Could not turn_on light.a: no answer" in caplog.text
+    assert [
+        (failure["action"], failure["error"])
+        for failure in entry.runtime_data.failed_actions
+    ] == [("turn_on light.a", "no answer")]
 
 
 async def test_appliance_states_are_not_taken_into_account(
@@ -805,6 +837,7 @@ async def test_entity_ids_are_the_same_in_every_language(
 ) -> None:
     """The entity ids group the entities, and the names are translated."""
     hass.config.language = language
+    enable_next_turn_on_sensor(hass)
     await setup_kraftvakt()
 
     names = {
@@ -816,6 +849,16 @@ async def test_entity_ids_are_the_same_in_every_language(
         entity_id: f"Kraftvakt {translated[index]}"
         for entity_id, translated in ENTITY_NAMES.items()
     }
+
+
+def enable_next_turn_on_sensor(hass: HomeAssistant) -> None:
+    """Register the sensor that is disabled by default as enabled."""
+    er.async_get(hass).async_get_or_create(
+        "sensor",
+        DOMAIN,
+        "waiting_time_next_turn_on",
+        suggested_object_id="kraftvakt_waiting_time_next_turn_on",
+    )
 
 
 async def set_power_limit(hass: HomeAssistant, watt: float) -> None:
@@ -955,6 +998,7 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     """The time left counts to the decision that turns the appliance on."""
     config["general"]["wait_at_limit_s"] = 300
     set_power(hass, "9000")
+    enable_next_turn_on_sensor(hass)
     await setup_kraftvakt()
     curve_waiting_s = 300 * WaitingCurve.from_settings(6, 80).share(0.9)
     windows_to_wait = math.ceil(curve_waiting_s / WINDOW.total_seconds())
@@ -1138,3 +1182,42 @@ async def test_switches_of_removed_appliances_are_removed_at_setup(
 
     assert registry.async_get(orphan.entity_id) is None
     assert excluded_switch(hass, "a") is not None
+
+
+async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    setup_kraftvakt,
+) -> None:
+    """It is found when the regulation starts and when an action fails.
+
+    An entity that only is unavailable is not an issue.
+    """
+    issues = ir.async_get(hass)
+    hass.states.async_set("light.b", "unavailable")
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+
+    assert issues.async_get_issue(DOMAIN, "missing_entity_light.a")
+    assert not issues.async_get_issue(DOMAIN, "missing_entity_light.b")
+
+    hass.states.async_set("light.a", "off")
+    hass.states.async_remove("light.b")
+    hass.services.async_remove("light", "turn_on")
+    await advance(hass, freezer)
+
+    assert not issues.async_get_issue(DOMAIN, "missing_entity_light.a")
+    assert issues.async_get_issue(DOMAIN, "missing_entity_light.b")
+
+
+async def test_next_turn_on_sensor_is_disabled_by_default(
+    hass: HomeAssistant, setup_kraftvakt
+) -> None:
+    await setup_kraftvakt()
+
+    registry_entry = er.async_get(hass).async_get(
+        entity_id(hass, "sensor", "waiting_time_next_turn_on")
+    )
+    assert registry_entry is not None
+    assert registry_entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION

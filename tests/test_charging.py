@@ -791,3 +791,15 @@ async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
     dr.async_get(hass).async_update_device(device.id, name_by_user="Garage")
 
     assert item_name(hass, charger) == "Garage"
+
+
+async def test_finish_after_window_of_a_removed_charger_changes_nothing(
+    hass: HomeAssistant, setup_kraftvakt
+) -> None:
+    """The switch can be used for a moment after its charger was removed."""
+    entry = await setup_kraftvakt()
+    runtime = entry.runtime_data
+
+    await runtime.async_set_finish_after_window("gone", True)
+
+    assert runtime.config_version == 0

@@ -68,7 +68,20 @@
       }
     }
   },
+  "issues": {
+    "regulation_not_started": {
+      "title": "Kraftvakt-reguleringen kjører ikke",
+      "description": "Reguleringen kunne ikke starte fordi konfigurasjonen ikke er komplett. Åpne Kraftvakt i sidemenyen, fullfør konfigurasjonen og start reguleringen."
+    },
+    "missing_entity": {
+      "title": "En entitet Kraftvakt bruker, finnes ikke lenger",
+      "description": "{entity_id}, som et apparat eller en elbillader i Kraftvakt bruker, finnes ikke lenger i Home Assistant. Velg en annen entitet i Kraftvakt-panelet, eller fjern apparatet eller elbilladeren."
+    }
+  },
   "exceptions": {
+    "config_incomplete": {
+      "message": "Reguleringen kan ikke starte før konfigurasjonen er komplett. {count} innstillinger mangler; se Kraftvakt i sidemenyen."
+    },
     "unreadable_configuration": {
       "message": "Den lagrede konfigurasjonen i .storage/kraftvakt.config kan ikke leses ({issues}). Kraftvakt er ikke startet, og filen er ikke endret."
     }

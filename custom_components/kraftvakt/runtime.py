@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from datetime import datetime, timedelta
 from functools import partial
+from typing import Any, Final
 
 from homeassistant.components.recorder import get_instance, history
 from homeassistant.config_entries import ConfigEntry
@@ -54,9 +55,17 @@ from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
 from .regulation.model import Command, DecisionInput, Waiting
 from .regulation.penalty import PenaltyState
+from .repairs import (
+    async_check_entities,
+    async_clear_not_started,
+    async_report_not_started,
+)
 from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
+
+RECENT_DECISIONS: Final = 100
+RECENT_FAILURES: Final = 20
 
 type KraftvaktConfigEntry = ConfigEntry[KraftvaktRuntime]
 type WindowListener = Callable[[WindowAverages], None]
@@ -109,7 +118,9 @@ class KraftvaktRuntime:
         self._config_version = 0
         self._engine = RegulationEngine(config)
         self._action_lock = action_lock or asyncio.Lock()
-        self._actions = ActionRunner(hass, config, self._action_lock)
+        self._actions = self._action_runner(config)
+        self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=RECENT_DECISIONS)
+        self._failed_actions: deque[dict[str, Any]] = deque(maxlen=RECENT_FAILURES)
         self._created_at = dt_util.utcnow()
         self._averager = PowerAverager(
             timedelta(seconds=config.general.regulation_window_s), self._created_at
@@ -235,6 +246,16 @@ class KraftvaktRuntime:
         return self._settings
 
     @property
+    def recent_decisions(self) -> list[dict[str, Any]]:
+        """Return the last decisions, oldest first, for the diagnostics."""
+        return list(self._recent_decisions)
+
+    @property
+    def failed_actions(self) -> list[dict[str, Any]]:
+        """Return the last failed actions, oldest first, for the diagnostics."""
+        return list(self._failed_actions)
+
+    @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
         return self._engine.chargers
@@ -270,7 +291,9 @@ class KraftvaktRuntime:
         self._start_regulation_if_complete(dt_util.utcnow())
 
     def _start_regulation_if_complete(self, now: datetime) -> None:
-        if not self._missing:
+        if self._missing:
+            async_report_not_started(self._hass)
+        else:
             self._start_regulation(now)
 
     def _forget_start_when_started(self) -> None:
@@ -327,7 +350,7 @@ class KraftvaktRuntime:
         self._config_version += 1
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
-        self._actions = ActionRunner(self._hass, config, self._action_lock)
+        self._actions = self._action_runner(config)
         self._averager.change_window_length(
             timedelta(seconds=config.general.regulation_window_s)
         )
@@ -389,6 +412,8 @@ class KraftvaktRuntime:
         return lambda: self._status_listeners.remove(listener)
 
     def _start_regulation(self, now: datetime) -> None:
+        async_clear_not_started(self._hass)
+        async_check_entities(self._hass, self.config)
         self._windows_since_decision.clear()
         self._settings.async_regulation_started(now)
         self._execute(self._engine.start(now))
@@ -520,30 +545,43 @@ class KraftvaktRuntime:
         result = self._engine.decide(decision)
         for charger_id in result.ended_overrides:
             self._settings.async_reset_window_override(charger_id)
-        self._log_decision(decision, result.commands)
+        self._record_decision(decision, result.commands)
         self._execute(result.commands)
 
-    def _log_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
-        if not _LOGGER.isEnabledFor(logging.DEBUG):
-            return
+    def _record_decision(
+        self, decision: DecisionInput, commands: list[Command]
+    ) -> None:
         penalty = self._engine.penalty
         waiting = self._engine.waiting
-        _LOGGER.debug(
-            "Decision at %s: regulation average %s W, average consumption %s W, "
-            "sensor valid %s, safe state %s, penalty %s (%.1f Wh), waiting %s, "
-            "commands %s",
-            dt_util.as_local(decision.now).isoformat(timespec="seconds"),
-            _rounded(decision.regulation_average_w),
-            _rounded(decision.tariff_average_w),
-            decision.power_sensor_valid,
-            self._engine.safe_state,
-            penalty.active,
-            penalty.overconsumption_wh,
-            None
+        record = {
+            "time": dt_util.as_local(decision.now).isoformat(timespec="seconds"),
+            "regulation_average_w": _rounded(decision.regulation_average_w),
+            "tariff_average_w": _rounded(decision.tariff_average_w),
+            "power_sensor_valid": decision.power_sensor_valid,
+            "safe_state": self._engine.safe_state,
+            "penalty_active": penalty.active,
+            "overconsumption_wh": round(penalty.overconsumption_wh, 1),
+            "waiting": None
             if waiting is None
             else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
-            commands or "none",
+            "commands": [str(command) for command in commands],
+        }
+        self._recent_decisions.append(record)
+        _LOGGER.debug("Decision: %s", record)
+
+    def _action_runner(self, config: KraftvaktConfig) -> ActionRunner:
+        return ActionRunner(self._hass, config, self._action_lock, self._action_failed)
+
+    def _action_failed(self, action: str, error: str) -> None:
+        """Remember the failure for the diagnostics, and look for removed entities."""
+        self._failed_actions.append(
+            {
+                "time": dt_util.now().isoformat(timespec="seconds"),
+                "action": action,
+                "error": error,
+            }
         )
+        async_check_entities(self._hass, self.config)
 
     def _repeat_commands(self, now: datetime) -> None:
         commands = self._engine.repeat_commands(

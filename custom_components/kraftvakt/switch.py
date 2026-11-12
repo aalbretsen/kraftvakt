@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
-import logging
 from abc import abstractmethod
 from collections.abc import Sequence
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .config_model import Appliance, ItemSwitches, KraftvaktConfig
+from .const import DOMAIN
 from .entity import KraftvaktEntity
 from .item_entity import ChargerEntity, ItemEntity, async_setup_item_entities
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
 from .settings import Settings
 
-_LOGGER = logging.getLogger(__name__)
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -60,12 +61,15 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
         return self._runtime.running
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Start the regulation, or log why it cannot start and stay off."""
+        """Start the regulation; it cannot start with an incomplete configuration."""
         try:
             self._runtime.async_start_regulation()
         except ConfigIncompleteError as err:
-            _LOGGER.warning("The regulation cannot start. %s", err)
-            self.async_write_ha_state()
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="config_incomplete",
+                translation_placeholders={"count": str(len(err.missing))},
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Stop the regulation."""

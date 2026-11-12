@@ -19,6 +19,8 @@ from homeassistant.util import dt as dt_util
 from .entity import KraftvaktEntity
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
+PARALLEL_UPDATES = 0
+
 
 @dataclass(frozen=True, kw_only=True)
 class RegulationSensorDescription(SensorEntityDescription):
@@ -115,7 +117,9 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
         key="waiting_time_remaining", value_fn=_waiting_time_remaining_s
     ),
     DurationSensorDescription(
-        key="waiting_time_next_turn_on", value_fn=_waiting_time_next_turn_on_s
+        key="waiting_time_next_turn_on",
+        entity_registry_enabled_default=False,
+        value_fn=_waiting_time_next_turn_on_s,
     ),
 )
 

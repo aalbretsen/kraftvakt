@@ -22,6 +22,8 @@ from .item_entity import ChargerEntity, async_setup_item_entities
 from .regulation.charging import window_allows_charging
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
+PARALLEL_UPDATES = 0
+
 
 @dataclass(frozen=True, kw_only=True)
 class RegulationBinarySensorDescription(BinarySensorEntityDescription):

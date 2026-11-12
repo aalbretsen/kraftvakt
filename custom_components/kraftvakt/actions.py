@@ -154,13 +154,16 @@ class ActionRunner:
         hass: HomeAssistant,
         config: KraftvaktConfig,
         lock: asyncio.Lock | None = None,
+        on_failure: Callable[[str, str], None] | None = None,
     ) -> None:
         """Create the runner for the appliances and chargers in the configuration.
 
         Runners that share `lock` run their commands one at a time, so a runner
         for a new configuration waits for the commands of the previous one.
+        `on_failure` gets the action and the error of each failed action.
         """
         self._hass = hass
+        self._on_failure = on_failure
         self._appliances = {appliance.id: appliance for appliance in config.appliances}
         self._chargers = {charger.id: charger for charger in config.chargers}
         self._lock = lock or asyncio.Lock()
@@ -232,14 +235,15 @@ class ActionRunner:
                     Context(),
                 )
         except TimeoutError:
-            _LOGGER.error(
-                "Could not %s %s: no answer within %s s",
-                kind,
-                item.entity_id,
-                self._timeout_s,
-            )
+            self._failed(kind, item, f"no answer within {self._timeout_s} s")
         except Exception as err:  # The regulation goes on regardless.
-            _LOGGER.error("Could not %s %s: %s", kind, item.entity_id, err)
+            self._failed(kind, item, str(err))
+
+    def _failed(self, kind: ActionKind, item: Appliance | Charger, error: str) -> None:
+        action = f"{kind} {item.entity_id}"
+        _LOGGER.error("Could not %s: %s", action, error)
+        if self._on_failure is not None:
+            self._on_failure(action, error)
 
     async def _async_script(
         self,

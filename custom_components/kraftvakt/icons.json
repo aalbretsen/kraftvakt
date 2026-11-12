@@ -1,0 +1,75 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "regulation_safe_state": {
+        "default": "mdi:shield-check",
+        "state": {
+          "on": "mdi:shield-alert"
+        }
+      },
+      "penalty_active": {
+        "default": "mdi:check-circle-outline",
+        "state": {
+          "on": "mdi:alert-octagon"
+        }
+      },
+      "charger_window_allowed": {
+        "default": "mdi:clock-remove-outline",
+        "state": {
+          "on": "mdi:clock-check-outline"
+        }
+      }
+    },
+    "number": {
+      "power_limit": {
+        "default": "mdi:gauge"
+      }
+    },
+    "sensor": {
+      "regulation_steps_on": {
+        "default": "mdi:stairs"
+      },
+      "waiting_time_remaining": {
+        "default": "mdi:timer-sand"
+      },
+      "waiting_time_next_turn_on": {
+        "default": "mdi:timer-outline"
+      },
+      "penalty_overconsumption": {
+        "default": "mdi:flash-alert"
+      }
+    },
+    "switch": {
+      "regulation": {
+        "default": "mdi:power-plug-off",
+        "state": {
+          "on": "mdi:power-plug"
+        }
+      },
+      "appliance_excluded": {
+        "default": "mdi:check-circle-outline",
+        "state": {
+          "on": "mdi:cancel"
+        }
+      },
+      "charger_excluded": {
+        "default": "mdi:ev-station",
+        "state": {
+          "on": "mdi:cancel"
+        }
+      },
+      "charger_window_override": {
+        "default": "mdi:clock-outline",
+        "state": {
+          "on": "mdi:clock-fast"
+        }
+      },
+      "charger_finish_after_window": {
+        "default": "mdi:clock-outline",
+        "state": {
+          "on": "mdi:clock-end"
+        }
+      }
+    }
+  }
+}
