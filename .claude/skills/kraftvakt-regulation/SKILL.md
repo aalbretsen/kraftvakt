@@ -194,10 +194,8 @@ energy in Wh; the status page shows kW.
   the waiting time at the limit plus a number of steps, 1–9. Both are set
   separately for appliances (default 0.5 and 4) and for fictive appliances
   (default 1 and 5). With waiting time 0 at the limit, the step and the cap
-  are 0, so the waiting time does not grow. The step is a share and the cap a
-  number of steps because that is easy to understand and follows the waiting
-  time at the limit. Any command for another slot, also forced ones, resets
-  the counter.
+  are 0, so the waiting time does not grow. Any command for another slot,
+  also forced ones, resets the counter.
 - Known limitation, to revisit if it shows up in real use: two slots that
   alternate (A on, B on, B off, A off, A on …) reset each other's counter, so
   their waiting time never grows.
@@ -223,11 +221,9 @@ energy in Wh; the status page shows kW.
   (stop, safe state, HA start, power limit change). The current variants are
   still evaluated during a penalty; a switch gives only the turn-off action of
   the new variant, since everything is off.
-- The start after a penalty resets the cycling counters like every other
-  start, so while the average consumption stays above limit plus threshold, an
-  appliance that pushes the average over the limit goes on and off with the
-  waiting time from the curve only, never the longer waiting time on
-  persistent cycling. The penalty should never be needed.
+- The start after a penalty resets the cycling counters, so while the average
+  consumption stays above limit plus threshold, an appliance that pushes the
+  average over the limit cycles with the waiting time from the curve only.
 
 ## Safe state
 
@@ -241,10 +237,10 @@ energy in Wh; the status page shows kW.
 ## Start and stop
 
 - Every start turns off every appliance in the configuration, once per
-  appliance even with variants, and deactivates every charger. The same holds wherever everything is turned off. The
-  current variant is found at the first decision, so a start uses the
-  appliance's own turn-off action, and stop, the safe state and a penalty use
-  the current variant's.
+  appliance even with variants, and deactivates every charger. The same holds
+  wherever everything is turned off. The current variant is found at the
+  first decision, so a start uses the appliance's own turn-off action, and
+  stop, the safe state and a penalty use the current variant's.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends, when the power sensor is back after the safe state, and
@@ -326,8 +322,7 @@ All with entity category diagnostic:
 - Waiting time next turn-on (calculated) (s): the waiting time the next
   turn-on gets from the curve, for the last regulation average and the limit
   in use, without the longer waiting time on persistent cycling. Unavailable
-  without an average. Named after what it is for, so the user does not need
-  to know the curve.
+  without an average.
 
 ## Variants
 

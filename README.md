@@ -21,8 +21,9 @@ grid tariff. Everything is set up in a panel in the sidebar. Kraftvakt runs enti
 ## Requirements
 
 - Home Assistant 2026.10 or newer
-- A sensor from another integration that measures the total power of the house, typically from the HAN port of the 
-- electricity meter, with the device class power. It may report W or kW. A sensor without a unit is read as W.
+- A sensor from another integration that measures the total power of the
+  house, typically from the HAN port of the electricity meter, with the device
+  class power. It may report W or kW. A sensor without a unit is read as W.
 
 ## Installation
 
@@ -107,16 +108,14 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   regulation runs, also in the safe state and during a penalty. Excluded
   appliances and EV chargers get no repeated commands.
 
-Kraftvakt does not know what an appliance actually uses, and does not read
-whether it is on. It assumes the appliances are as Kraftvakt last set them,
-and repeats the command for that state now and then, in case an appliance has
-changed by itself, for example after a power outage on its circuit. Do
-not turn regulated appliances on or off outside Kraftvakt. It can disturb the
-regulation, affect appliances with higher priority and trigger a penalty, and
-the command repeat sets the appliance back. Exclude the appliance from the
-regulation instead. EV chargers are the
-exception: Kraftvakt reads whether they are actively charging and whether a
-car is connected.
+Kraftvakt does not know what an appliance uses, and does not read whether it
+is on. It assumes each appliance is as Kraftvakt last set it, and repeats that
+command now and then, see **Command repeat**. Do not turn regulated
+appliances on or off outside Kraftvakt. It can disturb the regulation, affect
+appliances with higher priority and trigger a penalty, and the command repeat
+sets the appliance back. Exclude the appliance from the regulation instead.
+EV chargers are the exception: Kraftvakt reads whether they are actively
+charging and whether a car is connected.
 
 ## Starting and stopping
 

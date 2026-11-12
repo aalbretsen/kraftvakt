@@ -64,23 +64,23 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
   amperes. It draws power only while charging is allowed, a car is connected
   and the car is not fully charged. Its charging binary sensor is on while it
   draws power, so Kraftvakt's actively charging can be tested from an entity.
-- Heating devices, thermostats and chargers have an unplugged switch. While it is on, the
-  device uses no power whatever its other switches say, so a simulation can
-  control which devices consume. A heater's cycle runs on while unplugged. The
+- Heating devices, thermostats and chargers have an unplugged switch. While
+  it is on, the device uses no power whatever its other switches say. A heater's cycle runs on while unplugged. The
   HAN has no such switch: set its background power instead.
 - Entities that control the simulation and are not part of a real device have
   `EntityCategory.CONFIG`, so HA shows them under Configuration on the device
   page: background power, heating power, duty cycle, period, room
-  temperature, car connected, car fully charged and unplugged. Charging allowed, the charging current, the
-  heater switch and the sensors are the device's own and stay main entities.
+  temperature, car connected, car fully charged and unplugged. Charging
+  allowed, the charging current, the heater switch and the sensors are the
+  device's own and stay main entities.
 - A heating device's switch and a thermostat's climate entity have the
-  device's name. The other entities are
-  named by their translation key.
+  device's name. The other entities are named by their translation key.
 - After a restart every entity gets its state back. The switches, the
   charging current (clamped to the current range) and a thermostat's mode and
-  target temperature restore themselves. The settings that are numbers (background power, heating power,
-  duty cycle, period, room temperature) are kept in the config entry data instead, so that
-  reconfiguring the device changes them.
+  target temperature restore themselves. The settings that are numbers
+  (background power, heating power, duty cycle, period, room temperature) are
+  kept in the config entry data instead, so reconfiguring the device changes
+  them.
 - Every kind has a reconfigure flow with the same form as when it was added.
   It reloads the entry.
 

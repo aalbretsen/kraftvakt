@@ -45,8 +45,7 @@ class _KraftvaktStore(Store[dict[str, Any]]):
         """Migrate the stored data to the current version.
 
         Version 2 keeps the actions of an appliance in a map with its variants,
-        and puts the chargers in groups, where the earlier chargers become one
-        group.
+        and the chargers in groups.
         """
         if old_major_version < 2:
             old_data = _with_charger_groups(_with_appliance_actions_map(old_data))
@@ -54,12 +53,12 @@ class _KraftvaktStore(Store[dict[str, Any]]):
 
 
 def _with_charger_groups(data: dict[str, Any]) -> dict[str, Any]:
-    """Make the earlier chargers one group, regulated also if charging was disabled.
+    """Put the chargers in one group, also when charging is disabled.
 
-    There is no group without chargers while charging was disabled. The group
-    takes the place of «EV charging» in the priority list, or the bottom
-    without it. Charging settings that are not a mapping are kept as the
-    group, so reading them still fails and the stored file is left alone.
+    Disabled charging without chargers gives no group. The group takes the
+    place of «EV charging» in the priority list, or the bottom without it.
+    Charging settings that are not a mapping become the group as they are, so
+    reading them fails and the stored file is left alone.
     """
     migrated = {key: value for key, value in data.items() if key != "charging"}
     charging = data.get("charging", {})

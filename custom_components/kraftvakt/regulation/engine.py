@@ -37,7 +37,6 @@ from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import build_slots, current_variant, fictive_slots
 from .waiting import CyclingSteps, WaitingCurve, waiting_time
 
-# Kept apart so it can change without changing the rest of the regulation.
 SLOTS_PER_DECISION: Final = 1
 
 
@@ -182,13 +181,10 @@ class RegulationEngine:
     ) -> list[Command]:
         """Return the command for the current state again where it is due.
 
-        An appliance or charger that has had no command for the repeat
-        interval gets the command for the state the regulation has set, in
-        case it changed by itself, for example after a power outage. A
-        charger that is activated gets its current, and one that is
-        deactivated is deactivated again. A repeat is not a switch, so it
-        leaves waiting times and cycling counters alone. Excluded appliances
-        and chargers are left alone.
+        Due means no command for the repeat interval. An activated charger
+        gets its current, a deactivated one is deactivated again. Waiting
+        times and cycling counters are not touched, and excluded appliances
+        and chargers get nothing.
         """
         if not self._running:
             return []
@@ -366,13 +362,12 @@ class RegulationEngine:
     def _place_appliances(self, decision: DecisionInput) -> list[Command]:
         """Handle the appliances that are excluded, included again or switch variant.
 
-        An excluded appliance that is on is switched off. An appliance that
-        comes to a new place, by switching variant or by being included again,
-        is off afterwards and gets room there. An appliance that switches
-        variant is sent the turn-off action of the new variant also when it was
-        off, since the variants may turn it off in different ways. Before the
-        first decision after a start, the appliance itself is the variant. The
-        switch-offs are an exception to one slot per decision.
+        An excluded appliance that is on is switched off. An appliance at a new
+        place is off afterwards and gets room there. A variant switch sends the
+        turn-off action of the new variant also when the appliance was off,
+        since variants may turn it off in different ways. Before the first
+        decision after a start, the appliance itself is the variant. These
+        switch-offs are not limited to one slot per decision.
         """
         previous_variants = self._state.current_variants
         previous_excluded = self._state.excluded_appliances

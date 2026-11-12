@@ -47,7 +47,7 @@ Code that mirrors the backend and must be kept in step with it:
 - the types of the configuration and the status snapshot,
 - reading the power sensor in W or kW, the same units as the backend.
 
-## Behaviour that was settled
+## Behaviour
 
 ### Configuration pages
 
@@ -72,8 +72,7 @@ Code that mirrors the backend and must be kept in step with it:
   button.
 - The warning against controlling regulated appliances outside Kraftvakt is
   shown only while a list is empty (appliances on the Appliances page,
-  chargers on the EV charging page), since the user does not need to see it
-  all the time.
+  chargers on the EV charging page).
 - Default is offered only for domains with a default action. It is chosen
   when an entity with a default action is picked and the action is not set,
   and a default action becomes an empty custom action when the new entity has
@@ -111,8 +110,9 @@ Code that mirrors the backend and must be kept in step with it:
 - The power sensor picker offers sensors with device class power, without
   Kraftvakt's own sensors.
 - The EV charging page has one card per charger group, with its name, its
-  settings and its chargers, and Add group under the cards. A new group gets the first free name of «EV chargers», «EV
-  chargers 2» and so on, so it has no error at once. A group can be deleted
+  settings and its chargers, and Add group under the cards. A new group gets
+  the first free name of «EV chargers», «EV chargers 2» and so on, so it has
+  no error at once. A group can be deleted
   only when it has no chargers.
 - A charger moves to another group by dragging it to that group's list, with
   `ha-sortable`'s `group`, which puts the dragged row back so the lists follow
@@ -163,8 +163,8 @@ Code that mirrors the backend and must be kept in step with it:
 
 - The status page shows everything in the status snapshot: averages against
   the limit, next decision, safe state and penalty with what is left and
-  whether recovery has started,
-  appliances with variant and waiting, chargers with current and state.
+  whether recovery has started, appliances with variant and waiting, chargers
+  with current and state.
   Power is shown in kW and energy in kWh.
 - While stopped, the regulation card lists what is missing, each with a link
   to the page where it is fixed.
@@ -197,12 +197,10 @@ Code that mirrors the backend and must be kept in step with it:
 - Appliances and chargers share one full-width priority list card. Each
   charger group has a row with its name and its own rank at its position,
   and its chargers are indented under it in the group's current charging
-  priority. Every row is one
-  line, with columns that line up without headings: rank, name with the
-  variant after it, current, waiting and state chip. The rank is right
-  aligned with digits of equal width, so ranks of one and two digits line
-  up. A name too long for
-  its column is cut with an ellipsis and has the whole name as a tooltip;
+  priority. Every row is one line, with columns that line up without
+  headings: rank, name with the variant after it, current, waiting and state
+  chip. The rank is right aligned with digits of equal width. A name too long
+  for its column is cut with an ellipsis and has the whole name as a tooltip;
   the variant is cut first, down to a few letters.
   - On a phone (a viewport at most 600 px wide, by a media query of its own,
     since a tablet that HA calls narrow still has room for every column) a
@@ -229,8 +227,8 @@ Code that mirrors the backend and must be kept in step with it:
     or a group's row while one of its chargers is activated and not
     bypassed. It is hidden when nothing is on, or when only excluded
     appliances are below the last entry that is on, so something that can be
-    turned on is always below it. It shows the free power and its share of the power
-    limit while that is above 0, and explains itself in a tooltip. By the
+    turned on is always below it. It shows the free power and its share of the
+    power limit while that is above 0, and explains itself in a tooltip. By the
     fixed order nothing below the line is on.
 - Colours come from Home Assistant's theme variables, set once on `:host`:
   the Energy dashboard's grid colour for the average consumption, a teal
@@ -239,8 +237,8 @@ Code that mirrors the backend and must be kept in step with it:
   what is off is dimmed. An appliance whose entity is missing, or whose icon
   HA cannot show in the panel (an icon set that is not loaded renders
   nothing), shows a default icon instead: the icon slot is one icon wide,
-  and the entity's icon pushes the default icon out of it. The safe state and penalty chips are in the alarm
-  colour and show only while active.
+  and the entity's icon pushes the default icon out of it. The safe state and
+  penalty chips are in the alarm colour and show only while active.
 
 ## Home Assistant components
 

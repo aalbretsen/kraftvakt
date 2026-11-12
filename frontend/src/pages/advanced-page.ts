@@ -36,10 +36,9 @@ function untilDecision(waiting: number, decisionInterval: number): number {
 }
 
 /**
- * The regulation works with utilization of the power limit, but the page shows
- * free power, the power limit minus the regulation average, as a share of the
- * limit. The pivot point slider moves over the stored utilization, so free
- * power goes down to the right like on the graph, and shows 100 minus it.
+ * Fields stored as utilization of the power limit and shown as free power, 100
+ * minus it. The slider still moves over the utilization, so free power goes
+ * down to the right as on the graph.
  */
 const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
   wait_curve_steepness: false,
@@ -104,10 +103,9 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
   }
 
   /**
-   * The waiting time each time the same slot is turned on in a row. The first
-   * two follow the curve and are shown at the pivot point; from the third it
-   * is the waiting time at the limit, one step longer each time, until the
-   * last column, which holds for every time after it as well.
+   * The waiting time for each turn-on of the same slot in a row. The first two
+   * follow the curve, shown at the pivot point. The last column holds for every
+   * turn-on after it.
    */
   private renderCyclingTable(factor: number, steps: number) {
     const general = this.config.general;

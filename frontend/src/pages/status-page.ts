@@ -380,15 +380,14 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   /**
-   * The icon of the appliance's entity, coloured like Home Assistant colours a switch that is on,
-   * or a default icon when the entity has none that the panel can show.
+   * The icon of the appliance's entity, coloured as Home Assistant colours a switch that is on, or
+   * a default icon.
    */
   private renderApplianceIcon(appliance: ApplianceStatus) {
     const entityId = this.config?.config.appliances.find((item) => item.id === appliance.id)?.entity_id;
     const stateObj = entityId ? this.hass.states[entityId] : undefined;
-    // The slot is one icon wide: an icon from the entity fills it and pushes the default icon out of
-    // sight, while an icon Home Assistant cannot load (from an icon set that is not loaded) takes no
-    // width and leaves the default icon in view.
+    // The slot is one icon wide. The entity's icon pushes the default icon out of it; an icon
+    // Home Assistant cannot load takes no width and leaves the default icon in view.
     return html`
       <span class="device-icon ${appliance.on ? "on" : ""}">
         ${stateObj ? html`<ha-state-icon .hass=${this.hass} .stateObj=${stateObj}></ha-state-icon>` : nothing}

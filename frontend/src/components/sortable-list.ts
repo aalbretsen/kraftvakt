@@ -30,9 +30,9 @@ export interface ItemAdded {
  *
  * Fires `item-moved` with the old and new index, `item-added` when a row is
  * dragged in from another list of the same group, and `open-row` with the key
- * of the row whose button was pressed. The list does not move the rows itself:
- * `ha-sortable` puts a dragged row back, and the rows follow the new `rows`.
- * While it is locked, the rows cannot be moved, and the button only shows them.
+ * of the row whose button was pressed. `ha-sortable` puts a dragged row back,
+ * and the rows follow the new `rows`. While locked, the rows cannot be moved
+ * and the button only shows them.
  */
 @customElement("kraftvakt-sortable-list")
 export class KraftvaktSortableList extends LitElement {

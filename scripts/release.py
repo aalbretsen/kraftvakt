@@ -6,12 +6,8 @@ Run on an up-to-date main branch with a clean working tree and Node active:
 
 The version is SemVer. The script runs every check, sets the version in the
 files that carry it, commits, makes the tag `v<version>`, and asks before it
-pushes main and the tag. The pushed tag starts the release workflow, which
-creates a draft GitHub release for the release notes to be written by hand.
-A version with a pre-release part, like `0.2.0-beta.1`, gives a GitHub
-pre-release, which HACS offers only to users who turned on pre-releases.
-
-The simulator is for development only and keeps its own version.
+pushes main and the tag. The pushed tag starts the release workflow. The
+simulator keeps its own version.
 """
 
 from __future__ import annotations

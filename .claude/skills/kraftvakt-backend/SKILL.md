@@ -28,9 +28,8 @@ integrations.
   device first), and after the entity when it has no device; an appliance is
   named after its entity. The status, the entity names sent to the panel and
   the charger switches use the same function for this, and the panel mirrors
-  it for a charger that is not saved yet. The entity that allows charging
-  often has a name made of the device name and a word like "Charging allowed",
-  which makes a poor name for the charger.
+  it for a charger that is not saved yet. Why: the entity that allows
+  charging often has a name like «Garage Charging allowed».
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through
   `config_panel_domain` when the panel is registered.
@@ -82,19 +81,18 @@ The format is defined by the dataclasses and their serialization in
 - `charger_switches`: the positions of the two switches per charger.
 
 The store has a version. A change of the stored format raises it and adds a
-migration in `storage.py`, with tests, since installations regulate homes
-with a stored configuration that must keep working after an update. The
-chargers from before charger groups became one regulated group named «EV
-chargers», in English whatever the language, since the name is the user's
-data, also where EV charging was disabled. EV charging that was disabled
-without chargers became no group.
+migration in `storage.py`, with tests, so stored configurations keep working
+after an update. The migration to version 2 puts the chargers in one
+regulated group named «EV chargers», also when EV charging is disabled, and
+makes no group when it is disabled without chargers. The name is in English
+in every language, since it is the user's data.
 
 IDs are short UUIDs, so entities can change without losing the place in the
 list. An action is `default`, `custom` (a script), `entity` or `domain` (the
 key of a domain action and a value per parameter, `null` while not chosen). A
-condition is
-an entity or a template; actively charging may also be a power sensor. HA's
-action editor adds empty `data`; stored actions must tolerate that.
+condition is an entity or a template; actively charging may also be a power
+sensor. HA's action editor adds empty `data`; stored actions must tolerate
+that.
 
 ## Validation and completeness
 
@@ -117,13 +115,11 @@ An invalid configuration is not saved:
   before that check can run.
 - The `entity` action mode is only allowed for setting the charging current:
   it runs the default action of the chosen entity instead of the charger's own
-  entity, so it must be a `number` or `input_number`. Most chargers have a
-  number entity for the current, and a custom action for it is needlessly
-  hard.
+  entity, so it must be a `number` or `input_number`. Why: most chargers have
+  a number entity for the current.
 - A value of the wrong type is reported and read as its default, so every
   other rule is still checked and all issues come back together; the default
-  is not checked again. Why: the user sees every error at once, not one at a
-  time.
+  is not checked again.
 
 An incomplete configuration can be saved, but the regulation cannot start.
 Missing items and validation errors are both issues with a code, a section, a
