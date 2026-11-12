@@ -98,11 +98,11 @@ def test_exclusion_is_followed_during_a_penalty() -> None:
     """Nothing is on, so excluding and including again give no commands."""
     scenario = Scenario(make_config("a", "b", wait_at_limit_s=0, threshold_w=0))
     scenario.turn_on("a", "b")
-    scenario.decide(10500, capacity=10500)
-    assert scenario.decide(10500, capacity=10500) == off("a", "b")
+    scenario.decide(10500, tariff=10500)
+    assert scenario.decide(10500, tariff=10500) == off("a", "b")
     scenario.exclude("a")
 
-    assert scenario.decide(10500, capacity=10500) == []
+    assert scenario.decide(10500, tariff=10500) == []
     assert scenario.engine.excluded_appliances == {"a"}
     scenario.exclude()
-    assert scenario.decide(10500, capacity=10500) == []
+    assert scenario.decide(10500, tariff=10500) == []

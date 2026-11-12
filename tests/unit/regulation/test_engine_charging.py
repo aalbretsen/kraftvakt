@@ -2,7 +2,10 @@
 
 from datetime import UTC, datetime, timedelta
 
-from custom_components.kraftvakt.regulation.charging import ChargerStatus
+from custom_components.kraftvakt.regulation.charging import (
+    ChargerState,
+    ChargerStatus,
+)
 from custom_components.kraftvakt.regulation.model import ActivateCharger
 
 from .configs import appliance, charger, charger_group, make_config
@@ -14,7 +17,6 @@ from .scenario import (
     deactivate,
     off,
     on,
-    reset_override,
 )
 
 ABOVE_LIMIT = 10_500
@@ -61,12 +63,10 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
         [],
     ]
     assert scenario.engine.chargers["c"] == ChargerStatus(
+        state=ChargerState.CHARGING,
         ampere_steps_on=3,
         current_a=8,
-        allowed=True,
         bypassed=False,
-        waiting=False,
-        excluded=False,
         charging=True,
     )
 
@@ -361,12 +361,12 @@ def test_charging_charger_goes_first_and_the_other_waits() -> None:
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide_many(0, 3) == [current("b", 7), [], []]
-    assert scenario.engine.chargers["a"].waiting
+    assert scenario.engine.chargers["a"].state is ChargerState.QUEUED
 
     scenario.set_charger("b", actively_charging=False, car_connected=False)
 
     assert scenario.decide(0) == (current("b", 6) + deactivate("b") + activate("a"))
-    assert not scenario.engine.chargers["a"].waiting
+    assert scenario.engine.chargers["a"].state is not ChargerState.QUEUED
 
 
 def test_first_charger_in_the_current_priority_is_chosen() -> None:
@@ -382,7 +382,7 @@ def test_charger_that_counts_as_charging_keeps_the_other_waiting() -> None:
     scenario.set_charger("b", actively_charging=True)
 
     assert scenario.decide(0) == activate("b")
-    assert scenario.engine.chargers["a"].waiting
+    assert scenario.engine.chargers["a"].state is ChargerState.QUEUED
 
 
 def test_excluded_charger_that_counts_as_charging_lets_the_other_charge() -> None:
@@ -391,7 +391,7 @@ def test_excluded_charger_that_counts_as_charging_lets_the_other_charge() -> Non
     scenario.set_charger("b", actively_charging=True, excluded=True)
 
     assert scenario.decide(0) == activate("a")
-    assert not scenario.engine.chargers["a"].waiting
+    assert scenario.engine.chargers["a"].state is not ChargerState.QUEUED
 
 
 def test_new_car_makes_room_for_the_power_reserve() -> None:
@@ -421,7 +421,7 @@ def test_excluded_charger_stops_at_once_and_never_charges() -> None:
 
     assert scenario.decide(0) == deactivate("c")
     assert scenario.decide_many(0, 3) == [[], [], []]
-    assert not scenario.engine.chargers["c"].allowed
+    assert scenario.engine.chargers["c"].state is ChargerState.EXCLUDED
 
 
 def test_charger_charges_only_inside_its_charging_window() -> None:
@@ -468,12 +468,11 @@ def test_charger_finishes_ongoing_charging_after_its_window() -> None:
     scenario = window_ending_scenario()
 
     assert scenario.decide(0) == current("c", 9)
-    assert scenario.engine.chargers["c"].finishing
-    assert scenario.engine.chargers["c"].allowed
+    assert scenario.engine.chargers["c"].state is ChargerState.FINISHING
     assert scenario.decide(ABOVE_LIMIT) == current("c", 8)
     scenario.set_charger("c", actively_charging=False)
     assert scenario.decide(0) == deactivate("c")
-    assert not scenario.engine.chargers["c"].finishing
+    assert scenario.engine.chargers["c"].state is not ChargerState.FINISHING
 
 
 def test_charger_is_not_turned_on_again_after_its_window() -> None:
@@ -484,7 +483,7 @@ def test_charger_is_not_turned_on_again_after_its_window() -> None:
     assert scenario.decide(0) == deactivate("c")
     scenario.set_charger("c", car_connected=True)
     assert scenario.decide_many(0, 3) == [[], [], []]
-    assert not scenario.engine.chargers["c"].allowed
+    assert scenario.engine.chargers["c"].state is ChargerState.OUTSIDE_WINDOW
 
 
 def test_charger_on_trial_when_its_window_ends_does_not_finish() -> None:
@@ -505,10 +504,12 @@ def test_override_allows_charging_until_the_next_window_starts() -> None:
     )
 
     assert scenario.decide(0) == activate("c")
-    assert scenario.engine.chargers["c"].window_overridden
+    assert scenario.engine.chargers["c"].state is ChargerState.OVERRIDE
     assert scenario.decide(0, after=timedelta(hours=9, minutes=58)) == []
-    assert scenario.decide(0) == reset_override("c")
-    assert not scenario.engine.chargers["c"].window_overridden
+    assert scenario.ended_overrides == []
+    assert scenario.decide(0) == []
+    assert scenario.ended_overrides == ["c"]
+    assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
     scenario.set_charger("c", window_override=False)
     assert scenario.decide(0, after=timedelta(minutes=4)) == []
     assert scenario.decide(0) == deactivate("c")
@@ -518,13 +519,12 @@ def test_override_ends_also_during_a_penalty() -> None:
     """The override is evaluated at every decision."""
     scenario = one_charger(max_a=6, window="12:30-13:00")
     scenario.set_charger("c", window_override=True, override_switched_on_at=START)
-    scenario.decide(12000, capacity=12000)
-    assert scenario.decide(12000, capacity=12000) == deactivate("c")
+    scenario.decide(12000, tariff=12000)
+    assert scenario.decide(12000, tariff=12000) == deactivate("c")
     assert scenario.engine.penalty.active
 
-    assert scenario.decide(12000, capacity=12000, after=timedelta(minutes=28)) == (
-        reset_override("c")
-    )
+    assert scenario.decide(12000, tariff=12000, after=timedelta(minutes=28)) == []
+    assert scenario.ended_overrides == ["c"]
 
 
 def test_switching_the_override_off_stops_charging_outside_the_window() -> None:
@@ -559,7 +559,7 @@ def test_penalty_and_safe_state_deactivate_the_chargers() -> None:
 
 
 def test_variant_switch_makes_room_by_switching_off_a_ampere_step() -> None:
-    """The lowest step that is on may be a ampere step."""
+    """The lowest step that is on may be an ampere step."""
     scenario = Scenario(
         make_config(
             appliance("h", variants=("morning",)),

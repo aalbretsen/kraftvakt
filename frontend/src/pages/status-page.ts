@@ -20,6 +20,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import {
   type ApplianceStatus,
   type ChargerGroupStatus,
+  type ChargerState,
   type ChargerStatus,
   type ConfigResponse,
   type StatusSnapshot,
@@ -55,6 +56,21 @@ const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
 const CHIP_OVERRIDE: Chip = { kind: "info", icon: mdiClockFast };
 const CHIP_FINISHING: Chip = { kind: "info", icon: mdiClockEnd };
 const CHIP_FIRST_DECISION: Chip = { kind: "off", icon: mdiTimerSand };
+
+/** The chip, its word and its sentence for each state of an EV charger. */
+const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
+  first_decision: [CHIP_FIRST_DECISION, "status.chip_first_decision", "status.first_decision"],
+  excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
+  outside_window: [CHIP_OUTSIDE_WINDOW, "status.chip_window", "status.outside_window"],
+  no_car: [CHIP_NO_CAR, "status.chip_no_car", "status.bypassed_no_car"],
+  not_charging: [CHIP_NOT_CHARGING, "status.chip_not_charging", "status.bypassed"],
+  queued: [CHIP_QUEUED, "status.chip_queued", "status.waiting_charger"],
+  override: [CHIP_OVERRIDE, "status.chip_override", "status.window_overridden"],
+  finishing: [CHIP_FINISHING, "status.chip_finishing", "status.finishing_at"],
+  charging: [CHIP_CHARGING, "status.chip_charging", "status.charging_at"],
+  activated: [CHIP_ON, "status.activated", "status.activated_not_charging"],
+  deactivated: [CHIP_OFF, "status.deactivated", "status.deactivated"],
+};
 
 /** An entry in the priority list: an appliance, or a group with its EV chargers. */
 type PriorityEntry =
@@ -484,42 +500,14 @@ export class KraftvaktStatusPage extends LitElement {
     `;
   }
 
-  /** The chip with the most important reason why the EV charger stands as it does. */
   private renderChargerChip(charger: ChargerStatus) {
+    const [chip, word, sentence] = CHARGER_CHIPS[charger.state];
     const window = this.chargerConfig(charger)?.charging_window;
-    if (charger.excluded === null) {
-      return this.renderChip(CHIP_FIRST_DECISION, "status.chip_first_decision", "status.first_decision");
-    }
-    if (charger.excluded) {
-      return this.renderChip(CHIP_EXCLUDED, "status.chip_excluded", "status.excluded");
-    }
-    if (!charger.allowed && window) {
+    if (charger.state === "outside_window" && window) {
       const short = { start: shortTime(window.start), end: shortTime(window.end) };
-      return this.renderChip(CHIP_OUTSIDE_WINDOW, "status.chip_window", "status.outside_window", short, { ...window });
+      return this.renderChip(chip, word, sentence, short, { ...window });
     }
-    if (charger.bypassed && charger.car_connected === false) {
-      return this.renderChip(CHIP_NO_CAR, "status.chip_no_car", "status.bypassed_no_car");
-    }
-    if (charger.bypassed) {
-      return this.renderChip(CHIP_NOT_CHARGING, "status.chip_not_charging", "status.bypassed");
-    }
-    if (charger.waiting) {
-      return this.renderChip(CHIP_QUEUED, "status.chip_queued", "status.waiting_charger");
-    }
-    if (charger.window_overridden && charger.activated) {
-      return this.renderChip(CHIP_OVERRIDE, "status.chip_override", "status.window_overridden");
-    }
-    if (charger.finishing) {
-      const current = { current: charger.current_a ?? 0 };
-      return this.renderChip(CHIP_FINISHING, "status.chip_finishing", "status.finishing_at", {}, current);
-    }
-    if (charger.charging) {
-      const current = { current: charger.current_a ?? 0 };
-      return this.renderChip(CHIP_CHARGING, "status.chip_charging", "status.charging_at", {}, current);
-    }
-    return charger.activated
-      ? this.renderChip(CHIP_ON, "status.activated", "status.activated_not_charging")
-      : this.renderChip(CHIP_OFF, "status.deactivated", "status.deactivated");
+    return this.renderChip(chip, word, sentence, {}, { current: charger.current_a ?? 0 });
   }
 
   /** A chip with an icon (or a dot) and a word, and the whole sentence as a tooltip. */

@@ -48,7 +48,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
             None if averages is None else averages.regulation_average_w
         ),
         "tariff_average_w": (None if averages is None else averages.tariff_average_w),
-        "power_limit_w": runtime.power_limit_w,
+        "power_limit_w": config.general.power_limit_w,
         "regulation_window_s": config.general.regulation_window_s,
         "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
@@ -110,16 +110,11 @@ def _charger_status(
     return {
         "id": charger.id,
         "name": item_name(hass, charger),
+        "state": status.state.value,
         "activated": status.ampere_steps_on > 0,
         "current_a": status.current_a,
         "bypassed": status.bypassed,
-        "waiting": status.waiting,
-        "allowed": status.allowed,
-        "excluded": status.excluded,
         "charging": status.charging,
-        "window_overridden": status.window_overridden,
-        "finishing": status.finishing,
-        "car_connected": status.car_connected,
         **_waiting_fields(runtime, charger.id),
     }
 

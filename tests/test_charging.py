@@ -34,6 +34,7 @@ from custom_components.kraftvakt.config_reader import (
 )
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.entity import item_name
+from custom_components.kraftvakt.regulation.charging import ChargerState
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
 POWER_SENSOR = "sensor.han_power"
@@ -324,7 +325,7 @@ async def test_actively_charging_from_a_sensor_an_entity_or_a_template(
         {"type": "template", "value": "{{ states('sensor.gone') | float > 0 }}"},
     ],
 )
-async def test_charger_without_evidence_counts_as_charging(
+async def test_charger_without_evidence_counts_as_not_charging(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     actions,
@@ -341,8 +342,8 @@ async def test_charger_without_evidence_counts_as_charging(
     await advance(hass, freezer)
     await advance(hass, freezer)
     await advance(hass, freezer)
-    assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 8"]
-    assert not entry.runtime_data.chargers["c1"].bypassed
+    assert actions == ["current 6", f"on {CHARGER}"]
+    assert entry.runtime_data.chargers["c1"].bypassed
 
 
 async def test_excluded_switch_stops_charging_and_is_saved(
@@ -477,7 +478,7 @@ async def test_charger_finishes_charging_after_the_window_when_switched_on(
     for _ in range(4):
         await advance(hass, freezer, timedelta(minutes=10))
     assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 8"]
-    assert runtime.chargers["c1"].finishing
+    assert runtime.chargers["c1"].state is ChargerState.FINISHING
 
     set_power(hass, CHARGER_POWER, "0")
     await advance(hass, freezer, timedelta(minutes=10))

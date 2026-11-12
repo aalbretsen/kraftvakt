@@ -63,12 +63,12 @@ def test_safe_state_without_any_average() -> None:
 def test_safe_state_ends_a_penalty() -> None:
     """The restart after the safe state forgets the overconsumption."""
     scenario = Scenario(no_waiting("a"))
-    scenario.decide(10000, capacity=ABOVE_THRESHOLD)
-    scenario.decide(16000, capacity=ABOVE_THRESHOLD)
+    scenario.decide(10000, tariff=ABOVE_THRESHOLD)
+    scenario.decide(16000, tariff=ABOVE_THRESHOLD)
     assert scenario.engine.penalty.active
 
     scenario.decide(None, sensor_valid=False, sensor_lost=True)
-    scenario.decide(2000, capacity=ABOVE_THRESHOLD)
+    scenario.decide(2000, tariff=ABOVE_THRESHOLD)
 
     assert not scenario.engine.penalty.active
     assert scenario.engine.penalty.overconsumption_wh == 0.0

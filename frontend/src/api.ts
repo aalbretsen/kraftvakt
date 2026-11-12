@@ -195,23 +195,29 @@ export interface ApplianceStatus {
   waiting_ends_at: string | null;
 }
 
+/** How an EV charger stands after the last decision, the most important first. */
+export type ChargerState =
+  | "first_decision"
+  | "excluded"
+  | "outside_window"
+  | "no_car"
+  | "not_charging"
+  | "queued"
+  | "override"
+  | "finishing"
+  | "charging"
+  | "activated"
+  | "deactivated";
+
 export interface ChargerStatus {
   id: string;
   name: string;
+  state: ChargerState;
   activated: boolean;
   current_a: number | null;
   bypassed: boolean;
-  waiting: boolean;
-  allowed: boolean;
-  excluded: boolean | null;
   /** Activated and actively charging at the last decision. */
   charging: boolean;
-  /** Allowed to charge only because its charging window is overridden. */
-  window_overridden: boolean;
-  /** Allowed to charge only to finish the charging it had when its charging window ended. */
-  finishing: boolean;
-  /** «Car connected» at the last decision, null when it is not set or before the first decision. */
-  car_connected: boolean | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */

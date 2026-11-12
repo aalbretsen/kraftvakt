@@ -241,15 +241,8 @@ Code that mirrors the backend and must be kept in step with it:
     hatched.
   - The state chip has an icon and a word, with the whole sentence as a
     tooltip. An appliance shows excluded, on or off, and the title of an
-    excluded appliance is dimmed. A charger shows the first that
-    holds of: first decision (before the first decision after a start),
-    excluded, its charging window when it is not allowed to charge, no car
-    connected (bypassed and car connected is false), not charging (bypassed
-    otherwise), queued (waiting), override (allowed only by the override
-    while activated), finishing (allowed only to finish ongoing charging
-    after the window), charging, activated, deactivated. Excluded comes before
-    bypassed, so a stale bypassed is not shown. No car connected is a state
-    of its own, because the user needs to know that the car is missing.
+    excluded appliance is dimmed. A charger shows its state from the status,
+    with its charging window as the word when it is outside it.
   - A resting charger is shown as bypassed, without when it is tried again.
   - A dashed cut-off line goes under the last entry that is on: an appliance,
     or a group's row while one of its chargers is activated and not

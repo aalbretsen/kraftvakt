@@ -187,9 +187,8 @@ panel's translations.
 - The power limit entity and the finish after window switch of each charger
   change the stored configuration, also while running. They save at once,
   through the switch board so configuration and switches are saved together.
-  While running, the runtime starts a new engine at the next decision when
-  the engine's limit differs from the stored one. Finish after window reaches
-  the engine in the charger readings, so it needs no restart.
+  While running, the engine gets the new power limit for the next decision,
+  and finish after window reaches it in the charger readings.
 - The runtime counts every change of the stored configuration in a config
   version, sent in the status, so the panel fetches the configuration again
   when an entity has changed it.
@@ -228,9 +227,6 @@ step. Rules that are not obvious from the code:
 
 - Power in W and energy in Wh. Times are ISO 8601 in HA's time zone.
 - Averages are `null` until the first window.
-- The power limit is the one the regulation uses now, which lags the stored
-  one until the next decision after the power limit entity changed it while
-  running.
 - The next decision time is `null` while stopped.
 - The penalty part holds whether a penalty is active, the overconsumption and
   whether recovery has started.
@@ -241,12 +237,16 @@ step. Rules that are not obvious from the code:
 - An appliance's variant is the label of its current variant, or `null`.
 - An appliance is excluded when it was excluded at the last decision, so it
   is false before the first decision after a start.
-- Charger details are from the last decision. Before the first decision after
-  a start, a charger is not allowed and excluded is `null`. Charging is true
-  while the charger is activated and was actively charging at the last
-  decision. Window overridden is true while it was allowed to charge only
-  because of the override. Car connected is `null` when it is not set or
-  before the first decision.
+- A charger's state is the first that holds of: first decision (before the
+  first decision after a start), excluded, outside its charging window, no
+  car connected (bypassed and car connected is false), not charging
+  (bypassed otherwise), queued (waiting), override (allowed only by the
+  override while activated), finishing, charging, activated, deactivated. It
+  is worked out in the engine from the last decision. Excluded comes before
+  bypassed, so a stale bypassed is not shown, and no car connected is a state
+  of its own, because the user needs to know that the car is missing.
+  Charging is true while the charger is activated and was actively charging
+  at the last decision.
 - Appliances are sorted by the entry of their current variant. The charger
   groups are listed in the order of their entries, each with its
   position, the number of appliances whose current variant is placed before

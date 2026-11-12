@@ -37,7 +37,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Priority list | Sorted list of appliances, their variants and an entry per charger group. Top is highest priority, turned off last. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list, and optionally its own actions. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
-| Step | An entry the regulation switches: the current variant of an appliance, or a ampere step. |
+| Step | An entry the regulation switches: the current variant of an appliance, or an ampere step. |
 | Safe state | Everything off and nothing turned on, because there is no valid power measurement. |
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
@@ -67,22 +67,22 @@ energy in Wh; the status page shows kW.
 - Only the current configuration is regulated. Removed appliances and chargers
   get no more commands and are not cleaned up.
 - The configuration can only be changed while the regulation is stopped, except
-  the user's switches (one per appliance, two per charger) and the power limit
-  (see Power limit entity). Everything is off while stopped, so removed
+  the user's switches (one per appliance, two per charger), finish after window
+  (see EV charging) and the power limit (see Power limit entity). Everything is off while stopped, so removed
   appliances are already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, repeated turn-on counters,
   overconsumption, penalty, current charging priority, bypassed chargers,
   rests, current variants, excluded appliances, when each appliance and
   charger last got a command) starts again with defaults at
-  every start: HA or integration start, user start, after the safe state, after
-  a penalty and after a change of the power limit. The configuration and the
+  every start: HA or integration start, user start, after the safe state and
+  after a penalty. The configuration and the
   switch positions are kept over any restart.
-- True/false from HA (variant expressions, car connected) is a boolean entity
-  or a template. True only when the entity is `on` or the template gives the
-  boolean true. Everything else is false, also unavailable entities and
-  failing templates. Settings are named so that true means the thing is the
-  case. Missing evidence means the regulation acts as if the thing is not the
-  case. Exception: actively charging, see EV charging.
+- True/false from HA (variant expressions, car connected, actively charging)
+  is a boolean entity or a template, and for actively charging also a power
+  sensor. Only evidence makes it true: an entity that is `on`, a template that
+  gives the boolean true, or a valid power above 100 W. Everything else is
+  false, also unavailable entities and sensors and failing templates.
+  Settings are named so that true means the thing is the case.
 
 ## Measurement
 
@@ -232,11 +232,11 @@ energy in Wh; the status page shows kW.
   the status shows whether it has.
 - The penalty ends only when the overconsumption is paid back (then the
   regulation starts again with everything off at that decision) or by a restart
-  (stop, safe state, HA start, power limit change). The current variants are
+  (stop, safe state, HA start). The current variants are
   still evaluated during a penalty; a switch gives only the turn-off action of
   the new variant, since everything is off.
-- The start after a penalty resets the repeated turn-on counters, so while the average
-  consumption stays above limit plus threshold, an appliance that pushes the
+- The start after a penalty resets the repeated turn-on counters, so while the tariff
+  average stays above limit plus threshold, an appliance that pushes the
   average over the limit cycles with the waiting time from the curve only.
 
 ## Safe state
@@ -257,8 +257,7 @@ energy in Wh; the status page shows kW.
   stop, the safe state and a penalty use the current variant's.
 - Starts: when HA has finished starting (so the appliances' integrations are
   loaded), at once after a reload of the integration, when the user starts it,
-  when a penalty ends, when the power sensor is back after the safe state, and
-  at the next decision after the power limit was changed while it ran. The
+  when a penalty ends and when the power sensor is back after the safe state. The
   regulation always tries to start when HA starts and when the integration is
   reloaded (for example after an update). If the user starts or stops before
   HA has finished starting, that wins.
@@ -303,14 +302,9 @@ Automations can set the power limit with it:
 - A `number` entity in whole watts with the same range as the setting, the
   same value as the power limit in the panel. A new value is saved at once
   and rounded to whole watts.
-- While stopped, the new limit is used from the next start.
-- While running, the regulation starts again with the new limit at the next
-  decision instead of deciding, like the start after a penalty: everything is
-  turned off, the state starts with defaults (a penalty ends), and the first
-  decision comes one interval later. Until then it regulates against the
-  previous limit. Several changes before the decision give one restart with
-  the last value, and a value changed back to the limit in use gives none.
-  A value equal to the stored one changes nothing.
+- The new limit is used from the next decision, also while running, without
+  a restart. Above a lower limit, steps are switched off one per decision as
+  usual. A value equal to the stored one changes nothing.
 
 ## Diagnostic entities
 
@@ -319,7 +313,7 @@ All with entity category diagnostic:
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0
   outside the overconsumption state.
-- Power free: the power limit in use minus the last regulation average,
+- Power free: the power limit minus the last regulation average,
   negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of steps that are on, appliances and
   ampere steps alike. Meant for a graph of how much the regulation has
@@ -397,15 +391,11 @@ All with entity category diagnostic:
   new current. Switching off: set the lower current, or for the last one set
   current to min and then deactivate. Every deactivation sets min current
   first. The set-current action always gets a current between min and max.
-- Actively charging: read at each decision, also when deactivated, from one
-  of a charging power sensor (> 100 W, not configurable, in W or kW), a
-  boolean entity or a template. Only evidence that it does not charge counts
-  as not charging: a valid power of at most 100 W, an entity that is `off`, or
-  a template that gives the boolean false. Everything else counts as
-  charging, also an unavailable sensor or entity and a failing template or one
-  that gives something else than a boolean. Why: it looks for evidence that
-  the car does not charge; a charger taken for idle while it charges could
-  cause overconsumption.
+- Actively charging: read at each decision, also when deactivated, from a
+  charging power sensor (above 100 W, not configurable, in W or kW), a
+  boolean entity or a template, true only with evidence (see Ground rules).
+  Why: a charger that has lost power or its connection reports unavailable,
+  and it does not charge.
 - On trial: a charger that may charge but does not charge actively gets only
   its first ampere step, so it stays at the minimum current until it
   charges actively. Meanwhile the steps after it may be turned on. Why: a

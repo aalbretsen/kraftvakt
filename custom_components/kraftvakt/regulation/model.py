@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, tzinfo
 
@@ -70,20 +70,12 @@ class SetChargingCurrent:
     current_a: int
 
 
-@dataclass(frozen=True, slots=True)
-class ResetWindowOverride:
-    """Switch off the override of the charging window."""
-
-    charger_id: str
-
-
 type Command = (
     TurnOnAppliance
     | TurnOffAppliance
     | ActivateCharger
     | DeactivateCharger
     | SetChargingCurrent
-    | ResetWindowOverride
 )
 
 
@@ -96,17 +88,20 @@ class ApplianceStepKey:
 
 @dataclass(frozen=True, slots=True)
 class AmpereStepKey:
-    """Identifies a ampere step of a charger, counted from 0."""
+    """Identifies an ampere step of a charger, counted from 0."""
 
     charger_id: str
     index: int
+
+
+type StepKey = ApplianceStepKey | AmpereStepKey
 
 
 @dataclass(frozen=True, slots=True)
 class Step:
     """A place in the order the regulation turns things on and off."""
 
-    key: Hashable
+    key: StepKey
     is_on: bool
     power_reserve_w: float | None
     growth: RepeatedTurnOnGrowth
@@ -121,7 +116,7 @@ class Waiting:
     The step is turned on at the first decision at or after `until`.
     """
 
-    key: Hashable
+    key: StepKey
     started_at: datetime
     until: datetime
 
@@ -145,3 +140,11 @@ class RegulationState:
     charging_groups: dict[str, ChargingState] = field(default_factory=dict)
     appliances_commanded_at: dict[str, datetime] = field(default_factory=dict)
     chargers_commanded_at: dict[str, datetime] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionResult:
+    """The commands of a decision, and the chargers whose window override ended."""
+
+    commands: list[Command]
+    ended_overrides: list[str] = field(default_factory=list)

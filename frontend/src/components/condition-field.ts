@@ -9,11 +9,7 @@ import type { HomeAssistant } from "../types";
 /** The same limit as the backend uses for a power sensor. */
 const ACTIVELY_CHARGING_ABOVE_W = 100;
 
-/**
- * What the field gives: a true/false condition, where missing evidence is
- * false, or whether an EV charger is actively charging, where missing
- * evidence counts as charging. The kind is also the prefix of its texts.
- */
+/** What the field gives, also the prefix of its texts. Only evidence counts as true. */
 export type ConditionKind = "condition" | "actively_charging";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
@@ -149,9 +145,8 @@ export class KraftvaktConditionField extends LitElement {
       return nothing;
     }
     const evidence = this.evidence(this.value);
-    const value = this.kind === "actively_charging" ? evidence !== false : evidence === true;
     return html`
-      ${this.renderNow(value)}
+      ${this.renderNow(evidence === true)}
       ${this.value.type === "template" && evidence === null
         ? html`<div class="warning">${this.text("not_boolean", { value: JSON.stringify(this.preview?.result) })}</div>`
         : nothing}

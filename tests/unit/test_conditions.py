@@ -3,10 +3,7 @@
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.kraftvakt.conditions import (
-    evaluate_actively_charging,
-    evaluate_condition,
-)
+from custom_components.kraftvakt.conditions import evaluate_condition
 from custom_components.kraftvakt.config_model import Condition, ConditionType
 
 APPLIANCE = "switch.water_heater"
@@ -91,60 +88,21 @@ async def test_entity_variable_is_none_when_the_entity_is_missing(
         ("0.1", "kW", False),
         ("110", None, True),
         ("-500", "W", False),
-        ("200", "A", True),
-        ("unavailable", "W", True),
-        ("unknown", "W", True),
+        ("200", "A", False),
+        ("unavailable", "W", False),
+        ("unknown", "W", False),
     ],
 )
-async def test_power_sensor_is_charging_above_100_watt_or_without_a_valid_value(
+async def test_power_sensor_is_true_above_100_watt(
     hass: HomeAssistant, state: str, unit: str | None, expected: bool
 ) -> None:
     hass.states.async_set("sensor.charger_power", state, {"unit_of_measurement": unit})
     condition = Condition(ConditionType.POWER_SENSOR, "sensor.charger_power")
 
-    assert evaluate_actively_charging(hass, condition, CHARGER) is expected
+    assert evaluate_condition(hass, condition, CHARGER) is expected
 
 
-@pytest.mark.parametrize(
-    ("state", "expected"),
-    [("on", True), ("off", False), ("unavailable", True), ("unknown", True)],
-)
-async def test_entity_is_charging_unless_off(
-    hass: HomeAssistant, state: str, expected: bool
-) -> None:
-    hass.states.async_set("binary_sensor.charging", state)
+async def test_missing_power_sensor_is_false(hass: HomeAssistant) -> None:
+    condition = Condition(ConditionType.POWER_SENSOR, "sensor.gone")
 
-    assert (
-        evaluate_actively_charging(hass, entity("binary_sensor.charging"), CHARGER)
-        is expected
-    )
-
-
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        ("{{ true }}", True),
-        ("{{ false }}", False),
-        ("{{ 1 > 2 }}", False),
-        ("{{ 'off' }}", True),
-        ("{{ 0 }}", True),
-        ("{{ 1 / 0 }}", True),
-        ("{{ entity_id == 'switch.charger' and entity is none }}", True),
-    ],
-)
-async def test_template_is_charging_unless_the_boolean_false(
-    hass: HomeAssistant, value: str, expected: bool
-) -> None:
-    assert evaluate_actively_charging(hass, template(value), CHARGER) is expected
-
-
-@pytest.mark.parametrize(
-    "condition_type", [ConditionType.POWER_SENSOR, ConditionType.ENTITY]
-)
-async def test_missing_entity_counts_as_charging(
-    hass: HomeAssistant, condition_type: ConditionType
-) -> None:
-    """A removed or disabled entity gives no evidence that the charger is idle."""
-    condition = Condition(condition_type, "sensor.gone")
-
-    assert evaluate_actively_charging(hass, condition, CHARGER)
+    assert not evaluate_condition(hass, condition, CHARGER)

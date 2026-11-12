@@ -857,42 +857,34 @@ async def test_power_limit_is_saved_while_the_regulation_is_stopped(
 
     assert stored_power_limit(hass_storage) == 8000
     assert state_of(hass, "number", "power_limit") == "8000"
-    assert entry.runtime_data.power_limit_w == 8000
+    assert entry.runtime_data.config.general.power_limit_w == 8000
     assert regulation_switch(hass) == STATE_OFF
     assert actions == []
 
 
-async def test_power_limit_restarts_the_regulation_at_the_next_decision(
+async def test_power_limit_is_used_from_the_next_decision_without_a_restart(
     hass: HomeAssistant,
     hass_storage: dict[str, Any],
     freezer: FrozenDateTimeFactory,
     actions,
     setup_kraftvakt,
 ) -> None:
-    """Several changes before the decision give one restart with the last limit."""
-    set_power(hass, "7000")
+    set_power(hass, "2000")
     entry = await setup_kraftvakt()
     await advance(hass, freezer)
+    await advance(hass, freezer)
+    assert actions[-2:] == ["on light.a", "on light.b"]
     actions.clear()
 
     await set_power_limit(hass, 9000)
     await set_power_limit(hass, 7500)
     assert stored_power_limit(hass_storage) == 7500
     assert state_of(hass, "number", "power_limit") == "7500"
-    assert entry.runtime_data.power_limit_w == 10000
-    assert actions == []
-
+    assert entry.runtime_data.config.general.power_limit_w == 7500
+    set_power(hass, "7600")
     await advance(hass, freezer)
-    assert actions == ["off light.a", "off light.b"]
-    assert entry.runtime_data.power_limit_w == 7500
 
-    set_power(hass, "7450")
-    await advance(hass, freezer)
-    assert actions == ["off light.a", "off light.b"]
-
-    set_power(hass, "7000")
-    await advance(hass, freezer)
-    assert actions == ["off light.a", "off light.b", "on light.a"]
+    assert actions == ["off light.b"]
 
 
 async def test_power_limit_changed_while_running_is_used_after_a_stop(
@@ -902,7 +894,7 @@ async def test_power_limit_changed_while_running_is_used_after_a_stop(
     entry = await setup_kraftvakt()
     await set_power_limit(hass, 7500)
     await switch_regulation(hass, "turn_off")
-    assert entry.runtime_data.power_limit_w == 7500
+    assert entry.runtime_data.config.general.power_limit_w == 7500
 
     await switch_regulation(hass, "turn_on")
     actions.clear()

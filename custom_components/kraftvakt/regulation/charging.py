@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta, tzinfo
+from enum import StrEnum
 from typing import Final
 
 from ..config_model import Charger, ChargingWindow
@@ -19,13 +20,9 @@ RETRY_PAUSES: Final = (
 
 @dataclass(frozen=True, slots=True)
 class ChargerReading:
-    """What a decision knows about a charger.
+    """What a decision reads for a charger; `car_connected` is None when not set."""
 
-    None means that the value is not valid or not given. Actively charging
-    is true without evidence that the charger does not charge.
-    """
-
-    actively_charging: bool = True
+    actively_charging: bool = False
     car_connected: bool | None = None
     excluded: bool = False
     window_override: bool = False
@@ -33,20 +30,55 @@ class ChargerReading:
     finish_after_window: bool = False
 
 
+class ChargingPermission(StrEnum):
+    """Whether a charger may charge, and why."""
+
+    EXCLUDED = "excluded"
+    OUTSIDE_WINDOW = "outside_window"
+    WINDOW = "window"
+    OVERRIDE = "override"
+    FINISHING = "finishing"
+
+    @property
+    def allowed(self) -> bool:
+        """Return whether the charger may charge."""
+        return self in _ALLOWED
+
+
+_ALLOWED: Final = frozenset(
+    {
+        ChargingPermission.WINDOW,
+        ChargingPermission.OVERRIDE,
+        ChargingPermission.FINISHING,
+    }
+)
+
+
+class ChargerState(StrEnum):
+    """How a charger stands after the last decision, the most important first."""
+
+    FIRST_DECISION = "first_decision"
+    EXCLUDED = "excluded"
+    OUTSIDE_WINDOW = "outside_window"
+    NO_CAR = "no_car"
+    NOT_CHARGING = "not_charging"
+    QUEUED = "queued"
+    OVERRIDE = "override"
+    FINISHING = "finishing"
+    CHARGING = "charging"
+    ACTIVATED = "activated"
+    DEACTIVATED = "deactivated"
+
+
 @dataclass(frozen=True, slots=True)
 class ChargerStatus:
     """How a charger stands after the last decision."""
 
+    state: ChargerState
     ampere_steps_on: int
     current_a: int | None
-    allowed: bool
     bypassed: bool
-    waiting: bool
-    excluded: bool | None = None
-    charging: bool = False
-    window_overridden: bool = False
-    finishing: bool = False
-    car_connected: bool | None = None
+    charging: bool
 
 
 def ampere_step_count(charger: Charger) -> int:
@@ -120,51 +152,34 @@ def window_allows_charging(
     return window is None or override_active or in_charging_window(window, local_time)
 
 
-def allowed_to_charge(
-    charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
-) -> bool:
-    """Return whether the charger is allowed to charge."""
-    return not reading.excluded and window_allows_charging(
-        charger.charging_window, override_active, local_time
-    )
-
-
-def finishing_after_window(
+def charging_permission(
     charger: Charger,
     reading: ChargerReading,
     override_active: bool,
     local_time: time,
     activated: bool,
-) -> bool:
-    """Return whether the charger may finish the charging it had when its window ended.
+) -> ChargingPermission:
+    """Return whether the charger may charge, and why.
 
-    It must have stayed activated and actively charging at every decision
-    since, so a stop for any reason ends it until the window allows charging
-    again.
+    Finishing needs the charger to have stayed activated and actively charging
+    at every decision since its window ended, so a stop for any reason ends it
+    until the window allows charging again.
     """
-    return (
+    window = charger.charging_window
+    if reading.excluded:
+        return ChargingPermission.EXCLUDED
+    if window is None or in_charging_window(window, local_time):
+        return ChargingPermission.WINDOW
+    if override_active:
+        return ChargingPermission.OVERRIDE
+    if (
         reading.finish_after_window
         and activated
         and reading.actively_charging
         and reading.car_connected is not False
-        and not reading.excluded
-        and not window_allows_charging(
-            charger.charging_window, override_active, local_time
-        )
-    )
-
-
-def window_overridden(
-    charger: Charger, reading: ChargerReading, override_active: bool, local_time: time
-) -> bool:
-    """Return whether the charger may charge only because of the override."""
-    window = charger.charging_window
-    return (
-        not reading.excluded
-        and window is not None
-        and override_active
-        and not in_charging_window(window, local_time)
-    )
+    ):
+        return ChargingPermission.FINISHING
+    return ChargingPermission.OUTSIDE_WINDOW
 
 
 @dataclass(slots=True)
@@ -178,17 +193,13 @@ class ChargingState:
     priority: list[str] = field(default_factory=list)
     ampere_steps_on: dict[str, int] = field(default_factory=dict)
     activated_at: dict[str, datetime] = field(default_factory=dict)
-    excluded: set[str] | None = None
-    allowed: set[str] = field(default_factory=set)
-    overridden: set[str] = field(default_factory=set)
-    finishing: set[str] = field(default_factory=set)
-    charging: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
     on_trial: set[str] = field(default_factory=set)
     waiting: set[str] = field(default_factory=set)
     rests: dict[str, Rest] = field(default_factory=dict)
-    car_connected: dict[str, bool | None] = field(default_factory=dict)
+    last_readings: dict[str, ChargerReading] = field(default_factory=dict)
+    last_permissions: dict[str, ChargingPermission] = field(default_factory=dict)
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -217,74 +228,84 @@ class ChargingState:
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
 
+    def is_allowed(self, charger_id: str) -> bool:
+        """Return whether the charger was allowed to charge at the last decision."""
+        permission = self.last_permissions.get(charger_id)
+        return permission is not None and permission.allowed
+
     def evaluate(
         self,
         chargers: Sequence[Charger],
         readings: Mapping[str, ChargerReading],
-        allowed: Collection[str],
+        permissions: Mapping[str, ChargingPermission],
         now: datetime,
         window: timedelta,
         one_at_a_time: bool,
-        overridden: Collection[str] = (),
-        finishing: Collection[str] = (),
     ) -> list[str]:
         """Evaluate the chargers at a decision and return the newly bypassed ones."""
-        self.excluded = {
-            charger.id
-            for charger in chargers
-            if readings.get(charger.id, ChargerReading()).excluded
-        }
-        self.car_connected = {
-            charger.id: readings.get(charger.id, ChargerReading()).car_connected
+        self.last_readings = {
+            charger.id: readings.get(charger.id, ChargerReading())
             for charger in chargers
         }
-        self.allowed = set(allowed)
-        self.overridden = set(overridden)
-        self.finishing = set(finishing)
-        self.charging = {
-            charger_id
-            for charger_id in self.activated()
-            if readings.get(charger_id, ChargerReading()).actively_charging
+        self.last_permissions = {
+            charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW)
+            for charger in chargers
         }
-        newly_bypassed = self._update_bypassed(chargers, readings, now, window)
+        newly_bypassed = self._update_bypassed(chargers, now, window)
         self._update_priority(chargers, newly_bypassed)
-        self._select(readings, one_at_a_time)
-        self._update_on_trial(readings)
+        self._select(one_at_a_time)
+        self._update_on_trial()
         return newly_bypassed
 
     def status(self, chargers: Sequence[Charger]) -> dict[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
-        return {
-            charger.id: ChargerStatus(
-                ampere_steps_on=self.ampere_steps_on.get(charger.id, 0),
-                current_a=(
-                    charging_current(charger, self.ampere_steps_on[charger.id])
-                    if self.ampere_steps_on.get(charger.id)
-                    else None
-                ),
-                allowed=charger.id in self.allowed,
-                bypassed=charger.id in self.bypassed,
-                waiting=charger.id in self.waiting,
-                excluded=None if self.excluded is None else charger.id in self.excluded,
-                charging=charger.id in self.charging
-                and bool(self.ampere_steps_on.get(charger.id)),
-                window_overridden=charger.id in self.overridden,
-                finishing=charger.id in self.finishing,
-                car_connected=self.car_connected.get(charger.id),
-            )
-            for charger in chargers
-        }
+        return {charger.id: self._status(charger) for charger in chargers}
+
+    def _status(self, charger: Charger) -> ChargerStatus:
+        steps_on = self.ampere_steps_on.get(charger.id, 0)
+        reading = self.last_readings.get(charger.id, ChargerReading())
+        charging = steps_on > 0 and reading.actively_charging
+        return ChargerStatus(
+            state=self._state_of(charger.id, steps_on > 0, charging),
+            ampere_steps_on=steps_on,
+            current_a=charging_current(charger, steps_on) if steps_on else None,
+            bypassed=charger.id in self.bypassed,
+            charging=charging,
+        )
+
+    def _state_of(
+        self, charger_id: str, activated: bool, charging: bool
+    ) -> ChargerState:
+        permission = self.last_permissions.get(charger_id)
+        if permission is None:
+            return ChargerState.FIRST_DECISION
+        if permission is ChargingPermission.EXCLUDED:
+            return ChargerState.EXCLUDED
+        if permission is ChargingPermission.OUTSIDE_WINDOW:
+            return ChargerState.OUTSIDE_WINDOW
+        if charger_id in self.bypassed:
+            if self.last_readings[charger_id].car_connected is False:
+                return ChargerState.NO_CAR
+            return ChargerState.NOT_CHARGING
+        if charger_id in self.waiting:
+            return ChargerState.QUEUED
+        if permission is ChargingPermission.OVERRIDE and activated:
+            return ChargerState.OVERRIDE
+        if permission is ChargingPermission.FINISHING:
+            return ChargerState.FINISHING
+        if charging:
+            return ChargerState.CHARGING
+        return ChargerState.ACTIVATED if activated else ChargerState.DEACTIVATED
 
     def _update_bypassed(
         self,
         chargers: Sequence[Charger],
-        readings: Mapping[str, ChargerReading],
         now: datetime,
         window: timedelta,
     ) -> list[str]:
         bypassed = set()
         for charger in chargers:
-            reading = readings.get(charger.id, ChargerReading())
+            reading = self.last_readings[charger.id]
             if self._update_rest(charger.id, reading, now, window):
                 bypassed.add(charger.id)
         newly_bypassed = [
@@ -348,21 +369,19 @@ class ChargingState:
                 if charger_id in self.bypassed
             ]
 
-    def _update_on_trial(self, readings: Mapping[str, ChargerReading]) -> None:
+    def _update_on_trial(self) -> None:
         """Find the chargers that may charge but do not charge actively.
 
         A charger tried without a car that charges must not get more current
-        and hold back the appliances below «EV charging».
+        and hold back the steps below the entry of its group.
         """
         self.on_trial = {
             charger_id
             for charger_id in self.may_charge
-            if not readings.get(charger_id, ChargerReading()).actively_charging
+            if not self.last_readings[charger_id].actively_charging
         }
 
-    def _select(
-        self, readings: Mapping[str, ChargerReading], one_at_a_time: bool
-    ) -> None:
+    def _select(self, one_at_a_time: bool) -> None:
         """Decide which chargers may get ampere steps turned on.
 
         With one charger at a time, a charger that charges actively goes first
@@ -371,7 +390,7 @@ class ChargingState:
         eligible = [
             charger_id
             for charger_id in self.priority
-            if charger_id not in self.bypassed and charger_id in self.allowed
+            if charger_id not in self.bypassed and self.is_allowed(charger_id)
         ]
         self.waiting = set()
         if not one_at_a_time:
@@ -380,7 +399,7 @@ class ChargingState:
         charging = [
             charger_id
             for charger_id in eligible
-            if readings.get(charger_id, ChargerReading()).actively_charging
+            if self.last_readings[charger_id].actively_charging
         ]
         if not charging:
             self.may_charge = set(eligible[:1])

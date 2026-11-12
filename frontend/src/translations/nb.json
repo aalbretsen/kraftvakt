@@ -330,12 +330,12 @@
     "power_sensor_label": "Sensor for ladeeffekt",
     "entity_label": "Boolsk entitet",
     "template_label": "Mal",
-    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes som lading.",
-    "entity_helper": "Av regnes som ikke lading. På og utilgjengelig regnes som lading.",
-    "template_helper": "Bare den boolske verdien usann regnes som ikke lading. Alt annet, også en feil, regnes som lading. Variabler: entity_id, entity.",
+    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes som ikke lading.",
+    "entity_helper": "På regnes som lading. Av og utilgjengelig regnes som ikke lading.",
+    "template_helper": "Bare den boolske verdien sann regnes som lading. Alt annet, også en feil, regnes som ikke lading. Variabler: entity_id, entity.",
     "true": "lader",
     "false": "lader ikke",
-    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som lading."
+    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som ikke lading."
   },
   "charging": {
     "name": "Navn",
@@ -406,7 +406,7 @@
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
       },
       "actively_charging": {
-        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den ikke lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes den som ladende."
+        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes den som ikke ladende."
       },
       "charging_window": {
         "label": "Ladetidsrom (valgfritt)",

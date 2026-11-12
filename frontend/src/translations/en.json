@@ -330,12 +330,12 @@
     "power_sensor_label": "Sensor for charging power",
     "entity_label": "Boolean entity",
     "template_label": "Template",
-    "power_sensor_helper": "Above 100 W, in W or kW, counts as charging. Unavailable counts as charging.",
-    "entity_helper": "Off counts as not charging. On and unavailable count as charging.",
-    "template_helper": "Only the boolean value false counts as not charging. Anything else, also an error, counts as charging. Variables: entity_id, entity.",
+    "power_sensor_helper": "Above 100 W, in W or kW, counts as charging. Unavailable counts as not charging.",
+    "entity_helper": "On counts as charging. Off and unavailable count as not charging.",
+    "template_helper": "Only the boolean value true counts as charging. Anything else, also an error, counts as not charging. Variables: entity_id, entity.",
     "true": "charging",
     "false": "not charging",
-    "not_boolean": "The template gives {value}, which is not true or false, so it counts as charging."
+    "not_boolean": "The template gives {value}, which is not true or false, so it counts as not charging."
   },
   "charging": {
     "name": "Name",
@@ -406,7 +406,7 @@
         "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
       },
       "actively_charging": {
-        "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is not charging, for example an unavailable entity or a template that fails, it counts as charging."
+        "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is charging, for example an unavailable entity or a template that fails, it counts as not charging."
       },
       "charging_window": {
         "label": "Charging window (optional)",

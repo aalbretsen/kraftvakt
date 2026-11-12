@@ -934,16 +934,11 @@ async def test_status_shows_the_chargers(
         {
             "id": "c1",
             "name": "input_boolean.charger",
+            "state": "first_decision",
             "activated": False,
             "current_a": None,
             "bypassed": False,
-            "waiting": False,
-            "allowed": False,
-            "excluded": None,
             "charging": False,
-            "window_overridden": False,
-            "finishing": False,
-            "car_connected": None,
             "waiting_since": None,
             "waiting_until": None,
             "waiting_ends_at": None,
@@ -973,7 +968,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """A bypassed charger is shown last, with whether its car is connected."""
+    """A bypassed charger is shown last."""
     config["charger_groups"] = [
         {
             "id": "g1",
@@ -1010,15 +1005,9 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     status = await next_status(client)
 
     assert [
-        (
-            item["id"],
-            item["bypassed"],
-            item["allowed"],
-            item["excluded"],
-            item["car_connected"],
-        )
+        (item["id"], item["state"], item["bypassed"])
         for item in status["charger_groups"][0]["chargers"]
-    ] == [("c2", False, False, True, True), ("c1", True, True, False, False)]
+    ] == [("c2", "excluded", False), ("c1", "no_car", True)]
 
 
 async def test_status_places_charger_groups_among_the_current_variants(

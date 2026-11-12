@@ -19,7 +19,6 @@ from custom_components.kraftvakt.regulation.model import (
     Command,
     DeactivateCharger,
     DecisionInput,
-    ResetWindowOverride,
     SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
@@ -63,11 +62,6 @@ def current(charger_id: str, current_a: int) -> list[Command]:
     return [SetChargingCurrent(charger_id, current_a)]
 
 
-def reset_override(charger_id: str) -> list[Command]:
-    """Return the command that switches off the window override."""
-    return [ResetWindowOverride(charger_id)]
-
-
 IDLE_CHARGER = ChargerReading(actively_charging=False)
 
 
@@ -91,6 +85,7 @@ class Scenario:
         self.time_zone = time_zone
         self.chargers = {charger.id: IDLE_CHARGER for charger in config.chargers}
         self.excluded_appliances: frozenset[str] = frozenset()
+        self.ended_overrides: list[str] = []
         self.start_commands = self.engine.start(self.now)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
@@ -105,7 +100,7 @@ class Scenario:
         self,
         average_w: float | None,
         *,
-        capacity: float = 0.0,
+        tariff: float = 0.0,
         averages: tuple[float, ...] | None = None,
         after: timedelta = DECISION_INTERVAL,
         true: tuple[str, ...] = (),
@@ -116,7 +111,7 @@ class Scenario:
 
         `sensor_valid` and `sensor_lost` tell how the power sensor was when the
         last windows closed, by default valid.
-        `capacity` is the tariff average, well under the limit unless given.
+        `tariff` is the tariff average, well under the limit unless given.
         `averages` are the regulation averages since the previous decision, by
         default only `average_w`. `true` lists the variants whose conditions
         are true.
@@ -124,11 +119,11 @@ class Scenario:
         self.now += after
         if averages is None:
             averages = () if average_w is None else (average_w,)
-        return self.engine.decide(
+        result = self.engine.decide(
             DecisionInput(
                 now=self.now,
                 regulation_average_w=average_w,
-                tariff_average_w=None if average_w is None else capacity,
+                tariff_average_w=None if average_w is None else tariff,
                 regulation_averages_w=averages,
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
@@ -138,6 +133,8 @@ class Scenario:
                 time_zone=self.time_zone,
             )
         )
+        self.ended_overrides = result.ended_overrides
+        return result.commands
 
     def repeat(self, after: timedelta) -> list[Command]:
         """Repeat the commands that are due `after` the previous decision or repeat.
@@ -161,13 +158,11 @@ class Scenario:
         average_w: float,
         count: int,
         *,
-        capacity: float = 0.0,
+        tariff: float = 0.0,
         true: tuple[str, ...] = (),
     ) -> list[list[Command]]:
         """Make `count` decisions with the same averages and return their commands."""
-        return [
-            self.decide(average_w, capacity=capacity, true=true) for _ in range(count)
-        ]
+        return [self.decide(average_w, tariff=tariff, true=true) for _ in range(count)]
 
     def turn_on(self, *appliance_ids: str, true: tuple[str, ...] = ()) -> None:
         """Turn on the appliances with a low average, in priority order.

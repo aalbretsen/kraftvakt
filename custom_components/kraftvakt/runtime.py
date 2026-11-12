@@ -32,7 +32,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from .actions import ActionRunner
-from .conditions import evaluate_actively_charging, evaluate_condition
+from .conditions import evaluate_condition
 from .config_model import (
     Charger,
     Issue,
@@ -50,7 +50,7 @@ from .measurement import (
 )
 from .regulation.charging import ChargerReading, ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput, ResetWindowOverride, Waiting
+from .regulation.model import Command, DecisionInput, Waiting
 from .regulation.penalty import PenaltyState
 from .switch_board import SwitchBoard
 
@@ -159,15 +159,6 @@ class KraftvaktRuntime:
     def config_version(self) -> int:
         """Return a number that changes each time the stored configuration changes."""
         return self._config_version
-
-    @property
-    def power_limit_w(self) -> int:
-        """Return the power limit the regulation uses now.
-
-        After the power limit is changed while the regulation runs, this is
-        the previous limit until the next decision.
-        """
-        return self._engine.power_limit_w
 
     @property
     def steps_on(self) -> int:
@@ -315,10 +306,7 @@ class KraftvaktRuntime:
 
     @callback
     def async_stop_regulation(self) -> None:
-        """Stop the regulation and turn everything off at once.
-
-        The new engine picks up a power limit changed while the regulation ran.
-        """
+        """Stop the regulation and turn everything off at once."""
         self._forget_start_when_started()
         if not self._engine.running:
             return
@@ -350,12 +338,7 @@ class KraftvaktRuntime:
         await self._switch_board.async_update_config(config)
 
     async def async_set_power_limit(self, power_limit_w: int) -> None:
-        """Save a new power limit, also while the regulation runs.
-
-        While it runs, the regulation starts again with the new limit at the
-        next decision, so several changes give one restart and a limit changed
-        back to the one in use gives none.
-        """
+        """Save a new power limit, used from the next decision also while running."""
         general = self._config.general
         if power_limit_w == general.power_limit_w:
             return
@@ -389,6 +372,7 @@ class KraftvaktRuntime:
             return
         self._config = config
         self._config_version += 1
+        self._engine.use_power_limit(config.general.power_limit_w)
         self._notify_status()
         await self._switch_board.async_update_config(config)
 
@@ -468,7 +452,7 @@ class KraftvaktRuntime:
         if self._engine.running:
             self._windows_since_decision.append(averages)
             if self._decision_is_due():
-                self._decide_or_restart(averages)
+                self._decide(averages)
             self._repeat_commands(averages.end)
         self._notify_status()
 
@@ -491,21 +475,6 @@ class KraftvaktRuntime:
             if started_at is not None and window.start >= started_at
         )
 
-    def _decide_or_restart(self, averages: WindowAverages) -> None:
-        if self._engine.power_limit_w == self._config.general.power_limit_w:
-            self._decide(averages)
-        else:
-            self._restart_with_new_power_limit(averages.end)
-
-    def _restart_with_new_power_limit(self, now: datetime) -> None:
-        _LOGGER.info(
-            "The power limit changed from %s W to %s W, the regulation starts again",
-            self._engine.power_limit_w,
-            self._config.general.power_limit_w,
-        )
-        self._engine = RegulationEngine(self._config)
-        self._start_regulation(now)
-
     def _decide(self, averages: WindowAverages) -> None:
         decision = DecisionInput(
             now=averages.end,
@@ -524,9 +493,11 @@ class KraftvaktRuntime:
             time_zone=dt_util.get_default_time_zone(),
         )
         self._windows_since_decision.clear()
-        commands = self._engine.decide(decision)
-        self._log_decision(decision, commands)
-        self._execute(commands)
+        result = self._engine.decide(decision)
+        for charger_id in result.ended_overrides:
+            self._switch_board.async_reset_window_override(charger_id)
+        self._log_decision(decision, result.commands)
+        self._execute(result.commands)
 
     def _log_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
         if not _LOGGER.isEnabledFor(logging.DEBUG):
@@ -601,8 +572,8 @@ class KraftvaktRuntime:
         switches = self._switch_board.charger_switches(charger.id)
         return ChargerReading(
             actively_charging=(
-                charger.actively_charging is None
-                or evaluate_actively_charging(
+                charger.actively_charging is not None
+                and evaluate_condition(
                     self._hass, charger.actively_charging, charger.entity_id
                 )
             ),
@@ -622,15 +593,9 @@ class KraftvaktRuntime:
         )
 
     def _execute(self, commands: Sequence[Command]) -> None:
-        actions = []
-        for command in commands:
-            if isinstance(command, ResetWindowOverride):
-                self._switch_board.async_reset_window_override(command.charger_id)
-            else:
-                actions.append(command)
-        if actions:
+        if commands:
             self._hass.async_create_background_task(
-                self._actions.async_execute(actions), "kraftvakt actions"
+                self._actions.async_execute(commands), "kraftvakt actions"
             )
 
     def _notify_status(self) -> None:

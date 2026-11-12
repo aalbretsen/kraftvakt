@@ -16,7 +16,10 @@ def test_engine_is_stopped_until_started() -> None:
 
     assert not engine.running
     assert engine.started_at is None
-    assert engine.decide(DecisionInput(START, 0.0, 0.0, (0.0,), True, False)) == []
+    assert (
+        engine.decide(DecisionInput(START, 0.0, 0.0, (0.0,), True, False)).commands
+        == []
+    )
 
 
 def test_start_turns_off_every_appliance_once() -> None:

@@ -8,15 +8,16 @@ import pytest
 from custom_components.kraftvakt.config_model import Charger, ChargingWindow
 from custom_components.kraftvakt.regulation.charging import (
     ChargerReading,
+    ChargerState,
     ChargerStatus,
+    ChargingPermission,
     ChargingState,
-    allowed_to_charge,
     ampere_step_count,
     charging_current,
+    charging_permission,
     charging_window_started,
     in_charging_window,
     override_expired,
-    window_overridden,
 )
 
 OSLO = ZoneInfo("Europe/Oslo")
@@ -124,26 +125,35 @@ def test_override_without_window_or_switched_off_never_ends() -> None:
     )
 
 
-def test_allowed_to_charge() -> None:
+def test_charging_permission() -> None:
     night = charger(charging_window=NIGHT)
     excluded = ChargerReading(excluded=True)
+    finishing = ChargerReading(actively_charging=True, finish_after_window=True)
 
-    assert allowed_to_charge(charger(), IDLE, False, time(12))
-    assert not allowed_to_charge(charger(), excluded, True, time(12))
-    assert allowed_to_charge(night, IDLE, False, time(23))
-    assert not allowed_to_charge(night, IDLE, False, time(12))
-    assert allowed_to_charge(night, IDLE, True, time(12))
-    assert not allowed_to_charge(night, excluded, True, time(23))
+    assert charging_permission(charger(), IDLE, False, time(12), False) == "window"
+    assert charging_permission(charger(), excluded, True, time(12), True) == "excluded"
+    assert charging_permission(night, IDLE, False, time(23), False) == "window"
+    assert charging_permission(night, IDLE, True, time(23), False) == "window"
+    assert charging_permission(night, IDLE, True, time(12), False) == "override"
+    assert charging_permission(night, IDLE, False, time(12), True) == "outside_window"
+    assert charging_permission(night, finishing, False, time(12), True) == "finishing"
+    assert (
+        charging_permission(night, finishing, False, time(12), False)
+        == "outside_window"
+    )
 
 
-def test_window_overridden_only_outside_the_window() -> None:
-    night = charger(charging_window=NIGHT)
+def test_finishing_ends_without_a_car() -> None:
+    no_car = ChargerReading(
+        actively_charging=True, finish_after_window=True, car_connected=False
+    )
 
-    assert window_overridden(night, IDLE, True, time(12))
-    assert not window_overridden(night, IDLE, True, time(23))
-    assert not window_overridden(night, IDLE, False, time(12))
-    assert not window_overridden(charger(), IDLE, True, time(12))
-    assert not window_overridden(night, ChargerReading(excluded=True), True, time(12))
+    assert (
+        charging_permission(
+            charger(charging_window=NIGHT), no_car, False, time(12), True
+        )
+        == "outside_window"
+    )
 
 
 def chargers(*ids: str) -> list[Charger]:
@@ -160,15 +170,16 @@ def evaluate(
     now: datetime = NOW,
     one_at_a_time: bool = True,
 ) -> list[str]:
-    return state.evaluate(
-        configured,
-        readings,
-        [c.id for c in configured] if allowed is None else allowed,
-        now,
-        WINDOW,
-        one_at_a_time,
-        overridden,
-    )
+    """Evaluate with each charger allowed by its window unless `allowed` says else."""
+    permissions = {
+        c.id: ChargingPermission.OVERRIDE
+        if c.id in overridden
+        else ChargingPermission.WINDOW
+        if allowed is None or c.id in allowed
+        else ChargingPermission.OUTSIDE_WINDOW
+        for c in configured
+    }
+    return state.evaluate(configured, readings, permissions, now, WINDOW, one_at_a_time)
 
 
 def test_priority_starts_as_configured() -> None:
@@ -204,19 +215,6 @@ def test_charger_that_does_not_draw_power_is_bypassed_after_two_windows() -> Non
     assert evaluate(state, configured, {"a": IDLE}, now=NOW + 2 * WINDOW) == ["a"]
     assert evaluate(state, configured, {"a": IDLE}, now=NOW + 3 * WINDOW) == []
     assert state.bypassed == {"a"}
-
-
-def test_charger_without_valid_charging_power_is_bypassed_only_without_car() -> None:
-    """An invalid charging power counts as charging."""
-    configured = chargers("a")
-    state = ChargingState.for_chargers(configured)
-    state.set_ampere_steps_on("a", 1, NOW)
-    later = NOW + 5 * WINDOW
-
-    assert evaluate(state, configured, {"a": ChargerReading()}, now=later) == []
-    assert evaluate(
-        state, configured, {"a": ChargerReading(car_connected=False)}, now=later
-    ) == ["a"]
 
 
 def test_charger_that_did_not_charge_rests_also_when_deactivated() -> None:
@@ -383,38 +381,29 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
 
 
 def test_status_of_each_charger() -> None:
-    """Whether it is excluded and «car connected» are known after the first decision."""
-    configured = chargers("a", "b")
+    configured = chargers("a", "b", "c", "d")
     state = ChargingState.for_chargers(configured)
-    assert state.status(configured)["a"].excluded is None
-    assert state.status(configured)["a"].car_connected is None
+    assert state.status(configured)["a"].state is ChargerState.FIRST_DECISION
     state.set_ampere_steps_on("a", 4, NOW)
     evaluate(
         state,
         configured,
         {
             "a": ChargerReading(actively_charging=True, car_connected=True),
-            "b": ChargerReading(actively_charging=False, excluded=True),
+            "b": IDLE,
+            "c": ChargerReading(car_connected=False),
+            "d": IDLE,
         },
-        allowed=("a",),
+        allowed=("a", "c", "d"),
         overridden=("a",),
+        one_at_a_time=False,
     )
 
     assert state.status(configured) == {
-        "a": ChargerStatus(
-            4,
-            9,
-            allowed=True,
-            bypassed=False,
-            waiting=False,
-            excluded=False,
-            charging=True,
-            window_overridden=True,
-            car_connected=True,
-        ),
-        "b": ChargerStatus(
-            0, None, allowed=False, bypassed=False, waiting=False, excluded=True
-        ),
+        "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, bypassed=False, charging=True),
+        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False),
+        "c": ChargerStatus(ChargerState.NO_CAR, 0, None, bypassed=True, charging=False),
+        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False),
     }
 
 

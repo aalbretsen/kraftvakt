@@ -49,7 +49,9 @@ def _tariff_average_w(runtime: KraftvaktRuntime) -> float | None:
 
 def _power_free_w(runtime: KraftvaktRuntime) -> float | None:
     average_w = _regulation_average_w(runtime)
-    return None if average_w is None else runtime.power_limit_w - average_w
+    return (
+        None if average_w is None else runtime.config.general.power_limit_w - average_w
+    )
 
 
 def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
