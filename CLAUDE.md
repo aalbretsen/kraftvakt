@@ -31,11 +31,13 @@ Read the skill for the kind of task before starting:
 - All decisions and information that is important for the next coding session, and to understand the code easier, shall be documented in the skill files.
 - Document only what is true now, and only what is not obvious from the code or from the rule itself.
 - When behaviour changes or a question is settled, change the existing rule instead of adding a note. Give the reason only when it is not obvious. Do not write who decided it, how it was before, or the alternatives that were rejected. The same applies to code comments.
+- Use one term per concept. The glossary is the Concepts table in the `kraftvakt-regulation` skill; code, tests, the README and the panel use its terms, and user-facing words map to it.
 
 ## Coding Rules
 - Write readable code that human beings can read and understand.
 - Let the code speak for itself through naming, not comments.
-- Write as little comments as possible and only for important decisions and docstrings for every public method.
+- Write as few comments as possible, only for important decisions and choices that are not obvious from the code. This includes docstrings: one that repeats the name or the code is left out.
+- The backend is the source of truth for validation. The panel checks the draft only to give quick feedback.
 - Focus on separation of concerns to make the code adaptable to changed requirements.
 - Avoid specific code for each problem, lean on generic solutions, as long as the code is still understandable.
 - Follow Home Assistant coding standards and principles for integrations.
