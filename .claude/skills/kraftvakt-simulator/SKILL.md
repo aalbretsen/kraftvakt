@@ -40,10 +40,9 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 - A heating device has power (W), duty cycle (0–100 %) and period (whole
   minutes). It heats in a fixed cycle, the on part first. Its switch cuts the
   power: off consumes nothing. **The cycle restarts in its on part every time
-  the switch is turned on from off**, and so also after a restart with a
-  restored switch. Why: a device that Kraftvakt turns on must draw power at
-  once, as a real one does. Turning it on while it is on changes nothing, so
-  the command repeat does not disturb the cycle.
+  the switch is turned on**, and so also after a restart with a restored
+  switch. Why: a device that Kraftvakt turns on must draw power at once, as a
+  real one does.
 - A thermostat is a heating device whose climate entity takes the place of
   the switch, with the HVAC modes chosen in its settings (at least one of the
   heating modes heat, heat/cool and auto) and a target temperature. It runs
