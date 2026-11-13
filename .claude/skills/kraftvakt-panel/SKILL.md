@@ -61,9 +61,10 @@ Code that mirrors the backend and must be kept in step with it:
   backend does, that the device exists and each entity belongs to it.
 - Choosing another device clears every entity field that is not on the new device, then fills each empty field from the device in `charger-device.ts`, and adapts the actions to the
   new entity as a new entity does. A field is filled with the candidate of its type with the highest score from words in its name and entity ID (English and Norwegian, without the
-  device name, which every entity has) and a likely device class or unit; a tie fills nothing, and a word on a field's exclusion list rules a candidate out. For the charger's own
-  entity, the set-current entity and the charging power sensor, the only candidate of the type is enough. An entity filled for one field is not used for another. Actively charging
-  prefers a boolean charging entity and falls back to a power sensor.
+  device name, which every entity has) and a likely device class or unit, and a word on a field's exclusion list rules a candidate out. Of candidates with the same score, the one
+  with the fewest other words in its name wins, since it is the most specific; a tie on that too fills nothing. The main entity of the device, which has no name of its own, counts
+  as a word for the charger's own entity. For the charger's own entity, the set-current entity and the charging power sensor, the only candidate of the type is enough. An entity
+  filled for one field is not used for another. Actively charging prefers a boolean charging entity and falls back to a power sensor.
 - The appliance dialog lists the variants by label, with drag and edit, and Add variant. What else is wrong or missing in a variant is shown under its label. A variant's edit
   button, and its row in the priority list, open the variant dialog: the expression and one switch per action to override it, both off by default. Switched on, the action starts
   from what it had while the dialog is open, or else a copy of the appliance's. The variant dialog edits a copy of the whole appliance; its Delete removes the variant with

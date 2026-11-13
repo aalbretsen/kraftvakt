@@ -20,6 +20,8 @@ interface GuessRule {
   excludedWords?: string[];
   /** Whether the only entity of the type is guessed without a word. */
   onlyCandidateIsEnough: boolean;
+  /** Whether the main entity of the device, which has no name of its own, counts as a word. */
+  mainEntityMatches?: boolean;
 }
 
 interface Candidate {
@@ -28,6 +30,8 @@ interface Candidate {
   deviceClass?: unknown;
   unit?: unknown;
   text: string;
+  /** The words of the name without the device name, none for the main entity of the device. */
+  ownWords: string[];
 }
 
 const LIKELY_TYPE_SCORE = 2;
@@ -116,8 +120,9 @@ export function changesForDevice(
     guess({
       domains: defaults.activate.domains,
       words: ["charging", "allow", "enable", "lading", "tillat"],
-      excludedWords: ["connected", "plug", "full", "lock", "tilkoblet"],
+      excludedWords: ["connected", "plug", "full", "lock", "offline", "phase", "tilkoblet", "fase"],
       onlyCandidateIsEnough: true,
+      mainEntityMatches: true,
     });
   if (entityId) {
     taken.add(entityId);
@@ -128,7 +133,8 @@ export function changesForDevice(
     const currentEntity = guess({
       domains: defaults.set_current.domains,
       likelyUnit: "A",
-      words: ["current", "ampere", "limit", "strøm"],
+      words: ["current", "ampere", "limit", "charge", "strøm", "lade"],
+      excludedWords: ["offline"],
       onlyCandidateIsEnough: true,
     });
     setCurrent = currentEntity
@@ -168,19 +174,23 @@ function candidate(hass: HomeAssistant, entityId: string, deviceId: string | nul
   const name = String(attributes.friendly_name ?? "").toLowerCase();
   const withoutDevice = (text: string, prefix: string) =>
     prefix && text.startsWith(prefix) ? text.slice(prefix.length) : text;
+  const ownName = withoutDevice(name, deviceName);
+  const ownObjectId = withoutDevice(objectId, deviceName.replace(/\W+/g, "_"));
   return {
     entityId,
     domain,
     deviceClass: attributes.device_class,
     unit: attributes.unit_of_measurement,
-    text: `${withoutDevice(name, deviceName)} ${withoutDevice(objectId, deviceName.replace(/\W+/g, "_"))}`.replace(
-      /_/g,
-      " ",
-    ),
+    text: `${ownName} ${ownObjectId}`.replace(/_/g, " "),
+    ownWords: (name ? ownName : ownObjectId).split(/[^\p{L}\p{N}]+/u).filter(Boolean),
   };
 }
 
-/** Return the entity with the highest score for the rule, none when two share it. */
+/**
+ * Return the entity with the highest score for the rule. Of those that share
+ * it, the one with the fewest other words in its name is the most specific;
+ * none when two share that too.
+ */
 function guessEntity(candidates: Candidate[], rule: GuessRule): string | null {
   const matching = candidates.filter(
     (item) =>
@@ -191,19 +201,25 @@ function guessEntity(candidates: Candidate[], rule: GuessRule): string | null {
   if (matching.length === 1 && rule.onlyCandidateIsEnough) {
     return matching[0].entityId;
   }
-  const scored = matching
-    .map((item) => ({ entityId: item.entityId, score: score(item, rule) }))
+  const ranked = matching
+    .map((item) => ({ entityId: item.entityId, score: score(item, rule), otherWords: otherWords(item, rule) }))
     .filter((item) => item.score > 0)
-    .sort((first, second) => second.score - first.score);
-  if (scored.length === 0 || scored[1]?.score === scored[0].score) {
+    .sort((first, second) => second.score - first.score || first.otherWords - second.otherWords);
+  const [best, next] = ranked;
+  if (!best || (next && next.score === best.score && next.otherWords === best.otherWords)) {
     return null;
   }
-  return scored[0].entityId;
+  return best.entityId;
 }
 
 function score(item: Candidate, rule: GuessRule): number {
   const words = rule.words.filter((word) => item.text.includes(word)).length;
   const likelyClass = rule.likelyDeviceClasses?.includes(String(item.deviceClass)) ? LIKELY_TYPE_SCORE : 0;
   const likelyUnit = rule.likelyUnit !== undefined && item.unit === rule.likelyUnit ? LIKELY_TYPE_SCORE : 0;
-  return words + likelyClass + likelyUnit;
+  const mainEntity = rule.mainEntityMatches && item.ownWords.length === 0 ? 1 : 0;
+  return words + likelyClass + likelyUnit + mainEntity;
+}
+
+function otherWords(item: Candidate, rule: GuessRule): number {
+  return item.ownWords.filter((word) => !rule.words.some((ruleWord) => word.includes(ruleWord))).length;
 }
