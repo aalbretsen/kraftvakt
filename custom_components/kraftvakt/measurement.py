@@ -35,8 +35,6 @@ def power_w(state: str | None, unit: str | None) -> float | None:
 
 @dataclass(frozen=True, slots=True)
 class WindowAverages:
-    """The averages calculated when a regulation window closes."""
-
     start: datetime
     end: datetime
     regulation_average_w: float | None
@@ -53,7 +51,7 @@ class _Step:
 
 
 class PowerAverager:
-    """Time-weighted averages of the power over the two windows.
+    """Time-weighted averages over the regulation window and the tariff window.
 
     An invalid measurement keeps the last valid one in place, and the first
     measurement also applies backwards in time unless history has been added.
@@ -71,16 +69,13 @@ class PowerAverager:
 
     @property
     def window_start(self) -> datetime:
-        """Return when the current regulation window started."""
         return self._window_start
 
     @property
     def window_end(self) -> datetime:
-        """Return when the current regulation window closes."""
         return self._window_start + self._window_length
 
     def change_window_length(self, window_length: timedelta) -> None:
-        """Use a new length of the regulation window from the next window on."""
         self._next_window_length = window_length
 
     def add_measurement(self, when: datetime, power: float | None) -> None:

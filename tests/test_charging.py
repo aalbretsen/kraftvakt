@@ -386,7 +386,6 @@ async def test_charger_current_is_repeated_until_the_charger_is_excluded(
     actions,
     setup_kraftvakt,
 ) -> None:
-    """An excluded charger gets no repeated commands."""
     config["general"]["command_repeat_interval_min"] = 10
     set_power(hass, CHARGER_POWER, "4100")
     await setup_kraftvakt()

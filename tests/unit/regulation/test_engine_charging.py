@@ -558,7 +558,7 @@ def test_penalty_and_safe_state_deactivate_the_chargers() -> None:
     assert scenario.decide(0) == activate("c")
 
 
-def test_variant_switch_makes_room_by_switching_off_a_ampere_step() -> None:
+def test_variant_switch_makes_room_by_switching_off_an_ampere_step() -> None:
     """The lowest step that is on may be an ampere step."""
     scenario = Scenario(
         make_config(

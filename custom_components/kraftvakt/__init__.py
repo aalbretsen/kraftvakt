@@ -46,11 +46,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
-    """Set up Kraftvakt from a config entry.
-
-    A stored configuration that cannot be read stops the setup and is left as
-    it is.
-    """
+    """A stored configuration that cannot be read stops the setup and is kept."""
     storage = KraftvaktStorage(hass)
     try:
         stored = await storage.async_load()
@@ -74,7 +70,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> bool:
-    """Unload a config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         frontend.async_remove_panel(hass, PANEL_URL_PATH)

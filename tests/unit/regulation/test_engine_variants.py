@@ -196,7 +196,6 @@ def heater_moving_down_config():
 
 
 def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
-    """The waiting time for the appliance starts again."""
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b")
     assert scenario.decide_many(8000, 2) == [[], []]
@@ -210,8 +209,7 @@ def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
     ]
 
 
-def test_switch_resets_the_increasing_waiting_time() -> None:
-    """The counter for increasing waiting time is reset."""
+def test_switch_resets_the_repeated_turn_on_counter() -> None:
     scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b", "heater")
     assert scenario.decide(10500) == off("heater")

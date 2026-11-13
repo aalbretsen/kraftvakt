@@ -43,7 +43,6 @@ export class KraftvaktActionField extends LitElement {
   /** The error of each parameter of a domain action, by name. */
   @property({ attribute: false }) parameterErrors: Record<string, string> = {};
 
-  /** The variables the action gets. */
   @property({ attribute: false }) variables: string[] = [];
 
   @property() error?: string;

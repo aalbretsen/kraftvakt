@@ -220,7 +220,6 @@ async def test_config_get_gives_configuration_names_and_missing(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """The configuration with entity names and what is missing."""
     config["appliances"][1]["turn_off"] = None
     hass.states.async_set("light.a", "off", {"friendly_name": "Water heater"})
     config_entry = MockConfigEntry(domain=DOMAIN)
@@ -530,7 +529,6 @@ async def test_saved_chargers_get_their_switches(
     entry: MockConfigEntry,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """The switches follow the saved chargers."""
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
     changed = config_with_charger(
@@ -744,7 +742,6 @@ async def test_status_is_sent_at_once_and_at_each_window(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """The status now, and after each window and decision."""
     started = dt_util.utcnow()
     hass.states.async_set("light.a", "off", {"friendly_name": "Water heater"})
     await setup_entry(hass)
@@ -810,7 +807,6 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """The current variant, its place and the waiting."""
     started = dt_util.utcnow()
     config["general"]["wait_at_limit_s"] = 300
     config["appliances"][1]["variants"] = [
@@ -846,7 +842,6 @@ async def test_status_shows_the_variant_and_the_waiting_time(
 async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(
     hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
 ) -> None:
-    """The status, the panel and the switch agree."""
     subscriber = await hass_ws_client(hass)
     commander = await hass_ws_client(hass)
     assert (await subscribe_status(subscriber))["running"]

@@ -19,7 +19,6 @@ from .settings import Settings
 
 
 def item_entity_key(kind: str, item_id: str, setting: str) -> str:
-    """Return the unique id of an entity of an appliance or charger."""
     return f"{kind}_{item_id}_{setting}"
 
 
@@ -41,7 +40,6 @@ class ItemEntity(KraftvaktEntity):
         name: str,
         setting: str,
     ) -> None:
-        """Create the entity for the setting of the item."""
         super().__init__(
             entry,
             item_entity_key(self.kind, item_id, setting),
@@ -66,13 +64,10 @@ class ItemEntity(KraftvaktEntity):
 
 
 class ChargerEntity(ItemEntity):
-    """An entity of a charger."""
-
     kind = "charger"
 
     @staticmethod
     def items(config: KraftvaktConfig) -> Sequence[Charger]:
-        """Return the chargers in the configuration."""
         return config.chargers
 
     def _charger(self) -> Charger | None:
@@ -124,7 +119,6 @@ class ItemEntities:
         async_add_entities: AddConfigEntryEntitiesCallback,
         entity_type: type[ItemEntity],
     ) -> None:
-        """Create the entities of `entity_type` for the items on the settings."""
         self._hass = hass
         self._entry = entry
         self._settings = entry.runtime_data.settings
@@ -134,7 +128,6 @@ class ItemEntities:
 
     @callback
     def async_follow_items(self) -> None:
-        """Remove the entities of removed items and add those of new ones."""
         configured = {
             item.id: item for item in self._entity_type.items(self._settings.config)
         }

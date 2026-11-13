@@ -16,23 +16,18 @@ from typing import Any, Final
 
 @dataclass(frozen=True, slots=True)
 class Range:
-    """Valid range and resolution of a numeric setting."""
-
     minimum: float
     maximum: float | None
     resolution: float
 
     def contains(self, value: float) -> bool:
-        """Return whether the value lies within the range."""
         return value >= self.minimum and (self.maximum is None or value <= self.maximum)
 
     def matches_resolution(self, value: float) -> bool:
-        """Return whether the value is a whole multiple of the resolution."""
         multiple = value / self.resolution
         return abs(multiple - round(multiple)) < 1e-6
 
     def to_dict(self) -> dict[str, float | None]:
-        """Return the range as JSON-friendly data for the panel."""
         return {"min": self.minimum, "max": self.maximum, "resolution": self.resolution}
 
 
@@ -82,8 +77,6 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
 
 
 class ActionKind(StrEnum):
-    """What an action does."""
-
     TURN_ON = "turn_on"
     TURN_OFF = "turn_off"
     SET_CURRENT = "set_current"
@@ -116,8 +109,6 @@ class ConditionType(StrEnum):
 
 
 class PriorityEntryType(StrEnum):
-    """Kind of entry in the priority list."""
-
     APPLIANCE = "appliance"
     CHARGER_GROUP = "charger_group"
 
@@ -138,7 +129,6 @@ class ActionConfig:
     data: Mapping[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the action as JSON-friendly data."""
         match self.mode:
             case ActionMode.DEFAULT:
                 return {"mode": self.mode.value}
@@ -173,7 +163,6 @@ class Condition:
     value: str
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the condition as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
@@ -212,7 +201,6 @@ class Variant:
     actions: Mapping[str, ActionConfig | None] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the variant as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
@@ -255,14 +243,11 @@ class Appliance:
                     )
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the appliance as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class PriorityEntry:
-    """An entry in the priority list."""
-
     type: PriorityEntryType
     appliance_id: str | None = None
     variant_id: str | None = None
@@ -272,16 +257,13 @@ class PriorityEntry:
     def for_appliance(
         cls, appliance_id: str, variant_id: str | None = None
     ) -> PriorityEntry:
-        """Return the entry for an appliance or one of its variants."""
         return cls(PriorityEntryType.APPLIANCE, appliance_id, variant_id)
 
     @classmethod
     def for_charger_group(cls, group_id: str) -> PriorityEntry:
-        """Return the entry for a group of chargers."""
         return cls(PriorityEntryType.CHARGER_GROUP, group_id=group_id)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the entry as JSON-friendly data."""
         if self.type is PriorityEntryType.CHARGER_GROUP:
             return {"type": self.type.value, "group_id": self.group_id}
         return {
@@ -305,8 +287,6 @@ class ChargingWindow:
 
 @dataclass(frozen=True, slots=True)
 class Charger:
-    """An EV charger."""
-
     id: str
     device_id: str | None = None
     entity_id: str | None = None
@@ -322,7 +302,6 @@ class Charger:
     finish_after_window: bool = False
 
     def action_fields(self) -> Iterator[ActionField]:
-        """Return the actions of the charger."""
         for name, kind in CHARGER_ACTION_KINDS.items():
             yield ActionField(name, kind, getattr(self, name))
 
@@ -342,7 +321,6 @@ class Charger:
                 yield field_name, condition.value
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the charger as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
@@ -359,14 +337,11 @@ class ChargerGroup:
     chargers: tuple[Charger, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the group as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class GeneralConfig:
-    """General parameters."""
-
     power_sensor: str | None = None
     power_limit_w: int = 10_000
     turn_on_margin_w: int = 100
@@ -385,14 +360,11 @@ class GeneralConfig:
     power_sensor_timeout_s: int = 300
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the general parameters as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class KraftvaktConfig:
-    """The whole configuration."""
-
     general: GeneralConfig = field(default_factory=GeneralConfig)
     appliances: tuple[Appliance, ...] = ()
     priority: tuple[PriorityEntry, ...] = ()
@@ -400,7 +372,6 @@ class KraftvaktConfig:
 
     @property
     def chargers(self) -> tuple[Charger, ...]:
-        """Return the chargers of every group."""
         return tuple(
             charger for group in self.charger_groups for charger in group.chargers
         )
@@ -427,30 +398,23 @@ class KraftvaktConfig:
             yield "chargers", charger
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the configuration as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class ApplianceSwitches:
-    """The user's switches for an appliance."""
-
     excluded: bool = False
 
     def to_dict(self) -> dict[str, bool]:
-        """Return the switches as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class ChargerSwitches:
-    """The user's switches for a charger."""
-
     excluded: bool = False
     window_override: bool = False
 
     def to_dict(self) -> dict[str, bool]:
-        """Return the switches as JSON-friendly data."""
         return _fields_to_dict(self)
 
 
@@ -477,7 +441,6 @@ class ConfigValidationError(ValueError):
     """Raised when a configuration is invalid. Holds every issue found."""
 
     def __init__(self, issues: list[Issue]) -> None:
-        """Create the error from the issues found."""
         super().__init__(", ".join(issue.code for issue in issues))
         self.issues = issues
 
@@ -518,7 +481,6 @@ def _switches_for[T: ItemSwitches](
 
 
 def _fields_to_dict(item: Any) -> dict[str, Any]:
-    """Return the fields of a dataclass as JSON-friendly data."""
     return {
         attribute.name: _to_json(getattr(item, attribute.name))
         for attribute in fields(item)
@@ -552,6 +514,5 @@ class IssueLocation:
     prefix: str = ""
 
     def issue(self, code: str, field_name: str | None = None) -> Issue:
-        """Return the issue for a field at this location."""
         name = None if field_name is None else f"{self.prefix}{field_name}"
         return Issue(code, self.section, self.target, name)

@@ -23,7 +23,6 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the power limit for the config entry."""
     async_add_entities([PowerLimitNumber(entry, entry.runtime_data)])
 
 
@@ -38,7 +37,6 @@ class PowerLimitNumber(KraftvaktEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
 
     def __init__(self, entry: KraftvaktConfigEntry, runtime: KraftvaktRuntime) -> None:
-        """Create the power limit for the runtime."""
         super().__init__(entry, "power_limit")
         self._runtime = runtime
 
@@ -50,7 +48,6 @@ class PowerLimitNumber(KraftvaktEntity, NumberEntity):
 
     @property
     def native_value(self) -> int:
-        """Return the stored power limit."""
         return self._runtime.config.general.power_limit_w
 
     async def async_set_native_value(self, value: float) -> None:

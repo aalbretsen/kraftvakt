@@ -188,18 +188,15 @@ def replace_version(
 
 
 def note_change(changes: list[str], name: str, current: str, newest: str) -> None:
-    """Note a version that changes."""
     if current != newest:
         changes.append(f"{name}: {current} → {newest}")
 
 
 def read_core(version: str, path: str) -> str:
-    """Return a file of a Home Assistant core release."""
     return fetch_text(CORE_FILE.format(version=version, path=path))
 
 
 def fetch_json(url: str) -> Any:
-    """Return the JSON at the URL."""
     return json.loads(fetch_text(url))
 
 

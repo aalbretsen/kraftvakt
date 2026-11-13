@@ -10,7 +10,6 @@ from .config_model import Issue, IssueLocation, KraftvaktConfig
 
 
 def device_of_entity(hass: HomeAssistant, entity_id: str) -> str | None:
-    """Return the id of the device the entity belongs to, if any."""
     registry_entry = er.async_get(hass).async_get(entity_id)
     return None if registry_entry is None else registry_entry.device_id
 

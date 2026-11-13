@@ -66,7 +66,6 @@ class ChargerState:
 
     @property
     def power_w(self) -> float:
-        """Return the charging power in W."""
         charging = (
             self.charging_allowed and self.car_connected and not self.car_fully_charged
         )

@@ -23,7 +23,6 @@ ROOM_TEMPERATURE = "number.living_room_room_temperature"
 
 
 def attribute(hass: HomeAssistant, name: str) -> object:
-    """Return an attribute of the thermostat."""
     found = hass.states.get(CLIMATE)
     assert found is not None
     return found.attributes[name]

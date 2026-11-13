@@ -58,7 +58,6 @@ PLATFORMS: Final = {
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SimulatorConfigEntry) -> bool:
-    """Set up one simulated device."""
     device = create_device(hass, entry)
     entry.runtime_data = device
     device.async_start()

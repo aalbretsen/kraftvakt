@@ -6,7 +6,6 @@ import { repeat } from "lit/directives/repeat.js";
 
 import type { Localize } from "../localize";
 
-/** One row in a sortable list. */
 export interface ListRow {
   key: string;
   title: string;

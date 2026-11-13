@@ -196,7 +196,6 @@ async def test_default_actions_call_the_domain_service(hass: HomeAssistant) -> N
 
 
 async def test_custom_actions_get_the_entity_variables(hass: HomeAssistant) -> None:
-    """Custom actions get `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "record")
     hass.states.async_set("switch.a", "off", {"mode": "eco"})
     action = custom(

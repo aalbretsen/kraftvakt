@@ -68,7 +68,6 @@ def test_every_average_since_the_previous_decision_counts() -> None:
 
 
 def test_overconsumption_state_ends_when_paid_back() -> None:
-    """The state ends when the overconsumption is zero or less."""
     state = overconsuming_state()
     state.decide(LIMITS, 10500, (11000,))
 

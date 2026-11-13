@@ -160,7 +160,6 @@ class SimulatorConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask which kind of device to add."""
         return self.async_show_menu(step_id="user", menu_options=list(DeviceKind))
 
     async def async_step_han(
@@ -177,19 +176,16 @@ class SimulatorConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_heater(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for the settings of a heating device."""
         return await self._async_device_step(DeviceKind.HEATER, user_input)
 
     async def async_step_thermostat(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for the settings of a thermostat."""
         return await self._async_device_step(DeviceKind.THERMOSTAT, user_input)
 
     async def async_step_charger(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for the settings of an EV charger."""
         return await self._async_device_step(DeviceKind.CHARGER, user_input)
 
     async def async_step_reconfigure(

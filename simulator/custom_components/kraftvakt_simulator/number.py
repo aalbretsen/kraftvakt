@@ -168,11 +168,9 @@ class SettingNumber(SimulatorEntity[SimulatedDevice], NumberEntity):
 
     @property
     def native_value(self) -> float:
-        """Return the value of the setting."""
         return self.entity_description.value_fn(self.device)
 
     async def async_set_native_value(self, value: float) -> None:
-        """Change the setting."""
         self.entity_description.set_fn(self.device, value)
 
 
@@ -181,16 +179,13 @@ class ChargingCurrentNumber(SimulatorEntity[SimulatedCharger], RestoreNumber):
 
     @property
     def native_value(self) -> float:
-        """Return the charging current in A."""
         return self.device.state.current_a
 
     async def async_added_to_hass(self) -> None:
-        """Restore the current from before the restart."""
         await super().async_added_to_hass()
         last = await self.async_get_last_number_data()
         if last is not None and last.native_value is not None:
             self.device.async_set_current(last.native_value)
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set the charging current."""
         self.device.async_set_current(value)

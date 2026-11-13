@@ -29,20 +29,20 @@ def build_steps(
     current_variants: Mapping[str, str | None],
     appliances_on: Collection[str],
     growth: RepeatedTurnOnGrowth,
-    charger_slots: Mapping[str, Sequence[Step]] | None = None,
+    ampere_steps_by_group: Mapping[str, Sequence[Step]] | None = None,
     excluded_appliances: Collection[str] = (),
 ) -> list[Step]:
     """Return the steps in priority order, highest priority first.
 
-    `charger_slots` has the ampere steps of each group of chargers, by
-    the id of the group.
+    `ampere_steps_by_group` has the ampere steps of each group of chargers, by
+    the id of the group, to put at the entry of the group.
     """
-    charger_slots = charger_slots or {}
+    ampere_steps_by_group = ampere_steps_by_group or {}
     appliances = {appliance.id: appliance for appliance in config.appliances}
     steps: list[Step] = []
     for entry in config.priority:
         if entry.type is PriorityEntryType.CHARGER_GROUP:
-            steps.extend(charger_slots.get(entry.group_id or "", ()))
+            steps.extend(ampere_steps_by_group.get(entry.group_id or "", ()))
             continue
         appliance_id = entry.appliance_id
         if (
@@ -70,7 +70,6 @@ def ampere_steps(
     bypassed: Collection[str],
     growth: RepeatedTurnOnGrowth,
 ) -> list[Step]:
-    """Return the ampere steps of the chargers, interleaved."""
     rounds = max(map(ampere_step_count, chargers), default=0)
     return [
         Step(

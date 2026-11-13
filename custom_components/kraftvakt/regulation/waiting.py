@@ -15,8 +15,6 @@ PIVOT_CAP_FACTOR: Final = 0.999
 
 @dataclass(frozen=True, slots=True)
 class RepeatedTurnOnGrowth:
-    """How the waiting time grows on repeated turn-on."""
-
     increment: timedelta
     cap: timedelta
 
@@ -69,7 +67,6 @@ def _above_start(utilization: float) -> float:
 def repeated_turn_on_waiting_time(
     repeat: int, wait_at_limit: timedelta, growth: RepeatedTurnOnGrowth
 ) -> timedelta:
-    """Return the fixed waiting time on repeated turn-on."""
     return min(
         growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT)
     )
@@ -100,12 +97,10 @@ class RepeatedTurnOnCounter:
     """
 
     def __init__(self) -> None:
-        """Start without any count."""
         self._last_key: Hashable | None = None
         self._repeats = 0
 
     def record(self, key: Hashable, turned_on: bool) -> None:
-        """Record that the regulation turned the step on or off."""
         if key != self._last_key:
             self._last_key = key
             self._repeats = 0
@@ -117,7 +112,6 @@ class RepeatedTurnOnCounter:
         return self._repeats + 1 if key == self._last_key else 0
 
     def reset(self, key: Hashable) -> None:
-        """Forget the count for the step."""
         if key == self._last_key:
             self._last_key = None
             self._repeats = 0

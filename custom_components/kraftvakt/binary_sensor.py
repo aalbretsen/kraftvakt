@@ -27,8 +27,6 @@ PARALLEL_UPDATES = 0
 
 @dataclass(frozen=True, kw_only=True)
 class RegulationBinarySensorDescription(BinarySensorEntityDescription):
-    """Describes a binary sensor that shows a state of the regulation."""
-
     is_on_fn: Callable[[KraftvaktRuntime], bool]
     device_class: BinarySensorDeviceClass = BinarySensorDeviceClass.PROBLEM
 
@@ -51,7 +49,6 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the binary sensors of the regulation and of the configured chargers."""
     async_add_entities(
         RegulationBinarySensor(entry, entry.runtime_data, description)
         for description in BINARY_SENSORS
@@ -72,7 +69,6 @@ class RegulationBinarySensor(KraftvaktEntity, BinarySensorEntity):
         runtime: KraftvaktRuntime,
         description: RegulationBinarySensorDescription,
     ) -> None:
-        """Create the sensor described by `description`."""
         super().__init__(entry, description.key)
         self.entity_description = description
         self._runtime = runtime
@@ -85,7 +81,6 @@ class RegulationBinarySensor(KraftvaktEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return whether the regulation is in the state."""
         return self.entity_description.is_on_fn(self._runtime)
 
 
@@ -113,7 +108,6 @@ class ChargerWindowBinarySensor(ChargerEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return whether the charging window or its override allows charging."""
         charger = self._charger()
         return window_allows_charging(
             None if charger is None else charger.charging_window,

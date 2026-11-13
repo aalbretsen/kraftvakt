@@ -50,22 +50,16 @@ class TurnOffAppliance:
 
 @dataclass(frozen=True, slots=True)
 class ActivateCharger:
-    """Run the action that allows the charger to charge."""
-
     charger_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class DeactivateCharger:
-    """Run the action that does not allow the charger to charge."""
-
     charger_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class SetChargingCurrent:
-    """Run the action that sets the charging current in amperes."""
-
     charger_id: str
     current_a: int
 

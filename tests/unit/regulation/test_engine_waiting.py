@@ -40,21 +40,18 @@ def test_end_of_the_waiting_time_follows_the_average() -> None:
 
 
 def test_no_waiting_time_turns_on_at_the_same_decision() -> None:
-    """A waiting time of 0 turns the appliance on at once."""
     scenario = Scenario(make_config("a", "b", wait_at_limit_s=0))
 
     assert scenario.decide(9000) == on("a")
 
 
 def test_zero_average_gives_no_waiting_time() -> None:
-    """An average of 0 gives no waiting time."""
     scenario = Scenario(make_config("a"))
 
     assert scenario.decide(0) == on("a")
 
 
 def test_waiting_time_is_calculated_again_at_each_decision() -> None:
-    """The waiting time follows the average at each decision."""
     scenario = Scenario(make_config("a"))
 
     assert scenario.decide(9800) == []

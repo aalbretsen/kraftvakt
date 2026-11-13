@@ -34,7 +34,6 @@ class Observable:
     """Calls its listeners when it changes."""
 
     def __init__(self) -> None:
-        """Start without listeners."""
         self._listeners: list[CALLBACK_TYPE] = []
 
     @callback
@@ -53,18 +52,15 @@ class PowerBoard(Observable):
     """The power of every simulated consumer, summed by the HAN."""
 
     def __init__(self) -> None:
-        """Start with no consumers."""
         super().__init__()
         self._power_w: dict[str, float] = {}
 
     @property
     def total_w(self) -> float:
-        """Return the total power in W."""
         return sum(self._power_w.values())
 
     @callback
     def async_set_power(self, consumer_id: str, power_w: float) -> None:
-        """Set the power of a consumer."""
         if self._power_w.get(consumer_id) != power_w:
             self._power_w[consumer_id] = power_w
             self._async_notify()
@@ -95,11 +91,10 @@ class SimulatedDevice(Observable, ABC):
     @property
     @abstractmethod
     def power_w(self) -> float:
-        """Return the power the device consumes now, in W."""
+        pass
 
     @callback
     def async_start(self) -> None:
-        """Report the starting power."""
         self._async_changed()
 
     @callback
@@ -130,12 +125,10 @@ class SimulatedHan(SimulatedDevice):
 
     @property
     def power_w(self) -> float:
-        """Return the background power in W."""
         return self.background_w
 
     @callback
     def async_set_background(self, background_w: float) -> None:
-        """Change the background power."""
         self.background_w = background_w
         self._store_setting(CONF_BACKGROUND_W, background_w)
         self._async_changed()
@@ -145,7 +138,6 @@ class PluggedInDevice(SimulatedDevice):
     """A device that can be unplugged, so it uses no power whatever its state."""
 
     def __init__(self, hass: HomeAssistant, consumer_id: str) -> None:
-        """Start plugged in."""
         super().__init__(hass, consumer_id)
         self.unplugged = False
 
@@ -189,7 +181,6 @@ class SimulatedHeater(PluggedInDevice):
 
     @property
     def is_on(self) -> bool:
-        """Return whether the switch is on."""
         return self._switched_on_at is not None
 
     @property
@@ -319,7 +310,6 @@ class SimulatedThermostat(SimulatedHeater):
 
     @callback
     def async_set_hvac_mode(self, mode: HVACMode) -> None:
-        """Change the mode."""
         if mode in HEATING_MODES:
             self._last_heating_mode = mode
         self.hvac_mode = mode
@@ -332,13 +322,11 @@ class SimulatedThermostat(SimulatedHeater):
 
     @callback
     def async_set_target_temperature(self, temperature: float) -> None:
-        """Change the target temperature."""
         self.target_temperature = temperature
         self._async_follow_thermostat()
 
     @callback
     def async_set_room_temperature(self, temperature: float) -> None:
-        """Change the temperature in the room."""
         self.room_temperature = temperature
         self._store_setting(CONF_ROOM_TEMPERATURE, temperature)
         self._async_follow_thermostat()
@@ -377,17 +365,14 @@ class SimulatedCharger(PluggedInDevice):
 
     @property
     def demand_w(self) -> float:
-        """Return the charging power in W."""
         return self.state.power_w
 
     @callback
     def async_set_charging_allowed(self, allowed: bool) -> None:
-        """Allow or stop charging."""
         self._async_update(charging_allowed=allowed)
 
     @callback
     def async_set_car_connected(self, connected: bool) -> None:
-        """Connect or disconnect the simulated car."""
         self._async_update(car_connected=connected)
 
     @callback

@@ -41,7 +41,6 @@ class ChargingPermission(StrEnum):
 
     @property
     def allowed(self) -> bool:
-        """Return whether the charger may charge."""
         return self in _ALLOWED
 
 
@@ -82,12 +81,10 @@ class ChargerStatus:
 
 
 def ampere_step_count(charger: Charger) -> int:
-    """Return the number of ampere steps, one per whole ampere."""
     return charger.max_current_a - charger.min_current_a + 1
 
 
 def charging_current(charger: Charger, ampere_steps_on: int) -> int:
-    """Return the current for the number of ampere steps that are on."""
     return charger.min_current_a + max(ampere_steps_on, 1) - 1
 
 

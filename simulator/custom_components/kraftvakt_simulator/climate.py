@@ -31,7 +31,6 @@ async def async_setup_entry(
     entry: SimulatorConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the thermostat."""
     device = device_of(entry, SimulatedThermostat)
     async_add_entities([SimulatorThermostat(entry, device, THERMOSTAT)])
 
@@ -72,7 +71,6 @@ class SimulatorThermostat(
 
     @property
     def hvac_mode(self) -> HVACMode:
-        """Return the mode."""
         return self.device.hvac_mode
 
     @property
@@ -84,7 +82,6 @@ class SimulatorThermostat(
 
     @property
     def target_temperature(self) -> float:
-        """Return the target temperature."""
         return self.device.target_temperature
 
     async def async_added_to_hass(self) -> None:
@@ -98,7 +95,6 @@ class SimulatorThermostat(
             self.device.async_set_hvac_mode(HVACMode(last_state.state))
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        """Change the mode."""
         self.device.async_set_hvac_mode(hvac_mode)
 
     async def async_turn_on(self) -> None:
@@ -106,7 +102,6 @@ class SimulatorThermostat(
         self.device.async_turn_on()
 
     async def async_turn_off(self) -> None:
-        """Turn the thermostat off."""
         self.device.async_set_hvac_mode(HVACMode.OFF)
 
     async def async_set_temperature(self, **kwargs: Any) -> None:

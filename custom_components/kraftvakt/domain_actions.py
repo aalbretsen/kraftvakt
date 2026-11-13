@@ -105,7 +105,6 @@ class DomainAction:
         }
 
     def steps(self, entity_id: str, data: Mapping[str, Any]) -> list[dict[str, Any]]:
-        """Return the script steps that call the service for the entity."""
         return [
             {
                 "action": f"{self.domain}.{self.service}",

@@ -31,7 +31,6 @@ class Settings:
     def __init__(
         self, hass: HomeAssistant, storage: KraftvaktStorage, stored: StoredData
     ) -> None:
-        """Create the settings from what is stored."""
         self._hass = hass
         self._storage = storage
         self._config = stored.config
@@ -46,15 +45,12 @@ class Settings:
 
     @property
     def config(self) -> KraftvaktConfig:
-        """Return the stored configuration."""
         return self._config
 
     def appliance_switches(self, appliance_id: str) -> ApplianceSwitches:
-        """Return the positions of the switches for the appliance."""
         return self._appliance_switches.get(appliance_id, ApplianceSwitches())
 
     def charger_switches(self, charger_id: str) -> ChargerSwitches:
-        """Return the positions of the switches for the charger."""
         return self._charger_switches.get(charger_id, ChargerSwitches())
 
     def override_switched_on_at(self, charger_id: str) -> datetime | None:
@@ -136,7 +132,6 @@ class Settings:
         self._notify()
 
     async def async_save(self) -> None:
-        """Save the configuration and the switches."""
         await self._storage.async_save(
             StoredData(self._config, self._appliance_switches, self._charger_switches)
         )

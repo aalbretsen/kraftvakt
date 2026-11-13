@@ -23,8 +23,6 @@ class PenaltyOutcome(Enum):
 
 @dataclass(frozen=True, slots=True)
 class PenaltyLimits:
-    """The settings that decide overconsumption and penalty."""
-
     power_limit_w: float
     threshold_w: float
     window: timedelta
@@ -32,8 +30,6 @@ class PenaltyLimits:
 
 @dataclass(slots=True)
 class PenaltyState:
-    """The overconsumption state and the penalty period."""
-
     overconsuming: bool = False
     overconsumption_wh: float = 0.0
     active: bool = False
@@ -74,10 +70,10 @@ class PenaltyState:
     def _count(
         self, limits: PenaltyLimits, regulation_averages_w: Sequence[float]
     ) -> None:
-        """Add the net energy over the limit of each regulation average.
+        """Add the energy above the limit of each regulation average, net.
 
-        During a penalty nothing is subtracted before the first regulation average
-        under the limit, and from then on it counts net.
+        During a penalty, recovery has started at the first regulation average
+        under the limit.
         """
         hours = limits.window.total_seconds() / SECONDS_PER_HOUR
         for average_w in regulation_averages_w:

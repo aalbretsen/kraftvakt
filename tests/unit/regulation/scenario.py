@@ -48,17 +48,14 @@ def _appliance_and_variant(text: str) -> tuple[str, str | None]:
 
 
 def activate(charger_id: str, min_a: int = 6) -> list[Command]:
-    """Return the commands that activate the charger."""
     return [SetChargingCurrent(charger_id, min_a), ActivateCharger(charger_id)]
 
 
 def deactivate(charger_id: str, min_a: int = 6) -> list[Command]:
-    """Return the commands that deactivate the charger."""
     return [SetChargingCurrent(charger_id, min_a), DeactivateCharger(charger_id)]
 
 
 def current(charger_id: str, current_a: int) -> list[Command]:
-    """Return the command that sets the charging current."""
     return [SetChargingCurrent(charger_id, current_a)]
 
 
@@ -79,7 +76,6 @@ class Scenario:
         start: datetime = START,
         time_zone: tzinfo = UTC,
     ) -> None:
-        """Create the engine and start it at `start`."""
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone

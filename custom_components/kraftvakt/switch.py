@@ -26,7 +26,6 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the regulation switch and the switches of the configured items."""
     async_add_entities([RegulationSwitch(entry, entry.runtime_data)])
     async_setup_item_entities(
         hass,
@@ -45,7 +44,6 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
     """
 
     def __init__(self, entry: KraftvaktConfigEntry, runtime: KraftvaktRuntime) -> None:
-        """Create the switch for the runtime."""
         super().__init__(entry, "regulation")
         self._runtime = runtime
 
@@ -57,7 +55,6 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return whether the regulation runs."""
         return self._runtime.running
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -72,7 +69,6 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
             ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Stop the regulation."""
         self._runtime.async_stop_regulation()
 
 
@@ -81,7 +77,6 @@ class ItemSwitch(ItemEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return the position of the switch."""
         return bool(getattr(self._positions(), self._setting))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -94,7 +89,7 @@ class ItemSwitch(ItemEntity, SwitchEntity):
 
     @abstractmethod
     def _positions(self) -> ItemSwitches:
-        """Return the positions of the switches of the item."""
+        pass
 
     @abstractmethod
     async def _async_set(self, position: bool) -> None:
@@ -102,14 +97,11 @@ class ItemSwitch(ItemEntity, SwitchEntity):
 
 
 class ApplianceSwitch(ItemSwitch):
-    """A user's switch for an appliance."""
-
     kind = "appliance"
     settings = ("excluded",)
 
     @staticmethod
     def items(config: KraftvaktConfig) -> Sequence[Appliance]:
-        """Return the appliances in the configuration."""
         return config.appliances
 
     def _positions(self) -> ItemSwitches:
@@ -122,8 +114,6 @@ class ApplianceSwitch(ItemSwitch):
 
 
 class ChargerSwitch(ItemSwitch, ChargerEntity):
-    """A user's switch for a charger."""
-
     settings = ("excluded", "window_override")
 
     def _positions(self) -> ItemSwitches:
@@ -148,7 +138,6 @@ class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
         name: str,
         setting: str,
     ) -> None:
-        """Create the switch for the setting of the charger."""
         super().__init__(entry, settings, item_id, name, setting)
         self._runtime = entry.runtime_data
 

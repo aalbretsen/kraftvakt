@@ -93,7 +93,6 @@ def test_lowest_priority_is_switched_off_above_the_limit() -> None:
 
 
 def test_nothing_changes_at_the_limit() -> None:
-    """At the limit, nothing is turned on or off."""
     scenario = Scenario(no_waiting("a", "b"))
     scenario.turn_on("a")
 

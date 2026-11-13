@@ -40,7 +40,6 @@ SIGNAL_STATUS: Final = f"{DOMAIN}_status"
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    """Register the WebSocket commands of Kraftvakt."""
     websocket_api.async_register_command(hass, websocket_capabilities)
     websocket_api.async_register_command(hass, websocket_get_config)
     websocket_api.async_register_command(hass, websocket_save_config)
@@ -72,7 +71,6 @@ def websocket_capabilities(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Send the actions per field, the limits and the defaults of the settings."""
     connection.send_result(msg["id"], capabilities())
 
 

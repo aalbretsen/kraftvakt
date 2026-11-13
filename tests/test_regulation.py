@@ -656,7 +656,6 @@ async def test_custom_action_gets_the_entity_variables(
     config,
     setup_kraftvakt,
 ) -> None:
-    """Custom actions run with `entity_id` and `entity`."""
     calls = async_mock_service(hass, "test", "heat")
     config["appliances"][0]["turn_on"] = {
         "mode": "custom",

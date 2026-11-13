@@ -119,7 +119,6 @@ def test_no_penalty_at_or_under_limit_plus_threshold() -> None:
 
 
 def test_zero_threshold_gives_penalty_one_decision_later() -> None:
-    """With threshold 0, the penalty starts one decision later."""
     scenario = Scenario(no_waiting("a", threshold_w=0))
     scenario.turn_on("a")
 

@@ -22,7 +22,6 @@ export function newId(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/** Return whether two configurations are the same. */
 export function sameConfig(first: KraftvaktConfig | undefined, second: KraftvaktConfig | undefined): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
 }
@@ -68,7 +67,6 @@ function expectedPriority(config: KraftvaktConfig): PriorityEntry[] {
   return entries;
 }
 
-/** Return the chargers of every group. */
 export function allChargers(config: KraftvaktConfig): Charger[] {
   return config.charger_groups.flatMap((group) => group.chargers);
 }

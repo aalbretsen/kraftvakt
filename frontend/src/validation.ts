@@ -87,7 +87,6 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   return missing;
 }
 
-/** Return what is missing in one appliance and its variants. */
 export function missingInAppliance(appliance: Appliance): Issue[] {
   return [
     ...missingEntityAndActions("appliances", appliance, applianceActions(appliance)),
@@ -97,7 +96,6 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   ];
 }
 
-/** Return what is missing in one EV charger. */
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing: Issue[] = charger.device_id
     ? []
@@ -112,7 +110,6 @@ export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[]
   return missing;
 }
 
-/** Return the default action of an action field. */
 export function defaultActionOf(capabilities: Capabilities, section: ActionSection, field: string): DefaultAction {
   return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];
 }
@@ -159,7 +156,6 @@ export function isMissingAction(action: ActionConfig | null): boolean {
   );
 }
 
-/** Return the mistakes in one appliance and its variants. */
 export function applianceErrors(appliance: Appliance, capabilities: Capabilities, states: States): Issue[] {
   const labels = appliance.variants.map((variant) => variant.label.trim());
   return [
@@ -178,7 +174,6 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
   ];
 }
 
-/** Return the mistakes in one EV charger. */
 export function chargerErrors(charger: Charger, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
   const issues = [

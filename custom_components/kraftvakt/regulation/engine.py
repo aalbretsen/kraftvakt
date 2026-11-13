@@ -72,7 +72,6 @@ class RegulationEngine:
 
     @property
     def running(self) -> bool:
-        """Return whether the regulation runs."""
         return self._running
 
     @property
@@ -102,12 +101,10 @@ class RegulationEngine:
 
     @property
     def appliances_on(self) -> frozenset[str]:
-        """Return the ids of the appliances the regulation has turned on."""
         return frozenset(self._state.appliances_on)
 
     @property
     def excluded_appliances(self) -> frozenset[str]:
-        """Return the ids of the appliances excluded at the last decision."""
         return self._state.excluded_appliances
 
     @property
@@ -122,7 +119,6 @@ class RegulationEngine:
 
     @property
     def safe_state(self) -> bool:
-        """Return whether the regulation is in the safe state."""
         return self._state.safe_state
 
     @property
@@ -150,7 +146,6 @@ class RegulationEngine:
         }
 
     def start(self, now: datetime) -> list[Command]:
-        """Start the regulation with a new state and everything off."""
         self._running = True
         self._state = RegulationState(
             started_at=now, charging_groups=self._new_charging_groups()
@@ -158,7 +153,6 @@ class RegulationEngine:
         return self._record_commands(self._turn_off_everything(), now)
 
     def stop(self) -> list[Command]:
-        """Stop the regulation and turn everything off."""
         self._running = False
         commands = self._turn_off_everything()
         self._state = RegulationState(charging_groups=self._new_charging_groups())
@@ -256,7 +250,6 @@ class RegulationEngine:
         return self._state.charging_groups[group_id]
 
     def _charging_of(self, charger_id: str) -> ChargingState:
-        """Return the state of the group the charger is in."""
         return self._charging(self._group_of[charger_id].id)
 
     def _turn_off_everything(self) -> list[Command]:
@@ -435,7 +428,6 @@ class RegulationEngine:
         return self._switch(lowest_on.key, turn_on=False)
 
     def _make_room_below(self, key: StepKey) -> list[Command]:
-        """Switch off the lowest step that is on below the step, if any."""
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
         lowest_on = next(

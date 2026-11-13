@@ -24,15 +24,11 @@ PARALLEL_UPDATES = 0
 
 @dataclass(frozen=True, kw_only=True)
 class RegulationSensorDescription(SensorEntityDescription):
-    """Describes a sensor that shows a value of the regulation."""
-
     value_fn: Callable[[KraftvaktRuntime], float | None]
 
 
 @dataclass(frozen=True, kw_only=True)
 class PowerSensorDescription(RegulationSensorDescription):
-    """Describes a sensor that shows a power in W."""
-
     device_class: SensorDeviceClass = SensorDeviceClass.POWER
     state_class: SensorStateClass = SensorStateClass.MEASUREMENT
     native_unit_of_measurement: str = UnitOfPower.WATT
@@ -129,7 +125,6 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the sensors for the config entry."""
     async_add_entities(
         RegulationSensor(entry, entry.runtime_data, description)
         for description in SENSORS
@@ -137,8 +132,6 @@ async def async_setup_entry(
 
 
 class RegulationSensor(KraftvaktEntity, SensorEntity):
-    """Shows a value of the regulation."""
-
     entity_description: RegulationSensorDescription
 
     def __init__(
@@ -147,7 +140,6 @@ class RegulationSensor(KraftvaktEntity, SensorEntity):
         runtime: KraftvaktRuntime,
         description: RegulationSensorDescription,
     ) -> None:
-        """Create the sensor described by `description`."""
         super().__init__(entry, description.key)
         self.entity_description = description
         self._runtime = runtime
@@ -160,10 +152,8 @@ class RegulationSensor(KraftvaktEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the value of the regulation."""
         return self.entity_description.value_fn(self._runtime)
 
     @property
     def available(self) -> bool:
-        """Return whether there is a value to show."""
         return self.native_value is not None

@@ -28,7 +28,6 @@ async def async_setup_entry(
     entry: SimulatorConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Add the charging sensor of the EV charger."""
     device = device_of(entry, SimulatedCharger)
     async_add_entities([ChargingSensor(entry, device, CHARGING)])
 
@@ -38,5 +37,4 @@ class ChargingSensor(SimulatorEntity[SimulatedCharger], BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return whether the EV charger charges the car."""
         return self.device.power_w > 0

@@ -21,7 +21,6 @@ from .entity import SimulatorEntity
 
 
 def power_description(key: str) -> SensorEntityDescription:
-    """Return the description of a power sensor in W."""
     return SensorEntityDescription(
         key=key,
         translation_key=key,
@@ -56,7 +55,6 @@ class PowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
 
     @property
     def native_value(self) -> float:
-        """Return the power in W."""
         return self.device.power_w
 
 
@@ -70,5 +68,4 @@ class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
 
     @property
     def native_value(self) -> float:
-        """Return the total power in W."""
         return async_get_power_board(self.hass).total_w

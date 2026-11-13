@@ -71,11 +71,9 @@ class ConfigReader:
     """Reads JSON-friendly data into the model and collects type errors."""
 
     def __init__(self) -> None:
-        """Start without issues."""
         self.issues: list[Issue] = []
 
     def config(self, data: Any) -> KraftvaktConfig:
-        """Return the configuration in the data."""
         root = self._mapping(data, IssueLocation("general"), None)
         return KraftvaktConfig(
             general=self._general(root.get("general")),
@@ -101,7 +99,6 @@ class ConfigReader:
     def switches[T: ItemSwitches](
         self, data: Any, switch_type: type[T], section: str
     ) -> dict[str, T]:
-        """Return the switches in the data, by the id of the appliance or charger."""
         switches = {}
         defaults = switch_type()
         for item_id, item in self._mapping(data, IssueLocation(section), None).items():

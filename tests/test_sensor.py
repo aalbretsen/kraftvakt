@@ -193,7 +193,6 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
 async def test_power_sensor_without_unit_is_read_as_watt(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
 ) -> None:
-    """A power sensor without unit reports watt."""
     set_power(hass, "2500", unit=None)
     await setup_kraftvakt()
 
@@ -223,7 +222,6 @@ async def test_window_length_comes_from_the_configuration(
     stored_general: dict[str, Any],
     setup_kraftvakt,
 ) -> None:
-    """The regulation window is the configured one."""
     stored_general["regulation_window_s"] = 20
     set_power(hass, "1000")
     await setup_kraftvakt()

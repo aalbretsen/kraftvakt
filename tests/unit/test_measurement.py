@@ -312,7 +312,6 @@ def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
 
 
 def test_without_first_measurement_windows_stay_unknown() -> None:
-    """Windows without any measurement at all are invalid."""
     averager = PowerAverager(WINDOW, START)
     averager.add_measurement(at(10), None)
 

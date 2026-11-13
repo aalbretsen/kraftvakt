@@ -76,7 +76,6 @@ class ConfigIncompleteError(HomeAssistantError):
     """Raised when the regulation is started before the configuration is complete."""
 
     def __init__(self, missing: Sequence[Issue]) -> None:
-        """Create the error from what is missing."""
         super().__init__(
             "The configuration is not complete: "
             + ", ".join(issue.code for issue in missing)
@@ -85,10 +84,7 @@ class ConfigIncompleteError(HomeAssistantError):
 
 
 class RegulationRunningError(HomeAssistantError):
-    """Raised when the configuration is changed while the regulation runs."""
-
     def __init__(self) -> None:
-        """Create the error."""
         super().__init__("The regulation must be stopped to change the configuration")
 
 
@@ -139,32 +135,26 @@ class KraftvaktRuntime:
 
     @property
     def latest_averages(self) -> WindowAverages | None:
-        """Return the averages of the last closed window, if any."""
         return self._latest_averages
 
     @property
     def config(self) -> KraftvaktConfig:
-        """Return the stored configuration."""
         return self._settings.config
 
     @property
     def missing(self) -> list[Issue]:
-        """Return what is missing before the regulation can start."""
         return list(self._missing)
 
     @property
     def running(self) -> bool:
-        """Return whether the regulation runs."""
         return self._engine.running
 
     @property
     def safe_state(self) -> bool:
-        """Return whether the regulation is in the safe state."""
         return self._engine.safe_state
 
     @property
     def penalty(self) -> PenaltyState:
-        """Return the overconsumption state and the penalty period."""
         return self._engine.penalty
 
     @property
@@ -179,12 +169,10 @@ class KraftvaktRuntime:
 
     @property
     def appliances_on(self) -> frozenset[str]:
-        """Return the ids of the appliances the regulation has turned on."""
         return self._engine.appliances_on
 
     @property
     def excluded_appliances(self) -> frozenset[str]:
-        """Return the ids of the appliances excluded at the last decision."""
         return self._engine.excluded_appliances
 
     @property
@@ -215,7 +203,6 @@ class KraftvaktRuntime:
 
     @property
     def decision_interval(self) -> timedelta:
-        """Return the time between two decisions."""
         general = self.config.general
         return timedelta(
             seconds=general.regulation_window_s * general.regulation_interval
@@ -234,7 +221,6 @@ class KraftvaktRuntime:
 
     @property
     def curve_waiting_time(self) -> timedelta | None:
-        """Return the waiting time from the curve for the last regulation average."""
         averages = self._latest_averages
         if averages is None or averages.regulation_average_w is None:
             return None
@@ -303,7 +289,6 @@ class KraftvaktRuntime:
 
     @callback
     def async_shutdown(self) -> None:
-        """Stop listening to the power sensor and cancel the window timer."""
         self._forget_start_when_started()
         if self._history_task:
             self._history_task.cancel()
@@ -328,7 +313,6 @@ class KraftvaktRuntime:
 
     @callback
     def async_stop_regulation(self) -> None:
-        """Stop the regulation and turn everything off at once."""
         self._forget_start_when_started()
         if not self._engine.running:
             return

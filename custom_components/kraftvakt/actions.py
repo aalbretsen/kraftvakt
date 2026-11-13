@@ -52,7 +52,6 @@ class DefaultAction:
     data: Mapping[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the default action as JSON-friendly data for the panel."""
         return {
             "domains": list(self.domains),
             "service": self.service,
@@ -134,7 +133,6 @@ def domain_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
-    """Return the variables of the action that sets the charging current."""
     return {
         "current": min(max(current, charger.min_current_a), charger.max_current_a),
         "min_current": charger.min_current_a,

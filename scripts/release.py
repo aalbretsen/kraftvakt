@@ -146,7 +146,6 @@ def set_version(version: str) -> None:
 
 
 def value_at(data: dict, location: tuple[str, ...]) -> object:
-    """Return the value at a path of keys in JSON data."""
     for key in location:
         data = data[key]
     return data
@@ -187,7 +186,6 @@ def run(*command: str, capture: bool = False) -> str:
 
 
 def run_ok(*command: str) -> bool:
-    """Return whether a command succeeds."""
     return subprocess.run(command, cwd=ROOT, capture_output=True).returncode == 0
 
 

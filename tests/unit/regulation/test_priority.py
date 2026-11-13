@@ -31,7 +31,6 @@ def test_appliance_without_true_condition_is_its_own_current_variant() -> None:
 
 
 def test_topmost_true_condition_gives_current_variant() -> None:
-    """The variant of the topmost true expression applies."""
     heater = appliance("heater", variants=("morning", "evening"))
 
     assert current_variant(heater, {"evening": True}) == "evening"
@@ -67,10 +66,10 @@ def test_only_the_current_variant_gets_a_slot() -> None:
     ]
 
 
-def test_each_charger_group_entry_is_replaced_by_its_charger_slots() -> None:
+def test_each_charger_group_entry_is_replaced_by_its_ampere_steps() -> None:
     config = make_config("a", "b", priority=("a", "ev", "b", "@g2"))
 
-    def charger_slot(name: str) -> Step:
+    def ampere_step(name: str) -> Step:
         return Step(ApplianceStepKey(name), False, 4.0, APPLIANCE_GROWTH)
 
     assert keys(build_steps(config, {}, (), APPLIANCE_GROWTH)) == ["a", "b"]
@@ -79,7 +78,7 @@ def test_each_charger_group_entry_is_replaced_by_its_charger_slots() -> None:
         {},
         (),
         APPLIANCE_GROWTH,
-        charger_slots={"ev": [charger_slot("ev")], "g2": [charger_slot("g2")]},
+        ampere_steps_by_group={"ev": [ampere_step("ev")], "g2": [ampere_step("g2")]},
     )
     assert keys(steps) == ["a", "ev", "b", "g2"]
 

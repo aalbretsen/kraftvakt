@@ -103,19 +103,15 @@ class SimulatorSwitch(SimulatorEntity[SimulatedDevice], SwitchEntity, RestoreEnt
 
     @property
     def is_on(self) -> bool:
-        """Return whether the switch is on."""
         return self.entity_description.is_on_fn(self.device)
 
     async def async_added_to_hass(self) -> None:
-        """Restore the state from before the restart."""
         await super().async_added_to_hass()
         if (last_state := await self.async_get_last_state()) is not None:
             self.entity_description.set_fn(self.device, last_state.state == STATE_ON)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the switch on."""
         self.entity_description.set_fn(self.device, True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the switch off."""
         self.entity_description.set_fn(self.device, False)

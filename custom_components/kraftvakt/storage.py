@@ -41,7 +41,6 @@ class KraftvaktStorage:
     """
 
     def __init__(self, hass: HomeAssistant) -> None:
-        """Create the storage for the Home Assistant instance."""
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, STORAGE_KEY, atomic_writes=True
         )
