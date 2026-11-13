@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Final
 
 from homeassistant.components.sensor import (
@@ -11,13 +12,16 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import UnitOfPower
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 
 from . import SimulatorConfigEntry, kind_of
 from .const import DeviceKind
 from .devices import Observable, SimulatedDevice, async_get_power_board
 from .entity import SimulatorEntity
+
+HAN_INTERVAL: Final = timedelta(seconds=10)
 
 
 def power_description(key: str) -> SensorEntityDescription:
@@ -59,7 +63,22 @@ class PowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
 
 
 class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
-    """The power of the whole house: background plus every simulated device."""
+    """The power of the whole house: background plus every simulated device.
+
+    It reports every 10 seconds also when the power has not changed, as a HAN
+    reader does, so Kraftvakt's power sensor timeout does not run out.
+    """
+
+    async def async_added_to_hass(self) -> None:
+        """Report at a fixed interval as well as on every change."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_track_time_interval(self.hass, self._async_report, HAN_INTERVAL)
+        )
+
+    @callback
+    def _async_report(self, _now: datetime) -> None:
+        self.async_write_ha_state()
 
     @property
     def observed(self) -> Observable:

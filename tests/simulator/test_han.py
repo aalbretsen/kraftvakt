@@ -84,3 +84,20 @@ async def test_unloaded_device_no_longer_counts(
     assert power(hass, HOUSE_POWER) == 3500
     await advance(hass, freezer, timedelta(minutes=60))
     assert power(hass, HOUSE_POWER) == 3500
+
+
+async def test_han_reports_every_10_seconds_also_without_change(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
+) -> None:
+    """As a HAN reader does, so Kraftvakt's power sensor timeout does not run out."""
+    await add_device(DeviceKind.HAN, "HAN")
+    first = hass.states.get(HOUSE_POWER)
+    assert first is not None
+    reported_at, changed_at = first.last_reported, first.last_changed
+
+    await advance(hass, freezer, timedelta(seconds=10))
+
+    again = hass.states.get(HOUSE_POWER)
+    assert again is not None
+    assert again.last_reported > reported_at
+    assert again.last_changed == changed_at

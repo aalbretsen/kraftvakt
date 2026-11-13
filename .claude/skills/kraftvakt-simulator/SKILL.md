@@ -34,7 +34,9 @@ a local Home Assistant next to Kraftvakt and is never shipped to users.
 - One integration. Adding a device shows a menu: HAN, heating device,
   thermostat or EV charger. Each device is its own config entry and device.
 - Only one HAN. It reports the background power plus the power of every
-  simulated device, also devices set up after it.
+  simulated device, also devices set up after it, on every change and every
+  10 seconds. Why: Kraftvakt's power sensor timeout counts a sensor that does
+  not report as invalid, and a real HAN reader reports that often.
 - Heating device types (heating cable, water heater, panel heater) behave the
   same; the type only gives the switch its icon.
 - A heating device has power (W), duty cycle (0–100 %) and period (whole

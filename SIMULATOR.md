@@ -14,7 +14,8 @@ device at a time with **Add device**:
 
 - **HAN:** the power of the house, the background power plus the power of all
   the simulated devices (`sensor.han_power` when the device is named «HAN»).
-  There can be only one HAN.
+  It reports every 10 seconds, also when the power has not changed, as a HAN
+  reader does. There can be only one HAN.
 - **Heating device:** heating cable, water heater or panel heater, with power
   (W), duty cycle (0–100 %) and period (minutes). It has a switch and a power
   sensor. While the switch is on, it heats in a fixed cycle that starts with
