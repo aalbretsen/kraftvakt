@@ -29,7 +29,8 @@ Read the skill for the kind of task before starting:
   - tester: what is not tested, what can fail, how a failure is noticed, and edge cases such as a restart or a sensor that stops reporting;
   - software architect: separation of concerns, one owner for each piece of state, and Home Assistant's rules for integrations;
   - functional architect: whether the behaviour matches the specification, and whether code, tests, panel and documentation use the same concepts;
-  - business developer: whether it serves the users and the tariff it is made for, stays easy for most users and possible for experts, and what happens when devices, cloud services or the network fail.
+  - business developer: whether it serves the users and the tariff it is made for, stays easy for most users and possible for experts, and what happens when devices, 
+    cloud services or the network fail.
   Verify a finding by running it, in a test or against a local Home Assistant with the simulator, before reporting it.
   Lean on the official Home Assistant documentation as the source of truth, especially the documentation for developing an integration.
 
@@ -39,17 +40,24 @@ Read the skill for the kind of task before starting:
 - Do not write documentation that will need update for every code change. Do not use fragment from code as examples, or number of tests, current coverage etc. Generalize instead.
 - All decisions and information that is important for the next coding session, and to understand the code easier, shall be documented in the skill files.
 - Document only what is true now, and only what is not obvious from the code or from the rule itself.
-- When behaviour changes or a question is settled, change the existing rule instead of adding a note. Give the reason only when it is not obvious. Do not write who decided it, how it was before, or the alternatives that were rejected. The same applies to code comments.
-- Use one term per concept. The glossary is the Concepts table in the `kraftvakt-regulation` skill; code, tests, the README and the panel use its terms, and user-facing words map to it.
+- When behaviour changes or a question is settled, change the existing rule instead of adding a note. Give the reason only when it is not obvious. Do not write who decided it, 
+  how it was before, or the alternatives that were rejected. The same applies to code comments.
+- Use one term per concept. The glossary is the Concepts table in the `kraftvakt-regulation` skill; code, tests, the README and the panel use its terms,
+  and user-facing words map to it.
+- Every file, Markdown included, respects `max_line_length` from `.editorconfig`. Tables in Markdown are exempt.
+- When a line must wrap in the documentation (.md) files, break it at punctuation without adding lines: after a sentence end if possible, else after a colon, semicolon or comma.
+  Indent continuation lines in a list item to the item's text.
 
 ## Coding Rules
 - Write readable code that human beings can read and understand.
 - Let the code speak for itself through naming, not comments.
-- Write as few comments as possible, only for important decisions and choices that are not obvious from the code. This includes docstrings: one that repeats the name or the code is left out.
+- Write as few comments as possible, only for important decisions and choices that are not obvious from the code. 
+  This includes docstrings: one that repeats the name or the code is left out.
 - The backend is the source of truth for validation. The panel checks the draft only to give quick feedback.
 - Focus on separation of concerns to make the code adaptable to changed requirements.
 - Avoid specific code for each problem, lean on generic solutions, as long as the code is still understandable.
 - Follow Home Assistant coding standards and principles for integrations.
+- Write a hardcoded value used once where it is used, not as a named constant. A constant is for a value used in more than one place.
 - All code and commit messages shall be written in English, except translation files.
 
 ## Test code rules
