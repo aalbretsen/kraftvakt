@@ -27,8 +27,9 @@ integrations.
 - A charger is a device in HA, stored as its `device_id`, and every entity
   it names (its own, the set-current entity, and the car connected and
   actively charging entities or power sensor) must belong to that device.
-  Templates and custom actions are not checked. Why: integrations group a
-  charger's entities as a device, and the panel picks them from it.
+  Templates and custom actions are not checked, and cover a charger whose
+  values are elsewhere. Why: integrations group a charger's entities as a
+  device, so picking them from it keeps the setup easy for most users.
 - A charger is named after its device (the user's name for the device
   first), and after its entity while the device is missing or unknown; an
   appliance is named after its entity. The status, the entity names sent to
@@ -57,7 +58,7 @@ integrations.
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
-| `runtime.py` | Connects the engine to HA: follows the power sensor, fills the hour before the start from the recorder in a background task (skipped when the recorder is not loaded), schedules windows at absolute times, counts windows to decisions, reads chargers and conditions at a decision, logs each decision at DEBUG, runs commands in a background task, asks the engine for the repeated commands at every window, start and stop, starts when HA has started, safe state, status listeners, saving the configuration. |
+| `runtime.py` | Connects the engine to HA: measures the power sensor (with the hour before from the recorder), closes the windows at absolute times and counts them to decisions, reads the conditions and chargers at a decision, runs the commands in a background task, repeats commands, starts when HA has started, and keeps the last decisions and failed actions for the diagnostics. |
 | `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and when the override was switched on (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
@@ -131,8 +132,8 @@ An invalid configuration is not saved:
 
 An incomplete configuration can be saved, but the regulation cannot start.
 A charger without a device is missing, not an error.
-An empty variant expression is missing, not an error, since the variant is
-added in the appliance dialog and gets its expression in its own dialog.
+An empty condition is missing, not an error; a variant is added in the
+appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a
 target (the id of the appliance or charger) and a field; a variant field is
 addressed through the variant's id, also the variant's own actions

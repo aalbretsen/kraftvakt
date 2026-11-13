@@ -25,7 +25,7 @@ specification; the code holds them in one place (`config_model.py`).
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
 | Tariff window | One hour back from now, sliding, not configurable. |
-| Tariff average | Time-weighted average of the power sensor over the tariff window. The regulation uses it only for the penalty. |
+| Tariff average | Time-weighted average of the power sensor over the tariff window. The regulation uses it only for the penalty. Why sliding: the grid company measures each clock hour, and every clock hour is one of the sliding hours; a sliding hour also finds overconsumption early, where a budget per clock hour could be used up in the middle of the hour and leave no power for the rest of it. |
 | Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. The command repeat sends commands also between decisions, but only for the state the regulation has already set. |
 | Command repeat interval | 10–60 min, default 30 min. How long an appliance or charger may go without a command before the command for its state is sent again. |
 | Action timeout | 10–3600 s, default 60 s. How long an action may run before it is stopped and counts as failed. Why: the actions run one at a time, so one that never finishes would hold back every later command, also the turn-offs. |
@@ -66,8 +66,10 @@ energy in Wh; the status page shows kW.
   connected.
 - A failed action, also one stopped by the action timeout, is logged and not retried. The regulation goes on as if it
   worked. The command repeat sends the command for the state again later.
-- Only the current configuration is regulated. Removed appliances and chargers
-  get no more commands and are not cleaned up.
+- Only the current configuration is regulated. Kraftvakt never hands an
+  appliance or charger back: removed, excluded, with the regulation stopped or
+  the integration removed, it stays as last commanded, and the user sets it
+  as wanted.
 - The configuration can only be changed while the regulation is stopped, except
   the user's switches (one per appliance, two per charger), finish after window
   (see EV charging) and the power limit (see Power limit entity). Everything is off while stopped, so removed

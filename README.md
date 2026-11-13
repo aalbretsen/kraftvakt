@@ -49,9 +49,13 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 - **Power limit:** the highest allowed tariff average, for example
   10,000 W. It matches the step of the capacity tariff you want to stay below.
-- **Tariff average:** the moving average of the power sensor over the
-  last hour. This is what the grid company measures, and what is kept below
-  the power limit.
+- **Tariff average:** the average of the power sensor over the tariff window,
+  the last hour, sliding. The grid company measures the energy of each clock
+  hour, and every clock hour is also one of the sliding hours, so keeping the
+  tariff average below the power limit keeps every clock hour below it too.
+  The sliding hour also finds overconsumption early: a budget for each clock
+  hour could be used up in the middle of the hour, and leave the household
+  without power for the rest of it.
 - **Regulation average:** the average of the power sensor over a short
   regulation window, 10 seconds by default. It drives the decisions.
 - **Decisions:** at every regulation interval, the regulation decides whether
@@ -77,12 +81,13 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - **Repeated turn-on:** when the regulation turns the same appliance on over
   and over again with nothing else switched in between, the first two
   turn-ons follow the curve. From the third, the waiting time is the waiting
-  time at the power limit, and it grows by one step each time until the
-  chosen number of steps is reached. The step is a share of the waiting time
-  at the power limit. The defaults are × 0.5 and 4 steps for appliances
-  (150 s steps, at most 900 s), and × 1 and 5 steps for EV chargers (300 s
-  steps, at most 1800 s), where each ampere counts on its own. With no waiting
-  time at the power limit, the waiting time does not grow.
+  time at the power limit, and it grows by one increment each time until the
+  chosen number of increments is reached. The increment is a share of the
+  waiting time at the power limit. The defaults are × 0.5 and 4 increments for
+  appliances (150 s increments, at most 900 s), and × 1 and 5 increments for
+  EV chargers (300 s increments, at most 1800 s), where each ampere counts on
+  its own. With no waiting time at the power limit, the waiting time does not
+  grow.
 - **Variants:** an appliance can have variants with another place in the
   priority list, for example a higher priority in the morning. A variant uses
   the actions of the appliance, or overrides the action to turn on, to turn
@@ -102,7 +107,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   valve and should normally never happen.
 - **Safe state:** when the power sensor has had no valid value as two
   regulation windows in a row closed, every appliance is kept off. A single
-  missing value is tolerated. When the sensor gives a valid value again, the
+  missing value is tolerated. A power sensor that has not reported for the
+  power sensor timeout, 300 seconds by default, has no valid value, also when
+  its value has not changed. When the sensor gives a valid value again, the
   regulation starts again.
 - **Command repeat:** an appliance or EV charger that has had no command for
   the command repeat interval, 30 minutes by default, gets the command for the
@@ -111,6 +118,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   deactivated. It is checked every time a regulation window closes while the
   regulation runs, also in the safe state and during a penalty. Excluded
   appliances and EV chargers get no repeated commands.
+- **Failed action:** an action that fails, or has not finished within the
+  action timeout, 60 seconds by default, is logged, and the regulation goes
+  on as if it worked. The command repeat sends it again later.
 
 Kraftvakt does not know what an appliance uses, and does not read whether it
 is on. It assumes each appliance is as Kraftvakt last set it, and repeats that
@@ -135,23 +145,47 @@ provided the configuration is complete:
   in its group may charge at a time.
 
 When Home Assistant starts, the regulation waits until Home Assistant has
-finished starting, so the integrations of the appliances are loaded. If the
-stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt
-does not start, the integration shows an error, and the file is left
-unchanged.
+finished starting, so the integrations of the appliances are loaded. When the
+configuration is not complete then, it is reported under **Settings →
+Repairs**. If the stored configuration (`.storage/kraftvakt.config`) cannot be
+read, Kraftvakt does not start, the integration shows an error, and the file
+is left unchanged.
 
 Every start turns all appliances off at once, and deactivates all EV
 chargers. The regulation then turns them on one by one
 in priority order, with the first decision one full regulation interval after
 the start. The regulation also starts again with everything off when a penalty
-or the safe state ends, and at the next decision after the power limit is
-changed with the **Power limit** entity, see [Entities](#entities).
+or the safe state ends.
 
 The **Regulation** switch, and the button on the status page, stop and start
 the regulation. Stopping turns all appliances off, and nothing is turned on
-until it starts again. If the configuration is not complete, the switch stays
-off and the attempt is logged. The switch has no stored state, so the
-regulation runs again after a restart.
+until it starts again. If the configuration is not complete, turning the
+switch on gives an error and it stays off. The switch has no stored state, so
+the regulation runs again after a restart.
+
+## Appliances are not handed back
+
+Kraftvakt never hands an appliance back to you. When an appliance or EV
+charger is removed from the configuration or excluded from the regulation,
+when the regulation is stopped, and when the integration is removed, it stays
+as Kraftvakt last set it, often off. Set it yourself as you want it: for
+example, turn the water heater on again, or it stays cold.
+
+## Cloud-controlled devices
+
+Kraftvakt runs locally, but an appliance or EV charger controlled through a
+cloud service depends on that service and on the internet connection. A
+command may be delayed, or lost while the service is down. Kraftvakt logs the
+failure, goes on as if the command worked, and sends it again with the
+command repeat, so an appliance may stay on longer than the regulation wants
+and the power limit may be exceeded. Prefer devices with local control for
+appliances that draw a lot of power. An action that does not finish is
+stopped by the action timeout, so it does not hold back the commands after
+it.
+
+An entity of an appliance or EV charger that no longer exists in Home
+Assistant is reported under **Settings → Repairs**. An entity that is only
+unavailable, for example while its cloud service is down, is not.
 
 ## EV charging
 
@@ -181,14 +215,13 @@ set to the minimum before the EV charger is activated or deactivated.
 - **Actively charging** is read at every decision, from one of:
   - a sensor for charging power: above 100 W counts as charging. It may
     report W or kW,
-  - a boolean entity: off counts as not charging, on as charging,
-  - a template: the boolean value false counts as not charging, true as
-    charging.
+  - a boolean entity: on counts as charging,
+  - a template: the boolean value true counts as charging.
 
-  Only evidence that the EV charger is not charging counts as not charging.
-  An unavailable sensor or entity, and a template that fails or gives
-  something else than true or false, count as charging, so an EV charger that
-  may be charging is never taken for idle.
+  Anything else counts as not charging, also an unavailable sensor or entity
+  and a template that fails or gives something else than true or false. An
+  EV charger that has lost power or its connection reports unavailable, and
+  does not charge.
 - An EV charger gets more than the minimum current only when it is actively
   charging. While it is being tried, the appliances below its group can be
   turned on. When it charges, or is tried again, they are turned off one at a
@@ -233,11 +266,9 @@ pages. Only administrators have access.
 Changes are collected in a draft. **Save** stores everything at once, and
 **Discard** goes back to what is stored. Errors are shown at the field, and
 nothing is saved until they are fixed. The panel asks before unsaved changes
-are discarded when you go to the status page, and the browser asks when the
-page is closed. The configuration can only be changed while the regulation is
-stopped. While it runs, the configuration pages are locked and show the
-**Stop regulation** button. A saved configuration is used the next time the
-regulation starts.
+are discarded. The configuration can only be changed while the regulation is
+stopped; while it runs, the configuration pages are locked. A saved
+configuration is used the next time the regulation starts.
 
 ### Configuration pages
 
@@ -245,101 +276,49 @@ regulation starts.
   regulation interval, waiting time at the power limit and penalty threshold.
   The helper text under each field shows the valid range and the default.
 - **Appliances:** the priority list, with the most important appliance at the
-  top. Drag the handle to change the order. **Add appliance** and the pencil
-  open a dialog with the entity, the actions to turn it on and off, an
-  optional power reserve, and the variants. The dialog lists the variants by
-  label: add and rename them, and drag them in the order their expressions
-  are evaluated. A variant is a separate entry in the priority list, and the
-  top true expression applies. The pencil of a variant, in the list of the
-  appliance or on its row in the priority list, opens the dialog of the
-  variant, with the expression, either a boolean entity or a template, and
-  the switches **Override the action to turn on** and **Override the action
-  to turn off**. The current result of a template is shown under it. A
-  variant is deleted in its own dialog. From the dialog of the appliance, a
-  variant can only be opened when the dialog has no changes; press OK and
-  open the appliance again first. The power reserve applies to every
-  variant. Each
-  group of EV chargers is in the list under its name, and can be moved like
+  top; drag to change the order. An appliance has an entity, actions to turn
+  it on and off, an optional power reserve, and its variants. A variant is a
+  separate entry in the priority list with an expression, a boolean entity or
+  a template, and can override the action to turn on, to turn off or both.
+  The variants are evaluated in the order of the appliance's list, and the
+  top true expression applies. The power reserve applies to every variant.
+  Each group of EV chargers is in the list under its name, and is moved like
   an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV
-  charger at a time, and the EV chargers in charging priority. **Add group** adds a group, and a group without EV
-  chargers can be deleted. Drag an EV charger to the list of another group to
-  move it there. The dialog for an EV charger starts with the device of the
-  charger in Home Assistant, and every entity of the EV charger is chosen
-  among the entities of that device. Choosing the device fills the empty
-  fields with the entities the device most likely has for them, guessed from
-  their names and types, and clears the entities of the device chosen
-  before. Check what was filled in. Then come the entity, the actions to
-  activate, deactivate and set the charging current, the minimum and maximum
-  charging current, the power reserve, car connected, actively charging, and
-  the charging window with **Finish ongoing charging after the charging
-  window**.
-- **Advanced:**
-  - **Waiting time curve:** two sliders, steepness and pivot point, with a
-    table and a curve showing how much of the waiting time an appliance waits
-    by how much power is free (the power limit minus the regulation average).
-    The pivot point is free power as a percentage of the power limit. The
-    table also shows the actual waiting time, rounded up to the regulation
-    interval, since the appliance is turned on at the first decision after
-    the waiting time. The table is hidden on a narrow screen.
-  - **Waiting time on repeated turn-on:** step (× 0.25, × 0.5, × 0.75 or × 1)
-    and number of steps (1–9), for appliances and for EV chargers, each with a
-    table of the waiting time for each turn-on in a row.
-  - **Command repeat:** the command repeat interval, 10–60 minutes.
+  charger at a time, and the EV chargers in charging priority. Drag an EV
+  charger to another group to move it there. An EV charger starts with its
+  device in Home Assistant; choosing the device fills in the entities the
+  device most likely has, guessed from their names and types, so check what
+  was filled in. Then come the actions, the charging current, the power
+  reserve, car connected, actively charging and the charging window.
+- **Advanced:** the waiting time curve, the waiting time on repeated turn-on,
+  the command repeat interval, and the timeouts for actions and for the power
+  sensor. The tables show the actual waiting time, rounded up to the
+  regulation interval, since an appliance is turned on at the first decision
+  after its waiting time.
 
 ### Actions
 
 Actions adapt to the domain of the entity. A standard action is offered when
-the domain has one. Some device types also have specific actions of their own.
-Every action can also be a custom action, made with the action editor of Home
-Assistant, see [Template and action examples](#template-and-action-examples).
-
-A failed action is logged, and the regulation continues without retrying. The
-command repeat sends it again later. An
-entity used by another appliance or EV charger cannot be chosen.
+the domain has one, and some device types have actions of their own, such as
+the HVAC mode and temperature of a thermostat. Every action can also be a
+custom action, made with the action editor of Home Assistant, see
+[Template and action examples](#template-and-action-examples). An entity used
+by another appliance or EV charger cannot be chosen.
 
 ### Status page
 
-The status page shows whether the regulation runs and has the button to start
+The status page shows whether the regulation runs, with the button to start
 and stop it. If the configuration is not complete, it lists what is missing,
-with a link to the page where it is fixed. While the regulation runs, it also
-shows:
-
-- the tariff average and the regulation average against the power limit,
-  and the consumption now. The bar shows the consumption now, with a marker
-  for each average and for the power limit,
-- a ring that empties towards the next decision,
-- safe state and penalty periods when they occur, with the overconsumption
-  left and whether it has started to be recovered,
-- the priority list with the current variant of each appliance. Each
-  appliance has the icon of its entity, or a default icon when the entity has
-  none that can be shown. The icon of
-  an appliance that is on is yellow, as in Home Assistant, and an excluded
-  appliance is dimmed. Under each group, its EV chargers are listed in the
-  current charging priority with the charging current and one mark per ampere
-  from the minimum to the maximum current, filled up to the current one. The
-  group shows how many of its EV chargers are charging, for example «2 / 5»,
-- a label on each row: **Excluded**, **On** or **Off** for an appliance, and
-  for an EV charger the most important of **First decision**, **Excluded**,
-  the charging window (for example «22–06») when outside it, **No car
-  connected**, **Not charging**, **Queued**, **Override**, **Finishing**,
-  **Charging**,
-  **Activated** or **Deactivated**. Hover over a label or an icon for the full
-  explanation,
-- a dashed line under the last entry that is on. Here the power is used up,
-  and what is below waits for free power. The line shows the free power and
-  its share of the power limit, for example «5.00 kW (50 %) free». It is not
-  shown when everything is off, or when everything that is not excluded is
-  on. A group counts as on when one of its EV chargers is activated and not
-  bypassed,
-- a bar that empties evenly until the decision where the next appliance, or
-  one more ampere, is turned on.
-
-Every row of the priority list is one line. A name that is too long is cut,
-and the full name is shown when you hover over it. On a phone, each row only
-shows the icon, the name and the label: the rank, the variant, the number of
-EV chargers charging, the charging current and the bar for the next turn-on
-are hidden.
+with a link to the page where it is fixed. While the regulation runs, it
+shows the consumption now and the averages against the power limit, the next
+decision, the safe state and the penalty when they occur, and the priority
+list as it stands: each appliance at the place of its current variant, and
+each group with its EV chargers in the current charging priority and their
+charging current. Each row has a label telling how it stands; hover over it
+for the explanation. A dashed line goes under the last entry that is on, with
+the free power, and a bar shows the time left until the next appliance, or
+one more ampere, is turned on.
 
 ## Entities
 
@@ -352,9 +331,9 @@ All entities belong to the service device **Kraftvakt**.
 | `binary_sensor.kraftvakt_regulation_safe_state` (Regulation safe state) | On while the regulation is in safe state. Can trigger an automation that notifies you. |
 | `sensor.kraftvakt_regulation_steps_on` (Regulation steps on) | Diagnostic. The number of steps that are on: each appliance is one step, and each ampere of an EV charger, from the minimum current up, is one step. |
 | **Power** | |
-| `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs, see below. |
+| `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs. |
 | `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in W. |
-| `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average over the last hour in W. |
+| `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
@@ -384,17 +363,16 @@ also just after a restart. The time Home Assistant was down is counted with
 the last value before it stopped. Without history, the first measurement is
 used back in time.
 
-A new value in **Power limit** is stored at once. While the regulation runs,
-it starts again with the new power limit at the next decision, and an ongoing
-penalty ends. Several changes before the next decision give one restart, and a
-value equal to the power limit in use does nothing. The status page shows the
-power limit in use.
+A new value in **Power limit** is stored at once and used from the next
+decision, also while the regulation runs, without starting it again. Above a
+lower limit, appliances are turned off one at each decision as usual.
 
 The appliance and EV charger switches can be used while the regulation runs
 and apply from the next decision, without restarting it. An excluded
 appliance or EV charger gets no repeated commands from the next regulation
-window. Their state is stored at once and kept over a restart. The entities of an EV charger do not depend on its group, and are
-kept when it is moved to another group.
+window. Their state is stored at once and kept over a restart. The entities
+of an EV charger do not depend on its group, and are kept when it is moved to
+another group.
 
 The entity IDs are the same in every language and are grouped by what they
 concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and
@@ -402,6 +380,14 @@ concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and
 is the name of the entity of the appliance. ‹charger› is the name of the
 device of the EV charger. The entity ID keeps the name from when the appliance
 or EV charger was added.
+
+**Waiting time next turn-on (calculated)** is disabled by default; enable it
+under the entity's settings when you want it.
+
+## Diagnostics
+
+**Download diagnostics** on the integration's page gives the configuration,
+the status, and the last decisions and failed actions, for a bug report.
 
 ## Template and action examples
 

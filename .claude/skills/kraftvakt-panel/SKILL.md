@@ -39,8 +39,9 @@ configure button) goes to the Appliances page.
 Code that mirrors the backend and must be kept in step with it:
 
 - the waiting time curve, the same as in `regulation/waiting.py`,
-- validation against the limits, what is missing and completing the priority
-  list, the same rules as in `config_validation.py`,
+- a subset of the validation in `config_validation.py`: the limits, what is
+  missing and completing the priority list, for quick feedback; the backend
+  checks everything at save,
 - the checks of default and domain actions against their entities, the same
   as in `actions.py` and `domain_actions.py`,
 - the name of a charger that is not saved yet, the same rule as the backend,
@@ -129,9 +130,10 @@ Code that mirrors the backend and must be kept in step with it:
   not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A
   new variant starts as an empty template, which is missing, not an error, so
-  the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set», offers
-  a boolean entity first and shows it until one is chosen; its preview reads the
-  value as the backend does, so missing evidence shows as charging. Car
+  the appliance can be confirmed before the variant gets its expression.
+  Actively charging has no «not set», offers a boolean entity first and shows
+  it until one is chosen. Every preview reads the value as the backend does,
+  so only evidence shows as true. Car
   connected is shown as required when only one charger in the group may
   charge at a time.
 - The power sensor picker offers sensors with device class power, without
@@ -184,6 +186,8 @@ Code that mirrors the backend and must be kept in step with it:
 - Third card, command repeat: a short text on why commands are repeated and
   that excluded appliances and chargers are left alone, and the interval in
   minutes.
+- Fourth card, timeouts: a short text on what each timeout guards against,
+  and the action timeout and the power sensor timeout in seconds.
 - Tables are left out on a narrow screen.
 
 ### Status page
