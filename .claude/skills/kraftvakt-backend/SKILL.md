@@ -199,7 +199,8 @@ panel's translations.
 - Repair issues are only for problems in the configuration, never for an
   entity that is merely unavailable, since that is often a cloud service that
   is down. The regulation that could not start is reported when HA or the
-  integration starts and cleared at any start. Removed entities are looked
+  integration starts, also right after a fresh install with nothing
+  configured, and cleared at any start. Removed entities are looked
   for at every start of the regulation and after every failed action.
 - The waiting time next turn-on sensor is disabled by default.
 - Each appliance has an excluded switch, and each charger an excluded switch,
