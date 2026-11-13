@@ -23,7 +23,6 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "custom_components" / "kraftvakt" / "manifest.json"
 PYPROJECT = ROOT / "pyproject.toml"
 PACKAGE_JSON = ROOT / "frontend" / "package.json"
-PACKAGE_LOCK = ROOT / "frontend" / "package-lock.json"
 BRANCH = "main"
 REMOTE = "origin"
 
@@ -32,13 +31,15 @@ SEMVER = re.compile(
     r"(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][\dA-Za-z-]*)"
     r"(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][\dA-Za-z-]*))*))?"
 )
-PYPROJECT_VERSION = re.compile(r'^version = "([^"]+)"$', re.MULTILINE)
 # Where the version is in each JSON file of the release, as paths of keys, in
 # the order they come in the file.
 JSON_VERSIONS = {
     MANIFEST: (("version",),),
     PACKAGE_JSON: (("version",),),
-    PACKAGE_LOCK: (("version",), ("packages", "", "version")),
+    ROOT / "frontend" / "package-lock.json": (
+        ("version",),
+        ("packages", "", "version"),
+    ),
 }
 
 CHECKS = (
@@ -142,7 +143,15 @@ def set_version(version: str) -> None:
                 raise ReleaseError(f"the version in {path.name} was not where expected")
         path.write_text(text)
     text = PYPROJECT.read_text()
-    PYPROJECT.write_text(PYPROJECT_VERSION.sub(f'version = "{version}"', text, 1))
+    PYPROJECT.write_text(
+        re.sub(
+            r'^version = "([^"]+)"$',
+            f'version = "{version}"',
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    )
 
 
 def value_at(data: dict, location: tuple[str, ...]) -> object:

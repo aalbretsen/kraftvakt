@@ -26,9 +26,6 @@ const CHARGER_FIELDS = [
   "charging_window",
 ] as const;
 
-/** EV chargers can be dragged between the lists of all groups. */
-const CHARGER_LISTS = "kraftvakt-chargers";
-
 const GROUP_SCHEMA = [
   { name: "name", required: true, selector: { text: {} } },
   { name: "one_at_a_time", selector: { boolean: {} } },
@@ -75,7 +72,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         empty: this.localize("charging.empty"),
         rows: group.chargers.map((charger) => this.row(charger)),
         locked: this.locked,
-        group: CHARGER_LISTS,
+        group: "kraftvakt-chargers",
         onAdd: () => this.addCharger(group),
         onMoved: (event) => this.chargerMoved(group, event),
         onAdded: (event) => this.chargerAdded(group, event),

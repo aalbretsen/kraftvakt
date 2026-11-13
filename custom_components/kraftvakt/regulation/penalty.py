@@ -9,7 +9,6 @@ from enum import Enum, auto
 from typing import Final
 
 PAID_BACK_TOLERANCE_WH: Final = 1e-6
-SECONDS_PER_HOUR: Final = 3600
 
 
 class PenaltyOutcome(Enum):
@@ -75,7 +74,7 @@ class PenaltyState:
         During a penalty, recovery has started at the first regulation average
         under the limit.
         """
-        hours = limits.window.total_seconds() / SECONDS_PER_HOUR
+        hours = limits.window.total_seconds() / 3600
         for average_w in regulation_averages_w:
             excess_w = average_w - limits.power_limit_w
             if self.active and excess_w < 0:

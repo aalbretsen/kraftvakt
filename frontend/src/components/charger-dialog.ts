@@ -9,7 +9,6 @@ import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
 const ENTITY_VARIABLES = ["entity_id", "entity"];
-const CURRENT_VARIABLES = ["current", "min_current", "max_current", ...ENTITY_VARIABLES];
 
 /** Adds or edits one EV charger. */
 @customElement("kraftvakt-charger-dialog")
@@ -57,7 +56,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
             max_current_a: value.max_current_a as number,
           }),
       )}
-      ${this.renderAction("set_current", issues, CURRENT_VARIABLES, true)}
+      ${this.renderAction("set_current", issues, ["current", "min_current", "max_current", ...ENTITY_VARIABLES], true)}
       ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
         this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
       )}

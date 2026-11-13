@@ -64,10 +64,6 @@ def read_switches[T: ItemSwitches](
     return switches
 
 
-_BOOLEAN_CONDITIONS = (ConditionType.ENTITY, ConditionType.TEMPLATE)
-_TIME_PATTERN = re.compile(r"(\d{1,2}):(\d{2})(?::(\d{2}))?")
-
-
 class ConfigReader:
     """Reads JSON-friendly data into the model and collects type errors."""
 
@@ -304,7 +300,11 @@ class ConfigReader:
             return None
         condition_type = condition.get("type")
         value = condition.get("value", "")
-        allowed = tuple(ConditionType) if power_sensor_allowed else _BOOLEAN_CONDITIONS
+        allowed = (
+            tuple(ConditionType)
+            if power_sensor_allowed
+            else (ConditionType.ENTITY, ConditionType.TEMPLATE)
+        )
         if condition_type not in allowed or not isinstance(value, str):
             self.issues.append(location.issue("invalid_type", key))
             return None
@@ -327,7 +327,7 @@ class ConfigReader:
     def _time(self, value: Any) -> time | None:
         if not isinstance(value, str):
             return None
-        match = _TIME_PATTERN.fullmatch(value)
+        match = re.fullmatch(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", value)
         if match is None:
             return None
         hour, minute, second = (int(part or 0) for part in match.groups())

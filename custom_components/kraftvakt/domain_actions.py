@@ -16,8 +16,6 @@ from homeassistant.core import State, split_entity_id
 
 from .config_model import ActionConfig, ActionKind
 
-ON_OFF_KINDS: Final = (ActionKind.TURN_ON, ActionKind.TURN_OFF)
-
 
 class ParameterType(StrEnum):
     """What kind of value a parameter takes, and how the panel shows it."""
@@ -94,7 +92,7 @@ class DomainAction:
     domain: str
     service: str
     parameters: tuple[ActionParameter, ...]
-    kinds: tuple[ActionKind, ...] = ON_OFF_KINDS
+    kinds: tuple[ActionKind, ...] = (ActionKind.TURN_ON, ActionKind.TURN_OFF)
 
     def to_dict(self, kind: ActionKind) -> dict[str, Any]:
         """Return the domain action for an action of the kind, for the panel."""

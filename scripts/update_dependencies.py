@@ -33,22 +33,12 @@ PYPROJECT = ROOT / "pyproject.toml"
 NVMRC = ROOT / ".nvmrc"
 FRONTEND = ROOT / "frontend"
 PACKAGE_JSON = FRONTEND / "package.json"
-WORKFLOWS = ROOT / ".github" / "workflows"
 
 TEST_HARNESS = "pytest-homeassistant-custom-component"
-FROM_TEST_HARNESS = ("homeassistant", "pytest", "pytest-asyncio")
-FROM_HA_FRONTEND = ("lit", "typescript", "@mdi/js")
 
-CORE_FILE = "https://raw.githubusercontent.com/home-assistant/core/{version}/{path}"
 FRONTEND_FILE = (
     "https://raw.githubusercontent.com/home-assistant/frontend/{version}/{path}"
 )
-PYPI = "https://pypi.org/pypi/{name}/json"
-PYPI_RELEASE = "https://pypi.org/pypi/{name}/{version}/json"
-NPM_LATEST = "https://registry.npmjs.org/{name}/latest"
-GITHUB_RELEASE = "https://api.github.com/repos/{repository}/releases/latest"
-FRONTEND_MANIFEST = "homeassistant/components/frontend/manifest.json"
-ACTION_PIN = re.compile(r"(uses: )([\w.-]+/[\w.-]+)@(v[\d.]+)")
 
 
 def main() -> None:
@@ -66,13 +56,17 @@ def update_python(changes: list[str]) -> str:
     Returns the version of the Home Assistant frontend the new Home Assistant
     release uses.
     """
-    harness = fetch_json(PYPI.format(name=TEST_HARNESS))["info"]
+    harness = fetch_json(f"https://pypi.org/pypi/{TEST_HARNESS}/json")["info"]
     pins = {TEST_HARNESS: harness["version"]}
     harness_pins = requirement_pins(harness["requires_dist"])
-    pins |= {name: harness_pins[name] for name in FROM_TEST_HARNESS}
+    pins |= {
+        name: harness_pins[name]
+        for name in ("homeassistant", "pytest", "pytest-asyncio")
+    }
     ha_version = pins["homeassistant"]
     pins["home-assistant-frontend"] = pinned(
-        read_core(ha_version, FRONTEND_MANIFEST), "home-assistant-frontend"
+        read_core(ha_version, "homeassistant/components/frontend/manifest.json"),
+        "home-assistant-frontend",
     )
     pins["ruff"] = pinned(
         read_core(ha_version, "requirements_test_pre_commit.txt"), "ruff"
@@ -86,9 +80,7 @@ def update_python(changes: list[str]) -> str:
         )
     REQUIREMENTS.write_text(text)
 
-    ha_release = fetch_json(
-        PYPI_RELEASE.format(name="homeassistant", version=ha_version)
-    )
+    ha_release = fetch_json(f"https://pypi.org/pypi/homeassistant/{ha_version}/json")
     python = ha_release["info"]["requires_python"]
     PYPROJECT.write_text(
         replace_version(
@@ -115,10 +107,11 @@ def update_panel(frontend_version: str, changes: list[str]) -> None:
     package = json.loads(PACKAGE_JSON.read_text())
     for section in ("dependencies", "devDependencies"):
         for name, current in package[section].items():
-            if name in FROM_HA_FRONTEND:
+            if name in ("lit", "typescript", "@mdi/js"):
                 newest = ha_packages[name].lstrip("^~")
             else:
-                newest = fetch_json(NPM_LATEST.format(name=name))["version"]
+                latest = fetch_json(f"https://registry.npmjs.org/{name}/latest")
+                newest = latest["version"]
             note_change(changes, name, current, newest)
             package[section][name] = newest
     PACKAGE_JSON.write_text(json.dumps(package, indent=2) + "\n")
@@ -135,8 +128,10 @@ def update_actions(changes: list[str]) -> None:
     """
     newest: dict[str, str] = {}
     update = partial(update_action_pin, newest, changes)
-    for workflow in sorted(WORKFLOWS.glob("*.yml")):
-        workflow.write_text(ACTION_PIN.sub(update, workflow.read_text()))
+    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        workflow.write_text(
+            re.sub(r"(uses: )([\w.-]+/[\w.-]+)@(v[\d.]+)", update, workflow.read_text())
+        )
 
 
 def update_action_pin(
@@ -148,7 +143,9 @@ def update_action_pin(
     """
     repository, current = match.group(2), match.group(3)
     if repository not in newest:
-        release = fetch_json(GITHUB_RELEASE.format(repository=repository))
+        release = fetch_json(
+            f"https://api.github.com/repos/{repository}/releases/latest"
+        )
         newest[repository] = release["tag_name"]
     parts = current.count(".") + 1
     version = ".".join(newest[repository].split(".")[:parts])
@@ -193,7 +190,9 @@ def note_change(changes: list[str], name: str, current: str, newest: str) -> Non
 
 
 def read_core(version: str, path: str) -> str:
-    return fetch_text(CORE_FILE.format(version=version, path=path))
+    return fetch_text(
+        f"https://raw.githubusercontent.com/home-assistant/core/{version}/{path}"
+    )
 
 
 def fetch_json(url: str) -> Any:

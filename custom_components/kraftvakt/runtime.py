@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Final
+from typing import Any
 
 from homeassistant.components.recorder import get_instance, history
 from homeassistant.config_entries import ConfigEntry
@@ -65,9 +65,6 @@ from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
 
-RECENT_DECISIONS: Final = 100
-RECENT_FAILURES: Final = 20
-
 type KraftvaktConfigEntry = ConfigEntry[KraftvaktRuntime]
 type WindowListener = Callable[[WindowAverages], None]
 type StatusListener = Callable[[], None]
@@ -116,8 +113,8 @@ class KraftvaktRuntime:
         self._engine = RegulationEngine(config)
         self._action_lock = action_lock or asyncio.Lock()
         self._actions = self._action_runner(config)
-        self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=RECENT_DECISIONS)
-        self._failed_actions: deque[dict[str, Any]] = deque(maxlen=RECENT_FAILURES)
+        self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=100)
+        self._failed_actions: deque[dict[str, Any]] = deque(maxlen=20)
         self._created_at = dt_util.utcnow()
         self._averager = PowerAverager(
             timedelta(seconds=config.general.regulation_window_s), self._created_at

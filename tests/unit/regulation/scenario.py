@@ -60,9 +60,6 @@ def current(charger_id: str, current_a: int) -> list[Command]:
     return [SetChargingCurrent(charger_id, current_a)]
 
 
-IDLE_CHARGER = ChargerReading(actively_charging=False)
-
-
 class Scenario:
     """Drives a started engine through decisions.
 
@@ -80,7 +77,10 @@ class Scenario:
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone
-        self.chargers = {charger.id: IDLE_CHARGER for charger in config.chargers}
+        self.chargers = {
+            charger.id: ChargerReading(actively_charging=False)
+            for charger in config.chargers
+        }
         self.excluded_appliances: frozenset[str] = frozenset()
         self.overrides = OverrideChanges()
         self.start_commands = self.engine.start(self.now)

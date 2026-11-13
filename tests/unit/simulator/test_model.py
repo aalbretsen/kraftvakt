@@ -11,15 +11,15 @@ from custom_components.kraftvakt_simulator.model import (
     three_phase_power_w,
 )
 
-HOUR = timedelta(hours=1)
-
 
 def minutes(value: float) -> timedelta:
     return timedelta(minutes=value)
 
 
 def heating_cable(duty_cycle_pct: int = 25) -> DutyCycle:
-    return DutyCycle(power_w=750, duty_cycle_pct=duty_cycle_pct, period=HOUR)
+    return DutyCycle(
+        power_w=750, duty_cycle_pct=duty_cycle_pct, period=timedelta(hours=1)
+    )
 
 
 @pytest.mark.parametrize(

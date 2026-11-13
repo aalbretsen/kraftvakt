@@ -10,7 +10,6 @@ from typing import Final
 
 from ..config_model import Charger, ChargingWindow, OverrideEnd
 
-BYPASSED_AFTER_WINDOWS: Final = 2
 RETRY_PAUSES: Final = (
     timedelta(minutes=15),
     timedelta(minutes=30),
@@ -49,16 +48,11 @@ class ChargingPermission(StrEnum):
 
     @property
     def allowed(self) -> bool:
-        return self in _ALLOWED
-
-
-_ALLOWED: Final = frozenset(
-    {
-        ChargingPermission.WINDOW,
-        ChargingPermission.OVERRIDE,
-        ChargingPermission.FINISHING,
-    }
-)
+        return self in (
+            ChargingPermission.WINDOW,
+            ChargingPermission.OVERRIDE,
+            ChargingPermission.FINISHING,
+        )
 
 
 class ChargerState(StrEnum):
@@ -262,10 +256,7 @@ class ChargingState:
     ) -> bool:
         """Return whether a car has had time to start charging since activation."""
         activated_at = self.activated_at.get(charger_id)
-        return (
-            activated_at is not None
-            and now - activated_at >= BYPASSED_AFTER_WINDOWS * window
-        )
+        return activated_at is not None and now - activated_at >= 2 * window
 
     def is_allowed(self, charger_id: str) -> bool:
         """Return whether the charger was allowed to charge at the last decision."""

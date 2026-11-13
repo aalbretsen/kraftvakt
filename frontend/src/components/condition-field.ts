@@ -17,8 +17,6 @@ const TYPES: Record<ConditionKind, Condition["type"][]> = {
   actively_charging: ["entity", "power_sensor", "template"],
 };
 
-const PREVIEW_DELAY_MS = 500;
-
 type ConditionType = Condition["type"] | "none";
 
 interface TemplateResult {
@@ -200,7 +198,7 @@ export class KraftvaktConditionField extends LitElement {
       return;
     }
     const template = this.value.value;
-    this.previewTimer = window.setTimeout(() => this.startPreview(template), PREVIEW_DELAY_MS);
+    this.previewTimer = window.setTimeout(() => this.startPreview(template), 500);
   }
 
   private startPreview(template: string): void {

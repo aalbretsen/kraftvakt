@@ -22,7 +22,6 @@ type ActionSection = keyof Capabilities["default_actions"];
 type States = Record<string, HassEntity>;
 
 export const APPLIANCE_ACTIONS = ["turn_on", "turn_off"] as const;
-const CHARGER_ACTIONS = ["activate", "deactivate", "set_current"] as const;
 
 /** An action of an appliance or a charger: its name, the field issues address, and its value. */
 interface ActionEntry {
@@ -51,7 +50,7 @@ export function isOverridden(actions: Partial<ApplianceActions> | undefined, nam
 }
 
 function chargerActions(charger: Charger): ActionEntry[] {
-  return CHARGER_ACTIONS.map((name) => ({ name, field: name, action: charger[name] }));
+  return (["activate", "deactivate", "set_current"] as const).map((name) => ({ name, field: name, action: charger[name] }));
 }
 
 /** Return the mistakes in the draft that stop it from being saved. */

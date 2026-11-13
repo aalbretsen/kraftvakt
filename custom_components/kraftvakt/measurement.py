@@ -16,12 +16,10 @@ from typing import Final
 TARIFF_WINDOW: Final = timedelta(hours=1)
 CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN: Final = 2
 
-_W_PER_UNIT: Final[dict[str | None, float]] = {None: 1.0, "W": 1.0, "kW": 1000.0}
-
 
 def power_w(state: str | None, unit: str | None) -> float | None:
     """Return a sensor state in W, or None when it is not a valid measurement."""
-    factor = _W_PER_UNIT.get(unit or None)
+    factor = {None: 1.0, "W": 1.0, "kW": 1000.0}.get(unit or None)
     if factor is None or state is None:
         return None
     try:

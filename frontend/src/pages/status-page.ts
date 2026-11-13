@@ -14,7 +14,7 @@ import {
   mdiTimerOutline,
   mdiTimerSand,
 } from "@mdi/js";
-import { LitElement, type TemplateResult, css, html, nothing, unsafeCSS } from "lit";
+import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import {
@@ -36,11 +36,6 @@ import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
 import { WidthQuery } from "../width-query";
 
-/** The width of the waiting column in pixels. */
-const WAITING_WIDTH = 120;
-/** The widest status page, in pixels, that gets the phone layout. */
-const PHONE_MAX_WIDTH = 600;
-
 /** How a chip looks: its colour and its icon, or a dot without one. */
 interface Chip {
   kind: "on" | "off" | "warning" | "outline" | "info";
@@ -49,27 +44,19 @@ interface Chip {
 
 const CHIP_ON: Chip = { kind: "on" };
 const CHIP_OFF: Chip = { kind: "off" };
-const CHIP_CHARGING: Chip = { kind: "on", icon: mdiLightningBolt };
-const CHIP_NOT_CHARGING: Chip = { kind: "warning", icon: mdiPowerPlugOff };
-const CHIP_NO_CAR: Chip = { kind: "warning", icon: mdiCarOff };
-const CHIP_QUEUED: Chip = { kind: "off", icon: mdiTimerSand };
 const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
-const CHIP_OUTSIDE_WINDOW: Chip = { kind: "outline", icon: mdiClockOutline };
-const CHIP_OVERRIDE: Chip = { kind: "info", icon: mdiClockFast };
-const CHIP_FINISHING: Chip = { kind: "info", icon: mdiClockEnd };
-const CHIP_FIRST_DECISION: Chip = { kind: "off", icon: mdiTimerSand };
 
 /** The chip, its word and its sentence for each state of an EV charger. */
 const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
-  first_decision: [CHIP_FIRST_DECISION, "status.chip_first_decision", "status.first_decision"],
+  first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
   excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
-  outside_window: [CHIP_OUTSIDE_WINDOW, "status.chip_window", "status.outside_window"],
-  no_car: [CHIP_NO_CAR, "status.chip_no_car", "status.bypassed_no_car"],
-  not_charging: [CHIP_NOT_CHARGING, "status.chip_not_charging", "status.bypassed"],
-  queued: [CHIP_QUEUED, "status.chip_queued", "status.waiting_charger"],
-  override: [CHIP_OVERRIDE, "status.chip_override", "status.window_overridden"],
-  finishing: [CHIP_FINISHING, "status.chip_finishing", "status.finishing_at"],
-  charging: [CHIP_CHARGING, "status.chip_charging", "status.charging_at"],
+  outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
+  no_car: [{ kind: "warning", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
+  not_charging: [{ kind: "warning", icon: mdiPowerPlugOff }, "status.chip_not_charging", "status.bypassed"],
+  queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
+  override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
+  finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
+  charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
   activated: [CHIP_ON, "status.activated", "status.activated_not_charging"],
   deactivated: [CHIP_OFF, "status.deactivated", "status.deactivated"],
 };
@@ -111,13 +98,12 @@ function shortTime(time: string): string {
   return time.endsWith(":00") ? time.slice(0, -3) : time;
 }
 
-/** The kW steps the meter's scale may use, and how many ticks it may have at most. */
+/** The kW steps the meter's scale may use. */
 const TICK_STEPS = [1, 2, 5, 10, 20, 50];
-const MAX_TICKS = 15;
 
-/** Return the step between ticks and the end of a scale that reaches at least `reach` kW. */
+/** Return the step between at most 15 ticks and the end of a scale that reaches at least `reach` kW. */
 function meterScale(reach: number): { step: number; end: number } {
-  const step = TICK_STEPS.find((candidate) => reach / candidate <= MAX_TICKS) ?? TICK_STEPS[TICK_STEPS.length - 1];
+  const step = TICK_STEPS.find((candidate) => reach / candidate <= 15) ?? TICK_STEPS[TICK_STEPS.length - 1];
   return { step, end: Math.ceil(reach / step) * step };
 }
 
@@ -136,7 +122,8 @@ export class KraftvaktStatusPage extends LitElement {
 
   @state() private runningError?: string;
 
-  private readonly phoneQuery = new WidthQuery(this, PHONE_MAX_WIDTH);
+  /** The widest status page, in pixels, that gets the phone layout. */
+  private readonly phoneQuery = new WidthQuery(this, 600);
 
   private get phone(): boolean {
     return this.phoneQuery.matches;
@@ -774,7 +761,7 @@ export class KraftvaktStatusPage extends LitElement {
     }
     .list {
       display: grid;
-      grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) ${unsafeCSS(WAITING_WIDTH)}px max-content;
+      grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) 120px max-content;
       column-gap: 12px;
     }
     .row {

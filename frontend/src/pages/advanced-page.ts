@@ -12,17 +12,11 @@ type RepeatFactorField = "appliance_repeat_increment_factor" | "charger_repeat_i
 type RepeatIncrementsField = "appliance_repeat_increments" | "charger_repeat_increments";
 type TableRow = "advanced.free_power_kw" | "advanced.waiting_minutes" | "advanced.actual_waiting_minutes";
 
-const CURVE_FIELDS: CurveField[] = ["wait_curve_steepness", "wait_curve_pivot"];
 /** The first time a slot is turned on, and the first time again, follow the curve. */
 const CURVE_TURN_ONS = 2;
-const TABLE_FREE_PERCENTS = [50, 40, 30, 25, 20, 15, 10, 7, 4, 1];
 /** The waiting time is 0 above 50 % free power, so the graph starts a bit above it. */
 const GRAPH_FREE_PERCENT = 60;
 const KW_TICK_STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10];
-const MAX_KW_TICKS = 10;
-const MAX_KW_TICKS_NARROW = 4;
-/** The widest page, in pixels, that leaves out the tables, which do not fit, and draws a small graph. */
-const NARROW_MAX_WIDTH = 760;
 
 /** Return the smallest kW step that gives at most `maxTicks` steps up to `reach` kW. */
 function kwTickStep(reach: number, maxTicks: number): number {
@@ -54,7 +48,8 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
  */
 @customElement("kraftvakt-advanced-page")
 export class KraftvaktAdvancedPage extends SettingsFormPage {
-  private readonly narrowQuery = new WidthQuery(this, NARROW_MAX_WIDTH);
+  /** The widest page, in pixels, that leaves out the tables, which do not fit, and draws a small graph. */
+  private readonly narrowQuery = new WidthQuery(this, 760);
 
   /** Narrow by the page's own width, not by Home Assistant's narrow, which follows the viewport. */
   private get narrowPage(): boolean {
@@ -73,7 +68,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
       <ha-card .header=${this.localize("advanced.wait_curve")}>
         <div class="card-content">
           <p class="description">${this.localize("advanced.wait_curve_info")}</p>
-          <div class="sliders">${CURVE_FIELDS.map((name) => this.renderSlider(name))}</div>
+          <div class="sliders">${(["wait_curve_steepness", "wait_curve_pivot"] as const).map((name) => this.renderSlider(name))}</div>
           ${this.renderWaitCurve()}
         </div>
       </ha-card>
@@ -215,7 +210,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const row = (title: TableRow, cell: (free: number) => unknown) => html`
       <tr>
         <th>${this.localize(title)}</th>
-        ${TABLE_FREE_PERCENTS.map((free) => html`<td>${cell(free)}</td>`)}
+        ${[50, 40, 30, 25, 20, 15, 10, 7, 4, 1].map((free) => html`<td>${cell(free)}</td>`)}
       </tr>
     `;
     return html`
@@ -249,7 +244,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const yTicks = [0, 20, 40, 60, 80, 100];
     const limitKw = limitW === null ? 0 : limitW / 1000;
     const reachKw = (limitKw * GRAPH_FREE_PERCENT) / 100;
-    const step = kwTickStep(reachKw, this.narrowPage ? MAX_KW_TICKS_NARROW : MAX_KW_TICKS);
+    const step = kwTickStep(reachKw, this.narrowPage ? 4 : 10);
     const kwTicks = reachKw > 0 ? Array.from({ length: Math.floor(reachKw / step + 1e-9) + 1 }, (_, i) => i * step) : [];
     const decimals = step < 1 ? 1 : 0;
     return html`

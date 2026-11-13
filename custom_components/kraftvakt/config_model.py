@@ -33,45 +33,34 @@ class Range:
 
 POWER_LIMIT_MAX_W: Final = 50_000
 POWER_LIMIT_W = Range(1000, POWER_LIMIT_MAX_W, 1)
-TURN_ON_MARGIN_W = Range(1, 1000, 1)
 REGULATION_WINDOW_S = Range(10, 600, 1)
-REGULATION_INTERVAL = Range(1, 4, 1)
-WAIT_AT_LIMIT_S = Range(0, 600, 1)
-WAIT_CURVE_STEEPNESS = Range(1.5, 9, 0.5)
-WAIT_CURVE_PIVOT = Range(50, 99, 1)
 REPEAT_INCREMENT_FACTOR = Range(0.25, 1, 0.25)
 REPEAT_INCREMENTS = Range(1, 9, 1)
-PENALTY_THRESHOLD_W = Range(0, 10_000, 1)
-COMMAND_REPEAT_INTERVAL_MIN = Range(10, 60, 1)
-ACTION_TIMEOUT_S = Range(10, 3600, 1)
-POWER_SENSOR_TIMEOUT_S = Range(10, 3600, 1)
-APPLIANCE_POWER_RESERVE_W = Range(0, None, 1)
-CHARGER_POWER_RESERVE_W = Range(0, 5000, 1)
 CHARGING_CURRENT_A = Range(1, None, 1)
 
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "general": {
         "power_limit_w": POWER_LIMIT_W,
-        "turn_on_margin_w": TURN_ON_MARGIN_W,
+        "turn_on_margin_w": Range(1, 1000, 1),
         "regulation_window_s": REGULATION_WINDOW_S,
-        "regulation_interval": REGULATION_INTERVAL,
-        "wait_at_limit_s": WAIT_AT_LIMIT_S,
-        "wait_curve_steepness": WAIT_CURVE_STEEPNESS,
-        "wait_curve_pivot": WAIT_CURVE_PIVOT,
+        "regulation_interval": Range(1, 4, 1),
+        "wait_at_limit_s": Range(0, 600, 1),
+        "wait_curve_steepness": Range(1.5, 9, 0.5),
+        "wait_curve_pivot": Range(50, 99, 1),
         "appliance_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
         "appliance_repeat_increments": REPEAT_INCREMENTS,
         "charger_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
         "charger_repeat_increments": REPEAT_INCREMENTS,
-        "penalty_threshold_w": PENALTY_THRESHOLD_W,
-        "command_repeat_interval_min": COMMAND_REPEAT_INTERVAL_MIN,
-        "action_timeout_s": ACTION_TIMEOUT_S,
-        "power_sensor_timeout_s": POWER_SENSOR_TIMEOUT_S,
+        "penalty_threshold_w": Range(0, 10_000, 1),
+        "command_repeat_interval_min": Range(10, 60, 1),
+        "action_timeout_s": Range(10, 3600, 1),
+        "power_sensor_timeout_s": Range(10, 3600, 1),
     },
-    "appliances": {"power_reserve_w": APPLIANCE_POWER_RESERVE_W},
+    "appliances": {"power_reserve_w": Range(0, None, 1)},
     "chargers": {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
-        "power_reserve_w": CHARGER_POWER_RESERVE_W,
+        "power_reserve_w": Range(0, 5000, 1),
     },
 }
 

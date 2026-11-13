@@ -21,10 +21,6 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets" / "brand"
 OUT = ROOT / "custom_components" / "kraftvakt" / "brand"
 
-WORDMARK = "Kraftvakt"
-TEXT_LIGHT = "#0F1B3D"
-TEXT_DARK = "#F2F5FB"
-
 LOGO_TEMPLATE = """\
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 2200 512" width="2200" height="512">
@@ -32,7 +28,7 @@ LOGO_TEMPLATE = """\
   <g>{icon}</g>
   <text x="552" y="340" fill="{color}"
         font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-weight="700" font-size="250" letter-spacing="-4">{text}</text>
+        font-weight="700" font-size="250" letter-spacing="-4">Kraftvakt</text>
 </svg>
 """
 
@@ -79,8 +75,8 @@ def main() -> None:
         save(square.resize((size, size), Image.Resampling.LANCZOS), name)
 
     defs, body = icon_parts()
-    for prefix, color in (("", TEXT_LIGHT), ("dark_", TEXT_DARK)):
-        svg = LOGO_TEMPLATE.format(defs=defs, icon=body, color=color, text=WORDMARK)
+    for prefix, color in (("", "#0F1B3D"), ("dark_", "#F2F5FB")):
+        svg = LOGO_TEMPLATE.format(defs=defs, icon=body, color=color)
         (SRC / f"{prefix}logo.svg").write_text(svg, encoding="utf-8")
         img = trim(render(svg, 8800))
         save(fit_height(img, 128), f"{prefix}logo.png")

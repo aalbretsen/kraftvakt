@@ -21,8 +21,6 @@ from .const import DeviceKind
 from .devices import Observable, SimulatedDevice, async_get_power_board
 from .entity import SimulatorEntity
 
-HAN_INTERVAL: Final = timedelta(seconds=10)
-
 
 def power_description(key: str) -> SensorEntityDescription:
     return SensorEntityDescription(
@@ -73,7 +71,9 @@ class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
         """Report at a fixed interval as well as on every change."""
         await super().async_added_to_hass()
         self.async_on_remove(
-            async_track_time_interval(self.hass, self._async_report, HAN_INTERVAL)
+            async_track_time_interval(
+                self.hass, self._async_report, timedelta(seconds=10)
+            )
         )
 
     @callback

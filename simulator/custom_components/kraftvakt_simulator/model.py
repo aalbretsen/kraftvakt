@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Final
 
-LINE_VOLTAGE_V: Final = 400
 HEATING_MODES: Final = ("heat", "heat_cool", "auto")
 
 
@@ -52,7 +51,7 @@ def thermostat_heats(hvac_mode: str, target: float, room: float) -> bool:
 
 def three_phase_power_w(current_a: float) -> float:
     """Return the power in W of a 400 V three-phase load with power factor 1."""
-    return math.sqrt(3) * LINE_VOLTAGE_V * current_a
+    return math.sqrt(3) * 400 * current_a
 
 
 @dataclass(frozen=True)

@@ -32,9 +32,6 @@ from .entity import item_name
 from .runtime import ConfigIncompleteError, KraftvaktRuntime
 from .status import status_snapshot
 
-ERR_NOT_LOADED: Final = "not_loaded"
-ERR_REGULATION_RUNNING: Final = "regulation_running"
-ERR_CONFIG_INCOMPLETE: Final = "config_incomplete"
 SIGNAL_STATUS: Final = f"{DOMAIN}_status"
 
 
@@ -158,7 +155,7 @@ def websocket_set_running(
         try:
             runtime.async_start_regulation()
         except ConfigIncompleteError as err:
-            connection.send_error(msg["id"], ERR_CONFIG_INCOMPLETE, str(err))
+            connection.send_error(msg["id"], "config_incomplete", str(err))
             return
     connection.send_result(msg["id"], {"running": runtime.running})
 
@@ -253,7 +250,7 @@ def _send_regulation_running(
 ) -> None:
     connection.send_error(
         msg["id"],
-        ERR_REGULATION_RUNNING,
+        "regulation_running",
         "The regulation must be stopped to change the configuration",
     )
 
@@ -266,5 +263,5 @@ def _loaded_runtime(
     if entries := hass.config_entries.async_loaded_entries(DOMAIN):
         runtime: KraftvaktRuntime = entries[0].runtime_data
         return runtime
-    connection.send_error(msg["id"], ERR_NOT_LOADED, "Kraftvakt is not loaded")
+    connection.send_error(msg["id"], "not_loaded", "Kraftvakt is not loaded")
     return None

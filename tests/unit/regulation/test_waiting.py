@@ -16,7 +16,6 @@ DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
 APPLIANCE_GROWTH = RepeatedTurnOnGrowth(
     increment=timedelta(minutes=2), cap=timedelta(minutes=15)
 )
-UTILIZATIONS = (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
 
 
 @pytest.mark.parametrize(
@@ -50,7 +49,10 @@ def test_waiting_curve_follows_the_specification(
     curve = WaitingCurve.from_settings(steepness, pivot)
 
     assert curve.shape == pytest.approx(shape, abs=1e-6)
-    assert [round(100 * curve.share(u / 100), 2) for u in UTILIZATIONS] == list(shares)
+    assert [
+        round(100 * curve.share(u / 100), 2)
+        for u in (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
+    ] == list(shares)
 
 
 @pytest.mark.parametrize("utilization", [0, 0.25, 0.5])
