@@ -91,7 +91,7 @@ class SimulatedDevice(Observable, ABC):
     @property
     @abstractmethod
     def power_w(self) -> float:
-        pass
+        """Return the power the device consumes now, in W."""
 
     @callback
     def async_start(self) -> None:

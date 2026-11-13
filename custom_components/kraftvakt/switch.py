@@ -89,7 +89,7 @@ class ItemSwitch(ItemEntity, SwitchEntity):
 
     @abstractmethod
     def _positions(self) -> ItemSwitches:
-        pass
+        """Return the positions of the switches of the item."""
 
     @abstractmethod
     async def _async_set(self, position: bool) -> None:
