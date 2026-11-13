@@ -21,7 +21,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from . import SimulatorConfigEntry
 from .const import MAX_TARGET_TEMPERATURE, MIN_TARGET_TEMPERATURE
 from .devices import SimulatedThermostat
-from .entity import SimulatorEntity
+from .entity import SimulatorEntity, device_of
 
 THERMOSTAT = EntityDescription(key="thermostat", name=None)
 
@@ -32,7 +32,8 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the thermostat."""
-    async_add_entities([SimulatorThermostat(entry, entry.runtime_data, THERMOSTAT)])
+    device = device_of(entry, SimulatedThermostat)
+    async_add_entities([SimulatorThermostat(entry, device, THERMOSTAT)])
 
 
 class SimulatorThermostat(

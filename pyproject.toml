@@ -28,6 +28,13 @@ select = [
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components"]
 
+[tool.mypy]
+python_version = "3.14"
+files = ["custom_components/kraftvakt", "simulator/custom_components/kraftvakt_simulator"]
+strict = true
+# Home Assistant re-exports names from its packages without listing them.
+implicit_reexport = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

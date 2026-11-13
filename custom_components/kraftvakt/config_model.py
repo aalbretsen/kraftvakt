@@ -36,7 +36,8 @@ class Range:
         return {"min": self.minimum, "max": self.maximum, "resolution": self.resolution}
 
 
-POWER_LIMIT_W = Range(1000, 50_000, 1)
+POWER_LIMIT_MAX_W: Final = 50_000
+POWER_LIMIT_W = Range(1000, POWER_LIMIT_MAX_W, 1)
 TURN_ON_MARGIN_W = Range(1, 1000, 1)
 REGULATION_WINDOW_S = Range(10, 600, 1)
 REGULATION_INTERVAL = Range(1, 4, 1)

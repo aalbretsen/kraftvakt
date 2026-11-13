@@ -45,6 +45,7 @@ CHECKS = (
     (".venv/bin/python", "-m", "pytest", "-q"),
     (".venv/bin/ruff", "check", "."),
     (".venv/bin/ruff", "format", "--check", "."),
+    (".venv/bin/mypy",),
     ("npm", "--prefix", "frontend", "run", "typecheck"),
     ("npm", "--prefix", "frontend", "run", "build"),
 )

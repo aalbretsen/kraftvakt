@@ -8,7 +8,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import Any
 
-import voluptuous as vol
+import probatio as vol
 from homeassistant.core import valid_entity_id
 from homeassistant.helpers import config_validation as cv
 

@@ -55,7 +55,7 @@ class WaitingCurve:
 
     def share(self, utilization: float) -> float:
         """Return the share, 0 to 1, for an average as a share of the limit."""
-        power = _above_start(utilization) ** self.steepness
+        power: float = _above_start(utilization) ** self.steepness
         if power == 0:
             return 0.0
         return power * (1 + self.shape) / (power + self.shape)

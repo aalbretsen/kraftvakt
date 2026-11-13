@@ -37,7 +37,7 @@ const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set([
  * are spread over «General» and «Advanced», and their texts are in
  * `general.fields`.
  */
-export class GeneralSettingsPage extends ConfigPage {
+export class SettingsFormPage extends ConfigPage {
   protected renderForm(schema: FormField[]) {
     return html`
       <ha-form

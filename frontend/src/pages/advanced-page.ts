@@ -3,7 +3,7 @@ import { customElement } from "lit/decorators.js";
 
 import { formatMinutes, formatNumber, formatPower } from "../format";
 import { waitingCurve } from "../wait-curve";
-import { GeneralSettingsPage } from "./general-settings-page";
+import { SettingsFormPage } from "./settings-form-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
 type RepeatTitle = "advanced.appliances" | "advanced.chargers";
@@ -50,7 +50,7 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
  * again and again, and how often commands are repeated.
  */
 @customElement("kraftvakt-advanced-page")
-export class KraftvaktAdvancedPage extends GeneralSettingsPage {
+export class KraftvaktAdvancedPage extends SettingsFormPage {
   protected render() {
     return html`
       ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
@@ -262,7 +262,7 @@ export class KraftvaktAdvancedPage extends GeneralSettingsPage {
   }
 
   static styles = [
-    GeneralSettingsPage.styles,
+    SettingsFormPage.styles,
     css`
       h3 {
         margin: 0 0 -8px;

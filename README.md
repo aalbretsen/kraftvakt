@@ -495,6 +495,7 @@ uv pip install -r requirements_dev.txt
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .
+uv run mypy
 ```
 
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python
@@ -539,7 +540,7 @@ language of the user in Home Assistant.
 
 Every dependency is pinned, and most follow Home Assistant:
 `pytest-homeassistant-custom-component` decides the version of Home Assistant
-and pytest, Home Assistant decides the frontend, ruff and Python, and the
+and pytest, Home Assistant decides the frontend, ruff, mypy and Python, and the
 Home Assistant frontend decides Node, Lit, TypeScript and `@mdi/js`. The other
 build tools of the panel and the GitHub actions get their newest release.
 Update them all with Node active:

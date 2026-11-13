@@ -10,6 +10,15 @@ from .const import DOMAIN
 from .devices import Observable, SimulatedDevice
 
 
+def device_of[DeviceT: SimulatedDevice](
+    entry: SimulatorConfigEntry, device_type: type[DeviceT]
+) -> DeviceT:
+    """Return the device of the entry, which its kind makes of `device_type`."""
+    device = entry.runtime_data
+    assert isinstance(device, device_type)
+    return device
+
+
 class SimulatorEntity[DeviceT: SimulatedDevice](Entity):
     """An entity of a simulated device, updated when the device changes."""
 

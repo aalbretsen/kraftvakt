@@ -4,7 +4,7 @@ Home Assistant decides most of the versions, so they follow one chain:
 
 - pytest-homeassistant-custom-component, newest release: Home Assistant and the
   pytest packages it pins,
-- that Home Assistant release: the Home Assistant frontend, ruff and Python,
+- that Home Assistant release: the Home Assistant frontend, ruff, mypy and Python,
 - that Home Assistant frontend release: Node, Lit, TypeScript and @mdi/js.
 
 The other build tools of the panel and the GitHub actions get their newest
@@ -77,6 +77,7 @@ def update_python(changes: list[str]) -> str:
     pins["ruff"] = pinned(
         read_core(ha_version, "requirements_test_pre_commit.txt"), "ruff"
     )
+    pins["mypy"] = pinned(read_core(ha_version, "requirements_test.txt"), "mypy")
 
     text = REQUIREMENTS.read_text()
     for name, version in pins.items():

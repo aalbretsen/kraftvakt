@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import partial
 from typing import Any, Final
 
-import voluptuous as vol
+import probatio as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import (
@@ -265,6 +265,7 @@ def _loaded_runtime(
     msg: dict[str, Any],
 ) -> KraftvaktRuntime | None:
     if entries := hass.config_entries.async_loaded_entries(DOMAIN):
-        return entries[0].runtime_data
+        runtime: KraftvaktRuntime = entries[0].runtime_data
+        return runtime
     connection.send_error(msg["id"], ERR_NOT_LOADED, "Kraftvakt is not loaded")
     return None

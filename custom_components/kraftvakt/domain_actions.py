@@ -67,17 +67,21 @@ class ActionParameter:
         if value is None:
             return None
         attributes = state.attributes if state is not None else {}
+
+        def attribute(name: str | None) -> Any:
+            return None if name is None else attributes.get(name)
+
         if self.type is ParameterType.OPTION:
             if not isinstance(value, str):
                 return "invalid_type"
-            options = attributes.get(self.options_attribute)
+            options = attribute(self.options_attribute)
             if isinstance(options, list) and value not in options:
                 return "unsupported_option"
             return None
         if not _is_number(value):
             return "invalid_type"
-        low = attributes.get(self.min_attribute)
-        high = attributes.get(self.max_attribute)
+        low = attribute(self.min_attribute)
+        high = attribute(self.max_attribute)
         if (_is_number(low) and value < low) or (_is_number(high) and value > high):
             return "outside_entity_range"
         return None
@@ -183,7 +187,7 @@ def domain_action_issues(
     domain_action = _available(kind, entity_id, action.domain_action)
     if domain_action is None:
         return [(None, "domain_action_unavailable")]
-    issues = []
+    issues: list[tuple[str | None, str]] = []
     for parameter in domain_action.parameters:
         if parameter.name not in action.data:
             issues.append((parameter.name, "required"))

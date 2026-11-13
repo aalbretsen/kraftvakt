@@ -21,9 +21,10 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 ## Checks before every commit
 
 ```bash
-.venv/bin/python -m pytest -q --cov=custom_components/kraftvakt --cov=simulator/custom_components/kraftvakt_simulator --cov-report=term-missing
+.venv/bin/python -m pytest -q --cov=custom_components/kraftvakt --cov=simulator/custom_components/kraftvakt_simulator --cov-report=term-missing --cov-fail-under=100
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
+.venv/bin/mypy
 cd frontend && npm run typecheck && npm run build && git status --short ../custom_components/kraftvakt/frontend/
 ```
 

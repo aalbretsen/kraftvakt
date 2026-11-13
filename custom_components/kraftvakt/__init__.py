@@ -83,7 +83,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -
 
 def _action_lock(hass: HomeAssistant) -> asyncio.Lock:
     """Return the lock for the actions, shared over reloads of the config entry."""
-    return hass.data.setdefault(DOMAIN, {}).setdefault("action_lock", asyncio.Lock())
+    lock: asyncio.Lock = hass.data.setdefault(DOMAIN, {}).setdefault(
+        "action_lock", asyncio.Lock()
+    )
+    return lock
 
 
 async def _async_register_panel(hass: HomeAssistant) -> None:

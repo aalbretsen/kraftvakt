@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import voluptuous as vol
+import probatio as vol
 from homeassistant.components.climate import HVACMode
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
@@ -56,17 +56,14 @@ from .model import HEATING_MODES
 
 def whole_number(
     minimum: int, maximum: int, unit: str | None = None, step: int = 1
-) -> vol.All:
+) -> vol.All[Any]:
     """Return a field for a whole number between `minimum` and `maximum`."""
-    selector = NumberSelector(
-        NumberSelectorConfig(
-            min=minimum,
-            max=maximum,
-            step=step,
-            mode=NumberSelectorMode.BOX,
-            unit_of_measurement=unit,
-        )
+    config = NumberSelectorConfig(
+        min=minimum, max=maximum, step=step, mode=NumberSelectorMode.BOX
     )
+    if unit is not None:
+        config["unit_of_measurement"] = unit
+    selector = NumberSelector(config)
     return vol.All(selector, vol.Coerce(int))
 
 

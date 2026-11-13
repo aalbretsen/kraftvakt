@@ -82,6 +82,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the switches of a heating device, a thermostat or an EV charger."""
+    descriptions: tuple[SimulatorSwitchDescription[Any], ...]
     match kind_of(entry):
         case DeviceKind.HEATER:
             descriptions = (heater_switch(entry.data[CONF_HEATER_TYPE]),)
@@ -95,10 +96,10 @@ async def async_setup_entry(
     )
 
 
-class SimulatorSwitch(SimulatorEntity, SwitchEntity, RestoreEntity):
+class SimulatorSwitch(SimulatorEntity[SimulatedDevice], SwitchEntity, RestoreEntity):
     """A switch of a simulated device. It gets back its state after a restart."""
 
-    entity_description: SimulatorSwitchDescription
+    entity_description: SimulatorSwitchDescription[Any]
 
     @property
     def is_on(self) -> bool:

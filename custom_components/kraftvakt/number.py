@@ -11,7 +11,7 @@ from homeassistant.const import UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .config_model import POWER_LIMIT_W
+from .config_model import POWER_LIMIT_MAX_W, POWER_LIMIT_W
 from .entity import KraftvaktEntity
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
@@ -33,7 +33,7 @@ class PowerLimitNumber(KraftvaktEntity, NumberEntity):
     _attr_device_class = NumberDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_native_min_value = POWER_LIMIT_W.minimum
-    _attr_native_max_value = POWER_LIMIT_W.maximum
+    _attr_native_max_value = POWER_LIMIT_MAX_W
     _attr_native_step = POWER_LIMIT_W.resolution
     _attr_mode = NumberMode.BOX
 

@@ -103,13 +103,14 @@ class ConfigReader:
     ) -> dict[str, T]:
         """Return the switches in the data, by the id of the appliance or charger."""
         switches = {}
+        defaults = switch_type()
         for item_id, item in self._mapping(data, IssueLocation(section), None).items():
             location = IssueLocation(section, str(item_id))
             values = self._mapping(item, location, None)
             switches[str(item_id)] = switch_type(
                 **{
                     setting.name: self._bool(
-                        values, setting.name, setting.default, location
+                        values, setting.name, getattr(defaults, setting.name), location
                     )
                     for setting in fields(switch_type)
                 }

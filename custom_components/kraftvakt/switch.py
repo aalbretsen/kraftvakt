@@ -82,7 +82,7 @@ class ItemSwitch(ItemEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the position of the switch."""
-        return getattr(self._positions(), self._setting)
+        return bool(getattr(self._positions(), self._setting))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Switch on and save at once."""

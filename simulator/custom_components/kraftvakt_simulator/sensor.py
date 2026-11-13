@@ -16,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SimulatorConfigEntry, kind_of
 from .const import DeviceKind
-from .devices import Observable, async_get_power_board
+from .devices import Observable, SimulatedDevice, async_get_power_board
 from .entity import SimulatorEntity
 
 
@@ -51,7 +51,7 @@ async def async_setup_entry(
     async_add_entities([sensor_class(entry, entry.runtime_data, DESCRIPTIONS[kind])])
 
 
-class PowerSensor(SimulatorEntity, SensorEntity):
+class PowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
     """The power the simulated device consumes."""
 
     @property
@@ -60,7 +60,7 @@ class PowerSensor(SimulatorEntity, SensorEntity):
         return self.device.power_w
 
 
-class HousePowerSensor(SimulatorEntity, SensorEntity):
+class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
     """The power of the whole house: background plus every simulated device."""
 
     @property

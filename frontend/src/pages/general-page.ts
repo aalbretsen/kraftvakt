@@ -2,13 +2,13 @@ import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { ownEntities } from "../entities";
-import { GeneralSettingsPage, type FormField, type GeneralField } from "./general-settings-page";
+import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
 
 type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
 
 /** The power sensor and the settings of the regulation and the penalty. */
 @customElement("kraftvakt-general-page")
-export class KraftvaktGeneralPage extends GeneralSettingsPage {
+export class KraftvaktGeneralPage extends SettingsFormPage {
   protected render() {
     return html`
       ${this.renderCard("general.measurement", [

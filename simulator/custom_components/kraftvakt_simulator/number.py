@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Final
+from typing import Any, Final
 
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -42,7 +42,7 @@ from .devices import (
     SimulatedHeater,
     SimulatedThermostat,
 )
-from .entity import SimulatorEntity
+from .entity import SimulatorEntity, device_of
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -143,14 +143,17 @@ async def async_setup_entry(
     device = entry.runtime_data
     match kind_of(entry):
         case DeviceKind.HAN:
-            descriptions: tuple[SimulatorNumberDescription, ...] = (BACKGROUND_POWER,)
+            descriptions: tuple[SimulatorNumberDescription[Any], ...] = (
+                BACKGROUND_POWER,
+            )
         case DeviceKind.HEATER:
             descriptions = HEATER_NUMBERS
         case DeviceKind.THERMOSTAT:
             descriptions = (*HEATER_NUMBERS, ROOM_TEMPERATURE)
         case DeviceKind.CHARGER:
+            charger = device_of(entry, SimulatedCharger)
             async_add_entities(
-                [ChargingCurrentNumber(entry, device, charging_current(device))]
+                [ChargingCurrentNumber(entry, charger, charging_current(charger))]
             )
             return
     async_add_entities(
@@ -158,10 +161,10 @@ async def async_setup_entry(
     )
 
 
-class SettingNumber(SimulatorEntity, NumberEntity):
+class SettingNumber(SimulatorEntity[SimulatedDevice], NumberEntity):
     """A setting of a simulated device, changeable while Home Assistant runs."""
 
-    entity_description: SimulatorNumberDescription
+    entity_description: SimulatorNumberDescription[Any]
 
     @property
     def native_value(self) -> float:

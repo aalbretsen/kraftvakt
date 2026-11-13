@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SimulatorConfigEntry
 from .devices import SimulatedCharger
-from .entity import SimulatorEntity
+from .entity import SimulatorEntity, device_of
 
 CHARGING: Final = BinarySensorEntityDescription(
     key="charging",
@@ -29,7 +29,8 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the charging sensor of the EV charger."""
-    async_add_entities([ChargingSensor(entry, entry.runtime_data, CHARGING)])
+    device = device_of(entry, SimulatedCharger)
+    async_add_entities([ChargingSensor(entry, device, CHARGING)])
 
 
 class ChargingSensor(SimulatorEntity[SimulatedCharger], BinarySensorEntity):

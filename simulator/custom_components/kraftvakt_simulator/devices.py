@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, timedelta
+from typing import Any
 
 from homeassistant.components.climate import HVACMode
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
@@ -401,6 +402,6 @@ class SimulatedCharger(PluggedInDevice):
         self._async_update(current_a=clamped)
 
     @callback
-    def _async_update(self, **changes: bool | float) -> None:
+    def _async_update(self, **changes: Any) -> None:
         self.state = replace(self.state, **changes)
         self._async_changed()

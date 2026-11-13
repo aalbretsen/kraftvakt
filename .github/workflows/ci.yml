@@ -27,7 +27,22 @@ jobs:
         with:
           python-version: "3.14"
       - run: uv venv && uv pip install -r requirements_dev.txt
-      - run: uv run pytest
+      - run: >-
+          uv run pytest
+          --cov=custom_components/kraftvakt
+          --cov=simulator/custom_components/kraftvakt_simulator
+          --cov-fail-under=100
+
+  types:
+    name: Mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.14"
+      - run: uv venv && uv pip install -r requirements_dev.txt
+      - run: uv run mypy
 
   panel:
     name: Panel
