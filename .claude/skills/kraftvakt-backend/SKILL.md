@@ -5,42 +5,27 @@ description: Architecture of the Kraftvakt integration in custom_components/kraf
 
 # Kraftvakt backend
 
-What the regulation must do is in the `kraftvakt-regulation` skill. This file
-is about how the integration is built. Follow Home Assistant's standards for
-integrations.
+What the regulation must do is in the `kraftvakt-regulation` skill. This file is about how the integration is built. Follow Home Assistant's standards for integrations.
 
 ## Decisions
 
-- The regulation logic in `regulation/` is pure Python without Home Assistant
-  imports. It takes a snapshot of the inputs and returns an ordered list of
-  commands. Time is passed in, never read from a clock.
-- The configuration is kept in its own `Store` (`.storage/kraftvakt.config`),
-  written atomically, not in `config_entry.options`. The config entry is empty
-  and the config flow asks for nothing. A stored configuration that cannot be
-  read stops the setup with an error and leaves the file alone.
-- The panel talks to the backend with own WebSocket commands, all
-  `require_admin`.
+- The regulation logic in `regulation/` is pure Python without Home Assistant imports. It takes a snapshot of the inputs and returns an ordered list of commands. Time is passed in,
+  never read from a clock.
+- The configuration is kept in its own `Store` (`.storage/kraftvakt.config`), written atomically, not in `config_entry.options`. The config entry is empty and the config flow asks
+  for nothing. A stored configuration that cannot be read stops the setup with an error and leaves the file alone.
+- The panel talks to the backend with own WebSocket commands, all `require_admin`.
 - The panel edits a local draft and saves the whole configuration at once.
-- The entities of appliances and chargers are added and removed when the
-  configuration is saved, without reloading the config entry (a reload would
-  start the regulation). Registry entries of removed items are removed.
-- A charger is a device in HA, stored as its `device_id`, and every entity
-  it names (its own, the set-current entity, and the car connected and
-  actively charging entities or power sensor) must belong to that device.
-  Templates and custom actions are not checked, and cover a charger whose
-  values are elsewhere. Why: integrations group a charger's entities as a
-  device, so picking them from it keeps the setup easy for most users.
-- A charger is named after its device (the user's name for the device
-  first), and after its entity while the device is missing or unknown; an
-  appliance is named after its entity. The status, the entity names sent to
-  the panel and the charger switches use the same function for this, and the
-  panel mirrors it for a charger that is not saved yet. Why: the entity that
-  allows charging often has a name like «Garage Charging allowed».
+- The entities of appliances and chargers are added and removed when the configuration is saved, without reloading the config entry (a reload would start the regulation). Registry
+  entries of removed items are removed.
+- A charger is a device in HA, stored as its `device_id`, and every entity it names (its own, the set-current entity, and the car connected and actively charging entities or power
+  sensor) must belong to that device. Templates and custom actions are not checked, and cover a charger whose values are elsewhere. Why: integrations group a charger's entities as
+  a device, so picking them from it keeps the setup easy for most users.
+- A charger is named after its device (the user's name for the device first), and after its entity while the device is missing or unknown; an appliance is named after its entity.
+  The status, the entity names sent to the panel and the charger switches use the same function for this, and the panel mirrors it for a charger that is not saved yet. Why: the
+  entity that allows charging often has a name like «Garage Charging allowed».
 - Templates and actions run with HA's `Template` and `Script`.
-- The configure button of the integration opens the panel through
-  `config_panel_domain` when the panel is registered.
-- The action lock is shared over reloads, so a new runtime's turn-off
-  commands wait until the previous runtime's actions are done.
+- The configure button of the integration opens the panel through `config_panel_domain` when the panel is registered.
+- The action lock is shared over reloads, so a new runtime's turn-off commands wait until the previous runtime's actions are done.
 
 ## Modules
 
@@ -69,154 +54,91 @@ integrations.
 
 ## Stored configuration
 
-The format is defined by the dataclasses and their serialization in
-`config_model.py`, and by `config_reader.py`. Top-level sections:
+The format is defined by the dataclasses and their serialization in `config_model.py`, and by `config_reader.py`. Top-level sections:
 
-- `general`: the power sensor and every general setting, also those shown on
-  the panel's Advanced page.
-- `appliances`: each with an id, its entity, its turn-on and turn-off
-  actions, an optional power reserve and its variants (id, label, condition
-  and the actions it overrides). In a variant's actions, a key that is left
-  out is not overridden, and a key with `null` is overridden but not set, so
-  it is missing.
-- `priority`: the priority list, with an entry per appliance and variant and
-  an entry per charger group.
-- `charger_groups`: each with an id, a name, one at a time, and its
-  chargers in charging priority, each with an id, its device, its entity, activate,
-  deactivate and set-current actions, min and max current, power reserve, an
-  optional car connected condition, actively charging and an optional
-  charging window. A charger is nested in its group, so it cannot be in two.
+- `general`: the power sensor and every general setting, also those shown on the panel's Advanced page.
+- `appliances`: each with an id, its entity, its turn-on and turn-off actions, an optional power reserve and its variants (id, label, condition and the actions it overrides). In a
+  variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
+- `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
+- `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate, deactivate and set-current
+  actions, min and max current, power reserve, an optional car connected condition, actively charging and an optional charging window. A charger is nested in its group, so it
+  cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
-- `charger_switches`: the positions of the two switches per charger.
-  Finish after window is a field of the charger, not a switch position.
+- `charger_switches`: the positions of the two switches per charger. Finish after window is a field of the charger, not a switch position.
 
-The store and the config entry are at version 1, without migrations. Before
-the first stable release, the stored format and the entities change without
-migrations, and installations are set up again from scratch.
+The store and the config entry are at version 1, without migrations. Before the first stable release, the stored format and the entities change without migrations, and
+installations are set up again from scratch.
 
-IDs are short UUIDs, so entities can change without losing the place in the
-list. An action is `default`, `custom` (a script), `entity` or `domain` (the
-key of a domain action and a value per parameter, `null` while not chosen). A
-condition is an entity or a template; actively charging may also be a power
-sensor. HA's action editor adds empty `data`; stored actions must tolerate
-that.
+IDs are short UUIDs, so entities can change without losing the place in the list. An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and
+a value per parameter, `null` while not chosen). A condition is an entity or a template; actively charging may also be a power sensor. HA's action editor adds empty `data`; stored
+actions must tolerate that.
 
 ## Validation and completeness
 
 An invalid configuration is not saved:
 
-- The priority list has exactly one entry per appliance and variant, and one
-  per charger group. Missing entries are added at the bottom. Duplicates and
-  unknown entries are rejected.
-- Labels are non-empty and unique per appliance. Group names are non-empty
-  and unique among the groups.
+- The priority list has exactly one entry per appliance and variant, and one per charger group. Missing entries are added at the bottom. Duplicates and unknown entries are
+  rejected.
+- Labels are non-empty and unique per appliance. Group names are non-empty and unique among the groups.
 - Charger ids are unique across all groups.
-- The entity that identifies an appliance or charger is unique in the whole
-  configuration. Sensors, conditions and actions may reuse entities.
-- `1 ≤ min ≤ max` current, whole amperes. Charging window start ≠ end, whole
-  minutes.
+- The entity that identifies an appliance or charger is unique in the whole configuration. Sensors, conditions and actions may reuse entities.
+- `1 ≤ min ≤ max` current, whole amperes. Charging window start ≠ end, whole minutes.
 - Settings are checked against the setting ranges in `config_model.py`.
-- Custom actions are checked with HA's script schema, templates for syntax.
-  Whether a default action exists for the entity's domain is checked
-  separately in `actions.py`, outside parsing; type errors must be fixed
-  before that check can run. That a charger's device exists and its entities
-  belong to it is checked the same way, against the registries, in
+- Custom actions are checked with HA's script schema, templates for syntax. Whether a default action exists for the entity's domain is checked separately in `actions.py`, outside
+  parsing; type errors must be fixed before that check can run. That a charger's device exists and its entities belong to it is checked the same way, against the registries, in
   `devices.py`.
-- The `entity` action mode is only allowed for setting the charging current:
-  it runs the default action of the chosen entity instead of the charger's own
-  entity, so it must be a `number` or `input_number`. Why: most chargers have
-  a number entity for the current.
-- A value of the wrong type is reported and read as its default, so every
-  other rule is still checked and all issues come back together; the default
-  is not checked again.
+- The `entity` action mode is only allowed for setting the charging current: it runs the default action of the chosen entity instead of the charger's own entity, so it must be a
+  `number` or `input_number`. Why: most chargers have a number entity for the current.
+- A value of the wrong type is reported and read as its default, so every other rule is still checked and all issues come back together; the default is not checked again.
 
-An incomplete configuration can be saved, but the regulation cannot start.
-A charger without a device is missing, not an error.
-An empty condition is missing, not an error; a variant is added in the
-appliance dialog and gets its expression in its own dialog.
-Missing items and validation errors are both issues with a code, a section, a
-target (the id of the appliance or charger) and a field; a variant field is
-addressed through the variant's id, also the variant's own actions
-(`variants.<id>.turn_on`). Every issue code needs a text in the
-panel's translations.
+An incomplete configuration can be saved, but the regulation cannot start. A charger without a device is missing, not an error. An empty condition is missing, not an error; a
+variant is added in the appliance dialog and gets its expression in its own dialog. Missing items and validation errors are both issues with a code, a section, a target (the id of
+the appliance or charger) and a field; a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`). Every issue code needs a
+text in the panel's translations.
 
 ## Actions and templates
 
-- A default action exists for switch-like domains (turn on and off) and for
-  number-like domains (set value, for the charging current). The table is in
-  one place in `actions.py` and is sent to the panel, and the `entity` mode
-  uses the same table for the chosen entity.
-- A domain action is a service of the entity's domain with values the user
-  chooses, such as the thermostat actions (HVAC mode, temperature, or both).
-  The panel renders the parameters from the table in `domain_actions.py` and
-  has no code per domain. The keys start with the domain.
-  - A domain action belongs to action kinds, not sections, so it is offered
-    wherever an action of that kind is, chargers included. Why: no special
-    cases per section.
-  - A parameter has a type (an option or a temperature) and names the
-    entity's attributes that hold its options and range. The default option
-    is the first preferred option for the action kind that the entity
-    supports, worked out in the panel; a number parameter has a fixed
-    default. The temperature defaults to 0, outside every thermostat's range,
-    so the user must set it.
-  - At save, the domain action must belong to the domain of the entity and
-    the action kind, every parameter must be present, and the values must be
-    of the right type and among the options or within the range the entity
-    reports. Without the entity's state, only the types are checked. A value
-    that is not chosen (`null`) is missing, not an error. Issues for a
-    parameter are addressed as `<field>.<parameter>`.
-- The commands for an appliance carry its current variant, and the action
-  runner runs the variant's action if it overrides it, otherwise the
-  appliance's.
-- All templates and actions get `entity_id` and `entity` (the state object of
-  the appliance's or charger's entity, `none` when missing). The set-current
-  action also gets `current`, `min_current` and `max_current`; `current` is
-  clamped between min and max.
+- A default action exists for switch-like domains (turn on and off) and for number-like domains (set value, for the charging current). The table is in one place in `actions.py` and
+  is sent to the panel, and the `entity` mode uses the same table for the chosen entity.
+- A domain action is a service of the entity's domain with values the user chooses, such as the thermostat actions (HVAC mode, temperature, or both). The panel renders the
+  parameters from the table in `domain_actions.py` and has no code per domain. The keys start with the domain.
+  - A domain action belongs to action kinds, not sections, so it is offered wherever an action of that kind is, chargers included. Why: no special cases per section.
+  - A parameter has a type (an option or a temperature) and names the entity's attributes that hold its options and range. The default option is the first preferred option for the
+    action kind that the entity supports, worked out in the panel; a number parameter has a fixed default. The temperature defaults to 0, outside every thermostat's range, so the
+    user must set it.
+  - At save, the domain action must belong to the domain of the entity and the action kind, every parameter must be present, and the values must be of the right type and among the
+    options or within the range the entity reports. Without the entity's state, only the types are checked. A value that is not chosen (`null`) is missing, not an error. Issues for
+    a parameter are addressed as `<field>.<parameter>`.
+- The commands for an appliance carry its current variant, and the action runner runs the variant's action if it overrides it, otherwise the appliance's.
+- All templates and actions get `entity_id` and `entity` (the state object of the appliance's or charger's entity, `none` when missing). The set-current action also gets `current`,
+  `min_current` and `max_current`; `current` is clamped between min and max.
 
 ## Entities
 
-- All belong to one service device, Kraftvakt, and use `has_entity_name` and
-  `translation_key`. The unique id and the translation key are the key.
-- The entity ids are technical, English in every language, and grouped by
-  prefix (`regulation_`, `power_`, `waiting_time_`, `penalty_`, `appliance_`,
-  `charger_`).
-  An entity suggests its object id (the key unless given), which HA prefixes
-  with the device name. The names are grouped the same way, in every language.
-- The averages, power free and the power limit are power in W, also as
-  shown. The overconsumption is energy in Wh without a state class, since it
-  is not a total. The waiting times are durations in seconds.
-- The power limit entity and the finish after window switch of each charger
-  change the stored configuration, also while running. They save at once,
-  through the settings, so configuration and switches are saved together.
-  While running, the engine gets the new power limit for the next decision,
-  and finish after window reaches it in the charger readings.
-- The runtime counts every change of the stored configuration in a config
-  version, sent in the status, so the panel fetches the configuration again
-  when an entity has changed it.
-- The regulation switch has no stored position; it is the same function as
-  start and stop in the panel. With an incomplete configuration, turning it
-  on raises a translated `ServiceValidationError` and it stays off.
-- Repair issues are only for problems in the configuration, never for an
-  entity that is merely unavailable, since that is often a cloud service that
-  is down. The regulation that could not start is reported when HA or the
-  integration starts, also right after a fresh install with nothing
-  configured, and cleared at any start. Removed entities are looked
-  for at every start of the regulation and after every failed action.
+- All belong to one service device, Kraftvakt, and use `has_entity_name` and `translation_key`. The unique id and the translation key are the key.
+- The entity ids are technical, English in every language, and grouped by prefix (`regulation_`, `power_`, `waiting_time_`, `penalty_`, `appliance_`, `charger_`). An entity
+  suggests its object id (the key unless given), which HA prefixes with the device name. The names are grouped the same way, in every language.
+- The averages, power free and the power limit are power in W, also as shown. The overconsumption is energy in Wh without a state class, since it is not a total. The waiting times
+  are durations in seconds.
+- The power limit entity and the finish after window switch of each charger change the stored configuration, also while running. They save at once, through the settings, so
+  configuration and switches are saved together. While running, the engine gets the new power limit for the next decision, and finish after window reaches it in the charger
+  readings.
+- The runtime counts every change of the stored configuration in a config version, sent in the status, so the panel fetches the configuration again when an entity has changed it.
+- The regulation switch has no stored position; it is the same function as start and stop in the panel. With an incomplete configuration, turning it on raises a translated
+  `ServiceValidationError` and it stays off.
+- Repair issues are only for problems in the configuration, never for an entity that is merely unavailable, since that is often a cloud service that is down. The regulation that
+  could not start is reported when HA or the integration starts, also right after a fresh install with nothing configured, and cleared at any start. Removed entities are looked for
+  at every start of the regulation and after every failed action.
 - The waiting time next turn-on sensor is disabled by default.
-- Each appliance has an excluded switch, and each charger an excluded switch,
-  a window override switch and a binary sensor for charging allowed by
-  window, keyed by the item's id, with an entity id from the slug of the
-  item's name. The positions of the switches are stored. The charger
-  entities do not depend on the group, so moving a charger to another group
-  keeps them.
-- The charging allowed by window binary sensor computes the window from the
-  clock with the same function as the engine, updated by the settings
-  and at every whole minute, since windows are in whole minutes.
+- Each appliance has an excluded switch, and each charger an excluded switch, a window override switch and a binary sensor for charging allowed by window, keyed by the item's id,
+  with an entity id from the slug of the item's name. The positions of the switches are stored. The charger entities do not depend on the group, so moving a charger to another
+  group keeps them.
+- The charging allowed by window binary sensor computes the window from the clock with the same function as the engine, updated by the settings and at every whole minute, since
+  windows are in whole minutes.
 
 ## WebSocket API
 
-All commands require an administrator. Commands that need the runtime fail
-with `not_loaded` when Kraftvakt is not loaded.
+All commands require an administrator. Commands that need the runtime fail with `not_loaded` when Kraftvakt is not loaded.
 
 | Command | In | Out |
 |---|---|---|
@@ -230,31 +152,18 @@ A saved configuration is used from the next start without a reload.
 
 ## Status snapshot
 
-Built in `status.py` and typed in the panel's `api.ts`; keep the two in
-step. Rules that are not obvious from the code:
+Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Rules that are not obvious from the code:
 
 - Power in W and energy in Wh. Times are ISO 8601 in HA's time zone.
 - Averages are `null` until the first window.
 - The next decision time is `null` while stopped.
-- The penalty part holds whether a penalty is active, the overconsumption and
-  whether recovery has started.
-- The waiting fields are set only for the appliance or charger that is next
-  and waiting (for a charger: its next ampere step): when the waiting
-  started, when the waiting time ends, and the decision that turns it on, the
-  first at or after the end of the waiting time.
+- The penalty part holds whether a penalty is active, the overconsumption and whether recovery has started.
+- The waiting fields are set only for the appliance or charger that is next and waiting (for a charger: its next ampere step): when the waiting started, when the waiting time ends,
+  and the decision that turns it on, the first at or after the end of the waiting time.
 - An appliance's variant is the label of its current variant, or `null`.
-- An appliance is excluded when it was excluded at the last decision, so it
-  is false before the first decision after a start.
-- A charger's state is the first that holds of: first decision (before the
-  first decision after a start), excluded, outside its charging window, no
-  car connected (bypassed and car connected is false), not charging
-  (bypassed otherwise), queued (waiting), override (allowed only by the
-  override while activated), finishing, charging, activated, deactivated. It
-  is worked out in the engine from the last decision. Excluded comes before
-  bypassed, so a stale bypassed is not shown, and no car connected is a state
-  of its own, because the user needs to know that the car is missing.
-  Charging is true while the charger is activated and was actively charging
-  at the last decision.
-- The priority list has one row per appliance, at the entry of its current
-  variant, and one per charger group, with its chargers in the group's
-  current charging priority.
+- An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
+- A charger's state is the first that holds of: first decision (before the first decision after a start), excluded, outside its charging window, no car connected (bypassed and car
+  connected is false), not charging (bypassed otherwise), queued (waiting), override (allowed only by the override while activated), finishing, charging, activated, deactivated. It
+  is worked out in the engine from the last decision. Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user
+  needs to know that the car is missing. Charging is true while the charger is activated and was actively charging at the last decision.
+- The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the group's current charging priority.
