@@ -80,7 +80,7 @@
     "missing_action": "{item}: handling for å {action} mangler.",
     "missing_condition": "{item}: uttrykket mangler.",
     "missing_actively_charging": "{item}: «lader aktivt» mangler.",
-    "missing_car_connected": "{item}: «bil tilkoblet» mangler. Den er påkrevd når bare én elbillader i gruppen kan lade om gangen.",
+    "missing_car_connected": "{item}: «bil tilkoblet» mangler. Den er påkrevd når bare én elbillader i gruppen kan lade om gangen, og når overstyringen avsluttes når bilen kobles fra.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
     "charger_without_entity": "En elbillader uten entitet",
@@ -115,7 +115,7 @@
   },
   "errors": {
     "required": "Påkrevd.",
-    "car_connected_required": "Påkrevd når bare én elbillader i gruppen kan lade om gangen.",
+    "car_connected_required": "Påkrevd når bare én elbillader i gruppen kan lade om gangen, og når overstyringen avsluttes når bilen kobles fra.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
     "invalid_resolution": "Må være et multiplum av {resolution}.",
@@ -381,6 +381,11 @@
     "minimum_first": "Ladestrømmen settes alltid til minste ladestrøm før elbilladeren aktiveres eller deaktiveres.",
     "car_connected_required": "Bil tilkoblet",
     "car_connected_optional": "Bil tilkoblet (valgfri)",
+    "override_ends": {
+      "manual": "Når jeg slår den av",
+      "charging_stopped": "Når bilen ikke lader lenger",
+      "car_disconnected": "Når bilen kobles fra"
+    },
     "delete": "Slett elbillader",
     "fields": {
       "device_id": {
@@ -430,6 +435,10 @@
       "finish_after_window": {
         "label": "Fullfør pågående lading etter ladetidsrommet",
         "helper": "En elbillader som lader når ladetidsrommet slutter, kan fortsette til den slutter å lade. Når den har stoppet, slås den ikke på igjen før ladetidsrommet starter."
+      },
+      "override_ends": {
+        "label": "Avslutt overstyringen",
+        "helper": "«‹lader› overstyr ladetidsrom» venter til bilen har ladet, eller vært tilkoblet, siden den ble slått på, så den kan slås på før bilen kommer. En sensor uten verdi avslutter den ikke."
       }
     }
   }

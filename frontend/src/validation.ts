@@ -96,6 +96,10 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   ];
 }
 
+export function carConnectedRequired(charger: Charger, oneAtATime: boolean): boolean {
+  return oneAtATime || (charger.charging_window !== null && charger.override_ends === "car_disconnected");
+}
+
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
   const missing: Issue[] = charger.device_id
     ? []
@@ -104,7 +108,7 @@ export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[]
   if (!isSet(charger.actively_charging)) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
-  if (oneAtATime && !isSet(charger.car_connected)) {
+  if (carConnectedRequired(charger, oneAtATime) && !isSet(charger.car_connected)) {
     missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
   }
   return missing;

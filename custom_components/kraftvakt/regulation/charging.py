@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, time, timedelta, tzinfo
+from datetime import datetime, time, timedelta
 from enum import StrEnum
 from typing import Final
 
-from ..config_model import Charger, ChargingWindow
+from ..config_model import Charger, ChargingWindow, OverrideEnd
 
 BYPASSED_AFTER_WINDOWS: Final = 2
 RETRY_PAUSES: Final = (
@@ -20,13 +20,21 @@ RETRY_PAUSES: Final = (
 
 @dataclass(frozen=True, slots=True)
 class ChargerReading:
-    """What a decision reads for a charger; `car_connected` is None when not set."""
+    """What a decision reads for a charger; `car_connected` is None when not set.
+
+    `car_disconnected` and `charging_stopped` hold only with evidence that no
+    car is connected or that it does not charge. `override_armed` is whether
+    what ends the override has been seen at a decision since it was switched
+    on: the car connected, or the charger activated and actively charging.
+    """
 
     actively_charging: bool = False
     car_connected: bool | None = None
+    car_disconnected: bool = False
+    charging_stopped: bool = False
     excluded: bool = False
     window_override: bool = False
-    override_switched_on_at: datetime | None = None
+    override_armed: bool = False
     finish_after_window: bool = False
 
 
@@ -78,6 +86,7 @@ class ChargerStatus:
     current_a: int | None
     bypassed: bool
     charging: bool
+    car_connected: bool | None
 
 
 def ampere_step_count(charger: Charger) -> int:
@@ -110,43 +119,40 @@ def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
     return local_time >= window.start or local_time < window.end
 
 
-def charging_window_started(
-    window: ChargingWindow, after: datetime, until: datetime, time_zone: tzinfo
-) -> bool:
-    """Return whether the window started after `after` and no later than `until`."""
-    day = after.astimezone(time_zone).date()
-    last_day = until.astimezone(time_zone).date()
-    while day <= last_day:
-        if after < datetime.combine(day, window.start, time_zone) <= until:
-            return True
-        day += timedelta(days=1)
-    return False
-
-
-def override_expired(
-    charger: Charger,
-    reading: ChargerReading,
-    started_at: datetime,
-    now: datetime,
-    time_zone: tzinfo,
-) -> bool:
-    """Return whether the override of the charging window has ended.
-
-    The start of the regulation counts only when the time the override was
-    switched on is not known, as after a restart of Home Assistant.
-    """
-    window = charger.charging_window
-    if window is None or not reading.window_override:
+def override_arms(charger: Charger, reading: ChargerReading, activated: bool) -> bool:
+    """Return whether what ends the override has started, so it may end."""
+    if not _override_may_end(charger, reading):
         return False
-    since = reading.override_switched_on_at or started_at
-    return charging_window_started(window, since, now, time_zone)
+    if charger.override_ends is OverrideEnd.CAR_DISCONNECTED:
+        return reading.car_connected is True
+    return activated and reading.actively_charging
 
 
-def window_allows_charging(
-    window: ChargingWindow | None, override_active: bool, local_time: time
+def override_ended(
+    charger: Charger, reading: ChargerReading, activated_long_enough: bool
 ) -> bool:
-    """Return whether the charging window, or its override, allows charging."""
-    return window is None or override_active or in_charging_window(window, local_time)
+    """Return whether the override ends, because the car has stopped charging or left.
+
+    Only evidence that the car has stopped charging or left ends it, unlike
+    everywhere else where anything but evidence of true counts as false. An
+    override that has ended does not come back, so a sensor that is
+    unavailable for a moment, as while a cloud service is down, must not end
+    it. A charger that the regulation has deactivated, or activated too
+    recently for a car that starts slowly, does not end it either.
+    """
+    if not (_override_may_end(charger, reading) and reading.override_armed):
+        return False
+    if charger.override_ends is OverrideEnd.CAR_DISCONNECTED:
+        return reading.car_disconnected
+    return activated_long_enough and reading.charging_stopped
+
+
+def _override_may_end(charger: Charger, reading: ChargerReading) -> bool:
+    return (
+        charger.charging_window is not None
+        and charger.override_ends is not OverrideEnd.MANUAL
+        and reading.window_override
+    )
 
 
 def charging_permission(
@@ -177,6 +183,32 @@ def charging_permission(
     ):
         return ChargingPermission.FINISHING
     return ChargingPermission.OUTSIDE_WINDOW
+
+
+def charging_allowed_now(
+    charger: Charger,
+    status: ChargerStatus | None,
+    excluded: bool,
+    window_override: bool,
+    local_time: time,
+) -> bool:
+    """Return whether the charger may charge at `local_time`.
+
+    The charging window follows the clock, while finishing is judged from what
+    the last decision read, so a charger that was charging when its window
+    ended stays allowed until a decision ends the finishing.
+    """
+    reading = ChargerReading(
+        actively_charging=status is not None and status.charging,
+        car_connected=None if status is None else status.car_connected,
+        excluded=excluded,
+        window_override=window_override,
+        finish_after_window=charger.finish_after_window,
+    )
+    activated = status is not None and status.ampere_steps_on > 0
+    return charging_permission(
+        charger, reading, window_override, local_time, activated
+    ).allowed
 
 
 @dataclass(slots=True)
@@ -225,6 +257,16 @@ class ChargingState:
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
 
+    def activated_long_enough(
+        self, charger_id: str, now: datetime, window: timedelta
+    ) -> bool:
+        """Return whether a car has had time to start charging since activation."""
+        activated_at = self.activated_at.get(charger_id)
+        return (
+            activated_at is not None
+            and now - activated_at >= BYPASSED_AFTER_WINDOWS * window
+        )
+
     def is_allowed(self, charger_id: str) -> bool:
         """Return whether the charger was allowed to charge at the last decision."""
         permission = self.last_permissions.get(charger_id)
@@ -268,6 +310,7 @@ class ChargingState:
             current_a=charging_current(charger, steps_on) if steps_on else None,
             bypassed=charger.id in self.bypassed,
             charging=charging,
+            car_connected=reading.car_connected,
         )
 
     def _state_of(
@@ -325,17 +368,14 @@ class ChargingState:
         Without a rest, two chargers with full cars take turns being activated
         forever when only one may charge at a time.
         """
-        activated_at = self.activated_at.get(charger_id)
-        charges = activated_at is not None and reading.actively_charging
+        charges = charger_id in self.activated_at and reading.actively_charging
         if reading.car_connected is False or charges:
             self.rests.pop(charger_id, None)
         if reading.car_connected is False:
             return True
         rest = self.rests.get(charger_id)
-        not_charging = (
-            activated_at is not None
-            and not charges
-            and now - activated_at >= BYPASSED_AFTER_WINDOWS * window
+        not_charging = not charges and self.activated_long_enough(
+            charger_id, now, window
         )
         if not_charging and (rest is None or rest.until <= now):
             rest = self.rests[charger_id] = Rest.after(rest, now)

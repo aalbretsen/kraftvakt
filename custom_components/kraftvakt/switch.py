@@ -16,7 +16,6 @@ from .const import DOMAIN
 from .entity import KraftvaktEntity
 from .item_entity import ChargerEntity, ItemEntity, async_setup_item_entities
 from .runtime import ConfigIncompleteError, KraftvaktConfigEntry, KraftvaktRuntime
-from .settings import Settings
 
 PARALLEL_UPDATES = 0
 
@@ -129,17 +128,6 @@ class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
     """A setting of a charger in the configuration, also shown in the panel."""
 
     settings = ("finish_after_window",)
-
-    def __init__(
-        self,
-        entry: KraftvaktConfigEntry,
-        settings: Settings,
-        item_id: str,
-        name: str,
-        setting: str,
-    ) -> None:
-        super().__init__(entry, settings, item_id, name, setting)
-        self._runtime = entry.runtime_data
 
     @property
     def is_on(self) -> bool | None:

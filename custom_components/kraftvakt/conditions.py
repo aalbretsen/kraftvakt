@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Final
 
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_ON
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
@@ -34,6 +34,17 @@ def evaluate_condition(
     Everything else is false: an unavailable entity or sensor, and a template
     that fails or does not render a boolean.
     """
+    return condition_evidence(hass, condition, entity_id) is True
+
+
+def condition_evidence(
+    hass: HomeAssistant, condition: Condition, entity_id: str | None
+) -> bool | None:
+    """Return the value of the condition when there is evidence for it, else None.
+
+    Evidence is an entity that is on or off, a template that renders a
+    boolean, or a valid power.
+    """
     if condition.type is ConditionType.TEMPLATE:
         try:
             result = Template(condition.value, hass).async_render(
@@ -41,12 +52,12 @@ def evaluate_condition(
             )
         except TemplateError as err:
             _LOGGER.debug("Template %s gives no value: %s", condition.value, err)
-            return False
-        return result is True
+            return None
+        return result if isinstance(result, bool) else None
     state = hass.states.get(condition.value)
     if state is None:
-        return False
+        return None
     if condition.type is ConditionType.POWER_SENSOR:
         power = power_w(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
-        return power is not None and power > ACTIVELY_CHARGING_ABOVE_W
-    return state.state == STATE_ON
+        return None if power is None else power > ACTIVELY_CHARGING_ABOVE_W
+    return {STATE_ON: True, STATE_OFF: False}.get(state.state)

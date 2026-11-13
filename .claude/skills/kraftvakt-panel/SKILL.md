@@ -76,15 +76,16 @@ Code that mirrors the backend and must be kept in step with it:
   its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice: an option is a dropdown of the entity's
   options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper. A cleared value is `null`. A domain action
   becomes an empty custom action when the entity changes to one where it is not available.
-- Finish ongoing charging after the charging window is shown under the times of the charging window, only while the charger has one. Its value is kept when the window is removed,
-  since it has no effect without one.
+- Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger
+  has one. Their values are kept when the window is removed, since they have no effect without one.
 - Set charging current also offers Entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs. Required until an
   entity is chosen.
 - The boolean entity picker offers binary sensors, input booleans, switches and schedules. Templates are previewed with HA's `render_template` subscription, with `entity` as the
   frontend's state object. A result that is not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A new variant starts as an empty template, which is missing, not an error, so the appliance can be
   confirmed before the variant gets its expression. Actively charging has no «not set», offers a boolean entity first and shows it until one is chosen. Every preview reads the
-  value as the backend does, so only evidence shows as true. Car connected is shown as required when only one charger in the group may charge at a time.
+  value as the backend does, so only evidence shows as true. Car connected is shown as required when only one charger in the group may charge at a time, or
+  when the charger has a charging window and its override ends when the car is disconnected. A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers, and Add group under the cards. A new group gets the first free name of «EV
   chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.

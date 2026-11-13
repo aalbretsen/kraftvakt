@@ -1,10 +1,10 @@
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import type { Charger, Condition, Issue } from "../api";
+import { OVERRIDE_ENDS, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
 import { changesForDevice, deviceEntities } from "../charger-device";
 import type { TranslationKey } from "../localize";
-import { chargerErrors, missingInCharger } from "../validation";
+import { carConnectedRequired, chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
@@ -63,7 +63,9 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       )}
       ${this.renderConditionGroup(
         "car_connected",
-        this.oneAtATime ? "charger.car_connected_required" : "charger.car_connected_optional",
+        carConnectedRequired(this.draft, this.oneAtATime)
+          ? "charger.car_connected_required"
+          : "charger.car_connected_optional",
         issues,
       )}
       ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
@@ -126,6 +128,19 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
               ],
             },
             { name: "finish_after_window", selector: { boolean: {} } },
+            {
+              name: "override_ends",
+              required: true,
+              selector: {
+                select: {
+                  mode: "dropdown",
+                  options: OVERRIDE_ENDS.map((value) => ({
+                    value,
+                    label: this.localize(`charger.override_ends.${value}`),
+                  })),
+                },
+              },
+            },
           ]
         : []),
     ];
@@ -134,6 +149,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       start: window?.start ?? "",
       end: window?.end ?? "",
       finish_after_window: this.draft.finish_after_window,
+      override_ends: this.draft.override_ends,
     };
     return html`
       <div class="group">
@@ -146,6 +162,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
                 ? { start: wholeMinutes(value.start), end: wholeMinutes(value.end) }
                 : null,
               finish_after_window: !!value.finish_after_window,
+              override_ends: (value.override_ends as OverrideEnd | undefined) ?? this.draft.override_ends,
             }),
           data,
         )}

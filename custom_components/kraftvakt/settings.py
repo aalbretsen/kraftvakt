@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import replace
-from datetime import datetime
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.util import dt as dt_util
 
 from .config_model import (
     ApplianceSwitches,
     ChargerSwitches,
     KraftvaktConfig,
+    OverrideEnd,
     appliance_switches_for,
     charger_switches_for,
 )
@@ -22,11 +21,7 @@ type SwitchListener = Callable[[], None]
 
 
 class Settings:
-    """The stored configuration and the user's switches, saved together.
-
-    When the override of a charging window was switched on is kept only in
-    memory. After a restart, the first start of the regulation counts instead.
-    """
+    """The stored configuration and the user's switches, saved together."""
 
     def __init__(
         self, hass: HomeAssistant, storage: KraftvaktStorage, stored: StoredData
@@ -40,7 +35,7 @@ class Settings:
         self._charger_switches = charger_switches_for(
             stored.config, stored.charger_switches
         )
-        self._override_switched_on_at: dict[str, datetime] = {}
+        self._armed_overrides: set[str] = set()
         self._listeners: list[SwitchListener] = []
 
     @property
@@ -53,16 +48,21 @@ class Settings:
     def charger_switches(self, charger_id: str) -> ChargerSwitches:
         return self._charger_switches.get(charger_id, ChargerSwitches())
 
-    def override_switched_on_at(self, charger_id: str) -> datetime | None:
-        """Return when the override was switched on, if it is on and known."""
-        return self._override_switched_on_at.get(charger_id)
+    def override_armed(self, charger_id: str) -> bool:
+        """Return whether what ends the override has been seen since it was switched on.
+
+        It is kept in memory only, so after a restart a car that is still
+        connected or charging arms the override again at a decision.
+        """
+        return charger_id in self._armed_overrides
 
     @callback
-    def async_regulation_started(self, now: datetime) -> None:
-        """Count overrides switched on before a restart from `now`."""
-        for charger_id, switches in self._charger_switches.items():
-            if switches.window_override:
-                self._override_switched_on_at.setdefault(charger_id, now)
+    def async_arm_overrides(self, charger_ids: Iterable[str]) -> None:
+        self._armed_overrides |= {
+            charger_id
+            for charger_id in charger_ids
+            if self.charger_switches(charger_id).window_override
+        }
 
     async def async_set_appliance(self, appliance_id: str, *, excluded: bool) -> None:
         """Change the switches for the appliance and save them at once."""
@@ -94,16 +94,22 @@ class Settings:
 
     @callback
     def async_use_config(self, config: KraftvaktConfig) -> None:
-        """Use a new configuration and keep the switches of its items; not saved yet."""
+        """Use a new configuration and keep the switches of its items; not saved yet.
+
+        An override stays armed only while what ends it is the same.
+        """
+        previous_ends = _override_ends(self._config)
         self._config = config
         self._appliance_switches = appliance_switches_for(
             config, self._appliance_switches
         )
         self._charger_switches = charger_switches_for(config, self._charger_switches)
-        self._override_switched_on_at = {
-            charger_id: switched_on_at
-            for charger_id, switched_on_at in self._override_switched_on_at.items()
-            if charger_id in self._charger_switches
+        current_ends = _override_ends(config)
+        self._armed_overrides = {
+            charger_id
+            for charger_id in self._armed_overrides
+            if charger_id in current_ends
+            and previous_ends.get(charger_id) is current_ends[charger_id]
         }
         self._notify()
 
@@ -124,10 +130,8 @@ class Settings:
                 current.window_override if window_override is None else window_override
             ),
         )
-        if updated.window_override and not current.window_override:
-            self._override_switched_on_at[charger_id] = dt_util.utcnow()
-        elif not updated.window_override:
-            self._override_switched_on_at.pop(charger_id, None)
+        if updated.window_override != current.window_override:
+            self._armed_overrides.discard(charger_id)
         self._charger_switches[charger_id] = updated
         self._notify()
 
@@ -139,3 +143,7 @@ class Settings:
     def _notify(self) -> None:
         for listener in list(self._listeners):
             listener()
+
+
+def _override_ends(config: KraftvaktConfig) -> dict[str, OverrideEnd]:
+    return {charger.id: charger.override_ends for charger in config.chargers}

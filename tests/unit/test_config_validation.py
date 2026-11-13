@@ -551,3 +551,18 @@ async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None
 
     assert config.appliances[0].action(None, "turn_off").steps[0] == original
     assert original["target"] == {"entity_id": "{{ entity_id }}"}
+
+
+@pytest.mark.parametrize("value", ["when_full", True])
+async def test_override_end_must_be_one_of_the_choices(
+    hass: HomeAssistant, value: Any
+) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["override_ends"] = value
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [
+        Issue("invalid_type", "chargers", "c1", "override_ends")
+    ]

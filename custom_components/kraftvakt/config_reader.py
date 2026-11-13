@@ -29,6 +29,7 @@ from .config_model import (
     IssueLocation,
     ItemSwitches,
     KraftvaktConfig,
+    OverrideEnd,
     PriorityEntry,
     PriorityEntryType,
     Variant,
@@ -240,6 +241,7 @@ class ConfigReader:
             finish_after_window=self._bool(
                 values, "finish_after_window", defaults.finish_after_window, location
             ),
+            override_ends=self._override_end(values, defaults.override_ends, location),
         )
 
     def _action(
@@ -346,6 +348,15 @@ class ConfigReader:
             self.issues.append(location.issue("invalid_type", key))
             return None
         return value
+
+    def _override_end(
+        self, values: Mapping[str, Any], default: OverrideEnd, location: IssueLocation
+    ) -> OverrideEnd:
+        value = values.get("override_ends", default)
+        if value not in tuple(OverrideEnd):
+            self.issues.append(location.issue("invalid_type", "override_ends"))
+            return default
+        return OverrideEnd(value)
 
     def _bool(
         self,

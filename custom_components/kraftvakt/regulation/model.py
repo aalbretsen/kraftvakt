@@ -136,9 +136,17 @@ class RegulationState:
     chargers_commanded_at: dict[str, datetime] = field(default_factory=dict)
 
 
+@dataclass(slots=True)
+class OverrideChanges:
+    """The chargers whose window override arms or ends at a decision."""
+
+    armed: list[str] = field(default_factory=list)
+    ended: list[str] = field(default_factory=list)
+
+
 @dataclass(frozen=True, slots=True)
 class DecisionResult:
-    """The commands of a decision, and the chargers whose window override ended."""
+    """The commands of a decision, and the window overrides that arm or end."""
 
     commands: list[Command]
-    ended_overrides: list[str] = field(default_factory=list)
+    overrides: OverrideChanges = field(default_factory=OverrideChanges)

@@ -35,9 +35,10 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
 
 from .actions import ActionRunner
-from .conditions import evaluate_condition
+from .conditions import condition_evidence, evaluate_condition
 from .config_model import (
     Charger,
+    Condition,
     Issue,
     KraftvaktConfig,
 )
@@ -399,7 +400,6 @@ class KraftvaktRuntime:
         async_clear_not_started(self._hass)
         async_check_entities(self._hass, self.config)
         self._windows_since_decision.clear()
-        self._settings.async_regulation_started(now)
         self._execute(self._engine.start(now))
         self._notify_status()
 
@@ -527,8 +527,9 @@ class KraftvaktRuntime:
         )
         self._windows_since_decision.clear()
         result = self._engine.decide(decision)
-        for charger_id in result.ended_overrides:
+        for charger_id in result.overrides.ended:
             self._settings.async_reset_window_override(charger_id)
+        self._settings.async_arm_overrides(result.overrides.armed)
         self._record_decision(decision, result.commands)
         self._execute(result.commands)
 
@@ -616,25 +617,27 @@ class KraftvaktRuntime:
 
     def _charger_reading(self, charger: Charger) -> ChargerReading:
         switches = self._settings.charger_switches(charger.id)
+        car_connected = self._evidence(charger.car_connected, charger.entity_id)
+        actively_charging = self._evidence(charger.actively_charging, charger.entity_id)
         return ChargerReading(
-            actively_charging=(
-                charger.actively_charging is not None
-                and evaluate_condition(
-                    self._hass, charger.actively_charging, charger.entity_id
-                )
-            ),
+            actively_charging=actively_charging is True,
             car_connected=(
-                None
-                if charger.car_connected is None
-                else evaluate_condition(
-                    self._hass, charger.car_connected, charger.entity_id
-                )
+                None if charger.car_connected is None else car_connected is True
             ),
+            car_disconnected=car_connected is False,
+            charging_stopped=actively_charging is False,
             excluded=switches.excluded,
             window_override=switches.window_override,
-            override_switched_on_at=self._settings.override_switched_on_at(charger.id),
+            override_armed=self._settings.override_armed(charger.id),
             finish_after_window=charger.finish_after_window,
         )
+
+    def _evidence(
+        self, condition: Condition | None, entity_id: str | None
+    ) -> bool | None:
+        if condition is None:
+            return None
+        return condition_evidence(self._hass, condition, entity_id)
 
     def _execute(self, commands: Sequence[Command]) -> None:
         if commands:

@@ -18,8 +18,8 @@
       "penalty_active": {
         "name": "Straff aktiv"
       },
-      "charger_window_allowed": {
-        "name": "{charger} lading tillatt av ladetidsrom"
+      "charger_allowed_to_charge": {
+        "name": "{charger} har lov til å lade"
       }
     },
     "number": {

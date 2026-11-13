@@ -118,6 +118,23 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     ]
 
 
+def test_car_connected_is_required_when_the_override_ends_on_disconnect() -> None:
+    """Only with a charging window, where the override has an effect."""
+    data = full_config_data()
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["car_connected"] = None
+    charger["override_ends"] = "car_disconnected"
+
+    assert _missing(data) == [
+        Issue("missing_car_connected", "chargers", "c1", "car_connected")
+    ]
+    charger["charging_window"] = None
+    assert _missing(data) == []
+    charger["charging_window"] = {"start": "22:00", "end": "06:00"}
+    charger["override_ends"] = "charging_stopped"
+    assert _missing(data) == []
+
+
 def test_domain_action_needs_every_value_chosen() -> None:
     data = full_config_data()
     data["appliances"][0]["turn_on"] = {

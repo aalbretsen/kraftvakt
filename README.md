@@ -91,7 +91,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
 - every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, and **Actively charging**, and also **Car connected** when only one EV
-  charger in its group may charge at a time.
+  charger in its group may charge at a time, or when it has a charging window and **End the override** is **When the car is disconnected**.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded. When the configuration is not
 complete then, it is reported under **Settings → Repairs**. If the stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt does not start, the integration
@@ -154,8 +154,19 @@ minimum before the EV charger is activated or deactivated.
   until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit, a
   disconnected car, an excluded EV charger or a stopped regulation. It is then not turned on again before the charging window starts. An EV charger that is activated but not yet
   actively charging when the window ends is deactivated. The setting is also the switch **‹charger› finish charging after charging window**.
-- The switch **‹charger› override charging window** lets the EV charger charge outside the charging window until the next charging window has started, even if the regulation has
-  been stopped or in safe state meanwhile. After a restart of Home Assistant, this is counted from the first start of the regulation.
+- The switch **‹charger› override charging window** lets the EV charger charge outside the charging window. A charging window that starts does not end it. **End the override**
+  chooses when it turns itself off:
+  - **When I turn it off**, the default: it stays on until you turn it off.
+  - **When the car no longer charges**: at the first decision where the EV charger has been activated for two regulation windows and is not actively charging, once it has been
+    actively charging since the switch was turned on. A full car ends it, so the car heating in the morning does not charge. An EV charger that Kraftvakt has deactivated, for
+    example above the power limit, does not end it, and the car gets time to start again when it is activated again. A car that never starts charging, for example one that is
+    already full, does not end it.
+  - **When the car is disconnected**: at the first decision where the car is not connected, once a car has been connected since the switch was turned on. It lasts through a
+    full car and the car heating in the morning. **Car connected** is then required.
+
+  The last two can be turned on before the car arrives, since they wait for the car. Only a known value ends the override: a car sensor that is unavailable, or a template that
+  fails, does not, so a cloud service that is down for a moment does not stop the charging you asked for. A car that stops charging or leaves while the regulation is stopped is
+  noticed at the first decision after it starts; one that stops charging or leaves while Home Assistant restarts is not, and the override stays on until you turn it off.
 
 ## The panel
 
@@ -218,9 +229,9 @@ All entities belong to the service device **Kraftvakt**.
 | `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on and gets no repeated commands. |
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
-| `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off when the next charging window has started. |
+| `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
 | `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish ongoing charging after the charging window** in the panel. Can be changed while the regulation runs. |
-| `binary_sensor.kraftvakt_charger_<charger>_window_allowed` (‹charger› charging allowed by window) | Diagnostic. One per EV charger. On while the charging window allows charging: inside the charging window, while **‹charger› override charging window** is on, or always when the EV charger has no charging window. Follows the clock, also while the regulation is stopped. |
+| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, and it has no charging window, is inside it, has **‹charger› override charging window** on, or is finishing the charging after the charging window. It follows the clock, also while the regulation is stopped, and stays on without a break when the charging window ends with an EV charger that goes on finishing. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed, and after two
 regulation windows in a row closed without a valid value from the power sensor, also while the regulation is stopped. When the power sensor gives a valid value again, the

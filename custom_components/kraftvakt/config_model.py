@@ -108,6 +108,14 @@ class ConditionType(StrEnum):
     POWER_SENSOR = "power_sensor"
 
 
+class OverrideEnd(StrEnum):
+    """What ends the override of a charger's charging window, besides the user."""
+
+    MANUAL = "manual"
+    CHARGING_STOPPED = "charging_stopped"
+    CAR_DISCONNECTED = "car_disconnected"
+
+
 class PriorityEntryType(StrEnum):
     APPLIANCE = "appliance"
     CHARGER_GROUP = "charger_group"
@@ -300,6 +308,7 @@ class Charger:
     actively_charging: Condition | None = None
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
+    override_ends: OverrideEnd = OverrideEnd.MANUAL
 
     def action_fields(self) -> Iterator[ActionField]:
         for name, kind in CHARGER_ACTION_KINDS.items():

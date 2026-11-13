@@ -19,6 +19,7 @@ from custom_components.kraftvakt.config_model import (
     ConditionType,
     GeneralConfig,
     KraftvaktConfig,
+    OverrideEnd,
     PriorityEntry,
     Variant,
 )
@@ -61,6 +62,7 @@ def charger(
     max_a: int = 16,
     reserve_w: int = 4000,
     window: str | None = None,
+    override_ends: OverrideEnd = OverrideEnd.MANUAL,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""
     charging_window = None
@@ -80,6 +82,7 @@ def charger(
             ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"
         ),
         charging_window=charging_window,
+        override_ends=override_ends,
     )
 
 

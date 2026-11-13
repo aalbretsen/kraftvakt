@@ -13,7 +13,8 @@ from .charging import (
     ChargingState,
     charging_current,
     charging_permission,
-    override_expired,
+    override_arms,
+    override_ended,
 )
 from .model import (
     ActivateCharger,
@@ -23,6 +24,7 @@ from .model import (
     DeactivateCharger,
     DecisionInput,
     DecisionResult,
+    OverrideChanges,
     RegulationState,
     SetChargingCurrent,
     Step,
@@ -220,25 +222,25 @@ class RegulationEngine:
         average = decision.regulation_average_w
         if average is None:
             return DecisionResult([])
-        ended_overrides = self._ended_overrides(decision)
+        overrides = self._overrides(decision)
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
-            return DecisionResult(self.start(decision.now), ended_overrides)
+            return DecisionResult(self.start(decision.now), overrides)
         commands: list[Command] = []
         if penalty is PenaltyOutcome.STARTED:
             commands += self._hold_everything_off()
         if self._state.penalty.active:
             commands += self._place_appliances(decision)
-            return DecisionResult(commands, ended_overrides)
+            return DecisionResult(commands, overrides)
         steps_on_before = self.steps_on
-        commands += self._decide_chargers(decision, ended_overrides)
+        commands += self._decide_chargers(decision, overrides.ended)
         commands += self._place_appliances(decision)
         forced_off = self.steps_on < steps_on_before
         if average > self._config.general.power_limit_w:
             commands += self._switch_off_above_limit(forced_off)
         else:
             commands += self._turn_on_next(decision.now, average, forced_off)
-        return DecisionResult(commands, ended_overrides)
+        return DecisionResult(commands, overrides)
 
     def _new_charging_groups(self) -> dict[str, ChargingState]:
         return {
@@ -266,20 +268,20 @@ class RegulationEngine:
             commands += self._charger_commands(charger, 0)
         return commands
 
-    def _ended_overrides(self, decision: DecisionInput) -> list[str]:
-        started_at = self._state.started_at
-        assert started_at is not None
-        return [
-            charger.id
-            for charger in self._chargers.values()
-            if override_expired(
-                charger,
-                decision.chargers.get(charger.id, ChargerReading()),
-                started_at,
-                decision.now,
-                decision.time_zone,
-            )
-        ]
+    def _overrides(self, decision: DecisionInput) -> OverrideChanges:
+        """Return the overrides that arm or end at the decision."""
+        changes = OverrideChanges()
+        window = timedelta(seconds=self._config.general.regulation_window_s)
+        for charger in self._chargers.values():
+            reading = decision.chargers.get(charger.id, ChargerReading())
+            charging = self._charging_of(charger.id)
+            activated = charging.ampere_steps_on[charger.id] > 0
+            tried = charging.activated_long_enough(charger.id, decision.now, window)
+            if override_ended(charger, reading, tried):
+                changes.ended.append(charger.id)
+            elif override_arms(charger, reading, activated):
+                changes.armed.append(charger.id)
+        return changes
 
     def _decide_chargers(
         self, decision: DecisionInput, ended_overrides: list[str]

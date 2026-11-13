@@ -48,6 +48,7 @@ class ItemEntity(KraftvaktEntity):
         )
         self._attr_translation_placeholders = {self.kind: name}
         self._settings = settings
+        self._runtime = entry.runtime_data
         self._item_id = item_id
         self._setting = setting
 

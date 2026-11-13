@@ -1,4 +1,4 @@
-"""Binary sensors for the safe state, the penalty period and the charging windows."""
+"""Binary sensors for the safe state, the penalty and whether chargers may charge."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from .entity import KraftvaktEntity
 from .item_entity import ChargerEntity, async_setup_item_entities
-from .regulation.charging import window_allows_charging
+from .regulation.charging import charging_allowed_now
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
 PARALLEL_UPDATES = 0
@@ -54,7 +54,7 @@ async def async_setup_entry(
         for description in BINARY_SENSORS
     )
     async_setup_item_entities(
-        hass, entry, async_add_entities, "binary_sensor", (ChargerWindowBinarySensor,)
+        hass, entry, async_add_entities, "binary_sensor", (ChargerAllowedBinarySensor,)
     )
 
 
@@ -84,20 +84,24 @@ class RegulationBinarySensor(KraftvaktEntity, BinarySensorEntity):
         return self.entity_description.is_on_fn(self._runtime)
 
 
-class ChargerWindowBinarySensor(ChargerEntity, BinarySensorEntity):
-    """Is on while the charging window, or its override, allows the charger to charge.
+class ChargerAllowedBinarySensor(ChargerEntity, BinarySensorEntity):
+    """Is on while the charger may charge.
 
-    It follows the clock, not the decisions, so it is also right while the
-    regulation is stopped. A charging window is in whole minutes, so it is
-    updated at every whole minute.
+    The charging window and the switches follow the clock and the settings,
+    so it is also right while the regulation is stopped. A charging window is
+    in whole minutes, so it is updated at every whole minute, and finishing
+    is updated at the decisions.
     """
 
-    settings = ("window_allowed",)
+    settings = ("allowed_to_charge",)
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     async def async_added_to_hass(self) -> None:
-        """Follow the settings and the clock."""
+        """Follow the settings, the decisions and the clock."""
         await super().async_added_to_hass()
+        self.async_on_remove(
+            self._runtime.async_add_status_listener(self.async_write_ha_state)
+        )
         self.async_on_remove(
             async_track_time_change(self.hass, self._async_minute_started, second=0)
         )
@@ -109,8 +113,13 @@ class ChargerWindowBinarySensor(ChargerEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         charger = self._charger()
-        return window_allows_charging(
-            None if charger is None else charger.charging_window,
-            self._settings.charger_switches(self._item_id).window_override,
+        if charger is None:
+            return False
+        switches = self._settings.charger_switches(self._item_id)
+        return charging_allowed_now(
+            charger,
+            self._runtime.chargers.get(self._item_id),
+            switches.excluded,
+            switches.window_override,
             dt_util.now().time(),
         )

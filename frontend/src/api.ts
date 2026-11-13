@@ -95,7 +95,12 @@ export interface Charger {
   charging_window: ChargingWindow | null;
   /** Whether ongoing charging may finish after the charging window has ended. */
   finish_after_window: boolean;
+  /** What ends the override of the charging window, besides the user. */
+  override_ends: OverrideEnd;
 }
+
+export const OVERRIDE_ENDS = ["manual", "charging_stopped", "car_disconnected"] as const;
+export type OverrideEnd = (typeof OVERRIDE_ENDS)[number];
 
 /** A named group of EV chargers with its own place in the priority list. */
 export interface ChargerGroup {
@@ -173,7 +178,7 @@ export interface Capabilities {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
     charger_groups: { one_at_a_time: boolean };
-    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number };
+    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number; override_ends: OverrideEnd };
   };
 }
 

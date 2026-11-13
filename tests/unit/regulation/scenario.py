@@ -19,6 +19,7 @@ from custom_components.kraftvakt.regulation.model import (
     Command,
     DeactivateCharger,
     DecisionInput,
+    OverrideChanges,
     SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
@@ -81,7 +82,7 @@ class Scenario:
         self.time_zone = time_zone
         self.chargers = {charger.id: IDLE_CHARGER for charger in config.chargers}
         self.excluded_appliances: frozenset[str] = frozenset()
-        self.ended_overrides: list[str] = []
+        self.overrides = OverrideChanges()
         self.start_commands = self.engine.start(self.now)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
@@ -129,7 +130,7 @@ class Scenario:
                 time_zone=self.time_zone,
             )
         )
-        self.ended_overrides = result.ended_overrides
+        self.overrides = result.overrides
         return result.commands
 
     def repeat(self, after: timedelta) -> list[Command]:

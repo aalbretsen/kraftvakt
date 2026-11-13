@@ -1,11 +1,16 @@
 """Unit tests for the rules for the EV chargers."""
 
+from dataclasses import replace
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.kraftvakt.config_model import Charger, ChargingWindow
+from custom_components.kraftvakt.config_model import (
+    Charger,
+    ChargingWindow,
+    OverrideEnd,
+)
 from custom_components.kraftvakt.regulation.charging import (
     ChargerReading,
     ChargerState,
@@ -13,11 +18,12 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargingPermission,
     ChargingState,
     ampere_step_count,
+    charging_allowed_now,
     charging_current,
     charging_permission,
-    charging_window_started,
     in_charging_window,
-    override_expired,
+    override_arms,
+    override_ended,
 )
 
 OSLO = ZoneInfo("Europe/Oslo")
@@ -74,55 +80,42 @@ def test_charging_window_can_reach_across_midnight(
     assert in_charging_window(window, local_time) is expected
 
 
-def test_charging_window_start_is_found_in_the_time_zone() -> None:
-    """The window is given in the time zone of Home Assistant."""
-    assert charging_window_started(NIGHT, oslo(21, 0), oslo(22, 0), OSLO)
-    assert not charging_window_started(NIGHT, oslo(22, 0), oslo(23, 0), OSLO)
-    assert not charging_window_started(NIGHT, oslo(23, 0), oslo(21, 59, day=8), OSLO)
-    assert charging_window_started(NIGHT, oslo(23, 0), oslo(22, 0, day=8), OSLO)
-    assert charging_window_started(DAY, oslo(10, 0), oslo(10, 0, day=9), OSLO)
-    assert not charging_window_started(NIGHT, oslo(21, 0), oslo(21, 0), UTC)
+DISCONNECTING = charger(
+    charging_window=NIGHT, override_ends=OverrideEnd.CAR_DISCONNECTED
+)
+STOPPING = charger(charging_window=NIGHT, override_ends=OverrideEnd.CHARGING_STOPPED)
+MANUAL = charger(charging_window=NIGHT, override_ends=OverrideEnd.MANUAL)
 
 
-def test_override_ends_when_the_next_window_has_started() -> None:
-    """Counted from when the switch was switched on."""
-    night = charger(charging_window=NIGHT)
-    switched_on = ChargerReading(window_override=True, override_switched_on_at=oslo(12))
+def test_override_ends_on_evidence_once_it_is_armed() -> None:
+    """A charger that the regulation has deactivated does not stop charging."""
+    armed = ChargerReading(window_override=True, override_armed=True)
+    gone = replace(armed, car_disconnected=True)
+    full = replace(armed, charging_stopped=True)
 
-    assert not override_expired(night, switched_on, oslo(8), oslo(21, 59), OSLO)
-    assert override_expired(night, switched_on, oslo(8), oslo(22, 0), OSLO)
-
-
-def test_override_counts_from_the_switch_also_over_a_later_start() -> None:
-    """A window that started while the regulation was stopped counts."""
-    night = charger(charging_window=NIGHT)
-    long_ago = ChargerReading(
-        window_override=True, override_switched_on_at=oslo(8, day=5)
+    assert override_ended(DISCONNECTING, gone, False)
+    assert not override_ended(DISCONNECTING, full, True)
+    assert override_ended(STOPPING, full, True)
+    assert not override_ended(STOPPING, full, False)
+    assert not override_ended(STOPPING, gone, True)
+    assert not override_ended(MANUAL, replace(gone, charging_stopped=True), True)
+    assert not override_ended(DISCONNECTING, replace(gone, override_armed=False), True)
+    assert not override_ended(DISCONNECTING, replace(gone, window_override=False), True)
+    assert not override_ended(
+        charger(override_ends=OverrideEnd.CAR_DISCONNECTED), gone, True
     )
 
-    assert override_expired(night, long_ago, oslo(12), oslo(12, 10), OSLO)
 
+def test_override_arms_when_the_car_is_connected_or_charging() -> None:
+    connected = ChargerReading(window_override=True, car_connected=True)
+    charging = ChargerReading(window_override=True, actively_charging=True)
 
-def test_override_counts_from_the_start_when_switched_on_is_unknown() -> None:
-    """The start of the regulation counts when the switch time is not known."""
-    night = charger(charging_window=NIGHT)
-    unknown = ChargerReading(window_override=True)
-
-    assert not override_expired(night, unknown, oslo(12), oslo(21, 0), OSLO)
-    assert override_expired(night, unknown, oslo(12), oslo(22, 1), OSLO)
-
-
-def test_override_without_window_or_switched_off_never_ends() -> None:
-    """An override has no effect without a charging window."""
-    switched_on = ChargerReading(window_override=True, override_switched_on_at=oslo(1))
-    switched_off = ChargerReading(
-        window_override=False, override_switched_on_at=oslo(1)
-    )
-
-    assert not override_expired(charger(), switched_on, oslo(1), oslo(23), OSLO)
-    assert not override_expired(
-        charger(charging_window=NIGHT), switched_off, oslo(1), oslo(23), OSLO
-    )
+    assert override_arms(DISCONNECTING, connected, False)
+    assert not override_arms(DISCONNECTING, charging, True)
+    assert override_arms(STOPPING, charging, True)
+    assert not override_arms(STOPPING, charging, False)
+    assert not override_arms(STOPPING, replace(charging, window_override=False), True)
+    assert not override_arms(MANUAL, replace(charging, car_connected=True), True)
 
 
 def test_charging_permission() -> None:
@@ -153,6 +146,26 @@ def test_finishing_ends_without_a_car() -> None:
             charger(charging_window=NIGHT), no_car, False, time(12), True
         )
         == "outside_window"
+    )
+
+
+def test_charging_allowed_now() -> None:
+    """Finishing is judged from the status after the last decision."""
+    night = charger(charging_window=NIGHT, finish_after_window=True)
+    charging = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, None)
+    no_car = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, False)
+    deactivated = ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, None)
+
+    assert charging_allowed_now(charger(), None, False, False, time(12))
+    assert not charging_allowed_now(charger(), None, True, False, time(12))
+    assert charging_allowed_now(night, None, False, True, time(12))
+    assert not charging_allowed_now(night, None, False, False, time(12))
+    assert charging_allowed_now(night, charging, False, False, time(12))
+    assert not charging_allowed_now(night, charging, True, False, time(12))
+    assert not charging_allowed_now(night, no_car, False, False, time(12))
+    assert not charging_allowed_now(night, deactivated, False, False, time(12))
+    assert not charging_allowed_now(
+        charger(charging_window=NIGHT), charging, False, False, time(12)
     )
 
 
@@ -400,10 +413,10 @@ def test_status_of_each_charger() -> None:
     )
 
     assert state.status(configured) == {
-        "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, bypassed=False, charging=True),
-        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False),
-        "c": ChargerStatus(ChargerState.NO_CAR, 0, None, bypassed=True, charging=False),
-        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False),
+        "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, False, True, True),
+        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, None),
+        "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
+        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, None),
     }
 
 

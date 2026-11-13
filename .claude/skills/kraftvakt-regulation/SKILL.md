@@ -48,6 +48,11 @@ one place (`config_model.py`).
 | Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |
 | Waiting charger | With one charger at a time: a charger that may not charge because another in its group is actively charging. |
 | Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
+| Allowed to charge | A charger that is not excluded, and has no charging window, is inside it, has an active window override, or is finishing. |
+| Window override | A charger's switch that allows charging outside its charging window, until it is switched off or its override end ends it. |
+| Override end | What switches a window override off besides the user: manual, when the car no longer charges, or when the car is disconnected. |
+| Armed override | A window override where what ends it has started since it was switched on: the car charging or connected. Only an armed override ends. |
+| Finishing | A charger that was charging when its window ended going on until it stops, with finish after window. |
 
 Resolution of settings: power in whole watts, the regulation window and the waiting time at the limit in whole seconds, currents in whole amperes. Power is in W everywhere inside
 the regulation, the configuration and the entities, energy in Wh; the status page shows kW.
@@ -68,7 +73,7 @@ the regulation, the configuration and the entities, energy in Wh; the status pag
   after a penalty. The configuration and the switch positions are kept over any restart.
 - True/false from HA (variant expressions, car connected, actively charging) is a boolean entity or a template, and for actively charging also a power sensor. Only evidence makes
   it true: an entity that is `on`, a template that gives the boolean true, or a valid power above 100 W. Everything else is false, also unavailable entities and sensors and failing
-  templates. Settings are named so that true means the thing is the case.
+  templates. The one exception is the override end (see EV charging), which needs evidence of false. Settings are named so that true means the thing is the case.
 
 ## Measurement
 
@@ -93,7 +98,7 @@ the regulation, the configuration and the entities, energy in Wh; the status pag
   start do not count, so the first decision comes after N to N+1 windows. The decision time is the end of that window.
 - Order inside a decision, each step may end it:
   1. Safe state.
-  2. Window overrides that have ended are switched off.
+  2. Window overrides that end are switched off (see Override end).
   3. Overconsumption.
   4. Penalty.
   5. EV chargers: allowed, bypassed, current priority, waiting.
@@ -172,7 +177,8 @@ the regulation, the configuration and the entities, energy in Wh; the status pag
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions and actively charging, and also car connected when only one charger in its group may charge at a time.
+  activate, deactivate and set-current actions and actively charging, and also car connected when only one charger in its group may charge at a time, or when it has a charging
+  window and its override ends when the car is disconnected.
 
 ## Command repeat
 
@@ -205,9 +211,9 @@ All with entity category diagnostic:
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike. Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision that turns on the waiting step (an appliance or a charger's next ampere), so it is the real time left, a whole
   number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop.
-- Charging allowed by window (per charger): on while the charging window allows charging, that is inside the window, while the override switch is on, or always without a window. It
-  does not consider the excluded switch or finishing. It follows the clock, not the decisions, so it is right also while the regulation is stopped, and it changes at the whole
-  minute.
+- Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now. The charging window
+  follows the clock, so it is right also while the regulation is stopped and changes at the whole minute. Finishing is judged from what the last decision read (activated, actively
+  charging, car connected), so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use, without the longer
   waiting time on repeated turn-on. Unavailable without an average.
 
@@ -274,9 +280,19 @@ All with entity category diagnostic:
   window. A charger on trial at the end of the window is not actively charging, so it is deactivated. The setting is configuration, but also a switch that may be changed while the
   regulation runs; it applies from the next decision without a restart.
 - Excluded switch (per charger, default off): while on, the charger never charges.
-- Override switch (per charger, default off): allows charging outside the charging window. It ends at the first decision after a charging window has started after the switch was
-  turned on, also when the regulation was stopped or in the safe state meanwhile, and the switch is then set back to off. The switch-on time is kept only in memory; after a restart
-  of HA or the integration the first start of the regulation counts instead. No effect for a charger without charging window. Switching it off stops charging outside the window
-  like the window ending.
+- Override switch (per charger, default off): allows charging outside the charging window until it is switched off. A window that starts does not end it. No effect for a charger
+  without charging window. Switching it off stops charging outside the window like the window ending.
+- Override end (per charger setting, only with a charging window): what switches the override off besides the user. The override is armed at the first decision where what ends it
+  has started, and only an armed override ends, so it can be turned on before the car arrives. When it ends, the switch is set back to off.
+  - Manual (default): never ends by itself.
+  - When the car no longer charges: armed when the charger is activated and actively charging; ends at the first decision where it has been activated for at least two windows,
+    as for bypassed, and is not actively charging. A charger the regulation has deactivated neither arms nor ends it, and one it has activated again gives the car the same two
+    windows to start. A car that never starts charging, as one that is already full, never arms it.
+  - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false. Car connected is required.
+- Only evidence of false ends an override: car connected from an entity that is off or a template that gives false, and not actively charging from a valid power of at most 100 W,
+  an entity that is off or a template that gives false. Why: an override that has ended does not come back, so a sensor that is unavailable for a moment, as while a cloud service
+  is down, must not stop the charging the user asked for. This is the only exception to the evidence rule in Ground rules.
+- Whether an override is armed is kept in memory over stops, the safe state and penalties, and lost at a restart of HA or the integration and when its override end is changed;
+  a car still connected or charging arms it again. Decisions in the safe state neither arm nor end it. The setting is configuration only, without a switch.
 - Both switches can be used while the regulation runs, are saved at once, and take effect at the next decision; the excluded switch takes effect for the command repeat at the next
   window close. They do not restart the regulation.

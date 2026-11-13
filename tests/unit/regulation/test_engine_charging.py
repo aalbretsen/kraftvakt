@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
+from custom_components.kraftvakt.config_model import OverrideEnd
 from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
     ChargerStatus,
@@ -10,7 +11,6 @@ from custom_components.kraftvakt.regulation.model import ActivateCharger
 
 from .configs import appliance, charger, charger_group, make_config
 from .scenario import (
-    START,
     Scenario,
     activate,
     current,
@@ -68,6 +68,7 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
         current_a=8,
         bypassed=False,
         charging=True,
+        car_connected=None,
     )
 
 
@@ -496,35 +497,80 @@ def test_charger_on_trial_when_its_window_ends_does_not_finish() -> None:
     assert scenario.decide_many(0, 3) == [activate("c"), [], deactivate("c")]
 
 
-def test_override_allows_charging_until_the_next_window_starts() -> None:
-    """The switch is set back when the override ends."""
-    scenario = one_charger(max_a=6, window="22:00-22:05")
-    scenario.set_charger(
-        "c", **CHARGING, window_override=True, override_switched_on_at=START
+def test_override_lasts_until_a_connected_car_is_disconnected() -> None:
+    """A window that starts does not end it, nor a car sensor without evidence."""
+    scenario = one_charger(
+        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED
     )
+    scenario.set_charger("c", **CHARGING, window_override=True, car_connected=True)
 
     assert scenario.decide(0) == activate("c")
+    assert scenario.overrides.armed == ["c"]
     assert scenario.engine.chargers["c"].state is ChargerState.OVERRIDE
-    assert scenario.decide(0, after=timedelta(hours=9, minutes=58)) == []
-    assert scenario.ended_overrides == []
+    assert scenario.decide(0, after=timedelta(hours=20)) == []
+    assert scenario.overrides.ended == []
+
+    scenario.set_charger(
+        "c", actively_charging=False, car_connected=False, override_armed=True
+    )
     assert scenario.decide(0) == []
-    assert scenario.ended_overrides == ["c"]
-    assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
-    scenario.set_charger("c", window_override=False)
-    assert scenario.decide(0, after=timedelta(minutes=4)) == []
+    assert scenario.overrides.ended == []
+    scenario.set_charger("c", car_disconnected=True)
     assert scenario.decide(0) == deactivate("c")
+    assert scenario.overrides.ended == ["c"]
+    assert scenario.engine.chargers["c"].state is ChargerState.OUTSIDE_WINDOW
+
+
+def test_override_ends_when_the_activated_charger_stops_charging() -> None:
+    """It arms only when the charger was activated and charging."""
+    scenario = one_charger(
+        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED
+    )
+    scenario.set_charger("c", **CHARGING, window_override=True)
+
+    assert scenario.decide(0) == activate("c")
+    assert scenario.overrides.armed == []
+    assert scenario.decide(0) == []
+    assert scenario.overrides.armed == ["c"]
+
+    scenario.set_charger("c", actively_charging=False, override_armed=True)
+    assert scenario.decide(0) == []
+    assert scenario.overrides.ended == []
+    scenario.set_charger("c", charging_stopped=True)
+    assert scenario.decide(0) == deactivate("c")
+    assert scenario.overrides.ended == ["c"]
+
+
+def test_override_gives_a_reactivated_car_time_to_start_charging() -> None:
+    """As before a charger is bypassed, two windows after it was activated."""
+    scenario = one_charger(
+        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED
+    )
+    scenario.set_charger("c", **CHARGING, window_override=True, override_armed=True)
+    scenario.decide(0)
+    assert scenario.decide(12000) == deactivate("c")
+    assert scenario.decide(0) == activate("c")
+
+    scenario.set_charger("c", actively_charging=False, charging_stopped=True)
+    assert scenario.decide(0) == []
+    assert scenario.overrides.ended == []
+    assert scenario.decide(0) == deactivate("c")
+    assert scenario.overrides.ended == ["c"]
 
 
 def test_override_ends_also_during_a_penalty() -> None:
     """The override is evaluated at every decision."""
-    scenario = one_charger(max_a=6, window="12:30-13:00")
-    scenario.set_charger("c", window_override=True, override_switched_on_at=START)
+    scenario = one_charger(
+        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED
+    )
+    scenario.set_charger("c", window_override=True, car_connected=True)
     scenario.decide(12000, tariff=12000)
     assert scenario.decide(12000, tariff=12000) == deactivate("c")
     assert scenario.engine.penalty.active
 
-    assert scenario.decide(12000, tariff=12000, after=timedelta(minutes=28)) == []
-    assert scenario.ended_overrides == ["c"]
+    scenario.set_charger("c", car_disconnected=True, override_armed=True)
+    assert scenario.decide(12000, tariff=12000) == []
+    assert scenario.overrides.ended == ["c"]
 
 
 def test_switching_the_override_off_stops_charging_outside_the_window() -> None:

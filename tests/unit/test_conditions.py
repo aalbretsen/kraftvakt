@@ -3,7 +3,10 @@
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.kraftvakt.conditions import evaluate_condition
+from custom_components.kraftvakt.conditions import (
+    condition_evidence,
+    evaluate_condition,
+)
 from custom_components.kraftvakt.config_model import Condition, ConditionType
 
 APPLIANCE = "switch.water_heater"
@@ -60,6 +63,33 @@ async def test_template_is_true_only_for_the_boolean_true(
 )
 async def test_failing_template_is_false(hass: HomeAssistant, value: str) -> None:
     assert not evaluate_condition(hass, template(value), APPLIANCE)
+
+
+@pytest.mark.parametrize(
+    ("condition", "state", "expected"),
+    [
+        (entity("binary_sensor.car"), "on", True),
+        (entity("binary_sensor.car"), "off", False),
+        (entity("binary_sensor.car"), "unavailable", None),
+        (template("{{ is_state('binary_sensor.car', 'on') }}"), "off", False),
+        (template("{{ states('binary_sensor.car') }}"), "off", None),
+        (template("{{ 1 / 0 }}"), "off", None),
+        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "4100", True),
+        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "50", False),
+        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "unknown", None),
+    ],
+)
+async def test_evidence_either_way_or_none(
+    hass: HomeAssistant, condition: Condition, state: str, expected: bool | None
+) -> None:
+    """Only an entity that is on or off, a boolean or a valid power is evidence."""
+    hass.states.async_set("binary_sensor.car", state)
+
+    assert condition_evidence(hass, condition, CHARGER) is expected
+
+
+async def test_missing_entity_is_no_evidence(hass: HomeAssistant) -> None:
+    assert condition_evidence(hass, entity("binary_sensor.borte"), CHARGER) is None
 
 
 async def test_template_gets_the_entity_of_the_appliance(hass: HomeAssistant) -> None:

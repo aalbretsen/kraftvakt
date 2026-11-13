@@ -25,6 +25,7 @@ from .config_model import (
     Issue,
     IssueLocation,
     KraftvaktConfig,
+    OverrideEnd,
     PriorityEntry,
     PriorityEntryType,
     Range,
@@ -140,13 +141,22 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                         "actively_charging",
                     )
                 )
-            if group.one_at_a_time and not _is_set(charger.car_connected):
+            if _car_connected_required(group, charger) and not _is_set(
+                charger.car_connected
+            ):
                 missing.append(
                     Issue(
                         "missing_car_connected", "chargers", charger.id, "car_connected"
                     )
                 )
     return missing
+
+
+def _car_connected_required(group: ChargerGroup, charger: Charger) -> bool:
+    return group.one_at_a_time or (
+        charger.charging_window is not None
+        and charger.override_ends is OverrideEnd.CAR_DISCONNECTED
+    )
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:

@@ -80,7 +80,7 @@
     "missing_action": "{item}: the action to {action} is missing.",
     "missing_condition": "{item}: the expression is missing.",
     "missing_actively_charging": "{item}: «actively charging» is missing.",
-    "missing_car_connected": "{item}: «car connected» is missing. It is required when only one EV charger in the group may charge at a time.",
+    "missing_car_connected": "{item}: «car connected» is missing. It is required when only one EV charger in the group may charge at a time, and when the override ends when the car is disconnected.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
     "charger_without_entity": "An EV charger without an entity",
@@ -115,7 +115,7 @@
   },
   "errors": {
     "required": "Required.",
-    "car_connected_required": "Required when only one EV charger in the group may charge at a time.",
+    "car_connected_required": "Required when only one EV charger in the group may charge at a time, and when the override ends when the car is disconnected.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
     "invalid_resolution": "Must be a multiple of {resolution}.",
@@ -381,6 +381,11 @@
     "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
     "car_connected_required": "Car connected",
     "car_connected_optional": "Car connected (optional)",
+    "override_ends": {
+      "manual": "When I turn it off",
+      "charging_stopped": "When the car no longer charges",
+      "car_disconnected": "When the car is disconnected"
+    },
     "delete": "Delete EV charger",
     "fields": {
       "device_id": {
@@ -430,6 +435,10 @@
       "finish_after_window": {
         "label": "Finish ongoing charging after the charging window",
         "helper": "An EV charger that is charging when the charging window ends may go on until it stops charging. Once it has stopped, it is not turned on again before the charging window starts."
+      },
+      "override_ends": {
+        "label": "End the override",
+        "helper": "«‹charger› override charging window» waits until the car has charged, or been connected, since it was turned on, so it can be turned on before the car arrives. A sensor without a value does not end it."
       }
     }
   }

@@ -13,10 +13,10 @@
           "on": "mdi:alert-octagon"
         }
       },
-      "charger_window_allowed": {
-        "default": "mdi:clock-remove-outline",
+      "charger_allowed_to_charge": {
+        "default": "mdi:power-plug-off-outline",
         "state": {
-          "on": "mdi:clock-check-outline"
+          "on": "mdi:ev-station"
         }
       }
     },

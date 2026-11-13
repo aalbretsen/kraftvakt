@@ -236,6 +236,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       actively_charging: null,
       charging_window: null,
       finish_after_window: false,
+      override_ends: defaults.override_ends,
     };
     this.editing = { charger, groupId: group.id, isNew: true };
   }

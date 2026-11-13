@@ -46,7 +46,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: measures the power sensor (with the hour before from the recorder), closes the windows at absolute times and counts them to decisions, reads the conditions and chargers at a decision, runs the commands in a background task, repeats commands, starts when HA has started, and keeps the last decisions and failed actions for the diagnostics. |
-| `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and when the override was switched on (memory only). |
+| `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and which window overrides are armed (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
@@ -63,8 +63,8 @@ The format is defined by the dataclasses and their serialization in `config_mode
   variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate, deactivate and set-current
-  actions, min and max current, power reserve, an optional car connected condition, actively charging and an optional charging window. A charger is nested in its group, so it
-  cannot be in two.
+  actions, min and max current, power reserve, an optional car connected condition, actively charging, an optional charging window, finish after window and the override end. A
+  charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger. Finish after window is a field of the charger, not a switch position.
 
@@ -132,11 +132,11 @@ text in the panel's translations.
   could not start is reported when HA or the integration starts, also right after a fresh install with nothing configured, and cleared at any start. Removed entities are looked for
   at every start of the regulation and after every failed action.
 - The waiting time next turn-on sensor is disabled by default.
-- Each appliance has an excluded switch, and each charger an excluded switch, a window override switch and a binary sensor for charging allowed by window, keyed by the item's id,
-  with an entity id from the slug of the item's name. The positions of the switches are stored. The charger entities do not depend on the group, so moving a charger to another
-  group keeps them.
-- The charging allowed by window binary sensor computes the window from the clock with the same function as the engine, updated by the settings and at every whole minute, since
-  windows are in whole minutes.
+- Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a finish after window switch (configuration, see above) and a binary sensor
+  for allowed to charge, keyed by the item's id, with an entity id from the slug of the item's name. The positions of the switches are stored. The charger entities do not depend on
+  the group, so moving a charger to another group keeps them.
+- The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
+  the status of the regulation and at every whole minute, since windows are in whole minutes.
 
 ## WebSocket API
 
