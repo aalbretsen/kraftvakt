@@ -1,6 +1,7 @@
 ---
 name: kraftvakt-panel
-description: The Kraftvakt panel in frontend/ - Lit and TypeScript structure, routes, which Home Assistant components work in a custom panel, the draft and save flow, translations, and building the committed bundle. Use before changing anything in frontend/ or custom_components/kraftvakt/frontend/.
+description: The Kraftvakt panel in frontend/ - Lit and TypeScript structure, routes, which Home Assistant components work in a custom panel, the draft and save flow, translations,
+  and building the committed bundle. Use before changing anything in frontend/ or custom_components/kraftvakt/frontend/.
 ---
 
 # Kraftvakt panel

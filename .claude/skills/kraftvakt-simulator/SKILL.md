@@ -1,6 +1,8 @@
 ---
 name: kraftvakt-simulator
-description: The Kraftvakt simulator in simulator/custom_components/kraftvakt_simulator - a simulated HAN, heating devices and thermostats with a duty cycle, and 400 V three-phase EV chargers, set up as config entries in a local Home Assistant to test Kraftvakt by hand. Where it lives and why, how the devices behave, the modules, entities and config flow, and how to extend it. Use before changing or adding anything in simulator/ or tests/simulator/.
+description: The Kraftvakt simulator in simulator/custom_components/kraftvakt_simulator - a simulated HAN, heating devices and thermostats with a duty cycle, and 400 V three-phase
+  EV chargers, set up as config entries in a local Home Assistant to test Kraftvakt by hand. Where it lives and why, how the devices behave, the modules, entities and config flow,
+  and how to extend it. Use before changing or adding anything in simulator/ or tests/simulator/.
 ---
 
 # Kraftvakt simulator

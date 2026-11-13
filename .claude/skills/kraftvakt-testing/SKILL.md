@@ -1,6 +1,8 @@
 ---
 name: kraftvakt-testing
-description: How Kraftvakt is tested - the test layout, the scenario language for the regulation engine, conventions for black box tests with the Home Assistant test harness, the checks every commit must pass, how to test by hand against a local Home Assistant with the Kraftvakt simulator, and updating the dependencies. Use when writing or changing tests, before committing, when testing the panel or the regulation by hand, or when updating dependencies.
+description: How Kraftvakt is tested - the test layout, the scenario language for the regulation engine, conventions for black box tests with the Home Assistant test harness, the
+  checks every commit must pass, how to test by hand against a local Home Assistant with the Kraftvakt simulator, and updating the dependencies. Use when writing or changing tests,
+  before committing, when testing the panel or the regulation by hand, or when updating dependencies.
 ---
 
 # Testing Kraftvakt

@@ -1,6 +1,8 @@
 ---
 name: kraftvakt-release
-description: How a Kraftvakt release is made - SemVer versions and how to bump them (major, minor, patch, pre-release), the release script that sets the version, commits, tags and pushes, the workflow that drafts the GitHub release, release notes, and how HACS offers releases and pre-releases. Use when asked to make, prepare or plan a release, to bump the version, or about tags, release notes or HACS versions.
+description: How a Kraftvakt release is made - SemVer versions and how to bump them (major, minor, patch, pre-release), the release script that sets the version, commits, tags and
+  pushes, the workflow that drafts the GitHub release, release notes, and how HACS offers releases and pre-releases. Use when asked to make, prepare or plan a release, to bump the
+  version, or about tags, release notes or HACS versions.
 ---
 
 # Releasing Kraftvakt

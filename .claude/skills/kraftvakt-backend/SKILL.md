@@ -1,6 +1,8 @@
 ---
 name: kraftvakt-backend
-description: Architecture of the Kraftvakt integration in custom_components/kraftvakt - modules and their responsibilities, the stored configuration format, validation and completeness, actions and template variables, entities, the WebSocket API and the status snapshot the panel uses. Use before changing Python code in custom_components/kraftvakt or the messages between the panel and the backend.
+description: Architecture of the Kraftvakt integration in custom_components/kraftvakt - modules and their responsibilities, the stored configuration format, validation and
+  completeness, actions and template variables, entities, the WebSocket API and the status snapshot the panel uses. Use before changing Python code in custom_components/kraftvakt
+  or the messages between the panel and the backend.
 ---
 
 # Kraftvakt backend
