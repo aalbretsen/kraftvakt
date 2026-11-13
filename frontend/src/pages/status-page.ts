@@ -34,10 +34,12 @@ import { describeIssue, pageForIssue } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import type { HomeAssistant } from "../types";
+import { WidthQuery } from "../width-query";
 
 /** The width of the waiting column in pixels. */
 const WAITING_WIDTH = 120;
-const PHONE_MEDIA_QUERY = "(max-width: 600px)";
+/** The widest status page, in pixels, that gets the phone layout. */
+const PHONE_MAX_WIDTH = 600;
 
 /** How a chip looks: its colour and its icon, or a dot without one. */
 interface Chip {
@@ -134,23 +136,10 @@ export class KraftvaktStatusPage extends LitElement {
 
   @state() private runningError?: string;
 
-  @state() private phone = false;
+  private readonly phoneQuery = new WidthQuery(this, PHONE_MAX_WIDTH);
 
-  private readonly phoneQuery = window.matchMedia(PHONE_MEDIA_QUERY);
-
-  private readonly onPhoneChange = () => {
-    this.phone = this.phoneQuery.matches;
-  };
-
-  connectedCallback(): void {
-    super.connectedCallback();
-    this.onPhoneChange();
-    this.phoneQuery.addEventListener("change", this.onPhoneChange);
-  }
-
-  disconnectedCallback(): void {
-    this.phoneQuery.removeEventListener("change", this.onPhoneChange);
-    super.disconnectedCallback();
+  private get phone(): boolean {
+    return this.phoneQuery.matches;
   }
 
   protected render() {
@@ -337,7 +326,7 @@ export class KraftvaktStatusPage extends LitElement {
         </div>
         ${entries.length === 0
           ? html`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`
-          : html`<div class="list">
+          : html`<div class="list ${this.phone ? "phone" : ""}">
               ${entries.map(
                 (entry, index) => html`
                   ${entry.kind === "appliance"
@@ -361,7 +350,7 @@ export class KraftvaktStatusPage extends LitElement {
             ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
             : nothing}
         </div>
-        ${this.renderWideOnly(html`<span></span>`)}
+        <span></span>
         ${this.renderWideOnly(
           this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at"),
         )}
@@ -371,8 +360,8 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   /**
-   * The rank column. Like the other columns between the title and the chip,
-   * it is left out on a phone, where a row is only icon, name and chip.
+   * The rank column. Like the other columns between the title and the chip, except the current,
+   * it is left out on a phone.
    */
   private renderRank(rank: number | null) {
     return this.renderWideOnly(html`<span class="rank">${rank ?? nothing}</span>`);
@@ -445,7 +434,7 @@ export class KraftvaktStatusPage extends LitElement {
               <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
               ${this.renderName(charger.name)}
             </div>
-            ${this.renderWideOnly(this.renderAmperes(charger))}
+            ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
             ${this.renderWideOnly(
               this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at"),
             )}
@@ -497,6 +486,13 @@ export class KraftvaktStatusPage extends LitElement {
         </span>
       </span>
     `;
+  }
+
+  /** On a phone, the current alone, and nothing for a charger without one. */
+  private renderPhoneCurrent(charger: ChargerStatus) {
+    return charger.current_a === null
+      ? html`<span></span>`
+      : html`<span class="current">${this.localize("status.amperes", { current: charger.current_a })}</span>`;
   }
 
   private renderChargerChip(charger: ChargerStatus) {
@@ -893,7 +889,7 @@ export class KraftvaktStatusPage extends LitElement {
       align-items: center;
       gap: 10px;
     }
-    .amperes .current {
+    .current {
       min-width: 40px;
       text-align: end;
       font-weight: 500;
@@ -992,14 +988,12 @@ export class KraftvaktStatusPage extends LitElement {
     ul.missing a {
       color: var(--primary-color);
     }
-    @media ${unsafeCSS(PHONE_MEDIA_QUERY)} {
-      .list {
-        grid-template-columns: minmax(0, 1fr) max-content;
-        column-gap: 8px;
-      }
-      .row > .chip {
-        justify-self: end;
-      }
+    .list.phone {
+      grid-template-columns: minmax(0, 1fr) max-content max-content;
+      column-gap: 8px;
+    }
+    .list.phone .row > .chip {
+      justify-self: end;
     }
   `;
 }

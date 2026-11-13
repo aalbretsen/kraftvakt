@@ -23,8 +23,11 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
 ## Structure
 
 `frontend/src/` has the panel element (routing on `hass.route`, the top menu, the draft, the save bar and the lock of the configuration pages), one module per page in `pages/`,
-shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names and formatting. One page per route under
-`/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
+shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting and the width query. One page
+per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
+
+A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport: HA's sidebar is docked on a phone in landscape in the
+app and leaves the page little room, while a tablet that HA calls narrow has room.
 
 Code that mirrors the backend and must be kept in step with it:
 
@@ -108,7 +111,7 @@ Code that mirrors the backend and must be kept in step with it:
   the text says. Dropdowns keep their values as numbers in the draft.
 - Third card, command repeat: a short text on why commands are repeated and that excluded appliances and chargers are left alone, and the interval in minutes.
 - Fourth card, timeouts: a short text on what each timeout guards against, and the action timeout and the power sensor timeout in seconds.
-- Tables are left out on a narrow screen.
+- On a page at most 760 px wide the tables are left out and the graph is drawn small. Narrower, the tables do not fit with the most columns.
 
 ### Status page
 
@@ -131,10 +134,11 @@ Code that mirrors the backend and must be kept in step with it:
   it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank, name with the variant after it, current, waiting and state
   chip. The rank is right aligned with digits of equal width. A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first,
   down to a few letters.
-  - On a phone (a viewport at most 600 px wide, by a media query of its own, since a tablet that HA calls narrow still has room for every column) a row is only the icon, the name
-    and the state chip: the rank, the variant, the charger count, the current, the ampere bars, the waiting and the text that there are no chargers are left out.
+  - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current and the state chip: the rank, the variant, the charger count, the ampere
+    bars, the waiting and the text that there are no chargers are left out.
   - Icons instead of short texts, each with its sentence as a tooltip, and no legend. A group's row shows how many of its chargers are charging of all.
-  - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
+  - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched. A charger without
+    a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
   - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed. A charger
     shows its state from the status, with its charging window as the word when it is outside it.
   - A resting charger is shown as bypassed, without when it is tried again.

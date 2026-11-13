@@ -3,6 +3,7 @@ import { customElement } from "lit/decorators.js";
 
 import { formatMinutes, formatNumber, formatPower } from "../format";
 import { waitingCurve } from "../wait-curve";
+import { WidthQuery } from "../width-query";
 import { SettingsFormPage } from "./settings-form-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
@@ -20,6 +21,8 @@ const GRAPH_FREE_PERCENT = 60;
 const KW_TICK_STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10];
 const MAX_KW_TICKS = 10;
 const MAX_KW_TICKS_NARROW = 4;
+/** The widest page, in pixels, that leaves out the tables, which do not fit, and draws a small graph. */
+const NARROW_MAX_WIDTH = 760;
 
 /** Return the smallest kW step that gives at most `maxTicks` steps up to `reach` kW. */
 function kwTickStep(reach: number, maxTicks: number): number {
@@ -51,6 +54,13 @@ const SHOWN_AS_FREE_POWER: Record<CurveField, boolean> = {
  */
 @customElement("kraftvakt-advanced-page")
 export class KraftvaktAdvancedPage extends SettingsFormPage {
+  private readonly narrowQuery = new WidthQuery(this, NARROW_MAX_WIDTH);
+
+  /** Narrow by the page's own width, not by Home Assistant's narrow, which follows the viewport. */
+  private get narrowPage(): boolean {
+    return this.narrowQuery.matches;
+  }
+
   protected render() {
     return html`
       ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
@@ -112,7 +122,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
         this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`),
         this.selectField(stepsField, (steps) => String(steps)),
       ])}
-      ${this.narrow ? nothing : this.renderRepeatedTurnOnTable(this.config.general[factorField], this.config.general[stepsField])}
+      ${this.narrowPage ? nothing : this.renderRepeatedTurnOnTable(this.config.general[factorField], this.config.general[stepsField])}
     `;
   }
 
@@ -209,7 +219,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
       </tr>
     `;
     return html`
-      ${this.narrow
+      ${this.narrowPage
         ? nothing
         : html`<table class="curve-table">
             ${row("advanced.free_power_kw", (free) => formatPower(language, limit === null ? null : (limit * free) / 100))}
@@ -226,7 +236,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
    */
   private renderCurveGraph(share: (freePercent: number) => number, limitW: number | null) {
     const language = this.hass.language;
-    const [width, height] = this.narrow ? [320, 200] : [900, 260];
+    const [width, height] = this.narrowPage ? [320, 200] : [900, 260];
     const [left, right, top, bottom] = [44, 24, 8, 38];
     const x = (freePercent: number) =>
       left + ((width - left - right) * (GRAPH_FREE_PERCENT - freePercent)) / GRAPH_FREE_PERCENT;
@@ -239,7 +249,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const yTicks = [0, 20, 40, 60, 80, 100];
     const limitKw = limitW === null ? 0 : limitW / 1000;
     const reachKw = (limitKw * GRAPH_FREE_PERCENT) / 100;
-    const step = kwTickStep(reachKw, this.narrow ? MAX_KW_TICKS_NARROW : MAX_KW_TICKS);
+    const step = kwTickStep(reachKw, this.narrowPage ? MAX_KW_TICKS_NARROW : MAX_KW_TICKS);
     const kwTicks = reachKw > 0 ? Array.from({ length: Math.floor(reachKw / step + 1e-9) + 1 }, (_, i) => i * step) : [];
     const decimals = step < 1 ? 1 : 0;
     return html`
