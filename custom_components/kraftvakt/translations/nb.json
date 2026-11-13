@@ -71,7 +71,7 @@
   "issues": {
     "regulation_not_started": {
       "title": "Kraftvakt-reguleringen kjører ikke",
-      "description": "Reguleringen kunne ikke starte fordi konfigurasjonen ikke er komplett. Åpne Kraftvakt i sidemenyen, fullfør konfigurasjonen og start reguleringen."
+      "description": "Reguleringen kunne ikke starte fordi konfigurasjonen ikke er fullstendig. Åpne Kraftvakt i sidemenyen, fullfør konfigurasjonen og start reguleringen."
     },
     "missing_entity": {
       "title": "En entitet Kraftvakt bruker, finnes ikke lenger",
@@ -80,7 +80,7 @@
   },
   "exceptions": {
     "config_incomplete": {
-      "message": "Reguleringen kan ikke starte før konfigurasjonen er komplett. {count} innstillinger mangler; se Kraftvakt i sidemenyen."
+      "message": "Reguleringen kan ikke starte før konfigurasjonen er fullstendig. {count} innstillinger mangler; se Kraftvakt i sidemenyen."
     },
     "unreadable_configuration": {
       "message": "Den lagrede konfigurasjonen i .storage/kraftvakt.config kan ikke leses ({issues}). Kraftvakt er ikke startet, og filen er ikke endret."

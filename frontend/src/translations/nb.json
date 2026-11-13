@@ -48,11 +48,11 @@
     "deactivated": "Deaktivert",
     "waiting_ends_at": "Slås på ved avgjørelsen kl. {time}",
     "delayed_turn_on": "Forsinket innkobling",
-    "charging_at": "Lader med {current}A",
+    "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
     "bypassed": "Forbigått: lader ikke",
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
-    "waiting_charger": "Ventende: en annen elbillader i gruppen lader",
+    "waiting_charger": "I kø: en annen elbillader i gruppen lader",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
     "next_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
@@ -64,7 +64,7 @@
     "chip_charging": "Lader",
     "chip_not_charging": "Lader ikke",
     "chip_no_car": "Ingen bil tilkoblet",
-    "chip_queued": "Ventende",
+    "chip_queued": "I kø",
     "chip_excluded": "Utenfor regulering",
     "chip_window": "{start}–{end}",
     "chip_override": "Overstyrt",
@@ -208,7 +208,7 @@
       },
       "action_timeout_s": {
         "label": "Tidsavbrudd for handling",
-        "helper": "Hvor lenge en handling kan ta før den stoppes og regnes som feilet. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge en handling kan ta før den stoppes og regnes som mislykket. {min}–{max} s, standard {default} s."
       },
       "power_sensor_timeout_s": {
         "label": "Tidsavbrudd for effektsensor",
@@ -223,12 +223,12 @@
     "waiting_minutes": "Ventetid min:s",
     "actual_waiting_minutes": "Reell ventetid min:s",
     "repeated_turn_on": "Ventetid ved gjentatt innkobling",
-    "repeated_turn_on_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og den øker med én økning hver gang til antall økninger er nådd. For de to første viser tabellen ventetiden ved vendepunktet.",
+    "repeated_turn_on_info": "Når reguleringen slår på det samme apparatet, eller én ampere til for en elbillader, gang på gang, fordi det må slås av igjen hver gang og ingenting annet slås av eller på imellom, øker ventetiden. De to første gangene følger ventetiden kurven. Deretter er den lik ventetiden ved effektgrensen, og så legges én økning til hver gang til antall økninger er nådd. For de to første viser tabellen ventetiden ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
     "appliances": "Apparater",
     "chargers": "Elbilladere",
     "command_repeat": "Gjentatt kommando",
-    "command_repeat_info": "Et apparat kan endre tilstand uten Kraftvakt, for eksempel når sikringen går og kommer tilbake, eller på grunn av en feil i enheten. Reguleringen sender derfor kommandoen for tilstanden den har satt på nytt når et apparat eller en elbillader ikke har fått kommando på så lenge. Apparater og elbilladere som er utenfor regulering, får være i fred.",
+    "command_repeat_info": "Et apparat kan endre tilstand uten Kraftvakt, for eksempel når sikringen går og kommer tilbake, eller på grunn av en feil i enheten. Når et apparat eller en elbillader ikke har fått kommando på så lenge, sender reguleringen derfor kommandoen for tilstanden den har satt, på nytt. Apparater og elbilladere som er utenfor regulering, får være i fred.",
     "timeouts": "Tidsavbrudd",
     "timeouts_info": "En handling som ikke blir ferdig, holder igjen kommandoene etter den, også de som slår av apparater. En effektsensor som har sluttet å rapportere, kan vise en gammel verdi som om den var gyldig."
   },
@@ -339,12 +339,12 @@
     "power_sensor_label": "Sensor for ladeeffekt",
     "entity_label": "Boolsk entitet",
     "template_label": "Mal",
-    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes som ikke lading.",
-    "entity_helper": "På regnes som lading. Av og utilgjengelig regnes som ikke lading.",
-    "template_helper": "Bare den boolske verdien sann regnes som lading. Alt annet, også en feil, regnes som ikke lading. Variabler: entity_id, entity.",
+    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes ikke som lading.",
+    "entity_helper": "På regnes som lading. Av og utilgjengelig regnes ikke som lading.",
+    "template_helper": "Bare den boolske verdien sann regnes som lading. Alt annet, også en feil, regnes ikke som lading. Variabler: entity_id, entity.",
     "true": "lader",
     "false": "lader ikke",
-    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som ikke lading."
+    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor ikke som lading."
   },
   "charging": {
     "name": "Navn",
@@ -415,7 +415,7 @@
         "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
       },
       "actively_charging": {
-        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes den som ikke ladende."
+        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
       },
       "charging_window": {
         "label": "Ladetidsrom (valgfritt)",

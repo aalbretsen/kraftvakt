@@ -121,7 +121,8 @@ extend them rather than building engine inputs by hand.
 6. Drive the scenario with the simulator: change the background power,
    connect the car and let it be fully charged, and record the states
    regularly (or read the history API). Open the panel to watch the status
-   page; trusted networks logs in. Setting the HAN sensor to `unavailable`
-   with `POST /api/states/<entity>` simulates a lost sensor until the
-   simulator writes it again.
+   page; trusted networks logs in. Disabling the HAN's config entry
+   (`config_entries/disable`) leaves its sensor unavailable and silent, which
+   simulates a lost sensor; a state posted to it does not last, since the HAN
+   reports every 10 seconds.
 7. Stop Home Assistant and delete the folder afterwards.
