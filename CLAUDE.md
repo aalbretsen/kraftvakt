@@ -23,6 +23,7 @@ Read the skill for the kind of task before starting:
 - Always ask when you find the behaviour described in the skills ambiguous or in need of clarification. Same goes for user prompts.
 - If a skill, or user prompt, goes against any statement in this file; handle it as ambiguous.
 - When the owner settles a question about behaviour, record it in the skill it belongs to, as the documentation rules say.
+- When finished with a task, review your own work, and check that the rules in this file and the skills for the task are followed.
 - Review with more than a developer's eyes, and question the code, the tests and the documentation alike, since any of them can be wrong:
   - developer: correctness, readability, and code that could follow a shared concept instead of repeating almost the same thing;
   - tester: what is not tested, what can fail, how a failure is noticed, and edge cases such as a restart or a sensor that stops reporting;
@@ -30,6 +31,7 @@ Read the skill for the kind of task before starting:
   - functional architect: whether the behaviour matches the specification, and whether code, tests, panel and documentation use the same concepts;
   - business developer: whether it serves the users and the tariff it is made for, stays easy for most users and possible for experts, and what happens when devices, cloud services or the network fail.
   Verify a finding by running it, in a test or against a local Home Assistant with the simulator, before reporting it.
+  Lean on the official Home Assistant documentation as the source of truth, especially the documentation for developing an integration.
 
 ## Documentation Rules
 - The README.md file is for users of the integration and for developers, and SIMULATOR.md is for developers using the simulator. Keep both up to date with the code.
@@ -49,7 +51,6 @@ Read the skill for the kind of task before starting:
 - Avoid specific code for each problem, lean on generic solutions, as long as the code is still understandable.
 - Follow Home Assistant coding standards and principles for integrations.
 - All code and commit messages shall be written in English, except translation files.
-- When finished with a coding task, review your own code and verify the rules in this file and the related skills for the task is followed.
 
 ## Test code rules
 - When writing test code, the coding rules also applies.
