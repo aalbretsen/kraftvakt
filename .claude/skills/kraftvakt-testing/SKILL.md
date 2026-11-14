@@ -13,7 +13,13 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 - Complex logic (`regulation/`, `measurement.py`, the configuration) is also proven by itself with unit tests. Error handling that is hard to reach from the outside is unit tested.
 - Aim for coverage, not every permutation. Every line of Kraftvakt and the simulator should be covered, except defensive code that cannot be reached.
   Check the coverage report for new uncovered lines before committing.
-- The panel has no automatic tests. The type check and the build run in CI, and the panel is tested by hand in a browser.
+- The panel's logic is unit tested with vitest, one test file per module. Keep logic in modules outside the Lit elements, so it runs without a browser and can be tested.
+  Code that needs a browser engine, such as the elements, pages, dialogs and the DOM, is not tested automatically: test it by hand in a browser against a local Home Assistant
+  instead of building a browser test setup. `npm run coverage` shows what the tests reach; aim for every line of the modules outside the elements.
+  vitest is a build tool of the panel, so it gets its newest release, not the version of the Home Assistant frontend.
+- Where the panel mirrors the backend, its tests read fixtures made from the backend, so both sides are tested against the same values.
+  `tests/unit/test_panel_fixtures.py` fails when the backend no longer matches them: write them again with `.venv/bin/python -m tests.unit.test_panel_fixtures`
+  and run the panel's tests.
 
 ## Checks before every commit
 
@@ -22,7 +28,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 .venv/bin/mypy
-cd frontend && npm run typecheck && npm run build && git status --short ../custom_components/kraftvakt/frontend/
+cd frontend && npm run typecheck && npm test && npm run build && git status --short ../custom_components/kraftvakt/frontend/
 ```
 
 The bundle must be unchanged after the build, or be committed with the source. Node must be activated with nvm first, see the `kraftvakt-panel` skill.
@@ -39,6 +45,8 @@ A new Home Assistant version also needs the panel tested by hand, see the `kraft
 ## Layout
 
 - `tests/unit/`: unit tests. `tests/unit/regulation/` has the scenario tests for the engine, one file per area of the regulation.
+- `frontend/test/`: the panel's tests. `builders.ts` builds complete configurations and the parts of Home Assistant the panel reads,
+  and `fixtures/` holds the fixtures from the backend.
 - `tests/`: black box tests, one file per area. `tests/config_examples.py` has a full configuration that uses every feature.
 - `tests/simulator/` and `tests/unit/simulator/`: the simulator, see the `kraftvakt-simulator` skill.
   `pyproject.toml` puts `simulator` on pytest's `pythonpath`, so both integrations load in every test.

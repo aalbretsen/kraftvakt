@@ -356,7 +356,7 @@ uv run mypy
 ```
 
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
-The tests are in `tests/`, with unit tests in `tests/unit/`. The simulator is in `simulator/`, see [SIMULATOR.md](SIMULATOR.md).
+The tests are in `tests/`, with unit tests in `tests/unit/`, and the panel's tests in `frontend/test/`. The simulator is in `simulator/`, see [SIMULATOR.md](SIMULATOR.md).
 
 ### Panel
 
@@ -378,6 +378,7 @@ Build it again after every change in `frontend/`, and commit the source and the 
 cd frontend
 npm ci
 npm run typecheck
+npm test
 npm run build
 ```
 

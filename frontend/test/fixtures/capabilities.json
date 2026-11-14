@@ -1,0 +1,472 @@
+{
+  "default_actions": {
+    "appliances": {
+      "turn_on": {
+        "domains": [
+          "switch",
+          "input_boolean",
+          "light",
+          "fan",
+          "climate",
+          "water_heater"
+        ],
+        "service": "turn_on",
+        "data": {}
+      },
+      "turn_off": {
+        "domains": [
+          "switch",
+          "input_boolean",
+          "light",
+          "fan",
+          "climate",
+          "water_heater"
+        ],
+        "service": "turn_off",
+        "data": {}
+      }
+    },
+    "chargers": {
+      "activate": {
+        "domains": [
+          "switch",
+          "input_boolean",
+          "light",
+          "fan",
+          "climate",
+          "water_heater"
+        ],
+        "service": "turn_on",
+        "data": {}
+      },
+      "deactivate": {
+        "domains": [
+          "switch",
+          "input_boolean",
+          "light",
+          "fan",
+          "climate",
+          "water_heater"
+        ],
+        "service": "turn_off",
+        "data": {}
+      },
+      "set_current": {
+        "domains": [
+          "number",
+          "input_number"
+        ],
+        "service": "set_value",
+        "data": {
+          "value": "{{ current }}"
+        }
+      }
+    }
+  },
+  "domain_actions": {
+    "appliances": {
+      "turn_on": {
+        "climate_hvac_mode": {
+          "domain": "climate",
+          "service": "set_hvac_mode",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "heat",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            }
+          ]
+        },
+        "climate_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        },
+        "climate_hvac_mode_and_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "heat",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            },
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        }
+      },
+      "turn_off": {
+        "climate_hvac_mode": {
+          "domain": "climate",
+          "service": "set_hvac_mode",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "off",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            }
+          ]
+        },
+        "climate_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        },
+        "climate_hvac_mode_and_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "off",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            },
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        }
+      }
+    },
+    "chargers": {
+      "activate": {
+        "climate_hvac_mode": {
+          "domain": "climate",
+          "service": "set_hvac_mode",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "heat",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            }
+          ]
+        },
+        "climate_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        },
+        "climate_hvac_mode_and_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "heat",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            },
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        }
+      },
+      "deactivate": {
+        "climate_hvac_mode": {
+          "domain": "climate",
+          "service": "set_hvac_mode",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "off",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            }
+          ]
+        },
+        "climate_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        },
+        "climate_hvac_mode_and_temperature": {
+          "domain": "climate",
+          "service": "set_temperature",
+          "parameters": [
+            {
+              "name": "hvac_mode",
+              "type": "option",
+              "options_attribute": "hvac_modes",
+              "preferred_options": [
+                "off",
+                "auto"
+              ],
+              "min_attribute": null,
+              "max_attribute": null,
+              "step_attribute": null,
+              "default": null
+            },
+            {
+              "name": "temperature",
+              "type": "temperature",
+              "options_attribute": null,
+              "preferred_options": [],
+              "min_attribute": "min_temp",
+              "max_attribute": "max_temp",
+              "step_attribute": "target_temp_step",
+              "default": 0
+            }
+          ]
+        }
+      },
+      "set_current": {}
+    }
+  },
+  "limits": {
+    "general": {
+      "power_limit_w": {
+        "min": 1000,
+        "max": 50000,
+        "resolution": 1
+      },
+      "turn_on_margin_w": {
+        "min": 1,
+        "max": 1000,
+        "resolution": 1
+      },
+      "regulation_window_s": {
+        "min": 10,
+        "max": 600,
+        "resolution": 1
+      },
+      "regulation_interval": {
+        "min": 1,
+        "max": 4,
+        "resolution": 1
+      },
+      "wait_at_limit_s": {
+        "min": 0,
+        "max": 600,
+        "resolution": 1
+      },
+      "wait_curve_steepness": {
+        "min": 1.5,
+        "max": 9,
+        "resolution": 0.5
+      },
+      "wait_curve_pivot": {
+        "min": 50,
+        "max": 99,
+        "resolution": 1
+      },
+      "appliance_repeat_increment_factor": {
+        "min": 0.25,
+        "max": 1,
+        "resolution": 0.25
+      },
+      "appliance_repeat_increments": {
+        "min": 1,
+        "max": 9,
+        "resolution": 1
+      },
+      "charger_repeat_increment_factor": {
+        "min": 0.25,
+        "max": 1,
+        "resolution": 0.25
+      },
+      "charger_repeat_increments": {
+        "min": 1,
+        "max": 9,
+        "resolution": 1
+      },
+      "penalty_threshold_w": {
+        "min": 0,
+        "max": 10000,
+        "resolution": 1
+      },
+      "command_repeat_interval_min": {
+        "min": 10,
+        "max": 60,
+        "resolution": 1
+      },
+      "action_timeout_s": {
+        "min": 10,
+        "max": 300,
+        "resolution": 1
+      },
+      "power_sensor_timeout_s": {
+        "min": 10,
+        "max": 3600,
+        "resolution": 1
+      }
+    },
+    "appliances": {
+      "power_reserve_w": {
+        "min": 0,
+        "max": null,
+        "resolution": 1
+      }
+    },
+    "chargers": {
+      "min_current_a": {
+        "min": 1,
+        "max": null,
+        "resolution": 1
+      },
+      "max_current_a": {
+        "min": 1,
+        "max": null,
+        "resolution": 1
+      },
+      "power_reserve_w": {
+        "min": 0,
+        "max": 5000,
+        "resolution": 1
+      }
+    }
+  },
+  "defaults": {
+    "general": {
+      "power_sensor": null,
+      "power_limit_w": 10000,
+      "turn_on_margin_w": 100,
+      "regulation_window_s": 10,
+      "regulation_interval": 1,
+      "wait_at_limit_s": 300,
+      "wait_curve_steepness": 6.0,
+      "wait_curve_pivot": 80,
+      "appliance_repeat_increment_factor": 0.5,
+      "appliance_repeat_increments": 4,
+      "charger_repeat_increment_factor": 1.0,
+      "charger_repeat_increments": 5,
+      "penalty_threshold_w": 100,
+      "command_repeat_interval_min": 30,
+      "action_timeout_s": 60,
+      "power_sensor_timeout_s": 300
+    },
+    "appliances": {
+      "power_reserve_w": null
+    },
+    "charger_groups": {
+      "one_at_a_time": true
+    },
+    "chargers": {
+      "min_current_a": 6,
+      "max_current_a": 16,
+      "power_reserve_w": 4000,
+      "override_ends": "manual"
+    }
+  }
+}

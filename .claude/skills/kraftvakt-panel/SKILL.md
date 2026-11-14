@@ -15,7 +15,7 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
   Versions are pinned in `package.json` (Lit and TypeScript as the HA frontend for the supported HA version).
 - Node from `.nvmrc` (the same as the HA frontend uses), via nvm or nvm.fish.
   Node is not on `PATH` in a plain non-interactive shell; activate it with nvm first, for example `fish -c 'nvm use; npm run build'`.
-- `npm ci`, `npm run typecheck`, `npm run build` (`npm run watch`).
+- `npm ci`, `npm run typecheck`, `npm test`, `npm run build` (`npm run watch`).
 - The minified bundle `custom_components/kraftvakt/frontend/kraftvakt-panel.js` is committed, because HACS installs from the repository.
   Rebuild after every change in `frontend/` and commit source and bundle together. CI fails when the committed bundle differs from a clean build.
 - The bundle URL carries the manifest version. During development the browser may use an old bundle; reload without cache.
@@ -31,9 +31,9 @@ One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, 
 A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport:
 HA's sidebar is docked on a phone in landscape in the app and leaves the page little room, while a tablet that HA calls narrow has room.
 
-Code that mirrors the backend and must be kept in step with it:
+Logic is kept in modules outside the elements, so it is unit tested, see the `kraftvakt-testing` skill. Code that mirrors the backend and must be kept in step with it:
 
-- the waiting time curve, the same as in `regulation/waiting.py`,
+- the waiting times, the curve and the growth on repeated turn-on, the same as in `regulation/waiting.py`,
 - a subset of the validation in `config_validation.py`: the limits, what is missing and completing the priority list, for quick feedback; the backend checks everything at save,
 - the checks of default and domain actions against their entities, the same as in `actions.py` and `domain_actions.py`,
 - the name of a charger that is not saved yet, the same rule as the backend,

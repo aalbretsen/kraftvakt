@@ -23,6 +23,7 @@ config/*
 
 # ─── Node (building the panel in frontend/) ──────────────────────────────────
 node_modules/
+frontend/coverage/
 
 # ─── IntelliJ / PyCharm ──────────────────────────────────────────────────────
 .idea/

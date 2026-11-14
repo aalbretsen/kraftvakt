@@ -2,7 +2,7 @@ import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { formatMinutes, formatNumber, formatPower } from "../format";
-import { waitingCurve } from "../wait-curve";
+import { CURVE_TURN_ONS, repeatedTurnOnWaiting, untilDecision, waitingCurve } from "../waiting";
 import { WidthQuery } from "../width-query";
 import { SettingsFormPage, type GeneralField } from "./settings-form-page";
 
@@ -24,8 +24,6 @@ const RESTORED_FIELDS: readonly GeneralField[] = [
   "power_sensor_timeout_s",
 ];
 
-/** The first time a slot is turned on, and the first time again, follow the curve. */
-const CURVE_TURN_ONS = 2;
 /** The waiting time is 0 above 50 % free power, so the graph starts a bit above it. */
 const GRAPH_FREE_PERCENT = 60;
 const KW_TICK_STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10];
@@ -33,15 +31,6 @@ const KW_TICK_STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10];
 /** Return the smallest kW step that gives at most `maxTicks` steps up to `reach` kW. */
 function kwTickStep(reach: number, maxTicks: number): number {
   return KW_TICK_STEPS.find((step) => reach / step <= maxTicks) ?? KW_TICK_STEPS[KW_TICK_STEPS.length - 1];
-}
-
-/**
- * Return how long an appliance actually waits: it is turned on at the first
- * decision after the waiting time has passed, and decisions come every
- * `decisionInterval` seconds.
- */
-function untilDecision(waiting: number, decisionInterval: number): number {
-  return Math.max(0, Math.ceil(waiting / decisionInterval - 1e-9)) * decisionInterval;
 }
 
 /**
@@ -149,9 +138,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
         return "–";
       }
       const value =
-        turnOn <= CURVE_TURN_ONS
-          ? waitAtLimit * shareAtPivot
-          : waitAtLimit * (1 + factor * (turnOn - CURVE_TURN_ONS - 1));
+        turnOn <= CURVE_TURN_ONS ? waitAtLimit * shareAtPivot : repeatedTurnOnWaiting(turnOn, waitAtLimit, factor, steps);
       return formatMinutes(actual ? untilDecision(value, decisionInterval as number) : value);
     };
     return html`
