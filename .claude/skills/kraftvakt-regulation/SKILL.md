@@ -285,7 +285,8 @@ All with entity category diagnostic:
 - Rest: a charger that becomes bypassed because it does not charge rests. It stays bypassed while it rests, also after it is deactivated,
   and may be tried again when the rest is over: 15 min the first time, then 30 min, then 60 min each time it is tried and still does not charge.
   The rest ends at once, and the next one is the first again,
-  when car connected is false at a decision (a car that is connected again is tried at once, and gets two windows to start, also on a charger that stayed activated) or when the charger charges actively while activated. Every start begins without rests.
+  when car connected is false at a decision (a car that is connected again is tried at once,
+  and gets two windows to start, also on a charger that stayed activated) or when the charger charges actively while activated. Every start begins without rests.
   Why: without a rest, two chargers with full cars would take turns being activated forever when only one may charge at a time,
   and the appliances below the entry of their group would never be turned on.
 - Current charging priority: equal to the configured one at each start.
