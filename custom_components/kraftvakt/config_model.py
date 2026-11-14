@@ -53,7 +53,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "charger_repeat_increments": REPEAT_INCREMENTS,
         "penalty_threshold_w": Range(0, 10_000, 1),
         "command_repeat_interval_min": Range(10, 60, 1),
-        "action_timeout_s": Range(10, 3600, 1),
+        "action_timeout_s": Range(10, 300, 1),
         "power_sensor_timeout_s": Range(10, 3600, 1),
     },
     "appliances": {"power_reserve_w": Range(0, None, 1)},
