@@ -45,6 +45,11 @@ def excluded_chargers(settings: Settings) -> frozenset[str]:
     return frozenset(charger.id for charger in settings.config.chargers if settings.charger_switches(charger.id).excluded)
 
 
+def chargers_without_car(hass: HomeAssistant, settings: Settings) -> frozenset[str]:
+    """Return the chargers with evidence that no car is connected."""
+    return frozenset(charger.id for charger in settings.config.chargers if _evidence(hass, charger.car_connected, charger.entity_id) is False)
+
+
 def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) -> ChargerReading:
     switches = settings.charger_switches(charger.id)
     car_connected = _evidence(hass, charger.car_connected, charger.entity_id)

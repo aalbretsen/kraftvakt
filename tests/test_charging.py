@@ -392,6 +392,30 @@ async def test_charger_current_is_repeated_until_the_charger_is_excluded(
     assert actions == ["current 8", "current 6", f"off {CHARGER}"]
 
 
+async def test_charger_quiet_without_car_gets_no_repeated_commands_until_a_car_is_connected(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config,
+    actions,
+    setup_kraftvakt,
+) -> None:
+    config["general"]["command_repeat_interval_min"] = 10
+    charger = config["charger_groups"][0]["chargers"][0]
+    charger["quiet_without_car"] = True
+    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
+    hass.states.async_set(CAR_CONNECTED, STATE_OFF)
+    set_power(hass, CHARGER_POWER, "0")
+    await setup_kraftvakt()
+    actions.clear()
+
+    await advance_windows(hass, freezer, 20)
+    assert actions == []
+
+    hass.states.async_set(CAR_CONNECTED, STATE_UNAVAILABLE)
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"off {CHARGER}"]
+
+
 async def advance_until(hass: HomeAssistant, freezer: FrozenDateTimeFactory, local_time: str) -> None:
     """Close windows of ten minutes until the time of day in Oslo."""
     target = datetime.fromisoformat(local_time).replace(tzinfo=OSLO)

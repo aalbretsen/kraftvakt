@@ -234,6 +234,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       charging_window: null,
       finish_after_window: false,
       override_ends: defaults.override_ends,
+      quiet_without_car: false,
     };
     this.editing = { charger, groupId: group.id, isNew: true };
   }

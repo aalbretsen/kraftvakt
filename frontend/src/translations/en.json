@@ -424,6 +424,10 @@
       "actively_charging": {
         "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is charging, for example an unavailable entity or a template that fails, it counts as not charging."
       },
+      "quiet_without_car": {
+        "label": "Quiet while no car is connected",
+        "helper": "Sends no repeated commands to the EV charger while no car is connected. Turn it on for an EV charger controlled through a cloud service. Requires car connected."
+      },
       "charging_window": {
         "label": "Charging window (optional)",
         "helper": "Can span midnight. Start and end cannot be the same. Without a charging window, the EV charger is always allowed to charge."

@@ -55,7 +55,10 @@ class ProfileCondition:
 
 @dataclass(frozen=True, slots=True)
 class ChargerProfile:
-    """How Kraftvakt controls the chargers of a known integration. The name is shown to the user."""
+    """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
+
+    `quiet_without_car` is for chargers controlled through a cloud service.
+    """
 
     name: str
     device: DeviceMatch
@@ -65,6 +68,7 @@ class ChargerProfile:
     set_current: ProfileAction
     car_connected: ProfileCondition
     actively_charging: ProfileCondition
+    quiet_without_car: bool = False
 
 
 DEFAULT_ACTION = ProfileAction(ActionMode.DEFAULT)

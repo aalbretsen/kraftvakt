@@ -179,6 +179,7 @@ class ConfigReader:
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
             override_ends=self._override_end(values, defaults.override_ends, location),
+            quiet_without_car=self._bool(values, "quiet_without_car", defaults.quiet_without_car, location),
         )
 
     def _action(

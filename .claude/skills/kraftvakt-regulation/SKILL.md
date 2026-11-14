@@ -45,6 +45,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
+| Quiet without car | A charger setting, off by default: no command repeat while no car is connected. For chargers controlled through a cloud service. |
 | Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
 | Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Ampere step | One ampere of an EV charger's current, treated by the regulation as an appliance. |
@@ -196,7 +197,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
   activate, deactivate and set-current actions and actively charging, and also car connected when only one charger in its group may charge at a time,
-  or when it has a charging window and its override ends when the car is disconnected.
+  when it is quiet without car, or when it has a charging window and its override ends when the car is disconnected.
 
 ## Command repeat
 
@@ -211,6 +212,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   A charger that has lost its activation does not charge actively, and is handled as any charger that does not charge.
 - A repeat is not a switch: it leaves waiting times and repeated turn-on counters alone and does not count against one step per decision.
 - Excluded appliances and chargers get no repeat, by the position of the switch when the window closes, so the user can control them by hand.
+- A charger that is quiet without car gets no repeat while car connected gives evidence, when the window closes, that no car is connected, activated or deactivated.
+  Why: a charger controlled through a cloud service sends every command over the internet, also an unchanged one.
   They still get the commands the regulation sends them otherwise, such as the turn-off when they are excluded and at start and stop.
 - Nothing is repeated while the regulation is stopped.
 

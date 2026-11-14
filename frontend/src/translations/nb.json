@@ -424,6 +424,10 @@
       "actively_charging": {
         "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
       },
+      "quiet_without_car": {
+        "label": "Stille mens ingen bil er tilkoblet",
+        "helper": "Sender ingen gjentatte kommandoer til elbilladeren mens ingen bil er tilkoblet. Slå det på for en elbillader som styres gjennom en skytjeneste. Krever bil tilkoblet."
+      },
       "charging_window": {
         "label": "Ladetidsrom (valgfritt)",
         "helper": "Kan gå over midnatt. Start og slutt kan ikke være like. Uten ladetidsrom har elbilladeren alltid lov til å lade."

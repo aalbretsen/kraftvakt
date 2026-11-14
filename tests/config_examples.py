@@ -102,6 +102,7 @@ def full_config_data() -> dict[str, Any]:
                         },
                         "charging_window": {"start": "22:00", "end": "06:00"},
                         "finish_after_window": True,
+                        "quiet_without_car": True,
                         "override_ends": "car_disconnected",
                     }
                 ],

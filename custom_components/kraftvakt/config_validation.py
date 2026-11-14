@@ -132,7 +132,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
 
 
 def _car_connected_required(group: ChargerGroup, charger: Charger) -> bool:
-    return group.one_at_a_time or (charger.charging_window is not None and charger.override_ends is OverrideEnd.CAR_DISCONNECTED)
+    return group.one_at_a_time or charger.quiet_without_car or (charger.charging_window is not None and charger.override_ends is OverrideEnd.CAR_DISCONNECTED)
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:

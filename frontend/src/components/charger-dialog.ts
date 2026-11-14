@@ -70,6 +70,9 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           : "charger.car_connected_optional",
         issues,
       )}
+      ${this.renderForm([{ name: "quiet_without_car", selector: { boolean: {} } }], issues, (value) =>
+        this.changeDraft({ quiet_without_car: !!value.quiet_without_car }),
+      )}
       ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
       ${this.renderChargingWindow(issues)}
     `;

@@ -32,6 +32,7 @@ def charger_profile_fields(hass: HomeAssistant, device_id: str) -> tuple[Charger
         "set_current": entities.action(profile.set_current),
         "car_connected": entities.condition(profile.car_connected),
         "actively_charging": entities.condition(profile.actively_charging),
+        "quiet_without_car": profile.quiet_without_car,
     }
     return profile, {name: value for name, value in fields.items() if value is not None}
 

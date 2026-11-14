@@ -44,6 +44,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     charging_window: null,
     finish_after_window: false,
     override_ends: "manual",
+    quiet_without_car: false,
     ...parts,
   };
 }

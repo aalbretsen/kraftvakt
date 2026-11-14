@@ -79,7 +79,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - **Command repeat:** an appliance or EV charger that has had no command for the command repeat interval, 30 minutes by default,
   gets the command for the state Kraftvakt has set again: on or off for an appliance, the charging current for an activated EV charger, and deactivate for one that is deactivated.
   It is checked every time a regulation window closes while the regulation runs, also in the safe state and during a penalty.
-  Excluded appliances and EV chargers get no repeated commands.
+  Excluded appliances and EV chargers get no repeated commands, nor an EV charger with **Quiet while no car is connected** while no car is connected.
   An activated EV charger is not activated again, since that may start a new charging session in the charger.
 - **Failed action:** an action that fails, or has not finished within the action timeout, 60 seconds by default, is logged, and the regulation goes on as if it worked.
   The command repeat sends the command for the state again later, except the activation of an EV charger.
@@ -96,7 +96,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
 - every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, and **Actively charging**,
-  and also **Car connected** when only one EV charger in its group may charge at a time,
+  and also **Car connected** when only one EV charger in its group may charge at a time, when it has **Quiet while no car is connected**,
   or when it has a charging window and **End the override** is **When the car is disconnected**.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
@@ -157,6 +157,9 @@ so a car that is connected does not start charging by itself. The charging curre
 - When only one EV charger in a group may charge at a time, an EV charger that is actively charging may continue until it is done, and the others in the group wait.
   **Car connected** is then required for every EV charger in the group.
   Without it, Kraftvakt could only find a connected car by activating the EV charger, and EV chargers without a car would be activated in turn.
+- With **Quiet while no car is connected**, off by default, an EV charger gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected.
+  Turn it on for an EV charger controlled through a cloud service, where every command goes over the internet and may count against the limits of the service.
+  A car sensor that is unavailable, or a template that fails, does not count as no car, so the commands are repeated then.
 - Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
 - With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
   until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit,

@@ -290,6 +290,7 @@ class Charger:
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
+    quiet_without_car: bool = False
 
     def action_fields(self) -> Iterator[ActionField]:
         for name, kind in CHARGER_ACTION_KINDS.items():

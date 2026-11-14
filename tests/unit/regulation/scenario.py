@@ -134,13 +134,14 @@ class Scenario:
         """Repeat the commands that are due `after` the previous decision or repeat.
 
         The appliances excluded with `exclude` and the chargers read as excluded
-        are left out.
+        are left out, and the chargers read as without a car are passed as such.
         """
         self.now += after
         return self.engine.repeat_commands(
             self.now,
             self.excluded_appliances,
             frozenset(charger_id for charger_id, reading in self.chargers.items() if reading.excluded),
+            frozenset(charger_id for charger_id, reading in self.chargers.items() if reading.car_disconnected),
         )
 
     def decide_many(

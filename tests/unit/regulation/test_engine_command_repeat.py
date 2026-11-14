@@ -91,3 +91,25 @@ def test_nothing_is_repeated_while_stopped() -> None:
     scenario.engine.stop()
 
     assert scenario.repeat(REPEAT_INTERVAL) == []
+
+
+def test_charger_quiet_without_car_gets_no_repeated_commands_while_no_car_is_connected() -> None:
+    """Only with evidence that no car is connected; the charger that is not quiet is deactivated again."""
+    scenario = Scenario(make_config(chargers=(charger("quiet", quiet_without_car=True), charger("loud"))))
+    scenario.set_charger("quiet", car_connected=False, car_disconnected=True)
+    scenario.set_charger("loud", car_connected=False, car_disconnected=True)
+
+    assert scenario.repeat(REPEAT_INTERVAL) == deactivate("loud")
+
+    scenario.set_charger("quiet", car_connected=None, car_disconnected=False)
+    assert scenario.repeat(REPEAT_INTERVAL) == deactivate("quiet") + deactivate("loud")
+
+
+def test_activated_charger_quiet_without_car_gets_no_current_after_the_car_has_left() -> None:
+    scenario = Scenario(make_config(chargers=(charger("c", quiet_without_car=True),), wait_at_limit_s=0))
+    scenario.set_charger("c", car_connected=True, actively_charging=True)
+    scenario.charge("c", 8)
+    scenario.set_charger("c", car_connected=False, car_disconnected=True, actively_charging=False)
+    assert scenario.decide(0) == current("c", 6)
+
+    assert scenario.repeat(REPEAT_INTERVAL) == []

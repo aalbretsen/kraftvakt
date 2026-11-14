@@ -61,6 +61,7 @@ def charger(
     reserve_w: int = 4000,
     window: str | None = None,
     override_ends: OverrideEnd = OverrideEnd.MANUAL,
+    quiet_without_car: bool = False,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""
     charging_window = None
@@ -79,6 +80,7 @@ def charger(
         actively_charging=Condition(ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"),
         charging_window=charging_window,
         override_ends=override_ends,
+        quiet_without_car=quiet_without_car,
     )
 
 

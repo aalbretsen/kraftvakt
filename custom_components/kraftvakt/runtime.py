@@ -20,7 +20,7 @@ from .actions import ActionRunner
 from .config_model import Issue, KraftvaktConfig
 from .config_validation import missing_items
 from .decision_clock import DecisionClock, first_decision_from
-from .decision_input import excluded_appliances, excluded_chargers, read_decision_input
+from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
 from .measurement import WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
@@ -381,7 +381,7 @@ class KraftvaktRuntime:
         async_check_entities(self._hass, self.config)
 
     def _repeat_commands(self, now: datetime) -> None:
-        commands = self._engine.repeat_commands(now, excluded_appliances(self._settings), excluded_chargers(self._settings))
+        commands = self._engine.repeat_commands(now, excluded_appliances(self._settings), excluded_chargers(self._settings), chargers_without_car(self._hass, self._settings))
         if commands:
             _LOGGER.debug(
                 "Commands repeated at %s: %s",

@@ -150,13 +150,14 @@ class RegulationEngine:
         now: datetime,
         excluded_appliances: frozenset[str],
         excluded_chargers: frozenset[str],
+        chargers_without_car: frozenset[str],
     ) -> list[Command]:
         """Return the command for the current state again where it is due.
 
         Due means no command for the repeat interval. An activated charger
         gets its current, a deactivated one is deactivated again. Waiting
         times and repeated turn-on counters are not touched, and excluded appliances
-        and chargers get nothing.
+        and chargers get nothing, nor a charger quiet without car while no car is connected to it.
         """
         if not self._running:
             return []
@@ -174,6 +175,8 @@ class RegulationEngine:
                 commands.append(TurnOffAppliance(appliance_id, variant_id))
         for charger in self._chargers.values():
             if charger.id in excluded_chargers or state.chargers_commanded_at[charger.id] > due_at:
+                continue
+            if charger.quiet_without_car and charger.id in chargers_without_car:
                 continue
             commands += self._charger_commands(charger, self._charging_of(charger.id).ampere_steps_on[charger.id])
         return self._record_commands(commands, now)

@@ -68,7 +68,7 @@ The format is defined by the dataclasses and their serialization in `config_mode
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
   deactivate and set-current actions, min and max current, power reserve, an optional car connected condition, actively charging, an optional charging window,
-  finish after window and the override end. A charger is nested in its group, so it cannot be in two.
+  finish after window, the override end and quiet without car. A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger. Finish after window is a field of the charger, not a switch position.
 

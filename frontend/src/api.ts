@@ -97,6 +97,8 @@ export interface Charger {
   finish_after_window: boolean;
   /** What ends the override of the charging window, besides the user. */
   override_ends: OverrideEnd;
+  /** Whether the EV charger gets no repeated commands while no car is connected. */
+  quiet_without_car: boolean;
 }
 
 export const OVERRIDE_ENDS = ["manual", "charging_stopped", "car_disconnected"] as const;

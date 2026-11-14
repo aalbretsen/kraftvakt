@@ -30,6 +30,7 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
         "activate": {"mode": "default"},
         "deactivate": {"mode": "default"},
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
+        "quiet_without_car": False,
     }
 
 
