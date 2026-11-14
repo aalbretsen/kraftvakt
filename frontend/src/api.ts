@@ -164,6 +164,8 @@ export interface DomainAction {
   domain: string;
   service: string;
   parameters: ActionParameter[];
+  /** Whether the panel chooses it for a new entity of its domain, before the default action. */
+  suggested: boolean;
 }
 
 type ActionFields<T> = {

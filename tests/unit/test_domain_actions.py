@@ -67,6 +67,16 @@ def test_hvac_mode_defaults_depend_on_the_action_kind() -> None:
     assert actions["chargers"]["set_current"] == {}
 
 
+def test_hvac_mode_is_the_suggested_action_and_no_domain_has_two() -> None:
+    """The panel chooses the suggested domain action for a new entity, so there must be at most one per domain in each field."""
+    for section in domain_actions_by_field().values():
+        for actions in section.values():
+            suggested = [action["domain"] for action in actions.values() if action["suggested"]]
+            assert len(suggested) == len(set(suggested))
+    turn_on = domain_actions_by_field()["appliances"]["turn_on"]
+    assert [key for key, action in turn_on.items() if action["suggested"]] == ["climate_hvac_mode"]
+
+
 def test_temperature_starts_outside_every_range() -> None:
     action = domain_actions_by_field()["appliances"]["turn_on"]["climate_temperature"]
 

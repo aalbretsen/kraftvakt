@@ -85,12 +85,16 @@ class ActionParameter:
 
 @dataclass(frozen=True, slots=True)
 class DomainAction:
-    """A service of an entity domain, called for the entity with the chosen data."""
+    """A service of an entity domain, called for the entity with the chosen data.
+
+    A suggested domain action is the one the panel chooses for a new entity of its domain, before the default action.
+    """
 
     domain: str
     service: str
     parameters: tuple[ActionParameter, ...]
     kinds: tuple[ActionKind, ...] = (ActionKind.TURN_ON, ActionKind.TURN_OFF)
+    suggested: bool = False
 
     def to_dict(self, kind: ActionKind) -> dict[str, Any]:
         """Return the domain action for an action of the kind, for the panel."""
@@ -98,6 +102,7 @@ class DomainAction:
             "domain": self.domain,
             "service": self.service,
             "parameters": [parameter.to_dict(kind) for parameter in self.parameters],
+            "suggested": self.suggested,
         }
 
     def steps(self, entity_id: str, data: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -130,8 +135,9 @@ TARGET_TEMPERATURE: Final = ActionParameter(
     default=0,
 )
 
+# Most thermostats are better controlled by their HVAC mode than turned on and off.
 DOMAIN_ACTIONS: Final[Mapping[str, DomainAction]] = {
-    "climate_hvac_mode": DomainAction("climate", "set_hvac_mode", (HVAC_MODE,)),
+    "climate_hvac_mode": DomainAction("climate", "set_hvac_mode", (HVAC_MODE,), suggested=True),
     "climate_temperature": DomainAction("climate", "set_temperature", (TARGET_TEMPERATURE,)),
     "climate_hvac_mode_and_temperature": DomainAction("climate", "set_temperature", (HVAC_MODE, TARGET_TEMPERATURE)),
 }

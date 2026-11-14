@@ -512,7 +512,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         .disabled=${this.locked}
         @value-changed=${e=>a(e.detail.value)}
       ></kraftvakt-action-field>
-    `}actionForEntity(e,t,i){return null===t&&oi(this.capabilities,this.section,e,i)?{mode:"default"}:null===i||si(this.capabilities,this.section,e,i,t)?t:{mode:"custom",action:[]}}renderForm(e,t,i,a=this.draft){const r=e.map(e=>e.name);return X`
+    `}actionForEntity(e,t,i){return function(e,t,i,a,r,n){if(null===a){const a=Object.entries(Wt(e,t,i,r)).find(([,e])=>e.suggested);if(a){const[e,t]=a;return{mode:"domain",domain_action:e,data:Ut(t,n)}}if(oi(e,t,i,r))return{mode:"default"}}return null===r||si(e,t,i,r,a)?a:{mode:"custom",action:[]}}(this.capabilities,this.section,e,t,i,i?this.hass.states[i]:void 0)}renderForm(e,t,i,a=this.draft){const r=e.map(e=>e.name);return X`
       <ha-form
         .hass=${this.hass}
         .data=${a}

@@ -83,7 +83,8 @@
               "step_attribute": null,
               "default": null
             }
-          ]
+          ],
+          "suggested": true
         },
         "climate_temperature": {
           "domain": "climate",
@@ -99,7 +100,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         },
         "climate_hvac_mode_and_temperature": {
           "domain": "climate",
@@ -128,7 +130,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         }
       },
       "turn_off": {
@@ -149,7 +152,8 @@
               "step_attribute": null,
               "default": null
             }
-          ]
+          ],
+          "suggested": true
         },
         "climate_temperature": {
           "domain": "climate",
@@ -165,7 +169,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         },
         "climate_hvac_mode_and_temperature": {
           "domain": "climate",
@@ -194,7 +199,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         }
       }
     },
@@ -217,7 +223,8 @@
               "step_attribute": null,
               "default": null
             }
-          ]
+          ],
+          "suggested": true
         },
         "climate_temperature": {
           "domain": "climate",
@@ -233,7 +240,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         },
         "climate_hvac_mode_and_temperature": {
           "domain": "climate",
@@ -262,7 +270,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         }
       },
       "deactivate": {
@@ -283,7 +292,8 @@
               "step_attribute": null,
               "default": null
             }
-          ]
+          ],
+          "suggested": true
         },
         "climate_temperature": {
           "domain": "climate",
@@ -299,7 +309,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         },
         "climate_hvac_mode_and_temperature": {
           "domain": "climate",
@@ -328,7 +339,8 @@
               "step_attribute": "target_temp_step",
               "default": 0
             }
-          ]
+          ],
+          "suggested": false
         }
       },
       "set_current": {}

@@ -212,7 +212,9 @@ Like any other change, it is not stored until you press **Save**.
 ### Actions
 
 Actions adapt to the domain of the entity. A standard action is offered when the domain has one, and some device types have actions of their own,
-such as the HVAC mode and temperature of a thermostat. Every action can also be a custom action, made with the action editor of Home Assistant,
+such as the HVAC mode and temperature of a thermostat. A thermostat starts with the action that sets its HVAC mode,
+heat to turn it on and off to turn it off, since most thermostats are better controlled that way than turned on and off.
+Every action can also be a custom action, made with the action editor of Home Assistant,
 see [Template and action examples](#template-and-action-examples). An entity used by another appliance or EV charger cannot be chosen.
 
 ### Status page

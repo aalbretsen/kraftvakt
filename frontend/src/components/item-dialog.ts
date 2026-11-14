@@ -2,11 +2,12 @@ import { LitElement, css, html, nothing, type CSSResultGroup, type PropertyValue
 import { property, state } from "lit/decorators.js";
 
 import type { ActionConfig, Appliance, Capabilities, Charger, Issue } from "../api";
+import { actionForEntity } from "../actions";
 import { domainActionsFor } from "../domain-actions";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
-import { defaultActionOf, hasDefaultAction, isActionAvailable } from "../validation";
+import { defaultActionOf, hasDefaultAction } from "../validation";
 import "./action-field";
 
 type Item = Appliance | Charger;
@@ -145,19 +146,9 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     `;
   }
 
-  /**
-   * Return the action to use with a new entity: the default action when the
-   * entity has one and no action is set, and a custom action when the default
-   * or domain action is not available for it.
-   */
+  /** Return the action to use with a new entity, see `actionForEntity` in `actions.ts`. */
   protected actionForEntity(name: string, action: ActionConfig | null, entityId: string | null): ActionConfig | null {
-    if (action === null && hasDefaultAction(this.capabilities, this.section, name, entityId)) {
-      return { mode: "default" };
-    }
-    if (entityId !== null && !isActionAvailable(this.capabilities, this.section, name, entityId, action)) {
-      return { mode: "custom", action: [] };
-    }
-    return action;
+    return actionForEntity(this.capabilities, this.section, name, action, entityId, entityId ? this.hass.states[entityId] : undefined);
   }
 
   protected renderForm(

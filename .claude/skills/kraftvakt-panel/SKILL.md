@@ -60,8 +60,9 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor, which has no default.
   It only changes the draft, so it asks for no confirmation, and it is disabled while every setting it restores has its default.
 - The warning against controlling regulated appliances outside Kraftvakt is shown only while a list is empty (appliances on the Appliances page, chargers on the EV charging page).
-- Default is offered only for domains with a default action. It is chosen when an entity with a default action is picked and the action is not set,
-  and a default action becomes an empty custom action when the new entity has none. A custom action starts as the default action.
+- Default is offered only for domains with a default action. When an entity is picked and the action is not set, the suggested domain action of its domain is chosen,
+  with its values for the entity, or else Default when the domain has one. A default or domain action becomes an empty custom action when the new entity has none.
+  A custom action starts as the default action. The rule is in `actions.ts`.
 - The entity picker of an appliance or charger leaves out the entities that other appliances and chargers use.
 - The charger dialog starts with the device, required, and every entity picker in it offers only the device's entities, none before a device is chosen.
   The panel checks, as the backend does, that the device exists and each entity belongs to it.

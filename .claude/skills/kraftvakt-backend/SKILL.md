@@ -123,6 +123,8 @@ a variant field is addressed through the variant's id, also the variant's own ac
 - A domain action is a service of the entity's domain with values the user chooses, such as the thermostat actions (HVAC mode, temperature, or both).
   The panel renders the parameters from the table in `domain_actions.py` and has no code per domain. The keys start with the domain.
   - A domain action belongs to action kinds, not sections, so it is offered wherever an action of that kind is, chargers included. Why: no special cases per section.
+  - A domain action may be suggested: the panel chooses it for a new entity of its domain, before the default action, and a domain has at most one in each field.
+    Setting the HVAC mode is suggested for thermostats, since most thermostats are better controlled by their mode than turned on and off.
   - A parameter has a type (an option or a temperature) and names the entity's attributes that hold its options and range.
     The default option is the first preferred option for the action kind that the entity supports, worked out in the panel; a number parameter has a fixed default.
     The temperature defaults to 0, outside every thermostat's range, so the user must set it.
