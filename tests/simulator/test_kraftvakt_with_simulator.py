@@ -67,9 +67,7 @@ def kraftvakt_config() -> dict[str, Any]:
                             "action": [
                                 {
                                     "action": "number.set_value",
-                                    "target": {
-                                        "entity_id": "number.garage_charging_current"
-                                    },
+                                    "target": {"entity_id": "number.garage_charging_current"},
                                     "data": {"value": "{{ current }}"},
                                 }
                             ],
@@ -107,9 +105,7 @@ async def regulate_until(
     assert condition()
 
 
-async def setup_kraftvakt(
-    hass: HomeAssistant, hass_storage: dict[str, Any], config: dict[str, Any]
-) -> None:
+async def setup_kraftvakt(hass: HomeAssistant, hass_storage: dict[str, Any], config: dict[str, Any]) -> None:
     """Set up Kraftvakt with the configuration, which starts the regulation."""
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
@@ -140,17 +136,13 @@ async def test_kraftvakt_regulates_the_simulated_devices(
     await add_device(DeviceKind.CHARGER, "Garage")
     await call(hass, "switch", "turn_on", "switch.garage_car_connected")
     config = kraftvakt_config()
-    config["charger_groups"][0]["chargers"][0]["device_id"] = (
-        er.async_get(hass).async_get(CHARGING_ALLOWED).device_id
-    )
+    config["charger_groups"][0]["chargers"][0]["device_id"] = er.async_get(hass).async_get(CHARGING_ALLOWED).device_id
     await setup_kraftvakt(hass, hass_storage, config)
 
     await regulate_until(
         hass,
         freezer,
-        lambda: (
-            state(hass, WATER_HEATER) == STATE_ON and power(hass, CHARGING_POWER) > 0
-        ),
+        lambda: state(hass, WATER_HEATER) == STATE_ON and power(hass, CHARGING_POWER) > 0,
     )
     assert power(hass, HOUSE_POWER) <= 10_000
 
@@ -158,10 +150,7 @@ async def test_kraftvakt_regulates_the_simulated_devices(
     await regulate_until(
         hass,
         freezer,
-        lambda: (
-            state(hass, WATER_HEATER) == STATE_OFF
-            and state(hass, CHARGING_ALLOWED) == STATE_OFF
-        ),
+        lambda: state(hass, WATER_HEATER) == STATE_OFF and state(hass, CHARGING_ALLOWED) == STATE_OFF,
     )
     assert power(hass, HOUSE_POWER) == 9000
 

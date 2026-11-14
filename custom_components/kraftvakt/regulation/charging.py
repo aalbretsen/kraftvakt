@@ -122,9 +122,7 @@ def override_arms(charger: Charger, reading: ChargerReading, activated: bool) ->
     return activated and reading.actively_charging
 
 
-def override_ended(
-    charger: Charger, reading: ChargerReading, activated_long_enough: bool
-) -> bool:
+def override_ended(charger: Charger, reading: ChargerReading, activated_long_enough: bool) -> bool:
     """Return whether the override ends, because the car has stopped charging or left.
 
     Only evidence that the car has stopped charging or left ends it, unlike
@@ -142,11 +140,7 @@ def override_ended(
 
 
 def _override_may_end(charger: Charger, reading: ChargerReading) -> bool:
-    return (
-        charger.charging_window is not None
-        and charger.override_ends is not OverrideEnd.MANUAL
-        and reading.window_override
-    )
+    return charger.charging_window is not None and charger.override_ends is not OverrideEnd.MANUAL and reading.window_override
 
 
 def charging_permission(
@@ -169,12 +163,7 @@ def charging_permission(
         return ChargingPermission.WINDOW
     if override_active:
         return ChargingPermission.OVERRIDE
-    if (
-        reading.finish_after_window
-        and activated
-        and reading.actively_charging
-        and reading.car_connected is not False
-    ):
+    if reading.finish_after_window and activated and reading.actively_charging and reading.car_connected is not False:
         return ChargingPermission.FINISHING
     return ChargingPermission.OUTSIDE_WINDOW
 
@@ -200,9 +189,7 @@ def charging_allowed_now(
         finish_after_window=charger.finish_after_window,
     )
     activated = status is not None and status.ampere_steps_on > 0
-    return charging_permission(
-        charger, reading, window_override, local_time, activated
-    ).allowed
+    return charging_permission(charger, reading, window_override, local_time, activated).allowed
 
 
 @dataclass(slots=True)
@@ -236,9 +223,7 @@ class ChargingState:
         """Return the chargers with at least one ampere step on."""
         return [charger_id for charger_id, on in self.ampere_steps_on.items() if on]
 
-    def set_ampere_steps_on(
-        self, charger_id: str, count: int, now: datetime | None = None
-    ) -> None:
+    def set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> None:
         """Record how many ampere steps of the charger are on.
 
         `now` is needed only when the charger is activated.
@@ -251,9 +236,7 @@ class ChargingState:
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
 
-    def activated_long_enough(
-        self, charger_id: str, now: datetime, window: timedelta
-    ) -> bool:
+    def activated_long_enough(self, charger_id: str, now: datetime, window: timedelta) -> bool:
         """Return whether a car has had time to start charging since activation."""
         activated_at = self.activated_at.get(charger_id)
         return activated_at is not None and now - activated_at >= 2 * window
@@ -273,14 +256,8 @@ class ChargingState:
         one_at_a_time: bool,
     ) -> list[str]:
         """Evaluate the chargers at a decision and return the newly bypassed ones."""
-        self.last_readings = {
-            charger.id: readings.get(charger.id, ChargerReading())
-            for charger in chargers
-        }
-        self.last_permissions = {
-            charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW)
-            for charger in chargers
-        }
+        self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
+        self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
         newly_bypassed = self._update_bypassed(chargers, now, window)
         self._update_priority(chargers, newly_bypassed)
         self._select(one_at_a_time)
@@ -304,9 +281,7 @@ class ChargingState:
             car_connected=reading.car_connected,
         )
 
-    def _state_of(
-        self, charger_id: str, activated: bool, charging: bool
-    ) -> ChargerState:
+    def _state_of(self, charger_id: str, activated: bool, charging: bool) -> ChargerState:
         permission = self.last_permissions.get(charger_id)
         if permission is None:
             return ChargerState.FIRST_DECISION
@@ -339,11 +314,7 @@ class ChargingState:
             reading = self.last_readings[charger.id]
             if self._update_rest(charger.id, reading, now, window):
                 bypassed.add(charger.id)
-        newly_bypassed = [
-            charger_id
-            for charger_id in self.priority
-            if charger_id in bypassed and charger_id not in self.bypassed
-        ]
+        newly_bypassed = [charger_id for charger_id in self.priority if charger_id in bypassed and charger_id not in self.bypassed]
         self.bypassed = bypassed
         return newly_bypassed
 
@@ -365,37 +336,20 @@ class ChargingState:
         if reading.car_connected is False:
             return True
         rest = self.rests.get(charger_id)
-        not_charging = not charges and self.activated_long_enough(
-            charger_id, now, window
-        )
+        not_charging = not charges and self.activated_long_enough(charger_id, now, window)
         if not_charging and (rest is None or rest.until <= now):
             rest = self.rests[charger_id] = Rest.after(rest, now)
         return not_charging or (rest is not None and now < rest.until)
 
-    def _update_priority(
-        self, chargers: Sequence[Charger], newly_bypassed: Sequence[str]
-    ) -> None:
+    def _update_priority(self, chargers: Sequence[Charger], newly_bypassed: Sequence[str]) -> None:
         """Move newly bypassed chargers to the back until a charger is full.
 
         The configured order comes back for the chargers that are not bypassed
         when a charger has all its ampere steps on.
         """
-        self.priority = [
-            charger_id
-            for charger_id in self.priority
-            if charger_id not in newly_bypassed
-        ] + list(newly_bypassed)
-        if any(
-            self.ampere_steps_on.get(charger.id) == ampere_step_count(charger)
-            for charger in chargers
-        ):
-            self.priority = [
-                charger.id for charger in chargers if charger.id not in self.bypassed
-            ] + [
-                charger_id
-                for charger_id in self.priority
-                if charger_id in self.bypassed
-            ]
+        self.priority = [charger_id for charger_id in self.priority if charger_id not in newly_bypassed] + list(newly_bypassed)
+        if any(self.ampere_steps_on.get(charger.id) == ampere_step_count(charger) for charger in chargers):
+            self.priority = [charger.id for charger in chargers if charger.id not in self.bypassed] + [charger_id for charger_id in self.priority if charger_id in self.bypassed]
 
     def _update_on_trial(self) -> None:
         """Find the chargers that may charge but do not charge actively.
@@ -403,11 +357,7 @@ class ChargingState:
         A charger tried without a car that charges must not get more current
         and hold back the steps below the entry of its group.
         """
-        self.on_trial = {
-            charger_id
-            for charger_id in self.may_charge
-            if not self.last_readings[charger_id].actively_charging
-        }
+        self.on_trial = {charger_id for charger_id in self.may_charge if not self.last_readings[charger_id].actively_charging}
 
     def _select(self, one_at_a_time: bool) -> None:
         """Decide which chargers may get ampere steps turned on.
@@ -415,29 +365,17 @@ class ChargingState:
         With one charger at a time, a charger that charges actively goes first
         and the others wait.
         """
-        eligible = [
-            charger_id
-            for charger_id in self.priority
-            if charger_id not in self.bypassed and self.is_allowed(charger_id)
-        ]
+        eligible = [charger_id for charger_id in self.priority if charger_id not in self.bypassed and self.is_allowed(charger_id)]
         self.waiting = set()
         if not one_at_a_time:
             self.may_charge = set(eligible)
             return
-        charging = [
-            charger_id
-            for charger_id in eligible
-            if self.last_readings[charger_id].actively_charging
-        ]
+        charging = [charger_id for charger_id in eligible if self.last_readings[charger_id].actively_charging]
         if not charging:
             self.may_charge = set(eligible[:1])
             return
         selected = next(
-            (
-                charger_id
-                for charger_id in charging
-                if self.ampere_steps_on.get(charger_id)
-            ),
+            (charger_id for charger_id in charging if self.ampere_steps_on.get(charger_id)),
             charging[0],
         )
         self.may_charge = {selected}

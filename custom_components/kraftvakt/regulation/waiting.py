@@ -19,9 +19,7 @@ class RepeatedTurnOnGrowth:
     cap: timedelta
 
     @classmethod
-    def from_waiting_at_limit(
-        cls, wait_at_limit_s: float, increment_factor: float, increments: int
-    ) -> RepeatedTurnOnGrowth:
+    def from_waiting_at_limit(cls, wait_at_limit_s: float, increment_factor: float, increments: int) -> RepeatedTurnOnGrowth:
         """Return the growth, with the increment a share of the waiting at the limit."""
         increment = timedelta(seconds=wait_at_limit_s * increment_factor)
         return cls(
@@ -64,12 +62,8 @@ def _above_start(utilization: float) -> float:
     return min(1.0, max(0.0, (utilization - WAITING_STARTS_AT_UTILIZATION) / span))
 
 
-def repeated_turn_on_waiting_time(
-    repeat: int, wait_at_limit: timedelta, growth: RepeatedTurnOnGrowth
-) -> timedelta:
-    return min(
-        growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT)
-    )
+def repeated_turn_on_waiting_time(repeat: int, wait_at_limit: timedelta, growth: RepeatedTurnOnGrowth) -> timedelta:
+    return min(growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT))
 
 
 def waiting_time(

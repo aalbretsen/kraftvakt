@@ -81,12 +81,8 @@ def charger(entity_id: str, set_current: ActionConfig = DEFAULT) -> Charger:
 def test_on_off_domains_have_default_actions(domain: str) -> None:
     entity_id = f"{domain}.x"
 
-    assert default_action_steps(ActionKind.TURN_ON, entity_id) == [
-        {"action": f"{domain}.turn_on", "target": {"entity_id": entity_id}}
-    ]
-    assert default_action_steps(ActionKind.TURN_OFF, entity_id) == [
-        {"action": f"{domain}.turn_off", "target": {"entity_id": entity_id}}
-    ]
+    assert default_action_steps(ActionKind.TURN_ON, entity_id) == [{"action": f"{domain}.turn_on", "target": {"entity_id": entity_id}}]
+    assert default_action_steps(ActionKind.TURN_OFF, entity_id) == [{"action": f"{domain}.turn_off", "target": {"entity_id": entity_id}}]
 
 
 @pytest.mark.parametrize("domain", ["number", "input_number"])
@@ -135,9 +131,7 @@ async def test_actions_of_a_variant_are_checked_against_the_entity(
         )
     )
 
-    assert action_issues(hass, config) == [
-        Issue("default_action_unavailable", "appliances", "a1", "variants.v1.turn_on")
-    ]
+    assert action_issues(hass, config) == [Issue("default_action_unavailable", "appliances", "a1", "variants.v1.turn_on")]
 
 
 async def test_default_actions_must_exist_for_the_domain(hass: HomeAssistant) -> None:
@@ -183,13 +177,9 @@ def test_current_is_kept_between_min_and_max(current: int, expected: int) -> Non
 async def test_default_actions_call_the_domain_service(hass: HomeAssistant) -> None:
     turned_on = async_mock_service(hass, "switch", "turn_on")
     turned_off = async_mock_service(hass, "light", "turn_off")
-    config = KraftvaktConfig(
-        appliances=(appliance("a1", "switch.a"), appliance("a2", "light.b"))
-    )
+    config = KraftvaktConfig(appliances=(appliance("a1", "switch.a"), appliance("a2", "light.b")))
 
-    await ActionRunner(hass, config).async_execute(
-        [TurnOnAppliance("a1"), TurnOffAppliance("a2")]
-    )
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a2")])
 
     assert [call.data["entity_id"] for call in turned_on] == [["switch.a"]]
     assert [call.data["entity_id"] for call in turned_off] == [["light.b"]]
@@ -271,9 +261,7 @@ async def test_variant_with_own_actions_runs_them(hass: HomeAssistant) -> None:
     ]
 
 
-async def test_failed_action_is_logged_and_not_retried(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_failed_action_is_logged_and_not_retried(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     """The next commands still run after a failed action."""
     failures: list[ServiceCall] = []
 
@@ -290,18 +278,14 @@ async def test_failed_action_is_logged_and_not_retried(
         )
     )
 
-    await ActionRunner(hass, config).async_execute(
-        [TurnOnAppliance("a1"), TurnOffAppliance("a2")]
-    )
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a2")])
 
     assert len(failures) == 1
     assert len(turned_off) == 1
     assert "Could not turn_on switch.a: device offline" in caplog.text
 
 
-async def test_action_without_answer_is_stopped_by_the_timeout(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_action_without_answer_is_stopped_by_the_timeout(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     """The next commands run when the timeout has stopped the action."""
     turned_off = async_mock_service(hass, "switch", "turn_off")
     config = KraftvaktConfig(
@@ -311,11 +295,7 @@ async def test_action_without_answer_is_stopped_by_the_timeout(
             appliance("a2", "switch.b"),
         ),
     )
-    execution = asyncio.ensure_future(
-        ActionRunner(hass, config).async_execute(
-            [TurnOnAppliance("a1"), TurnOffAppliance("a2")]
-        )
-    )
+    execution = asyncio.ensure_future(ActionRunner(hass, config).async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a2")]))
     for _ in range(10):
         await asyncio.sleep(0)
     assert turned_off == []
@@ -335,9 +315,7 @@ async def test_action_without_answer_is_stopped_by_the_timeout(
         DEFAULT,
     ],
 )
-async def test_action_that_cannot_run_is_logged(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture, action: ActionConfig
-) -> None:
+async def test_action_that_cannot_run_is_logged(hass: HomeAssistant, caplog: pytest.LogCaptureFixture, action: ActionConfig) -> None:
     config = KraftvaktConfig(appliances=(appliance("a1", "sensor.a", turn_on=action),))
 
     await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1")])
@@ -345,9 +323,7 @@ async def test_action_that_cannot_run_is_logged(
     assert "Could not turn_on sensor.a" in caplog.text
 
 
-async def test_missing_action_is_logged(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_missing_action_is_logged(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     config = KraftvaktConfig(appliances=(Appliance("a1", "switch.a"),))
 
     await ActionRunner(hass, config).async_execute([TurnOffAppliance("a1")])
@@ -370,9 +346,7 @@ async def test_commands_run_one_at_a_time_in_order(hass: HomeAssistant) -> None:
 
     hass.services.async_register("switch", "turn_on", slow)
     hass.services.async_register("switch", "turn_off", fast)
-    config = KraftvaktConfig(
-        appliances=(appliance("a1", "switch.a"), appliance("a2", "switch.b"))
-    )
+    config = KraftvaktConfig(appliances=(appliance("a1", "switch.a"), appliance("a2", "switch.b")))
     runner = ActionRunner(hass, config)
 
     first = hass.async_create_task(runner.async_execute([TurnOnAppliance("a1")]))
@@ -399,11 +373,7 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
             },
         }
     )
-    config = KraftvaktConfig(
-        charger_groups=(
-            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
-        )
-    )
+    config = KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),))
 
     await ActionRunner(hass, config).async_execute(
         [
@@ -428,15 +398,9 @@ async def test_charging_current_can_be_set_on_a_chosen_number_entity(
     """The default action for the chosen entity, with the current as value."""
     values = async_mock_service(hass, "number", "set_value")
     set_current = ActionConfig(ActionMode.ENTITY, entity_id="number.charger_current")
-    config = KraftvaktConfig(
-        charger_groups=(
-            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
-        )
-    )
+    config = KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),))
 
-    await ActionRunner(hass, config).async_execute(
-        [SetChargingCurrent("c1", 9), SetChargingCurrent("c1", 20)]
-    )
+    await ActionRunner(hass, config).async_execute([SetChargingCurrent("c1", 9), SetChargingCurrent("c1", 20)])
 
     assert [call.data for call in values] == [
         {"entity_id": ["number.charger_current"], "value": 9},
@@ -444,15 +408,9 @@ async def test_charging_current_can_be_set_on_a_chosen_number_entity(
     ]
 
 
-async def test_entity_action_without_entity_is_logged(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_entity_action_without_entity_is_logged(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     set_current = ActionConfig(ActionMode.ENTITY)
-    config = KraftvaktConfig(
-        charger_groups=(
-            ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),
-        )
-    )
+    config = KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=(charger("switch.charger", set_current),)),))
 
     await ActionRunner(hass, config).async_execute([SetChargingCurrent("c1", 6)])
 
@@ -477,14 +435,10 @@ async def test_chosen_entity_must_have_a_default_action(hass: HomeAssistant) -> 
                         ),
                         id="c2",
                     ),
-                    replace(
-                        charger("switch.c", ActionConfig(ActionMode.ENTITY)), id="c3"
-                    ),
+                    replace(charger("switch.c", ActionConfig(ActionMode.ENTITY)), id="c3"),
                 ),
             ),
         )
     )
 
-    assert action_issues(hass, config) == [
-        Issue("unsupported_entity_domain", "chargers", "c2", "set_current")
-    ]
+    assert action_issues(hass, config) == [Issue("unsupported_entity_domain", "chargers", "c2", "set_current")]

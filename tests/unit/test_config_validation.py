@@ -119,9 +119,7 @@ def test_general_ranges(field: str, value: Any, code: str | None) -> None:
     [(0, None), (100_000, None), (-1, "out_of_range")],
 )
 def test_appliance_power_reserve(value: float, code: str | None) -> None:
-    expected = (
-        [] if code is None else [Issue(code, "appliances", "a2", "power_reserve_w")]
-    )
+    expected = [] if code is None else [Issue(code, "appliances", "a2", "power_reserve_w")]
 
     assert _issues_after(_set("appliances.1.power_reserve_w", value)) == expected
 
@@ -148,9 +146,7 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
 def test_charger_settings(field: str, value: Any, code: str | None) -> None:
     expected = [] if code is None else [Issue(code, "chargers", "c1", field)]
 
-    assert (
-        _issues_after(_set(f"charger_groups.0.chargers.0.{field}", value)) == expected
-    )
+    assert _issues_after(_set(f"charger_groups.0.chargers.0.{field}", value)) == expected
 
 
 def test_min_current_may_equal_max() -> None:
@@ -165,9 +161,7 @@ def test_max_current_must_be_at_least_one() -> None:
 
 
 def test_min_current_above_max_is_rejected() -> None:
-    assert _issues_after(_set("charger_groups.0.chargers.0.max_current_a", 5)) == [
-        Issue("min_current_above_max", "chargers", "c1", "min_current_a")
-    ]
+    assert _issues_after(_set("charger_groups.0.chargers.0.max_current_a", 5)) == [Issue("min_current_above_max", "chargers", "c1", "min_current_a")]
 
 
 def test_charging_window_start_must_differ_from_end() -> None:
@@ -178,9 +172,7 @@ def test_charging_window_start_must_differ_from_end() -> None:
         )
     )
 
-    assert issues == [
-        Issue("window_start_equals_end", "chargers", "c1", "charging_window")
-    ]
+    assert issues == [Issue("window_start_equals_end", "chargers", "c1", "charging_window")]
 
 
 def test_charging_window_in_whole_minutes() -> None:
@@ -197,9 +189,7 @@ def test_charging_window_in_whole_minutes() -> None:
 def test_charging_window_across_midnight_is_valid() -> None:
     window = {"start": "23:30", "end": "00:15"}
 
-    assert (
-        _issues_after(_set("charger_groups.0.chargers.0.charging_window", window)) == []
-    )
+    assert _issues_after(_set("charger_groups.0.chargers.0.charging_window", window)) == []
 
 
 @pytest.mark.parametrize(
@@ -215,32 +205,23 @@ def test_charging_window_across_midnight_is_valid() -> None:
 def test_car_connected_condition(condition: dict[str, str], code: str | None) -> None:
     expected = [] if code is None else [Issue(code, "chargers", "c1", "car_connected")]
 
-    assert (
-        _issues_after(_set("charger_groups.0.chargers.0.car_connected", condition))
-        == expected
-    )
+    assert _issues_after(_set("charger_groups.0.chargers.0.car_connected", condition)) == expected
 
 
 def test_empty_variant_condition_is_missing_not_an_error() -> None:
-    issues = _issues_after(
-        _set("appliances.0.variants.0.condition", {"type": "entity", "value": ""})
-    )
+    issues = _issues_after(_set("appliances.0.variants.0.condition", {"type": "entity", "value": ""}))
 
     assert issues == []
 
 
 def test_variant_label_must_not_be_empty() -> None:
-    assert _issues_after(_set("appliances.0.variants.0.label", "   ")) == [
-        Issue("empty_label", "appliances", "a1", "variants.v1.label")
-    ]
+    assert _issues_after(_set("appliances.0.variants.0.label", "   ")) == [Issue("empty_label", "appliances", "a1", "variants.v1.label")]
 
 
 def test_variant_labels_must_be_unique_per_appliance() -> None:
     def mutate(data: dict[str, Any]) -> None:
         variant = data["appliances"][0]["variants"][0]
-        data["appliances"][0]["variants"].append(
-            {**variant, "id": "v2", "label": "Morning "}
-        )
+        data["appliances"][0]["variants"].append({**variant, "id": "v2", "label": "Morning "})
         data["appliances"][1]["variants"].append({**variant, "id": "v3"})
         data["priority"] += [
             {"type": "appliance", "appliance_id": "a1", "variant_id": "v2"},
@@ -288,23 +269,17 @@ def test_unset_entities_are_not_duplicates() -> None:
 def test_ids_must_be_unique() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["appliances"][1]["id"] = "a1"
-        data["appliances"][0]["variants"].append(
-            {**data["appliances"][0]["variants"][0], "label": "Evening"}
-        )
+        data["appliances"][0]["variants"].append({**data["appliances"][0]["variants"][0], "label": "Evening"})
         data["charger_groups"][0]["chargers"].append(
             {
                 **data["charger_groups"][0]["chargers"][0],
                 "entity_id": "switch.charger_2",
             }
         )
-        data["priority"] = [
-            entry for entry in data["priority"] if entry.get("appliance_id") != "a2"
-        ]
+        data["priority"] = [entry for entry in data["priority"] if entry.get("appliance_id") != "a2"]
 
     assert Issue("duplicate_id", "appliances", "a1") in _issues_after(mutate)
-    assert Issue("duplicate_id", "appliances", "a1", "variants.v1") in _issues_after(
-        mutate
-    )
+    assert Issue("duplicate_id", "appliances", "a1", "variants.v1") in _issues_after(mutate)
     assert Issue("duplicate_id", "chargers", "c1") in _issues_after(mutate)
 
 
@@ -312,18 +287,14 @@ def test_priority_entry_for_unknown_variant_is_rejected() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["appliances"][0]["variants"] = []
 
-    assert _issues_after(mutate) == [
-        Issue("unknown_priority_entry", "priority", "a1", "variants.v1")
-    ]
+    assert _issues_after(mutate) == [Issue("unknown_priority_entry", "priority", "a1", "variants.v1")]
 
 
 def test_priority_entry_for_unknown_appliance_is_rejected() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["priority"].append({"type": "appliance", "appliance_id": "gone"})
 
-    assert _issues_after(mutate) == [
-        Issue("unknown_priority_entry", "priority", "gone")
-    ]
+    assert _issues_after(mutate) == [Issue("unknown_priority_entry", "priority", "gone")]
 
 
 def test_duplicate_priority_entry_is_rejected() -> None:
@@ -343,9 +314,7 @@ def test_entry_of_an_unknown_charger_group_is_rejected() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["priority"].append({"type": "charger_group", "group_id": "gone"})
 
-    assert _issues_after(mutate) == [
-        Issue("unknown_priority_entry", "priority", "gone")
-    ]
+    assert _issues_after(mutate) == [Issue("unknown_priority_entry", "priority", "gone")]
 
 
 def test_charger_group_name_is_required_and_unique() -> None:
@@ -436,9 +405,7 @@ async def test_parse_config_rejects_invalid_config(hass: HomeAssistant) -> None:
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
-    assert error.value.issues == [
-        Issue("out_of_range", "general", None, "power_limit_w")
-    ]
+    assert error.value.issues == [Issue("out_of_range", "general", None, "power_limit_w")]
     assert str(error.value) == "out_of_range"
 
 
@@ -471,9 +438,7 @@ async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
-    assert error.value.issues == [
-        Issue("invalid_type", "appliances", "a1", "power_reserve_w")
-    ]
+    assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "power_reserve_w")]
 
 
 @pytest.mark.parametrize(
@@ -483,9 +448,7 @@ async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
         ("set_current", {"mode": "entity", "entity_id": 7}),
     ],
 )
-async def test_only_the_charging_current_may_be_given_as_an_entity(
-    hass: HomeAssistant, field: str, action: dict[str, Any]
-) -> None:
+async def test_only_the_charging_current_may_be_given_as_an_entity(hass: HomeAssistant, field: str, action: dict[str, Any]) -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"][0][field] = action
 
@@ -529,9 +492,7 @@ async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:
         "mode": "custom",
         "action": [{"delay": "lenge"}],
     }
-    data["charger_groups"][0]["chargers"][0]["set_current"]["action"] = [
-        {"delay": "lenge"}
-    ]
+    data["charger_groups"][0]["chargers"][0]["set_current"]["action"] = [{"delay": "lenge"}]
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
@@ -554,15 +515,11 @@ async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None
 
 
 @pytest.mark.parametrize("value", ["when_full", True])
-async def test_override_end_must_be_one_of_the_choices(
-    hass: HomeAssistant, value: Any
-) -> None:
+async def test_override_end_must_be_one_of_the_choices(hass: HomeAssistant, value: Any) -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"][0]["override_ends"] = value
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
-    assert error.value.issues == [
-        Issue("invalid_type", "chargers", "c1", "override_ends")
-    ]
+    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", "override_ends")]

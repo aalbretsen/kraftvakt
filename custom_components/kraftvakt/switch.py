@@ -48,9 +48,7 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
 
     async def async_added_to_hass(self) -> None:
         """Follow the regulation, also when it is started or stopped elsewhere."""
-        self.async_on_remove(
-            self._runtime.async_add_status_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
 
     @property
     def is_on(self) -> bool:
@@ -107,9 +105,7 @@ class ApplianceSwitch(ItemSwitch):
         return self._settings.appliance_switches(self._item_id)
 
     async def _async_set(self, position: bool) -> None:
-        await self._settings.async_set_appliance(
-            self._item_id, **{self._setting: position}
-        )
+        await self._settings.async_set_appliance(self._item_id, **{self._setting: position})
 
 
 class ChargerSwitch(ItemSwitch, ChargerEntity):
@@ -119,9 +115,7 @@ class ChargerSwitch(ItemSwitch, ChargerEntity):
         return self._settings.charger_switches(self._item_id)
 
     async def _async_set(self, position: bool) -> None:
-        await self._settings.async_set_charger(
-            self._item_id, **{self._setting: position}
-        )
+        await self._settings.async_set_charger(self._item_id, **{self._setting: position})
 
 
 class ChargerConfigSwitch(ChargerEntity, SwitchEntity):

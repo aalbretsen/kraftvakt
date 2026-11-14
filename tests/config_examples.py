@@ -84,9 +84,7 @@ def full_config_data() -> dict[str, Any]:
                             "action": [
                                 {
                                     "action": "number.set_value",
-                                    "target": {
-                                        "entity_id": "number.garage_charger_current"
-                                    },
+                                    "target": {"entity_id": "number.garage_charger_current"},
                                     "data": {"value": "{{ current }}"},
                                 }
                             ],

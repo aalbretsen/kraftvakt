@@ -10,9 +10,7 @@ from .const import DOMAIN
 from .devices import Observable, SimulatedDevice
 
 
-def device_of[DeviceT: SimulatedDevice](
-    entry: SimulatorConfigEntry, device_type: type[DeviceT]
-) -> DeviceT:
+def device_of[DeviceT: SimulatedDevice](entry: SimulatorConfigEntry, device_type: type[DeviceT]) -> DeviceT:
     """Return the device of the entry, which its kind makes of `device_type`."""
     device = entry.runtime_data
     assert isinstance(device, device_type)
@@ -49,6 +47,4 @@ class SimulatorEntity[DeviceT: SimulatedDevice](Entity):
     async def async_added_to_hass(self) -> None:
         """Write the state each time the observed object changes."""
         await super().async_added_to_hass()
-        self.async_on_remove(
-            self.observed.async_add_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self.observed.async_add_listener(self.async_write_ha_state))

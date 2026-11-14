@@ -34,8 +34,6 @@ def device_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
             issues.append(location.issue("unknown_device", "device_id"))
             continue
         issues += [
-            location.issue("entity_not_on_device", field_name)
-            for field_name, entity_id in charger.device_entities()
-            if device_of_entity(hass, entity_id) != charger.device_id
+            location.issue("entity_not_on_device", field_name) for field_name, entity_id in charger.device_entities() if device_of_entity(hass, entity_id) != charger.device_id
         ]
     return issues

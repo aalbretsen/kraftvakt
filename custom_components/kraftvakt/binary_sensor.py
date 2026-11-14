@@ -49,13 +49,8 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    async_add_entities(
-        RegulationBinarySensor(entry, entry.runtime_data, description)
-        for description in BINARY_SENSORS
-    )
-    async_setup_item_entities(
-        hass, entry, async_add_entities, "binary_sensor", (ChargerAllowedBinarySensor,)
-    )
+    async_add_entities(RegulationBinarySensor(entry, entry.runtime_data, description) for description in BINARY_SENSORS)
+    async_setup_item_entities(hass, entry, async_add_entities, "binary_sensor", (ChargerAllowedBinarySensor,))
 
 
 class RegulationBinarySensor(KraftvaktEntity, BinarySensorEntity):
@@ -75,9 +70,7 @@ class RegulationBinarySensor(KraftvaktEntity, BinarySensorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Update the sensor each time the status of the regulation may change."""
-        self.async_on_remove(
-            self._runtime.async_add_status_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
 
     @property
     def is_on(self) -> bool:
@@ -99,12 +92,8 @@ class ChargerAllowedBinarySensor(ChargerEntity, BinarySensorEntity):
     async def async_added_to_hass(self) -> None:
         """Follow the settings, the decisions and the clock."""
         await super().async_added_to_hass()
-        self.async_on_remove(
-            self._runtime.async_add_status_listener(self.async_write_ha_state)
-        )
-        self.async_on_remove(
-            async_track_time_change(self.hass, self._async_minute_started, second=0)
-        )
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
+        self.async_on_remove(async_track_time_change(self.hass, self._async_minute_started, second=0))
 
     @callback
     def _async_minute_started(self, _now: datetime) -> None:

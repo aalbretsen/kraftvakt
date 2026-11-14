@@ -56,9 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) ->
             translation_key="unreadable_configuration",
             translation_placeholders={"issues": str(error)},
         ) from error
-    runtime = KraftvaktRuntime(
-        hass, Settings(hass, storage, stored), _action_lock(hass)
-    )
+    runtime = KraftvaktRuntime(hass, Settings(hass, storage, stored), _action_lock(hass))
     entry.runtime_data = runtime
     entry.async_on_unload(runtime.async_shutdown)
     runtime.async_start()
@@ -78,9 +76,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -
 
 def _action_lock(hass: HomeAssistant) -> asyncio.Lock:
     """Return the lock for the actions, shared over reloads of the config entry."""
-    lock: asyncio.Lock = hass.data.setdefault(DOMAIN, {}).setdefault(
-        "action_lock", asyncio.Lock()
-    )
+    lock: asyncio.Lock = hass.data.setdefault(DOMAIN, {}).setdefault("action_lock", asyncio.Lock())
     return lock
 
 
@@ -88,9 +84,7 @@ async def _async_register_panel(hass: HomeAssistant) -> None:
     # Static paths cannot be unregistered, so they are registered only once
     # per run of Home Assistant, also when the config entry is reloaded.
     if not hass.data.get(DOMAIN, {}).get("static_registered"):
-        await hass.http.async_register_static_paths(
-            [StaticPathConfig(STATIC_URL, str(FRONTEND_DIR), cache_headers=False)]
-        )
+        await hass.http.async_register_static_paths([StaticPathConfig(STATIC_URL, str(FRONTEND_DIR), cache_headers=False)])
         hass.data.setdefault(DOMAIN, {})["static_registered"] = True
 
     # The version in the URL makes the browser fetch new JS after an update.

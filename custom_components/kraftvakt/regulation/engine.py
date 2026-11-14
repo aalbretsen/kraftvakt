@@ -49,16 +49,10 @@ class RegulationEngine:
         """Create a stopped engine for the configuration."""
         self._config = config
         self._groups = config.charger_groups
-        self._chargers: dict[str, Charger] = {
-            charger.id: charger for group in self._groups for charger in group.chargers
-        }
-        self._group_of: dict[str, ChargerGroup] = {
-            charger.id: group for group in self._groups for charger in group.chargers
-        }
+        self._chargers: dict[str, Charger] = {charger.id: charger for group in self._groups for charger in group.chargers}
+        self._group_of: dict[str, ChargerGroup] = {charger.id: group for group in self._groups for charger in group.chargers}
         general = config.general
-        self._waiting_curve = WaitingCurve.from_settings(
-            general.wait_curve_steepness, general.wait_curve_pivot
-        )
+        self._waiting_curve = WaitingCurve.from_settings(general.wait_curve_steepness, general.wait_curve_pivot)
         self._appliance_growth = RepeatedTurnOnGrowth.from_waiting_at_limit(
             general.wait_at_limit_s,
             general.appliance_repeat_increment_factor,
@@ -84,10 +78,7 @@ class RegulationEngine:
     @property
     def steps_on(self) -> int:
         """Return how many steps are on: appliances and ampere steps."""
-        return len(self._state.appliances_on) + sum(
-            sum(charging.ampere_steps_on.values())
-            for charging in self._state.charging_groups.values()
-        )
+        return len(self._state.appliances_on) + sum(sum(charging.ampere_steps_on.values()) for charging in self._state.charging_groups.values())
 
     def use_power_limit(self, power_limit_w: int) -> None:
         """Regulate against a new power limit from the next decision."""
@@ -97,9 +88,7 @@ class RegulationEngine:
     def curve_waiting_time(self, average_w: float) -> timedelta:
         """Return the waiting time from the curve for a regulation average."""
         general = self._config.general
-        return timedelta(seconds=general.wait_at_limit_s) * self._waiting_curve.share(
-            average_w / general.power_limit_w
-        )
+        return timedelta(seconds=general.wait_at_limit_s) * self._waiting_curve.share(average_w / general.power_limit_w)
 
     @property
     def appliances_on(self) -> frozenset[str]:
@@ -131,27 +120,16 @@ class RegulationEngine:
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
-        return {
-            charger_id: status
-            for group in self._groups
-            for charger_id, status in self._charging(group.id)
-            .status(group.chargers)
-            .items()
-        }
+        return {charger_id: status for group in self._groups for charger_id, status in self._charging(group.id).status(group.chargers).items()}
 
     @property
     def charging_priorities(self) -> Mapping[str, list[str]]:
         """Return the current charging priority of each group, highest first."""
-        return {
-            group_id: list(charging.priority)
-            for group_id, charging in self._state.charging_groups.items()
-        }
+        return {group_id: list(charging.priority) for group_id, charging in self._state.charging_groups.items()}
 
     def start(self, now: datetime) -> list[Command]:
         self._running = True
-        self._state = RegulationState(
-            started_at=now, charging_groups=self._new_charging_groups()
-        )
+        self._state = RegulationState(started_at=now, charging_groups=self._new_charging_groups())
         return self._record_commands(self._turn_off_everything(), now)
 
     def stop(self) -> list[Command]:
@@ -181,17 +159,12 @@ class RegulationEngine:
         """
         if not self._running:
             return []
-        due_at = now - timedelta(
-            minutes=self._config.general.command_repeat_interval_min
-        )
+        due_at = now - timedelta(minutes=self._config.general.command_repeat_interval_min)
         state = self._state
         commands: list[Command] = []
         for appliance in self._config.appliances:
             appliance_id = appliance.id
-            if (
-                appliance_id in excluded_appliances
-                or state.appliances_commanded_at[appliance_id] > due_at
-            ):
+            if appliance_id in excluded_appliances or state.appliances_commanded_at[appliance_id] > due_at:
                 continue
             variant_id = state.current_variants.get(appliance_id)
             if appliance_id in state.appliances_on:
@@ -199,14 +172,9 @@ class RegulationEngine:
             else:
                 commands.append(TurnOffAppliance(appliance_id, variant_id))
         for charger in self._chargers.values():
-            if (
-                charger.id in excluded_chargers
-                or state.chargers_commanded_at[charger.id] > due_at
-            ):
+            if charger.id in excluded_chargers or state.chargers_commanded_at[charger.id] > due_at:
                 continue
-            commands += self._charger_commands(
-                charger, self._charging_of(charger.id).ampere_steps_on[charger.id]
-            )
+            commands += self._charger_commands(charger, self._charging_of(charger.id).ampere_steps_on[charger.id])
         return self._record_commands(commands, now)
 
     def _decide(self, decision: DecisionInput) -> DecisionResult:
@@ -243,10 +211,7 @@ class RegulationEngine:
         return DecisionResult(commands, overrides)
 
     def _new_charging_groups(self) -> dict[str, ChargingState]:
-        return {
-            group.id: ChargingState.for_chargers(group.chargers)
-            for group in self._groups
-        }
+        return {group.id: ChargingState.for_chargers(group.chargers) for group in self._groups}
 
     def _charging(self, group_id: str) -> ChargingState:
         return self._state.charging_groups[group_id]
@@ -260,10 +225,7 @@ class RegulationEngine:
         Before the first decision after a start, that is as the appliance does it.
         """
         current_variants = self._state.current_variants
-        commands: list[Command] = [
-            TurnOffAppliance(appliance.id, current_variants.get(appliance.id))
-            for appliance in self._config.appliances
-        ]
+        commands: list[Command] = [TurnOffAppliance(appliance.id, current_variants.get(appliance.id)) for appliance in self._config.appliances]
         for charger in self._chargers.values():
             commands += self._charger_commands(charger, 0)
         return commands
@@ -283,21 +245,15 @@ class RegulationEngine:
                 changes.armed.append(charger.id)
         return changes
 
-    def _decide_chargers(
-        self, decision: DecisionInput, ended_overrides: list[str]
-    ) -> list[Command]:
+    def _decide_chargers(self, decision: DecisionInput, ended_overrides: list[str]) -> list[Command]:
         """Switch off what the chargers must, an exception to one step per decision."""
         local_time = decision.now.astimezone(decision.time_zone).time()
-        readings = {
-            charger_id: decision.chargers.get(charger_id, ChargerReading())
-            for charger_id in self._chargers
-        }
+        readings = {charger_id: decision.chargers.get(charger_id, ChargerReading()) for charger_id in self._chargers}
         permissions = {
             charger.id: charging_permission(
                 charger,
                 readings[charger.id],
-                readings[charger.id].window_override
-                and charger.id not in ended_overrides,
+                readings[charger.id].window_override and charger.id not in ended_overrides,
                 local_time,
                 self._charging_of(charger.id).ampere_steps_on[charger.id] > 0,
             )
@@ -331,9 +287,7 @@ class RegulationEngine:
             threshold_w=general.penalty_threshold_w,
             window=timedelta(seconds=general.regulation_window_s),
         )
-        return self._state.penalty.decide(
-            limits, decision.tariff_average_w, decision.regulation_averages_w
-        )
+        return self._state.penalty.decide(limits, decision.tariff_average_w, decision.regulation_averages_w)
 
     def _hold_everything_off(self) -> list[Command]:
         """Turn everything off, an exception to one step per decision."""
@@ -355,17 +309,13 @@ class RegulationEngine:
         """
         previous_variants = self._state.current_variants
         previous_excluded = self._state.excluded_appliances
-        self._state.current_variants = {
-            appliance.id: current_variant(appliance, decision.variant_conditions)
-            for appliance in self._config.appliances
-        }
+        self._state.current_variants = {appliance.id: current_variant(appliance, decision.variant_conditions) for appliance in self._config.appliances}
         excluded = decision.excluded_appliances
         self._state.excluded_appliances = excluded
         moving = [
             appliance_id
             for appliance_id, variant in self._state.current_variants.items()
-            if previous_variants.get(appliance_id) != variant
-            or (appliance_id in previous_excluded and appliance_id not in excluded)
+            if previous_variants.get(appliance_id) != variant or (appliance_id in previous_excluded and appliance_id not in excluded)
         ]
         was_on = self._state.appliances_on & set(moving)
         commands: list[Command] = []
@@ -375,13 +325,8 @@ class RegulationEngine:
         for key in sorted(map(ApplianceStepKey, moving), key=lambda key: places[key]):
             appliance_id = key.appliance_id
             was_off = appliance_id not in was_on
-            switched_variant = (
-                previous_variants.get(appliance_id)
-                != self._state.current_variants[appliance_id]
-            )
-            if appliance_id in self._state.appliances_on or (
-                was_off and switched_variant
-            ):
+            switched_variant = previous_variants.get(appliance_id) != self._state.current_variants[appliance_id]
+            if appliance_id in self._state.appliances_on or (was_off and switched_variant):
                 commands += self._switch(key, turn_on=False)
             if was_off and appliance_id not in excluded:
                 commands += self._make_room_below(key)
@@ -395,10 +340,7 @@ class RegulationEngine:
             self._state.current_variants,
             self._state.appliances_on,
             self._appliance_growth,
-            {
-                group_id: self._ampere_steps(charging)
-                for group_id, charging in self._state.charging_groups.items()
-            },
+            {group_id: self._ampere_steps(charging) for group_id, charging in self._state.charging_groups.items()},
             self._state.excluded_appliances,
         )
 
@@ -413,9 +355,7 @@ class RegulationEngine:
         )
 
     def _steps_on_lowest_first(self) -> Iterator[Step]:
-        return (
-            step for step in reversed(self._steps()) if step.is_on and step.can_turn_off
-        )
+        return (step for step in reversed(self._steps()) if step.is_on and step.can_turn_off)
 
     def _switch_off_above_limit(self, forced_off: bool) -> list[Command]:
         """Switch off the lowest priority step that is on.
@@ -433,20 +373,14 @@ class RegulationEngine:
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
         lowest_on = next(
-            (
-                step
-                for step in reversed(steps[place + 1 :])
-                if step.is_on and step.can_turn_off
-            ),
+            (step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off),
             None,
         )
         if lowest_on is None:
             return []
         return self._switch(lowest_on.key, turn_on=False)
 
-    def _turn_on_next(
-        self, now: datetime, average_w: float, forced_off: bool
-    ) -> list[Command]:
+    def _turn_on_next(self, now: datetime, average_w: float, forced_off: bool) -> list[Command]:
         """Turn on the next step, or make room for it when there is none.
 
         No room is made when the decision has already forced something off,
@@ -482,11 +416,7 @@ class RegulationEngine:
 
     def _has_waited(self, step: Step, now: datetime, average_w: float) -> bool:
         waiting = self._state.waiting
-        started_at = (
-            waiting.started_at
-            if waiting is not None and waiting.key == step.key
-            else now
-        )
+        started_at = waiting.started_at if waiting is not None and waiting.key == step.key else now
         general = self._config.general
         required = waiting_time(
             average_w,
@@ -503,9 +433,7 @@ class RegulationEngine:
         if self._state.waiting is not None and self._state.waiting.key == key:
             self._state.waiting = None
 
-    def _switch(
-        self, key: StepKey, turn_on: bool, now: datetime | None = None
-    ) -> list[Command]:
+    def _switch(self, key: StepKey, turn_on: bool, now: datetime | None = None) -> list[Command]:
         """`now` is needed only to turn on the first ampere step of a charger."""
         if isinstance(key, ApplianceStepKey):
             appliance_id = key.appliance_id
@@ -516,11 +444,7 @@ class RegulationEngine:
                 return [TurnOnAppliance(appliance_id, variant_id)]
             self._state.appliances_on.discard(appliance_id)
             return [TurnOffAppliance(appliance_id, variant_id)]
-        commands = (
-            self._deactivate_others(key.charger_id)
-            if turn_on and key.index == 0
-            else []
-        )
+        commands = self._deactivate_others(key.charger_id) if turn_on and key.index == 0 else []
         count = key.index + 1 if turn_on else key.index
         return commands + self._set_ampere_steps_on(key.charger_id, count, now)
 
@@ -534,9 +458,7 @@ class RegulationEngine:
                 commands += self._set_ampere_steps_on(other_id, 0)
         return commands
 
-    def _set_ampere_steps_on(
-        self, charger_id: str, count: int, now: datetime | None = None
-    ) -> list[Command]:
+    def _set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> list[Command]:
         charging = self._charging_of(charger_id)
         before = charging.ampere_steps_on[charger_id]
         turn_on = count > before
@@ -550,9 +472,7 @@ class RegulationEngine:
 
     def _charger_commands(self, charger: Charger, count: int) -> list[Command]:
         """Return the commands for the charger, always setting the current first."""
-        commands: list[Command] = [
-            SetChargingCurrent(charger.id, charging_current(charger, count))
-        ]
+        commands: list[Command] = [SetChargingCurrent(charger.id, charging_current(charger, count))]
         if count == 0:
             commands.append(DeactivateCharger(charger.id))
         return commands
@@ -563,11 +483,7 @@ class RegulationEngine:
             match command:
                 case TurnOnAppliance(appliance_id) | TurnOffAppliance(appliance_id):
                     self._state.appliances_commanded_at[appliance_id] = now
-                case (
-                    ActivateCharger(charger_id)
-                    | DeactivateCharger(charger_id)
-                    | SetChargingCurrent(charger_id)
-                ):
+                case ActivateCharger(charger_id) | DeactivateCharger(charger_id) | SetChargingCurrent(charger_id):
                     self._state.chargers_commanded_at[charger_id] = now
         return commands
 
@@ -582,14 +498,5 @@ def _last_command_per_appliance(commands: list[Command]) -> list[Command]:
     An appliance turned off and on again at the same decision only gets the
     turn-on, since switching a device off and on at once wears its relays.
     """
-    last = {
-        command.appliance_id: index
-        for index, command in enumerate(commands)
-        if isinstance(command, TurnOnAppliance | TurnOffAppliance)
-    }
-    return [
-        command
-        for index, command in enumerate(commands)
-        if not isinstance(command, TurnOnAppliance | TurnOffAppliance)
-        or last[command.appliance_id] == index
-    ]
+    last = {command.appliance_id: index for index, command in enumerate(commands) if isinstance(command, TurnOnAppliance | TurnOffAppliance)}
+    return [command for index, command in enumerate(commands) if not isinstance(command, TurnOnAppliance | TurnOffAppliance) or last[command.appliance_id] == index]

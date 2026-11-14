@@ -96,9 +96,7 @@ async def send(client, message_type: str, **data: Any) -> dict[str, Any]:
     return await client.receive_json()
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW) -> None:
     freezer.tick(delta)
     async_fire_time_changed(hass)
     await hass.async_block_till_done(wait_background_tasks=True)
@@ -135,9 +133,7 @@ async def test_commands_require_an_administrator(
     assert response["error"]["code"] == "unauthorized"
 
 
-async def test_capabilities_give_default_actions_limits_and_defaults(
-    hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
-) -> None:
+async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator) -> None:
     """The panel gets the limits and default actions from one source."""
     client = await hass_ws_client(hass)
 
@@ -162,12 +158,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(
         "service": "set_value",
         "data": {"value": "{{ current }}"},
     }
-    assert (
-        result["domain_actions"]["appliances"]["turn_off"]["climate_hvac_mode"][
-            "service"
-        ]
-        == "set_hvac_mode"
-    )
+    assert result["domain_actions"]["appliances"]["turn_off"]["climate_hvac_mode"]["service"] == "set_hvac_mode"
     assert result["limits"]["general"]["power_limit_w"] == {
         "min": 1000,
         "max": 50_000,
@@ -315,9 +306,7 @@ async def test_save_is_refused_while_the_regulation_runs(
     assert stored_config(hass_storage) == before
 
 
-async def test_runtime_refuses_a_new_configuration_while_running(
-    hass: HomeAssistant, entry: MockConfigEntry
-) -> None:
+async def test_runtime_refuses_a_new_configuration_while_running(hass: HomeAssistant, entry: MockConfigEntry) -> None:
     """The runtime itself guards the configuration."""
     runtime = entry.runtime_data
 
@@ -438,9 +427,7 @@ async def test_domain_action_values_are_checked_against_the_entity(
     changed["appliances"][1]["turn_on"]["data"]["hvac_mode"] = "heat"
     response = await send(client, "kraftvakt/config/save", config=changed)
     assert response["result"]["saved"]
-    assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {
-        "hvac_mode": "heat"
-    }
+    assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {"hvac_mode": "heat"}
 
 
 async def test_incomplete_configuration_is_saved(
@@ -461,9 +448,7 @@ async def test_incomplete_configuration_is_saved(
     assert response["success"]
     result = response["result"]
     assert result["saved"]
-    assert result["missing"] == [
-        {"code": "missing_power_sensor", "section": "general", "field": "power_sensor"}
-    ]
+    assert result["missing"] == [{"code": "missing_power_sensor", "section": "general", "field": "power_sensor"}]
     assert result["config"]["priority"][-1] == {
         "type": "appliance",
         "appliance_id": "c",
@@ -524,9 +509,7 @@ async def test_saved_power_sensor_and_window_are_measured(
     assert averages.regulation_average_w == pytest.approx(4000)
     set_power(hass, "9000")
     await advance(hass, freezer, timedelta(seconds=30))
-    assert entry.runtime_data.latest_averages.regulation_average_w == pytest.approx(
-        4000
-    )
+    assert entry.runtime_data.latest_averages.regulation_average_w == pytest.approx(4000)
 
 
 async def test_saved_chargers_get_their_switches(
@@ -536,9 +519,7 @@ async def test_saved_chargers_get_their_switches(
 ) -> None:
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
-    changed = config_with_charger(
-        register_device(hass, "switch.charger", "sensor.charger_power")
-    )
+    changed = config_with_charger(register_device(hass, "switch.charger", "sensor.charger_power"))
 
     response = await send(client, "kraftvakt/config/save", config=changed)
     await hass.async_block_till_done()
@@ -552,9 +533,7 @@ def register_device(hass: HomeAssistant, *entity_ids: str) -> str:
     """Register the entities on a new device and return the id of the device."""
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={("test", entity_ids[0])}
-    )
+    device = dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, identifiers={("test", entity_ids[0])})
     for entity_id in entity_ids:
         domain, object_id = entity_id.split(".")
         er.async_get(hass).async_get_or_create(
@@ -607,9 +586,7 @@ async def test_charger_entities_must_belong_to_its_device(
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
     register_device(hass, "switch.charger", "sensor.charger_power")
-    other_device = register_device(
-        hass, "number.other_current", "binary_sensor.other_car"
-    )
+    other_device = register_device(hass, "number.other_current", "binary_sensor.other_car")
     changed = config_with_charger(
         other_device,
         set_current={"mode": "entity", "entity_id": "number.other_current"},
@@ -640,9 +617,7 @@ async def test_charger_device_must_exist(
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
 
-    response = await send(
-        client, "kraftvakt/config/save", config=config_with_charger("removed")
-    )
+    response = await send(client, "kraftvakt/config/save", config=config_with_charger("removed"))
 
     assert response["result"] == {
         "saved": False,
@@ -821,9 +796,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
             "condition": {"type": "template", "value": "{{ true }}"},
         }
     ]
-    config["priority"].insert(
-        0, {"type": "appliance", "appliance_id": "b", "variant_id": "v1"}
-    )
+    config["priority"].insert(0, {"type": "appliance", "appliance_id": "b", "variant_id": "v1"})
     set_power(hass, "7000")
     await setup_entry(hass)
     client = await hass_ws_client(hass)
@@ -837,16 +810,12 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     assert appliance_rows(status)[0]["variant"] == "Morning"
     assert appliance_rows(status)[0]["waiting_since"] == local(started + WINDOW)
     waiting_until = dt_util.parse_datetime(appliance_rows(status)[0]["waiting_until"])
-    assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(
-        75.4758, abs=1e-3
-    )
+    assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(75.4758, abs=1e-3)
     assert appliance_rows(status)[0]["waiting_ends_at"] == local(started + 3 * WINDOW)
     assert appliance_rows(status)[1]["waiting_until"] is None
 
 
-async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(
-    hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator
-) -> None:
+async def test_status_follows_start_and_stop_from_the_panel_and_the_switch(hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator) -> None:
     subscriber = await hass_ws_client(hass)
     commander = await hass_ws_client(hass)
     assert (await subscribe_status(subscriber))["running"]
@@ -1012,10 +981,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     await advance(hass, freezer)
     status = await next_status(client)
 
-    assert [
-        (item["id"], item["state"], item["bypassed"])
-        for item in status["priority"][-1]["chargers"]
-    ] == [("c2", "excluded", False), ("c1", "no_car", True)]
+    assert [(item["id"], item["state"], item["bypassed"]) for item in status["priority"][-1]["chargers"]] == [("c2", "excluded", False), ("c1", "no_car", True)]
 
 
 async def test_status_places_charger_groups_among_the_current_variants(

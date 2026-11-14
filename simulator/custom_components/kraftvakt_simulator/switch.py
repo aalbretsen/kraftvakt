@@ -42,14 +42,12 @@ def heater_switch(heater_type: str) -> SimulatorSwitchDescription[SimulatedHeate
     )
 
 
-UNPLUGGED_SWITCH: Final[SimulatorSwitchDescription[PluggedInDevice]] = (
-    SimulatorSwitchDescription(
-        key="unplugged",
-        translation_key="unplugged",
-        entity_category=EntityCategory.CONFIG,
-        is_on_fn=lambda device: device.unplugged,
-        set_fn=lambda device, unplugged: device.async_set_unplugged(unplugged),
-    )
+UNPLUGGED_SWITCH: Final[SimulatorSwitchDescription[PluggedInDevice]] = SimulatorSwitchDescription(
+    key="unplugged",
+    translation_key="unplugged",
+    entity_category=EntityCategory.CONFIG,
+    is_on_fn=lambda device: device.unplugged,
+    set_fn=lambda device, unplugged: device.async_set_unplugged(unplugged),
 )
 
 CHARGER_SWITCHES: Final[tuple[SimulatorSwitchDescription[SimulatedCharger], ...]] = (
@@ -90,10 +88,7 @@ async def async_setup_entry(
             descriptions = ()
         case _:
             descriptions = CHARGER_SWITCHES
-    async_add_entities(
-        SimulatorSwitch(entry, entry.runtime_data, description)
-        for description in (*descriptions, UNPLUGGED_SWITCH)
-    )
+    async_add_entities(SimulatorSwitch(entry, entry.runtime_data, description) for description in (*descriptions, UNPLUGGED_SWITCH))
 
 
 class SimulatorSwitch(SimulatorEntity[SimulatedDevice], SwitchEntity, RestoreEntity):

@@ -20,9 +20,7 @@ from .test_sensor import POWER_SENSOR, WINDOW, advance, set_power, state_of
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(
-    recorder_mock: Recorder, enable_custom_integrations: None
-) -> None:
+def auto_enable_custom_integrations(recorder_mock: Recorder, enable_custom_integrations: None) -> None:
     """Start the recorder before Home Assistant, which the recorder requires."""
 
 
@@ -44,9 +42,7 @@ async def setup_kraftvakt(hass: HomeAssistant, hass_storage: dict[str, Any]) -> 
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def record_power(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, when, value: str
-) -> None:
+async def record_power(hass: HomeAssistant, freezer: FrozenDateTimeFactory, when, value: str) -> None:
     freezer.move_to(when)
     set_power(hass, value)
     await async_wait_recording_done(hass)

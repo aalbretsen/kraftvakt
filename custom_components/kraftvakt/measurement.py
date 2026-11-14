@@ -92,9 +92,7 @@ class PowerAverager:
         if not self._steps or self._steps[-1].power_w != power:
             self._steps.append(_Step(when, power))
 
-    def add_history(
-        self, measurements: Iterable[tuple[datetime, float | None]]
-    ) -> None:
+    def add_history(self, measurements: Iterable[tuple[datetime, float | None]]) -> None:
         """Add measurements from before the first measurement, oldest first.
 
         Only the past the averager has not measured is filled.
@@ -122,14 +120,8 @@ class PowerAverager:
         self._window_start = end
         self._window_length = self._next_window_length
         self._latest = max(self._latest, end)
-        self._consecutive_invalid_closes = (
-            0 if self._sensor_valid else self._consecutive_invalid_closes + 1
-        )
-        if (
-            not self._steps
-            or self._consecutive_invalid_closes
-            >= CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN
-        ):
+        self._consecutive_invalid_closes = 0 if self._sensor_valid else self._consecutive_invalid_closes + 1
+        if not self._steps or self._consecutive_invalid_closes >= CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN:
             return WindowAverages(start, end, None, None, self._sensor_valid)
 
         self._forget_steps_before(end - TARIFF_WINDOW)
@@ -144,18 +136,13 @@ class PowerAverager:
     def _average(self, start: datetime, end: datetime) -> float:
         bounds = [start, *(step.start for step in self._steps[1:]), end]
         energy = 0.0
-        for step, (step_start, step_end) in zip(
-            self._steps, pairwise(bounds), strict=True
-        ):
+        for step, (step_start, step_end) in zip(self._steps, pairwise(bounds), strict=True):
             duration = (min(step_end, end) - max(step_start, start)).total_seconds()
             energy += step.power_w * max(duration, 0.0)
         return energy / (end - start).total_seconds()
 
     def _forget_steps_before(self, horizon: datetime) -> None:
         first_needed = 0
-        while (
-            first_needed + 1 < len(self._steps)
-            and self._steps[first_needed + 1].start <= horizon
-        ):
+        while first_needed + 1 < len(self._steps) and self._steps[first_needed + 1].start <= horizon:
             first_needed += 1
         del self._steps[:first_needed]

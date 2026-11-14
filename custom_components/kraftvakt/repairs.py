@@ -47,19 +47,11 @@ def async_check_entities(hass: HomeAssistant, config: KraftvaktConfig) -> None:
     """
     registry = er.async_get(hass)
     missing = {
-        entity_id
-        for _, item in config.items()
-        if (entity_id := item.entity_id) is not None
-        and hass.states.get(entity_id) is None
-        and registry.async_get(entity_id) is None
+        entity_id for _, item in config.items() if (entity_id := item.entity_id) is not None and hass.states.get(entity_id) is None and registry.async_get(entity_id) is None
     }
     prefix = f"{MISSING_ENTITY}_"
     for domain, issue_id in list(ir.async_get(hass).issues):
-        if (
-            domain == DOMAIN
-            and issue_id.startswith(prefix)
-            and issue_id.removeprefix(prefix) not in missing
-        ):
+        if domain == DOMAIN and issue_id.startswith(prefix) and issue_id.removeprefix(prefix) not in missing:
             ir.async_delete_issue(hass, DOMAIN, issue_id)
     for entity_id in missing:
         ir.async_create_issue(

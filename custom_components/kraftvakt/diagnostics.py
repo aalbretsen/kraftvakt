@@ -10,9 +10,7 @@ from .runtime import KraftvaktConfigEntry
 from .status import status_snapshot
 
 
-async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: KraftvaktConfigEntry
-) -> dict[str, Any]:
+async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> dict[str, Any]:
     """Return the configuration, the status, and the last decisions and failures.
 
     Nothing is redacted, since the configuration holds no credentials.

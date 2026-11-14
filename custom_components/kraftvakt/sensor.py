@@ -47,9 +47,7 @@ def _tariff_average_w(runtime: KraftvaktRuntime) -> float | None:
 
 def _power_free_w(runtime: KraftvaktRuntime) -> float | None:
     average_w = _regulation_average_w(runtime)
-    return (
-        None if average_w is None else runtime.config.general.power_limit_w - average_w
-    )
+    return None if average_w is None else runtime.config.general.power_limit_w - average_w
 
 
 def _overconsumption_wh(runtime: KraftvaktRuntime) -> float:
@@ -86,9 +84,7 @@ class DurationSensorDescription(RegulationSensorDescription):
 
 
 SENSORS: tuple[RegulationSensorDescription, ...] = (
-    PowerSensorDescription(
-        key="power_regulation_average", value_fn=_regulation_average_w
-    ),
+    PowerSensorDescription(key="power_regulation_average", value_fn=_regulation_average_w),
     PowerSensorDescription(key="power_tariff_average", value_fn=_tariff_average_w),
     PowerSensorDescription(
         key="power_free",
@@ -109,9 +105,7 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda runtime: runtime.steps_on,
     ),
-    DurationSensorDescription(
-        key="waiting_time_remaining", value_fn=_waiting_time_remaining_s
-    ),
+    DurationSensorDescription(key="waiting_time_remaining", value_fn=_waiting_time_remaining_s),
     DurationSensorDescription(
         key="waiting_time_next_turn_on",
         entity_registry_enabled_default=False,
@@ -125,10 +119,7 @@ async def async_setup_entry(
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    async_add_entities(
-        RegulationSensor(entry, entry.runtime_data, description)
-        for description in SENSORS
-    )
+    async_add_entities(RegulationSensor(entry, entry.runtime_data, description) for description in SENSORS)
 
 
 class RegulationSensor(KraftvaktEntity, SensorEntity):
@@ -146,9 +137,7 @@ class RegulationSensor(KraftvaktEntity, SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Update the sensor each time the status of the regulation may change."""
-        self.async_on_remove(
-            self._runtime.async_add_status_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
 
     @property
     def native_value(self) -> float | None:

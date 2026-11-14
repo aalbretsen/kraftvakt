@@ -67,9 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SimulatorConfigEntry) ->
 
 async def async_unload_entry(hass: HomeAssistant, entry: SimulatorConfigEntry) -> bool:
     """Unload one simulated device. It then consumes nothing."""
-    unloaded = await hass.config_entries.async_unload_platforms(
-        entry, platforms_of(entry)
-    )
+    unloaded = await hass.config_entries.async_unload_platforms(entry, platforms_of(entry))
     if unloaded:
         entry.runtime_data.async_stop()
     return unloaded
@@ -92,13 +90,9 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
     store_setting = partial(_store_setting, hass, entry)
     match kind_of(entry):
         case DeviceKind.HAN:
-            return SimulatedHan(
-                hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting
-            )
+            return SimulatedHan(hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting)
         case DeviceKind.HEATER:
-            return SimulatedHeater(
-                hass, entry.entry_id, _duty_cycle(data), store_setting
-            )
+            return SimulatedHeater(hass, entry.entry_id, _duty_cycle(data), store_setting)
         case DeviceKind.THERMOSTAT:
             return SimulatedThermostat(
                 hass,
@@ -125,7 +119,5 @@ def _duty_cycle(data: Mapping[str, Any]) -> DutyCycle:
     )
 
 
-def _store_setting(
-    hass: HomeAssistant, entry: ConfigEntry, key: str, value: float
-) -> None:
+def _store_setting(hass: HomeAssistant, entry: ConfigEntry, key: str, value: float) -> None:
     hass.config_entries.async_update_entry(entry, data={**entry.data, key: value})

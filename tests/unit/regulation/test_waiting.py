@@ -13,9 +13,7 @@ from custom_components.kraftvakt.regulation.waiting import (
 
 FIVE_MINUTES = timedelta(minutes=5)
 DEFAULT_CURVE = WaitingCurve.from_settings(6, 80)
-APPLIANCE_GROWTH = RepeatedTurnOnGrowth(
-    increment=timedelta(minutes=2), cap=timedelta(minutes=15)
-)
+APPLIANCE_GROWTH = RepeatedTurnOnGrowth(increment=timedelta(minutes=2), cap=timedelta(minutes=15))
 
 
 @pytest.mark.parametrize(
@@ -42,17 +40,12 @@ APPLIANCE_GROWTH = RepeatedTurnOnGrowth(
         (9, 50, 0, (100,) * 10),
     ],
 )
-def test_waiting_curve_follows_the_specification(
-    steepness: float, pivot: int, shape: float, shares: tuple[float, ...]
-) -> None:
+def test_waiting_curve_follows_the_specification(steepness: float, pivot: int, shape: float, shares: tuple[float, ...]) -> None:
     """The test values of the specification, the pivot 95 capped silently."""
     curve = WaitingCurve.from_settings(steepness, pivot)
 
     assert curve.shape == pytest.approx(shape, abs=1e-6)
-    assert [
-        round(100 * curve.share(u / 100), 2)
-        for u in (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)
-    ] == list(shares)
+    assert [round(100 * curve.share(u / 100), 2) for u in (60, 70, 75, 80, 85, 90, 93, 96, 99, 100)] == list(shares)
 
 
 @pytest.mark.parametrize("utilization", [0, 0.25, 0.5])
@@ -68,34 +61,20 @@ def test_whole_waiting_time_above_the_limit() -> None:
 def test_waiting_time_follows_the_curve_until_repeated_turn_on() -> None:
     """The first time a step is turned on again, the curve still applies."""
     for repeat in (0, 1):
-        assert waiting_time(
-            8000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH
-        ) == pytest.approx(FIVE_MINUTES * 0.8)
+        assert waiting_time(8000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH) == pytest.approx(FIVE_MINUTES * 0.8)
 
 
 def test_waiting_time_on_repeated_turn_on_for_appliances() -> None:
     """5, 7, 9, 11, 13 and then 15 minutes, whatever the average."""
-    minutes = [
-        waiting_time(
-            1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH
-        )
-        / timedelta(minutes=1)
-        for repeat in range(2, 10)
-    ]
+    minutes = [waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, APPLIANCE_GROWTH) / timedelta(minutes=1) for repeat in range(2, 10)]
 
     assert minutes == [5, 7, 9, 11, 13, 15, 15, 15]
 
 
 def test_growth_are_parameters() -> None:
     """Chargers use another increment and another cap."""
-    growth = RepeatedTurnOnGrowth(
-        increment=timedelta(minutes=5), cap=timedelta(minutes=30)
-    )
-    minutes = [
-        waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, growth)
-        / timedelta(minutes=1)
-        for repeat in range(2, 9)
-    ]
+    growth = RepeatedTurnOnGrowth(increment=timedelta(minutes=5), cap=timedelta(minutes=30))
+    minutes = [waiting_time(1000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, repeat, growth) / timedelta(minutes=1) for repeat in range(2, 9)]
 
     assert minutes == [5, 10, 15, 20, 25, 30, 30]
 
@@ -104,20 +83,14 @@ def test_growth_are_parameters() -> None:
     ("wait_at_limit_s", "factor", "increments", "increment_s", "cap_s"),
     [(300, 0.5, 4, 150, 900), (300, 1.0, 4, 300, 1500), (0, 0.25, 9, 0, 0)],
 )
-def test_growth_from_the_waiting_time_at_the_limit(
-    wait_at_limit_s: int, factor: float, increments: int, increment_s: int, cap_s: int
-) -> None:
+def test_growth_from_the_waiting_time_at_the_limit(wait_at_limit_s: int, factor: float, increments: int, increment_s: int, cap_s: int) -> None:
     """The increment is a share of the waiting time at the limit.
 
     The cap is the given number of increments above the waiting time at the limit.
     """
-    growth = RepeatedTurnOnGrowth.from_waiting_at_limit(
-        wait_at_limit_s, factor, increments
-    )
+    growth = RepeatedTurnOnGrowth.from_waiting_at_limit(wait_at_limit_s, factor, increments)
 
-    assert growth == RepeatedTurnOnGrowth(
-        increment=timedelta(seconds=increment_s), cap=timedelta(seconds=cap_s)
-    )
+    assert growth == RepeatedTurnOnGrowth(increment=timedelta(seconds=increment_s), cap=timedelta(seconds=cap_s))
 
 
 def test_counter_counts_slot_turned_on_again() -> None:

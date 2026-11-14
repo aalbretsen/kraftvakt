@@ -215,11 +215,7 @@ class Appliance:
     def overriding_variant(self, variant_id: str | None, name: str) -> Variant | None:
         """Return the variant if it overrides the action `name`."""
         return next(
-            (
-                variant
-                for variant in self.variants
-                if variant.id == variant_id and name in variant.actions
-            ),
+            (variant for variant in self.variants if variant.id == variant_id and name in variant.actions),
             None,
         )
 
@@ -235,9 +231,7 @@ class Appliance:
         for variant in self.variants:
             for name, kind in APPLIANCE_ACTION_KINDS.items():
                 if name in variant.actions:
-                    yield ActionField(
-                        f"variants.{variant.id}.{name}", kind, variant.actions[name]
-                    )
+                    yield ActionField(f"variants.{variant.id}.{name}", kind, variant.actions[name])
 
     def to_dict(self) -> dict[str, Any]:
         return _fields_to_dict(self)
@@ -251,9 +245,7 @@ class PriorityEntry:
     group_id: str | None = None
 
     @classmethod
-    def for_appliance(
-        cls, appliance_id: str, variant_id: str | None = None
-    ) -> PriorityEntry:
+    def for_appliance(cls, appliance_id: str, variant_id: str | None = None) -> PriorityEntry:
         return cls(PriorityEntryType.APPLIANCE, appliance_id, variant_id)
 
     @classmethod
@@ -311,11 +303,7 @@ class Charger:
             yield "set_current", self.set_current.entity_id
         for field_name in ("car_connected", "actively_charging"):
             condition = getattr(self, field_name)
-            if (
-                condition is not None
-                and condition.type is not ConditionType.TEMPLATE
-                and condition.value
-            ):
+            if condition is not None and condition.type is not ConditionType.TEMPLATE and condition.value:
                 yield field_name, condition.value
 
     def to_dict(self) -> dict[str, Any]:
@@ -370,19 +358,14 @@ class KraftvaktConfig:
 
     @property
     def chargers(self) -> tuple[Charger, ...]:
-        return tuple(
-            charger for group in self.charger_groups for charger in group.chargers
-        )
+        return tuple(charger for group in self.charger_groups for charger in group.chargers)
 
     def with_charger(self, charger: Charger) -> KraftvaktConfig:
         """Return the configuration with the charger of the same id replaced."""
         groups = tuple(
             replace(
                 group,
-                chargers=tuple(
-                    charger if existing.id == charger.id else existing
-                    for existing in group.chargers
-                ),
+                chargers=tuple(charger if existing.id == charger.id else existing for existing in group.chargers),
             )
             for group in self.charger_groups
         )
@@ -451,16 +434,12 @@ def new_id() -> str:
 type ItemSwitches = ApplianceSwitches | ChargerSwitches
 
 
-def appliance_switches_for(
-    config: KraftvaktConfig, switches: Mapping[str, ApplianceSwitches]
-) -> dict[str, ApplianceSwitches]:
+def appliance_switches_for(config: KraftvaktConfig, switches: Mapping[str, ApplianceSwitches]) -> dict[str, ApplianceSwitches]:
     """Return the switches for exactly the appliances in the configuration."""
     return _switches_for(config.appliances, switches, ApplianceSwitches())
 
 
-def charger_switches_for(
-    config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]
-) -> dict[str, ChargerSwitches]:
+def charger_switches_for(config: KraftvaktConfig, switches: Mapping[str, ChargerSwitches]) -> dict[str, ChargerSwitches]:
     """Return the switches for exactly the chargers in the configuration."""
     return _switches_for(config.chargers, switches, ChargerSwitches())
 
@@ -472,17 +451,12 @@ def switches_to_dict(
     return {item_id: state.to_dict() for item_id, state in switches.items()}
 
 
-def _switches_for[T: ItemSwitches](
-    items: Iterable[Appliance | Charger], switches: Mapping[str, T], default: T
-) -> dict[str, T]:
+def _switches_for[T: ItemSwitches](items: Iterable[Appliance | Charger], switches: Mapping[str, T], default: T) -> dict[str, T]:
     return {item.id: switches.get(item.id, default) for item in items}
 
 
 def _fields_to_dict(item: Any) -> dict[str, Any]:
-    return {
-        attribute.name: _to_json(getattr(item, attribute.name))
-        for attribute in fields(item)
-    }
+    return {attribute.name: _to_json(getattr(item, attribute.name)) for attribute in fields(item)}
 
 
 def _to_json(value: Any) -> Any:

@@ -74,10 +74,7 @@ class ConfigIncompleteError(HomeAssistantError):
     """Raised when the regulation is started before the configuration is complete."""
 
     def __init__(self, missing: Sequence[Issue]) -> None:
-        super().__init__(
-            "The configuration is not complete: "
-            + ", ".join(issue.code for issue in missing)
-        )
+        super().__init__("The configuration is not complete: " + ", ".join(issue.code for issue in missing))
         self.missing = list(missing)
 
 
@@ -116,13 +113,9 @@ class KraftvaktRuntime:
         self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=100)
         self._failed_actions: deque[dict[str, Any]] = deque(maxlen=20)
         self._created_at = dt_util.utcnow()
-        self._averager = PowerAverager(
-            timedelta(seconds=config.general.regulation_window_s), self._created_at
-        )
+        self._averager = PowerAverager(timedelta(seconds=config.general.regulation_window_s), self._created_at)
         self._latest_averages: WindowAverages | None = None
-        self._recent_windows: deque[WindowAverages] = deque(
-            maxlen=CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN
-        )
+        self._recent_windows: deque[WindowAverages] = deque(maxlen=CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN)
         self._windows_since_decision: list[WindowAverages] = []
         self._window_listeners: list[WindowListener] = []
         self._status_listeners: list[StatusListener] = []
@@ -190,21 +183,13 @@ class KraftvaktRuntime:
         if started_at is None:
             return None
         current_window_counts = self._averager.window_start >= started_at
-        windows_left = (
-            self.config.general.regulation_interval
-            - self._windows_counted_since_decision()
-            - current_window_counts
-        )
-        return self._averager.window_end + windows_left * timedelta(
-            seconds=self.config.general.regulation_window_s
-        )
+        windows_left = self.config.general.regulation_interval - self._windows_counted_since_decision() - current_window_counts
+        return self._averager.window_end + windows_left * timedelta(seconds=self.config.general.regulation_window_s)
 
     @property
     def decision_interval(self) -> timedelta:
         general = self.config.general
-        return timedelta(
-            seconds=general.regulation_window_s * general.regulation_interval
-        )
+        return timedelta(seconds=general.regulation_window_s * general.regulation_interval)
 
     @property
     def waiting_ends_at(self) -> datetime | None:
@@ -213,9 +198,7 @@ class KraftvaktRuntime:
         next_decision_at = self.next_decision_at
         if waiting is None or next_decision_at is None:
             return None
-        return first_decision_from(
-            waiting.until, next_decision_at, self.decision_interval
-        )
+        return first_decision_from(waiting.until, next_decision_at, self.decision_interval)
 
     @property
     def curve_waiting_time(self) -> timedelta | None:
@@ -258,16 +241,12 @@ class KraftvaktRuntime:
         off.
         """
         self._follow_power_sensor(self._created_at)
-        self._history_task = self._hass.async_create_background_task(
-            self._async_add_power_history(), "kraftvakt power history"
-        )
+        self._history_task = self._hass.async_create_background_task(self._async_add_power_history(), "kraftvakt power history")
         self._schedule_window_close()
         if self._hass.state is CoreState.running:
             self._start_regulation_if_complete(self._created_at)
         else:
-            self._cancel_start_when_started = async_at_started(
-                self._hass, self._async_home_assistant_started
-            )
+            self._cancel_start_when_started = async_at_started(self._hass, self._async_home_assistant_started)
 
     @callback
     def _async_home_assistant_started(self, _hass: HomeAssistant) -> None:
@@ -333,9 +312,7 @@ class KraftvaktRuntime:
         self._missing = missing_items(config)
         self._engine = RegulationEngine(config)
         self._actions = self._action_runner(config)
-        self._averager.change_window_length(
-            timedelta(seconds=config.general.regulation_window_s)
-        )
+        self._averager.change_window_length(timedelta(seconds=config.general.regulation_window_s))
         if config.general.power_sensor != previous.general.power_sensor:
             self._follow_power_sensor(dt_util.utcnow())
         self._notify_status()
@@ -346,13 +323,9 @@ class KraftvaktRuntime:
         general = self.config.general
         if power_limit_w == general.power_limit_w:
             return
-        await self._async_change_config(
-            replace(self.config, general=replace(general, power_limit_w=power_limit_w))
-        )
+        await self._async_change_config(replace(self.config, general=replace(general, power_limit_w=power_limit_w)))
 
-    async def async_set_finish_after_window(
-        self, charger_id: str, finish_after_window: bool
-    ) -> None:
+    async def async_set_finish_after_window(self, charger_id: str, finish_after_window: bool) -> None:
         """Save whether the charger finishes ongoing charging after its window.
 
         It can be changed while the regulation runs, and applies from the next
@@ -364,11 +337,7 @@ class KraftvaktRuntime:
         )
         if charger is None or charger.finish_after_window == finish_after_window:
             return
-        await self._async_change_config(
-            self.config.with_charger(
-                replace(charger, finish_after_window=finish_after_window)
-            )
-        )
+        await self._async_change_config(self.config.with_charger(replace(charger, finish_after_window=finish_after_window)))
 
     async def _async_change_config(self, config: KraftvaktConfig) -> None:
         """Save a change made by an entity, also while the regulation runs."""
@@ -403,17 +372,11 @@ class KraftvaktRuntime:
     def _follow_power_sensor(self, now: datetime) -> None:
         self._stop_following_power_sensor()
         power_sensor = self.config.general.power_sensor
-        self._record_power(
-            now, self._hass.states.get(power_sensor) if power_sensor else None
-        )
+        self._record_power(now, self._hass.states.get(power_sensor) if power_sensor else None)
         if power_sensor:
             self._cancel_power_listeners = [
-                async_track_state_change_event(
-                    self._hass, power_sensor, self._async_power_changed
-                ),
-                async_track_state_report_event(
-                    self._hass, power_sensor, self._async_power_changed
-                ),
+                async_track_state_change_event(self._hass, power_sensor, self._async_power_changed),
+                async_track_state_report_event(self._hass, power_sensor, self._async_power_changed),
             ]
 
     def _stop_following_power_sensor(self) -> None:
@@ -448,27 +411,18 @@ class KraftvaktRuntime:
             )
         )
         if power_sensor == self.config.general.power_sensor:
-            self._averager.add_history(
-                (state.last_changed, _power_of(state))
-                for state in states.get(power_sensor, [])
-            )
+            self._averager.add_history((state.last_changed, _power_of(state)) for state in states.get(power_sensor, []))
 
     @callback
-    def _async_power_changed(
-        self, event: Event[EventStateChangedData] | Event[EventStateReportedData]
-    ) -> None:
+    def _async_power_changed(self, event: Event[EventStateChangedData] | Event[EventStateReportedData]) -> None:
         self._record_power(event.time_fired, event.data["new_state"])
 
     def _record_power(self, when: datetime, state: State | None) -> None:
-        self._averager.add_measurement(
-            when, None if state is None else _power_of(state)
-        )
+        self._averager.add_measurement(when, None if state is None else _power_of(state))
 
     def _schedule_window_close(self) -> None:
         # Absolute times keep the windows from drifting.
-        self._cancel_window_timer = async_track_point_in_utc_time(
-            self._hass, self._async_window_ended, self._averager.window_end
-        )
+        self._cancel_window_timer = async_track_point_in_utc_time(self._hass, self._async_window_ended, self._averager.window_end)
 
     @callback
     def _async_window_ended(self, _now: datetime) -> None:
@@ -492,29 +446,18 @@ class KraftvaktRuntime:
         Windows that started before the start do not count, also when the engine
         starts again itself at a decision after the safe state or a penalty.
         """
-        return (
-            self._windows_counted_since_decision()
-            >= self.config.general.regulation_interval
-        )
+        return self._windows_counted_since_decision() >= self.config.general.regulation_interval
 
     def _windows_counted_since_decision(self) -> int:
         started_at = self._engine.started_at
-        return sum(
-            1
-            for window in self._windows_since_decision
-            if started_at is not None and window.start >= started_at
-        )
+        return sum(1 for window in self._windows_since_decision if started_at is not None and window.start >= started_at)
 
     def _decide(self, averages: WindowAverages) -> None:
         decision = DecisionInput(
             now=averages.end,
             regulation_average_w=averages.regulation_average_w,
             tariff_average_w=averages.tariff_average_w,
-            regulation_averages_w=[
-                window.regulation_average_w
-                for window in self._windows_since_decision
-                if window.regulation_average_w is not None
-            ],
+            regulation_averages_w=[window.regulation_average_w for window in self._windows_since_decision if window.regulation_average_w is not None],
             power_sensor_valid=averages.sensor_valid,
             power_sensor_lost=self._power_sensor_lost(),
             variant_conditions=self._variant_conditions(),
@@ -530,9 +473,7 @@ class KraftvaktRuntime:
         self._record_decision(decision, result.commands)
         self._execute(result.commands)
 
-    def _record_decision(
-        self, decision: DecisionInput, commands: list[Command]
-    ) -> None:
+    def _record_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
         penalty = self._engine.penalty
         waiting = self._engine.waiting
         record = {
@@ -543,9 +484,7 @@ class KraftvaktRuntime:
             "safe_state": self._engine.safe_state,
             "penalty_active": penalty.active,
             "overconsumption_wh": round(penalty.overconsumption_wh, 1),
-            "waiting": None
-            if waiting is None
-            else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
+            "waiting": None if waiting is None else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
             "commands": [str(command) for command in commands],
         }
         self._recent_decisions.append(record)
@@ -566,9 +505,7 @@ class KraftvaktRuntime:
         async_check_entities(self._hass, self.config)
 
     def _repeat_commands(self, now: datetime) -> None:
-        commands = self._engine.repeat_commands(
-            now, self._excluded_appliances(), self._excluded_chargers()
-        )
+        commands = self._engine.repeat_commands(now, self._excluded_appliances(), self._excluded_chargers())
         if commands:
             _LOGGER.debug(
                 "Commands repeated at %s: %s",
@@ -578,39 +515,19 @@ class KraftvaktRuntime:
             self._execute(commands)
 
     def _power_sensor_lost(self) -> bool:
-        return len(self._recent_windows) == self._recent_windows.maxlen and not any(
-            window.sensor_valid for window in self._recent_windows
-        )
+        return len(self._recent_windows) == self._recent_windows.maxlen and not any(window.sensor_valid for window in self._recent_windows)
 
     def _variant_conditions(self) -> dict[str, bool]:
-        return {
-            variant.id: evaluate_condition(
-                self._hass, variant.condition, appliance.entity_id
-            )
-            for appliance in self.config.appliances
-            for variant in appliance.variants
-        }
+        return {variant.id: evaluate_condition(self._hass, variant.condition, appliance.entity_id) for appliance in self.config.appliances for variant in appliance.variants}
 
     def _excluded_appliances(self) -> frozenset[str]:
-        return frozenset(
-            appliance.id
-            for appliance in self.config.appliances
-            if self._settings.appliance_switches(appliance.id).excluded
-        )
+        return frozenset(appliance.id for appliance in self.config.appliances if self._settings.appliance_switches(appliance.id).excluded)
 
     def _excluded_chargers(self) -> frozenset[str]:
-        return frozenset(
-            charger.id
-            for charger in self.config.chargers
-            if self._settings.charger_switches(charger.id).excluded
-        )
+        return frozenset(charger.id for charger in self.config.chargers if self._settings.charger_switches(charger.id).excluded)
 
     def _charger_readings(self) -> dict[str, ChargerReading]:
-        return {
-            charger.id: self._charger_reading(charger)
-            for group in self.config.charger_groups
-            for charger in group.chargers
-        }
+        return {charger.id: self._charger_reading(charger) for group in self.config.charger_groups for charger in group.chargers}
 
     def _charger_reading(self, charger: Charger) -> ChargerReading:
         switches = self._settings.charger_switches(charger.id)
@@ -618,9 +535,7 @@ class KraftvaktRuntime:
         actively_charging = self._evidence(charger.actively_charging, charger.entity_id)
         return ChargerReading(
             actively_charging=actively_charging is True,
-            car_connected=(
-                None if charger.car_connected is None else car_connected is True
-            ),
+            car_connected=(None if charger.car_connected is None else car_connected is True),
             car_disconnected=car_connected is False,
             charging_stopped=actively_charging is False,
             excluded=switches.excluded,
@@ -629,33 +544,25 @@ class KraftvaktRuntime:
             finish_after_window=charger.finish_after_window,
         )
 
-    def _evidence(
-        self, condition: Condition | None, entity_id: str | None
-    ) -> bool | None:
+    def _evidence(self, condition: Condition | None, entity_id: str | None) -> bool | None:
         if condition is None:
             return None
         return condition_evidence(self._hass, condition, entity_id)
 
     def _execute(self, commands: Sequence[Command]) -> None:
         if commands:
-            self._hass.async_create_background_task(
-                self._actions.async_execute(commands), "kraftvakt actions"
-            )
+            self._hass.async_create_background_task(self._actions.async_execute(commands), "kraftvakt actions")
 
     def _notify_status(self) -> None:
         for listener in list(self._status_listeners):
             listener()
 
 
-def first_decision_from(
-    moment: datetime, next_decision_at: datetime, interval: timedelta
-) -> datetime:
+def first_decision_from(moment: datetime, next_decision_at: datetime, interval: timedelta) -> datetime:
     """Return the first decision at or after `moment`."""
     if moment <= next_decision_at:
         return next_decision_at
-    return next_decision_at + interval * math.ceil(
-        (moment - next_decision_at) / interval
-    )
+    return next_decision_at + interval * math.ceil((moment - next_decision_at) / interval)
 
 
 def _rounded(power_w: float | None) -> int | None:

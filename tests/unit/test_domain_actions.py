@@ -37,9 +37,7 @@ def domain(key: str, **data: Any) -> ActionConfig:
     return ActionConfig(ActionMode.DOMAIN, domain_action=key, data=data)
 
 
-def thermostat(
-    turn_on: ActionConfig, turn_off: ActionConfig, entity_id: str = "climate.hall"
-) -> KraftvaktConfig:
+def thermostat(turn_on: ActionConfig, turn_off: ActionConfig, entity_id: str = "climate.hall") -> KraftvaktConfig:
     return KraftvaktConfig(
         appliances=(
             Appliance(
@@ -99,12 +97,8 @@ async def test_domain_actions_call_the_service_with_the_chosen_data(
 
     await runner.async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a1")])
 
-    assert [call.data for call in temperatures] == [
-        {"entity_id": ["climate.hall"], "hvac_mode": "heat", "temperature": 22}
-    ]
-    assert [call.data for call in modes] == [
-        {"entity_id": ["climate.hall"], "hvac_mode": "off"}
-    ]
+    assert [call.data for call in temperatures] == [{"entity_id": ["climate.hall"], "hvac_mode": "heat", "temperature": 22}]
+    assert [call.data for call in modes] == [{"entity_id": ["climate.hall"], "hvac_mode": "off"}]
 
 
 async def test_temperature_action_leaves_the_hvac_mode(hass: HomeAssistant) -> None:
@@ -114,9 +108,7 @@ async def test_temperature_action_leaves_the_hvac_mode(hass: HomeAssistant) -> N
         domain("climate_temperature", temperature=8),
     )
 
-    await ActionRunner(hass, config).async_execute(
-        [TurnOnAppliance("a1"), TurnOffAppliance("a1")]
-    )
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a1")])
 
     assert [call.data for call in temperatures] == [
         {"entity_id": ["climate.hall"], "temperature": 21.5},
@@ -136,9 +128,7 @@ async def test_temperature_action_leaves_the_hvac_mode(hass: HomeAssistant) -> N
             "a value of climate_hvac_mode is not chosen",
         ),
         (
-            thermostat(
-                domain("climate_hvac_mode", hvac_mode="heat"), domain("x"), "switch.a"
-            ),
+            thermostat(domain("climate_hvac_mode", hvac_mode="heat"), domain("x"), "switch.a"),
             "climate_hvac_mode is not available for switch.a",
         ),
     ],
@@ -234,9 +224,7 @@ async def test_every_value_of_the_action_is_required(hass: HomeAssistant) -> Non
         domain("climate_hvac_mode", hvac_mode="off"),
     )
 
-    assert action_issues(hass, config) == [
-        Issue("required", "appliances", "a1", "turn_on.hvac_mode")
-    ]
+    assert action_issues(hass, config) == [Issue("required", "appliances", "a1", "turn_on.hvac_mode")]
 
 
 async def test_charger_can_be_activated_with_a_domain_action(

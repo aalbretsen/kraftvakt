@@ -71,9 +71,7 @@ _ON_OFF_DOMAINS: Final = (
 DEFAULT_ACTIONS: Final[Mapping[ActionKind, DefaultAction]] = {
     ActionKind.TURN_ON: DefaultAction(_ON_OFF_DOMAINS, "turn_on"),
     ActionKind.TURN_OFF: DefaultAction(_ON_OFF_DOMAINS, "turn_off"),
-    ActionKind.SET_CURRENT: DefaultAction(
-        ("number", "input_number"), "set_value", {"value": "{{ current }}"}
-    ),
+    ActionKind.SET_CURRENT: DefaultAction(("number", "input_number"), "set_value", {"value": "{{ current }}"}),
 }
 
 
@@ -177,13 +175,9 @@ class ActionRunner:
     async def _async_execute_command(self, command: Command) -> None:
         match command:
             case TurnOnAppliance(appliance_id, variant_id):
-                await self._async_run_appliance(
-                    appliance_id, variant_id, "turn_on", ActionKind.TURN_ON
-                )
+                await self._async_run_appliance(appliance_id, variant_id, "turn_on", ActionKind.TURN_ON)
             case TurnOffAppliance(appliance_id, variant_id):
-                await self._async_run_appliance(
-                    appliance_id, variant_id, "turn_off", ActionKind.TURN_OFF
-                )
+                await self._async_run_appliance(appliance_id, variant_id, "turn_off", ActionKind.TURN_OFF)
             case ActivateCharger(charger_id):
                 charger = self._chargers[charger_id]
                 await self._async_run(charger, charger.activate, ActionKind.TURN_ON)
@@ -199,9 +193,7 @@ class ActionRunner:
                     set_current_variables(charger, current),
                 )
 
-    async def _async_run_appliance(
-        self, appliance_id: str, variant_id: str | None, name: str, kind: ActionKind
-    ) -> None:
+    async def _async_run_appliance(self, appliance_id: str, variant_id: str | None, name: str, kind: ActionKind) -> None:
         appliance = self._appliances[appliance_id]
         variant = appliance.overriding_variant(variant_id, name)
         await self._async_run(
@@ -221,9 +213,7 @@ class ActionRunner:
     ) -> None:
         """`owner` is the variant that overrides the action, or else the item."""
         try:
-            script = await self._async_script(
-                item.entity_id, action, kind, owner or item.id
-            )
+            script = await self._async_script(item.entity_id, action, kind, owner or item.id)
             async with asyncio.timeout(self._timeout_s):
                 await script.async_run(
                     {
@@ -255,9 +245,7 @@ class ActionRunner:
         key = (entity_id, owner, kind)
         if key not in self._scripts:
             steps = _action_steps(entity_id, action, kind)
-            sequence = await async_validate_actions_config(
-                self._hass, cv.SCRIPT_SCHEMA(steps)
-            )
+            sequence = await async_validate_actions_config(self._hass, cv.SCRIPT_SCHEMA(steps))
             self._scripts[key] = Script(
                 self._hass,
                 sequence,
@@ -285,9 +273,7 @@ def _join(field_name: str, parameter: str | None) -> str:
     return field_name if parameter is None else f"{field_name}.{parameter}"
 
 
-def _action_steps(
-    entity_id: str, action: ActionConfig, kind: ActionKind
-) -> list[dict[str, Any]]:
+def _action_steps(entity_id: str, action: ActionConfig, kind: ActionKind) -> list[dict[str, Any]]:
     match action.mode:
         case ActionMode.DEFAULT:
             return default_action_steps(kind, entity_id)
@@ -300,9 +286,7 @@ def _action_steps(
     return copy.deepcopy(list(action.steps))
 
 
-def _unavailable_default(
-    entity_id: str | None, action: ActionConfig, kind: ActionKind
-) -> str | None:
+def _unavailable_default(entity_id: str | None, action: ActionConfig, kind: ActionKind) -> str | None:
     match action.mode:
         case ActionMode.DEFAULT if entity_id is not None:
             code, target = "default_action_unavailable", entity_id

@@ -64,13 +64,7 @@ class SetChargingCurrent:
     current_a: int
 
 
-type Command = (
-    TurnOnAppliance
-    | TurnOffAppliance
-    | ActivateCharger
-    | DeactivateCharger
-    | SetChargingCurrent
-)
+type Command = TurnOnAppliance | TurnOffAppliance | ActivateCharger | DeactivateCharger | SetChargingCurrent
 
 
 @dataclass(frozen=True, slots=True)

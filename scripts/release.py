@@ -85,17 +85,10 @@ def release(version: str) -> None:
 
     answer = input(f"Push {BRANCH} and {tag} to {REMOTE}? [y/N] ")
     if answer.strip().lower() != "y":
-        print(
-            f"Not pushed. Push later with: git push --atomic {REMOTE} {BRANCH} {tag}\n"
-            f"Or undo with: git tag -d {tag}, and git reset --hard HEAD~1 if a "
-            "release commit was made."
-        )
+        print(f"Not pushed. Push later with: git push --atomic {REMOTE} {BRANCH} {tag}\nOr undo with: git tag -d {tag}, and git reset --hard HEAD~1 if a release commit was made.")
         return
     git("push", "--atomic", REMOTE, BRANCH, tag)
-    print(
-        f"Pushed. The release workflow creates a draft release for {tag} on "
-        "GitHub: write the release notes and publish it."
-    )
+    print(f"Pushed. The release workflow creates a draft release for {tag} on GitHub: write the release notes and publish it.")
 
 
 def check_version(version: str, current: str) -> None:
@@ -161,14 +154,7 @@ def precedence(version: str) -> tuple:
     if match is None:
         raise ReleaseError(f"{version} is not a SemVer version")
     major, minor, patch, prerelease = match.groups()
-    identifiers = (
-        ()
-        if prerelease is None
-        else tuple(
-            (0, int(part), "") if part.isdigit() else (1, 0, part)
-            for part in prerelease.split(".")
-        )
-    )
+    identifiers = () if prerelease is None else tuple((0, int(part), "") if part.isdigit() else (1, 0, part) for part in prerelease.split("."))
     return (int(major), int(minor), int(patch), prerelease is None, identifiers)
 
 
@@ -179,9 +165,7 @@ def git(*args: str) -> str:
 
 def run(*command: str, capture: bool = False) -> str:
     """Run a command in the repository, and stop the release if it fails."""
-    result = subprocess.run(
-        command, cwd=ROOT, check=True, text=True, capture_output=capture
-    )
+    result = subprocess.run(command, cwd=ROOT, check=True, text=True, capture_output=capture)
     return result.stdout.strip() if capture else ""
 
 

@@ -26,9 +26,7 @@ def context_variables(hass: HomeAssistant, entity_id: str | None) -> dict[str, A
     }
 
 
-def evaluate_condition(
-    hass: HomeAssistant, condition: Condition, entity_id: str | None
-) -> bool:
+def evaluate_condition(hass: HomeAssistant, condition: Condition, entity_id: str | None) -> bool:
     """Return whether there is evidence that the condition is true right now.
 
     Everything else is false: an unavailable entity or sensor, and a template
@@ -37,9 +35,7 @@ def evaluate_condition(
     return condition_evidence(hass, condition, entity_id) is True
 
 
-def condition_evidence(
-    hass: HomeAssistant, condition: Condition, entity_id: str | None
-) -> bool | None:
+def condition_evidence(hass: HomeAssistant, condition: Condition, entity_id: str | None) -> bool | None:
     """Return the value of the condition when there is evidence for it, else None.
 
     Evidence is an entity that is on or off, a template that renders a
@@ -47,9 +43,7 @@ def condition_evidence(
     """
     if condition.type is ConditionType.TEMPLATE:
         try:
-            result = Template(condition.value, hass).async_render(
-                context_variables(hass, entity_id)
-            )
+            result = Template(condition.value, hass).async_render(context_variables(hass, entity_id))
         except TemplateError as err:
             _LOGGER.debug("Template %s gives no value: %s", condition.value, err)
             return None

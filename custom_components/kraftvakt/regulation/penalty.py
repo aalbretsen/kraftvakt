@@ -52,10 +52,7 @@ class PenaltyState:
             return PenaltyOutcome.ONGOING
         if not self.overconsuming and tariff_average_w > limits.power_limit_w:
             self.overconsuming = True
-        if (
-            tariff_average_w > limits.power_limit_w + limits.threshold_w
-            and self.overconsumption_wh > PAID_BACK_TOLERANCE_WH
-        ):
+        if tariff_average_w > limits.power_limit_w + limits.threshold_w and self.overconsumption_wh > PAID_BACK_TOLERANCE_WH:
             self.active = True
             return PenaltyOutcome.STARTED
         return PenaltyOutcome.NONE
@@ -66,9 +63,7 @@ class PenaltyState:
         self.active = False
         self.recovery_started = False
 
-    def _count(
-        self, limits: PenaltyLimits, regulation_averages_w: Sequence[float]
-    ) -> None:
+    def _count(self, limits: PenaltyLimits, regulation_averages_w: Sequence[float]) -> None:
         """Add the energy above the limit of each regulation average, net.
 
         During a penalty, recovery has started at the first regulation average

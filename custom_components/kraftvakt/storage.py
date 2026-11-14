@@ -41,9 +41,7 @@ class KraftvaktStorage:
     """
 
     def __init__(self, hass: HomeAssistant) -> None:
-        self._store: Store[dict[str, Any]] = Store(
-            hass, STORAGE_VERSION, STORAGE_KEY, atomic_writes=True
-        )
+        self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY, atomic_writes=True)
 
     async def async_load(self) -> StoredData:
         """Return the stored data, or the defaults when nothing is stored.
@@ -54,12 +52,8 @@ class KraftvaktStorage:
         if data is None:
             return StoredData()
         config = read_config(data)
-        appliance_switches = read_switches(
-            data.get("appliance_switches") or {}, ApplianceSwitches, "appliances"
-        )
-        charger_switches = read_switches(
-            data.get("charger_switches") or {}, ChargerSwitches, "chargers"
-        )
+        appliance_switches = read_switches(data.get("appliance_switches") or {}, ApplianceSwitches, "appliances")
+        charger_switches = read_switches(data.get("charger_switches") or {}, ChargerSwitches, "chargers")
         return StoredData(
             config,
             appliance_switches_for(config, appliance_switches),
@@ -72,11 +66,7 @@ class KraftvaktStorage:
         await self._store.async_save(
             {
                 **config.to_dict(),
-                "appliance_switches": switches_to_dict(
-                    appliance_switches_for(config, stored.appliance_switches)
-                ),
-                "charger_switches": switches_to_dict(
-                    charger_switches_for(config, stored.charger_switches)
-                ),
+                "appliance_switches": switches_to_dict(appliance_switches_for(config, stored.appliance_switches)),
+                "charger_switches": switches_to_dict(charger_switches_for(config, stored.charger_switches)),
             }
         )

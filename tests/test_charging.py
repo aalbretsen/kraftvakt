@@ -139,9 +139,7 @@ def set_power(hass: HomeAssistant, entity_id: str, watt: str) -> None:
     hass.states.async_set(entity_id, watt, {ATTR_UNIT_OF_MEASUREMENT: "W"})
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW) -> None:
     """Move time on, with the power sensors reporting as a HAN reader does."""
     freezer.tick(delta)
     for sensor in (POWER_SENSOR, CHARGER_POWER):
@@ -151,18 +149,14 @@ async def advance(
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def advance_windows(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int
-) -> None:
+async def advance_windows(hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int) -> None:
     """Close `count` windows, one at a time, since each schedules the next."""
     for _ in range(count):
         await advance(hass, freezer)
 
 
 def switch_id(hass: HomeAssistant, charger_id: str, setting: str) -> str | None:
-    return er.async_get(hass).async_get_entity_id(
-        "switch", DOMAIN, f"charger_{charger_id}_{setting}"
-    )
+    return er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"charger_{charger_id}_{setting}")
 
 
 def switch_state(hass: HomeAssistant, charger_id: str, setting: str) -> str:
@@ -173,9 +167,7 @@ def switch_state(hass: HomeAssistant, charger_id: str, setting: str) -> str:
     return state.state
 
 
-async def use_switch(
-    hass: HomeAssistant, charger_id: str, setting: str, service: str
-) -> None:
+async def use_switch(hass: HomeAssistant, charger_id: str, setting: str, service: str) -> None:
     await hass.services.async_call(
         "switch",
         service,
@@ -185,9 +177,7 @@ async def use_switch(
 
 
 def allowed_sensor_id(hass: HomeAssistant, charger_id: str) -> str | None:
-    return er.async_get(hass).async_get_entity_id(
-        "binary_sensor", DOMAIN, f"charger_{charger_id}_allowed_to_charge"
-    )
+    return er.async_get(hass).async_get_entity_id("binary_sensor", DOMAIN, f"charger_{charger_id}_allowed_to_charge")
 
 
 def allowed_sensor_state(hass: HomeAssistant, charger_id: str) -> str:
@@ -199,9 +189,7 @@ def allowed_sensor_state(hass: HomeAssistant, charger_id: str) -> str:
 
 
 def steps_switched_on(hass: HomeAssistant) -> str:
-    entity_id = er.async_get(hass).async_get_entity_id(
-        "sensor", DOMAIN, "regulation_steps_on"
-    )
+    entity_id = er.async_get(hass).async_get_entity_id("sensor", DOMAIN, "regulation_steps_on")
     assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
@@ -212,9 +200,7 @@ def stored_switches(hass_storage: dict[str, Any]) -> dict[str, Any]:
     return hass_storage[STORAGE_KEY]["data"]["charger_switches"]
 
 
-async def test_charger_current_follows_the_free_power(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The current is set before (de)activating."""
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
@@ -406,9 +392,7 @@ async def test_charger_current_is_repeated_until_the_charger_is_excluded(
     assert actions == ["current 8", "current 6", f"off {CHARGER}"]
 
 
-async def advance_until(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, local_time: str
-) -> None:
+async def advance_until(hass: HomeAssistant, freezer: FrozenDateTimeFactory, local_time: str) -> None:
     """Close windows of ten minutes until the time of day in Oslo."""
     target = datetime.fromisoformat(local_time).replace(tzinfo=OSLO)
     while dt_util.now() < target:
@@ -692,9 +676,7 @@ async def test_charger_finishes_charging_after_the_window_when_switched_on(
     assert f"on {CHARGER}" not in actions
 
 
-async def test_finish_after_window_switch_saves_the_configuration_while_stopped(
-    hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
-) -> None:
+async def test_finish_after_window_switch_saves_the_configuration_while_stopped(hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt) -> None:
     """Setting it to what it is already saves nothing."""
     entry = await setup_kraftvakt()
     runtime = entry.runtime_data
@@ -787,9 +769,7 @@ async def test_allowed_sensor_follows_finishing_and_the_excluded_switch(
     assert allowed_sensor_state(hass, "c1") == STATE_OFF
 
 
-async def test_allowed_sensor_is_on_without_a_window(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     """A diagnostic named after the charger."""
     await setup_kraftvakt()
 
@@ -827,9 +807,7 @@ async def test_allowed_sensor_follows_the_configuration_without_reload(
     assert allowed_sensor_state(hass, "c1") == STATE_OFF
 
     hass.states.async_set("input_boolean.carport", STATE_OFF)
-    data["charger_groups"][0]["chargers"] = [
-        charger_data("c2", "input_boolean.carport")
-    ]
+    data["charger_groups"][0]["chargers"] = [charger_data("c2", "input_boolean.carport")]
     await settings.async_update_config(read_config(data))
     await hass.async_block_till_done()
 
@@ -837,16 +815,12 @@ async def test_allowed_sensor_follows_the_configuration_without_reload(
     assert allowed_sensor_state(hass, "c2") == STATE_ON
 
 
-async def test_allowed_sensor_of_removed_charger_is_removed_at_setup(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_allowed_sensor_of_removed_charger_is_removed_at_setup(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     """No orphaned binary sensors remain in the entity registry."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    orphan = registry.async_get_or_create(
-        "binary_sensor", DOMAIN, "charger_old_allowed_to_charge", config_entry=entry
-    )
+    orphan = registry.async_get_or_create("binary_sensor", DOMAIN, "charger_old_allowed_to_charge", config_entry=entry)
     hass.states.async_set(CHARGER, STATE_OFF, {ATTR_FRIENDLY_NAME: "Garage"})
     set_power(hass, POWER_SENSOR, "2000")
 
@@ -857,9 +831,7 @@ async def test_allowed_sensor_of_removed_charger_is_removed_at_setup(
     assert allowed_sensor_id(hass, "c1") is not None
 
 
-async def test_charger_switches_are_kept_over_a_reload(
-    hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
-) -> None:
+async def test_charger_switches_are_kept_over_a_reload(hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt) -> None:
     """The positions are configuration."""
     entry = await setup_kraftvakt()
     await use_switch(hass, "c1", "excluded", "turn_on")
@@ -870,24 +842,15 @@ async def test_charger_switches_are_kept_over_a_reload(
 
     assert switch_state(hass, "c1", "excluded") == STATE_ON
     assert switch_state(hass, "c1", "window_override") == STATE_ON
-    assert stored_switches(hass_storage) == {
-        "c1": {"excluded": True, "window_override": True}
-    }
+    assert stored_switches(hass_storage) == {"c1": {"excluded": True, "window_override": True}}
 
 
-async def test_charger_switches_are_named_after_the_charger(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_charger_switches_are_named_after_the_charger(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     """The name of the charger's entity identifies the switches."""
     await setup_kraftvakt()
 
-    assert (
-        switch_id(hass, "c1", "excluded") == "switch.kraftvakt_charger_garage_excluded"
-    )
-    assert (
-        switch_id(hass, "c1", "window_override")
-        == "switch.kraftvakt_charger_garage_window_override"
-    )
+    assert switch_id(hass, "c1", "excluded") == "switch.kraftvakt_charger_garage_excluded"
+    assert switch_id(hass, "c1", "window_override") == "switch.kraftvakt_charger_garage_window_override"
     excluded = hass.states.get(switch_id(hass, "c1", "excluded") or "")
     override = hass.states.get(switch_id(hass, "c1", "window_override") or "")
 
@@ -914,9 +877,7 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     old_switch = switch_id(hass, "c1", "excluded")
     hass.states.async_set("input_boolean.carport", STATE_OFF)
     data = deepcopy(config)
-    data["charger_groups"][0]["chargers"] = [
-        charger_data("c2", "input_boolean.carport")
-    ]
+    data["charger_groups"][0]["chargers"] = [charger_data("c2", "input_boolean.carport")]
     settings = entry.runtime_data.settings
 
     await settings.async_update_config(read_config(data))
@@ -927,25 +888,16 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     assert hass.states.get(old_switch) is None
     assert switch_state(hass, "c2", "excluded") == STATE_OFF
     assert switch_state(hass, "c2", "window_override") == STATE_OFF
-    assert stored_switches(hass_storage) == {
-        "c2": {"excluded": False, "window_override": False}
-    }
-    assert (
-        hass_storage[STORAGE_KEY]["data"]["charger_groups"][0]["chargers"][0]["id"]
-        == "c2"
-    )
+    assert stored_switches(hass_storage) == {"c2": {"excluded": False, "window_override": False}}
+    assert hass_storage[STORAGE_KEY]["data"]["charger_groups"][0]["chargers"][0]["id"] == "c2"
 
 
-async def test_switches_of_removed_chargers_are_removed_at_setup(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_switches_of_removed_chargers_are_removed_at_setup(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     """No orphaned switches remain in the entity registry."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    orphan = registry.async_get_or_create(
-        "switch", DOMAIN, "charger_old_excluded", config_entry=entry
-    )
+    orphan = registry.async_get_or_create("switch", DOMAIN, "charger_old_excluded", config_entry=entry)
     hass.states.async_set(CHARGER, STATE_OFF, {ATTR_FRIENDLY_NAME: "Garage"})
     set_power(hass, POWER_SENSOR, "2000")
 
@@ -959,16 +911,10 @@ async def test_switches_of_removed_chargers_are_removed_at_setup(
 async def test_charger_name_without_a_device(hass: HomeAssistant) -> None:
     """The entity's name is used, from the registry before it has a state."""
     registry = er.async_get(hass)
-    entry = registry.async_get_or_create(
-        "switch", "test", "garage", original_name="Garage charger"
-    )
+    entry = registry.async_get_or_create("switch", "test", "garage", original_name="Garage charger")
 
-    assert item_name(hass, Charger("c1", entity_id=entry.entity_id)) == (
-        "Garage charger"
-    )
-    assert item_name(hass, Charger("c1", entity_id="switch.unknown")) == (
-        "switch.unknown"
-    )
+    assert item_name(hass, Charger("c1", entity_id=entry.entity_id)) == ("Garage charger")
+    assert item_name(hass, Charger("c1", entity_id="switch.unknown")) == ("switch.unknown")
     assert item_name(hass, Charger("c1", device_id="unknown")) == "c1"
     assert item_name(hass, Charger("c1")) == "c1"
 
@@ -977,9 +923,7 @@ async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
     """A name the user gave the device wins."""
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Charger A"
-    )
+    device = dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Charger A")
     charger = Charger("c1", device_id=device.id, entity_id="switch.a_allowed")
 
     assert item_name(hass, charger) == "Charger A"
@@ -989,9 +933,7 @@ async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
     assert item_name(hass, charger) == "Garage"
 
 
-async def test_finish_after_window_of_a_removed_charger_changes_nothing(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_finish_after_window_of_a_removed_charger_changes_nothing(hass: HomeAssistant, setup_kraftvakt) -> None:
     """The switch can be used for a moment after its charger was removed."""
     entry = await setup_kraftvakt()
     runtime = entry.runtime_data

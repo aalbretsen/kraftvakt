@@ -15,9 +15,7 @@ HOUSE_POWER = "sensor.han_power"
 BACKGROUND = "number.han_background_power"
 
 
-async def test_han_reports_the_background_power(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_han_reports_the_background_power(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.HAN, "HAN")
 
     assert power(hass, HOUSE_POWER) == 3500
@@ -29,9 +27,7 @@ async def test_han_reports_the_background_power(
     assert sensor.attributes["unit_of_measurement"] == "W"
 
 
-async def test_han_sums_the_background_and_every_device(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
-) -> None:
+async def test_han_sums_the_background_and_every_device(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
     await add_device(DeviceKind.HAN, "HAN")
     await add_device(DeviceKind.HEATER, "Heating cable", duty_cycle_pct=100)
     await add_device(DeviceKind.CHARGER, "Charger")
@@ -41,14 +37,10 @@ async def test_han_sums_the_background_and_every_device(
 
     await call(hass, "switch", "turn_on", "switch.charger_car_connected")
     await call(hass, "switch", "turn_on", "switch.charger_charging_allowed")
-    assert power(hass, HOUSE_POWER) == pytest.approx(
-        3500 + 750 + three_phase_power_w(6)
-    )
+    assert power(hass, HOUSE_POWER) == pytest.approx(3500 + 750 + three_phase_power_w(6))
 
 
-async def test_han_set_up_after_the_devices_counts_them(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_han_set_up_after_the_devices_counts_them(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.HEATER, "Heating cable", duty_cycle_pct=100)
     await call(hass, "switch", "turn_on", "switch.heating_cable")
 
@@ -57,9 +49,7 @@ async def test_han_set_up_after_the_devices_counts_them(
     assert power(hass, HOUSE_POWER) == 3500 + 750
 
 
-async def test_background_power_can_be_changed_and_is_kept(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_background_power_can_be_changed_and_is_kept(hass: HomeAssistant, add_device: AddDevice) -> None:
     entry = await add_device(DeviceKind.HAN, "HAN")
 
     await call(hass, "number", "set_value", BACKGROUND, value=9200)
@@ -71,9 +61,7 @@ async def test_background_power_can_be_changed_and_is_kept(
     assert power(hass, HOUSE_POWER) == 9200
 
 
-async def test_unloaded_device_no_longer_counts(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
-) -> None:
+async def test_unloaded_device_no_longer_counts(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
     await add_device(DeviceKind.HAN, "HAN")
     heater = await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", "switch.heating_cable")
@@ -86,9 +74,7 @@ async def test_unloaded_device_no_longer_counts(
     assert power(hass, HOUSE_POWER) == 3500
 
 
-async def test_han_reports_every_10_seconds_also_without_change(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice
-) -> None:
+async def test_han_reports_every_10_seconds_also_without_change(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
     """As a HAN reader does, so Kraftvakt's power sensor timeout does not run out."""
     await add_device(DeviceKind.HAN, "HAN")
     first = hass.states.get(HOUSE_POWER)

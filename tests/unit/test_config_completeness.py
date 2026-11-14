@@ -22,9 +22,7 @@ def test_full_config_is_complete() -> None:
 
 
 def test_default_config_misses_power_sensor() -> None:
-    assert missing_items(KraftvaktConfig()) == [
-        Issue("missing_power_sensor", "general", None, "power_sensor")
-    ]
+    assert missing_items(KraftvaktConfig()) == [Issue("missing_power_sensor", "general", None, "power_sensor")]
 
 
 def test_appliance_needs_entity_and_both_actions() -> None:
@@ -40,9 +38,7 @@ def test_appliance_needs_entity_and_both_actions() -> None:
 
 def test_charger_needs_device_entity_actions_and_actively_charging() -> None:
     data = full_config_data()
-    data["charger_groups"][0]["chargers"].append(
-        {"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}}
-    )
+    data["charger_groups"][0]["chargers"].append({"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}})
 
     assert _missing(data) == [
         Issue("missing_device", "chargers", "c2", "device_id"),
@@ -113,9 +109,7 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     data["charger_groups"][0]["one_at_a_time"] = True
     data["charger_groups"][0]["chargers"][0]["car_connected"] = None
 
-    assert _missing(data) == [
-        Issue("missing_car_connected", "chargers", "c1", "car_connected")
-    ]
+    assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]
 
 
 def test_car_connected_is_required_when_the_override_ends_on_disconnect() -> None:
@@ -125,9 +119,7 @@ def test_car_connected_is_required_when_the_override_ends_on_disconnect() -> Non
     charger["car_connected"] = None
     charger["override_ends"] = "car_disconnected"
 
-    assert _missing(data) == [
-        Issue("missing_car_connected", "chargers", "c1", "car_connected")
-    ]
+    assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]
     charger["charging_window"] = None
     assert _missing(data) == []
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
@@ -143,9 +135,7 @@ def test_domain_action_needs_every_value_chosen() -> None:
         "data": {"hvac_mode": None},
     }
 
-    assert _missing(data) == [
-        Issue("missing_action", "appliances", data["appliances"][0]["id"], "turn_on")
-    ]
+    assert _missing(data) == [Issue("missing_action", "appliances", data["appliances"][0]["id"], "turn_on")]
 
 
 def test_variant_needs_only_the_actions_it_overrides() -> None:
@@ -155,15 +145,11 @@ def test_variant_needs_only_the_actions_it_overrides() -> None:
     assert _missing(data) == []
     data["appliances"][0]["variants"][0]["actions"] = {"turn_off": None}
 
-    assert _missing(data) == [
-        Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")
-    ]
+    assert _missing(data) == [Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")]
 
 
 def test_variant_needs_a_condition() -> None:
     data = full_config_data()
     data["appliances"][0]["variants"][0]["condition"]["value"] = " "
 
-    assert _missing(data) == [
-        Issue("missing_condition", "appliances", "a1", "variants.v1.condition")
-    ]
+    assert _missing(data) == [Issue("missing_condition", "appliances", "a1", "variants.v1.condition")]

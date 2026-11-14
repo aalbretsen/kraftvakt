@@ -10,12 +10,8 @@ from custom_components.kraftvakt.regulation.penalty import (
     PenaltyState,
 )
 
-LIMITS = PenaltyLimits(
-    power_limit_w=10_000, threshold_w=1000, window=timedelta(seconds=60)
-)
-NO_THRESHOLD = PenaltyLimits(
-    power_limit_w=10_000, threshold_w=0, window=timedelta(seconds=60)
-)
+LIMITS = PenaltyLimits(power_limit_w=10_000, threshold_w=1000, window=timedelta(seconds=60))
+NO_THRESHOLD = PenaltyLimits(power_limit_w=10_000, threshold_w=0, window=timedelta(seconds=60))
 WH_PER_W_WINDOW = 1 / 60
 
 

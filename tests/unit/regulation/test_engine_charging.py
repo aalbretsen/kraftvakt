@@ -27,9 +27,7 @@ CHARGING = {"actively_charging": True}
 def one_charger(**settings) -> Scenario:
     """Return a scenario with charger c from 6 A to 8 A and no waiting time."""
     settings.setdefault("max_a", 8)
-    return Scenario(
-        make_config(chargers=(charger("c", **settings),), wait_at_limit_s=0)
-    )
+    return Scenario(make_config(chargers=(charger("c", **settings),), wait_at_limit_s=0))
 
 
 def two_chargers(*, one_at_a_time: bool, max_a: int = 7) -> Scenario:
@@ -98,9 +96,7 @@ def test_current_decreases_one_ampere_per_ampere_step() -> None:
 
 def test_ampere_steps_have_their_own_growth() -> None:
     """5, 10, 15, 20, 25 and then 30 minutes."""
-    scenario = Scenario(
-        make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300)
-    )
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300))
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 6)
     waits = []
@@ -161,11 +157,7 @@ def test_charger_that_does_not_draw_power_is_bypassed() -> None:
 def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
     """A charger on trial gets no more current and does not hold back the
     appliances below «EV charging»."""
-    scenario = Scenario(
-        make_config(
-            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0
-        )
-    )
+    scenario = Scenario(make_config("x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0))
 
     assert scenario.decide_many(0, 3) == [activate("c"), on("x"), []]
     assert scenario.engine.chargers["c"].current_a == 6
@@ -174,11 +166,7 @@ def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
 def test_charger_that_starts_charging_makes_room_below() -> None:
     """The appliance turned on below while the charger was tried is switched
     off when the charger needs room for more current."""
-    scenario = Scenario(
-        make_config(
-            "x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0
-        )
-    )
+    scenario = Scenario(make_config("x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=0))
     scenario.decide_many(0, 2)
 
     scenario.set_charger("c", **CHARGING)
@@ -499,9 +487,7 @@ def test_charger_on_trial_when_its_window_ends_does_not_finish() -> None:
 
 def test_override_lasts_until_a_connected_car_is_disconnected() -> None:
     """A window that starts does not end it, nor a car sensor without evidence."""
-    scenario = one_charger(
-        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED
-    )
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED)
     scenario.set_charger("c", **CHARGING, window_override=True, car_connected=True)
 
     assert scenario.decide(0) == activate("c")
@@ -510,9 +496,7 @@ def test_override_lasts_until_a_connected_car_is_disconnected() -> None:
     assert scenario.decide(0, after=timedelta(hours=20)) == []
     assert scenario.overrides.ended == []
 
-    scenario.set_charger(
-        "c", actively_charging=False, car_connected=False, override_armed=True
-    )
+    scenario.set_charger("c", actively_charging=False, car_connected=False, override_armed=True)
     assert scenario.decide(0) == []
     assert scenario.overrides.ended == []
     scenario.set_charger("c", car_disconnected=True)
@@ -523,9 +507,7 @@ def test_override_lasts_until_a_connected_car_is_disconnected() -> None:
 
 def test_override_ends_when_the_activated_charger_stops_charging() -> None:
     """It arms only when the charger was activated and charging."""
-    scenario = one_charger(
-        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED
-    )
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED)
     scenario.set_charger("c", **CHARGING, window_override=True)
 
     assert scenario.decide(0) == activate("c")
@@ -543,9 +525,7 @@ def test_override_ends_when_the_activated_charger_stops_charging() -> None:
 
 def test_override_gives_a_reactivated_car_time_to_start_charging() -> None:
     """As before a charger is bypassed, two windows after it was activated."""
-    scenario = one_charger(
-        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED
-    )
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED)
     scenario.set_charger("c", **CHARGING, window_override=True, override_armed=True)
     scenario.decide(0)
     assert scenario.decide(12000) == deactivate("c")
@@ -560,9 +540,7 @@ def test_override_gives_a_reactivated_car_time_to_start_charging() -> None:
 
 def test_override_ends_also_during_a_penalty() -> None:
     """The override is evaluated at every decision."""
-    scenario = one_charger(
-        max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED
-    )
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED)
     scenario.set_charger("c", window_override=True, car_connected=True)
     scenario.decide(12000, tariff=12000)
     assert scenario.decide(12000, tariff=12000) == deactivate("c")
@@ -616,9 +594,7 @@ def test_variant_switch_makes_room_by_switching_off_an_ampere_step() -> None:
     scenario.set_charger("c", **CHARGING)
     scenario.charge("c", 7)
 
-    assert scenario.decide(9900, true=("morning",)) == off("h:morning") + current(
-        "c", 6
-    )
+    assert scenario.decide(9900, true=("morning",)) == off("h:morning") + current("c", 6)
 
 
 def two_groups() -> Scenario:

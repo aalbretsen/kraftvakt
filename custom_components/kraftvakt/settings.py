@@ -23,18 +23,12 @@ type SwitchListener = Callable[[], None]
 class Settings:
     """The stored configuration and the user's switches, saved together."""
 
-    def __init__(
-        self, hass: HomeAssistant, storage: KraftvaktStorage, stored: StoredData
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, storage: KraftvaktStorage, stored: StoredData) -> None:
         self._hass = hass
         self._storage = storage
         self._config = stored.config
-        self._appliance_switches = appliance_switches_for(
-            stored.config, stored.appliance_switches
-        )
-        self._charger_switches = charger_switches_for(
-            stored.config, stored.charger_switches
-        )
+        self._appliance_switches = appliance_switches_for(stored.config, stored.appliance_switches)
+        self._charger_switches = charger_switches_for(stored.config, stored.charger_switches)
         self._armed_overrides: set[str] = set()
         self._listeners: list[SwitchListener] = []
 
@@ -58,11 +52,7 @@ class Settings:
 
     @callback
     def async_arm_overrides(self, charger_ids: Iterable[str]) -> None:
-        self._armed_overrides |= {
-            charger_id
-            for charger_id in charger_ids
-            if self.charger_switches(charger_id).window_override
-        }
+        self._armed_overrides |= {charger_id for charger_id in charger_ids if self.charger_switches(charger_id).window_override}
 
     async def async_set_appliance(self, appliance_id: str, *, excluded: bool) -> None:
         """Change the switches for the appliance and save them at once."""
@@ -100,17 +90,10 @@ class Settings:
         """
         previous_ends = _override_ends(self._config)
         self._config = config
-        self._appliance_switches = appliance_switches_for(
-            config, self._appliance_switches
-        )
+        self._appliance_switches = appliance_switches_for(config, self._appliance_switches)
         self._charger_switches = charger_switches_for(config, self._charger_switches)
         current_ends = _override_ends(config)
-        self._armed_overrides = {
-            charger_id
-            for charger_id in self._armed_overrides
-            if charger_id in current_ends
-            and previous_ends.get(charger_id) is current_ends[charger_id]
-        }
+        self._armed_overrides = {charger_id for charger_id in self._armed_overrides if charger_id in current_ends and previous_ends.get(charger_id) is current_ends[charger_id]}
         self._notify()
 
     @callback
@@ -119,16 +102,12 @@ class Settings:
         self._listeners.append(listener)
         return lambda: self._listeners.remove(listener)
 
-    def _apply_charger(
-        self, charger_id: str, excluded: bool | None, window_override: bool | None
-    ) -> None:
+    def _apply_charger(self, charger_id: str, excluded: bool | None, window_override: bool | None) -> None:
         current = self._charger_switches[charger_id]
         updated = replace(
             current,
             excluded=current.excluded if excluded is None else excluded,
-            window_override=(
-                current.window_override if window_override is None else window_override
-            ),
+            window_override=(current.window_override if window_override is None else window_override),
         )
         if updated.window_override != current.window_override:
             self._armed_overrides.discard(charger_id)
@@ -136,9 +115,7 @@ class Settings:
         self._notify()
 
     async def async_save(self) -> None:
-        await self._storage.async_save(
-            StoredData(self._config, self._appliance_switches, self._charger_switches)
-        )
+        await self._storage.async_save(StoredData(self._config, self._appliance_switches, self._charger_switches))
 
     def _notify(self) -> None:
         for listener in list(self._listeners):

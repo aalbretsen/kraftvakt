@@ -65,7 +65,5 @@ class ChargerState:
 
     @property
     def power_w(self) -> float:
-        charging = (
-            self.charging_allowed and self.car_connected and not self.car_fully_charged
-        )
+        charging = self.charging_allowed and self.car_connected and not self.car_fully_charged
         return three_phase_power_w(self.current_a) if charging else 0.0

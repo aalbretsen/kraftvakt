@@ -22,18 +22,14 @@ from custom_components.kraftvakt.storage import (
 from tests.config_examples import full_config_data
 
 
-async def test_load_without_stored_data_gives_defaults(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_load_without_stored_data_gives_defaults(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     stored = await KraftvaktStorage(hass).async_load()
 
     assert stored == StoredData()
     assert STORAGE_KEY not in hass_storage
 
 
-async def test_saved_data_survives_restart(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_saved_data_survives_restart(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     config = read_config(full_config_data())
     saved = StoredData(
         config,
@@ -50,9 +46,7 @@ async def test_saved_data_survives_restart(
     assert stored == saved
 
 
-async def test_stored_format_is_versioned_json(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_stored_format_is_versioned_json(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     config = read_config(full_config_data())
 
     await KraftvaktStorage(hass).async_save(StoredData(config))
@@ -66,9 +60,7 @@ async def test_stored_format_is_versioned_json(
     }
 
 
-async def test_load_reads_stored_data(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_load_reads_stored_data(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
         "minor_version": 1,
@@ -90,9 +82,7 @@ async def test_load_reads_stored_data(
     assert stored.charger_switches == {"c1": ChargerSwitches(excluded=True)}
 
 
-async def test_switches_follow_configured_chargers(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_switches_follow_configured_chargers(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"].append(
         {
@@ -104,9 +94,7 @@ async def test_switches_follow_configured_chargers(
     config = read_config(data)
     switches = {"gone": ChargerSwitches(excluded=True)}
 
-    await KraftvaktStorage(hass).async_save(
-        StoredData(config, charger_switches=switches)
-    )
+    await KraftvaktStorage(hass).async_save(StoredData(config, charger_switches=switches))
     stored = await KraftvaktStorage(hass).async_load()
 
     assert stored.charger_switches == {
@@ -115,9 +103,7 @@ async def test_switches_follow_configured_chargers(
     }
 
 
-async def test_load_rejects_unreadable_data(
-    hass: HomeAssistant, hass_storage: dict[str, Any]
-) -> None:
+async def test_load_rejects_unreadable_data(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None:
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
         "key": STORAGE_KEY,

@@ -45,17 +45,13 @@ def async_register_commands(hass: HomeAssistant) -> None:
 
 
 @callback
-def async_forward_status(
-    hass: HomeAssistant, runtime: KraftvaktRuntime
-) -> CALLBACK_TYPE:
+def async_forward_status(hass: HomeAssistant, runtime: KraftvaktRuntime) -> CALLBACK_TYPE:
     """Send the status to the subscribers now and each time it may change.
 
     The subscribers follow the runtime that sends, so they keep getting the
     status when the config entry is reloaded.
     """
-    remove = runtime.async_add_status_listener(
-        lambda: async_dispatcher_send(hass, SIGNAL_STATUS, runtime)
-    )
+    remove = runtime.async_add_status_listener(lambda: async_dispatcher_send(hass, SIGNAL_STATUS, runtime))
     async_dispatcher_send(hass, SIGNAL_STATUS, runtime)
     return remove
 
@@ -172,9 +168,7 @@ def websocket_subscribe_status(
     if (runtime := _loaded_runtime(hass, connection, msg)) is None:
         return
     send_status = partial(_send_status, hass, connection, msg["id"])
-    connection.subscriptions[msg["id"]] = async_dispatcher_connect(
-        hass, SIGNAL_STATUS, send_status
-    )
+    connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, SIGNAL_STATUS, send_status)
     connection.send_result(msg["id"])
     send_status(runtime)
 
@@ -186,9 +180,7 @@ def _send_status(
     subscription_id: int,
     runtime: KraftvaktRuntime,
 ) -> None:
-    connection.send_message(
-        websocket_api.event_message(subscription_id, status_snapshot(hass, runtime))
-    )
+    connection.send_message(websocket_api.event_message(subscription_id, status_snapshot(hass, runtime)))
 
 
 def validated_config(hass: HomeAssistant, data: dict[str, Any]) -> KraftvaktConfig:
@@ -212,10 +204,7 @@ def capabilities() -> dict[str, Any]:
     return {
         "default_actions": default_actions_by_field(),
         "domain_actions": domain_actions_by_field(),
-        "limits": {
-            section: {name: value.to_dict() for name, value in ranges.items()}
-            for section, ranges in SETTING_RANGES.items()
-        },
+        "limits": {section: {name: value.to_dict() for name, value in ranges.items()} for section, ranges in SETTING_RANGES.items()},
         "defaults": {
             "general": general.to_dict(),
             "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},
@@ -238,16 +227,10 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
         *config.appliances,
         *config.chargers,
     ]
-    return {
-        item.entity_id: item_name(hass, item)
-        for item in items
-        if item.entity_id is not None
-    }
+    return {item.entity_id: item_name(hass, item) for item in items if item.entity_id is not None}
 
 
-def _send_regulation_running(
-    connection: websocket_api.ActiveConnection, msg: dict[str, Any]
-) -> None:
+def _send_regulation_running(connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     connection.send_error(
         msg["id"],
         "regulation_running",

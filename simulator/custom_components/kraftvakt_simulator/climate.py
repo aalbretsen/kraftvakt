@@ -35,9 +35,7 @@ async def async_setup_entry(
     async_add_entities([SimulatorThermostat(entry, device, THERMOSTAT)])
 
 
-class SimulatorThermostat(
-    SimulatorEntity[SimulatedThermostat], ClimateEntity, RestoreEntity
-):
+class SimulatorThermostat(SimulatorEntity[SimulatedThermostat], ClimateEntity, RestoreEntity):
     """A thermostat with the HVAC modes chosen in the settings.
 
     It gets back its mode and target temperature after a restart. It can be
@@ -52,9 +50,7 @@ class SimulatorThermostat(
     @property
     def supported_features(self) -> ClimateEntityFeature:
         """Return the features, with turning off only when off is a mode."""
-        features = (
-            ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
-        )
+        features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
         if HVACMode.OFF in self.hvac_modes:
             features |= ClimateEntityFeature.TURN_OFF
         return features

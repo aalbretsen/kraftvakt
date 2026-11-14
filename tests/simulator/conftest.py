@@ -57,9 +57,7 @@ def add_device(hass: HomeAssistant) -> AddDevice:
     return add
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
     """Move the time forward and run what is due."""
     freezer.tick(delta)
     async_fire_time_changed(hass)
@@ -78,11 +76,7 @@ def power(hass: HomeAssistant, entity_id: str) -> float:
     return float(state(hass, entity_id))
 
 
-async def call(
-    hass: HomeAssistant, domain: str, service: str, entity_id: str, **data: Any
-) -> None:
+async def call(hass: HomeAssistant, domain: str, service: str, entity_id: str, **data: Any) -> None:
     """Call a service for one entity and wait for it."""
-    await hass.services.async_call(
-        domain, service, {"entity_id": entity_id, **data}, blocking=True
-    )
+    await hass.services.async_call(domain, service, {"entity_id": entity_id, **data}, blocking=True)
     await hass.async_block_till_done()

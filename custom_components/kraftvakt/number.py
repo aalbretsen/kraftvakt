@@ -42,9 +42,7 @@ class PowerLimitNumber(KraftvaktEntity, NumberEntity):
 
     async def async_added_to_hass(self) -> None:
         """Follow the power limit, also when it is saved from the panel."""
-        self.async_on_remove(
-            self._runtime.async_add_status_listener(self.async_write_ha_state)
-        )
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
 
     @property
     def native_value(self) -> int:

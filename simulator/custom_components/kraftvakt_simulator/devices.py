@@ -205,9 +205,7 @@ class SimulatedHeater(PluggedInDevice):
     @callback
     def async_set_power(self, power_w: float) -> None:
         """Change the power while heating, in whole watts."""
-        self._async_set_cycle(
-            replace(self.cycle, power_w=int(power_w)), CONF_POWER_W, int(power_w)
-        )
+        self._async_set_cycle(replace(self.cycle, power_w=int(power_w)), CONF_POWER_W, int(power_w))
 
     @callback
     def async_set_duty_cycle(self, duty_cycle_pct: float) -> None:
@@ -257,9 +255,7 @@ class SimulatedHeater(PluggedInDevice):
     def _async_schedule_next_change(self) -> None:
         delay = self.cycle.time_to_next_change(self._elapsed())
         if delay is not None:
-            self._cancel_timer = async_track_point_in_utc_time(
-                self.hass, self._async_cycle_changed, dt_util.utcnow() + delay
-            )
+            self._cancel_timer = async_track_point_in_utc_time(self.hass, self._async_cycle_changed, dt_util.utcnow() + delay)
 
     @callback
     def _async_cycle_changed(self, _now: datetime) -> None:
@@ -298,9 +294,7 @@ class SimulatedThermostat(SimulatedHeater):
         self.room_temperature = room_temperature
         self.hvac_mode = HVACMode.OFF if HVACMode.OFF in hvac_modes else hvac_modes[0]
         self.target_temperature = DEFAULT_TARGET_TEMPERATURE
-        self._last_heating_mode = next(
-            mode for mode in hvac_modes if mode in HEATING_MODES
-        )
+        self._last_heating_mode = next(mode for mode in hvac_modes if mode in HEATING_MODES)
 
     @callback
     def async_start(self) -> None:
@@ -333,9 +327,7 @@ class SimulatedThermostat(SimulatedHeater):
 
     @callback
     def _async_follow_thermostat(self) -> None:
-        heats = thermostat_heats(
-            self.hvac_mode, self.target_temperature, self.room_temperature
-        )
+        heats = thermostat_heats(self.hvac_mode, self.target_temperature, self.room_temperature)
         if heats != self.is_on:
             self.async_set_on(heats)
         else:

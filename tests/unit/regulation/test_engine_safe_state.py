@@ -15,9 +15,7 @@ def test_lost_power_sensor_turns_everything_off_at_once() -> None:
     scenario = Scenario(no_waiting("a", "b", "c"))
     scenario.turn_on("a", "b")
 
-    assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == off(
-        "a", "b", "c"
-    )
+    assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == off("a", "b", "c")
     assert scenario.engine.safe_state
     assert scenario.engine.appliances_on == frozenset()
 

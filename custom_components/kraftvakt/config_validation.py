@@ -44,11 +44,7 @@ def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     reader = ConfigReader()
     config = _complete_priority(reader.config(data))
     unreadable = {(issue.section, issue.target, issue.field) for issue in reader.issues}
-    issues = reader.issues + [
-        issue
-        for issue in validate_config(config) + action_and_template_issues(config)
-        if (issue.section, issue.target, issue.field) not in unreadable
-    ]
+    issues = reader.issues + [issue for issue in validate_config(config) + action_and_template_issues(config) if (issue.section, issue.target, issue.field) not in unreadable]
     if issues:
         raise ConfigValidationError(issues)
     return config
@@ -62,20 +58,11 @@ def validate_config(config: KraftvaktConfig) -> list[Issue]:
     """
     return [
         *_general_issues(config.general),
-        *(
-            Issue("duplicate_id", "appliances", appliance_id)
-            for appliance_id in _duplicate_ids(config.appliances)
-        ),
+        *(Issue("duplicate_id", "appliances", appliance_id) for appliance_id in _duplicate_ids(config.appliances)),
         *(issue for item in config.appliances for issue in _appliance_issues(item)),
-        *(
-            Issue("duplicate_id", "charger_groups", group_id)
-            for group_id in _duplicate_ids(config.charger_groups)
-        ),
+        *(Issue("duplicate_id", "charger_groups", group_id) for group_id in _duplicate_ids(config.charger_groups)),
         *_charger_group_issues(config.charger_groups),
-        *(
-            Issue("duplicate_id", "chargers", charger_id)
-            for charger_id in _duplicate_ids(config.chargers)
-        ),
+        *(Issue("duplicate_id", "chargers", charger_id) for charger_id in _duplicate_ids(config.chargers)),
         *(issue for item in config.chargers for issue in _charger_issues(item)),
         *_unique_entity_issues(config),
         *_priority_issues(config),
@@ -128,9 +115,7 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
     for group in config.charger_groups:
         for charger in group.chargers:
             if charger.device_id is None:
-                missing.append(
-                    Issue("missing_device", "chargers", charger.id, "device_id")
-                )
+                missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
             missing += _missing_entity_and_actions("chargers", charger)
             if not _is_set(charger.actively_charging):
                 missing.append(
@@ -141,22 +126,13 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
                         "actively_charging",
                     )
                 )
-            if _car_connected_required(group, charger) and not _is_set(
-                charger.car_connected
-            ):
-                missing.append(
-                    Issue(
-                        "missing_car_connected", "chargers", charger.id, "car_connected"
-                    )
-                )
+            if _car_connected_required(group, charger) and not _is_set(charger.car_connected):
+                missing.append(Issue("missing_car_connected", "chargers", charger.id, "car_connected"))
     return missing
 
 
 def _car_connected_required(group: ChargerGroup, charger: Charger) -> bool:
-    return group.one_at_a_time or (
-        charger.charging_window is not None
-        and charger.override_ends is OverrideEnd.CAR_DISCONNECTED
-    )
+    return group.one_at_a_time or (charger.charging_window is not None and charger.override_ends is OverrideEnd.CAR_DISCONNECTED)
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:
@@ -173,10 +149,7 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
         *_entity_format_issues(location, "entity_id", appliance.entity_id),
         *_ranges_issues(location, appliance),
     ]
-    issues += [
-        location.issue("duplicate_id", f"variants.{variant_id}")
-        for variant_id in _duplicate_ids(appliance.variants)
-    ]
+    issues += [location.issue("duplicate_id", f"variants.{variant_id}") for variant_id in _duplicate_ids(appliance.variants)]
     labels = Counter(variant.label.strip() for variant in appliance.variants)
     for variant in appliance.variants:
         variant_location = replace(location, prefix=f"variants.{variant.id}.")
@@ -231,29 +204,19 @@ def _is_set(condition: Condition | None) -> bool:
     return condition is not None and bool(condition.value.strip())
 
 
-def _condition_issues(
-    location: IssueLocation, field_name: str, condition: Condition | None
-) -> list[Issue]:
-    if (
-        condition is None
-        or not _is_set(condition)
-        or condition.type is ConditionType.TEMPLATE
-    ):
+def _condition_issues(location: IssueLocation, field_name: str, condition: Condition | None) -> list[Issue]:
+    if condition is None or not _is_set(condition) or condition.type is ConditionType.TEMPLATE:
         return []
     return _entity_format_issues(location, field_name, condition.value)
 
 
-def _entity_format_issues(
-    location: IssueLocation, field_name: str, entity_id: str | None
-) -> list[Issue]:
+def _entity_format_issues(location: IssueLocation, field_name: str, entity_id: str | None) -> list[Issue]:
     if entity_id is None or valid_entity_id(entity_id):
         return []
     return [location.issue("invalid_entity_id", field_name)]
 
 
-def _ranges_issues(
-    location: IssueLocation, item: GeneralConfig | Appliance | Charger
-) -> list[Issue]:
+def _ranges_issues(location: IssueLocation, item: GeneralConfig | Appliance | Charger) -> list[Issue]:
     return [
         issue
         for field_name, value_range in SETTING_RANGES[location.section].items()
@@ -262,9 +225,7 @@ def _ranges_issues(
     ]
 
 
-def _range_issues(
-    location: IssueLocation, field_name: str, value: float, value_range: Range
-) -> list[Issue]:
+def _range_issues(location: IssueLocation, field_name: str, value: float, value_range: Range) -> list[Issue]:
     if not value_range.contains(value):
         return [location.issue("out_of_range", field_name)]
     if not value_range.matches_resolution(value):
@@ -285,11 +246,7 @@ def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
         *(("chargers", item.id, item.entity_id) for item in config.chargers),
     ]
     counts = Counter(entity_id for _, _, entity_id in owners if entity_id)
-    return [
-        Issue("duplicate_entity", section, target, "entity_id")
-        for section, target, entity_id in owners
-        if entity_id and counts[entity_id] > 1
-    ]
+    return [Issue("duplicate_entity", section, target, "entity_id") for section, target, entity_id in owners if entity_id and counts[entity_id] > 1]
 
 
 def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
@@ -299,27 +256,15 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
     for entry, count in counts.items():
         location = _priority_location(entry)
         if entry not in expected:
-            issues.append(
-                location.issue("unknown_priority_entry", _priority_field(entry))
-            )
+            issues.append(location.issue("unknown_priority_entry", _priority_field(entry)))
         elif count > 1:
-            issues.append(
-                location.issue("duplicate_priority_entry", _priority_field(entry))
-            )
-    issues += [
-        _priority_location(entry).issue(
-            "missing_priority_entry", _priority_field(entry)
-        )
-        for entry in expected
-        if entry not in counts
-    ]
+            issues.append(location.issue("duplicate_priority_entry", _priority_field(entry)))
+    issues += [_priority_location(entry).issue("missing_priority_entry", _priority_field(entry)) for entry in expected if entry not in counts]
     return issues
 
 
 def _complete_priority(config: KraftvaktConfig) -> KraftvaktConfig:
-    missing = [
-        entry for entry in _expected_priority(config) if entry not in config.priority
-    ]
+    missing = [entry for entry in _expected_priority(config) if entry not in config.priority]
     return replace(config, priority=(*config.priority, *missing))
 
 
@@ -327,13 +272,8 @@ def _expected_priority(config: KraftvaktConfig) -> list[PriorityEntry]:
     expected = []
     for appliance in config.appliances:
         expected.append(PriorityEntry.for_appliance(appliance.id))
-        expected += [
-            PriorityEntry.for_appliance(appliance.id, variant.id)
-            for variant in appliance.variants
-        ]
-    expected += [
-        PriorityEntry.for_charger_group(group.id) for group in config.charger_groups
-    ]
+        expected += [PriorityEntry.for_appliance(appliance.id, variant.id) for variant in appliance.variants]
+    expected += [PriorityEntry.for_charger_group(group.id) for group in config.charger_groups]
     return expected
 
 
@@ -380,7 +320,5 @@ def _missing_entity_and_actions(section: str, item: Appliance | Charger) -> list
     for action_field in item.action_fields():
         action = action_field.action
         if action is None or action.is_missing:
-            missing.append(
-                Issue("missing_action", section, item.id, action_field.field)
-            )
+            missing.append(Issue("missing_action", section, item.id, action_field.field))
     return missing

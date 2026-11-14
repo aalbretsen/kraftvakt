@@ -54,15 +54,11 @@ def test_full_config_is_read_into_model() -> None:
     assert turn_off is not None
     assert turn_off.mode is ActionMode.CUSTOM
     assert appliance.action("v1", "turn_off") == ActionConfig(ActionMode.DEFAULT)
-    assert appliance.variants[0].condition == Condition(
-        ConditionType.TEMPLATE, "{{ 5 <= now().hour < 8 }}"
-    )
+    assert appliance.variants[0].condition == Condition(ConditionType.TEMPLATE, "{{ 5 <= now().hour < 8 }}")
     assert config.priority[1] == PriorityEntry.for_charger_group("g1")
     charger = config.chargers[0]
     assert charger.charging_window == ChargingWindow(time(22, 0), time(6, 0))
-    assert charger.car_connected == Condition(
-        ConditionType.ENTITY, "binary_sensor.garage_charger_car"
-    )
+    assert charger.car_connected == Condition(ConditionType.ENTITY, "binary_sensor.garage_charger_car")
 
 
 def test_empty_data_gives_default_config() -> None:
@@ -93,9 +89,7 @@ def test_missing_settings_get_defaults() -> None:
 
 
 def test_empty_strings_count_as_not_set() -> None:
-    config = read_config(
-        {"general": {"power_sensor": ""}, "appliances": [{"id": "a1", "entity_id": ""}]}
-    )
+    config = read_config({"general": {"power_sensor": ""}, "appliances": [{"id": "a1", "entity_id": ""}]})
 
     assert config.general.power_sensor is None
     assert config.appliances[0].entity_id is None
@@ -120,9 +114,7 @@ def test_missing_ids_are_generated() -> None:
 
 def test_custom_action_keeps_editor_normalization() -> None:
     steps = [{"action": "switch.turn_on", "target": {}, "data": {}, "metadata": {}}]
-    config = read_config(
-        {"appliances": [main_actions(turn_on={"mode": "custom", "action": steps})]}
-    )
+    config = read_config({"appliances": [main_actions(turn_on={"mode": "custom", "action": steps})]})
 
     assert config.to_dict()["appliances"][0]["turn_on"] == {
         "mode": "custom",
@@ -132,21 +124,15 @@ def test_custom_action_keeps_editor_normalization() -> None:
 
 def test_single_custom_action_step_becomes_list() -> None:
     step = {"action": "switch.turn_on"}
-    config = read_config(
-        {"appliances": [main_actions(turn_on={"mode": "custom", "action": step})]}
-    )
+    config = read_config({"appliances": [main_actions(turn_on={"mode": "custom", "action": step})]})
 
-    assert config.appliances[0].action(None, "turn_on") == ActionConfig(
-        ActionMode.CUSTOM, (step,)
-    )
+    assert config.appliances[0].action(None, "turn_on") == ActionConfig(ActionMode.CUSTOM, (step,))
 
 
 def test_custom_action_without_steps_is_empty() -> None:
     config = read_config({"appliances": [main_actions(turn_on={"mode": "custom"})]})
 
-    assert config.appliances[0].action(None, "turn_on") == ActionConfig(
-        ActionMode.CUSTOM
-    )
+    assert config.appliances[0].action(None, "turn_on") == ActionConfig(ActionMode.CUSTOM)
 
 
 def test_time_with_seconds_is_read() -> None:
@@ -223,11 +209,7 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "appliances", "a1", "turn_on"),
         ),
         (
-            {
-                "appliances": [
-                    {"id": "a1", "variants": [variant_data("v1") | {"actions": []}]}
-                ]
-            },
+            {"appliances": [{"id": "a1", "variants": [variant_data("v1") | {"actions": []}]}]},
             Issue("invalid_type", "appliances", "a1", "variants.v1.actions"),
         ),
         (
@@ -235,9 +217,7 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
                 "appliances": [
                     {
                         "id": "a1",
-                        "variants": [
-                            variant_data("v1") | {"actions": {"turn_off": "off"}}
-                        ],
+                        "variants": [variant_data("v1") | {"actions": {"turn_off": "off"}}],
                     }
                 ]
             },
@@ -248,9 +228,7 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
                 "appliances": [
                     {
                         "id": "a1",
-                        "variants": [
-                            {"id": "v1", "condition": {"type": "state", "value": "x"}}
-                        ],
+                        "variants": [{"id": "v1", "condition": {"type": "state", "value": "x"}}],
                     }
                 ]
             },
@@ -278,11 +256,7 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "charger_groups", "g1", "one_at_a_time"),
         ),
         (
-            {
-                "charger_groups": [
-                    {"id": "g1", "chargers": [{"id": "c1", "min_current_a": 6.5}]}
-                ]
-            },
+            {"charger_groups": [{"id": "g1", "chargers": [{"id": "c1", "min_current_a": 6.5}]}]},
             Issue("not_integer", "chargers", "c1", "min_current_a"),
         ),
         (
@@ -322,9 +296,7 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
                 "charger_groups": [
                     {
                         "id": "g1",
-                        "chargers": [
-                            {"id": "c1", "charging_window": {"start": "22:00"}}
-                        ],
+                        "chargers": [{"id": "c1", "charging_window": {"start": "22:00"}}],
                     }
                 ]
             },
@@ -396,9 +368,7 @@ def test_appliance_switches_round_trip() -> None:
 
 
 def test_switches_get_defaults() -> None:
-    assert read_switches({"c1": {}}, ChargerSwitches, "chargers") == {
-        "c1": ChargerSwitches()
-    }
+    assert read_switches({"c1": {}}, ChargerSwitches, "chargers") == {"c1": ChargerSwitches()}
 
 
 def test_switches_with_wrong_type_are_rejected() -> None:

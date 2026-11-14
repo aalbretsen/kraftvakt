@@ -40,9 +40,7 @@ def test_penalty_turns_everything_off_at_once() -> None:
 
     assert scenario.engine.appliances_on == set()
     assert scenario.engine.waiting is None
-    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(
-        6000 * WH_PER_W_WINDOW
-    )
+    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(6000 * WH_PER_W_WINDOW)
 
 
 def test_nothing_is_turned_on_during_the_penalty() -> None:
@@ -98,9 +96,7 @@ def test_no_penalty_when_overconsumption_is_paid_back() -> None:
     scenario.turn_on("a", "b")
     assert scenario.decide(10000, tariff=ABOVE_THRESHOLD) == []
 
-    assert scenario.decide(
-        10500, tariff=ABOVE_THRESHOLD, averages=(6000, 10500)
-    ) == off("b")
+    assert scenario.decide(10500, tariff=ABOVE_THRESHOLD, averages=(6000, 10500)) == off("b")
 
     assert not scenario.engine.penalty.active
 
@@ -113,9 +109,7 @@ def test_no_penalty_at_or_under_limit_plus_threshold() -> None:
     assert scenario.decide_many(12000, 3, tariff=11000) == [off("b"), off("a"), []]
 
     assert not scenario.engine.penalty.active
-    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(
-        4000 * WH_PER_W_WINDOW
-    )
+    assert scenario.engine.penalty.overconsumption_wh == pytest.approx(4000 * WH_PER_W_WINDOW)
 
 
 def test_zero_threshold_gives_penalty_one_decision_later() -> None:
@@ -168,9 +162,7 @@ def test_current_variant_is_found_during_the_penalty() -> None:
     scenario.turn_on("b", "heater")
     start_penalty(scenario)
 
-    assert scenario.decide(5000, tariff=ABOVE_THRESHOLD, true=("morning",)) == off(
-        "heater:morning"
-    )
+    assert scenario.decide(5000, tariff=ABOVE_THRESHOLD, true=("morning",)) == off("heater:morning")
     assert scenario.engine.current_variants == {"heater": "morning", "b": None}
 
 
@@ -179,9 +171,7 @@ def test_no_penalty_without_a_tariff_average() -> None:
     engine = RegulationEngine(no_waiting("a"))
     engine.start(START)
 
-    commands = engine.decide(
-        DecisionInput(START + timedelta(minutes=1), 5.0, None, (5.0,), True, False)
-    ).commands
+    commands = engine.decide(DecisionInput(START + timedelta(minutes=1), 5.0, None, (5.0,), True, False)).commands
 
     assert commands == on("a")
     assert engine.penalty == PenaltyState()

@@ -47,9 +47,7 @@ WINDOW = timedelta(seconds=60)
 DEFAULT = {"mode": "default"}
 
 
-def appliance(
-    appliance_id: str, turn_on: dict[str, Any] = DEFAULT, **settings: Any
-) -> dict[str, Any]:
+def appliance(appliance_id: str, turn_on: dict[str, Any] = DEFAULT, **settings: Any) -> dict[str, Any]:
     return {
         "id": appliance_id,
         "entity_id": f"light.{appliance_id}",
@@ -122,9 +120,7 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
     hass.states.async_set(POWER_SENSOR, watt, {ATTR_UNIT_OF_MEASUREMENT: "W"})
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta = WINDOW) -> None:
     """Move time on, with the power sensors reporting as a HAN reader does."""
     freezer.tick(delta)
     for sensor in (POWER_SENSOR,):
@@ -134,9 +130,7 @@ async def advance(
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def advance_windows(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int
-) -> None:
+async def advance_windows(hass: HomeAssistant, freezer: FrozenDateTimeFactory, count: int) -> None:
     """Close `count` windows, one at a time, since each schedules the next."""
     for _ in range(count):
         await advance(hass, freezer)
@@ -176,9 +170,7 @@ async def switch_regulation(hass: HomeAssistant, service: str) -> None:
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def test_everything_is_turned_off_at_startup(
-    hass: HomeAssistant, actions: list[str], setup_kraftvakt
-) -> None:
+async def test_everything_is_turned_off_at_startup(hass: HomeAssistant, actions: list[str], setup_kraftvakt) -> None:
     """The regulation starts by itself with everything off."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -188,9 +180,7 @@ async def test_everything_is_turned_off_at_startup(
     assert safe_state(hass) == STATE_OFF
 
 
-async def test_regulation_starts_when_home_assistant_has_started(
-    hass: HomeAssistant, actions: list[str], setup_kraftvakt
-) -> None:
+async def test_regulation_starts_when_home_assistant_has_started(hass: HomeAssistant, actions: list[str], setup_kraftvakt) -> None:
     """The integrations of the appliances are loaded by then."""
     hass.set_state(CoreState.starting)
     set_power(hass, "2000")
@@ -206,9 +196,7 @@ async def test_regulation_starts_when_home_assistant_has_started(
     assert regulation_switch(hass) == STATE_ON
 
 
-async def test_user_start_before_home_assistant_has_started(
-    hass: HomeAssistant, actions: list[str], setup_kraftvakt
-) -> None:
+async def test_user_start_before_home_assistant_has_started(hass: HomeAssistant, actions: list[str], setup_kraftvakt) -> None:
     """The regulation is not started a second time when HA has started."""
     hass.set_state(CoreState.starting)
     set_power(hass, "2000")
@@ -223,9 +211,7 @@ async def test_user_start_before_home_assistant_has_started(
     assert regulation_switch(hass) == STATE_ON
 
 
-async def test_appliances_are_turned_on_one_per_decision(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_appliances_are_turned_on_one_per_decision(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The first decision comes after one interval."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -261,9 +247,7 @@ async def test_decisions_follow_the_regulation_interval(
     assert actions == ["on light.a", "on light.b"]
 
 
-async def test_lowest_priority_is_turned_off_above_the_limit(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_lowest_priority_is_turned_off_above_the_limit(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -276,9 +260,7 @@ async def test_lowest_priority_is_turned_off_above_the_limit(
     assert actions == ["off light.b"]
 
 
-async def test_stop_turns_everything_off_and_stops_the_decisions(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_stop_turns_everything_off_and_stops_the_decisions(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """Stopping works at once, and nothing is turned on."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -294,9 +276,7 @@ async def test_stop_turns_everything_off_and_stops_the_decisions(
     assert actions == ["off light.a", "off light.b"]
 
 
-async def test_start_waits_for_a_whole_window_after_the_start(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_start_waits_for_a_whole_window_after_the_start(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """A window that started before the start does not count."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -314,9 +294,7 @@ async def test_start_waits_for_a_whole_window_after_the_start(
     assert actions == ["off light.a", "off light.b", "on light.a"]
 
 
-async def test_turning_on_a_running_regulation_changes_nothing(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_turning_on_a_running_regulation_changes_nothing(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
     await advance(hass, freezer)
@@ -328,9 +306,7 @@ async def test_turning_on_a_running_regulation_changes_nothing(
     assert actions == ["on light.b"]
 
 
-async def test_turning_off_a_stopped_regulation_changes_nothing(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_turning_off_a_stopped_regulation_changes_nothing(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
     await switch_regulation(hass, "turn_off")
@@ -355,9 +331,7 @@ async def test_incomplete_configuration_does_not_start(
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     assert regulation_switch(hass) == STATE_OFF
-    assert entry.runtime_data.missing == [
-        Issue("missing_action", "appliances", "b", "turn_on")
-    ]
+    assert entry.runtime_data.missing == [Issue("missing_action", "appliances", "b", "turn_on")]
     assert ir.async_get(hass).async_get_issue(DOMAIN, "regulation_not_started")
 
     with pytest.raises(ServiceValidationError) as error:
@@ -411,9 +385,7 @@ async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
     assert "Decision: {'time': " in caplog.text
 
 
-async def test_safe_state_when_the_power_sensor_is_lost(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_safe_state_when_the_power_sensor_is_lost(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """One lost window is tolerated, two are not."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -434,9 +406,7 @@ async def test_safe_state_when_the_power_sensor_is_lost(
     assert actions == ["on light.b", "off light.a", "off light.b"]
 
 
-async def test_regulation_starts_again_when_the_power_sensor_is_back(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_regulation_starts_again_when_the_power_sensor_is_back(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
     set_power(hass, "unavailable")
@@ -455,9 +425,7 @@ async def test_regulation_starts_again_when_the_power_sensor_is_back(
     assert actions == ["off light.a", "off light.b", "on light.a"]
 
 
-async def test_safe_state_before_the_first_measurement(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_safe_state_before_the_first_measurement(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """A power sensor that never reports leads to the safe state."""
     await setup_kraftvakt()
     actions.clear()
@@ -470,9 +438,7 @@ async def test_safe_state_before_the_first_measurement(
     assert actions == ["off light.a", "off light.b"]
 
 
-async def test_penalty_turns_everything_off_until_paid_back(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_penalty_turns_everything_off_until_paid_back(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The regulation starts again after it."""
     set_power(hass, "12000")
     await setup_kraftvakt()
@@ -485,9 +451,7 @@ async def test_penalty_turns_everything_off_until_paid_back(
     await advance(hass, freezer)
     assert actions == ["off light.a", "off light.b"]
     assert state_of(hass, "binary_sensor", "penalty_active") == STATE_ON
-    assert float(state_of(hass, "sensor", "penalty_overconsumption")) == pytest.approx(
-        2000 * 60 / 3600
-    )
+    assert float(state_of(hass, "sensor", "penalty_overconsumption")) == pytest.approx(2000 * 60 / 3600)
 
     set_power(hass, "5000")
     await advance(hass, freezer)
@@ -516,9 +480,7 @@ async def test_variant_condition_moves_the_appliance(
             "condition": {"type": "entity", "value": "input_boolean.morning"},
         }
     ]
-    config["priority"].insert(
-        0, {"type": "appliance", "appliance_id": "b", "variant_id": "morning"}
-    )
+    config["priority"].insert(0, {"type": "appliance", "appliance_id": "b", "variant_id": "morning"})
     hass.states.async_set("input_boolean.morning", STATE_ON)
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -594,9 +556,7 @@ async def test_variant_with_own_actions_is_switched_with_them(
             },
         }
     ]
-    config["priority"].insert(
-        1, {"type": "appliance", "appliance_id": "b", "variant_id": "cool"}
-    )
+    config["priority"].insert(1, {"type": "appliance", "appliance_id": "b", "variant_id": "cool"})
     hass.states.async_set("input_boolean.cool", STATE_ON)
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -637,9 +597,7 @@ async def test_template_condition_gets_the_appliance_entity(
             },
         }
     ]
-    config["priority"].insert(
-        0, {"type": "appliance", "appliance_id": "b", "variant_id": "cold"}
-    )
+    config["priority"].insert(0, {"type": "appliance", "appliance_id": "b", "variant_id": "cold"})
     hass.states.async_set("light.b", STATE_OFF, {"temperature": 35})
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -705,15 +663,10 @@ async def test_failed_action_does_not_stop_the_regulation(
     assert len(attempts) == 1
     assert actions == ["on light.b"]
     assert "Could not turn_on light.a: no answer" in caplog.text
-    assert [
-        (failure["action"], failure["error"])
-        for failure in entry.runtime_data.failed_actions
-    ] == [("turn_on light.a", "no answer")]
+    assert [(failure["action"], failure["error"]) for failure in entry.runtime_data.failed_actions] == [("turn_on light.a", "no answer")]
 
 
-async def test_appliance_states_are_not_taken_into_account(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_appliance_states_are_not_taken_into_account(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The regulation counts on what it last decided itself.
 
     Appliances switched outside Kraftvakt are not noticed, and no appliance is
@@ -734,9 +687,7 @@ async def test_appliance_states_are_not_taken_into_account(
     assert actions == ["on light.b", "off light.b"]
 
 
-async def test_reload_starts_the_regulation_again(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_reload_starts_the_regulation_again(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """A restart forgets the state and turns all off."""
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
@@ -752,9 +703,7 @@ async def test_reload_starts_the_regulation_again(
     assert actions == ["off light.a", "off light.b", "on light.a"]
 
 
-async def test_reload_waits_for_the_actions_of_the_old_regulation(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, config, setup_kraftvakt
-) -> None:
+async def test_reload_waits_for_the_actions_of_the_old_regulation(hass: HomeAssistant, freezer: FrozenDateTimeFactory, config, setup_kraftvakt) -> None:
     """The appliances are turned off after the old actions have run."""
     recorded: list[str] = []
     release = asyncio.Event()
@@ -831,23 +780,14 @@ ENTITY_NAMES = {
 
 
 @pytest.mark.parametrize(("language", "index"), [("en", 0), ("nb", 1)])
-async def test_entity_ids_are_the_same_in_every_language(
-    hass: HomeAssistant, setup_kraftvakt, language: str, index: int
-) -> None:
+async def test_entity_ids_are_the_same_in_every_language(hass: HomeAssistant, setup_kraftvakt, language: str, index: int) -> None:
     """The entity ids group the entities, and the names are translated."""
     hass.config.language = language
     enable_next_turn_on_sensor(hass)
     await setup_kraftvakt()
 
-    names = {
-        entity.entity_id: hass.states.get(entity.entity_id).attributes["friendly_name"]
-        for entity in er.async_get(hass).entities.values()
-        if entity.platform == DOMAIN
-    }
-    assert names == {
-        entity_id: f"Kraftvakt {translated[index]}"
-        for entity_id, translated in ENTITY_NAMES.items()
-    }
+    names = {entity.entity_id: hass.states.get(entity.entity_id).attributes["friendly_name"] for entity in er.async_get(hass).entities.values() if entity.platform == DOMAIN}
+    assert names == {entity_id: f"Kraftvakt {translated[index]}" for entity_id, translated in ENTITY_NAMES.items()}
 
 
 def enable_next_turn_on_sensor(hass: HomeAssistant) -> None:
@@ -874,9 +814,7 @@ def stored_power_limit(hass_storage: dict[str, Any]) -> int:
     return hass_storage[STORAGE_KEY]["data"]["general"]["power_limit_w"]
 
 
-async def test_power_limit_is_the_stored_power_limit_in_w(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_power_limit_is_the_stored_power_limit_in_w(hass: HomeAssistant, setup_kraftvakt) -> None:
     await setup_kraftvakt()
 
     state = hass.states.get(entity_id(hass, "number", "power_limit"))
@@ -934,9 +872,7 @@ async def test_power_limit_is_used_from_the_next_decision_without_a_restart(
     assert actions == ["off light.b"]
 
 
-async def test_power_limit_changed_while_running_is_used_after_a_stop(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_power_limit_changed_while_running_is_used_after_a_stop(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     set_power(hass, "7450")
     entry = await setup_kraftvakt()
     await set_power_limit(hass, 7500)
@@ -970,9 +906,7 @@ async def test_power_limit_changed_back_before_the_decision_changes_nothing(
     assert actions == ["on light.b"]
 
 
-async def test_free_power_is_the_limit_minus_the_regulation_average(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_free_power_is_the_limit_minus_the_regulation_average(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     await setup_kraftvakt()
     assert state_of(hass, "sensor", "power_free") == STATE_UNAVAILABLE
@@ -1007,17 +941,11 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     actions.clear()
 
     await advance(hass, freezer)
-    assert float(
-        state_of(hass, "sensor", "waiting_time_next_turn_on")
-    ) == pytest.approx(curve_waiting_s)
-    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (
-        windows_to_wait * WINDOW.total_seconds()
-    )
+    assert float(state_of(hass, "sensor", "waiting_time_next_turn_on")) == pytest.approx(curve_waiting_s)
+    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (windows_to_wait * WINDOW.total_seconds())
 
     await advance(hass, freezer)
-    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == (
-        (windows_to_wait - 1) * WINDOW.total_seconds()
-    )
+    assert int(state_of(hass, "sensor", "waiting_time_remaining")) == ((windows_to_wait - 1) * WINDOW.total_seconds())
 
     for _ in range(windows_to_wait - 1):
         await advance(hass, freezer)
@@ -1025,9 +953,7 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
 
 
 def excluded_switch(hass: HomeAssistant, appliance_id: str) -> str | None:
-    return er.async_get(hass).async_get_entity_id(
-        "switch", DOMAIN, f"appliance_{appliance_id}_excluded"
-    )
+    return er.async_get(hass).async_get_entity_id("switch", DOMAIN, f"appliance_{appliance_id}_excluded")
 
 
 async def exclude(hass: HomeAssistant, appliance_id: str, service: str) -> None:
@@ -1039,9 +965,7 @@ async def exclude(hass: HomeAssistant, appliance_id: str, service: str) -> None:
     )
 
 
-async def test_excluded_appliance_is_switched_off_at_the_next_decision(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_excluded_appliance_is_switched_off_at_the_next_decision(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """It is skipped from then on, and no longer counted as on."""
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
@@ -1055,10 +979,7 @@ async def test_excluded_appliance_is_switched_off_at_the_next_decision(
 
     assert actions == ["off light.a"]
     assert state_of(hass, "sensor", "regulation_steps_on") == "1"
-    assert [
-        (item["id"], item["on"], item["excluded"])
-        for item in status_snapshot(hass, entry.runtime_data)["priority"]
-    ] == [("a", False, True), ("b", True, False)]
+    assert [(item["id"], item["on"], item["excluded"]) for item in status_snapshot(hass, entry.runtime_data)["priority"]] == [("a", False, True), ("b", True, False)]
 
 
 async def test_commands_are_repeated_at_any_window(
@@ -1073,9 +994,7 @@ async def test_commands_are_repeated_at_any_window(
     config["general"]["regulation_interval"] = 3
     config["general"]["command_repeat_interval_min"] = 10
     config["appliances"].append(appliance("c"))
-    config["priority"].append(
-        {"type": "appliance", "appliance_id": "c", "variant_id": None}
-    )
+    config["priority"].append({"type": "appliance", "appliance_id": "c", "variant_id": None})
     set_power(hass, "2000")
     await setup_kraftvakt()
     await exclude(hass, "c", "turn_on")
@@ -1092,9 +1011,7 @@ async def test_commands_are_repeated_at_any_window(
     assert actions == ["on light.a", "off light.b", "on light.a"]
 
 
-async def test_appliance_included_again_gets_room(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt
-) -> None:
+async def test_appliance_included_again_gets_room(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The appliance below is switched off, and comes on again after it."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -1110,9 +1027,7 @@ async def test_appliance_included_again_gets_room(
     assert actions == ["on light.b", "off light.b", "on light.a", "on light.b"]
 
 
-async def test_excluded_switches_are_named_and_kept_over_a_reload(
-    hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt
-) -> None:
+async def test_excluded_switches_are_named_and_kept_over_a_reload(hass: HomeAssistant, hass_storage: dict[str, Any], actions, setup_kraftvakt) -> None:
     """The positions are configuration, and the appliance names the switch."""
     hass.states.async_set("light.a", STATE_OFF, {"friendly_name": "Water heater"})
     entry = await setup_kraftvakt()
@@ -1165,16 +1080,12 @@ async def test_excluded_switches_follow_the_configuration_without_reload(
     }
 
 
-async def test_switches_of_removed_appliances_are_removed_at_setup(
-    hass: HomeAssistant, actions, setup_kraftvakt
-) -> None:
+async def test_switches_of_removed_appliances_are_removed_at_setup(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
     """No orphaned switches remain in the entity registry."""
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    orphan = registry.async_get_or_create(
-        "switch", DOMAIN, "appliance_old_excluded", config_entry=entry
-    )
+    orphan = registry.async_get_or_create("switch", DOMAIN, "appliance_old_excluded", config_entry=entry)
 
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done(wait_background_tasks=True)
@@ -1210,13 +1121,9 @@ async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
     assert issues.async_get_issue(DOMAIN, "missing_entity_light.b")
 
 
-async def test_next_turn_on_sensor_is_disabled_by_default(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_next_turn_on_sensor_is_disabled_by_default(hass: HomeAssistant, setup_kraftvakt) -> None:
     await setup_kraftvakt()
 
-    registry_entry = er.async_get(hass).async_get(
-        entity_id(hass, "sensor", "waiting_time_next_turn_on")
-    )
+    registry_entry = er.async_get(hass).async_get(entity_id(hass, "sensor", "waiting_time_next_turn_on"))
     assert registry_entry is not None
     assert registry_entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION

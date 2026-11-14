@@ -55,18 +55,16 @@ class SimulatorNumberDescription[DeviceT: SimulatedDevice](NumberEntityDescripti
     mode: NumberMode = NumberMode.BOX
 
 
-BACKGROUND_POWER: Final[SimulatorNumberDescription[SimulatedHan]] = (
-    SimulatorNumberDescription(
-        key="background_power",
-        translation_key="background_power",
-        device_class=NumberDeviceClass.POWER,
-        native_unit_of_measurement=UnitOfPower.WATT,
-        native_min_value=0,
-        native_max_value=MAX_BACKGROUND_W,
-        native_step=100,
-        value_fn=lambda han: han.background_w,
-        set_fn=lambda han, value: han.async_set_background(value),
-    )
+BACKGROUND_POWER: Final[SimulatorNumberDescription[SimulatedHan]] = SimulatorNumberDescription(
+    key="background_power",
+    translation_key="background_power",
+    device_class=NumberDeviceClass.POWER,
+    native_unit_of_measurement=UnitOfPower.WATT,
+    native_min_value=0,
+    native_max_value=MAX_BACKGROUND_W,
+    native_step=100,
+    value_fn=lambda han: han.background_w,
+    set_fn=lambda han, value: han.async_set_background(value),
 )
 
 HEATER_NUMBERS: Final[tuple[SimulatorNumberDescription[SimulatedHeater], ...]] = (
@@ -105,18 +103,16 @@ HEATER_NUMBERS: Final[tuple[SimulatorNumberDescription[SimulatedHeater], ...]] =
 )
 
 
-ROOM_TEMPERATURE: Final[SimulatorNumberDescription[SimulatedThermostat]] = (
-    SimulatorNumberDescription(
-        key="room_temperature",
-        translation_key="room_temperature",
-        device_class=NumberDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        native_min_value=MIN_ROOM_TEMPERATURE,
-        native_max_value=MAX_ROOM_TEMPERATURE,
-        native_step=TEMPERATURE_STEP,
-        value_fn=lambda thermostat: thermostat.room_temperature,
-        set_fn=lambda thermostat, value: thermostat.async_set_room_temperature(value),
-    )
+ROOM_TEMPERATURE: Final[SimulatorNumberDescription[SimulatedThermostat]] = SimulatorNumberDescription(
+    key="room_temperature",
+    translation_key="room_temperature",
+    device_class=NumberDeviceClass.TEMPERATURE,
+    native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+    native_min_value=MIN_ROOM_TEMPERATURE,
+    native_max_value=MAX_ROOM_TEMPERATURE,
+    native_step=TEMPERATURE_STEP,
+    value_fn=lambda thermostat: thermostat.room_temperature,
+    set_fn=lambda thermostat, value: thermostat.async_set_room_temperature(value),
 )
 
 
@@ -143,22 +139,16 @@ async def async_setup_entry(
     device = entry.runtime_data
     match kind_of(entry):
         case DeviceKind.HAN:
-            descriptions: tuple[SimulatorNumberDescription[Any], ...] = (
-                BACKGROUND_POWER,
-            )
+            descriptions: tuple[SimulatorNumberDescription[Any], ...] = (BACKGROUND_POWER,)
         case DeviceKind.HEATER:
             descriptions = HEATER_NUMBERS
         case DeviceKind.THERMOSTAT:
             descriptions = (*HEATER_NUMBERS, ROOM_TEMPERATURE)
         case DeviceKind.CHARGER:
             charger = device_of(entry, SimulatedCharger)
-            async_add_entities(
-                [ChargingCurrentNumber(entry, charger, charging_current(charger))]
-            )
+            async_add_entities([ChargingCurrentNumber(entry, charger, charging_current(charger))])
             return
-    async_add_entities(
-        SettingNumber(entry, device, description) for description in descriptions
-    )
+    async_add_entities(SettingNumber(entry, device, description) for description in descriptions)
 
 
 class SettingNumber(SimulatorEntity[SimulatedDevice], NumberEntity):

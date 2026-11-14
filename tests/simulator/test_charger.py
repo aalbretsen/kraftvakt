@@ -35,9 +35,7 @@ def restored_current(value: float) -> dict[str, Any]:
     }
 
 
-async def test_charger_starts_without_car_and_charging_not_allowed(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_charger_starts_without_car_and_charging_not_allowed(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
 
     for switch in (ALLOWED, CONNECTED, FULLY_CHARGED, UNPLUGGED):
@@ -52,9 +50,7 @@ async def test_charger_starts_without_car_and_charging_not_allowed(
     assert current.attributes["unit_of_measurement"] == "A"
 
 
-async def test_charger_draws_three_phase_power_for_a_charging_car(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_charger_draws_three_phase_power_for_a_charging_car(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
 
     await call(hass, "switch", "turn_on", ALLOWED)
@@ -75,9 +71,7 @@ async def test_charger_draws_three_phase_power_for_a_charging_car(
     assert power(hass, CHARGING_POWER) == 0
 
 
-async def test_unplugged_charger_draws_nothing_for_a_charging_car(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_unplugged_charger_draws_nothing_for_a_charging_car(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
     await call(hass, "switch", "turn_on", ALLOWED)
     await call(hass, "switch", "turn_on", CONNECTED)
@@ -89,9 +83,7 @@ async def test_unplugged_charger_draws_nothing_for_a_charging_car(
     assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(6))
 
 
-async def test_current_outside_the_charger_range_is_refused(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_current_outside_the_charger_range_is_refused(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
 
     with pytest.raises(ServiceValidationError):
@@ -100,9 +92,7 @@ async def test_current_outside_the_charger_range_is_refused(
     assert float(state(hass, CURRENT)) == 6
 
 
-async def test_charger_states_are_restored(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
+async def test_charger_states_are_restored(hass: HomeAssistant, add_device: AddDevice) -> None:
     mock_restore_cache_with_extra_data(
         hass,
         [
@@ -123,12 +113,8 @@ async def test_charger_states_are_restored(
     assert power(hass, CHARGING_POWER) == 0
 
 
-async def test_restored_current_is_kept_within_a_changed_range(
-    hass: HomeAssistant, add_device: AddDevice
-) -> None:
-    mock_restore_cache_with_extra_data(
-        hass, [(State(CURRENT, "16"), restored_current(16))]
-    )
+async def test_restored_current_is_kept_within_a_changed_range(hass: HomeAssistant, add_device: AddDevice) -> None:
+    mock_restore_cache_with_extra_data(hass, [(State(CURRENT, "16"), restored_current(16))])
 
     await add_device(DeviceKind.CHARGER, "Charger", max_current_a=10)
 

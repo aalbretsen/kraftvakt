@@ -10,16 +10,10 @@ from .model import AmpereStepKey, ApplianceStepKey, Step
 from .waiting import RepeatedTurnOnGrowth
 
 
-def current_variant(
-    appliance: Appliance, variant_conditions: Mapping[str, bool]
-) -> str | None:
+def current_variant(appliance: Appliance, variant_conditions: Mapping[str, bool]) -> str | None:
     """Return the variant with the topmost true condition, or None for the appliance."""
     return next(
-        (
-            variant.id
-            for variant in appliance.variants
-            if variant_conditions.get(variant.id, False)
-        ),
+        (variant.id for variant in appliance.variants if variant_conditions.get(variant.id, False)),
         None,
     )
 
@@ -45,10 +39,7 @@ def build_steps(
             steps.extend(ampere_steps_by_group.get(entry.group_id or "", ()))
             continue
         appliance_id = entry.appliance_id
-        if (
-            appliance_id is None
-            or current_variants.get(appliance_id) != entry.variant_id
-        ):
+        if appliance_id is None or current_variants.get(appliance_id) != entry.variant_id:
             continue
         steps.append(
             Step(
@@ -77,8 +68,7 @@ def ampere_steps(
             is_on=index < ampere_steps_on.get(charger.id, 0),
             power_reserve_w=charger.power_reserve_w if index == 0 else None,
             growth=growth,
-            can_turn_on=charger.id in may_charge
-            and (index == 0 or charger.id not in on_trial),
+            can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in on_trial),
             can_turn_off=charger.id not in bypassed,
         )
         for index in range(rounds)

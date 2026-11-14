@@ -37,9 +37,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
             "overconsumption_wh": penalty.overconsumption_wh,
             "recovery_started": penalty.recovery_started,
         },
-        "regulation_average_w": (
-            None if averages is None else averages.regulation_average_w
-        ),
+        "regulation_average_w": (None if averages is None else averages.regulation_average_w),
         "tariff_average_w": None if averages is None else averages.tariff_average_w,
         "power_limit_w": config.general.power_limit_w,
         "regulation_window_s": config.general.regulation_window_s,
@@ -49,9 +47,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
     }
 
 
-def _priority_rows(
-    hass: HomeAssistant, runtime: KraftvaktRuntime
-) -> list[dict[str, Any]]:
+def _priority_rows(hass: HomeAssistant, runtime: KraftvaktRuntime) -> list[dict[str, Any]]:
     """Return the priority list with each appliance at the entry of its current variant.
 
     Before the first decision after a start, the appliance itself is the
@@ -72,29 +68,21 @@ def _priority_rows(
     return rows
 
 
-def _charger_group_status(
-    hass: HomeAssistant, runtime: KraftvaktRuntime, group: ChargerGroup
-) -> dict[str, Any]:
+def _charger_group_status(hass: HomeAssistant, runtime: KraftvaktRuntime, group: ChargerGroup) -> dict[str, Any]:
     priority = runtime.charging_priorities.get(group.id, [])
     return {
         "type": PriorityEntryType.CHARGER_GROUP.value,
         "id": group.id,
         "name": group.name,
         "chargers": [
-            _charger_status(hass, runtime, charger, status)
-            for charger in _in_order(group.chargers, priority)
-            if (status := runtime.chargers.get(charger.id)) is not None
+            _charger_status(hass, runtime, charger, status) for charger in _in_order(group.chargers, priority) if (status := runtime.chargers.get(charger.id)) is not None
         ],
     }
 
 
-def _appliance_status(
-    hass: HomeAssistant, runtime: KraftvaktRuntime, appliance: Appliance
-) -> dict[str, Any]:
+def _appliance_status(hass: HomeAssistant, runtime: KraftvaktRuntime, appliance: Appliance) -> dict[str, Any]:
     variant_id = runtime.current_variants.get(appliance.id)
-    variant = next(
-        (variant for variant in appliance.variants if variant.id == variant_id), None
-    )
+    variant = next((variant for variant in appliance.variants if variant.id == variant_id), None)
     return {
         "type": PriorityEntryType.APPLIANCE.value,
         "id": appliance.id,
@@ -124,9 +112,7 @@ def _charger_status(
     }
 
 
-def _waiting_fields(
-    runtime: KraftvaktRuntime, waiting_for: ApplianceStepKey | str
-) -> Mapping[str, str | None]:
+def _waiting_fields(runtime: KraftvaktRuntime, waiting_for: ApplianceStepKey | str) -> Mapping[str, str | None]:
     """Return when the waiting started and ends, for the step that waits.
 
     `waiting_for` is the step of an appliance, or the id of a charger whose

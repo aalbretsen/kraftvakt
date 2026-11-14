@@ -56,9 +56,7 @@ def set_power(hass: HomeAssistant, value: str, unit: str | None = "W") -> None:
     hass.states.async_set(POWER_SENSOR, value, attributes)
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
     freezer.tick(delta)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -76,9 +74,7 @@ def state_of(hass: HomeAssistant, key: str) -> str:
     return state.state
 
 
-async def test_sensors_are_unavailable_before_the_first_average(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_sensors_are_unavailable_before_the_first_average(hass: HomeAssistant, setup_kraftvakt) -> None:
     """There is no average before the first window has closed."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -87,9 +83,7 @@ async def test_sensors_are_unavailable_before_the_first_average(
     assert state_of(hass, "power_tariff_average") == STATE_UNAVAILABLE
 
 
-async def test_sensors_show_the_averages_in_w(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_sensors_show_the_averages_in_w(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     """Both averages are power sensors in W."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -105,19 +99,13 @@ async def test_sensors_show_the_averages_in_w(
         assert state.attributes[ATTR_DEVICE_CLASS] == "power"
         assert state.attributes["state_class"] == "measurement"
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
-    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(
-        (2000 * 3555 + 6000 * 45) / 3600
-    )
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((2000 * 3555 + 6000 * 45) / 3600)
 
 
-async def test_sensors_belong_to_the_service_device(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_sensors_belong_to_the_service_device(hass: HomeAssistant, setup_kraftvakt) -> None:
     entry = await setup_kraftvakt()
 
-    device = dr.async_get(hass).async_get_device_by_identifier(
-        (DOMAIN, entry.entry_id), entry.entry_id
-    )
+    device = dr.async_get(hass).async_get_device_by_identifier((DOMAIN, entry.entry_id), entry.entry_id)
     assert device is not None
     assert device.name == "Kraftvakt"
     assert device.entry_type is dr.DeviceEntryType.SERVICE
@@ -128,9 +116,7 @@ async def test_sensors_belong_to_the_service_device(
         assert registry_entry.translation_key == key
 
 
-async def test_sensors_are_updated_once_per_window(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_sensors_are_updated_once_per_window(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     """The sensors change only when a window closes."""
     set_power(hass, "2000")
     await setup_kraftvakt()
@@ -145,9 +131,7 @@ async def test_sensors_are_updated_once_per_window(
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
 
 
-async def test_tariff_average_over_a_whole_hour_of_updates(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_tariff_average_over_a_whole_hour_of_updates(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     """The tariff average is right through the whole hour when the sensor
     updates every 10 seconds."""
     set_power(hass, "2000")
@@ -162,9 +146,7 @@ async def test_tariff_average_over_a_whole_hour_of_updates(
     assert float(state_of(hass, "power_tariff_average")) == pytest.approx(3000)
 
 
-async def test_sensors_follow_an_outage_of_the_power_sensor(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_sensors_follow_an_outage_of_the_power_sensor(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     """One invalid close keeps the last value, two make the sensors unavailable,
     and when a valid value comes the last valid value fills the gap."""
     set_power(hass, "3000")
@@ -182,17 +164,11 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(
     await advance(hass, freezer, timedelta(seconds=40))
     set_power(hass, "1500")
     await advance(hass, freezer, timedelta(seconds=20))
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(
-        (3000 * 40 + 1500 * 20) / 60
-    )
-    assert float(state_of(hass, "power_tariff_average")) == pytest.approx(
-        (3000 * 3580 + 1500 * 20) / 3600
-    )
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx((3000 * 40 + 1500 * 20) / 60)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((3000 * 3580 + 1500 * 20) / 3600)
 
 
-async def test_power_sensor_without_unit_is_read_as_watt(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_power_sensor_without_unit_is_read_as_watt(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     set_power(hass, "2500", unit=None)
     await setup_kraftvakt()
 
@@ -231,26 +207,19 @@ async def test_window_length_comes_from_the_configuration(
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1000)
 
 
-async def test_sensor_names_are_translated(
-    hass: HomeAssistant, setup_kraftvakt
-) -> None:
+async def test_sensor_names_are_translated(hass: HomeAssistant, setup_kraftvakt) -> None:
     """Norwegian names come from the translation files."""
     hass.config.language = "nb"
     await setup_kraftvakt()
 
-    names = {
-        key: hass.states.get(entity_id(hass, key)).attributes[ATTR_FRIENDLY_NAME]
-        for key in ("power_regulation_average", "power_tariff_average")
-    }
+    names = {key: hass.states.get(entity_id(hass, key)).attributes[ATTR_FRIENDLY_NAME] for key in ("power_regulation_average", "power_tariff_average")}
     assert names == {
         "power_regulation_average": "Kraftvakt Effekt reguleringssnitt",
         "power_tariff_average": "Kraftvakt Effekt tariffsnitt",
     }
 
 
-async def test_unload_stops_the_sensors(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt
-) -> None:
+async def test_unload_stops_the_sensors(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
 

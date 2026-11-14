@@ -40,9 +40,7 @@ def test_topmost_true_condition_gives_current_variant() -> None:
 def test_slots_follow_the_priority_list() -> None:
     config = make_config(appliance("a", reserve_w=2500), "b", "c")
 
-    steps = build_steps(
-        config, current_variants={}, appliances_on={"b"}, growth=APPLIANCE_GROWTH
-    )
+    steps = build_steps(config, current_variants={}, appliances_on={"b"}, growth=APPLIANCE_GROWTH)
 
     assert steps == [
         Step(ApplianceStepKey("a"), False, 2500, APPLIANCE_GROWTH),
@@ -84,9 +82,7 @@ def test_each_charger_group_entry_is_replaced_by_its_ampere_steps() -> None:
 
 
 def charger(charger_id: str, min_a: int, max_a: int, reserve_w: int = 4000) -> Charger:
-    return Charger(
-        charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_w=reserve_w
-    )
+    return Charger(charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_w=reserve_w)
 
 
 def test_ampere_steps_are_interleaved_between_chargers() -> None:

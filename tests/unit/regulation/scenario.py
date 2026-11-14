@@ -77,10 +77,7 @@ class Scenario:
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone
-        self.chargers = {
-            charger.id: ChargerReading(actively_charging=False)
-            for charger in config.chargers
-        }
+        self.chargers = {charger.id: ChargerReading(actively_charging=False) for charger in config.chargers}
         self.excluded_appliances: frozenset[str] = frozenset()
         self.overrides = OverrideChanges()
         self.start_commands = self.engine.start(self.now)
@@ -143,11 +140,7 @@ class Scenario:
         return self.engine.repeat_commands(
             self.now,
             self.excluded_appliances,
-            frozenset(
-                charger_id
-                for charger_id, reading in self.chargers.items()
-                if reading.excluded
-            ),
+            frozenset(charger_id for charger_id, reading in self.chargers.items() if reading.excluded),
         )
 
     def decide_many(

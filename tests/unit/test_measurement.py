@@ -49,9 +49,7 @@ def close_windows_until(averager: PowerAverager, end: datetime) -> WindowAverage
         (None, "W", None),
     ],
 )
-def test_power_w_converts_valid_measurements(
-    state: str | None, unit: str | None, expected: float | None
-) -> None:
+def test_power_w_converts_valid_measurements(state: str | None, unit: str | None, expected: float | None) -> None:
     """W and kW are converted, a missing unit is watt."""
     assert power_w(state, unit) == expected
 
@@ -138,12 +136,8 @@ def test_tariff_average_slides_over_the_last_hour() -> None:
     averager.add_measurement(at(30 * 60), 0.0)
 
     assert close_windows_until(averager, at(30 * 60)).tariff_average_w == 10.0
-    assert close_windows_until(averager, at(60 * 60)).tariff_average_w == pytest.approx(
-        5.0
-    )
-    assert close_windows_until(averager, at(75 * 60)).tariff_average_w == pytest.approx(
-        2.5
-    )
+    assert close_windows_until(averager, at(60 * 60)).tariff_average_w == pytest.approx(5.0)
+    assert close_windows_until(averager, at(75 * 60)).tariff_average_w == pytest.approx(2.5)
     assert close_windows_until(averager, at(90 * 60)).tariff_average_w == 0.0
     assert close_windows_until(averager, at(5 * 3600)).tariff_average_w == 0.0
 
@@ -160,9 +154,7 @@ def test_capacity_window_does_not_depend_on_the_window_length() -> None:
         averages = averager.close_window()
         end_s = (averages.end - START).total_seconds()
         seconds_with_power = min(3600, max(0, 3700 - end_s))
-        assert averages.tariff_average_w == pytest.approx(
-            6.0 * seconds_with_power / 3600
-        )
+        assert averages.tariff_average_w == pytest.approx(6.0 * seconds_with_power / 3600)
 
 
 def changing_power(seconds: int) -> float:
@@ -170,9 +162,7 @@ def changing_power(seconds: int) -> float:
     return 1.0 + (seconds // 30 % 7) * 1.25
 
 
-def run_with_updates_every(
-    interval_s: int, power_at: Callable[[int], float], window_s: int = 60
-) -> list[WindowAverages]:
+def run_with_updates_every(interval_s: int, power_at: Callable[[int], float], window_s: int = 60) -> list[WindowAverages]:
     """Feed the power once per interval through two hours and close all windows."""
     averager = PowerAverager(timedelta(seconds=window_s), START)
     results = []
@@ -185,18 +175,14 @@ def run_with_updates_every(
     return results
 
 
-def expected_average(
-    interval_s: int, power_at: Callable[[int], float], start: datetime, end: datetime
-) -> float:
+def expected_average(interval_s: int, power_at: Callable[[int], float], start: datetime, end: datetime) -> float:
     """Average of samples held until the next one, counted second by second.
 
     Before the first sample the first one applies.
     """
     first = int((start - START).total_seconds())
     last = int((end - START).total_seconds())
-    total = sum(
-        power_at(max(0, second - second % interval_s)) for second in range(first, last)
-    )
+    total = sum(power_at(max(0, second - second % interval_s)) for second in range(first, last))
     return total / (last - first)
 
 
@@ -205,9 +191,7 @@ def test_averages_are_correct_for_any_update_rate(interval_s: int) -> None:
     """The averages are correct whether the sensor updates every second, every
     10 seconds or less often, through the whole tariff window."""
     for averages in run_with_updates_every(interval_s, changing_power):
-        assert averages.regulation_average_w == pytest.approx(
-            expected_average(interval_s, changing_power, averages.start, averages.end)
-        )
+        assert averages.regulation_average_w == pytest.approx(expected_average(interval_s, changing_power, averages.start, averages.end))
         assert averages.tariff_average_w == pytest.approx(
             expected_average(
                 interval_s,
@@ -287,9 +271,7 @@ def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
     assert second == WindowAverages(at(60), at(120), None, None, sensor_valid=False)
     assert third == WindowAverages(at(120), at(180), None, None, sensor_valid=False)
     assert fourth.regulation_average_w == pytest.approx((9.0 * 20 + 2.0 * 40) / 60)
-    assert fourth.tariff_average_w == pytest.approx(
-        (9.0 * 3600 - 9.0 * 40 + 2.0 * 40) / 3600
-    )
+    assert fourth.tariff_average_w == pytest.approx((9.0 * 3600 - 9.0 * 40 + 2.0 * 40) / 3600)
     assert fourth.sensor_valid
 
 
@@ -306,9 +288,7 @@ def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
 
     averages = close_windows_until(averager, at(3780))
 
-    assert averages.tariff_average_w == pytest.approx(
-        (7.0 * 3540.5 + 3.0 * 59.5) / 3600, abs=1e-4
-    )
+    assert averages.tariff_average_w == pytest.approx((7.0 * 3540.5 + 3.0 * 59.5) / 3600, abs=1e-4)
 
 
 def test_without_first_measurement_windows_stay_unknown() -> None:
@@ -317,10 +297,7 @@ def test_without_first_measurement_windows_stay_unknown() -> None:
 
     results = [averager.close_window() for _ in range(3)]
 
-    assert all(
-        averages.regulation_average_w is None and not averages.sensor_valid
-        for averages in results
-    )
+    assert all(averages.regulation_average_w is None and not averages.sensor_valid for averages in results)
 
 
 def test_measurement_after_window_end_does_not_count_in_that_window() -> None:

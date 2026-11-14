@@ -70,11 +70,7 @@ class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
     async def async_added_to_hass(self) -> None:
         """Report at a fixed interval as well as on every change."""
         await super().async_added_to_hass()
-        self.async_on_remove(
-            async_track_time_interval(
-                self.hass, self._async_report, timedelta(seconds=10)
-            )
-        )
+        self.async_on_remove(async_track_time_interval(self.hass, self._async_report, timedelta(seconds=10)))
 
     @callback
     def _async_report(self, _now: datetime) -> None:

@@ -46,9 +46,7 @@ def appliance(
             Variant(
                 id=variant_id,
                 label=variant_id,
-                condition=Condition(
-                    ConditionType.ENTITY, f"binary_sensor.{variant_id}"
-                ),
+                condition=Condition(ConditionType.ENTITY, f"binary_sensor.{variant_id}"),
             )
             for variant_id in variants
         ),
@@ -78,9 +76,7 @@ def charger(
         min_current_a=min_a,
         max_current_a=max_a,
         power_reserve_w=reserve_w,
-        actively_charging=Condition(
-            ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"
-        ),
+        actively_charging=Condition(ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"),
         charging_window=charging_window,
         override_ends=override_ends,
     )
@@ -89,13 +85,9 @@ def charger(
 DEFAULT_GROUP = "ev"
 
 
-def charger_group(
-    group_id: str, *chargers: Charger, one_at_a_time: bool = True
-) -> ChargerGroup:
+def charger_group(group_id: str, *chargers: Charger, one_at_a_time: bool = True) -> ChargerGroup:
     """Return a group of the chargers, named after its id."""
-    return ChargerGroup(
-        id=group_id, name=group_id, one_at_a_time=one_at_a_time, chargers=chargers
-    )
+    return ChargerGroup(id=group_id, name=group_id, one_at_a_time=one_at_a_time, chargers=chargers)
 
 
 def priority_entry(text: str) -> PriorityEntry:
@@ -127,9 +119,7 @@ def make_config(
     explicit priority, the appliances come first in the given order, then the
     group ``"ev"`` when there are chargers, and the variants last.
     """
-    built = tuple(
-        appliance(item) if isinstance(item, str) else item for item in appliances
-    )
+    built = tuple(appliance(item) if isinstance(item, str) else item for item in appliances)
     if priority is None:
         priority = (
             *(item.id for item in built),
@@ -151,11 +141,7 @@ def make_config(
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),
         charger_groups=(
-            *(
-                (charger_group(DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time),)
-                if chargers
-                else ()
-            ),
+            *((charger_group(DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time),) if chargers else ()),
             *groups,
         ),
     )

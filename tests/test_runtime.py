@@ -19,14 +19,10 @@ WINDOW = timedelta(seconds=30)
 
 
 def config_with(power_sensor: str | None = POWER_SENSOR) -> KraftvaktConfig:
-    return KraftvaktConfig(
-        general=GeneralConfig(power_sensor=power_sensor, regulation_window_s=30)
-    )
+    return KraftvaktConfig(general=GeneralConfig(power_sensor=power_sensor, regulation_window_s=30))
 
 
-async def advance(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta
-) -> None:
+async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
     freezer.tick(delta)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -55,9 +51,7 @@ def start_runtime(hass: HomeAssistant, closed_windows: list[WindowAverages]):
         runtime.async_shutdown()
 
 
-async def test_windows_close_at_absolute_times_from_start(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_windows_close_at_absolute_times_from_start(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """Windows follow each other from the start without drifting."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     started = dt_util.utcnow()
@@ -73,9 +67,7 @@ async def test_windows_close_at_absolute_times_from_start(
     assert runtime.latest_averages == closed_windows[-1]
 
 
-async def test_power_sensor_state_feeds_the_averages(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_power_sensor_state_feeds_the_averages(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """The power sensor is read in W or kW."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     start_runtime(config_with())
@@ -89,9 +81,7 @@ async def test_power_sensor_state_feeds_the_averages(
     assert averages.sensor_valid
 
 
-async def test_unavailable_power_sensor_makes_the_window_invalid(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_unavailable_power_sensor_makes_the_window_invalid(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """An unavailable or removed sensor counts as no valid measurement."""
     hass.states.async_set(POWER_SENSOR, "3000", {"unit_of_measurement": "W"})
     start_runtime(config_with())
@@ -106,9 +96,7 @@ async def test_unavailable_power_sensor_makes_the_window_invalid(
     assert (second.regulation_average_w, second.sensor_valid) == (None, False)
 
 
-async def test_windows_close_without_power_sensor(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_windows_close_without_power_sensor(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """Without a configured power sensor there are no averages."""
     start_runtime(config_with(power_sensor=None))
 
@@ -118,9 +106,7 @@ async def test_windows_close_without_power_sensor(
     assert not closed_windows[0].sensor_valid
 
 
-async def test_shutdown_stops_measuring_and_closing_windows(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_shutdown_stops_measuring_and_closing_windows(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     runtime = start_runtime(config_with())
 
@@ -131,9 +117,7 @@ async def test_shutdown_stops_measuring_and_closing_windows(
     assert closed_windows == []
 
 
-async def test_removed_listener_is_not_called(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows
-) -> None:
+async def test_removed_listener_is_not_called(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     runtime = start_runtime(config_with())
     calls: list[WindowAverages] = []
     remove = runtime.async_add_window_listener(calls.append)

@@ -43,9 +43,7 @@ def test_waiting_time_grows_on_repeated_turn_on() -> None:
 
 def test_waiting_time_grows_with_the_configured_step_and_cap() -> None:
     """Steps of a quarter of 4 minutes, 3 steps: 4, 5, 6 and then 7 minutes."""
-    scenario = Scenario(
-        make_config("a", wait_at_limit_s=240, appliance_repeat=(0.25, 3))
-    )
+    scenario = Scenario(make_config("a", wait_at_limit_s=240, appliance_repeat=(0.25, 3)))
     scenario.turn_on("a")
 
     waits = [cycle(scenario, "a") for _ in range(6)]

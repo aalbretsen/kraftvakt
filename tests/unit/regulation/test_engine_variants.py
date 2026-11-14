@@ -251,9 +251,7 @@ def test_several_appliances_switching_up_switch_off_one_each() -> None:
     )
     scenario.turn_on("a", "b", "c")
 
-    assert scenario.decide(10000, true=("up", "up_too")) == off(
-        "d:up", "c", "e:up_too", "b"
-    )
+    assert scenario.decide(10000, true=("up", "up_too")) == off("d:up", "c", "e:up_too", "b")
 
 
 def test_switch_of_an_appliance_that_is_off_gives_the_new_turn_off_action() -> None:

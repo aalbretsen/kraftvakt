@@ -35,9 +35,7 @@ CHARGING = ChargerReading(actively_charging=True)
 IDLE = ChargerReading(actively_charging=False)
 
 
-def charger(
-    charger_id: str = "c", min_a: int = 6, max_a: int = 16, **settings
-) -> Charger:
+def charger(charger_id: str = "c", min_a: int = 6, max_a: int = 16, **settings) -> Charger:
     return Charger(charger_id, min_current_a=min_a, max_current_a=max_a, **settings)
 
 
@@ -73,16 +71,12 @@ def test_current_follows_the_ampere_steps_that_are_on() -> None:
         (NIGHT, time(12, 0), False),
     ],
 )
-def test_charging_window_can_reach_across_midnight(
-    window: ChargingWindow, local_time: time, expected: bool
-) -> None:
+def test_charging_window_can_reach_across_midnight(window: ChargingWindow, local_time: time, expected: bool) -> None:
     """The start is inside the window and the end is not."""
     assert in_charging_window(window, local_time) is expected
 
 
-DISCONNECTING = charger(
-    charging_window=NIGHT, override_ends=OverrideEnd.CAR_DISCONNECTED
-)
+DISCONNECTING = charger(charging_window=NIGHT, override_ends=OverrideEnd.CAR_DISCONNECTED)
 STOPPING = charger(charging_window=NIGHT, override_ends=OverrideEnd.CHARGING_STOPPED)
 MANUAL = charger(charging_window=NIGHT, override_ends=OverrideEnd.MANUAL)
 
@@ -101,9 +95,7 @@ def test_override_ends_on_evidence_once_it_is_armed() -> None:
     assert not override_ended(MANUAL, replace(gone, charging_stopped=True), True)
     assert not override_ended(DISCONNECTING, replace(gone, override_armed=False), True)
     assert not override_ended(DISCONNECTING, replace(gone, window_override=False), True)
-    assert not override_ended(
-        charger(override_ends=OverrideEnd.CAR_DISCONNECTED), gone, True
-    )
+    assert not override_ended(charger(override_ends=OverrideEnd.CAR_DISCONNECTED), gone, True)
 
 
 def test_override_arms_when_the_car_is_connected_or_charging() -> None:
@@ -130,23 +122,13 @@ def test_charging_permission() -> None:
     assert charging_permission(night, IDLE, True, time(12), False) == "override"
     assert charging_permission(night, IDLE, False, time(12), True) == "outside_window"
     assert charging_permission(night, finishing, False, time(12), True) == "finishing"
-    assert (
-        charging_permission(night, finishing, False, time(12), False)
-        == "outside_window"
-    )
+    assert charging_permission(night, finishing, False, time(12), False) == "outside_window"
 
 
 def test_finishing_ends_without_a_car() -> None:
-    no_car = ChargerReading(
-        actively_charging=True, finish_after_window=True, car_connected=False
-    )
+    no_car = ChargerReading(actively_charging=True, finish_after_window=True, car_connected=False)
 
-    assert (
-        charging_permission(
-            charger(charging_window=NIGHT), no_car, False, time(12), True
-        )
-        == "outside_window"
-    )
+    assert charging_permission(charger(charging_window=NIGHT), no_car, False, time(12), True) == "outside_window"
 
 
 def test_charging_allowed_now() -> None:
@@ -164,9 +146,7 @@ def test_charging_allowed_now() -> None:
     assert not charging_allowed_now(night, charging, True, False, time(12))
     assert not charging_allowed_now(night, no_car, False, False, time(12))
     assert not charging_allowed_now(night, deactivated, False, False, time(12))
-    assert not charging_allowed_now(
-        charger(charging_window=NIGHT), charging, False, False, time(12)
-    )
+    assert not charging_allowed_now(charger(charging_window=NIGHT), charging, False, False, time(12))
 
 
 def chargers(*ids: str) -> list[Charger]:
@@ -185,11 +165,7 @@ def evaluate(
 ) -> list[str]:
     """Evaluate with each charger allowed by its window unless `allowed` says else."""
     permissions = {
-        c.id: ChargingPermission.OVERRIDE
-        if c.id in overridden
-        else ChargingPermission.WINDOW
-        if allowed is None or c.id in allowed
-        else ChargingPermission.OUTSIDE_WINDOW
+        c.id: ChargingPermission.OVERRIDE if c.id in overridden else ChargingPermission.WINDOW if allowed is None or c.id in allowed else ChargingPermission.OUTSIDE_WINDOW
         for c in configured
     }
     return state.evaluate(configured, readings, permissions, now, WINDOW, one_at_a_time)
@@ -208,9 +184,7 @@ def test_charger_without_car_is_bypassed() -> None:
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
 
-    newly = evaluate(
-        state, configured, {"a": ChargerReading(car_connected=False), "b": IDLE}
-    )
+    newly = evaluate(state, configured, {"a": ChargerReading(car_connected=False), "b": IDLE})
 
     assert newly == ["a"]
     assert state.bypassed == {"a"}
@@ -287,9 +261,7 @@ def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
     no_car = ChargerReading(car_connected=False)
     evaluate(state, configured, {"a": IDLE, "b": no_car, "c": IDLE, "d": IDLE})
 
-    newly = evaluate(
-        state, configured, {"a": no_car, "b": no_car, "c": no_car, "d": IDLE}
-    )
+    newly = evaluate(state, configured, {"a": no_car, "b": no_car, "c": no_car, "d": IDLE})
 
     assert newly == ["a", "c"]
     assert state.priority == ["d", "b", "a", "c"]

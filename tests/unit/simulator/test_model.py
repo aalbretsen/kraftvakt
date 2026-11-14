@@ -17,9 +17,7 @@ def minutes(value: float) -> timedelta:
 
 
 def heating_cable(duty_cycle_pct: int = 25) -> DutyCycle:
-    return DutyCycle(
-        power_w=750, duty_cycle_pct=duty_cycle_pct, period=timedelta(hours=1)
-    )
+    return DutyCycle(power_w=750, duty_cycle_pct=duty_cycle_pct, period=timedelta(hours=1))
 
 
 @pytest.mark.parametrize(
@@ -56,9 +54,7 @@ def test_time_to_next_change(elapsed: timedelta, expected: timedelta) -> None:
 
 
 @pytest.mark.parametrize(("duty_cycle_pct", "heating"), [(0, False), (100, True)])
-def test_a_full_or_empty_duty_cycle_never_changes(
-    duty_cycle_pct: int, heating: bool
-) -> None:
+def test_a_full_or_empty_duty_cycle_never_changes(duty_cycle_pct: int, heating: bool) -> None:
     cycle = heating_cable(duty_cycle_pct)
 
     assert cycle.time_to_next_change(minutes(0)) is None
@@ -81,9 +77,7 @@ def test_three_phase_power() -> None:
         (True, True, True, 0.0),
     ],
 )
-def test_the_charger_draws_power_only_for_a_car_that_charges(
-    allowed: bool, connected: bool, fully_charged: bool, power_w: float
-) -> None:
+def test_the_charger_draws_power_only_for_a_car_that_charges(allowed: bool, connected: bool, fully_charged: bool, power_w: float) -> None:
     state = ChargerState(
         charging_allowed=allowed,
         current_a=10,
@@ -106,7 +100,5 @@ def test_the_charger_draws_power_only_for_a_car_that_charges(
         ("fan_only", 21, 5, False),
     ],
 )
-def test_thermostat_heats_in_a_heating_mode_below_the_target(
-    hvac_mode: str, target: float, room: float, heats: bool
-) -> None:
+def test_thermostat_heats_in_a_heating_mode_below_the_target(hvac_mode: str, target: float, room: float, heats: bool) -> None:
     assert thermostat_heats(hvac_mode, target, room) is heats

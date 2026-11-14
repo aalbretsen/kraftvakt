@@ -50,9 +50,7 @@ def read_config(data: Mapping[str, Any]) -> KraftvaktConfig:
     return config
 
 
-def read_switches[T: ItemSwitches](
-    data: Mapping[str, Any], switch_type: type[T], section: str
-) -> dict[str, T]:
+def read_switches[T: ItemSwitches](data: Mapping[str, Any], switch_type: type[T], section: str) -> dict[str, T]:
     """Read the switches of appliances or chargers by id from JSON-friendly data.
 
     Raises ConfigValidationError if a value has the wrong type.
@@ -74,54 +72,24 @@ class ConfigReader:
         root = self._mapping(data, IssueLocation("general"), None)
         return KraftvaktConfig(
             general=self._general(root.get("general")),
-            appliances=tuple(
-                self._appliance(item)
-                for item in self._list(
-                    root.get("appliances"), IssueLocation("appliances")
-                )
-            ),
-            priority=tuple(
-                entry
-                for item in self._list(root.get("priority"), IssueLocation("priority"))
-                if (entry := self._priority_entry(item)) is not None
-            ),
-            charger_groups=tuple(
-                self._charger_group(item)
-                for item in self._list(
-                    root.get("charger_groups"), IssueLocation("charger_groups")
-                )
-            ),
+            appliances=tuple(self._appliance(item) for item in self._list(root.get("appliances"), IssueLocation("appliances"))),
+            priority=tuple(entry for item in self._list(root.get("priority"), IssueLocation("priority")) if (entry := self._priority_entry(item)) is not None),
+            charger_groups=tuple(self._charger_group(item) for item in self._list(root.get("charger_groups"), IssueLocation("charger_groups"))),
         )
 
-    def switches[T: ItemSwitches](
-        self, data: Any, switch_type: type[T], section: str
-    ) -> dict[str, T]:
+    def switches[T: ItemSwitches](self, data: Any, switch_type: type[T], section: str) -> dict[str, T]:
         switches = {}
         defaults = switch_type()
         for item_id, item in self._mapping(data, IssueLocation(section), None).items():
             location = IssueLocation(section, str(item_id))
             values = self._mapping(item, location, None)
-            switches[str(item_id)] = switch_type(
-                **{
-                    setting.name: self._bool(
-                        values, setting.name, getattr(defaults, setting.name), location
-                    )
-                    for setting in fields(switch_type)
-                }
-            )
+            switches[str(item_id)] = switch_type(**{setting.name: self._bool(values, setting.name, getattr(defaults, setting.name), location) for setting in fields(switch_type)})
         return switches
 
     def _general(self, data: Any) -> GeneralConfig:
         location = IssueLocation("general")
         values = self._mapping(data, location, None)
-        return GeneralConfig(
-            **{
-                setting.name: self._setting(
-                    values, setting.name, setting.default, location
-                )
-                for setting in fields(GeneralConfig)
-            }
-        )
+        return GeneralConfig(**{setting.name: self._setting(values, setting.name, setting.default, location) for setting in fields(GeneralConfig)})
 
     def _setting(
         self,
@@ -147,10 +115,7 @@ class ConfigReader:
             turn_on=self._action(values, "turn_on", location),
             turn_off=self._action(values, "turn_off", location),
             power_reserve_w=self._integer(values, "power_reserve_w", None, location),
-            variants=tuple(
-                self._variant(item, appliance_id)
-                for item in self._list(values.get("variants"), location, "variants")
-            ),
+            variants=tuple(self._variant(item, appliance_id) for item in self._list(values.get("variants"), location, "variants")),
         )
 
     def _variant(self, data: Any, appliance_id: str) -> Variant:
@@ -162,13 +127,8 @@ class ConfigReader:
         return Variant(
             id=variant_id,
             label=self._text(values, "label", location) or "",
-            condition=self._condition(values, "condition", location)
-            or Condition(ConditionType.TEMPLATE, ""),
-            actions={
-                name: self._action(actions, name, location)
-                for name in APPLIANCE_ACTION_KINDS
-                if name in actions
-            },
+            condition=self._condition(values, "condition", location) or Condition(ConditionType.TEMPLATE, ""),
+            actions={name: self._action(actions, name, location) for name in APPLIANCE_ACTION_KINDS if name in actions},
         )
 
     def _priority_entry(self, data: Any) -> PriorityEntry | None:
@@ -185,9 +145,7 @@ class ConfigReader:
         if entry_type != PriorityEntryType.APPLIANCE or appliance_id is None:
             self.issues.append(location.issue("invalid_type"))
             return None
-        return PriorityEntry.for_appliance(
-            appliance_id, self._text(values, "variant_id", location)
-        )
+        return PriorityEntry.for_appliance(appliance_id, self._text(values, "variant_id", location))
 
     def _charger_group(self, data: Any) -> ChargerGroup:
         values = self._mapping(data, IssueLocation("charger_groups"), None)
@@ -197,13 +155,8 @@ class ConfigReader:
         return ChargerGroup(
             id=group_id,
             name=self._text(values, "name", location) or "",
-            one_at_a_time=self._bool(
-                values, "one_at_a_time", defaults.one_at_a_time, location
-            ),
-            chargers=tuple(
-                self._charger(item)
-                for item in self._list(values.get("chargers"), location, "chargers")
-            ),
+            one_at_a_time=self._bool(values, "one_at_a_time", defaults.one_at_a_time, location),
+            chargers=tuple(self._charger(item) for item in self._list(values.get("chargers"), location, "chargers")),
         )
 
     def _charger(self, data: Any) -> Charger:
@@ -217,26 +170,14 @@ class ConfigReader:
             entity_id=self._text(values, "entity_id", location),
             activate=self._action(values, "activate", location),
             deactivate=self._action(values, "deactivate", location),
-            set_current=self._action(
-                values, "set_current", location, entity_allowed=True
-            ),
-            min_current_a=self._integer(
-                values, "min_current_a", defaults.min_current_a, location
-            ),
-            max_current_a=self._integer(
-                values, "max_current_a", defaults.max_current_a, location
-            ),
-            power_reserve_w=self._integer(
-                values, "power_reserve_w", defaults.power_reserve_w, location
-            ),
+            set_current=self._action(values, "set_current", location, entity_allowed=True),
+            min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
+            max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
+            power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
             car_connected=self._condition(values, "car_connected", location),
-            actively_charging=self._condition(
-                values, "actively_charging", location, power_sensor_allowed=True
-            ),
+            actively_charging=self._condition(values, "actively_charging", location, power_sensor_allowed=True),
             charging_window=self._charging_window(values, location),
-            finish_after_window=self._bool(
-                values, "finish_after_window", defaults.finish_after_window, location
-            ),
+            finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
             override_ends=self._override_end(values, defaults.override_ends, location),
         )
 
@@ -255,32 +196,18 @@ class ConfigReader:
             if action.get("mode") == ActionMode.DEFAULT:
                 return ActionConfig(ActionMode.DEFAULT)
             entity_id = action.get("entity_id") or None
-            if (
-                entity_allowed
-                and action.get("mode") == ActionMode.ENTITY
-                and (entity_id is None or isinstance(entity_id, str))
-            ):
+            if entity_allowed and action.get("mode") == ActionMode.ENTITY and (entity_id is None or isinstance(entity_id, str)):
                 return ActionConfig(ActionMode.ENTITY, entity_id=entity_id)
             domain_action = action.get("domain_action")
             data = action.get("data", {})
-            if (
-                action.get("mode") == ActionMode.DOMAIN
-                and isinstance(domain_action, str)
-                and isinstance(data, Mapping)
-            ):
-                return ActionConfig(
-                    ActionMode.DOMAIN, domain_action=domain_action, data=dict(data)
-                )
+            if action.get("mode") == ActionMode.DOMAIN and isinstance(domain_action, str) and isinstance(data, Mapping):
+                return ActionConfig(ActionMode.DOMAIN, domain_action=domain_action, data=dict(data))
             if action.get("mode") == ActionMode.CUSTOM:
                 steps = action.get("action") or []
                 if isinstance(steps, Mapping):
                     steps = [steps]
-                if isinstance(steps, list) and all(
-                    isinstance(step, Mapping) for step in steps
-                ):
-                    return ActionConfig(
-                        ActionMode.CUSTOM, tuple(dict(step) for step in steps)
-                    )
+                if isinstance(steps, list) and all(isinstance(step, Mapping) for step in steps):
+                    return ActionConfig(ActionMode.CUSTOM, tuple(dict(step) for step in steps))
         self.issues.append(location.issue("invalid_type", key))
         return None
 
@@ -300,19 +227,13 @@ class ConfigReader:
             return None
         condition_type = condition.get("type")
         value = condition.get("value", "")
-        allowed = (
-            tuple(ConditionType)
-            if power_sensor_allowed
-            else (ConditionType.ENTITY, ConditionType.TEMPLATE)
-        )
+        allowed = tuple(ConditionType) if power_sensor_allowed else (ConditionType.ENTITY, ConditionType.TEMPLATE)
         if condition_type not in allowed or not isinstance(value, str):
             self.issues.append(location.issue("invalid_type", key))
             return None
         return Condition(ConditionType(condition_type), value)
 
-    def _charging_window(
-        self, values: Mapping[str, Any], location: IssueLocation
-    ) -> ChargingWindow | None:
+    def _charging_window(self, values: Mapping[str, Any], location: IssueLocation) -> ChargingWindow | None:
         data = values.get("charging_window")
         if data is None:
             return None
@@ -338,9 +259,7 @@ class ConfigReader:
     def _id(self, values: Mapping[str, Any], location: IssueLocation) -> str:
         return self._text(values, "id", location) or new_id()
 
-    def _text(
-        self, values: Mapping[str, Any], key: str, location: IssueLocation
-    ) -> str | None:
+    def _text(self, values: Mapping[str, Any], key: str, location: IssueLocation) -> str | None:
         value = values.get(key)
         if value is None or value == "":
             return None
@@ -349,9 +268,7 @@ class ConfigReader:
             return None
         return value
 
-    def _override_end(
-        self, values: Mapping[str, Any], default: OverrideEnd, location: IssueLocation
-    ) -> OverrideEnd:
+    def _override_end(self, values: Mapping[str, Any], default: OverrideEnd, location: IssueLocation) -> OverrideEnd:
         value = values.get("override_ends", default)
         if value not in tuple(OverrideEnd):
             self.issues.append(location.issue("invalid_type", "override_ends"))
@@ -371,9 +288,7 @@ class ConfigReader:
             return default
         return value
 
-    def _number[T: float | None](
-        self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation
-    ) -> float | T:
+    def _number[T: float | None](self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation) -> float | T:
         value = values.get(key)
         if value is None:
             return default
@@ -382,9 +297,7 @@ class ConfigReader:
             return default
         return float(value)
 
-    def _integer[T: int | None](
-        self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation
-    ) -> int | T:
+    def _integer[T: int | None](self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation) -> int | T:
         value = self._number(values, key, None, location)
         if value is None:
             return default
@@ -393,9 +306,7 @@ class ConfigReader:
             return default
         return int(value)
 
-    def _mapping(
-        self, data: Any, location: IssueLocation, key: str | None
-    ) -> Mapping[str, Any]:
+    def _mapping(self, data: Any, location: IssueLocation, key: str | None) -> Mapping[str, Any]:
         if data is None:
             return {}
         if not isinstance(data, Mapping):
@@ -403,9 +314,7 @@ class ConfigReader:
             return {}
         return data
 
-    def _list(
-        self, data: Any, location: IssueLocation, key: str | None = None
-    ) -> list[Any]:
+    def _list(self, data: Any, location: IssueLocation, key: str | None = None) -> list[Any]:
         if data is None:
             return []
         if not isinstance(data, list):
