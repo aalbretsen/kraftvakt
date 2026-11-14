@@ -45,7 +45,10 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, commands that wait merged, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
-| `runtime.py` | Connects the engine to HA: measures the power sensor (with the hour before from the recorder), closes the windows at absolute times and counts them to decisions, reads the conditions and chargers at a decision, runs the commands in a background task, repeats commands, starts when HA has started, and keeps the last decisions and failed actions for the diagnostics. |
+| `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at absolute times and tells its listeners. |
+| `decision_clock.py` | Counts the closed windows to decisions, and when the next decision and the one that ends a waiting time come. Pure Python. |
+| `decision_input.py` | Reads the conditions, the chargers and the user's switches into the input of a decision. |
+| `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, and keeps the last decisions and failed actions for the diagnostics. |
 | `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and which window overrides are armed (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
