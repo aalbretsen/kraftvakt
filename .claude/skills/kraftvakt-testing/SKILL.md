@@ -20,6 +20,11 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 - Where the panel mirrors the backend, its tests read fixtures made from the backend, so both sides are tested against the same values.
   `tests/unit/test_panel_fixtures.py` fails when the backend no longer matches them: write them again with `.venv/bin/python -m tests.unit.test_panel_fixtures`
   and run the panel's tests.
+- Each charger profile has its own test file in `tests/charger_profiles/profiles/`, with the device and entities as its integration registers them,
+  the fields the profile fills, and a save of a charger made from them, which the backend must accept.
+  The file records how we read the integration, from its source, so a change in the shared code that breaks a profile is found.
+  What every profile shares, such as a missing or disabled entity, is tested in `tests/charger_profiles/` itself,
+  as is that every module in `profiles/` is listed in `PROFILES` and has its test file, and that no two profiles fit the same device.
 
 ## Checks before every commit
 
@@ -47,6 +52,7 @@ A new Home Assistant version also needs the panel tested by hand, see the `kraft
 - `tests/unit/`: unit tests. `tests/unit/regulation/` has the scenario tests for the engine, one file per area of the regulation.
 - `frontend/test/`: the panel's tests. `builders.ts` builds complete configurations and the parts of Home Assistant the panel reads,
   and `fixtures/` holds the fixtures from the backend.
+- `tests/charger_profiles/`: the charger profiles, with `conftest.py` registering a device as an integration does, and one test file per profile in `profiles/`.
 - `tests/`: black box tests, one file per area. `tests/config_examples.py` has a full configuration that uses every feature.
 - `tests/simulator/` and `tests/unit/simulator/`: the simulator, see the `kraftvakt-simulator` skill.
   `pyproject.toml` puts `simulator` on pytest's `pythonpath`, so both integrations load in every test.

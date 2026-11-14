@@ -28,11 +28,11 @@ What controls the simulation and does not belong to a real device is under **Con
 The switches, the charging current, and the mode and target temperature of a thermostat keep their state over a restart.
 
 Then set up Kraftvakt against the simulator: the power sensor of the HAN as the power sensor, the switches of the heating devices and the thermostats as appliances,
-and for each EV charger (the entity IDs follow the language of Home Assistant when the device is added):
+and for each EV charger, filled in by hand (the entity IDs follow the language of Home Assistant when the device is added):
 
 | Field in Kraftvakt | Value |
 |---|---|
-| Device | The EV charger device; choosing it fills in the fields below |
+| Device | The EV charger device |
 | Entity for allowed charging | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |

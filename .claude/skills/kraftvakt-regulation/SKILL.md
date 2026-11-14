@@ -45,6 +45,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
+| Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
 | Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Ampere step | One ampere of an EV charger's current, treated by the regulation as an appliance. |
 | Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |

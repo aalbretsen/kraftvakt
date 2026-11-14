@@ -382,6 +382,7 @@
     "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
     "car_connected_required": "Car connected",
     "car_connected_optional": "Car connected (optional)",
+    "profile_applied": "Filled in from the charger profile {profile}. Check every field before you save.",
     "override_ends": {
       "manual": "When I turn it off",
       "charging_stopped": "When the car no longer charges",
@@ -391,7 +392,7 @@
     "fields": {
       "device_id": {
         "label": "Device",
-        "helper": "The EV charger in Home Assistant. Its name becomes the name of the EV charger, every entity is chosen among its entities, and the empty fields are filled with the entities it most likely has."
+        "helper": "The EV charger in Home Assistant. Its name becomes the name of the EV charger, and every entity is chosen among its entities. When Kraftvakt has a charger profile for it, the fields are filled in from the profile."
       },
       "entity_id": {
         "label": "Entity for allowed charging",

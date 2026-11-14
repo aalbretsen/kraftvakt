@@ -110,6 +110,7 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
     "message",
     [
         {"type": "kraftvakt/capabilities"},
+        {"type": "kraftvakt/charger_profile/get", "device_id": "device"},
         {"type": "kraftvakt/config/get"},
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": False},

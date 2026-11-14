@@ -195,8 +195,10 @@ while it runs, the configuration pages are locked. A saved configuration is used
   and can override the action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
   The power reserve applies to every variant. Each group of EV chargers is in the list under its name, and is moved like an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, and the EV chargers in charging priority.
-  Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant;
-  choosing the device fills in the entities the device most likely has, guessed from their names and types, so check what was filled in.
+  Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.
+  When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
+  A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
+  Without a profile, the fields are filled in by hand.
   Then come the actions, the charging current, the power reserve, car connected, actively charging and the charging window.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
@@ -269,7 +271,8 @@ The entity ID keeps the name from when the appliance or EV charger was added.
 
 ## Diagnostics
 
-**Download diagnostics** on the integration's page gives the configuration, the status, and the last decisions and failed actions, for a bug report.
+**Download diagnostics** on the integration's page gives the configuration, the status, the last decisions and failed actions,
+and the device of each EV charger with its entities and their values, for a bug report.
 
 ## Template and action examples
 
@@ -356,6 +359,7 @@ uv run mypy
 ```
 
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
+The charger profiles are in `charger_profiles/`, one module per profile in `charger_profiles/profiles/`.
 The tests are in `tests/`, with unit tests in `tests/unit/`, and the panel's tests in `frontend/test/`. The simulator is in `simulator/`, see [SIMULATOR.md](SIMULATOR.md).
 
 ### Panel
@@ -438,6 +442,7 @@ The panel talks to the integration over its own WebSocket commands. All of them 
 | Command | Does |
 |---|---|
 | `kraftvakt/capabilities` | Gives the standard actions per field, the limits and the defaults. |
+| `kraftvakt/charger_profile/get` | Gives the charger profile of a device, if Kraftvakt has one, and the fields of an EV charger it fills. |
 | `kraftvakt/config/get` | Gives the configuration, the names of the entities and what is missing. |
 | `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
 | `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |

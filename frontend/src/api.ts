@@ -278,6 +278,15 @@ export function errorMessage(error: unknown): string {
 export const fetchCapabilities = (hass: HomeAssistant) =>
   hass.callWS<Capabilities>({ type: "kraftvakt/capabilities" });
 
+/** The charger profile of a device, null without one, and the fields of a charger it fills. */
+export interface ChargerProfileFields {
+  profile: string | null;
+  fields: Partial<Charger>;
+}
+
+export const fetchChargerProfile = (hass: HomeAssistant, deviceId: string) =>
+  hass.callWS<ChargerProfileFields>({ type: "kraftvakt/charger_profile/get", device_id: deviceId });
+
 export const fetchConfig = (hass: HomeAssistant) => hass.callWS<ConfigResponse>({ type: "kraftvakt/config/get" });
 
 export const saveConfig = (hass: HomeAssistant, config: KraftvaktConfig) =>

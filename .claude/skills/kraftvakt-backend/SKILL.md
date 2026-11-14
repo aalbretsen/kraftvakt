@@ -42,6 +42,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
 | `conditions.py` | True/false from an entity or a template, and for actively charging also a power sensor, both as a value and as evidence of true or false. |
 | `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
+| `charger_profiles/` | The charger profiles: `profile.py` describes a profile, `recognition.py` finds the profile of a device and fills a charger from it, `device_description.py` describes a charger's device for the diagnostics, and `profiles/` has one module per profile, listed in `PROFILES`. |
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, commands that wait merged, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
@@ -55,7 +56,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
 | `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, and an entity of an appliance or charger no longer exists. |
-| `diagnostics.py` | The diagnostics: configuration, status, the last decisions and the last failed actions, kept in memory by the runtime. |
+| `diagnostics.py` | The diagnostics: configuration, status, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. |
 
 ## Stored configuration
 
@@ -100,6 +101,20 @@ An incomplete configuration can be saved, but the regulation cannot start. A cha
 An empty condition is missing, not an error; a variant is added in the appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a target (the id of the appliance or charger) and a field;
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`). Every issue code needs a text in the panel's translations.
+
+## Charger profiles
+
+- A charger profile is data: one module per profile in `charger_profiles/profiles/` with a `PROFILE`, listed in `PROFILES`. The shared code sits next to that folder,
+  so adding a profile changes no shared code. Without a profile nothing is filled in.
+- The backend recognises and applies a profile, and the panel only applies the fields it gets back.
+  Why: the backend sees the integration, manufacturer, model, translation keys and the integration's own entity names, and the panel keeps no knowledge of chargers.
+- A device has a profile when one of its config entries is of the profile's integration, and its manufacturer and model ID match where the profile names them.
+  The first profile in `PROFILES` that fits is used, so profiles must not overlap.
+- An entity is found by what does not change with the language: its translation key, the name the integration gives it (for integrations that do not translate),
+  or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,
+  and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
+- The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.
+- A profile is not validated when it is loaded; its test saves a charger made from it, which the backend must accept.
 
 ## Actions and templates
 
@@ -147,6 +162,7 @@ All commands require an administrator. Commands that need the runtime fail with 
 
 | Command | In | Out |
 |---|---|---|
+| `kraftvakt/charger_profile/get` | `device_id` | The name of the device's charger profile and the fields of a charger it fills, as stored; `null` and no fields without a profile. Needs no runtime. |
 | `kraftvakt/capabilities` | – | The default action (domains, service and data) and the domain actions (by key, with their parameters for the field's action kind) per section and field, limits per field (`max: null` means no upper limit), and defaults. |
 | `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
 | `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |

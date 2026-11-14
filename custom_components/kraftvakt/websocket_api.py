@@ -14,6 +14,7 @@ from homeassistant.helpers.dispatcher import (
 )
 
 from .actions import action_issues, default_actions_by_field, domain_actions_by_field
+from .charger_profiles.recognition import charger_profile_fields
 from .config_model import (
     SETTING_RANGES,
     Appliance,
@@ -38,6 +39,7 @@ SIGNAL_STATUS: Final = f"{DOMAIN}_status"
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_capabilities)
+    websocket_api.async_register_command(hass, websocket_get_charger_profile)
     websocket_api.async_register_command(hass, websocket_get_config)
     websocket_api.async_register_command(hass, websocket_save_config)
     websocket_api.async_register_command(hass, websocket_set_running)
@@ -65,6 +67,19 @@ def websocket_capabilities(
     msg: dict[str, Any],
 ) -> None:
     connection.send_result(msg["id"], capabilities())
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/charger_profile/get", vol.Required("device_id"): str})
+@websocket_api.require_admin
+@callback
+def websocket_get_charger_profile(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Send the name of the device's charger profile and the fields of a charger it fills, none without a profile."""
+    profile, fields = charger_profile_fields(hass, msg["device_id"])
+    connection.send_result(msg["id"], {"profile": None if profile is None else profile.name, "fields": fields})
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config/get"})

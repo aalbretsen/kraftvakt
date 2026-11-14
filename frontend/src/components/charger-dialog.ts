@@ -1,7 +1,7 @@
-import { css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { css, html, nothing } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
-import { OVERRIDE_ENDS, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
+import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
 import { changesForDevice, deviceEntities } from "../charger-device";
 import type { TranslationKey } from "../localize";
 import { carConnectedRequired, chargerErrors, missingInCharger } from "../validation";
@@ -26,6 +26,9 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   @property({ type: Boolean }) oneAtATime = false;
+
+  /** The charger profile that filled in the fields when the device was chosen. */
+  @state() private profile: string | null = null;
 
   protected errors(): Issue[] {
     return chargerErrors(this.draft, this.capabilities, this.hass);
@@ -73,19 +76,33 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   private renderDevice(issues: Issue[]) {
-    return this.renderForm([{ name: "device_id", required: true, selector: { device: {} } }], issues, (value) =>
-      this.deviceChanged((value.device_id as string) || null),
-    );
+    return html`
+      ${this.renderForm([{ name: "device_id", required: true, selector: { device: {} } }], issues, (value) =>
+        this.deviceChanged((value.device_id as string) || null),
+      )}
+      ${this.profile
+        ? html`<ha-alert alert-type="info">${this.localize("charger.profile_applied", { profile: this.profile })}</ha-alert>`
+        : nothing}
+    `;
   }
 
-  /** A new device clears the entities that are not on it, and fills the empty fields with its likely entities. */
-  private deviceChanged(deviceId: string | null): void {
+  /** A new device clears the entities that are not on it, and fills in the fields from its charger profile when it has one. */
+  private async deviceChanged(deviceId: string | null): Promise<void> {
     if (deviceId === this.draft.device_id) {
       return;
     }
-    const changes = changesForDevice(this.draft, deviceId, this.hass, this.capabilities, this.usedEntities);
+    const changes = changesForDevice(this.draft, deviceId, this.hass);
     this.changeDraft(changes);
     this.entityChanged(changes.entity_id ?? null);
+    this.profile = null;
+    if (!deviceId) {
+      return;
+    }
+    const { profile, fields } = await fetchChargerProfile(this.hass, deviceId).catch(() => ({ profile: null, fields: {} }));
+    if (profile && this.draft.device_id === deviceId) {
+      this.changeDraft(fields);
+      this.profile = profile;
+    }
   }
 
   private renderConditionGroup(field: "car_connected" | "actively_charging", title: TranslationKey, issues: Issue[]) {

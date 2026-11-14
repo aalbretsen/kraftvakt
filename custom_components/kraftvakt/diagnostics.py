@@ -6,14 +6,15 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .charger_profiles.device_description import device_description
 from .runtime import KraftvaktConfigEntry
 from .status import status_snapshot
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> dict[str, Any]:
-    """Return the configuration, the status, and the last decisions and failures.
+    """Return the configuration, the status, the last decisions and failures, and the device of each charger.
 
-    Nothing is redacted, since the configuration holds no credentials.
+    The configuration is not redacted, since it holds no credentials. The devices are described so a charger profile can be written from them.
     """
     runtime = entry.runtime_data
     return {
@@ -21,4 +22,5 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: Kraftva
         "status": status_snapshot(hass, runtime),
         "recent_decisions": runtime.recent_decisions,
         "failed_actions": runtime.failed_actions,
+        "charger_devices": {charger.id: device_description(hass, charger.device_id) for charger in runtime.config.chargers if charger.device_id is not None},
     }
