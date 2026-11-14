@@ -29,6 +29,7 @@ from .settings import Settings
 from .storage import KraftvaktStorage
 from .websocket_api import async_forward_status, async_register_commands
 
+FRONTEND_DIR = Path(__file__).parent / "frontend"
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.NUMBER,
@@ -88,13 +89,7 @@ async def _async_register_panel(hass: HomeAssistant) -> None:
     # per run of Home Assistant, also when the config entry is reloaded.
     if not hass.data.get(DOMAIN, {}).get("static_registered"):
         await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig(
-                    STATIC_URL,
-                    str(Path(__file__).parent / "frontend"),
-                    cache_headers=False,
-                )
-            ]
+            [StaticPathConfig(STATIC_URL, str(FRONTEND_DIR), cache_headers=False)]
         )
         hass.data.setdefault(DOMAIN, {})["static_registered"] = True
 
