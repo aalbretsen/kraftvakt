@@ -141,7 +141,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     return html`
-      <div class="row ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}">
+      <div class="row appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}">
         ${this.renderRank(rank)}
         <div class="row-title">
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
@@ -149,19 +149,13 @@ export class KraftvaktPriorityList extends LitElement {
             ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
             : nothing}
         </div>
-        <span></span>
-        ${this.renderWideOnly(
-          this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at"),
-        )}
+        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
         ${this.renderApplianceChip(appliance)}
       </div>
     `;
   }
 
-  /**
-   * The rank column. Like the other columns between the title and the chip, except the current,
-   * it is left out on a phone.
-   */
+  /** The rank column, left out on a phone. */
   private renderRank(rank: number | null) {
     return this.renderWideOnly(html`<span class="rank">${rank ?? nothing}</span>`);
   }
@@ -238,13 +232,16 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.renderWideOnly(this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at"))}
+        ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       </div>
     `;
   }
 
-  /** An icon and a bar that empties from when the waiting started until the decision that ends it. */
+  /**
+   * An icon and a bar that empties from when the waiting started until the decision that ends it.
+   * On a phone, the icon alone.
+   */
   private renderWaiting(
     item: ApplianceStatus | ChargerStatus,
     icon: string,
@@ -252,16 +249,18 @@ export class KraftvaktPriorityList extends LitElement {
     endsAt: TranslationKey,
   ) {
     if (!item.waiting_since || !item.waiting_ends_at) {
-      return html`<span></span>`;
+      return this.phone ? nothing : html`<span></span>`;
     }
     const time = formatClockTime(this.hass.language, item.waiting_ends_at);
     return html`
       <span class="waiting" title="${this.localize(label)}: ${this.localize(endsAt, { time })}">
         <ha-svg-icon .path=${icon}></ha-svg-icon>
-        <kraftvakt-countdown-bar
-          .start=${Date.parse(item.waiting_since)}
-          .end=${Date.parse(item.waiting_ends_at)}
-        ></kraftvakt-countdown-bar>
+        ${this.renderWideOnly(
+          html`<kraftvakt-countdown-bar
+            .start=${Date.parse(item.waiting_since)}
+            .end=${Date.parse(item.waiting_ends_at)}
+          ></kraftvakt-countdown-bar>`,
+        )}
       </span>
     `;
   }
@@ -290,7 +289,7 @@ export class KraftvaktPriorityList extends LitElement {
   /** On a phone, the current alone, and nothing for a charger without one. */
   private renderPhoneCurrent(charger: ChargerStatus) {
     return charger.current_a === null
-      ? html`<span></span>`
+      ? nothing
       : html`<span class="current">${this.localize("status.amperes", { current: charger.current_a })}</span>`;
   }
 
@@ -356,7 +355,7 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .list {
         display: grid;
-        grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) 120px max-content;
+        grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) 120px max-content;
         column-gap: 12px;
       }
       .row {
@@ -385,6 +384,9 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .row.excluded .row-title {
         opacity: 0.5;
+      }
+      .row.appliance .row-title {
+        grid-column: span 2;
       }
       .row.charger .row-title {
         padding-inline-start: 24px;
@@ -453,6 +455,7 @@ export class KraftvaktPriorityList extends LitElement {
         min-width: 40px;
         text-align: end;
         font-weight: 500;
+        white-space: nowrap;
       }
       .amperes .current.none {
         color: var(--secondary-text-color);
@@ -542,11 +545,14 @@ export class KraftvaktPriorityList extends LitElement {
         color: var(--primary-color);
       }
       .list.phone {
-        grid-template-columns: minmax(0, 1fr) max-content max-content;
-        column-gap: 8px;
+        display: block;
       }
-      .list.phone .row > .chip {
-        justify-self: end;
+      .list.phone .row {
+        display: flex;
+        gap: 8px;
+      }
+      .list.phone .row-title {
+        flex: 1;
       }
     `,
   ];

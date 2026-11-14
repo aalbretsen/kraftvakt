@@ -131,17 +131,20 @@ Code that mirrors the backend and must be kept in step with it:
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting step shows an icon (a timer for an appliance,
   a plus for one more ampere) before a thin bar that empties smoothly from when the waiting started to the decision that turns the step on, animated like the ring.
-  What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows.
+  What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.
   Consumption now is the power sensor's state read in the panel, so it updates live. Under each average is the time it covers.
 - The meter is a bar for consumption now. Each other value is a triangle above the bar pointing down at it, in its own colour, and each tile has the same triangle as swatch.
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
 - Appliances and chargers share one full-width priority list card. Each charger group has a row with its name and its own rank at its position,
   and its chargers are indented under it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank,
-  name with the variant after it, current, waiting and state chip. The rank is right aligned with digits of equal width.
+  name with the variant after it, current, waiting and state chip. An appliance has no current, so its name also takes the current column.
+  The rank is right aligned with digits of equal width.
   A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first, down to a few letters.
-  - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current and the state chip: the rank, the variant, the charger count,
-    the ampere bars, the waiting and the text that there are no chargers are left out.
+  - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current, the waiting icon and the state chip:
+    the rank, the variant, the charger count, the ampere bars, the waiting bar and the text that there are no chargers are left out.
+    The rows share no columns there: each row puts its chip at the right end, what it has of the current and the waiting icon just before it,
+    and gives the name the rest, since a shared column would be as wide as the widest chip or current in any row.
   - Icons instead of short texts, each with its sentence as a tooltip, and no legend. A group's row shows how many of its chargers are charging of all.
   - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
