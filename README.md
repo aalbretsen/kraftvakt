@@ -80,8 +80,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   gets the command for the state Kraftvakt has set again: on or off for an appliance, the charging current for an activated EV charger, and deactivate for one that is deactivated.
   It is checked every time a regulation window closes while the regulation runs, also in the safe state and during a penalty.
   Excluded appliances and EV chargers get no repeated commands.
+  An activated EV charger is not activated again, since that may start a new charging session in the charger.
 - **Failed action:** an action that fails, or has not finished within the action timeout, 60 seconds by default, is logged, and the regulation goes on as if it worked.
-  The command repeat sends it again later.
+  The command repeat sends the command for the state again later, except the activation of an EV charger.
 
 Kraftvakt does not know what an appliance uses, and does not read whether it is on.
 It assumes each appliance is as Kraftvakt last set it, and repeats that command now and then, see **Command repeat**. Do not turn regulated appliances on or off outside Kraftvakt.
