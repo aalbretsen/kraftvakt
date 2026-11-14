@@ -38,6 +38,7 @@ from .regulation.model import (
     SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
+    without_superseded,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -142,7 +143,9 @@ class ActionRunner:
     """Carries out the commands from the regulation engine, one at a time.
 
     A failed action, also one stopped by the action timeout, is logged and not
-    retried, and the rest of the commands still run.
+    retried, and the rest of the commands still run. Commands that wait for
+    an earlier action are merged with newer ones, so a slow action is not
+    followed by a burst of outdated commands.
     """
 
     def __init__(
@@ -165,12 +168,26 @@ class ActionRunner:
         self._lock = lock or asyncio.Lock()
         self._timeout_s = config.general.action_timeout_s
         self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
+        self._queued: list[Command] = []
+        self._queued_done: asyncio.Future[None] | None = None
 
     async def async_execute(self, commands: Sequence[Command]) -> None:
         """Run the actions for the commands, in order, after any earlier ones."""
-        async with self._lock:
-            for command in commands:
-                await self._async_execute_command(command)
+        self._queued = without_superseded([*self._queued, *commands]) if self._queued else list(commands)
+        if self._queued_done is not None:
+            await asyncio.shield(self._queued_done)
+            return
+        done = self._queued_done = asyncio.get_running_loop().create_future()
+        try:
+            async with self._lock:
+                self._queued_done = None
+                queued, self._queued = self._queued, []
+                for command in queued:
+                    await self._async_execute_command(command)
+        finally:
+            if self._queued_done is done:
+                self._queued_done = None
+            done.set_result(None)
 
     async def _async_execute_command(self, command: Command) -> None:
         match command:

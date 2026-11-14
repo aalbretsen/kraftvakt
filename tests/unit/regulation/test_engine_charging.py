@@ -369,7 +369,7 @@ def test_charging_charger_goes_first_and_the_other_waits() -> None:
 
     scenario.set_charger("b", actively_charging=False, car_connected=False)
 
-    assert scenario.decide(0) == (current("b", 6) + deactivate("b") + activate("a"))
+    assert scenario.decide(0) == deactivate("b") + activate("a")
     assert scenario.engine.chargers["a"].state is not ChargerState.QUEUED
 
 

@@ -358,6 +358,66 @@ async def test_commands_run_one_at_a_time_in_order(hass: HomeAssistant) -> None:
     assert order == ["start switch.a", "end switch.a", "off switch.b"]
 
 
+async def test_commands_waiting_for_a_slow_action_are_merged(hass: HomeAssistant) -> None:
+    """Only the newest command for each appliance runs when the slow action has finished."""
+    order: list[str] = []
+    release = asyncio.Event()
+
+    async def slow(call: ServiceCall) -> None:
+        await release.wait()
+        order.append(f"on {call.data['entity_id'][0]}")
+
+    async def record(call: ServiceCall) -> None:
+        order.append(f"{call.service.removeprefix('turn_')} {call.data['entity_id'][0]}")
+
+    hass.services.async_register("switch", "turn_on", slow)
+    hass.services.async_register("light", "turn_on", record)
+    hass.services.async_register("light", "turn_off", record)
+    config = KraftvaktConfig(appliances=(appliance("a1", "switch.a"), appliance("a2", "light.b"), appliance("a3", "light.c")))
+    runner = ActionRunner(hass, config)
+
+    executions = [
+        hass.async_create_task(runner.async_execute(commands))
+        for commands in (
+            [TurnOnAppliance("a1")],
+            [TurnOnAppliance("a2")],
+            [TurnOffAppliance("a2"), TurnOnAppliance("a3")],
+            [TurnOnAppliance("a2")],
+        )
+    ]
+    await asyncio.sleep(0)
+    release.set()
+    await asyncio.gather(*executions)
+
+    assert order == ["on switch.a", "on light.c", "on light.b"]
+
+
+async def test_cancelled_waiting_commands_run_with_the_next(hass: HomeAssistant) -> None:
+    order: list[str] = []
+    release = asyncio.Event()
+
+    async def slow(call: ServiceCall) -> None:
+        await release.wait()
+
+    async def record(call: ServiceCall) -> None:
+        order.append(call.data["entity_id"][0])
+
+    hass.services.async_register("switch", "turn_on", slow)
+    hass.services.async_register("light", "turn_on", record)
+    config = KraftvaktConfig(appliances=(appliance("a1", "switch.a"), appliance("a2", "light.b"), appliance("a3", "light.c")))
+    runner = ActionRunner(hass, config)
+    first = hass.async_create_task(runner.async_execute([TurnOnAppliance("a1")]))
+    waiting = hass.async_create_task(runner.async_execute([TurnOnAppliance("a2")]))
+    await asyncio.sleep(0)
+    waiting.cancel()
+    release.set()
+    await first
+
+    await runner.async_execute([TurnOnAppliance("a3")])
+
+    assert order == ["light.b", "light.c"]
+
+
 async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) -> None:
     """The current is kept between the minimum and max."""
     activated = async_mock_service(hass, "switch", "turn_on")

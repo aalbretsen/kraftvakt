@@ -119,6 +119,7 @@ Kraftvakt runs locally, but an appliance or EV charger controlled through a clou
 A command may be delayed, or lost while the service is down. Kraftvakt logs the failure, goes on as if the command worked, and sends it again with the command repeat,
 so an appliance may stay on longer than the regulation wants and the power limit may be exceeded. Prefer devices with local control for appliances that draw a lot of power.
 An action that does not finish is stopped by the action timeout, so it does not hold back the commands after it.
+The commands that wait for it are merged, so only the newest command for each appliance and EV charger is sent when it finishes.
 
 An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**.
 An entity that is only unavailable, for example while its cloud service is down, is not.

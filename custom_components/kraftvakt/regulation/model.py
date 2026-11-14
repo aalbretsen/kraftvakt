@@ -67,6 +67,39 @@ class SetChargingCurrent:
 type Command = TurnOnAppliance | TurnOffAppliance | ActivateCharger | DeactivateCharger | SetChargingCurrent
 
 
+def without_superseded(commands: Sequence[Command]) -> list[Command]:
+    """Keep only the commands that decide where each appliance and charger ends up, in their order.
+
+    An appliance keeps its last command, since switching a device off and on at
+    once wears its relays. A charger keeps its last activation or deactivation
+    with the current set before it, and its last current after it.
+    """
+    kept: set[int] = set()
+    for indexes in _indexes_per_item(commands).values():
+        changes = [index for index in indexes if isinstance(commands[index], TurnOnAppliance | TurnOffAppliance | ActivateCharger | DeactivateCharger)]
+        currents = [index for index in indexes if isinstance(commands[index], SetChargingCurrent)]
+        if not changes:
+            kept.update(currents[-1:])
+            continue
+        last_change = changes[-1]
+        kept.add(last_change)
+        kept.update([index for index in currents if index < last_change][-1:])
+        kept.update([index for index in currents if index > last_change][-1:])
+    return [command for index, command in enumerate(commands) if index in kept]
+
+
+def _indexes_per_item(commands: Sequence[Command]) -> dict[tuple[str, str], list[int]]:
+    indexes: dict[tuple[str, str], list[int]] = {}
+    for index, command in enumerate(commands):
+        match command:
+            case TurnOnAppliance(appliance_id) | TurnOffAppliance(appliance_id):
+                item = ("appliance", appliance_id)
+            case ActivateCharger(charger_id) | DeactivateCharger(charger_id) | SetChargingCurrent(charger_id):
+                item = ("charger", charger_id)
+        indexes.setdefault(item, []).append(index)
+    return indexes
+
+
 @dataclass(frozen=True, slots=True)
 class ApplianceStepKey:
     """Identifies the step of an appliance, whichever variant is current."""

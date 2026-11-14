@@ -65,6 +65,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   Switching appliances outside Kraftvakt can disturb the regulation. Exception: for chargers it reads actively charging and car connected.
 - A failed action, also one stopped by the action timeout, is logged and not retried. The regulation goes on as if it worked.
   The command repeat sends the command for the state again later.
+- Commands that wait for an action that has not finished are merged with newer ones, as the commands of one decision are (see Decisions).
+  Why: a slow action, as with a cloud service that is down, must not be followed by a burst of outdated commands that switch a device on and off.
 - Only the current configuration is regulated. Kraftvakt never hands an appliance or charger back: removed, excluded, with the regulation stopped or the integration removed,
   it stays as last commanded, and the user sets it as wanted.
 - The configuration can only be changed while the regulation is stopped, except the user's switches (one per appliance, two per charger),
@@ -117,6 +119,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   9. Turn on: only the first step that is off and not skipped may be turned on. Without room for it, room is made below it instead (see Making room).
 - An appliance gets at most one command per decision, the last one. Turned off and on again at the same decision, it only gets the turn-on.
   Why: switching a device off and on at once wears its relays, for example in a thermostat.
+  A charger gets only its last activation or deactivation, with the current set before it, and its last current after it.
 - Only one step is turned on or off per decision based on free power.
   Several may be switched off at once only when consumption must drop at once or switching does not change consumption: start and stop, safe state, penalty,
   chargers not allowed to charge, bypassed chargers, excluded appliances, variant switches, appliances included again,

@@ -42,7 +42,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
 | `conditions.py` | True/false from an entity or a template, and for actively charging also a power sensor, both as a value and as evidence of true or false. |
 | `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
-| `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
+| `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, commands that wait merged, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
 | `runtime.py` | Connects the engine to HA: measures the power sensor (with the hour before from the recorder), closes the windows at absolute times and counts them to decisions, reads the conditions and chargers at a decision, runs the commands in a background task, repeats commands, starts when HA has started, and keeps the last decisions and failed actions for the diagnostics. |

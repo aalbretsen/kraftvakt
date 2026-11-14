@@ -32,6 +32,7 @@ from .model import (
     TurnOffAppliance,
     TurnOnAppliance,
     Waiting,
+    without_superseded,
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import ampere_steps, build_steps, current_variant
@@ -141,7 +142,7 @@ class RegulationEngine:
     def decide(self, decision: DecisionInput) -> DecisionResult:
         """Make one decision."""
         result = self._decide(decision)
-        commands = _last_command_per_appliance(result.commands)
+        commands = without_superseded(result.commands)
         return replace(result, commands=self._record_commands(commands, decision.now))
 
     def repeat_commands(
@@ -490,13 +491,3 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
-
-
-def _last_command_per_appliance(commands: list[Command]) -> list[Command]:
-    """Keep only the last command for each appliance.
-
-    An appliance turned off and on again at the same decision only gets the
-    turn-on, since switching a device off and on at once wears its relays.
-    """
-    last = {command.appliance_id: index for index, command in enumerate(commands) if isinstance(command, TurnOnAppliance | TurnOffAppliance)}
-    return [command for index, command in enumerate(commands) if not isinstance(command, TurnOnAppliance | TurnOffAppliance) or last[command.appliance_id] == index]
