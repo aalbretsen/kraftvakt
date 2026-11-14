@@ -103,10 +103,7 @@ def update_panel(frontend_version: str, changes: list[str]) -> None:
     package = json.loads(PACKAGE_JSON.read_text())
     for section in ("dependencies", "devDependencies"):
         for name, current in package[section].items():
-            if name in FROM_HA_FRONTEND:
-                newest = ha_packages[name].lstrip("^~")
-            else:
-                newest = fetch_json(NPM_LATEST.format(name=name))["version"]
+            newest = ha_packages[name].lstrip("^~") if name in FROM_HA_FRONTEND else fetch_json(NPM_LATEST.format(name=name))["version"]
             note_change(changes, name, current, newest)
             package[section][name] = newest
     PACKAGE_JSON.write_text(json.dumps(package, indent=2) + "\n")
