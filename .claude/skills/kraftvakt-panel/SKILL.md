@@ -55,6 +55,10 @@ Code that mirrors the backend and must be kept in step with it:
   Forms and lists are dimmed, add buttons are disabled and dialogs only show the item.
 - The configuration pages extend `ConfigPage`, which holds what they share: the locked look, the list card with its add button, and the entities other items use.
   The status page and the lock banner share the start and stop button.
+- General and Advanced end with Restore defaults (HA's own words), right aligned under the last card and shared in `SettingsFormPage`:
+  each page passes the settings it restores, and the defaults come from the capabilities.
+  General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor, which has no default.
+  It only changes the draft, so it asks for no confirmation, and it is disabled while every setting it restores has its default.
 - The warning against controlling regulated appliances outside Kraftvakt is shown only while a list is empty (appliances on the Appliances page, chargers on the EV charging page).
 - Default is offered only for domains with a default action. It is chosen when an entity with a default action is picked and the action is not set,
   and a default action becomes an empty custom action when the new entity has none. A custom action starts as the default action.

@@ -201,6 +201,9 @@ while it runs, the configuration pages are locked. A saved configuration is used
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 
+**Restore defaults**, under the last card on General and Advanced, puts the settings on the page back to their defaults, except the power sensor and the power limit.
+Like any other change, it is not stored until you press **Save**.
+
 ### Actions
 
 Actions adapt to the domain of the entity. A standard action is offered when the domain has one, and some device types have actions of their own,

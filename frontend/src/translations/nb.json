@@ -94,6 +94,7 @@
   },
   "config": {
     "save": "Lagre",
+    "restore_defaults": "Gjenopprett standardinnstillinger",
     "discard": "Forkast",
     "unsaved": "Ulagrede endringer",
     "fix_before_saving": "Rett de merkede innstillingene før du lagrer.",

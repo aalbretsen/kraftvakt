@@ -1,3 +1,4 @@
+import { mdiRestore } from "@mdi/js";
 import { css, html, type CSSResultGroup } from "lit";
 
 import type { GeneralConfig, Range } from "../api";
@@ -51,6 +52,25 @@ export class SettingsFormPage extends ConfigPage {
         .computeError=${(error: string) => error}
         @value-changed=${this.valueChanged}
       ></ha-form>
+    `;
+  }
+
+  /** It only changes the draft, so it needs no confirmation: Discard brings the saved values back. */
+  protected renderRestoreDefaults(fields: readonly GeneralField[]) {
+    const general = this.config.general;
+    const defaults = this.capabilities.defaults.general;
+    const atDefaults = fields.every((name) => general[name] === defaults[name]);
+    const restore = () => {
+      const restored = Object.fromEntries(fields.map((name) => [name, defaults[name]]));
+      this.changeConfig({ ...this.config, general: { ...general, ...restored } });
+    };
+    return html`
+      <div class="restore-defaults">
+        <ha-button appearance="plain" .disabled=${this.locked || atDefaults} @click=${restore}>
+          <ha-svg-icon slot="start" .path=${mdiRestore}></ha-svg-icon>
+          ${this.localize("config.restore_defaults")}
+        </ha-button>
+      </div>
     `;
   }
 
@@ -128,6 +148,10 @@ export class SettingsFormPage extends ConfigPage {
       .card-content {
         display: grid;
         gap: 16px;
+      }
+      .restore-defaults {
+        display: flex;
+        justify-content: flex-end;
       }
       .description {
         margin: 0;

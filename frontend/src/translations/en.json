@@ -94,6 +94,7 @@
   },
   "config": {
     "save": "Save",
+    "restore_defaults": "Restore defaults",
     "discard": "Discard",
     "unsaved": "Unsaved changes",
     "fix_before_saving": "Fix the marked settings before saving.",

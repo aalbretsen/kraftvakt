@@ -4,13 +4,25 @@ import { customElement } from "lit/decorators.js";
 import { formatMinutes, formatNumber, formatPower } from "../format";
 import { waitingCurve } from "../wait-curve";
 import { WidthQuery } from "../width-query";
-import { SettingsFormPage } from "./settings-form-page";
+import { SettingsFormPage, type GeneralField } from "./settings-form-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
 type RepeatTitle = "advanced.appliances" | "advanced.chargers";
 type RepeatFactorField = "appliance_repeat_increment_factor" | "charger_repeat_increment_factor";
 type RepeatIncrementsField = "appliance_repeat_increments" | "charger_repeat_increments";
 type TableRow = "advanced.free_power_kw" | "advanced.waiting_minutes" | "advanced.actual_waiting_minutes";
+
+const RESTORED_FIELDS: readonly GeneralField[] = [
+  "wait_curve_steepness",
+  "wait_curve_pivot",
+  "appliance_repeat_increment_factor",
+  "appliance_repeat_increments",
+  "charger_repeat_increment_factor",
+  "charger_repeat_increments",
+  "command_repeat_interval_min",
+  "action_timeout_s",
+  "power_sensor_timeout_s",
+];
 
 /** The first time a slot is turned on, and the first time again, follow the curve. */
 const CURVE_TURN_ONS = 2;
@@ -59,7 +71,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
   protected render() {
     return html`
       ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
-      ${this.renderTimeoutsCard()}
+      ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 

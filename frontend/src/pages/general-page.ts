@@ -4,6 +4,15 @@ import { customElement } from "lit/decorators.js";
 import { ownEntities } from "../entities";
 import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
 
+/** The power sensor has no default, and the power limit is the tariff step the user has chosen. */
+const RESTORED_FIELDS: readonly GeneralField[] = [
+  "regulation_window_s",
+  "turn_on_margin_w",
+  "regulation_interval",
+  "wait_at_limit_s",
+  "penalty_threshold_w",
+];
+
 type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
 
 /** The power sensor and the settings of the regulation and the penalty. */
@@ -26,6 +35,7 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
         [this.numberField("penalty_threshold_w")],
         html`<ha-alert alert-type="info">${this.localize("general.tariff_window_info")}</ha-alert>`,
       )}
+      ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 
