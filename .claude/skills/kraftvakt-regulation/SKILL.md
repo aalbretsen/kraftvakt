@@ -160,7 +160,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 - Overconsumption state: starts when the tariff average is above the limit at a decision, with overconsumption 0 at that decision.
   Every regulation average closed after it adds (average − limit) × window. It ends when the overconsumption is ≤ 0 (rounding noise counts as 0),
-  at the earliest at the next decision. If the tariff average is still above the limit, a new state starts at 0 at once.
+  at the earliest at the next decision. If the tariff average is still above the limit, a new state starts at 0 at once,
+  except when a penalty ends: the regulation then starts again with defaults, and the state starts at the next decision where the tariff average is above the limit.
 - A penalty starts when the tariff average is above limit + threshold and the overconsumption is > 0. With threshold 0 it starts one decision after the state started.
   Everything is turned off at once, also chargers, with a turn-off command to every appliance in the configuration. Nothing is turned on while it lasts.
 - During a penalty the overconsumption still counts net.
@@ -201,6 +202,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   an appliance the turn-on or turn-off action of its current variant, an activated charger only the set-current action with its current,
   and a deactivated charger min current and deactivate. At a decision it comes after the decision's commands, so what got a command at the decision is not repeated.
   It is checked at every window, not only at decisions, so a long regulation interval does not delay it.
+  An activated charger is not activated again. Why: activating again may start a new charging session in the charger and reset its measurements.
+  A charger that has lost its activation does not charge actively, and is handled as any charger that does not charge.
 - A repeat is not a switch: it leaves waiting times and repeated turn-on counters alone and does not count against one step per decision.
 - Excluded appliances and chargers get no repeat, by the position of the switch when the window closes, so the user can control them by hand.
   They still get the commands the regulation sends them otherwise, such as the turn-off when they are excluded and at start and stop.

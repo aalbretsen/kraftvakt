@@ -299,8 +299,9 @@ A template is true only when it gives the boolean value true. Anything else, inc
 {{ states('sensor.garage_charger_current') | float(0) > 1 }}
 ```
 
-When the sensor is unavailable, `float(0)` gives 0 and the template gives false, so the EV charger counts as not charging.
-Leave out the default, `| float`, to let an unavailable sensor count as charging instead.
+When the sensor is unavailable, `float(0)` gives 0 and the template gives false, so the EV charger counts as not charging,
+and as stopped for **End the override**. Leave out the default, `| float`, to let an unavailable sensor give no value instead:
+the EV charger still counts as not charging, but the override does not end.
 
 **Turn on** an appliance by setting a temperature instead of turning it on:
 

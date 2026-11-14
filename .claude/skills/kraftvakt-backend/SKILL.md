@@ -40,7 +40,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `config_validation.py` | Validation and completeness. Parsing a configuration from the panel must run in the event loop, since templates are checked there. |
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
 | `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
-| `conditions.py` | True/false from an entity or a template, and actively charging, which also takes a power sensor and counts missing evidence as charging. |
+| `conditions.py` | True/false from an entity or a template, and for actively charging also a power sensor, both as a value and as evidence of true or false. |
 | `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
