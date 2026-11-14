@@ -255,6 +255,19 @@ def test_bypassed_charger_is_no_longer_bypassed_when_a_car_connects() -> None:
     assert state.priority == ["b", "a"]
 
 
+def test_car_connected_again_gets_two_windows_on_a_charger_that_stayed_activated() -> None:
+    configured = chargers("a")
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 1, NOW)
+    evaluate(state, configured, {"a": ChargerReading(car_connected=False)}, now=NOW + 10 * WINDOW)
+    connected = ChargerReading(car_connected=True)
+
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 11 * WINDOW) == []
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 12 * WINDOW) == []
+    assert state.bypassed == set()
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 13 * WINDOW) == ["a"]
+
+
 def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
     configured = chargers("a", "b", "c", "d")
     state = ChargingState.for_chargers(configured)

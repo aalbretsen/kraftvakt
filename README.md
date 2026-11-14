@@ -150,7 +150,8 @@ so a car that is connected does not start charging by itself. The charging curre
 - An EV charger that is not charging, because no car is connected or because it is not actively charging two regulation windows after it was activated, is bypassed.
   It gets no more than the minimum current, stays activated if it is, and does not stand in the way of other EV chargers in the group.
 - An EV charger that is not charging rests before it is tried again: 15 minutes the first time, then 30, and then 60 minutes each time the car still does not charge.
-  It stays bypassed while it rests. If the car is disconnected and connected again, or starts charging, it is tried at once.
+  It stays bypassed while it rests. If the car is disconnected and connected again, or starts charging, it is tried at once,
+  and a car connected again gets two regulation windows to start charging.
 - When only one EV charger in a group may charge at a time, an EV charger that is actively charging may continue until it is done, and the others in the group wait.
   **Car connected** is then required for every EV charger in the group.
   Without it, Kraftvakt could only find a connected car by activating the EV charger, and EV chargers without a car would be activated in turn.

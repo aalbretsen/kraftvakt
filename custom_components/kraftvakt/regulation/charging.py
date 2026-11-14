@@ -256,9 +256,10 @@ class ChargingState:
         one_at_a_time: bool,
     ) -> list[str]:
         """Evaluate the chargers at a decision and return the newly bypassed ones."""
+        previous_readings = self.last_readings
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
-        newly_bypassed = self._update_bypassed(chargers, now, window)
+        newly_bypassed = self._update_bypassed(chargers, previous_readings, now, window)
         self._update_priority(chargers, newly_bypassed)
         self._select(one_at_a_time)
         self._update_on_trial()
@@ -306,17 +307,26 @@ class ChargingState:
     def _update_bypassed(
         self,
         chargers: Sequence[Charger],
+        previous_readings: Mapping[str, ChargerReading],
         now: datetime,
         window: timedelta,
     ) -> list[str]:
         bypassed = set()
         for charger in chargers:
             reading = self.last_readings[charger.id]
+            previous = previous_readings.get(charger.id)
+            if previous is not None and previous.car_connected is False and reading.car_connected is True:
+                self._restart_trial(charger.id, now)
             if self._update_rest(charger.id, reading, now, window):
                 bypassed.add(charger.id)
         newly_bypassed = [charger_id for charger_id in self.priority if charger_id in bypassed and charger_id not in self.bypassed]
         self.bypassed = bypassed
         return newly_bypassed
+
+    def _restart_trial(self, charger_id: str, now: datetime) -> None:
+        """Give a car that is connected again two windows to start, also on a charger that stayed activated."""
+        if charger_id in self.activated_at:
+            self.activated_at[charger_id] = now
 
     def _update_rest(
         self,

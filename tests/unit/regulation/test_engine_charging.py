@@ -297,6 +297,21 @@ def test_car_connected_again_is_tried_at_once() -> None:
     assert scenario.decide(0) == deactivate("b") + activate("a")
 
 
+def test_car_connected_again_gets_two_windows_on_the_charger_that_stayed_activated() -> None:
+    scenario = one_charger()
+    scenario.set_charger("c", car_connected=True, **CHARGING)
+    scenario.charge("c", 8)
+    scenario.set_charger("c", car_connected=False, actively_charging=False)
+    assert scenario.decide(0) == current("c", 6)
+
+    scenario.set_charger("c", car_connected=True)
+
+    scenario.decide_many(0, 2)
+    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
+    scenario.decide(0)
+    assert scenario.engine.chargers["c"].state is ChargerState.NOT_CHARGING
+
+
 def test_current_priority_starts_as_configured_at_each_start() -> None:
     scenario = two_chargers(one_at_a_time=True)
     scenario.set_charger("a", **NO_CAR)
