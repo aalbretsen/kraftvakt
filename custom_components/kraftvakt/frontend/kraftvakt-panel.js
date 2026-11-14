@@ -1,4 +1,4 @@
-function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPropertyDescriptor(t,i):a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)s=Reflect.decorate(e,t,i,a);else for(var o=e.length-1;o>=0;o--)(r=e[o])&&(s=(n<3?r(s):n>3?r(t,i,s):r(t,i))||s);return n>3&&s&&Object.defineProperty(t,i,s),s}"function"==typeof SuppressedError&&SuppressedError;var t="M18.92 2C18.72 1.42 18.16 1 17.5 1H6.5C5.84 1 5.29 1.42 5.08 2L3 8V16C3 16.55 3.45 17 4 17H5C5.55 17 6 16.55 6 16V15H18V16C18 16.55 18.45 17 19 17H20C20.55 17 21 16.55 21 16V8L18.92 2M6.5 12C5.67 12 5 11.33 5 10.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12M17.5 12C16.67 12 16 11.33 16 10.5S16.67 9 17.5 9 19 9.67 19 10.5 18.33 12 17.5 12M5 7L6.5 2.5H17.5L19 7H5M7 20H11V18L17 21H13V23L7 20Z",i="M21 11H3V9H21V11M21 13H3V15H21V13Z",a="M19.77,7.23L19.78,7.22L16.06,3.5L15,4.56L17.11,6.67C16.17,7.03 15.5,7.93 15.5,9A2.5,2.5 0 0,0 18,11.5C18.36,11.5 18.69,11.42 19,11.29V18.5A1,1 0 0,1 18,19.5A1,1 0 0,1 17,18.5V14A2,2 0 0,0 15,12H14V5A2,2 0 0,0 12,3H6A2,2 0 0,0 4,5V21H14V13.5H15.5V18.5A2.5,2.5 0 0,0 18,21A2.5,2.5 0 0,0 20.5,18.5V9C20.5,8.31 20.22,7.68 19.77,7.23M18,10A1,1 0 0,1 17,9A1,1 0 0,1 18,8A1,1 0 0,1 19,9A1,1 0 0,1 18,10M8,18V13.5H6L10,6V11H12L8,18Z",r="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z",n="M11 15H6L13 1V9H18L11 23V15Z",s="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z",o="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z",l="M6,2H18V8H18V8L14,12L18,16V16H18V22H6V16H6V16L10,12L6,8V8H6V2M16,16.5L12,12.5L8,16.5V20H16V16.5M12,11.5L16,7.5V4H8V7.5L12,11.5M10,6H14V6.75L12,8.75L10,6.75V6Z";const d=globalThis,c=d.ShadowRoot&&(void 0===d.ShadyCSS||d.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,h=Symbol(),p=new WeakMap;let u=class{constructor(e,t,i){if(this._$cssResult$=!0,i!==h)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(c&&void 0===e){const i=void 0!==t&&1===t.length;i&&(e=p.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),i&&p.set(t,e))}return e}toString(){return this.cssText}};const g=(e,...t)=>{const i=1===e.length?e[0]:t.reduce((t,i,a)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[a+1],e[0]);return new u(i,e,h)},v=c?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new u("string"==typeof e?e:e+"",void 0,h))(t)})(e):e,{is:m,defineProperty:f,getOwnPropertyDescriptor:_,getOwnPropertyNames:y,getOwnPropertySymbols:b,getPrototypeOf:w}=Object,$=globalThis,k=$.trustedTypes,x=k?k.emptyScript:"",A=$.reactiveElementPolyfillSupport,C=(e,t)=>e,E={toAttribute(e,t){switch(t){case Boolean:e=e?x:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},z=(e,t)=>!m(e,t),V={attribute:!0,type:String,converter:E,reflect:!1,useDefault:!1,hasChanged:z};Symbol.metadata??=Symbol("metadata"),$.litPropertyMetadata??=new WeakMap;let S=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=V){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),a=this.getPropertyDescriptor(e,i,t);void 0!==a&&f(this.prototype,e,a)}}static getPropertyDescriptor(e,t,i){const{get:a,set:r}=_(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:a,set(t){const n=a?.call(this);r?.call(this,t),this.requestUpdate(e,n,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??V}static _$Ei(){if(this.hasOwnProperty(C("elementProperties")))return;const e=w(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(C("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(C("properties"))){const e=this.properties,t=[...y(e),...b(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(v(e))}else void 0!==e&&t.push(v(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,t)=>{if(c)e.adoptedStyleSheets=t.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const i of t){const t=document.createElement("style"),a=d.litNonce;void 0!==a&&t.setAttribute("nonce",a),t.textContent=i.cssText,e.appendChild(t)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),a=this.constructor._$Eu(e,i);if(void 0!==a&&!0===i.reflect){const r=(void 0!==i.converter?.toAttribute?i.converter:E).toAttribute(t,i.type);this._$Em=e,null==r?this.removeAttribute(a):this.setAttribute(a,r),this._$Em=null}}_$AK(e,t){const i=this.constructor,a=i._$Eh.get(e);if(void 0!==a&&this._$Em!==a){const e=i.getPropertyOptions(a),r="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:E;this._$Em=a;const n=r.fromAttribute(t,e.type);this[a]=n??this._$Ej?.get(a)??n,this._$Em=null}}requestUpdate(e,t,i,a=!1,r){if(void 0!==e){const n=this.constructor;if(!1===a&&(r=this[e]),i??=n.getPropertyOptions(e),!((i.hasChanged??z)(r,t)||i.useDefault&&i.reflect&&r===this._$Ej?.get(e)&&!this.hasAttribute(n._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:a,wrapped:r},n){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,n??t??this[e]),!0!==r||void 0!==n)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===a&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,a=this[t];!0!==e||this._$AL.has(t)||void 0===a||this.C(t,void 0,i,a)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};S.elementStyles=[],S.shadowRootOptions={mode:"open"},S[C("elementProperties")]=new Map,S[C("finalized")]=new Map,A?.({ReactiveElement:S}),($.reactiveElementVersions??=[]).push("2.1.2");const H=globalThis,M=e=>e,L=H.trustedTypes,T=L?L.createPolicy("lit-html",{createHTML:e=>e}):void 0,P="$lit$",N=`lit$${Math.random().toFixed(9).slice(2)}$`,O="?"+N,D=`<${O}>`,W=document,I=()=>W.createComment(""),j=e=>null===e||"object"!=typeof e&&"function"!=typeof e,F=Array.isArray,R="[ \t\n\f\r]",U=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,B=/-->/g,q=/>/g,K=RegExp(`>|${R}(?:([^\\s"'>=/]+)(${R}*=${R}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),Z=/'/g,G=/"/g,J=/^(?:script|style|textarea|title)$/i,Q=e=>(t,...i)=>({_$litType$:e,strings:t,values:i}),X=Q(1),Y=Q(2),ee=Symbol.for("lit-noChange"),te=Symbol.for("lit-nothing"),ie=new WeakMap,ae=W.createTreeWalker(W,129);function re(e,t){if(!F(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==T?T.createHTML(t):t}class ne{constructor({strings:e,_$litType$:t},i){let a;this.parts=[];let r=0,n=0;const s=e.length-1,o=this.parts,[l,d]=((e,t)=>{const i=e.length-1,a=[];let r,n=2===t?"<svg>":3===t?"<math>":"",s=U;for(let t=0;t<i;t++){const i=e[t];let o,l,d=-1,c=0;for(;c<i.length&&(s.lastIndex=c,l=s.exec(i),null!==l);)c=s.lastIndex,s===U?"!--"===l[1]?s=B:void 0!==l[1]?s=q:void 0!==l[2]?(J.test(l[2])&&(r=RegExp("</"+l[2],"g")),s=K):void 0!==l[3]&&(s=K):s===K?">"===l[0]?(s=r??U,d=-1):void 0===l[1]?d=-2:(d=s.lastIndex-l[2].length,o=l[1],s=void 0===l[3]?K:'"'===l[3]?G:Z):s===G||s===Z?s=K:s===B||s===q?s=U:(s=K,r=void 0);const h=s===K&&e[t+1].startsWith("/>")?" ":"";n+=s===U?i+D:d>=0?(a.push(o),i.slice(0,d)+P+i.slice(d)+N+h):i+N+(-2===d?t:h)}return[re(e,n+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),a]})(e,t);if(this.el=ne.createElement(l,i),ae.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(a=ae.nextNode())&&o.length<s;){if(1===a.nodeType){if(a.hasAttributes())for(const e of a.getAttributeNames())if(e.endsWith(P)){const t=d[n++],i=a.getAttribute(e).split(N),s=/([.?@])?(.*)/.exec(t);o.push({type:1,index:r,name:s[2],strings:i,ctor:"."===s[1]?ce:"?"===s[1]?he:"@"===s[1]?pe:de}),a.removeAttribute(e)}else e.startsWith(N)&&(o.push({type:6,index:r}),a.removeAttribute(e));if(J.test(a.tagName)){const e=a.textContent.split(N),t=e.length-1;if(t>0){a.textContent=L?L.emptyScript:"";for(let i=0;i<t;i++)a.append(e[i],I()),ae.nextNode(),o.push({type:2,index:++r});a.append(e[t],I())}}}else if(8===a.nodeType)if(a.data===O)o.push({type:2,index:r});else{let e=-1;for(;-1!==(e=a.data.indexOf(N,e+1));)o.push({type:7,index:r}),e+=N.length-1}r++}}static createElement(e,t){const i=W.createElement("template");return i.innerHTML=e,i}}function se(e,t,i=e,a){if(t===ee)return t;let r=void 0!==a?i._$Co?.[a]:i._$Cl;const n=j(t)?void 0:t._$litDirective$;return r?.constructor!==n&&(r?._$AO?.(!1),void 0===n?r=void 0:(r=new n(e),r._$AT(e,i,a)),void 0!==a?(i._$Co??=[])[a]=r:i._$Cl=r),void 0!==r&&(t=se(e,r._$AS(e,t.values),r,a)),t}class oe{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,a=(e?.creationScope??W).importNode(t,!0);ae.currentNode=a;let r=ae.nextNode(),n=0,s=0,o=i[0];for(;void 0!==o;){if(n===o.index){let t;2===o.type?t=new le(r,r.nextSibling,this,e):1===o.type?t=new o.ctor(r,o.name,o.strings,this,e):6===o.type&&(t=new ue(r,this,e)),this._$AV.push(t),o=i[++s]}n!==o?.index&&(r=ae.nextNode(),n++)}return ae.currentNode=W,a}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class le{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,a){this.type=2,this._$AH=te,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=a,this._$Cv=a?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=se(this,e,t),j(e)?e===te||null==e||""===e?(this._$AH!==te&&this._$AR(),this._$AH=te):e!==this._$AH&&e!==ee&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>F(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==te&&j(this._$AH)?this._$AA.nextSibling.data=e:this.T(W.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,a="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=ne.createElement(re(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===a)this._$AH.p(t);else{const e=new oe(a,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=ie.get(e.strings);return void 0===t&&ie.set(e.strings,t=new ne(e)),t}k(e){F(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,a=0;for(const r of e)a===t.length?t.push(i=new le(this.O(I()),this.O(I()),this,this.options)):i=t[a],i._$AI(r),a++;a<t.length&&(this._$AR(i&&i._$AB.nextSibling,a),t.length=a)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=M(e).nextSibling;M(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class de{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,a,r){this.type=1,this._$AH=te,this._$AN=void 0,this.element=e,this.name=t,this._$AM=a,this.options=r,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=te}_$AI(e,t=this,i,a){const r=this.strings;let n=!1;if(void 0===r)e=se(this,e,t,0),n=!j(e)||e!==this._$AH&&e!==ee,n&&(this._$AH=e);else{const a=e;let s,o;for(e=r[0],s=0;s<r.length-1;s++)o=se(this,a[i+s],t,s),o===ee&&(o=this._$AH[s]),n||=!j(o)||o!==this._$AH[s],o===te?e=te:e!==te&&(e+=(o??"")+r[s+1]),this._$AH[s]=o}n&&!a&&this.j(e)}j(e){e===te?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class ce extends de{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===te?void 0:e}}class he extends de{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==te)}}class pe extends de{constructor(e,t,i,a,r){super(e,t,i,a,r),this.type=5}_$AI(e,t=this){if((e=se(this,e,t,0)??te)===ee)return;const i=this._$AH,a=e===te&&i!==te||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,r=e!==te&&(i===te||a);a&&this.element.removeEventListener(this.name,this,i),r&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class ue{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){se(this,e)}}const ge={I:le},ve=H.litHtmlPolyfillSupport;ve?.(ne,le),(H.litHtmlVersions??=[]).push("3.3.3");const me=globalThis;let fe=class extends S{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const a=i?.renderBefore??t;let r=a._$litPart$;if(void 0===r){const e=i?.renderBefore??null;a._$litPart$=r=new le(t.insertBefore(I(),e),e,void 0,i??{})}return r._$AI(e),r})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return ee}};fe._$litElement$=!0,fe.finalized=!0,me.litElementHydrateSupport?.({LitElement:fe});const _e=me.litElementPolyfillSupport;_e?.({LitElement:fe}),(me.litElementVersions??=[]).push("4.2.2");const ye=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},be={attribute:!0,type:String,converter:E,reflect:!1,hasChanged:z},we=(e=be,t,i)=>{const{kind:a,metadata:r}=i;let n=globalThis.litPropertyMetadata.get(r);if(void 0===n&&globalThis.litPropertyMetadata.set(r,n=new Map),"setter"===a&&((e=Object.create(e)).wrapped=!0),n.set(i.name,e),"accessor"===a){const{name:a}=i;return{set(i){const r=t.get.call(this);t.set.call(this,i),this.requestUpdate(a,r,e,!0,i)},init(t){return void 0!==t&&this.C(a,void 0,e,t),t}}}if("setter"===a){const{name:a}=i;return function(i){const r=this[a];t.call(this,i),this.requestUpdate(a,r,e,!0,i)}}throw Error("Unsupported decorator location: "+a)};function $e(e){return(t,i)=>"object"==typeof i?we(e,t,i):((e,t,i)=>{const a=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),a?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function ke(e){return $e({...e,state:!0,attribute:!1})}const xe=1,Ae=2,Ce=3,Ee=4,ze=e=>(...t)=>({_$litDirective$:e,values:t});let Ve=class{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,i){this._$Ct=e,this._$AM=t,this._$Ci=i}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}};const{I:Se}=ge,He=e=>e,Me=()=>document.createComment(""),Le=(e,t,i)=>{const a=e._$AA.parentNode,r=void 0===t?e._$AB:t._$AA;if(void 0===i){const t=a.insertBefore(Me(),r),n=a.insertBefore(Me(),r);i=new Se(t,n,e,e.options)}else{const t=i._$AB.nextSibling,n=i._$AM,s=n!==e;if(s){let t;i._$AQ?.(e),i._$AM=e,void 0!==i._$AP&&(t=e._$AU)!==n._$AU&&i._$AP(t)}if(t!==r||s){let e=i._$AA;for(;e!==t;){const t=He(e).nextSibling;He(a).insertBefore(e,r),e=t}}}return i},Te=(e,t,i=e)=>(e._$AI(t,i),e),Pe={},Ne=(e,t=Pe)=>e._$AH=t,Oe=e=>{e._$AR(),e._$AA.remove()},De=ze(class extends Ve{constructor(e){if(super(e),e.type!==Ce&&e.type!==xe&&e.type!==Ee)throw Error("The `live` directive is not allowed on child or event bindings");if(!(e=>void 0===e.strings)(e))throw Error("`live` bindings can only contain a single expression")}render(e){return e}update(e,[t]){if(t===ee||t===te)return t;const i=e.element,a=e.name;if(e.type===Ce){if(t===i[a])return ee}else if(e.type===Ee){if(!!t===i.hasAttribute(a))return ee}else if(e.type===xe&&i.getAttribute(a)===t+"")return ee;return Ne(e),t}}),We=Symbol.for(""),Ie=e=>{if(e?.r===We)return e?._$litStatic$},je=(e,...t)=>({_$litStatic$:t.reduce((t,i,a)=>t+(e=>{if(void 0!==e._$litStatic$)return e._$litStatic$;throw Error(`Value passed to 'literal' function must be a 'literal' result: ${e}. Use 'unsafeStatic' to pass non-literal values, but\n            take care to ensure page security.`)})(i)+e[a+1],e[0]),r:We}),Fe=new Map,Re=(e=>(t,...i)=>{const a=i.length;let r,n;const s=[],o=[];let l,d=0,c=!1;for(;d<a;){for(l=t[d];d<a&&void 0!==(n=i[d],r=Ie(n));)l+=r+t[++d],c=!0;d!==a&&o.push(n),s.push(l),d++}if(d===a&&s.push(t[a]),c){const e=s.join("$$lit$$");void 0===(t=Fe.get(e))&&(s.raw=s,Fe.set(e,t=s)),i=o}return e(t,...i)})(X),Ue=["manual","charging_stopped","car_disconnected"];function Be(e){return"object"==typeof e&&null!==e&&"code"in e&&"message"in e}function qe(e){return Be(e)?e.message:String(e)}let Ke=class extends fe{constructor(){super(...arguments),this.open=!1,this.heading="",this.text="",this.confirmText="",this.cancelText="",this.confirmed=!1}render(){return X`
+function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPropertyDescriptor(t,i):a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)s=Reflect.decorate(e,t,i,a);else for(var o=e.length-1;o>=0;o--)(r=e[o])&&(s=(n<3?r(s):n>3?r(t,i,s):r(t,i))||s);return n>3&&s&&Object.defineProperty(t,i,s),s}"function"==typeof SuppressedError&&SuppressedError;var t="M18.92 2C18.72 1.42 18.16 1 17.5 1H6.5C5.84 1 5.29 1.42 5.08 2L3 8V16C3 16.55 3.45 17 4 17H5C5.55 17 6 16.55 6 16V15H18V16C18 16.55 18.45 17 19 17H20C20.55 17 21 16.55 21 16V8L18.92 2M6.5 12C5.67 12 5 11.33 5 10.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12M17.5 12C16.67 12 16 11.33 16 10.5S16.67 9 17.5 9 19 9.67 19 10.5 18.33 12 17.5 12M5 7L6.5 2.5H17.5L19 7H5M7 20H11V18L17 21H13V23L7 20Z",i="M21 11H3V9H21V11M21 13H3V15H21V13Z",a="M19.77,7.23L19.78,7.22L16.06,3.5L15,4.56L17.11,6.67C16.17,7.03 15.5,7.93 15.5,9A2.5,2.5 0 0,0 18,11.5C18.36,11.5 18.69,11.42 19,11.29V18.5A1,1 0 0,1 18,19.5A1,1 0 0,1 17,18.5V14A2,2 0 0,0 15,12H14V5A2,2 0 0,0 12,3H6A2,2 0 0,0 4,5V21H14V13.5H15.5V18.5A2.5,2.5 0 0,0 18,21A2.5,2.5 0 0,0 20.5,18.5V9C20.5,8.31 20.22,7.68 19.77,7.23M18,10A1,1 0 0,1 17,9A1,1 0 0,1 18,8A1,1 0 0,1 19,9A1,1 0 0,1 18,10M8,18V13.5H6L10,6V11H12L8,18Z",r="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z",n="M11 15H6L13 1V9H18L11 23V15Z",s="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z",o="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z",l="M6,2H18V8H18V8L14,12L18,16V16H18V22H6V16H6V16L10,12L6,8V8H6V2M16,16.5L12,12.5L8,16.5V20H16V16.5M12,11.5L16,7.5V4H8V7.5L12,11.5M10,6H14V6.75L12,8.75L10,6.75V6Z";const d=globalThis,c=d.ShadowRoot&&(void 0===d.ShadyCSS||d.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,h=Symbol(),p=new WeakMap;let u=class{constructor(e,t,i){if(this._$cssResult$=!0,i!==h)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(c&&void 0===e){const i=void 0!==t&&1===t.length;i&&(e=p.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),i&&p.set(t,e))}return e}toString(){return this.cssText}};const g=(e,...t)=>{const i=1===e.length?e[0]:t.reduce((t,i,a)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[a+1],e[0]);return new u(i,e,h)},v=c?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new u("string"==typeof e?e:e+"",void 0,h))(t)})(e):e,{is:m,defineProperty:f,getOwnPropertyDescriptor:_,getOwnPropertyNames:y,getOwnPropertySymbols:b,getPrototypeOf:w}=Object,$=globalThis,k=$.trustedTypes,x=k?k.emptyScript:"",A=$.reactiveElementPolyfillSupport,C=(e,t)=>e,E={toAttribute(e,t){switch(t){case Boolean:e=e?x:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},z=(e,t)=>!m(e,t),V={attribute:!0,type:String,converter:E,reflect:!1,useDefault:!1,hasChanged:z};Symbol.metadata??=Symbol("metadata"),$.litPropertyMetadata??=new WeakMap;let S=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=V){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),a=this.getPropertyDescriptor(e,i,t);void 0!==a&&f(this.prototype,e,a)}}static getPropertyDescriptor(e,t,i){const{get:a,set:r}=_(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:a,set(t){const n=a?.call(this);r?.call(this,t),this.requestUpdate(e,n,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??V}static _$Ei(){if(this.hasOwnProperty(C("elementProperties")))return;const e=w(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(C("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(C("properties"))){const e=this.properties,t=[...y(e),...b(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(v(e))}else void 0!==e&&t.push(v(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,t)=>{if(c)e.adoptedStyleSheets=t.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const i of t){const t=document.createElement("style"),a=d.litNonce;void 0!==a&&t.setAttribute("nonce",a),t.textContent=i.cssText,e.appendChild(t)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),a=this.constructor._$Eu(e,i);if(void 0!==a&&!0===i.reflect){const r=(void 0!==i.converter?.toAttribute?i.converter:E).toAttribute(t,i.type);this._$Em=e,null==r?this.removeAttribute(a):this.setAttribute(a,r),this._$Em=null}}_$AK(e,t){const i=this.constructor,a=i._$Eh.get(e);if(void 0!==a&&this._$Em!==a){const e=i.getPropertyOptions(a),r="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:E;this._$Em=a;const n=r.fromAttribute(t,e.type);this[a]=n??this._$Ej?.get(a)??n,this._$Em=null}}requestUpdate(e,t,i,a=!1,r){if(void 0!==e){const n=this.constructor;if(!1===a&&(r=this[e]),i??=n.getPropertyOptions(e),!((i.hasChanged??z)(r,t)||i.useDefault&&i.reflect&&r===this._$Ej?.get(e)&&!this.hasAttribute(n._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:a,wrapped:r},n){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,n??t??this[e]),!0!==r||void 0!==n)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===a&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,a=this[t];!0!==e||this._$AL.has(t)||void 0===a||this.C(t,void 0,i,a)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};S.elementStyles=[],S.shadowRootOptions={mode:"open"},S[C("elementProperties")]=new Map,S[C("finalized")]=new Map,A?.({ReactiveElement:S}),($.reactiveElementVersions??=[]).push("2.1.2");const H=globalThis,M=e=>e,L=H.trustedTypes,T=L?L.createPolicy("lit-html",{createHTML:e=>e}):void 0,P="$lit$",N=`lit$${Math.random().toFixed(9).slice(2)}$`,O="?"+N,W=`<${O}>`,D=document,I=()=>D.createComment(""),j=e=>null===e||"object"!=typeof e&&"function"!=typeof e,F=Array.isArray,R="[ \t\n\f\r]",U=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,B=/-->/g,q=/>/g,K=RegExp(`>|${R}(?:([^\\s"'>=/]+)(${R}*=${R}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),Z=/'/g,G=/"/g,J=/^(?:script|style|textarea|title)$/i,Q=e=>(t,...i)=>({_$litType$:e,strings:t,values:i}),X=Q(1),Y=Q(2),ee=Symbol.for("lit-noChange"),te=Symbol.for("lit-nothing"),ie=new WeakMap,ae=D.createTreeWalker(D,129);function re(e,t){if(!F(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==T?T.createHTML(t):t}class ne{constructor({strings:e,_$litType$:t},i){let a;this.parts=[];let r=0,n=0;const s=e.length-1,o=this.parts,[l,d]=((e,t)=>{const i=e.length-1,a=[];let r,n=2===t?"<svg>":3===t?"<math>":"",s=U;for(let t=0;t<i;t++){const i=e[t];let o,l,d=-1,c=0;for(;c<i.length&&(s.lastIndex=c,l=s.exec(i),null!==l);)c=s.lastIndex,s===U?"!--"===l[1]?s=B:void 0!==l[1]?s=q:void 0!==l[2]?(J.test(l[2])&&(r=RegExp("</"+l[2],"g")),s=K):void 0!==l[3]&&(s=K):s===K?">"===l[0]?(s=r??U,d=-1):void 0===l[1]?d=-2:(d=s.lastIndex-l[2].length,o=l[1],s=void 0===l[3]?K:'"'===l[3]?G:Z):s===G||s===Z?s=K:s===B||s===q?s=U:(s=K,r=void 0);const h=s===K&&e[t+1].startsWith("/>")?" ":"";n+=s===U?i+W:d>=0?(a.push(o),i.slice(0,d)+P+i.slice(d)+N+h):i+N+(-2===d?t:h)}return[re(e,n+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),a]})(e,t);if(this.el=ne.createElement(l,i),ae.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(a=ae.nextNode())&&o.length<s;){if(1===a.nodeType){if(a.hasAttributes())for(const e of a.getAttributeNames())if(e.endsWith(P)){const t=d[n++],i=a.getAttribute(e).split(N),s=/([.?@])?(.*)/.exec(t);o.push({type:1,index:r,name:s[2],strings:i,ctor:"."===s[1]?ce:"?"===s[1]?he:"@"===s[1]?pe:de}),a.removeAttribute(e)}else e.startsWith(N)&&(o.push({type:6,index:r}),a.removeAttribute(e));if(J.test(a.tagName)){const e=a.textContent.split(N),t=e.length-1;if(t>0){a.textContent=L?L.emptyScript:"";for(let i=0;i<t;i++)a.append(e[i],I()),ae.nextNode(),o.push({type:2,index:++r});a.append(e[t],I())}}}else if(8===a.nodeType)if(a.data===O)o.push({type:2,index:r});else{let e=-1;for(;-1!==(e=a.data.indexOf(N,e+1));)o.push({type:7,index:r}),e+=N.length-1}r++}}static createElement(e,t){const i=D.createElement("template");return i.innerHTML=e,i}}function se(e,t,i=e,a){if(t===ee)return t;let r=void 0!==a?i._$Co?.[a]:i._$Cl;const n=j(t)?void 0:t._$litDirective$;return r?.constructor!==n&&(r?._$AO?.(!1),void 0===n?r=void 0:(r=new n(e),r._$AT(e,i,a)),void 0!==a?(i._$Co??=[])[a]=r:i._$Cl=r),void 0!==r&&(t=se(e,r._$AS(e,t.values),r,a)),t}class oe{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,a=(e?.creationScope??D).importNode(t,!0);ae.currentNode=a;let r=ae.nextNode(),n=0,s=0,o=i[0];for(;void 0!==o;){if(n===o.index){let t;2===o.type?t=new le(r,r.nextSibling,this,e):1===o.type?t=new o.ctor(r,o.name,o.strings,this,e):6===o.type&&(t=new ue(r,this,e)),this._$AV.push(t),o=i[++s]}n!==o?.index&&(r=ae.nextNode(),n++)}return ae.currentNode=D,a}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class le{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,a){this.type=2,this._$AH=te,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=a,this._$Cv=a?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=se(this,e,t),j(e)?e===te||null==e||""===e?(this._$AH!==te&&this._$AR(),this._$AH=te):e!==this._$AH&&e!==ee&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>F(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==te&&j(this._$AH)?this._$AA.nextSibling.data=e:this.T(D.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,a="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=ne.createElement(re(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===a)this._$AH.p(t);else{const e=new oe(a,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=ie.get(e.strings);return void 0===t&&ie.set(e.strings,t=new ne(e)),t}k(e){F(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,a=0;for(const r of e)a===t.length?t.push(i=new le(this.O(I()),this.O(I()),this,this.options)):i=t[a],i._$AI(r),a++;a<t.length&&(this._$AR(i&&i._$AB.nextSibling,a),t.length=a)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=M(e).nextSibling;M(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class de{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,a,r){this.type=1,this._$AH=te,this._$AN=void 0,this.element=e,this.name=t,this._$AM=a,this.options=r,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=te}_$AI(e,t=this,i,a){const r=this.strings;let n=!1;if(void 0===r)e=se(this,e,t,0),n=!j(e)||e!==this._$AH&&e!==ee,n&&(this._$AH=e);else{const a=e;let s,o;for(e=r[0],s=0;s<r.length-1;s++)o=se(this,a[i+s],t,s),o===ee&&(o=this._$AH[s]),n||=!j(o)||o!==this._$AH[s],o===te?e=te:e!==te&&(e+=(o??"")+r[s+1]),this._$AH[s]=o}n&&!a&&this.j(e)}j(e){e===te?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class ce extends de{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===te?void 0:e}}class he extends de{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==te)}}class pe extends de{constructor(e,t,i,a,r){super(e,t,i,a,r),this.type=5}_$AI(e,t=this){if((e=se(this,e,t,0)??te)===ee)return;const i=this._$AH,a=e===te&&i!==te||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,r=e!==te&&(i===te||a);a&&this.element.removeEventListener(this.name,this,i),r&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class ue{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){se(this,e)}}const ge={I:le},ve=H.litHtmlPolyfillSupport;ve?.(ne,le),(H.litHtmlVersions??=[]).push("3.3.3");const me=globalThis;let fe=class extends S{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const a=i?.renderBefore??t;let r=a._$litPart$;if(void 0===r){const e=i?.renderBefore??null;a._$litPart$=r=new le(t.insertBefore(I(),e),e,void 0,i??{})}return r._$AI(e),r})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return ee}};fe._$litElement$=!0,fe.finalized=!0,me.litElementHydrateSupport?.({LitElement:fe});const _e=me.litElementPolyfillSupport;_e?.({LitElement:fe}),(me.litElementVersions??=[]).push("4.2.2");const ye=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},be={attribute:!0,type:String,converter:E,reflect:!1,hasChanged:z},we=(e=be,t,i)=>{const{kind:a,metadata:r}=i;let n=globalThis.litPropertyMetadata.get(r);if(void 0===n&&globalThis.litPropertyMetadata.set(r,n=new Map),"setter"===a&&((e=Object.create(e)).wrapped=!0),n.set(i.name,e),"accessor"===a){const{name:a}=i;return{set(i){const r=t.get.call(this);t.set.call(this,i),this.requestUpdate(a,r,e,!0,i)},init(t){return void 0!==t&&this.C(a,void 0,e,t),t}}}if("setter"===a){const{name:a}=i;return function(i){const r=this[a];t.call(this,i),this.requestUpdate(a,r,e,!0,i)}}throw Error("Unsupported decorator location: "+a)};function $e(e){return(t,i)=>"object"==typeof i?we(e,t,i):((e,t,i)=>{const a=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),a?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function ke(e){return $e({...e,state:!0,attribute:!1})}const xe=1,Ae=2,Ce=3,Ee=4,ze=e=>(...t)=>({_$litDirective$:e,values:t});let Ve=class{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,i){this._$Ct=e,this._$AM=t,this._$Ci=i}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}};const{I:Se}=ge,He=e=>e,Me=()=>document.createComment(""),Le=(e,t,i)=>{const a=e._$AA.parentNode,r=void 0===t?e._$AB:t._$AA;if(void 0===i){const t=a.insertBefore(Me(),r),n=a.insertBefore(Me(),r);i=new Se(t,n,e,e.options)}else{const t=i._$AB.nextSibling,n=i._$AM,s=n!==e;if(s){let t;i._$AQ?.(e),i._$AM=e,void 0!==i._$AP&&(t=e._$AU)!==n._$AU&&i._$AP(t)}if(t!==r||s){let e=i._$AA;for(;e!==t;){const t=He(e).nextSibling;He(a).insertBefore(e,r),e=t}}}return i},Te=(e,t,i=e)=>(e._$AI(t,i),e),Pe={},Ne=(e,t=Pe)=>e._$AH=t,Oe=e=>{e._$AR(),e._$AA.remove()},We=ze(class extends Ve{constructor(e){if(super(e),e.type!==Ce&&e.type!==xe&&e.type!==Ee)throw Error("The `live` directive is not allowed on child or event bindings");if(!(e=>void 0===e.strings)(e))throw Error("`live` bindings can only contain a single expression")}render(e){return e}update(e,[t]){if(t===ee||t===te)return t;const i=e.element,a=e.name;if(e.type===Ce){if(t===i[a])return ee}else if(e.type===Ee){if(!!t===i.hasAttribute(a))return ee}else if(e.type===xe&&i.getAttribute(a)===t+"")return ee;return Ne(e),t}}),De=Symbol.for(""),Ie=e=>{if(e?.r===De)return e?._$litStatic$},je=(e,...t)=>({_$litStatic$:t.reduce((t,i,a)=>t+(e=>{if(void 0!==e._$litStatic$)return e._$litStatic$;throw Error(`Value passed to 'literal' function must be a 'literal' result: ${e}. Use 'unsafeStatic' to pass non-literal values, but\n            take care to ensure page security.`)})(i)+e[a+1],e[0]),r:De}),Fe=new Map,Re=(e=>(t,...i)=>{const a=i.length;let r,n;const s=[],o=[];let l,d=0,c=!1;for(;d<a;){for(l=t[d];d<a&&void 0!==(n=i[d],r=Ie(n));)l+=r+t[++d],c=!0;d!==a&&o.push(n),s.push(l),d++}if(d===a&&s.push(t[a]),c){const e=s.join("$$lit$$");void 0===(t=Fe.get(e))&&(s.raw=s,Fe.set(e,t=s)),i=o}return e(t,...i)})(X),Ue=["manual","charging_stopped","car_disconnected"];function Be(e){return"object"==typeof e&&null!==e&&"code"in e&&"message"in e}function qe(e){return Be(e)?e.message:String(e)}let Ke=class extends fe{constructor(){super(...arguments),this.open=!1,this.heading="",this.text="",this.confirmText="",this.cancelText="",this.confirmed=!1}render(){return X`
       <ha-dialog .open=${this.open} .headerTitle=${this.heading} @closed=${this.closed}>
         <p>${this.text}</p>
         <div slot="footer">
@@ -278,7 +278,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         margin: 0;
         color: var(--secondary-text-color);
       }
-    `]}}const Tt=60,Pt=[.1,.2,.5,1,2,5,10];function Nt(e,t){return Math.max(0,Math.ceil(e/t-1e-9))*t}const Ot={wait_curve_steepness:!1,wait_curve_pivot:!0};let Dt=class extends Lt{constructor(){super(...arguments),this.narrowQuery=new mt(this,760)}get narrowPage(){return this.narrowQuery.matches}render(){return X`
+    `]}}const Tt=60,Pt=[.1,.2,.5,1,2,5,10];function Nt(e,t){return Math.max(0,Math.ceil(e/t-1e-9))*t}const Ot={wait_curve_steepness:!1,wait_curve_pivot:!0};let Wt=class extends Lt{constructor(){super(...arguments),this.narrowQuery=new mt(this,760)}get narrowPage(){return this.narrowQuery.matches}render(){return X`
       ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
       ${this.renderTimeoutsCard()}
     `}renderWaitCurveCard(){return X`
@@ -430,7 +430,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         fill: var(--primary-color);
         opacity: 0.12;
       }
-    `]}};Dt=e([ye("kraftvakt-advanced-page")],Dt);const Wt=["binary_sensor","input_boolean","switch","schedule"];function It(e,t,i){return t[i]??e.states[i]?.attributes.friendly_name??i}function jt(e,t,i){const a=i.device_id?e.devices?.[i.device_id]:void 0,r=a?.name_by_user??a?.name;return r||(i.entity_id?It(e,t,i.entity_id):null)}function Ft(e){return Object.values(e.entities??{}).filter(e=>"kraftvakt"===e.platform).map(e=>e.entity_id)}function Rt(e,t){const i=e.states[t],a=Number(i?.state);if(!i||""===i.state.trim()||!Number.isFinite(a))return null;const r=i.attributes.unit_of_measurement,n="kW"===r?1e3:r&&"W"!==r?null:1;return null===n?null:Math.max(0,a)*n}const Ut={domains:Wt,likelyDeviceClasses:["plug","connectivity"],words:["connected","plug","cable","car","tilkoblet","kabel","bil"],excludedWords:["unplugged","allow","enable","full","tillat"],onlyCandidateIsEnough:!1},Bt={domains:Wt,likelyDeviceClasses:["battery_charging","running","power"],words:["charging","lader","lading"],excludedWords:["allow","enable","connected","full","tillat","tilkoblet"],onlyCandidateIsEnough:!1},qt={domains:["sensor"],deviceClass:"power",words:["charging","charger","lade","effekt"],onlyCandidateIsEnough:!0};function Kt(e,t){return t?Object.values(e.entities??{}).filter(e=>e.device_id===t).map(e=>e.entity_id):[]}function Zt(e){return e&&"template"!==e.type?e.value:null}function Gt(e,t,i,a,r){const n=new Set(Kt(i,t)),s=e=>e&&n.has(e)?e:null,o=[...n].map(e=>function(e,t,i){const a=i?e.devices?.[i]:void 0,r=(a?.name_by_user??a?.name??"").toLowerCase(),n=e.states[t]?.attributes??{},[s,o]=t.split("."),l=String(n.friendly_name??"").toLowerCase(),d=(e,t)=>t&&e.startsWith(t)?e.slice(t.length):e,c=d(l,r),h=d(o,r.replace(/\W+/g,"_"));return{entityId:t,domain:s,deviceClass:n.device_class,unit:n.unit_of_measurement,text:`${c} ${h}`.replace(/_/g," "),ownWords:(l?c:h).split(/[^\p{L}\p{N}]+/u).filter(Boolean)}}(i,e,t)),l=new Set(r),d=e=>{const t=function(e,t){const i=e.filter(e=>t.domains.includes(e.domain)&&(void 0===t.deviceClass||e.deviceClass===t.deviceClass)&&!t.excludedWords?.some(t=>e.text.includes(t)));if(1===i.length&&t.onlyCandidateIsEnough)return i[0].entityId;const a=i.map(e=>({entityId:e.entityId,score:Jt(e,t),otherWords:Qt(e,t)})).filter(e=>e.score>0).sort((e,t)=>t.score-e.score||e.otherWords-t.otherWords),[r,n]=a;if(!r||n&&n.score===r.score&&n.otherWords===r.otherWords)return null;return r.entityId}(o.filter(e=>!l.has(e.entityId)),e);return t&&l.add(t),t},c=a.default_actions.chargers,h=s(e.entity_id)??d({domains:c.activate.domains,words:["charging","allow","enable","lading","tillat"],excludedWords:["connected","plug","full","lock","offline","phase","tilkoblet","fase"],onlyCandidateIsEnough:!0,mainEntityMatches:!0});h&&l.add(h);let p=e.set_current;if(null===p||"entity"===p.mode&&!s(p.entity_id)){const e=d({domains:c.set_current.domains,likelyUnit:"A",words:["current","ampere","limit","charge","strøm","lade"],excludedWords:["offline"],onlyCandidateIsEnough:!0});p=e?{mode:"entity",entity_id:e}:p&&{mode:"entity",entity_id:null}}const u=e=>e&&("template"===e.type||s(e.value))?e:null,g=(e,t)=>t?{type:e,value:t}:null,v=u(e.car_connected)??g("entity",d(Ut)),m=u(e.actively_charging)??g("entity",d(Bt))??g("power_sensor",d(qt));return{device_id:t,entity_id:h,set_current:p,car_connected:v,actively_charging:m}}function Jt(e,t){return t.words.filter(t=>e.text.includes(t)).length+(t.likelyDeviceClasses?.includes(String(e.deviceClass))?2:0)+(void 0!==t.likelyUnit&&e.unit===t.likelyUnit?2:0)+(t.mainEntityMatches&&0===e.ownWords.length?1:0)}function Qt(e,t){return e.ownWords.filter(e=>!t.words.some(t=>e.includes(t))).length}function Xt(e,t,i,a){const r=e.domain_actions[t][i],n=a?.split(".")[0];return Object.fromEntries(Object.entries(r).filter(([,e])=>e.domain===n))}function Yt(e,t,i,a,r){return r?.domain_action?Xt(e,t,i,a)[r.domain_action]:void 0}function ei(e,t,i={}){return Object.fromEntries(e.parameters.map(e=>[e.name,i[e.name]??ai(e,t)]))}function ti(e,t){return{min:ni(t,e.min_attribute),max:ni(t,e.max_attribute),step:ni(t,e.step_attribute)}}function ii(e,t,i){if(null===t)return;if("option"===e.type){const a=ri(i,e.options_attribute);return Array.isArray(a)&&!a.includes(t)?"unsupported_option":void 0}const{min:a,max:r}=ti(e,i);return"number"==typeof t&&(void 0!==a&&t<a||void 0!==r&&t>r)?"outside_entity_range":void 0}function ai(e,t){if("option"===e.type){const i=ri(t,e.options_attribute),a=Array.isArray(i)?i:e.preferred_options;return e.preferred_options.find(e=>a.includes(e))??null}return e.default}function ri(e,t){return t?e?.attributes[t]:void 0}function ni(e,t){const i=ri(e,t);return"number"==typeof i?i:void 0}const si=["turn_on","turn_off"];function oi(e){return[...si.map(t=>({name:t,field:t,action:e[t]})),...e.variants.flatMap(e=>si.filter(t=>li(e.actions,t)).map(t=>({name:t,field:`variants.${e.id}.${t}`,action:e.actions[t]??null})))]}function li(e,t){return void 0!==e?.[t]}function di(e){return["activate","deactivate","set_current"].map(t=>({name:t,field:t,action:e[t]}))}function ci(e){const t=e.map(e=>e.name.trim());return e.flatMap((e,i)=>{const a=t[i],r=a?t.filter(e=>e===a).length>1?"duplicate_name":void 0:"empty_name";return r?[{code:r,section:"charger_groups",target:e.id,field:"name"}]:[]})}function hi(e){const t=[];e.general.power_sensor||t.push({code:"missing_power_sensor",section:"general",field:"power_sensor"}),t.push(...e.appliances.flatMap(pi));for(const i of e.charger_groups)t.push(...i.chargers.flatMap(e=>gi(e,i.one_at_a_time)));return t}function pi(e){return[...xi("appliances",e,oi(e)),...e.variants.filter(e=>!wi(e.condition)).map(t=>bi(e,"missing_condition",`variants.${t.id}.condition`))]}function ui(e,t){return t||null!==e.charging_window&&"car_disconnected"===e.override_ends}function gi(e,t){const i=e.device_id?[]:[{code:"missing_device",section:"chargers",target:e.id,field:"device_id"}];return i.push(...xi("chargers",e,di(e))),wi(e.actively_charging)||i.push({code:"missing_actively_charging",section:"chargers",target:e.id,field:"actively_charging"}),ui(e,t)&&!wi(e.car_connected)&&i.push({code:"missing_car_connected",section:"chargers",target:e.id,field:"car_connected"}),i}function vi(e,t,i){return e.default_actions[t][i]}function mi(e,t,i,a,r){switch(r?.mode){case"default":return fi(e,t,i,a);case"domain":return void 0!==Yt(e,t,i,a,r);default:return!0}}function fi(e,t,i,a){return null!==a&&vi(e,t,i).domains.includes(a.split(".")[0])}function _i(e,t,i){const a=e.variants.map(e=>e.label.trim());return[...$i("appliances",e.id,e,t.limits.appliances,!1),...ki("appliances",e,oi(e),t,i),...e.variants.flatMap((t,i)=>{const r=`variants.${t.id}.label`;return""===a[i]?[bi(e,"empty_label",r)]:a.filter(e=>e===a[i]).length>1?[bi(e,"duplicate_label",r)]:[]})]}function yi(e,t,i){const a=(t,i)=>({code:t,section:"chargers",target:e.id,field:i}),r=[...$i("chargers",e.id,e,t.limits.chargers,!0),...ki("chargers",e,di(e),t,i.states),...Ai(e,i).map(([e,t])=>a(e,t))];e.min_current_a>e.max_current_a&&r.push(a("min_current_above_max","min_current_a"));const n=e.charging_window;return!n||n.start&&n.end?n&&n.start===n.end&&r.push(a("window_start_equals_end","charging_window")):r.push(a("invalid_time","charging_window")),r}function bi(e,t,i){return{code:t,section:"appliances",target:e.id,field:i}}function wi(e){return null!==e&&""!==e.value.trim()}function $i(e,t,i,a,r){const n=i;return Object.entries(a).flatMap(([i,a])=>{const s=n[i],o="number"!=typeof s||Number.isNaN(s)?r?"required":void 0:function(e,t){if(null!==t.min&&e<t.min||null!==t.max&&e>t.max)return"out_of_range";const i=e/t.resolution;return Math.abs(i-Math.round(i))<1e-6?void 0:"invalid_resolution"}(s,a);return o?[{code:o,section:e,target:t,field:i}]:[]})}function ki(e,t,i,a,r){const n=t.entity_id;return null===n?[]:i.flatMap(({name:i,field:s,action:o})=>{const l=(i,a)=>({code:i,section:e,target:t.id,field:a?`${s}.${a}`:s});if(!mi(a,e,i,n,o))return[l("default"===o?.mode?"default_action_unavailable":"domain_action_unavailable")];const d=Yt(a,e,i,n,o);return d?Object.entries(function(e,t,i){const a={};for(const r of e.parameters){const e=r.name in t?ii(r,t[r.name],i):"required";e&&(a[r.name]=e)}return a}(d,o?.data??{},r[n])).map(([e,t])=>l(t,e)):[]})}function xi(e,t,i){return[...t.entity_id?[]:[{code:"missing_entity",section:e,target:t.id,field:"entity_id"}],...i.filter(({action:e})=>function(e){return null===e||"custom"===e.mode&&0===(e.action??[]).length||"entity"===e.mode&&!e.entity_id||"domain"===e.mode&&Object.values(e.data??{}).includes(null)}(e)).map(({field:i})=>({code:"missing_action",section:e,target:t.id,field:i}))]}function Ai(e,t){return e.device_id?t.devices?.[e.device_id]?function(e){return[["entity_id",e.entity_id],["set_current","entity"===e.set_current?.mode?e.set_current.entity_id:null],["car_connected",Zt(e.car_connected)],["actively_charging",Zt(e.actively_charging)]].filter(e=>!!e[1])}(e).filter(([,i])=>t.entities?.[i]?.device_id!==e.device_id).map(([e])=>["entity_not_on_device",e]):[["unknown_device","device_id"]]:[]}let Ci=class extends fe{constructor(){super(...arguments),this.label="",this.value=null,this.entityId=null,this.defaultAvailable=!1,this.entityDomains=[],this.domainActions={},this.parameterErrors={},this.variables=[],this.disabled=!1}render(){const e=this.value?.mode,t=this.domainAction;return X`
+    `]}};Wt=e([ye("kraftvakt-advanced-page")],Wt);const Dt=["binary_sensor","input_boolean","switch","schedule"];function It(e,t,i){return t[i]??e.states[i]?.attributes.friendly_name??i}function jt(e,t,i){const a=i.device_id?e.devices?.[i.device_id]:void 0,r=a?.name_by_user??a?.name;return r||(i.entity_id?It(e,t,i.entity_id):null)}function Ft(e){return Object.values(e.entities??{}).filter(e=>"kraftvakt"===e.platform).map(e=>e.entity_id)}function Rt(e,t){const i=e.states[t],a=Number(i?.state);if(!i||""===i.state.trim()||!Number.isFinite(a))return null;const r=i.attributes.unit_of_measurement,n="kW"===r?1e3:r&&"W"!==r?null:1;return null===n?null:Math.max(0,a)*n}const Ut={domains:Dt,likelyDeviceClasses:["plug","connectivity"],words:["connected","plug","cable","car","tilkoblet","kabel","bil"],excludedWords:["unplugged","allow","enable","full","tillat"],onlyCandidateIsEnough:!1},Bt={domains:Dt,likelyDeviceClasses:["battery_charging","running","power"],words:["charging","lader","lading"],excludedWords:["allow","enable","connected","full","tillat","tilkoblet"],onlyCandidateIsEnough:!1},qt={domains:["sensor"],deviceClass:"power",words:["charging","charger","lade","effekt"],onlyCandidateIsEnough:!0};function Kt(e,t){return t?Object.values(e.entities??{}).filter(e=>e.device_id===t).map(e=>e.entity_id):[]}function Zt(e){return e&&"template"!==e.type?e.value:null}function Gt(e,t,i,a,r){const n=new Set(Kt(i,t)),s=e=>e&&n.has(e)?e:null,o=[...n].map(e=>function(e,t,i){const a=i?e.devices?.[i]:void 0,r=(a?.name_by_user??a?.name??"").toLowerCase(),n=e.states[t]?.attributes??{},[s,o]=t.split("."),l=String(n.friendly_name??"").toLowerCase(),d=(e,t)=>t&&e.startsWith(t)?e.slice(t.length):e,c=d(l,r),h=d(o,r.replace(/\W+/g,"_"));return{entityId:t,domain:s,deviceClass:n.device_class,unit:n.unit_of_measurement,text:`${c} ${h}`.replace(/_/g," "),ownWords:(l?c:h).split(/[^\p{L}\p{N}]+/u).filter(Boolean)}}(i,e,t)),l=new Set(r),d=e=>{const t=function(e,t){const i=e.filter(e=>t.domains.includes(e.domain)&&(void 0===t.deviceClass||e.deviceClass===t.deviceClass)&&!t.excludedWords?.some(t=>e.text.includes(t)));if(1===i.length&&t.onlyCandidateIsEnough)return i[0].entityId;const a=i.map(e=>({entityId:e.entityId,score:Jt(e,t),otherWords:Qt(e,t)})).filter(e=>e.score>0).sort((e,t)=>t.score-e.score||e.otherWords-t.otherWords),[r,n]=a;if(!r||n&&n.score===r.score&&n.otherWords===r.otherWords)return null;return r.entityId}(o.filter(e=>!l.has(e.entityId)),e);return t&&l.add(t),t},c=a.default_actions.chargers,h=s(e.entity_id)??d({domains:c.activate.domains,words:["charging","allow","enable","lading","tillat"],excludedWords:["connected","plug","full","lock","offline","phase","tilkoblet","fase"],onlyCandidateIsEnough:!0,mainEntityMatches:!0});h&&l.add(h);let p=e.set_current;if(null===p||"entity"===p.mode&&!s(p.entity_id)){const e=d({domains:c.set_current.domains,likelyUnit:"A",words:["current","ampere","limit","charge","strøm","lade"],excludedWords:["offline"],onlyCandidateIsEnough:!0});p=e?{mode:"entity",entity_id:e}:p&&{mode:"entity",entity_id:null}}const u=e=>e&&("template"===e.type||s(e.value))?e:null,g=(e,t)=>t?{type:e,value:t}:null,v=u(e.car_connected)??g("entity",d(Ut)),m=u(e.actively_charging)??g("entity",d(Bt))??g("power_sensor",d(qt));return{device_id:t,entity_id:h,set_current:p,car_connected:v,actively_charging:m}}function Jt(e,t){return t.words.filter(t=>e.text.includes(t)).length+(t.likelyDeviceClasses?.includes(String(e.deviceClass))?2:0)+(void 0!==t.likelyUnit&&e.unit===t.likelyUnit?2:0)+(t.mainEntityMatches&&0===e.ownWords.length?1:0)}function Qt(e,t){return e.ownWords.filter(e=>!t.words.some(t=>e.includes(t))).length}function Xt(e,t,i,a){const r=e.domain_actions[t][i],n=a?.split(".")[0];return Object.fromEntries(Object.entries(r).filter(([,e])=>e.domain===n))}function Yt(e,t,i,a,r){return r?.domain_action?Xt(e,t,i,a)[r.domain_action]:void 0}function ei(e,t,i={}){return Object.fromEntries(e.parameters.map(e=>[e.name,i[e.name]??ai(e,t)]))}function ti(e,t){return{min:ni(t,e.min_attribute),max:ni(t,e.max_attribute),step:ni(t,e.step_attribute)}}function ii(e,t,i){if(null===t)return;if("option"===e.type){const a=ri(i,e.options_attribute);return Array.isArray(a)&&!a.includes(t)?"unsupported_option":void 0}const{min:a,max:r}=ti(e,i);return"number"==typeof t&&(void 0!==a&&t<a||void 0!==r&&t>r)?"outside_entity_range":void 0}function ai(e,t){if("option"===e.type){const i=ri(t,e.options_attribute),a=Array.isArray(i)?i:e.preferred_options;return e.preferred_options.find(e=>a.includes(e))??null}return e.default}function ri(e,t){return t?e?.attributes[t]:void 0}function ni(e,t){const i=ri(e,t);return"number"==typeof i?i:void 0}const si=["turn_on","turn_off"];function oi(e){return[...si.map(t=>({name:t,field:t,action:e[t]})),...e.variants.flatMap(e=>si.filter(t=>li(e.actions,t)).map(t=>({name:t,field:`variants.${e.id}.${t}`,action:e.actions[t]??null})))]}function li(e,t){return void 0!==e?.[t]}function di(e){return["activate","deactivate","set_current"].map(t=>({name:t,field:t,action:e[t]}))}function ci(e){const t=e.map(e=>e.name.trim());return e.flatMap((e,i)=>{const a=t[i],r=a?t.filter(e=>e===a).length>1?"duplicate_name":void 0:"empty_name";return r?[{code:r,section:"charger_groups",target:e.id,field:"name"}]:[]})}function hi(e){const t=[];e.general.power_sensor||t.push({code:"missing_power_sensor",section:"general",field:"power_sensor"}),t.push(...e.appliances.flatMap(pi));for(const i of e.charger_groups)t.push(...i.chargers.flatMap(e=>gi(e,i.one_at_a_time)));return t}function pi(e){return[...xi("appliances",e,oi(e)),...e.variants.filter(e=>!wi(e.condition)).map(t=>bi(e,"missing_condition",`variants.${t.id}.condition`))]}function ui(e,t){return t||null!==e.charging_window&&"car_disconnected"===e.override_ends}function gi(e,t){const i=e.device_id?[]:[{code:"missing_device",section:"chargers",target:e.id,field:"device_id"}];return i.push(...xi("chargers",e,di(e))),wi(e.actively_charging)||i.push({code:"missing_actively_charging",section:"chargers",target:e.id,field:"actively_charging"}),ui(e,t)&&!wi(e.car_connected)&&i.push({code:"missing_car_connected",section:"chargers",target:e.id,field:"car_connected"}),i}function vi(e,t,i){return e.default_actions[t][i]}function mi(e,t,i,a,r){switch(r?.mode){case"default":return fi(e,t,i,a);case"domain":return void 0!==Yt(e,t,i,a,r);default:return!0}}function fi(e,t,i,a){return null!==a&&vi(e,t,i).domains.includes(a.split(".")[0])}function _i(e,t,i){const a=e.variants.map(e=>e.label.trim());return[...$i("appliances",e.id,e,t.limits.appliances,!1),...ki("appliances",e,oi(e),t,i),...e.variants.flatMap((t,i)=>{const r=`variants.${t.id}.label`;return""===a[i]?[bi(e,"empty_label",r)]:a.filter(e=>e===a[i]).length>1?[bi(e,"duplicate_label",r)]:[]})]}function yi(e,t,i){const a=(t,i)=>({code:t,section:"chargers",target:e.id,field:i}),r=[...$i("chargers",e.id,e,t.limits.chargers,!0),...ki("chargers",e,di(e),t,i.states),...Ai(e,i).map(([e,t])=>a(e,t))];e.min_current_a>e.max_current_a&&r.push(a("min_current_above_max","min_current_a"));const n=e.charging_window;return!n||n.start&&n.end?n&&n.start===n.end&&r.push(a("window_start_equals_end","charging_window")):r.push(a("invalid_time","charging_window")),r}function bi(e,t,i){return{code:t,section:"appliances",target:e.id,field:i}}function wi(e){return null!==e&&""!==e.value.trim()}function $i(e,t,i,a,r){const n=i;return Object.entries(a).flatMap(([i,a])=>{const s=n[i],o="number"!=typeof s||Number.isNaN(s)?r?"required":void 0:function(e,t){if(null!==t.min&&e<t.min||null!==t.max&&e>t.max)return"out_of_range";const i=e/t.resolution;return Math.abs(i-Math.round(i))<1e-6?void 0:"invalid_resolution"}(s,a);return o?[{code:o,section:e,target:t,field:i}]:[]})}function ki(e,t,i,a,r){const n=t.entity_id;return null===n?[]:i.flatMap(({name:i,field:s,action:o})=>{const l=(i,a)=>({code:i,section:e,target:t.id,field:a?`${s}.${a}`:s});if(!mi(a,e,i,n,o))return[l("default"===o?.mode?"default_action_unavailable":"domain_action_unavailable")];const d=Yt(a,e,i,n,o);return d?Object.entries(function(e,t,i){const a={};for(const r of e.parameters){const e=r.name in t?ii(r,t[r.name],i):"required";e&&(a[r.name]=e)}return a}(d,o?.data??{},r[n])).map(([e,t])=>l(t,e)):[]})}function xi(e,t,i){return[...t.entity_id?[]:[{code:"missing_entity",section:e,target:t.id,field:"entity_id"}],...i.filter(({action:e})=>function(e){return null===e||"custom"===e.mode&&0===(e.action??[]).length||"entity"===e.mode&&!e.entity_id||"domain"===e.mode&&Object.values(e.data??{}).includes(null)}(e)).map(({field:i})=>({code:"missing_action",section:e,target:t.id,field:i}))]}function Ai(e,t){return e.device_id?t.devices?.[e.device_id]?function(e){return[["entity_id",e.entity_id],["set_current","entity"===e.set_current?.mode?e.set_current.entity_id:null],["car_connected",Zt(e.car_connected)],["actively_charging",Zt(e.actively_charging)]].filter(e=>!!e[1])}(e).filter(([,i])=>t.entities?.[i]?.device_id!==e.device_id).map(([e])=>["entity_not_on_device",e]):[["unknown_device","device_id"]]:[]}let Ci=class extends fe{constructor(){super(...arguments),this.label="",this.value=null,this.entityId=null,this.defaultAvailable=!1,this.entityDomains=[],this.domainActions={},this.parameterErrors={},this.variables=[],this.disabled=!1}render(){const e=this.value?.mode,t=this.domainAction;return X`
       <div class="field ${this.error?"invalid":""}">
         <div class="label">${this.label}</div>
         <ha-form
@@ -617,7 +617,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         @value-changed=${this.valueChanged}
       ></ha-form>
       ${this.renderPreview()} ${this.error?X`<div class="error">${this.error}</div>`:te}
-    `}shownType(){return this.value?.type??(this.optional?"none":Li[this.kind][0])}schema(e){return[{name:"type",selector:{select:{mode:"list",options:[...this.optional?["none"]:[],...Li[this.kind]].map(e=>({value:e,label:this.text(e)}))}}},...this.valueField(e)]}valueField(e){switch(e){case"entity":return[{name:"value",required:!0,selector:{entity:{filter:{domain:Wt},include_entities:this.includeEntities}}}];case"power_sensor":return[{name:"value",required:!0,selector:{entity:{filter:{domain:"sensor",device_class:"power"},include_entities:this.includeEntities,exclude_entities:Ft(this.hass)}}}];case"template":return[{name:"value",required:!0,selector:{template:{}}}];default:return[]}}renderPreview(){if(!this.value?.value)return te;if("template"===this.value.type&&void 0!==this.preview?.error)return X`<div class="preview error">${this.localize("condition.error",{message:this.preview.error})}</div>`;if("template"===this.value.type&&!this.preview)return te;const e=this.evidence(this.value);return X`
+    `}shownType(){return this.value?.type??(this.optional?"none":Li[this.kind][0])}schema(e){return[{name:"type",selector:{select:{mode:"list",options:[...this.optional?["none"]:[],...Li[this.kind]].map(e=>({value:e,label:this.text(e)}))}}},...this.valueField(e)]}valueField(e){switch(e){case"entity":return[{name:"value",required:!0,selector:{entity:{filter:{domain:Dt},include_entities:this.includeEntities}}}];case"power_sensor":return[{name:"value",required:!0,selector:{entity:{filter:{domain:"sensor",device_class:"power"},include_entities:this.includeEntities,exclude_entities:Ft(this.hass)}}}];case"template":return[{name:"value",required:!0,selector:{template:{}}}];default:return[]}}renderPreview(){if(!this.value?.value)return te;if("template"===this.value.type&&void 0!==this.preview?.error)return X`<div class="preview error">${this.localize("condition.error",{message:this.preview.error})}</div>`;if("template"===this.value.type&&!this.preview)return te;const e=this.evidence(this.value);return X`
       ${this.renderNow(!0===e)}
       ${"template"===this.value.type&&null===e?X`<div class="warning">${this.text("not_boolean",{value:JSON.stringify(this.preview?.result)})}</div>`:te}
     `}evidence(e){switch(e.type){case"template":return"boolean"==typeof this.preview?.result?this.preview.result:null;case"power_sensor":{const t=Rt(this.hass,e.value);return null===t?null:t>100}default:{const t=this.hass.states[e.value]?.state;return"on"===t||"off"!==t&&null}}}renderNow(e){const t=this.text(e?"true":"false");return X`<div class="preview">${this.localize("condition.now",{value:""})}<b>${t}</b></div>`}text(e,t){return this.localize(`${this.kind}.${e}`,t)}valueChanged(e){e.stopPropagation();const{type:t,value:i}=e.detail.value,a=t===this.shownType(),r="none"===t?null:{type:t,value:a?i??"":""};this.dispatchEvent(new CustomEvent("value-changed",{detail:{value:r}}))}schedulePreview(){if(this.stopPreview(),"template"!==this.value?.type||!this.value.value.trim())return void(this.preview=void 0);const e=this.value.value;this.previewTimer=window.setTimeout(()=>this.startPreview(e),500)}startPreview(e){const t=this.entityId?this.hass.states[this.entityId]??null:null;this.unsubscribePreview=this.hass.connection.subscribeMessage(e=>this.preview=e,{type:"render_template",template:e,variables:{entity_id:this.entityId,entity:t},report_errors:!0}),this.unsubscribePreview.catch(e=>{this.preview={error:String(e instanceof Object&&"message"in e?e.message:e)}})}stopPreview(){window.clearTimeout(this.previewTimer),this.unsubscribePreview?.then(e=>e()).catch(()=>{}),this.unsubscribePreview=void 0}static{this.styles=g`
@@ -694,14 +694,14 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         @closed=${this.applianceDialogClosed}
       ></kraftvakt-appliance-dialog>
     `}applianceSaveErrors(e){return this.saveErrors.filter(t=>"appliances"===t.section&&t.target===e.id)}applianceDialogClosed(){const e=this.config.appliances.find(e=>e.id===this.editing?.appliance.id),t=this.variantToOpen;this.editing=void 0,this.variantToOpen=void 0,e&&t&&(this.editingVariant={appliance:e,variantId:t})}row(e){if("charger_group"===e.type){const t=this.config.charger_groups.find(t=>t.id===e.group_id);return{key:et(e),title:t?.name??"",iconPath:a,details:[X`${this.localize("appliances.charger_group_sub",{count:t?.chargers.length??0})}
-            <a href="${ot}/charging" @click=${this.openChargingPage}>${this.localize("tabs.charging")}</a>`],errors:[],openable:!1}}const t=this.config.appliances.find(t=>t.id===e.appliance_id),i=t?.variants.find(t=>t.id===e.variant_id),r=this.issues.filter(t=>"appliances"===t.section&&t.target===e.appliance_id&&(i?t.field?.startsWith(`variants.${i.id}.`):!t.field?.startsWith("variants.")));return{key:et(e),title:t?this.applianceName(t):"",tag:i?.label,details:t?i?this.variantDetails(i):this.applianceDetails(t):[],errors:r.map(e=>`${this.fieldLabel(e)}: ${this.describeIssue(e)}`),openable:!0}}applianceName(e){return e.entity_id?It(this.hass,this.entityNames,e.entity_id):this.localize("missing.appliance_without_entity")}applianceDetails(e){const t=e.entity_id?[e.entity_id]:[];return null!==e.power_reserve_w&&t.push(this.localize("appliances.power_reserve",{power:dt(this.hass.language,e.power_reserve_w,0)})),e.variants.length>0&&t.push(this.localize("appliances.variant_count",{count:e.variants.length})),t}variantDetails(e){const t="entity"===e.condition.type?this.localize("appliances.variant_entity",{entity:e.condition.value}):this.localize("appliances.variant_template"),i=si.filter(t=>li(e.actions,t));return i.length===si.length?[t,this.localize("appliances.variant_own_actions")]:[t,...i.map(e=>this.localize(`appliances.variant_own_${e}`))]}fieldLabel(e){const t=e.field?.split(".").at(-1)??"";return Ni.includes(t)?this.localize(`appliance.fields.${t}.label`):t}entryMoved(e){const{oldIndex:t,newIndex:i}=e.detail;this.changeConfig({...this.config,priority:Ye(this.config.priority,t,i)})}addAppliance(){const e={id:Xe(),entity_id:null,turn_on:null,turn_off:null,power_reserve_w:this.capabilities.defaults.appliances.power_reserve_w,variants:[]};this.editing={appliance:e,isNew:!0}}openRow(e){const t=this.config.priority.find(t=>et(t)===e.detail);if("appliance"!==t?.type)return;const i=this.config.appliances.find(e=>e.id===t.appliance_id);i&&t.variant_id?this.editingVariant={appliance:i,variantId:t.variant_id}:i&&(this.editing={appliance:i,isNew:!1})}applianceChanged(e){const t=e.detail,i=this.config.appliances.some(e=>e.id===t.id)?this.config.appliances.map(e=>e.id===t.id?t:e):[...this.config.appliances,t];this.changeConfig({...this.config,appliances:i})}applianceDeleted(e){this.changeConfig({...this.config,appliances:this.config.appliances.filter(t=>t.id!==e.detail)})}openChargingPage(e){e.preventDefault(),lt("charging")}static{this.styles=St.styles}};e([ke()],Oi.prototype,"editing",void 0),e([ke()],Oi.prototype,"editingVariant",void 0),Oi=e([ye("kraftvakt-appliances-page")],Oi);const Di=["entity_id","entity"];let Wi=class extends zi{constructor(){super(...arguments),this.section="chargers",this.texts="charger",this.oneAtATime=!1}actionsForEntity(e){return{activate:this.actionForEntity("activate",this.draft.activate,e),deactivate:this.actionForEntity("deactivate",this.draft.deactivate,e),set_current:this.actionForEntity("set_current",this.draft.set_current,e)}}errors(){return yi(this.draft,this.capabilities,this.hass)}get entityScope(){return Kt(this.hass,this.draft.device_id)}missing(){return gi(this.draft,this.oneAtATime)}renderFields(e){return X`
+            <a href="${ot}/charging" @click=${this.openChargingPage}>${this.localize("tabs.charging")}</a>`],errors:[],openable:!1}}const t=this.config.appliances.find(t=>t.id===e.appliance_id),i=t?.variants.find(t=>t.id===e.variant_id),r=this.issues.filter(t=>"appliances"===t.section&&t.target===e.appliance_id&&(i?t.field?.startsWith(`variants.${i.id}.`):!t.field?.startsWith("variants.")));return{key:et(e),title:t?this.applianceName(t):"",tag:i?.label,details:t?i?this.variantDetails(i):this.applianceDetails(t):[],errors:r.map(e=>`${this.fieldLabel(e)}: ${this.describeIssue(e)}`),openable:!0}}applianceName(e){return e.entity_id?It(this.hass,this.entityNames,e.entity_id):this.localize("missing.appliance_without_entity")}applianceDetails(e){const t=e.entity_id?[e.entity_id]:[];return null!==e.power_reserve_w&&t.push(this.localize("appliances.power_reserve",{power:dt(this.hass.language,e.power_reserve_w,0)})),e.variants.length>0&&t.push(this.localize("appliances.variant_count",{count:e.variants.length})),t}variantDetails(e){const t="entity"===e.condition.type?this.localize("appliances.variant_entity",{entity:e.condition.value}):this.localize("appliances.variant_template"),i=si.filter(t=>li(e.actions,t));return i.length===si.length?[t,this.localize("appliances.variant_own_actions")]:[t,...i.map(e=>this.localize(`appliances.variant_own_${e}`))]}fieldLabel(e){const t=e.field?.split(".").at(-1)??"";return Ni.includes(t)?this.localize(`appliance.fields.${t}.label`):t}entryMoved(e){const{oldIndex:t,newIndex:i}=e.detail;this.changeConfig({...this.config,priority:Ye(this.config.priority,t,i)})}addAppliance(){const e={id:Xe(),entity_id:null,turn_on:null,turn_off:null,power_reserve_w:this.capabilities.defaults.appliances.power_reserve_w,variants:[]};this.editing={appliance:e,isNew:!0}}openRow(e){const t=this.config.priority.find(t=>et(t)===e.detail);if("appliance"!==t?.type)return;const i=this.config.appliances.find(e=>e.id===t.appliance_id);i&&t.variant_id?this.editingVariant={appliance:i,variantId:t.variant_id}:i&&(this.editing={appliance:i,isNew:!1})}applianceChanged(e){const t=e.detail,i=this.config.appliances.some(e=>e.id===t.id)?this.config.appliances.map(e=>e.id===t.id?t:e):[...this.config.appliances,t];this.changeConfig({...this.config,appliances:i})}applianceDeleted(e){this.changeConfig({...this.config,appliances:this.config.appliances.filter(t=>t.id!==e.detail)})}openChargingPage(e){e.preventDefault(),lt("charging")}static{this.styles=St.styles}};e([ke()],Oi.prototype,"editing",void 0),e([ke()],Oi.prototype,"editingVariant",void 0),Oi=e([ye("kraftvakt-appliances-page")],Oi);const Wi=["entity_id","entity"];let Di=class extends zi{constructor(){super(...arguments),this.section="chargers",this.texts="charger",this.oneAtATime=!1}actionsForEntity(e){return{activate:this.actionForEntity("activate",this.draft.activate,e),deactivate:this.actionForEntity("deactivate",this.draft.deactivate,e),set_current:this.actionForEntity("set_current",this.draft.set_current,e)}}errors(){return yi(this.draft,this.capabilities,this.hass)}get entityScope(){return Kt(this.hass,this.draft.device_id)}missing(){return gi(this.draft,this.oneAtATime)}renderFields(e){return X`
       ${this.renderDevice(e)} ${this.renderEntity(e)} ${this.renderSection("charger.allowed_charging")}
-      ${this.renderAction("activate",e,Di)}
-      ${this.renderAction("deactivate",e,Di)}
+      ${this.renderAction("activate",e,Wi)}
+      ${this.renderAction("deactivate",e,Wi)}
       <div class="info">${this.localize("charger.minimum_first")}</div>
       ${this.renderSection("charger.charging_current")}
       ${this.renderForm([this.numberField("min_current_a","A",!0),this.numberField("max_current_a","A",!0)],e,e=>this.changeDraft({min_current_a:e.min_current_a,max_current_a:e.max_current_a}))}
-      ${this.renderAction("set_current",e,["current","min_current","max_current",...Di],!0)}
+      ${this.renderAction("set_current",e,["current","min_current","max_current",...Wi],!0)}
       ${this.renderForm([this.numberField("power_reserve_w","W",!0)],e,e=>this.changeDraft({power_reserve_w:e.power_reserve_w}))}
       ${this.renderConditionGroup("car_connected",ui(this.draft,this.oneAtATime)?"charger.car_connected_required":"charger.car_connected_optional",e)}
       ${this.renderConditionGroup("actively_charging","charger.actively_charging",e)}
@@ -741,7 +741,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       .group .info {
         margin-top: 0;
       }
-    `]}};function Ii(e){return"string"==typeof e?e.slice(0,5):""}e([$e({type:Boolean})],Wi.prototype,"oneAtATime",void 0),Wi=e([ye("kraftvakt-charger-dialog")],Wi);const ji=["device_id","entity_id","activate","deactivate","set_current","min_current_a","max_current_a","power_reserve_w","car_connected","actively_charging","charging_window"],Fi=[{name:"name",required:!0,selector:{text:{}}},{name:"one_at_a_time",selector:{boolean:{}}}];let Ri=class extends St{render(){const e=this.config.charger_groups;return X`
+    `]}};function Ii(e){return"string"==typeof e?e.slice(0,5):""}e([$e({type:Boolean})],Di.prototype,"oneAtATime",void 0),Di=e([ye("kraftvakt-charger-dialog")],Di);const ji=["device_id","entity_id","activate","deactivate","set_current","min_current_a","max_current_a","power_reserve_w","car_connected","actively_charging","charging_window"],Fi=[{name:"name",required:!0,selector:{text:{}}},{name:"one_at_a_time",selector:{boolean:{}}}];let Ri=class extends St{render(){const e=this.config.charger_groups;return X`
       ${0===e.length?X`<ha-card><div class="card-content no-groups">${this.localize("charging.no_groups")}</div></ha-card>`:e.map(e=>this.renderGroup(e))}
       <div class="page-footer">
         <ha-button .disabled=${this.locked} @click=${this.addGroup}>
@@ -870,251 +870,45 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       background: var(--primary-text-color);
       transform-origin: right;
     }
-  `}};Zi=e([ye("kraftvakt-countdown-bar")],Zi);const Gi={kind:"on"},Ji={kind:"off"},Qi={kind:"outline",icon:"M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"},Xi={first_decision:[{kind:"off",icon:l},"status.chip_first_decision","status.first_decision"],excluded:[Qi,"status.chip_excluded","status.excluded"],outside_window:[{kind:"outline",icon:"M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"},"status.chip_window","status.outside_window"],no_car:[{kind:"warning",icon:"M20.5,19.85L6.41,5.76L2.41,1.76L1.11,3L4.57,6.46L3,11V19A1,1 0 0,0 4,20H5A1,1 0 0,0 6,19V18H16.11L20.84,22.73L22.11,21.46L20.5,19.85M6.5,15A1.5,1.5 0 0,1 5,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,15M5,10L5.78,7.67L8.11,10H5M17.5,5.5L19,10H13.2L16.12,12.92C16.5,12.17 17.37,11.86 18.12,12.21C18.87,12.57 19.18,13.47 18.83,14.21C18.68,14.5 18.43,14.77 18.12,14.92L21,17.8V11L18.92,5C18.71,4.4 18.14,4 17.5,4H7.2L8.7,5.5H17.5Z"},"status.chip_no_car","status.bypassed_no_car"],not_charging:[{kind:"warning",icon:"M20.84 22.73L15.31 17.2L14.5 18V21H9.5V18L6 14.5V9C6 8.7 6.1 8.41 6.25 8.14L1.11 3L2.39 1.73L22.11 21.46L20.84 22.73M18 14.5V9C18 8 17 7 16 7V3H14V7H10.2L17.85 14.65L18 14.5M10 3H8V4.8L10 6.8V3Z"},"status.chip_not_charging","status.bypassed"],queued:[{kind:"off",icon:l},"status.chip_queued","status.waiting_charger"],override:[{kind:"info",icon:"M15,4A8,8 0 0,1 23,12A8,8 0 0,1 15,20A8,8 0 0,1 7,12A8,8 0 0,1 15,4M15,6A6,6 0 0,0 9,12A6,6 0 0,0 15,18A6,6 0 0,0 21,12A6,6 0 0,0 15,6M14,8H15.5V11.78L17.83,14.11L16.77,15.17L14,12.4V8M2,18A1,1 0 0,1 1,17A1,1 0 0,1 2,16H5.83C6.14,16.71 6.54,17.38 7,18H2M3,13A1,1 0 0,1 2,12A1,1 0 0,1 3,11H5.05L5,12L5.05,13H3M4,8A1,1 0 0,1 3,7A1,1 0 0,1 4,6H7C6.54,6.62 6.14,7.29 5.83,8H4Z"},"status.chip_override","status.window_overridden"],finishing:[{kind:"info",icon:"M12,1C8.14,1 5,4.14 5,8A7,7 0 0,0 12,15C15.86,15 19,11.87 19,8C19,4.14 15.86,1 12,1M12,3.15C14.67,3.15 16.85,5.32 16.85,8C16.85,10.68 14.67,12.85 12,12.85A4.85,4.85 0 0,1 7.15,8A4.85,4.85 0 0,1 12,3.15M11,5V8.69L14.19,10.53L14.94,9.23L12.5,7.82V5M15,16V19H3V21H15V24L19,20M19,20V24H21V16H19"},"status.chip_finishing","status.finishing_at"],charging:[{kind:"on",icon:n},"status.chip_charging","status.charging_at"],activated:[Gi,"status.activated","status.activated_not_charging"],deactivated:[Ji,"status.deactivated","status.deactivated"]};function Yi(e){return e.endsWith(":00")?e.slice(0,-3):e}const ea=[1,2,5,10,20,50];let ta=class extends fe{constructor(){super(...arguments),this.narrow=!1,this.phoneQuery=new mt(this,600)}get phone(){return this.phoneQuery.matches}render(){if(!this.status)return te;const e=this.status;return X`
-      <div class="cards">
-        ${this.renderRegulationCard(e)} ${e.running?this.renderPriorityCard(e):te}
-      </div>
-    `}renderRegulationCard(e){return X`
-      <ha-card class="regulation">
-        <div class="card-header">
-          <span>${this.localize("status.regulation")}</span>
-          <span class="chip ${e.running?"running":"off"}">
-            <span class="dot"></span>
-            ${this.localize(e.running?"status.running":"status.stopped")}
-          </span>
-          ${e.running&&e.safe_state?X`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`:te}
-          ${e.running&&e.penalty.active?X`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`:te}
-          <span class="spacer"></span>
-          ${e.running&&e.next_decision_at?this.renderNextDecision(e,e.next_decision_at):te}
-        </div>
-        <div class="card-content">
-          ${this.runningError?X`<ha-alert alert-type="error">${this.runningError}</ha-alert>`:te}
-          ${e.running?this.renderRunning(e):this.renderStopped(e)}
-        </div>
-        <div class="card-actions">${this.renderStartStop(e)}</div>
-      </ha-card>
-    `}renderStartStop(e){return X`
-      <kraftvakt-running-button
-        .hass=${this.hass}
-        .localize=${this.localize}
-        .running=${e.running}
-        .disabled=${!e.running&&e.missing.length>0}
-        @running-error=${e=>this.runningError=e.detail}
-      ></kraftvakt-running-button>
-    `}renderRunning(e){const t=this.hass.language,i=Rt(this.hass,this.config?.config.general.power_sensor??"");return X`
-      ${e.safe_state?this.renderSafeState(null!==i):te} ${e.penalty.active?this.renderPenalty(e):te}
+  `}};Zi=e([ye("kraftvakt-countdown-bar")],Zi);const Gi=[1,2,5,10,20,50];let Ji=class extends fe{constructor(){super(...arguments),this.narrow=!1,this.powerNowW=null}render(){const e=this.status,t=this.hass.language;return X`
       <div class="stats">
-        ${this.renderStat("power-now","status.power_now",ct(t,i),this.localize("status.momentary"))}
+        ${this.renderStat("power-now","status.power_now",ct(t,this.powerNowW),this.localize("status.momentary"))}
         ${this.renderStat("regulation-average","status.regulation_average",ct(t,e.regulation_average_w),this.localize("status.average_over_seconds",{seconds:e.regulation_window_s}))}
-        ${this.renderStat("tariff-average","status.tariff_average",ct(t,e.tariff_average_w),this.localize("status.average_over_hour"),(a=e.tariff_average_w,null!==a&&a>e.power_limit_w))}
+        ${this.renderStat("tariff-average","status.tariff_average",ct(t,e.tariff_average_w),this.localize("status.average_over_hour"),(i=e.tariff_average_w,null!==i&&i>e.power_limit_w))}
         ${this.renderStat("power-limit","status.power_limit",ct(t,e.power_limit_w))}
       </div>
-      ${this.renderMeter(e,i)}
-    `;var a}renderNextDecision(e,t){const i=Date.parse(t),a=e.regulation_window_s*e.regulation_interval*1e3,r=ut(this.hass.language,t);return X`
-      <span class="next-decision" title=${this.localize("status.next_decision_at",{time:r})}>
-        ${this.narrow?te:this.localize("status.next_decision")}
-        <kraftvakt-countdown-ring .start=${i-a} .end=${i}></kraftvakt-countdown-ring>
-      </span>
-    `}renderSafeState(e){const t=this.config?.config.general.power_sensor??"",i=this.hass.states[t]?.attributes.friendly_name??t;return X`
-      <ha-alert alert-type=${e?"info":"error"} .title=${this.localize("status.safe_state_title")}>
-        ${this.localize(e?"status.safe_state_back_text":"status.safe_state_text",{sensor:i})}
-      </ha-alert>
-    `}renderPenalty(e){const t=(i=this.hass.language,a=Math.max(0,e.penalty.overconsumption_wh),dt(i,a/1e3,2));var i,a;const r=e.penalty.recovery_started?"status.recovery_started":"status.recovery_not_started";return X`
-      <ha-alert alert-type="warning" .title=${this.localize("status.penalty_title")}>
-        ${this.localize("status.penalty_text")}
-        <div class="penalty-details">${this.localize("status.overconsumption_left",{energy:t})} · ${this.localize(r)}</div>
-      </ha-alert>
-    `}renderStat(e,t,i,a,r=!1){return X`
+      ${this.renderMeter()}
+    `;var i}renderStat(e,t,i,a,r=!1){return X`
       <div class="stat">
-        <div class="stat-label">${e?X`<span class="swatch ${e}"></span>`:te}${this.localize(t)}</div>
+        <div class="stat-label"><span class="swatch ${e}"></span>${this.localize(t)}</div>
         <div class="stat-value ${r?"alarm":""}">${i} <small>kW</small></div>
         ${a?X`<div class="stat-period">${a}</div>`:te}
       </div>
-    `}renderMeter(e,t){const i=e=>null===e?null:e/1e3,a=e.power_limit_w/1e3,r=i(t),n=i(e.tariff_average_w),s=i(e.regulation_average_w),o=[r,n,s],{step:l,end:d}=function(e){const t=ea.find(t=>e/t<=15)??ea[ea.length-1];return{step:t,end:Math.ceil(e/t)*t}}(Math.max(1.2*a,...o.map(e=>e??0))),c=e=>100*Math.min(e,d)/d+"%",h=this.hass.language,p=Array.from({length:d/l+1},(e,t)=>t*l),u=this.narrow?3:2,g=p.filter((e,t)=>t%u===0),v=(e,t,i)=>null===i?te:X`<span
+    `}renderMeter(){const e=this.status,t=e=>null===e?null:e/1e3,i=e.power_limit_w/1e3,a=t(this.powerNowW),r=t(e.tariff_average_w),n=t(e.regulation_average_w),s=[a,r,n],{step:o,end:l}=function(e){const t=Gi.find(t=>e/t<=15)??Gi[Gi.length-1];return{step:t,end:Math.ceil(e/t)*t}}(Math.max(1.2*i,...s.map(e=>e??0))),d=e=>100*Math.min(e,l)/l+"%",c=this.hass.language,h=Array.from({length:l/o+1},(e,t)=>t*o),p=this.narrow?3:2,u=h.filter((e,t)=>t%p===0),g=(e,t,i)=>null===i?te:X`<span
             class="marker ${e}"
-            style="left: ${c(i)}"
-            title="${this.localize(t)} ${dt(h,i,2)} kW"
+            style="left: ${d(i)}"
+            title="${this.localize(t)} ${dt(c,i,2)} kW"
           ></span>`;return X`
       <div class="meter">
         <div class="markers">
-          ${v("power-limit","status.power_limit",a)}
-          ${v("tariff-average","status.tariff_average",n)}
-          ${v("regulation-average","status.regulation_average",s)}
+          ${g("power-limit","status.power_limit",i)}
+          ${g("tariff-average","status.tariff_average",r)}
+          ${g("regulation-average","status.regulation_average",n)}
         </div>
         <div class="bar">
-          ${null===r?te:X`<div class="fill power-now" style="width: ${c(r)}"></div>`}
+          ${null===a?te:X`<div class="fill power-now" style="width: ${d(a)}"></div>`}
         </div>
-        <div class="ticks">${p.map(e=>X`<span style="left: ${c(e)}"></span>`)}</div>
+        <div class="ticks">${h.map(e=>X`<span style="left: ${d(e)}"></span>`)}</div>
         <div class="scale">
-          ${g.map((e,t)=>X`<span class=${0===e?"start":e===d?"end":""} style="left: ${c(e)}"
-                >${dt(h,e,0)}${t===g.length-1?" kW":""}</span
+          ${u.map((e,t)=>X`<span class=${0===e?"start":e===l?"end":""} style="left: ${d(e)}"
+                >${dt(c,e,0)}${t===u.length-1?" kW":""}</span
               >`)}
         </div>
       </div>
-    `}renderPriorityCard(e){const t=function(e){return e.priority.map(e=>"appliance"===e.type?{kind:"appliance",appliance:e,on:e.on}:{kind:"charger_group",group:e,on:e.chargers.some(e=>e.activated&&!e.bypassed)})}(e),i=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(t);return X`
-      <ha-card>
-        <div class="card-header">
-          <span>${this.localize("status.priority_list")}</span>
-        </div>
-        ${0===t.length?X`<div class="card-content empty">${this.localize("status.no_appliances")}</div>`:X`<div class="list ${this.phone?"phone":""}">
-              ${t.map((t,a)=>X`
-                  ${"appliance"===t.kind?this.renderApplianceRow(t.appliance,a+1):this.renderChargerGroup(t.group,a+1)}
-                  ${a===i?this.renderCutOff(e):te}
-                `)}
-            </div>`}
-      </ha-card>
-    `}renderApplianceRow(e,t){return X`
-      <div class="row ${e.on?"":"off"} ${e.excluded?"excluded":""}">
-        ${this.renderRank(t)}
-        <div class="row-title">
-          ${this.renderApplianceIcon(e)}${this.renderName(e.name)}
-          ${e.variant&&!this.phone?X`<span class="variant" title=${e.variant}>${e.variant}</span>`:te}
-        </div>
-        <span></span>
-        ${this.renderWideOnly(this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at"))}
-        ${this.renderApplianceChip(e)}
-      </div>
-    `}renderRank(e){return this.renderWideOnly(X`<span class="rank">${e??te}</span>`)}renderWideOnly(e){return this.phone?te:e}renderName(e){return X`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(Qi,"status.chip_excluded","status.excluded"):e.on?this.renderChip(Gi,"status.on","status.on"):this.renderChip(Ji,"status.off","status.off")}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0;return X`
-      <span class="device-icon ${e.on?"on":""}">
-        ${i?X`<ha-state-icon .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:te}
-        <ha-svg-icon .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>
-      </span>
-    `}renderChargerGroup(e,i){const r=e.chargers,s=r.filter(e=>e.charging).length;return X`
-      <div class="row group">
-        ${this.renderRank(i)}
-        <div class="row-title">
-          <ha-svg-icon class="ev-icon" .path=${t}></ha-svg-icon>
-          ${this.renderName(e.name)}
-          ${0!==r.length||this.phone?te:X`<span class="row-sub">${this.localize("status.no_chargers")}</span>`}
-        </div>
-        ${this.renderWideOnly(0===r.length?X`<span></span>`:X`<span
-                class="charging-count"
-                title=${this.localize("status.chargers_charging",{charging:s,total:r.length})}
-              >
-                <ha-svg-icon .path=${n}></ha-svg-icon>${s} / ${r.length}
-              </span>`)}
-      </div>
-      ${r.map(e=>X`
-          <div class="row charger ${e.activated?"":"off"}">
-            ${this.renderRank(null)}
-            <div class="row-title">
-              <ha-svg-icon class="device-icon ev ${e.activated?"on":""}" .path=${a}></ha-svg-icon>
-              ${this.renderName(e.name)}
-            </div>
-            ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)}
-            ${this.renderWideOnly(this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at"))}
-            ${this.renderChargerChip(e)}
-          </div>
-        `)}
-    `}renderWaiting(e,t,i,a){if(!e.waiting_since||!e.waiting_ends_at)return X`<span></span>`;const r=ut(this.hass.language,e.waiting_ends_at);return X`
-      <span class="waiting" title="${this.localize(i)}: ${this.localize(a,{time:r})}">
-        <ha-svg-icon .path=${t}></ha-svg-icon>
-        <kraftvakt-countdown-bar
-          .start=${Date.parse(e.waiting_since)}
-          .end=${Date.parse(e.waiting_ends_at)}
-        ></kraftvakt-countdown-bar>
-      </span>
-    `}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,a=null===e.current_a?0:e.current_a-t.min_current_a+1,r=e.bypassed?"on bypassed":"on";return X`
-      <span class="amperes">
-        <span class="current ${null===e.current_a?"none":""}"
-          >${null===e.current_a?"–":this.localize("status.amperes",{current:e.current_a})}</span
-        >
-        <span class="ampere-steps ${i>16?"small":""}">
-          ${Array.from({length:i},(e,t)=>X`<span class="ampere ${t<a?r:""}"></span>`)}
-        </span>
-      </span>
-    `}renderPhoneCurrent(e){return null===e.current_a?X`<span></span>`:X`<span class="current">${this.localize("status.amperes",{current:e.current_a})}</span>`}renderChargerChip(e){const[t,i,a]=Xi[e.state],r=this.chargerConfig(e)?.charging_window;if("outside_window"===e.state&&r){const e={start:Yi(r.start),end:Yi(r.end)};return this.renderChip(t,i,a,e,{...r})}return this.renderChip(t,i,a,{},{current:e.current_a??0})}renderChip(e,t,i,a={},r=a){return X`
-      <span class="state chip ${e.kind}" title=${this.localize(i,r)}>
-        ${e.icon?X`<ha-svg-icon .path=${e.icon}></ha-svg-icon>`:X`<span class="dot"></span>`}
-        ${this.localize(t,a)}
-      </span>
-    `}renderCutOff(e){const t=this.hass.language,i=e.regulation_average_w,a=null===i?0:e.power_limit_w-i;return X`
-      <div class="cut-off" title=${this.localize("status.power_runs_out")}>
-        <ha-svg-icon .path=${"M11,4H13V16L18.5,10.5L19.92,11.92L12,19.84L4.08,11.92L5.5,10.5L11,16V4Z"}></ha-svg-icon>
-        ${a>0?this.localize("status.free_power",{power:ct(t,a),share:pt(t,a/e.power_limit_w)}):te}
-      </div>
-    `}chargerConfig(e){return this.config&&it(this.config.config).find(t=>t.id===e.id)}renderStopped(e){return 0===e.missing.length?X`<ha-alert alert-type="info">${this.localize("status.stopped_info")}</ha-alert>`:X`
-      <ha-alert alert-type="warning" .title=${this.localize("status.incomplete_title")}>
-        <ul class="missing">
-          ${e.missing.map(e=>{const t=function(e){return"general"===e.section&&e.field&&kt.has(e.field)?"advanced":$t[e.section]}(e);return X`
-              <li>
-                ${function(e,t,i){const a={item:At(e,t,i),action:xt(e.field,i),code:e.code};return i(bt[e.code]??"missing.unknown",a)}(e,this.config,this.localize)}
-                <a href="${ot}/${t}" @click=${e=>this.openPage(e,t)}>
-                  ${this.localize(`tabs.${t}`)}
-                </a>
-              </li>
-            `})}
-        </ul>
-      </ha-alert>
-    `}openPage(e,t){e.preventDefault(),lt(t)}static{this.styles=g`
+    `}static{this.styles=g`
     :host {
-      display: block;
-      --kraftvakt-grid-color: var(--energy-grid-consumption-color, #488fc2);
-      --kraftvakt-now-color: var(--secondary-text-color);
-      --kraftvakt-ev-color: var(--teal-color, #009688);
-      --kraftvakt-on-color: var(--state-active-color, var(--amber-color, #ffc107));
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 16px;
-    }
-    :host([narrow]) .cards {
-      gap: 8px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      min-height: 40px;
-      padding: 12px 16px;
-      font-size: var(--ha-font-size-xl, 20px);
-    }
-    .spacer {
-      flex: 1;
-    }
-    .card-content {
       display: grid;
       gap: 16px;
-      padding: 0 16px 16px;
-    }
-    .card-content:empty {
-      display: none;
-    }
-    .card-actions {
-      display: flex;
-      justify-content: flex-end;
-      padding: 8px 16px;
-      border-top: 1px solid var(--divider-color);
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 10px;
-      border-radius: 999px;
-      font-size: var(--ha-font-size-s, 12px);
-      font-weight: 500;
-      line-height: 20px;
-      white-space: nowrap;
-      background: var(--kraftvakt-chip-off-background, rgba(127, 127, 127, 0.16));
-      color: var(--secondary-text-color);
-    }
-    .chip .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-    .chip.running,
-    .chip.on {
-      background: rgba(var(--rgb-success-color, 67, 160, 71), 0.16);
-      color: var(--success-color, #43a047);
-    }
-    .chip.alarm {
-      background: rgba(var(--rgb-error-color, 219, 68, 55), 0.16);
-      color: var(--error-color, #db4437);
     }
     .stats {
       display: grid;
@@ -1241,245 +1035,478 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     .meter .scale .end {
       transform: translateX(-100%);
     }
-    .penalty-details {
-      margin-top: 8px;
-    }
-    .empty {
-      color: var(--secondary-text-color);
-    }
-    .list {
-      display: grid;
-      grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) 120px max-content;
-      column-gap: 12px;
-    }
-    .row {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: subgrid;
-      align-items: center;
-      min-height: 48px;
-      padding: 4px 16px;
-      border-top: 1px solid var(--divider-color);
-      box-sizing: border-box;
-    }
-    :host([narrow]) .row {
-      padding: 4px 12px;
-    }
-    .row.group,
-    .row.charger {
-      background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
-    }
-    .row.charger {
-      min-height: 44px;
-      border-top-style: dashed;
-    }
-    .row.off .name {
-      color: var(--secondary-text-color);
-    }
-    .row.excluded .row-title {
-      opacity: 0.5;
-    }
-    .row.charger .row-title {
-      padding-inline-start: 24px;
-    }
-    :host([narrow]) .row.charger .row-title {
-      padding-inline-start: 16px;
-    }
-    .rank {
-      text-align: end;
-      font-variant-numeric: tabular-nums;
-      color: var(--secondary-text-color);
-    }
-    .row > .chip {
-      justify-self: start;
-    }
-    .chip ha-svg-icon {
-      --mdc-icon-size: 16px;
-    }
-    .chip.warning {
-      background: rgba(var(--rgb-warning-color, 255, 166, 0), 0.16);
-      color: var(--warning-color, #ffa600);
-    }
-    .chip.outline {
-      background: none;
-      box-shadow: inset 0 0 0 1px var(--divider-color);
-    }
-    .chip.info {
-      background: rgba(var(--rgb-info-color, 3, 155, 229), 0.16);
-      color: var(--info-color, #039be5);
-    }
-    .cut-off {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 4px 16px;
-      border-top: 1px solid var(--divider-color);
-      color: var(--primary-color);
-      font-size: var(--ha-font-size-s, 12px);
-      white-space: nowrap;
-    }
-    .cut-off::before,
-    .cut-off::after {
-      content: "";
-      flex: 1;
-      border-top: 2px dashed var(--primary-color);
-    }
-    .cut-off ha-svg-icon {
-      --mdc-icon-size: 14px;
-    }
-    .next-decision {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: var(--ha-font-size-m, 14px);
-      color: var(--secondary-text-color);
-    }
-    .waiting {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .waiting kraftvakt-countdown-bar {
-      flex: 1;
-    }
-    .waiting ha-svg-icon,
-    .charging-count ha-svg-icon {
-      flex: none;
-      --mdc-icon-size: 16px;
-      color: var(--secondary-text-color);
-    }
-    .charging-count {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--secondary-text-color);
-      font-size: var(--ha-font-size-s, 12px);
-    }
-    .charging-count ha-svg-icon {
-      color: var(--kraftvakt-ev-color);
-    }
-    .amperes {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .current {
-      min-width: 40px;
-      text-align: end;
-      font-weight: 500;
-    }
-    .amperes .current.none {
-      color: var(--secondary-text-color);
-      font-weight: normal;
-    }
-    .ampere-steps {
-      display: inline-flex;
-      gap: 2px;
-    }
-    .ampere {
-      width: 3px;
-      height: 14px;
-      border-radius: 1px;
-      background: rgba(127, 127, 127, 0.32);
-    }
-    .ampere-steps.small {
-      gap: 1px;
-    }
-    .ampere-steps.small .ampere {
-      width: 2px;
-    }
-    .ampere.on {
-      background: var(--kraftvakt-ev-color);
-    }
-    .ampere.on.bypassed {
-      background: repeating-linear-gradient(
-        45deg,
-        var(--secondary-text-color) 0 2px,
-        rgba(127, 127, 127, 0.16) 2px 4px
-      );
-    }
-    .row-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-    .name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .row-title ha-svg-icon,
-    .row-title ha-state-icon {
-      flex: none;
-      --mdc-icon-size: 20px;
-    }
-    .row-title ha-svg-icon,
-    .row-title .device-icon {
-      color: var(--state-inactive-color, var(--secondary-text-color));
-    }
-    .row-title .device-icon > * {
-      color: inherit;
-    }
-    span.device-icon {
-      display: flex;
-      flex: none;
-      width: 20px;
-      height: 20px;
-      overflow: hidden;
-    }
-    .row-title .device-icon.on {
-      color: var(--kraftvakt-on-color);
-    }
-    .row-title .device-icon.ev.on,
-    .row-title .ev-icon {
-      color: var(--kraftvakt-ev-color);
-    }
-    .row.group .name {
-      font-weight: 500;
-    }
-    .row-sub {
-      flex: none;
-      color: var(--secondary-text-color);
-      font-size: var(--ha-font-size-s, 12px);
-    }
-    .variant {
-      flex: 0 1000 auto;
-      min-width: 3em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding: 0 8px;
-      border-radius: 999px;
-      font-size: var(--ha-font-size-s, 12px);
-      background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.16);
-      color: var(--primary-color);
-    }
-    ul.missing {
-      margin: 6px 0 0;
-      padding-inline-start: 18px;
-    }
-    ul.missing a {
-      color: var(--primary-color);
-    }
-    .list.phone {
-      grid-template-columns: minmax(0, 1fr) max-content max-content;
-      column-gap: 8px;
-    }
-    .list.phone .row > .chip {
-      justify-self: end;
-    }
-  `}};e([$e({attribute:!1})],ta.prototype,"hass",void 0),e([$e({attribute:!1})],ta.prototype,"localize",void 0),e([$e({type:Boolean,reflect:!0})],ta.prototype,"narrow",void 0),e([$e({attribute:!1})],ta.prototype,"status",void 0),e([$e({attribute:!1})],ta.prototype,"config",void 0),e([ke()],ta.prototype,"runningError",void 0),ta=e([ye("kraftvakt-status-page")],ta);const ia={status:"M3,13H5.79L10.1,4.79L11.28,13.75L14.5,9.66L17.83,13H21V15H17L14.67,12.67L9.92,18.73L8.94,11.31L7,15H3V13Z",general:"M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z",appliances:"M7,13V11H21V13H7M7,19V17H21V19H7M7,7V5H21V7H7M3,8V5H2V4H4V8H3M2,17V16H5V20H2V19H4V18.5H3V17.5H4V17H2M4.25,10A0.75,0.75 0 0,1 5,10.75C5,10.95 4.92,11.14 4.79,11.27L3.12,13H5V14H2V13.08L4,11H2V10H4.25Z",charging:t,advanced:"M3,17V19H9V17H3M3,5V7H13V5H3M13,21V19H21V17H13V15H11V21H13M7,9V11H3V13H7V15H9V9H7M21,13V11H11V13H21M15,9H17V7H21V5H17V3H15V9Z"},aa={general:je`kraftvakt-general-page`,appliances:je`kraftvakt-appliances-page`,charging:je`kraftvakt-charging-page`,advanced:je`kraftvakt-advanced-page`};let ra=class extends fe{constructor(){super(...arguments),this.narrow=!1,this.haElementsReady=!1,this.saveErrors=[],this.saving=!1,this.localize=rt("en"),this.warnBeforeUnload=e=>{this.dirty&&e.preventDefault()}}connectedCallback(){super.connectedCallback(),window.addEventListener("beforeunload",this.warnBeforeUnload),customElements.whenDefined("ha-form").then(()=>{this.haElementsReady=!0}),this.hass&&this.subscribe()}disconnectedCallback(){super.disconnectedCallback(),window.removeEventListener("beforeunload",this.warnBeforeUnload),this.unsubscribe()}willUpdate(e){e.has("hass")&&this.hass?.language!==e.get("hass")?.language&&(this.localize=rt(this.hass?.language??"en"),this.hass?.loadFragmentTranslation("config")),e.has("hass")&&this.hass&&!this.unsubscribeStatus&&this.subscribe()}updated(e){e.has("route")&&this.openAppliancesFromConfigureButton()}render(){if(!this.hass||!this.haElementsReady)return X``;const e=this.currentPage;return X`
+  `}};e([$e({attribute:!1})],Ji.prototype,"hass",void 0),e([$e({attribute:!1})],Ji.prototype,"localize",void 0),e([$e({type:Boolean,reflect:!0})],Ji.prototype,"narrow",void 0),e([$e({attribute:!1})],Ji.prototype,"status",void 0),e([$e({attribute:!1})],Ji.prototype,"powerNowW",void 0),Ji=e([ye("kraftvakt-power-overview")],Ji);const Qi=g`
+  .card-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 40px;
+    padding: 12px 16px;
+    font-size: var(--ha-font-size-xl, 20px);
+  }
+`,Xi=g`
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: var(--ha-font-size-s, 12px);
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    background: var(--kraftvakt-chip-off-background, rgba(127, 127, 127, 0.16));
+    color: var(--secondary-text-color);
+  }
+  .chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .chip ha-svg-icon {
+    --mdc-icon-size: 16px;
+  }
+  .chip.running,
+  .chip.on {
+    background: rgba(var(--rgb-success-color, 67, 160, 71), 0.16);
+    color: var(--success-color, #43a047);
+  }
+  .chip.alarm {
+    background: rgba(var(--rgb-error-color, 219, 68, 55), 0.16);
+    color: var(--error-color, #db4437);
+  }
+  .chip.warning {
+    background: rgba(var(--rgb-warning-color, 255, 166, 0), 0.16);
+    color: var(--warning-color, #ffa600);
+  }
+  .chip.outline {
+    background: none;
+    box-shadow: inset 0 0 0 1px var(--divider-color);
+  }
+  .chip.info {
+    background: rgba(var(--rgb-info-color, 3, 155, 229), 0.16);
+    color: var(--info-color, #039be5);
+  }
+`,Yi={kind:"on"},ea={kind:"off"},ta={kind:"outline",icon:"M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"},ia={first_decision:[{kind:"off",icon:l},"status.chip_first_decision","status.first_decision"],excluded:[ta,"status.chip_excluded","status.excluded"],outside_window:[{kind:"outline",icon:"M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"},"status.chip_window","status.outside_window"],no_car:[{kind:"warning",icon:"M20.5,19.85L6.41,5.76L2.41,1.76L1.11,3L4.57,6.46L3,11V19A1,1 0 0,0 4,20H5A1,1 0 0,0 6,19V18H16.11L20.84,22.73L22.11,21.46L20.5,19.85M6.5,15A1.5,1.5 0 0,1 5,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,15M5,10L5.78,7.67L8.11,10H5M17.5,5.5L19,10H13.2L16.12,12.92C16.5,12.17 17.37,11.86 18.12,12.21C18.87,12.57 19.18,13.47 18.83,14.21C18.68,14.5 18.43,14.77 18.12,14.92L21,17.8V11L18.92,5C18.71,4.4 18.14,4 17.5,4H7.2L8.7,5.5H17.5Z"},"status.chip_no_car","status.bypassed_no_car"],not_charging:[{kind:"warning",icon:"M20.84 22.73L15.31 17.2L14.5 18V21H9.5V18L6 14.5V9C6 8.7 6.1 8.41 6.25 8.14L1.11 3L2.39 1.73L22.11 21.46L20.84 22.73M18 14.5V9C18 8 17 7 16 7V3H14V7H10.2L17.85 14.65L18 14.5M10 3H8V4.8L10 6.8V3Z"},"status.chip_not_charging","status.bypassed"],queued:[{kind:"off",icon:l},"status.chip_queued","status.waiting_charger"],override:[{kind:"info",icon:"M15,4A8,8 0 0,1 23,12A8,8 0 0,1 15,20A8,8 0 0,1 7,12A8,8 0 0,1 15,4M15,6A6,6 0 0,0 9,12A6,6 0 0,0 15,18A6,6 0 0,0 21,12A6,6 0 0,0 15,6M14,8H15.5V11.78L17.83,14.11L16.77,15.17L14,12.4V8M2,18A1,1 0 0,1 1,17A1,1 0 0,1 2,16H5.83C6.14,16.71 6.54,17.38 7,18H2M3,13A1,1 0 0,1 2,12A1,1 0 0,1 3,11H5.05L5,12L5.05,13H3M4,8A1,1 0 0,1 3,7A1,1 0 0,1 4,6H7C6.54,6.62 6.14,7.29 5.83,8H4Z"},"status.chip_override","status.window_overridden"],finishing:[{kind:"info",icon:"M12,1C8.14,1 5,4.14 5,8A7,7 0 0,0 12,15C15.86,15 19,11.87 19,8C19,4.14 15.86,1 12,1M12,3.15C14.67,3.15 16.85,5.32 16.85,8C16.85,10.68 14.67,12.85 12,12.85A4.85,4.85 0 0,1 7.15,8A4.85,4.85 0 0,1 12,3.15M11,5V8.69L14.19,10.53L14.94,9.23L12.5,7.82V5M15,16V19H3V21H15V24L19,20M19,20V24H21V16H19"},"status.chip_finishing","status.finishing_at"],charging:[{kind:"on",icon:n},"status.chip_charging","status.charging_at"],activated:[Yi,"status.activated","status.activated_not_charging"],deactivated:[ea,"status.deactivated","status.deactivated"]};function aa(e){return e.endsWith(":00")?e.slice(0,-3):e}let ra=class extends fe{constructor(){super(...arguments),this.narrow=!1,this.phoneQuery=new mt(this,600)}get phone(){return this.phoneQuery.matches}render(){const e=function(e){return e.priority.map(e=>"appliance"===e.type?{kind:"appliance",appliance:e,on:e.on}:{kind:"charger_group",group:e,on:e.chargers.some(e=>e.activated&&!e.bypassed)})}(this.status),t=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(e);return X`
+      <ha-card>
+        <div class="card-header">
+          <span>${this.localize("status.priority_list")}</span>
+        </div>
+        ${0===e.length?X`<div class="empty">${this.localize("status.no_appliances")}</div>`:X`<div class="list ${this.phone?"phone":""}">
+              ${e.map((e,i)=>X`
+                  ${"appliance"===e.kind?this.renderApplianceRow(e.appliance,i+1):this.renderChargerGroup(e.group,i+1)}
+                  ${i===t?this.renderCutOff():te}
+                `)}
+            </div>`}
+      </ha-card>
+    `}renderApplianceRow(e,t){return X`
+      <div class="row ${e.on?"":"off"} ${e.excluded?"excluded":""}">
+        ${this.renderRank(t)}
+        <div class="row-title">
+          ${this.renderApplianceIcon(e)}${this.renderName(e.name)}
+          ${e.variant&&!this.phone?X`<span class="variant" title=${e.variant}>${e.variant}</span>`:te}
+        </div>
+        <span></span>
+        ${this.renderWideOnly(this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at"))}
+        ${this.renderApplianceChip(e)}
+      </div>
+    `}renderRank(e){return this.renderWideOnly(X`<span class="rank">${e??te}</span>`)}renderWideOnly(e){return this.phone?te:e}renderName(e){return X`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(ta,"status.chip_excluded","status.excluded"):e.on?this.renderChip(Yi,"status.on","status.on"):this.renderChip(ea,"status.off","status.off")}renderApplianceIcon(e){const t=this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id,i=t?this.hass.states[t]:void 0;return X`
+      <span class="device-icon ${e.on?"on":""}">
+        ${i?X`<ha-state-icon .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:te}
+        <ha-svg-icon .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>
+      </span>
+    `}renderChargerGroup(e,i){const a=e.chargers,r=a.filter(e=>e.charging).length;return X`
+      <div class="row group">
+        ${this.renderRank(i)}
+        <div class="row-title">
+          <ha-svg-icon class="ev-icon" .path=${t}></ha-svg-icon>
+          ${this.renderName(e.name)}
+          ${0!==a.length||this.phone?te:X`<span class="row-sub">${this.localize("status.no_chargers")}</span>`}
+        </div>
+        ${this.renderWideOnly(0===a.length?X`<span></span>`:X`<span
+                class="charging-count"
+                title=${this.localize("status.chargers_charging",{charging:r,total:a.length})}
+              >
+                <ha-svg-icon .path=${n}></ha-svg-icon>${r} / ${a.length}
+              </span>`)}
+      </div>
+      ${a.map(e=>this.renderChargerRow(e))}
+    `}renderChargerRow(e){return X`
+      <div class="row charger ${e.activated?"":"off"}">
+        ${this.renderRank(null)}
+        <div class="row-title">
+          <ha-svg-icon class="device-icon ev ${e.activated?"on":""}" .path=${a}></ha-svg-icon>
+          ${this.renderName(e.name)}
+        </div>
+        ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)}
+        ${this.renderWideOnly(this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at"))}
+        ${this.renderChargerChip(e)}
+      </div>
+    `}renderWaiting(e,t,i,a){if(!e.waiting_since||!e.waiting_ends_at)return X`<span></span>`;const r=ut(this.hass.language,e.waiting_ends_at);return X`
+      <span class="waiting" title="${this.localize(i)}: ${this.localize(a,{time:r})}">
+        <ha-svg-icon .path=${t}></ha-svg-icon>
+        <kraftvakt-countdown-bar
+          .start=${Date.parse(e.waiting_since)}
+          .end=${Date.parse(e.waiting_ends_at)}
+        ></kraftvakt-countdown-bar>
+      </span>
+    `}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,a=null===e.current_a?0:e.current_a-t.min_current_a+1,r=e.bypassed?"on bypassed":"on";return X`
+      <span class="amperes">
+        <span class="current ${null===e.current_a?"none":""}"
+          >${null===e.current_a?"–":this.localize("status.amperes",{current:e.current_a})}</span
+        >
+        <span class="ampere-steps ${i>16?"small":""}">
+          ${Array.from({length:i},(e,t)=>X`<span class="ampere ${t<a?r:""}"></span>`)}
+        </span>
+      </span>
+    `}renderPhoneCurrent(e){return null===e.current_a?X`<span></span>`:X`<span class="current">${this.localize("status.amperes",{current:e.current_a})}</span>`}renderChargerChip(e){const[t,i,a]=ia[e.state],r=this.chargerConfig(e)?.charging_window;if("outside_window"===e.state&&r){const e={start:aa(r.start),end:aa(r.end)};return this.renderChip(t,i,a,e,{...r})}return this.renderChip(t,i,a,{},{current:e.current_a??0})}renderChip(e,t,i,a={},r=a){return X`
+      <span class="state chip ${e.kind}" title=${this.localize(i,r)}>
+        ${e.icon?X`<ha-svg-icon .path=${e.icon}></ha-svg-icon>`:X`<span class="dot"></span>`}
+        ${this.localize(t,a)}
+      </span>
+    `}renderCutOff(){const e=this.status,t=this.hass.language,i=e.regulation_average_w,a=null===i?0:e.power_limit_w-i;return X`
+      <div class="cut-off" title=${this.localize("status.power_runs_out")}>
+        <ha-svg-icon .path=${"M11,4H13V16L18.5,10.5L19.92,11.92L12,19.84L4.08,11.92L5.5,10.5L11,16V4Z"}></ha-svg-icon>
+        ${a>0?this.localize("status.free_power",{power:ct(t,a),share:pt(t,a/e.power_limit_w)}):te}
+      </div>
+    `}chargerConfig(e){return this.config&&it(this.config.config).find(t=>t.id===e.id)}static{this.styles=[Qi,Xi,g`
+      :host {
+        display: block;
+      }
+      .empty {
+        padding: 0 16px 16px;
+        color: var(--secondary-text-color);
+      }
+      .list {
+        display: grid;
+        grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(max-content, 1.3fr) 120px max-content;
+        column-gap: 12px;
+      }
+      .row {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: subgrid;
+        align-items: center;
+        min-height: 48px;
+        padding: 4px 16px;
+        border-top: 1px solid var(--divider-color);
+        box-sizing: border-box;
+      }
+      :host([narrow]) .row {
+        padding: 4px 12px;
+      }
+      .row.group,
+      .row.charger {
+        background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
+      }
+      .row.charger {
+        min-height: 44px;
+        border-top-style: dashed;
+      }
+      .row.off .name {
+        color: var(--secondary-text-color);
+      }
+      .row.excluded .row-title {
+        opacity: 0.5;
+      }
+      .row.charger .row-title {
+        padding-inline-start: 24px;
+      }
+      :host([narrow]) .row.charger .row-title {
+        padding-inline-start: 16px;
+      }
+      .rank {
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+        color: var(--secondary-text-color);
+      }
+      .row > .chip {
+        justify-self: start;
+      }
+      .cut-off {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 16px;
+        border-top: 1px solid var(--divider-color);
+        color: var(--primary-color);
+        font-size: var(--ha-font-size-s, 12px);
+        white-space: nowrap;
+      }
+      .cut-off::before,
+      .cut-off::after {
+        content: "";
+        flex: 1;
+        border-top: 2px dashed var(--primary-color);
+      }
+      .cut-off ha-svg-icon {
+        --mdc-icon-size: 14px;
+      }
+      .waiting {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .waiting kraftvakt-countdown-bar {
+        flex: 1;
+      }
+      .waiting ha-svg-icon,
+      .charging-count ha-svg-icon {
+        flex: none;
+        --mdc-icon-size: 16px;
+        color: var(--secondary-text-color);
+      }
+      .charging-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 12px);
+      }
+      .charging-count ha-svg-icon {
+        color: var(--kraftvakt-ev-color);
+      }
+      .amperes {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .current {
+        min-width: 40px;
+        text-align: end;
+        font-weight: 500;
+      }
+      .amperes .current.none {
+        color: var(--secondary-text-color);
+        font-weight: normal;
+      }
+      .ampere-steps {
+        display: inline-flex;
+        gap: 2px;
+      }
+      .ampere {
+        width: 3px;
+        height: 14px;
+        border-radius: 1px;
+        background: rgba(127, 127, 127, 0.32);
+      }
+      .ampere-steps.small {
+        gap: 1px;
+      }
+      .ampere-steps.small .ampere {
+        width: 2px;
+      }
+      .ampere.on {
+        background: var(--kraftvakt-ev-color);
+      }
+      .ampere.on.bypassed {
+        background: repeating-linear-gradient(
+          45deg,
+          var(--secondary-text-color) 0 2px,
+          rgba(127, 127, 127, 0.16) 2px 4px
+        );
+      }
+      .row-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .row-title ha-svg-icon,
+      .row-title ha-state-icon {
+        flex: none;
+        --mdc-icon-size: 20px;
+      }
+      .row-title ha-svg-icon,
+      .row-title .device-icon {
+        color: var(--state-inactive-color, var(--secondary-text-color));
+      }
+      .row-title .device-icon > * {
+        color: inherit;
+      }
+      span.device-icon {
+        display: flex;
+        flex: none;
+        width: 20px;
+        height: 20px;
+        overflow: hidden;
+      }
+      .row-title .device-icon.on {
+        color: var(--kraftvakt-on-color);
+      }
+      .row-title .device-icon.ev.on,
+      .row-title .ev-icon {
+        color: var(--kraftvakt-ev-color);
+      }
+      .row.group .name {
+        font-weight: 500;
+      }
+      .row-sub {
+        flex: none;
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 12px);
+      }
+      .variant {
+        flex: 0 1000 auto;
+        min-width: 3em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: var(--ha-font-size-s, 12px);
+        background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.16);
+        color: var(--primary-color);
+      }
+      .list.phone {
+        grid-template-columns: minmax(0, 1fr) max-content max-content;
+        column-gap: 8px;
+      }
+      .list.phone .row > .chip {
+        justify-self: end;
+      }
+    `]}};e([$e({attribute:!1})],ra.prototype,"hass",void 0),e([$e({attribute:!1})],ra.prototype,"localize",void 0),e([$e({type:Boolean,reflect:!0})],ra.prototype,"narrow",void 0),e([$e({attribute:!1})],ra.prototype,"status",void 0),e([$e({attribute:!1})],ra.prototype,"config",void 0),ra=e([ye("kraftvakt-priority-list")],ra);let na=class extends fe{constructor(){super(...arguments),this.narrow=!1}render(){if(!this.status)return te;const e=this.status;return X`
+      <div class="cards">
+        ${this.renderRegulationCard(e)}
+        ${e.running?X`<kraftvakt-priority-list
+              .hass=${this.hass}
+              .localize=${this.localize}
+              .narrow=${this.narrow}
+              .status=${e}
+              .config=${this.config}
+            ></kraftvakt-priority-list>`:te}
+      </div>
+    `}renderRegulationCard(e){return X`
+      <ha-card class="regulation">
+        <div class="card-header">
+          <span>${this.localize("status.regulation")}</span>
+          <span class="chip ${e.running?"running":"off"}">
+            <span class="dot"></span>
+            ${this.localize(e.running?"status.running":"status.stopped")}
+          </span>
+          ${e.running&&e.safe_state?X`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`:te}
+          ${e.running&&e.penalty.active?X`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`:te}
+          <span class="spacer"></span>
+          ${e.running&&e.next_decision_at?this.renderNextDecision(e,e.next_decision_at):te}
+        </div>
+        <div class="card-content">
+          ${this.runningError?X`<ha-alert alert-type="error">${this.runningError}</ha-alert>`:te}
+          ${e.running?this.renderRunning(e):this.renderStopped(e)}
+        </div>
+        <div class="card-actions">${this.renderStartStop(e)}</div>
+      </ha-card>
+    `}renderStartStop(e){return X`
+      <kraftvakt-running-button
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .running=${e.running}
+        .disabled=${!e.running&&e.missing.length>0}
+        @running-error=${e=>this.runningError=e.detail}
+      ></kraftvakt-running-button>
+    `}renderRunning(e){const t=Rt(this.hass,this.config?.config.general.power_sensor??"");return X`
+      ${e.safe_state?this.renderSafeState(null!==t):te} ${e.penalty.active?this.renderPenalty(e):te}
+      <kraftvakt-power-overview
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .narrow=${this.narrow}
+        .status=${e}
+        .powerNowW=${t}
+      ></kraftvakt-power-overview>
+    `}renderNextDecision(e,t){const i=Date.parse(t),a=e.regulation_window_s*e.regulation_interval*1e3,r=ut(this.hass.language,t);return X`
+      <span class="next-decision" title=${this.localize("status.next_decision_at",{time:r})}>
+        ${this.narrow?te:this.localize("status.next_decision")}
+        <kraftvakt-countdown-ring .start=${i-a} .end=${i}></kraftvakt-countdown-ring>
+      </span>
+    `}renderSafeState(e){const t=this.config?.config.general.power_sensor??"",i=this.hass.states[t]?.attributes.friendly_name??t;return X`
+      <ha-alert alert-type=${e?"info":"error"} .title=${this.localize("status.safe_state_title")}>
+        ${this.localize(e?"status.safe_state_back_text":"status.safe_state_text",{sensor:i})}
+      </ha-alert>
+    `}renderPenalty(e){const t=(i=this.hass.language,a=Math.max(0,e.penalty.overconsumption_wh),dt(i,a/1e3,2));var i,a;const r=e.penalty.recovery_started?"status.recovery_started":"status.recovery_not_started";return X`
+      <ha-alert alert-type="warning" .title=${this.localize("status.penalty_title")}>
+        ${this.localize("status.penalty_text")}
+        <div class="penalty-details">${this.localize("status.overconsumption_left",{energy:t})} · ${this.localize(r)}</div>
+      </ha-alert>
+    `}renderStopped(e){return 0===e.missing.length?X`<ha-alert alert-type="info">${this.localize("status.stopped_info")}</ha-alert>`:X`
+      <ha-alert alert-type="warning" .title=${this.localize("status.incomplete_title")}>
+        <ul class="missing">
+          ${e.missing.map(e=>{const t=function(e){return"general"===e.section&&e.field&&kt.has(e.field)?"advanced":$t[e.section]}(e);return X`
+              <li>
+                ${function(e,t,i){const a={item:At(e,t,i),action:xt(e.field,i),code:e.code};return i(bt[e.code]??"missing.unknown",a)}(e,this.config,this.localize)}
+                <a href="${ot}/${t}" @click=${e=>this.openPage(e,t)}>
+                  ${this.localize(`tabs.${t}`)}
+                </a>
+              </li>
+            `})}
+        </ul>
+      </ha-alert>
+    `}openPage(e,t){e.preventDefault(),lt(t)}static{this.styles=[Qi,Xi,g`
+      :host {
+        display: block;
+        --kraftvakt-grid-color: var(--energy-grid-consumption-color, #488fc2);
+        --kraftvakt-now-color: var(--secondary-text-color);
+        --kraftvakt-ev-color: var(--teal-color, #009688);
+        --kraftvakt-on-color: var(--state-active-color, var(--amber-color, #ffc107));
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+      }
+      :host([narrow]) .cards {
+        gap: 8px;
+      }
+      .spacer {
+        flex: 1;
+      }
+      .card-content {
+        display: grid;
+        gap: 16px;
+        padding: 0 16px 16px;
+      }
+      .card-content:empty {
+        display: none;
+      }
+      .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 8px 16px;
+        border-top: 1px solid var(--divider-color);
+      }
+      .next-decision {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--ha-font-size-m, 14px);
+        color: var(--secondary-text-color);
+      }
+      .penalty-details {
+        margin-top: 8px;
+      }
+      ul.missing {
+        margin: 6px 0 0;
+        padding-inline-start: 18px;
+      }
+      ul.missing a {
+        color: var(--primary-color);
+      }
+    `]}};e([$e({attribute:!1})],na.prototype,"hass",void 0),e([$e({attribute:!1})],na.prototype,"localize",void 0),e([$e({type:Boolean,reflect:!0})],na.prototype,"narrow",void 0),e([$e({attribute:!1})],na.prototype,"status",void 0),e([$e({attribute:!1})],na.prototype,"config",void 0),e([ke()],na.prototype,"runningError",void 0),na=e([ye("kraftvakt-status-page")],na);const sa={status:"M3,13H5.79L10.1,4.79L11.28,13.75L14.5,9.66L17.83,13H21V15H17L14.67,12.67L9.92,18.73L8.94,11.31L7,15H3V13Z",general:"M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z",appliances:"M7,13V11H21V13H7M7,19V17H21V19H7M7,7V5H21V7H7M3,8V5H2V4H4V8H3M2,17V16H5V20H2V19H4V18.5H3V17.5H4V17H2M4.25,10A0.75,0.75 0 0,1 5,10.75C5,10.95 4.92,11.14 4.79,11.27L3.12,13H5V14H2V13.08L4,11H2V10H4.25Z",charging:t,advanced:"M3,17V19H9V17H3M3,5V7H13V5H3M13,21V19H21V17H13V15H11V21H13M7,9V11H3V13H7V15H9V9H7M21,13V11H11V13H21M15,9H17V7H21V5H17V3H15V9Z"},oa={general:je`kraftvakt-general-page`,appliances:je`kraftvakt-appliances-page`,charging:je`kraftvakt-charging-page`,advanced:je`kraftvakt-advanced-page`};let la=class extends fe{constructor(){super(...arguments),this.narrow=!1,this.haElementsReady=!1,this.saveErrors=[],this.saving=!1,this.localize=rt("en"),this.warnBeforeUnload=e=>{this.dirty&&e.preventDefault()}}connectedCallback(){super.connectedCallback(),window.addEventListener("beforeunload",this.warnBeforeUnload),customElements.whenDefined("ha-form").then(()=>{this.haElementsReady=!0}),this.hass&&this.subscribe()}disconnectedCallback(){super.disconnectedCallback(),window.removeEventListener("beforeunload",this.warnBeforeUnload),this.unsubscribe()}willUpdate(e){e.has("hass")&&this.hass?.language!==e.get("hass")?.language&&(this.localize=rt(this.hass?.language??"en"),this.hass?.loadFragmentTranslation("config")),e.has("hass")&&this.hass&&!this.unsubscribeStatus&&this.subscribe()}updated(e){e.has("route")&&this.openAppliancesFromConfigureButton()}render(){if(!this.hass||!this.haElementsReady)return X``;const e=this.currentPage;return X`
       <div class="toolbar">
         <ha-menu-button .hass=${this.hass} .narrow=${this.narrow}></ha-menu-button>
         <div class="title">${this.localize("panel.title")}</div>
         <ha-tab-group @wa-tab-show=${this.tabShown}>
-          ${Object.entries(ia).map(([t,i])=>X`
+          ${Object.entries(sa).map(([t,i])=>X`
               <ha-tab-group-tab
                 slot="nav"
                 panel=${t}
-                .active=${De(t===e)}
+                .active=${We(t===e)}
                 title=${this.tabLabel(t)}
               >
                 <ha-svg-icon .path=${i}></ha-svg-icon>
@@ -1523,7 +1550,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
               @discard=${this.discard}
             ></kraftvakt-save-bar>
           `:""}
-    `}renderConfigPageContent(e,t,i,a){const r=aa[e];return Re`
+    `}renderConfigPageContent(e,t,i,a){const r=oa[e];return Re`
       <${r}
         .hass=${this.hass}
         .localize=${this.localize}
@@ -1585,4 +1612,4 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
     :host([narrow]) .content {
       padding: 8px;
     }
-  `}};e([$e({attribute:!1})],ra.prototype,"hass",void 0),e([$e({type:Boolean,reflect:!0})],ra.prototype,"narrow",void 0),e([$e({attribute:!1})],ra.prototype,"route",void 0),e([ke()],ra.prototype,"haElementsReady",void 0),e([ke()],ra.prototype,"status",void 0),e([ke()],ra.prototype,"config",void 0),e([ke()],ra.prototype,"loadError",void 0),e([ke()],ra.prototype,"capabilities",void 0),e([ke()],ra.prototype,"draft",void 0),e([ke()],ra.prototype,"saveErrors",void 0),e([ke()],ra.prototype,"saveMessage",void 0),e([ke()],ra.prototype,"saving",void 0),e([ke()],ra.prototype,"leavingTo",void 0),ra=e([ye("kraftvakt-panel")],ra);export{ra as KraftvaktPanel};
+  `}};e([$e({attribute:!1})],la.prototype,"hass",void 0),e([$e({type:Boolean,reflect:!0})],la.prototype,"narrow",void 0),e([$e({attribute:!1})],la.prototype,"route",void 0),e([ke()],la.prototype,"haElementsReady",void 0),e([ke()],la.prototype,"status",void 0),e([ke()],la.prototype,"config",void 0),e([ke()],la.prototype,"loadError",void 0),e([ke()],la.prototype,"capabilities",void 0),e([ke()],la.prototype,"draft",void 0),e([ke()],la.prototype,"saveErrors",void 0),e([ke()],la.prototype,"saveMessage",void 0),e([ke()],la.prototype,"saving",void 0),e([ke()],la.prototype,"leavingTo",void 0),la=e([ye("kraftvakt-panel")],la);export{la as KraftvaktPanel};

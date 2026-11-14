@@ -23,7 +23,9 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
 ## Structure
 
 `frontend/src/` has the panel element (routing on `hass.route`, the top menu, the draft, the save bar and the lock of the configuration pages), one module per page in `pages/`,
-shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting and the width query.
+shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting, the width query
+and the styles the status page shares with its components.
+The status page holds the regulation card; the power tiles with the meter, and the priority list, are components of their own.
 One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
 
 A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport:
