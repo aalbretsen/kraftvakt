@@ -113,7 +113,7 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]
 
 
-def test_car_connected_is_required_for_a_charger_cloud_controlled() -> None:
+def test_car_connected_is_required_for_a_cloud_controlled_charger() -> None:
     data = full_config_data()
     charger = data["charger_groups"][0]["chargers"][0]
     charger["car_connected"] = None

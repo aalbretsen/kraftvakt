@@ -163,10 +163,12 @@ so a car that is connected does not start charging by itself. The charging curre
   where every command goes over the internet and may count against the limits of the service, and charging may take minutes to start:
   - It gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected, so **Car connected** is required.
     A car sensor that is unavailable, or a template that fails, does not count as no car, so the commands are repeated then.
-  - **Start delay**, 300 seconds by default and at most 900, is the longest time from when the EV charger is activated until the car draws power
-    and the EV charger reports that it is actively charging. The car gets this time to start, when it is longer than two regulation windows.
-  - While the car starts, the power reserve of the EV charger is kept free: what is below it in the priority list is turned on only when there is room for it
-    with the power reserve counted as used. Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
+  - **Start delay**, 300 seconds by default and at most 900,
+    is the longest time from when the EV charger is activated until the car draws power and the EV charger reports that it is actively charging.
+    The car gets this time to start, when it is longer than two regulation windows.
+  - While the car starts, the power reserve of the EV charger is kept free:
+    what is below it in the priority list is turned on only when there is room for it with the power reserve counted as used.
+    Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
 - Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
 - With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
   until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit,

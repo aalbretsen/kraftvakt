@@ -392,7 +392,7 @@ async def test_charger_current_is_repeated_until_the_charger_is_excluded(
     assert actions == ["current 8", "current 6", f"off {CHARGER}"]
 
 
-async def test_charger_cloud_controlled_gets_no_repeated_commands_until_a_car_is_connected(
+async def test_cloud_controlled_charger_gets_no_repeated_commands_until_a_car_is_connected(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     config,
