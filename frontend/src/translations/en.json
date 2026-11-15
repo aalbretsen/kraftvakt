@@ -424,9 +424,13 @@
       "actively_charging": {
         "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is charging, for example an unavailable entity or a template that fails, it counts as not charging."
       },
-      "quiet_without_car": {
-        "label": "Quiet while no car is connected",
-        "helper": "Sends no repeated commands to the EV charger while no car is connected. Turn it on for an EV charger controlled through a cloud service. Requires car connected."
+      "cloud_controlled": {
+        "label": "Cloud-controlled EV charger",
+        "helper": "Turn it on when the EV charger is controlled through a cloud service, where commands go over the internet and take time. It then gets no repeated commands while no car is connected. Requires car connected."
+      },
+      "start_delay_s": {
+        "label": "Start delay",
+        "helper": "The longest time from when the EV charger is activated until the car draws power. Kraftvakt gives the car this long to start charging, and keeps the power free for it meanwhile. {min}–{max} s, default {default} s."
       },
       "charging_window": {
         "label": "Charging window (optional)",

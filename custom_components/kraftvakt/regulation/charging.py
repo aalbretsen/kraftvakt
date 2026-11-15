@@ -106,6 +106,17 @@ class Rest:
         return cls(until=now + pause, count=count)
 
 
+def time_to_start(charger: Charger, window: timedelta) -> timedelta:
+    """Return how long a car gets to start charging after the charger is activated.
+
+    A charger controlled through a cloud service may take much longer than
+    two windows before the car draws power or it reports actively charging.
+    """
+    if charger.cloud_controlled:
+        return max(2 * window, timedelta(seconds=charger.start_delay_s))
+    return 2 * window
+
+
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
     """Return whether the time of day is inside the window, which may span midnight."""
     if window.start < window.end:
@@ -197,7 +208,9 @@ class ChargingState:
     """What the regulation keeps track of for the chargers while it runs.
 
     A charger on trial may charge but does not charge actively, so it may only
-    get its first ampere step.
+    get its first ampere step. A starting charger is a cloud-controlled
+    charger on trial within its time to start, whose power reserve is held
+    for the car that is about to draw power.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -206,6 +219,7 @@ class ChargingState:
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
     on_trial: set[str] = field(default_factory=set)
+    starting: set[str] = field(default_factory=set)
     waiting: set[str] = field(default_factory=set)
     rests: dict[str, Rest] = field(default_factory=dict)
     last_readings: dict[str, ChargerReading] = field(default_factory=dict)
@@ -236,10 +250,10 @@ class ChargingState:
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
 
-    def activated_long_enough(self, charger_id: str, now: datetime, window: timedelta) -> bool:
+    def activated_long_enough(self, charger: Charger, now: datetime, window: timedelta) -> bool:
         """Return whether a car has had time to start charging since activation."""
-        activated_at = self.activated_at.get(charger_id)
-        return activated_at is not None and now - activated_at >= 2 * window
+        activated_at = self.activated_at.get(charger.id)
+        return activated_at is not None and now - activated_at >= time_to_start(charger, window)
 
     def is_allowed(self, charger_id: str) -> bool:
         """Return whether the charger was allowed to charge at the last decision."""
@@ -263,6 +277,7 @@ class ChargingState:
         self._update_priority(chargers, newly_bypassed)
         self._select(one_at_a_time)
         self._update_on_trial()
+        self._update_starting(chargers, now, window)
         return newly_bypassed
 
     def status(self, chargers: Sequence[Charger]) -> dict[str, ChargerStatus]:
@@ -317,20 +332,20 @@ class ChargingState:
             previous = previous_readings.get(charger.id)
             if previous is not None and previous.car_connected is False and reading.car_connected is True:
                 self._restart_trial(charger.id, now)
-            if self._update_rest(charger.id, reading, now, window):
+            if self._update_rest(charger, reading, now, window):
                 bypassed.add(charger.id)
         newly_bypassed = [charger_id for charger_id in self.priority if charger_id in bypassed and charger_id not in self.bypassed]
         self.bypassed = bypassed
         return newly_bypassed
 
     def _restart_trial(self, charger_id: str, now: datetime) -> None:
-        """Give a car that is connected again two windows to start, also on a charger that stayed activated."""
+        """Give a car that is connected again its time to start, also on a charger that stayed activated."""
         if charger_id in self.activated_at:
             self.activated_at[charger_id] = now
 
     def _update_rest(
         self,
-        charger_id: str,
+        charger: Charger,
         reading: ChargerReading,
         now: datetime,
         window: timedelta,
@@ -340,13 +355,14 @@ class ChargingState:
         Without a rest, two chargers with full cars take turns being activated
         forever when only one may charge at a time.
         """
+        charger_id = charger.id
         charges = charger_id in self.activated_at and reading.actively_charging
         if reading.car_connected is False or charges:
             self.rests.pop(charger_id, None)
         if reading.car_connected is False:
             return True
         rest = self.rests.get(charger_id)
-        not_charging = not charges and self.activated_long_enough(charger_id, now, window)
+        not_charging = not charges and self.activated_long_enough(charger, now, window)
         if not_charging and (rest is None or rest.until <= now):
             rest = self.rests[charger_id] = Rest.after(rest, now)
         return not_charging or (rest is not None and now < rest.until)
@@ -368,6 +384,13 @@ class ChargingState:
         and hold back the steps below the entry of its group.
         """
         self.on_trial = {charger_id for charger_id in self.may_charge if not self.last_readings[charger_id].actively_charging}
+
+    def _update_starting(self, chargers: Sequence[Charger], now: datetime, window: timedelta) -> None:
+        self.starting = {
+            charger.id
+            for charger in chargers
+            if charger.cloud_controlled and charger.id in self.on_trial and charger.id in self.activated_at and not self.activated_long_enough(charger, now, window)
+        }
 
     def _select(self, one_at_a_time: bool) -> None:
         """Decide which chargers may get ampere steps turned on.

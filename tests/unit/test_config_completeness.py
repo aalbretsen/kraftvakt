@@ -95,7 +95,7 @@ def test_optional_settings_are_not_required() -> None:
     data["appliances"][1]["power_reserve_w"] = None
     charger = data["charger_groups"][0]["chargers"][0]
     charger["car_connected"] = None
-    charger["quiet_without_car"] = False
+    charger["cloud_controlled"] = False
     charger["charging_window"] = None
     del charger["min_current_a"]
     del charger["max_current_a"]
@@ -113,11 +113,11 @@ def test_car_connected_is_required_with_one_charger_at_a_time() -> None:
     assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]
 
 
-def test_car_connected_is_required_for_a_charger_quiet_without_car() -> None:
+def test_car_connected_is_required_for_a_charger_cloud_controlled() -> None:
     data = full_config_data()
     charger = data["charger_groups"][0]["chargers"][0]
     charger["car_connected"] = None
-    charger["quiet_without_car"] = True
+    charger["cloud_controlled"] = True
 
     assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]
 
@@ -127,7 +127,7 @@ def test_car_connected_is_required_when_the_override_ends_on_disconnect() -> Non
     data = full_config_data()
     charger = data["charger_groups"][0]["chargers"][0]
     charger["car_connected"] = None
-    charger["quiet_without_car"] = False
+    charger["cloud_controlled"] = False
     charger["override_ends"] = "car_disconnected"
 
     assert _missing(data) == [Issue("missing_car_connected", "chargers", "c1", "car_connected")]

@@ -96,7 +96,7 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
 }
 
 export function carConnectedRequired(charger: Charger, oneAtATime: boolean): boolean {
-  return oneAtATime || charger.quiet_without_car || (charger.charging_window !== null && charger.override_ends === "car_disconnected");
+  return oneAtATime || charger.cloud_controlled || (charger.charging_window !== null && charger.override_ends === "car_disconnected");
 }
 
 export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {

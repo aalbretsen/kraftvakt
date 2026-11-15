@@ -62,7 +62,11 @@
         "data": {
           "name": "Name",
           "min_current_a": "Minimum current",
-          "max_current_a": "Maximum current"
+          "max_current_a": "Maximum current",
+          "start_delay_s": "Start delay"
+        },
+        "data_description": {
+          "start_delay_s": "How long the car waits before it draws power each time it may start charging, as with a charger controlled through a cloud service."
         }
       }
     },

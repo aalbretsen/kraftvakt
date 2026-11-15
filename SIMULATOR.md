@@ -19,6 +19,8 @@ Add the integration under **Settings → Devices & services**, and add one devic
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has the switches **Charging allowed**, **Car connected** and **Car fully charged**,
   **Charging current** (A), the sensor **Charging power** and the binary sensor **Charging**, on while it draws power.
   It draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging is allowed, a car is connected and the car is not fully charged.
+  With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
+  as with a charger controlled through a cloud service; set the same or a longer start delay on a cloud-controlled EV charger in Kraftvakt.
 
 Heating devices, thermostats and EV chargers also have the switch **Unplugged**. While it is on, the device uses nothing, whatever the other switches are set to.
 The cycle of a heating device runs on while it is unplugged.

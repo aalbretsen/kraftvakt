@@ -97,8 +97,10 @@ export interface Charger {
   finish_after_window: boolean;
   /** What ends the override of the charging window, besides the user. */
   override_ends: OverrideEnd;
-  /** Whether the EV charger gets no repeated commands while no car is connected. */
-  quiet_without_car: boolean;
+  /** Whether the EV charger is controlled through a cloud service. */
+  cloud_controlled: boolean;
+  /** How long a cloud-controlled EV charger may take from activation until the car draws power. */
+  start_delay_s: number;
 }
 
 export const OVERRIDE_ENDS = ["manual", "charging_stopped", "car_disconnected"] as const;
@@ -182,7 +184,7 @@ export interface Capabilities {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
     charger_groups: { one_at_a_time: boolean };
-    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number; override_ends: OverrideEnd };
+    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number; override_ends: OverrideEnd; start_delay_s: number };
   };
 }
 

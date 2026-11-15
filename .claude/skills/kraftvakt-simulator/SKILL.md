@@ -42,6 +42,8 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
 - An EV charger is 400 V three-phase with power factor 1: `P = √3 · 400 V · I`. It has a minimum and maximum current in whole amperes.
   It draws power only while charging is allowed, a car is connected and the car is not fully charged.
   Its charging binary sensor is on while it draws power, so Kraftvakt's actively charging can be tested from an entity.
+  With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed, as with a cloud-controlled charger.
+  A change of current while it charges does not delay it.
 - Heating devices, thermostats and chargers have an unplugged switch. While it is on, the device uses no power whatever its other switches say.
   A heater's cycle runs on while unplugged. The HAN has no such switch: set its background power instead.
 - Entities that control the simulation and are not part of a real device have `EntityCategory.CONFIG`, so HA shows them under Configuration on the device page: background power,

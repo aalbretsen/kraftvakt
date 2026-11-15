@@ -30,7 +30,7 @@ THERMOSTAT = {
     "hvac_modes": ["off", "heat", "auto"],
     "room_temperature": 5.0,
 }
-CHARGER = {"min_current_a": 6, "max_current_a": 16}
+CHARGER = {"min_current_a": 6, "max_current_a": 16, "start_delay_s": 0}
 SETTINGS = {
     DeviceKind.HAN: HAN,
     DeviceKind.HEATER: HEATER,

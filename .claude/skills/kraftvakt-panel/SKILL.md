@@ -81,7 +81,8 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
-- Quiet while no car is connected is a switch under car connected.
+- Cloud-controlled EV charger is a switch in a box of its own under actively charging, and shows the start delay while it is on or the delay has an error.
+  The start delay is kept when the switch is turned off, since it has no effect then.
 - Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
 - Set charging current also offers Entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.

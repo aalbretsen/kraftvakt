@@ -33,6 +33,7 @@ CONF_DUTY_CYCLE_PCT: Final = "duty_cycle_pct"
 CONF_PERIOD_MIN: Final = "period_min"
 CONF_MIN_CURRENT_A: Final = "min_current_a"
 CONF_MAX_CURRENT_A: Final = "max_current_a"
+CONF_START_DELAY_S: Final = "start_delay_s"
 CONF_HVAC_MODES: Final = "hvac_modes"
 CONF_ROOM_TEMPERATURE: Final = "room_temperature"
 

@@ -23,7 +23,7 @@ async def test_drafted_profile_passes_its_drafted_test(
     assert "Charger c1: Example EX-1" in report
     assert "car_connected: the template names sun.sun, which is not on the charger's device." in report
     profile = load(tmp_path / PROFILES / "example_ex_1.py", PROFILES_PACKAGE).PROFILE
-    assert profile.quiet_without_car
+    assert profile.cloud_controlled
     drafted_test = load(tmp_path / PROFILE_TESTS / "test_example_ex_1.py", PROFILE_TESTS_PACKAGE)
     monkeypatch.setattr(recognition, "PROFILES", (profile,))
     await drafted_test.test_example_ex_1_fills_the_fields_of_a_charger(hass, command)

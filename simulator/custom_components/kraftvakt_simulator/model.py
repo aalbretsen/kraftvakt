@@ -56,14 +56,22 @@ def three_phase_power_w(current_a: float) -> float:
 
 @dataclass(frozen=True)
 class ChargerState:
-    """What decides the power of a simulated EV charger."""
+    """What decides the power of a simulated EV charger.
+
+    A car that wants power draws none while `starting`, as when a charger
+    controlled through a cloud service takes time to start charging.
+    """
 
     charging_allowed: bool
     current_a: float
     car_connected: bool
     car_fully_charged: bool
+    starting: bool = False
+
+    @property
+    def wants_power(self) -> bool:
+        return self.charging_allowed and self.car_connected and not self.car_fully_charged
 
     @property
     def power_w(self) -> float:
-        charging = self.charging_allowed and self.car_connected and not self.car_fully_charged
-        return three_phase_power_w(self.current_a) if charging else 0.0
+        return three_phase_power_w(self.current_a) if self.wants_power and not self.starting else 0.0

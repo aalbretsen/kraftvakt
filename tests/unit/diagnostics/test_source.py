@@ -36,7 +36,7 @@ PROFILE = ChargerProfile(
     set_current=entity_action(ProfileEntity("number", name="Current")),
     car_connected=template_condition("{{ states('$power') != '$$' }}", power=ProfileEntity("sensor", translation_key="power")),
     actively_charging=ProfileCondition(ConditionType.ENTITY),
-    quiet_without_car=True,
+    cloud_controlled=True,
 )
 
 DRAFT = ProfileDraft(module="acme_box_mqtt", profile=PROFILE, manufacturer="Acme", model_id="B-1", entities=ENTITIES[1:], charger_id="c1", notes=())
@@ -55,7 +55,7 @@ def test_the_written_profile_is_the_drafted_profile(tmp_path: Path) -> None:
     assert load(written(tmp_path, source, "acme_box_mqtt"), PROFILES_PACKAGE).PROFILE == PROFILE
 
 
-def test_a_profile_without_quiet_without_car_leaves_the_setting_out(tmp_path: Path) -> None:
+def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Path) -> None:
     profile = ChargerProfile(
         name="Acme",
         device=DeviceMatch("acme"),
@@ -70,7 +70,7 @@ def test_a_profile_without_quiet_without_car_leaves_the_setting_out(tmp_path: Pa
 
     source = profile_source(draft)
 
-    assert "quiet_without_car" not in source
+    assert "cloud_controlled" not in source
     assert "ConditionType" not in source
     assert draft.profile == load(written(tmp_path, source, "acme"), PROFILES_PACKAGE).PROFILE
 

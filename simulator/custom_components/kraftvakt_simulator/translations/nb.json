@@ -62,7 +62,11 @@
         "data": {
           "name": "Navn",
           "min_current_a": "Minste ladestrøm",
-          "max_current_a": "Største ladestrøm"
+          "max_current_a": "Største ladestrøm",
+          "start_delay_s": "Startforsinkelse"
+        },
+        "data_description": {
+          "start_delay_s": "Hvor lenge bilen venter før den trekker strøm hver gang den kan begynne å lade, som med en lader som styres gjennom en skytjeneste."
         }
       }
     },

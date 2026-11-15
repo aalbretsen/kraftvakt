@@ -31,8 +31,8 @@ def profile_source(draft: ProfileDraft) -> str:
         "car_connected": writer.condition(profile.car_connected),
         "actively_charging": writer.condition(profile.actively_charging),
     }
-    if profile.quiet_without_car:
-        fields["quiet_without_car"] = "True"
+    if profile.cloud_controlled:
+        fields["cloud_controlled"] = "True"
     imports = [f"from ..profile import {', '.join(sorted(writer.profile_names, key=_import_order))}"]
     if writer.uses_condition_type:
         imports.insert(0, "from ...config_model import ConditionType")

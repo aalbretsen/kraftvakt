@@ -1,8 +1,10 @@
 """Black box tests of the simulated EV chargers."""
 
+from datetime import timedelta
 from typing import Any
 
 import pytest
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import ServiceValidationError
@@ -13,7 +15,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.kraftvakt_simulator.const import DeviceKind
 from custom_components.kraftvakt_simulator.model import three_phase_power_w
 
-from .conftest import AddDevice, call, power, state
+from .conftest import AddDevice, advance, call, power, state
 
 ALLOWED = "switch.charger_charging_allowed"
 CONNECTED = "switch.charger_car_connected"
@@ -69,6 +71,32 @@ async def test_charger_draws_three_phase_power_for_a_charging_car(hass: HomeAssi
     await call(hass, "switch", "turn_off", FULLY_CHARGED)
     await call(hass, "switch", "turn_off", ALLOWED)
     assert power(hass, CHARGING_POWER) == 0
+
+
+async def test_car_draws_power_after_the_start_delay_each_time_it_may_charge(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
+    """A change of current while it charges does not delay it."""
+    entry = await add_device(DeviceKind.CHARGER, "Charger", start_delay_s=60)
+    await call(hass, "switch", "turn_on", CONNECTED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+
+    await advance(hass, freezer, timedelta(seconds=59))
+    assert power(hass, CHARGING_POWER) == 0
+    assert state(hass, CHARGING) == STATE_OFF
+    await advance(hass, freezer, timedelta(seconds=1))
+    assert state(hass, CHARGING) == STATE_ON
+    await call(hass, "number", "set_value", CURRENT, value=10)
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(10))
+
+    await call(hass, "switch", "turn_off", ALLOWED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+    await call(hass, "switch", "turn_off", ALLOWED)
+    await advance(hass, freezer, timedelta(seconds=60))
+    assert power(hass, CHARGING_POWER) == 0
+    await call(hass, "switch", "turn_on", ALLOWED)
+    assert power(hass, CHARGING_POWER) == 0
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await advance(hass, freezer, timedelta(seconds=60))
 
 
 async def test_unplugged_charger_draws_nothing_for_a_charging_car(hass: HomeAssistant, add_device: AddDevice) -> None:

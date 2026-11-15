@@ -70,11 +70,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           : "charger.car_connected_optional",
         issues,
       )}
-      ${this.renderForm([{ name: "quiet_without_car", selector: { boolean: {} } }], issues, (value) =>
-        this.changeDraft({ quiet_without_car: !!value.quiet_without_car }),
-      )}
       ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
-      ${this.renderChargingWindow(issues)}
+      ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)}
     `;
   }
 
@@ -128,6 +125,28 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
             this.changeDraft({ [field]: event.detail.value })}
         ></kraftvakt-condition-field>
+      </div>
+    `;
+  }
+
+  /**
+   * The start delay is kept while the switch is off, since it has no effect then.
+   * It stays in view while it has an error, so the error that keeps the draft from being saved can be seen.
+   */
+  private renderCloudControl(issues: Issue[]) {
+    const showDelay = this.draft.cloud_controlled || issues.some((issue) => issue.field === "start_delay_s");
+    const schema = [
+      { name: "cloud_controlled", selector: { boolean: {} } },
+      ...(showDelay ? [this.numberField("start_delay_s", "s", true)] : []),
+    ];
+    return html`
+      <div class="group">
+        ${this.renderForm(schema, issues, (value) =>
+          this.changeDraft({
+            cloud_controlled: !!value.cloud_controlled,
+            start_delay_s: value.start_delay_s as number,
+          }),
+        )}
       </div>
     `;
   }

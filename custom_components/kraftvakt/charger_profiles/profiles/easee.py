@@ -1,7 +1,7 @@
 """Easee chargers with the Easee integration from HACS.
 
 The integration has no entity for the charging current or a connected car, so the profile uses its services and its status sensor.
-Every command goes through the Easee cloud and is sent on even when nothing changes, so an idle charger is left quiet.
+Every command goes through the Easee cloud and is sent on even when nothing changes, and charging starts with a delay, so the charger is cloud-controlled.
 """
 
 from __future__ import annotations
@@ -36,5 +36,5 @@ PROFILE: Final = ChargerProfile(
         status=ProfileEntity("sensor", translation_key="easee_status"),
     ),
     actively_charging=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
-    quiet_without_car=True,
+    cloud_controlled=True,
 )

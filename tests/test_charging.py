@@ -392,7 +392,7 @@ async def test_charger_current_is_repeated_until_the_charger_is_excluded(
     assert actions == ["current 8", "current 6", f"off {CHARGER}"]
 
 
-async def test_charger_quiet_without_car_gets_no_repeated_commands_until_a_car_is_connected(
+async def test_charger_cloud_controlled_gets_no_repeated_commands_until_a_car_is_connected(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     config,
@@ -401,7 +401,7 @@ async def test_charger_quiet_without_car_gets_no_repeated_commands_until_a_car_i
 ) -> None:
     config["general"]["command_repeat_interval_min"] = 10
     charger = config["charger_groups"][0]["chargers"][0]
-    charger["quiet_without_car"] = True
+    charger["cloud_controlled"] = True
     charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_OFF)
     set_power(hass, CHARGER_POWER, "0")
@@ -414,6 +414,30 @@ async def test_charger_quiet_without_car_gets_no_repeated_commands_until_a_car_i
     hass.states.async_set(CAR_CONNECTED, STATE_UNAVAILABLE)
     await advance(hass, freezer)
     assert actions == ["current 6", f"off {CHARGER}"]
+
+
+async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as_not_charging(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config,
+    actions,
+    setup_kraftvakt,
+) -> None:
+    charger = config["charger_groups"][0]["chargers"][0]
+    charger["cloud_controlled"] = True
+    charger["start_delay_s"] = 180
+    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
+    hass.states.async_set(CAR_CONNECTED, STATE_ON)
+    set_power(hass, CHARGER_POWER, "0")
+    entry = await setup_kraftvakt()
+    actions.clear()
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"on {CHARGER}"]
+
+    await advance_windows(hass, freezer, 2)
+    assert entry.runtime_data.chargers["c1"].state is ChargerState.ACTIVATED
+    await advance(hass, freezer)
+    assert entry.runtime_data.chargers["c1"].state is ChargerState.NOT_CHARGING
 
 
 async def advance_until(hass: HomeAssistant, freezer: FrozenDateTimeFactory, local_time: str) -> None:

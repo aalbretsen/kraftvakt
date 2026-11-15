@@ -61,6 +61,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
         "power_reserve_w": Range(0, 5000, 1),
+        "start_delay_s": Range(0, 900, 1),
     },
 }
 
@@ -290,7 +291,8 @@ class Charger:
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
-    quiet_without_car: bool = False
+    cloud_controlled: bool = False
+    start_delay_s: int = 300
 
     def action_fields(self) -> Iterator[ActionField]:
         for name, kind in CHARGER_ACTION_KINDS.items():

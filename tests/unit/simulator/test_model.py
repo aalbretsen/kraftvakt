@@ -69,20 +69,22 @@ def test_three_phase_power() -> None:
 
 
 @pytest.mark.parametrize(
-    ("allowed", "connected", "fully_charged", "power_w"),
+    ("allowed", "connected", "fully_charged", "starting", "power_w"),
     [
-        (True, True, False, three_phase_power_w(10)),
-        (False, True, False, 0.0),
-        (True, False, False, 0.0),
-        (True, True, True, 0.0),
+        (True, True, False, False, three_phase_power_w(10)),
+        (False, True, False, False, 0.0),
+        (True, False, False, False, 0.0),
+        (True, True, True, False, 0.0),
+        (True, True, False, True, 0.0),
     ],
 )
-def test_the_charger_draws_power_only_for_a_car_that_charges(allowed: bool, connected: bool, fully_charged: bool, power_w: float) -> None:
+def test_the_charger_draws_power_only_for_a_car_that_charges(allowed: bool, connected: bool, fully_charged: bool, starting: bool, power_w: float) -> None:
     state = ChargerState(
         charging_allowed=allowed,
         current_a=10,
         car_connected=connected,
         car_fully_charged=fully_charged,
+        starting=starting,
     )
 
     assert state.power_w == power_w

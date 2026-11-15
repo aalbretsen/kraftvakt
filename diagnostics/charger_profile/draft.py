@@ -138,7 +138,7 @@ class ProfileDrafting:
             set_current=self._action("set_current", charger.set_current),
             car_connected=self._condition("car_connected", charger.car_connected),
             actively_charging=self._condition("actively_charging", charger.actively_charging),
-            quiet_without_car=charger.quiet_without_car,
+            cloud_controlled=charger.cloud_controlled,
         )
         return ProfileDraft(
             module=slugify(name) or "charger",

@@ -168,7 +168,7 @@ class RegulationEngine:
         Due means no command for the repeat interval. An activated charger
         gets its current, a deactivated one is deactivated again. Waiting
         times and repeated turn-on counters are not touched, and excluded appliances
-        and chargers get nothing, nor a charger quiet without car while no car is connected to it.
+        and chargers get nothing, nor a cloud-controlled charger while no car is connected to it.
         """
         if not self._running:
             return []
@@ -187,7 +187,7 @@ class RegulationEngine:
         for charger in self._chargers.values():
             if charger.id in excluded_chargers or state.chargers_commanded_at[charger.id] > due_at:
                 continue
-            if charger.quiet_without_car and charger.id in chargers_without_car:
+            if charger.cloud_controlled and charger.id in chargers_without_car:
                 continue
             commands += self._charger_commands(charger, self._charging_of(charger.id).ampere_steps_on[charger.id])
         return self._record_commands(commands, now)
@@ -253,7 +253,7 @@ class RegulationEngine:
             reading = decision.chargers.get(charger.id, ChargerReading())
             charging = self._charging_of(charger.id)
             activated = charging.ampere_steps_on[charger.id] > 0
-            tried = charging.activated_long_enough(charger.id, decision.now, window)
+            tried = charging.activated_long_enough(charger, decision.now, window)
             if override_ended(charger, reading, tried):
                 changes.ended.append(charger.id)
             elif override_arms(charger, reading, activated):
@@ -366,6 +366,7 @@ class RegulationEngine:
             charging.may_charge,
             charging.on_trial,
             charging.bypassed,
+            charging.starting,
             self._ampere_step_growth,
         )
 
@@ -401,14 +402,14 @@ class RegulationEngine:
         No room is made when the decision has already forced something off,
         since the average was measured before that.
         """
-        candidate = next(
-            (step for step in self._steps() if not step.is_on and step.can_turn_on),
-            None,
-        )
-        if candidate is None:
+        steps = self._steps()
+        place = next((place for place, step in enumerate(steps) if not step.is_on and step.can_turn_on), None)
+        if place is None:
             self._state.waiting = None
             return []
-        if not self._may_turn_on(candidate, average_w):
+        candidate = steps[place]
+        held_w = sum(step.power_reserve_w or 0 for step in steps[:place] if step.holds_reserve)
+        if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
             return [] if forced_off else self._make_room_below(candidate.key)
         if not self._has_waited(candidate, now, average_w):
@@ -420,7 +421,8 @@ class RegulationEngine:
 
         The average must be below the limit by the turn-on margin, since the
         window after a decision still holds some of the consumption from before
-        its commands.
+        its commands. The power reserves held for starting chargers above the
+        step count as used.
         """
         general = self._config.general
         limit_w = general.power_limit_w

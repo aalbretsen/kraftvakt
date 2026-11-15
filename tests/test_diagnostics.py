@@ -134,6 +134,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "bypassed": [],
         "may_charge": ["c"],
         "on_trial": ["c"],
+        "starting": [],
         "waiting": [],
         "rests": {},
         "last_readings": None,

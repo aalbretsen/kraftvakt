@@ -72,7 +72,7 @@ class DeviceEntities:
             "set_current": self.action(profile.set_current),
             "car_connected": self.condition(profile.car_connected),
             "actively_charging": self.condition(profile.actively_charging),
-            "quiet_without_car": profile.quiet_without_car,
+            "cloud_controlled": profile.cloud_controlled,
         }
         return {name: value for name, value in fields.items() if value is not None}
 

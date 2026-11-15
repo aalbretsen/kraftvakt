@@ -95,6 +95,7 @@ def test_ampere_steps_are_interleaved_between_chargers() -> None:
         may_charge={"a", "b", "c"},
         on_trial=(),
         bypassed=(),
+        starting=(),
         growth=AMPERE_STEP_GROWTH,
     )
 
@@ -116,6 +117,7 @@ def test_only_the_first_ampere_step_has_the_power_reserve() -> None:
         {"a"},
         (),
         (),
+        (),
         AMPERE_STEP_GROWTH,
     )
 
@@ -133,6 +135,7 @@ def test_ampere_steps_of_chargers_that_may_not_charge_or_are_bypassed() -> None:
         may_charge={"b"},
         on_trial=(),
         bypassed={"a"},
+        starting=(),
         growth=AMPERE_STEP_GROWTH,
     )
 
@@ -149,7 +152,22 @@ def test_charger_on_trial_can_only_get_its_first_ampere_step() -> None:
         may_charge={"a"},
         on_trial={"a"},
         bypassed=(),
+        starting=(),
         growth=AMPERE_STEP_GROWTH,
     )
 
     assert [step.can_turn_on for step in steps] == [True, False, False]
+
+
+def test_only_the_first_ampere_step_of_a_starting_charger_holds_its_reserve() -> None:
+    steps = ampere_steps(
+        [charger("a", 6, 7), charger("b", 6, 6)],
+        {"a": 1},
+        may_charge={"a", "b"},
+        on_trial={"a"},
+        bypassed=(),
+        starting={"a"},
+        growth=AMPERE_STEP_GROWTH,
+    )
+
+    assert [step.holds_reserve for step in steps] == [True, False, False]

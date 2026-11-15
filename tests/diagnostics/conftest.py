@@ -53,7 +53,7 @@ def driveway_charger(device_id: str) -> dict:
             "value": "{{ is_state('binary_sensor.driveway_car_connected', 'on') or states('sensor.driveway_status') == 'charging' and is_state('sun.sun', 'above_horizon') }}",
         },
         "actively_charging": {"type": "power_sensor", "value": "sensor.driveway"},
-        "quiet_without_car": True,
+        "cloud_controlled": True,
     }
 
 

@@ -134,6 +134,7 @@ class Step:
     growth: RepeatedTurnOnGrowth
     can_turn_on: bool = True
     can_turn_off: bool = True
+    holds_reserve: bool = False
 
 
 @dataclass(frozen=True, slots=True)

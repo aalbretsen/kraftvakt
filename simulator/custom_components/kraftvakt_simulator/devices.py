@@ -343,11 +343,14 @@ class SimulatedCharger(PluggedInDevice):
         consumer_id: str,
         min_current_a: int,
         max_current_a: int,
+        start_delay: timedelta,
     ) -> None:
         """Start with charging not allowed, no car and the minimum current."""
         super().__init__(hass, consumer_id)
         self.min_current_a = min_current_a
         self.max_current_a = max_current_a
+        self.start_delay = start_delay
+        self._cancel_start: CALLBACK_TYPE | None = None
         self.state = ChargerState(
             charging_allowed=False,
             current_a=min_current_a,
@@ -379,6 +382,30 @@ class SimulatedCharger(PluggedInDevice):
         self._async_update(current_a=clamped)
 
     @callback
+    def async_stop(self) -> None:
+        self._async_cancel_start()
+        super().async_stop()
+
+    @callback
     def _async_update(self, **changes: Any) -> None:
+        """Let a car that starts to want power wait the start delay before it draws it."""
+        wanted_power = self.state.wants_power
         self.state = replace(self.state, **changes)
+        if not self.state.wants_power:
+            self._async_cancel_start()
+            self.state = replace(self.state, starting=False)
+        elif not wanted_power and self.start_delay > timedelta(0):
+            self.state = replace(self.state, starting=True)
+            self._cancel_start = async_track_point_in_utc_time(self.hass, self._async_started, dt_util.utcnow() + self.start_delay)
         self._async_changed()
+
+    @callback
+    def _async_started(self, _now: datetime) -> None:
+        self._cancel_start = None
+        self._async_update(starting=False)
+
+    @callback
+    def _async_cancel_start(self) -> None:
+        if self._cancel_start is not None:
+            self._cancel_start()
+            self._cancel_start = None

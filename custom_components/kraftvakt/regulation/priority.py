@@ -59,6 +59,7 @@ def ampere_steps(
     may_charge: Collection[str],
     on_trial: Collection[str],
     bypassed: Collection[str],
+    starting: Collection[str],
     growth: RepeatedTurnOnGrowth,
 ) -> list[Step]:
     rounds = max(map(ampere_step_count, chargers), default=0)
@@ -70,6 +71,7 @@ def ampere_steps(
             growth=growth,
             can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in on_trial),
             can_turn_off=charger.id not in bypassed,
+            holds_reserve=index == 0 and charger.id in starting and ampere_steps_on.get(charger.id, 0) > 0,
         )
         for index in range(rounds)
         for charger in chargers

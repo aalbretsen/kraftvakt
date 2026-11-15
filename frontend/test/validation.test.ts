@@ -67,8 +67,8 @@ describe("missing items", () => {
     expect(carConnectedRequired(charger("garage", { charging_window: window, override_ends: ends }), oneAtATime)).toBe(required);
   });
 
-  it("car connected is required for a charger quiet without car", () => {
-    expect(carConnectedRequired(charger("garage", { quiet_without_car: true }), false)).toBe(true);
+  it("car connected is required for a cloud-controlled charger", () => {
+    expect(carConnectedRequired(charger("garage", { cloud_controlled: true }), false)).toBe(true);
   });
 
   it("an action that is set is not missing", () => {

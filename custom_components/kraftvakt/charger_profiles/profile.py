@@ -57,7 +57,7 @@ class ProfileCondition:
 class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
-    `quiet_without_car` is for chargers controlled through a cloud service.
+    `cloud_controlled` is for chargers controlled through a cloud service.
     """
 
     name: str
@@ -68,7 +68,7 @@ class ChargerProfile:
     set_current: ProfileAction
     car_connected: ProfileCondition
     actively_charging: ProfileCondition
-    quiet_without_car: bool = False
+    cloud_controlled: bool = False
 
 
 DEFAULT_ACTION = ProfileAction(ActionMode.DEFAULT)

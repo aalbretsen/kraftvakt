@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from custom_components.kraftvakt.config_model import OverrideEnd
 from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
@@ -152,6 +154,48 @@ def test_charger_that_does_not_draw_power_is_bypassed() -> None:
 
     assert scenario.decide_many(0, 5) == [activate("c"), [], [], [], []]
     assert scenario.engine.chargers["c"].bypassed
+
+
+@pytest.mark.parametrize(("start_delay_s", "decisions_before_bypassed"), [(300, 5), (0, 2)])
+def test_cloud_controlled_charger_gets_its_start_delay_before_it_is_bypassed(start_delay_s: int, decisions_before_bypassed: int) -> None:
+    """Never less than the two windows every charger gets."""
+    scenario = one_charger(cloud_controlled=True, start_delay_s=start_delay_s)
+    assert scenario.decide(0) == activate("c")
+
+    scenario.decide_many(0, decisions_before_bypassed - 1)
+    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
+    scenario.decide(0)
+    assert scenario.engine.chargers["c"].state is ChargerState.NOT_CHARGING
+
+
+@pytest.mark.parametrize(
+    ("cloud_controlled", "expected"),
+    [
+        (False, [activate("c"), on("x"), [], [], [], []]),
+        (True, [activate("c"), [], [], [], [], on("x")]),
+    ],
+)
+def test_starting_cloud_controlled_charger_holds_its_power_reserve(cloud_controlled: bool, expected: list) -> None:
+    """The appliance below has room only when the car that is about to draw power is left out."""
+    scenario = Scenario(
+        make_config(
+            "x",
+            chargers=(charger("c", cloud_controlled=cloud_controlled),),
+            priority=("ev", "x"),
+            wait_at_limit_s=0,
+        )
+    )
+
+    assert scenario.decide_many(6000, 6) == expected
+
+
+def test_held_power_reserve_ends_when_the_car_starts_charging() -> None:
+    scenario = Scenario(make_config("x", chargers=(charger("c", max_a=7, cloud_controlled=True),), priority=("ev", "x"), wait_at_limit_s=0))
+    assert scenario.decide_many(6000, 2) == [activate("c"), []]
+
+    scenario.set_charger("c", **CHARGING)
+
+    assert scenario.decide_many(6000, 2) == [current("c", 7), on("x")]
 
 
 def test_appliance_below_is_turned_on_while_a_charger_is_tried() -> None:
@@ -548,6 +592,17 @@ def test_override_gives_a_reactivated_car_time_to_start_charging() -> None:
 
     scenario.set_charger("c", actively_charging=False, charging_stopped=True)
     assert scenario.decide(0) == []
+    assert scenario.overrides.ended == []
+    assert scenario.decide(0) == deactivate("c")
+    assert scenario.overrides.ended == ["c"]
+
+
+def test_override_gives_a_cloud_controlled_charger_its_start_delay() -> None:
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CHARGING_STOPPED, cloud_controlled=True)
+    scenario.set_charger("c", window_override=True, override_armed=True, charging_stopped=True)
+    assert scenario.decide(0) == activate("c")
+
+    assert scenario.decide_many(0, 4) == [[], [], [], []]
     assert scenario.overrides.ended == []
     assert scenario.decide(0) == deactivate("c")
     assert scenario.overrides.ended == ["c"]
