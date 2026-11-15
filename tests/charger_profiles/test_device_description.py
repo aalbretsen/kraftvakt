@@ -33,7 +33,7 @@ async def test_diagnostics_describe_the_device_of_each_charger(hass: HomeAssista
     assert diagnostics["charger_devices"] == {
         "c1": {
             "profile": "Easee",
-            "integrations": ["easee"],
+            "integration": "easee",
             "manufacturer": "Easee",
             "model": None,
             "model_id": "Easee Home",
@@ -65,7 +65,7 @@ async def test_diagnostics_describe_the_device_of_each_charger(hass: HomeAssista
                     "attributes": {},
                 },
             ],
-            "services": {"easee": ["set_charger_access"]},
+            "services": ["set_charger_access"],
         }
     }
 

@@ -5,7 +5,7 @@ from html.parser import HTMLParser
 from typing import Any
 
 from diagnostics.diagnostics_file import DiagnosticsFile
-from diagnostics.to_html import html_document
+from diagnostics.to_html.document import html_document
 
 WRAPPER = {"home_assistant": {"version": "2026.10.4"}, "integration_manifest": {"name": "Kraftvakt", "version": "0.8.0"}}
 
@@ -46,6 +46,7 @@ def test_the_table_of_contents_links_every_section_of_the_diagnostics_and_of_the
     assert "kraftvakt.json: Kraftvakt 0.8.0, Home Assistant 2026.10.4." in html
     assert re.findall(r'<a href="#(s\d)">(\w+)</a>', html) == [("s1", "config"), ("s2", "engine"), ("s3", "home_assistant"), ("s4", "integration_manifest")]
     assert all(f'id="s{number}"' in html for number in range(1, 5))
+    assert '<a href="#s1">config</a> <a href="#s2">engine</a>' in html, "a space between the links lets the header wrap"
 
 
 def test_a_file_without_a_manifest_still_gets_a_title() -> None:
@@ -83,7 +84,7 @@ def test_a_list_of_flat_objects_is_a_table_with_a_column_for_every_key() -> None
 
     html = document({"recent_decisions": rows})
 
-    assert "<tr><th>time</th><th>commands</th><th>attributes</th><th>waiting</th></tr>" in html
+    assert '<div class="table"><table><thead><tr><th>time</th><th>commands</th><th>attributes</th><th>waiting</th></tr>' in html
     assert '<td class="value"><span class="value">TurnOn(a)</span><br><span class="value">TurnOff(b)</span></td>' in html
     assert '<span class="key">options:</span> <span class="value">on</span>, <span class="value">off</span>' in html
     assert '<td class="value"></td><td class="value"></td><td class="value"><span class="literal">null</span></td>' in html
@@ -100,7 +101,7 @@ def test_a_list_of_nested_objects_is_a_tree_named_by_the_items() -> None:
 
 
 def test_a_list_of_plain_values_is_a_list() -> None:
-    html = document({"integrations": ["easee", 2, {"nested": [1]}], "services": ["a", None]})
+    html = document({"mixed": ["easee", 2, {"nested": [1]}], "plain": ["a", None]})
 
     assert '<ol><li><span class="value"><span class="value">a</span></span></li><li><span class="value"><span class="literal">null</span></span></li></ol>' in html
     assert '<summary><span class="key">2</span> <small>1 key</small></summary>' in html

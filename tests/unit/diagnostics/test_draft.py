@@ -35,7 +35,7 @@ ENTITIES = [
 
 
 def device(**fields: Any) -> dict[str, Any]:
-    return {"profile": None, "integrations": ["acme"], "manufacturer": "Acme", "model": "Box", "model_id": "B-1", "entities": ENTITIES, **fields}
+    return {"profile": None, "integration": "acme", "manufacturer": "Acme", "model": "Box", "model_id": "B-1", "entities": ENTITIES, **fields}
 
 
 def charger(charger_id: str = "c1", **fields: Any) -> dict[str, Any]:
@@ -99,24 +99,20 @@ def test_diagnostics_without_a_configuration_that_can_be_read_are_refused(data: 
 
 
 def test_a_device_of_an_integration_for_many_makers_is_matched_by_its_manufacturer_and_model() -> None:
-    assert draft({"integrations": ["mqtt"]}).profile.device == DeviceMatch("mqtt", manufacturer="Acme", model_id="B-1")
+    assert draft({"integration": "mqtt"}).profile.device == DeviceMatch("mqtt", manufacturer="Acme", model_id="B-1")
 
-    without_model = draft({"integrations": ["mqtt"], "model_id": None})
+    without_model = draft({"integration": "mqtt", "model_id": None})
 
     assert without_model.profile.name == "Acme Box (mqtt)"
     assert without_model.profile.device == DeviceMatch("mqtt", manufacturer="Acme")
     assert without_model.notes == ("device: mqtt serves devices of many makers, and the device has no model ID, so the profile fits every model of its manufacturer.",)
 
 
-def test_a_device_with_another_number_of_integrations_than_one_is_noted() -> None:
-    several = draft({"integrations": ["acme", "mqtt"]})
-    assert several.profile.device == DeviceMatch("acme")
-    assert several.notes == ("device: it belongs to the integrations acme, mqtt. The profile is for acme; choose the one that controls the charger.",)
-
-    none = draft({"integrations": [], "manufacturer": None, "model": None, "model_id": None})
-    assert none.profile.device == DeviceMatch("")
-    assert none.module == "charger"
-    assert none.notes == ("device: it has no integration. Fill in the integration of the profile.",)
+def test_a_device_without_an_integration_is_noted() -> None:
+    without_integration = draft({"integration": None, "manufacturer": None, "model": None, "model_id": None})
+    assert without_integration.profile.device == DeviceMatch("")
+    assert without_integration.module == "charger"
+    assert without_integration.notes == ("device: it has no integration. Fill in the integration of the profile.",)
 
 
 def test_entities_a_profile_cannot_find_are_noted() -> None:

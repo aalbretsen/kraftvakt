@@ -14,7 +14,12 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 ## Where they live
 
 - `diagnostics/` in the repository root is a Python package, outside `custom_components/`, so HACS never installs it and hassfest never reads it.
-  A tool runs from the repository root as a module, `uv run python -m diagnostics.<tool>`, so the package and `custom_components` are both importable.
+- Every tool is built the same way, so they are used and changed the same way. A tool is a folder of its own, `diagnostics/<tool>/`, with:
+  - `__init__.py` with a one-line docstring that tells what the tool does,
+  - `__main__.py`, which runs the tool: a module docstring that starts with what it does and shows the command, and `main`,
+  - the logic in modules next to them, named by what they do.
+- Code shared by the tools is in modules directly in `diagnostics/`, such as `diagnostics_file.py`.
+- A tool runs from the repository root as a module, `uv run python -m diagnostics.<tool>`, so the package and `custom_components` are both importable.
 - A tool may import from the integration, for example the charger profile dataclasses and `read_config`, so its output is checked against the real types and rules.
   It uses no dependencies beyond the development environment; ask the owner before adding one.
 - `diagnostics` is in mypy's `files` in `pyproject.toml`. `custom_components` is a namespace package both in the root and in `simulator/`,
@@ -33,13 +38,15 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 - **Draft:** what the charger profile extractor writes. A developer reviews it before it is committed; the tool never edits `PROFILES` or writes over a file.
 - **Note:** a line the extractor prints under an EV charger, naming the field and what a profile cannot carry over. Every case the tool cannot map gives a note.
 
-## HTML document (`to_html.py`)
+## HTML document (`to_html/`)
 
+- `document.py` renders the document; `__main__.py` reads the file and writes the HTML.
 - Every section, of `data` and of the wrapper, is rendered by the same rules, without code for any section. Why: sections added to the diagnostics show up by themselves.
 - One expand/collapse mechanism, native `<details>`, for every object and list. A plain value, or an empty object or list, is one line.
   The first levels below a section are open (`OPEN_LEVELS`). The items of a list are labelled by their index and the values of `NAMING_KEYS`.
 - A list of objects whose values are flat (plain, or a list or object of plain values) or hold only flat values is a table with a column for every key, in the order first seen.
   In a cell each item of a list or object is a line, and a nested flat value is one line with commas. Other lists are trees.
+  A wide table scrolls sideways in its own block, so the page and its header do not.
 - One navigation: the sticky header links to each section, grouped as the integration's diagnostics and Home Assistant's wrapper.
   The only script is the inline `onclick` of **Expand all** and **Collapse all**.
 - Strings are shown as they are; any other plain value as JSON, marked `literal`, so `"null"` is not taken for `null`. Every key and value is escaped.
@@ -65,9 +72,10 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 
 ## How to write code for the tools
 
-- The coding rules in `CLAUDE.md` apply. Keep the reading of the file in `diagnostics_file.py`, the logic in plain functions and classes, and printing and files in `main`.
+- The coding rules in `CLAUDE.md` apply. Keep the reading of the file in `diagnostics_file.py`, the logic in plain functions and classes,
+  and printing and files in `main` in `__main__.py`.
 - Use the integration's own types and functions rather than copying its rules, and make a small, general change in the integration when a tool needs one.
-- Each tool has `main(arguments: list[str] | None = None) -> int`, which prints `NotADiagnosticsFileError` to stderr and returns 1, and ends with `sys.exit(main())`
+- Each `__main__.py` has `main(arguments: list[str] | None = None) -> int`, which prints `NotADiagnosticsFileError` to stderr and returns 1, and ends with `sys.exit(main())`
   under `if __name__ == "__main__"`.
 
 ## Testing
@@ -83,8 +91,7 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 
 ## How to add a tool
 
-1. Add `diagnostics/<tool>.py`, or a package `diagnostics/<tool>/` with `__main__.py` when it needs several modules, with a module docstring that starts with
-   what it does and shows the command.
+1. Add the folder `diagnostics/<tool>/` with `__init__.py`, `__main__.py` and the modules with its logic, as described under Where they live.
 2. Read the file with `read_diagnostics_file` and depend only on what the concepts above allow.
 3. Test it on `diagnostics_file` in `tests/diagnostics/test_<tool>.py`, and its rules in `tests/unit/diagnostics/`.
 4. Add a section with the command and what the tool gives to `DIAGNOSTICS.md`, and describe its decisions in this skill.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import keyword
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Final
 
@@ -151,13 +151,10 @@ class ProfileDrafting:
         )
 
     def _device_match(self) -> DeviceMatch:
-        integrations: Sequence[str] = self._device.get("integrations") or []
-        if not integrations:
+        integration: str | None = self._device.get("integration")
+        if integration is None:
             self._notes.append("device: it has no integration. Fill in the integration of the profile.")
             return DeviceMatch(integration="")
-        integration = integrations[0]
-        if len(integrations) > 1:
-            self._notes.append(f"device: it belongs to the integrations {', '.join(integrations)}. The profile is for {integration}; choose the one that controls the charger.")
         if integration not in SHARED_INTEGRATIONS:
             return DeviceMatch(integration)
         model_id = self._device.get("model_id")

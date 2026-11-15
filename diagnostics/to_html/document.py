@@ -1,23 +1,18 @@
-"""Write a diagnostics file as a self-contained HTML document that is easier to read than the JSON.
+"""The HTML document of a diagnostics file.
 
-    uv run python -m diagnostics.to_html <diagnostics file> [--output <HTML file>]
-
-Every section is shown by the same rules, so sections added to the diagnostics later show up without changes here:
+Every section is shown by the same rules, so sections added to the diagnostics show up without changes here:
 a list or an object is a tree that expands and collapses, and a list of flat objects is a table.
 """
 
 from __future__ import annotations
 
-import argparse
 import json
-import sys
 from collections.abc import Mapping
 from html import escape
 from itertools import count
-from pathlib import Path
 from typing import Any, Final
 
-from .diagnostics_file import DiagnosticsFile, NotADiagnosticsFileError, read_diagnostics_file
+from ..diagnostics_file import DiagnosticsFile
 
 # Levels of the tree below a section that are expanded when the document opens.
 OPEN_LEVELS: Final = 2
@@ -40,25 +35,10 @@ main > details > summary { font-size: 1.1rem; font-weight: 600; }
 ul, ol { list-style: none; margin: 0; padding: 0; }
 .key { font-weight: 600; }
 .value { white-space: pre-wrap; overflow-wrap: break-word; }
+div.table { overflow-x: auto; }
 table { border-collapse: collapse; }
 th, td { border: 1px solid GrayText; padding: 0.1rem 0.4rem; text-align: left; vertical-align: top; }
 """
-
-
-def main(arguments: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m diagnostics.to_html", description=(__doc__ or "").splitlines()[0])
-    parser.add_argument("file", type=Path, help="the JSON file from Download diagnostics")
-    parser.add_argument("--output", type=Path, help="the HTML file to write (default: the diagnostics file with .html)")
-    options = parser.parse_args(arguments)
-    try:
-        diagnostics = read_diagnostics_file(options.file)
-    except NotADiagnosticsFileError as error:
-        print(error, file=sys.stderr)
-        return 1
-    output: Path = options.output or options.file.with_suffix(".html")
-    output.write_text(html_document(diagnostics, options.file.name), encoding="utf-8")
-    print(f"Wrote {output}")
-    return 0
 
 
 def html_document(diagnostics: DiagnosticsFile, file_name: str) -> str:
@@ -78,7 +58,7 @@ def html_document(diagnostics: DiagnosticsFile, file_name: str) -> str:
             anchor = f"s{next(numbers)}"
             links.append(f'<a href="#{anchor}">{escape(key)}</a>')
             sections.append(_details(key, value, level=0, anchor=anchor))
-        navigation.append(f"<p><strong>{escape(group)}:</strong> {''.join(links)}</p>")
+        navigation.append(f"<p><strong>{escape(group)}:</strong> {' '.join(links)}</p>")
     buttons = "".join(
         f'<button type="button" onclick="document.querySelectorAll(\'details\').forEach(d => d.open = {state})">{label}</button> '
         for label, state in (("Expand all", "true"), ("Collapse all", "false"))
@@ -117,7 +97,7 @@ def _table(rows: list[Mapping[str, Any]]) -> str:
     columns = list(dict.fromkeys(key for row in rows for key in row))
     header = "".join(f"<th>{escape(str(column))}</th>" for column in columns)
     lines = "".join("<tr>" + "".join(f'<td class="value">{_cell(row[column]) if column in row else ""}</td>' for column in columns) + "</tr>" for row in rows)
-    return f"<table><thead><tr>{header}</tr></thead><tbody>{lines}</tbody></table>"
+    return f'<div class="table"><table><thead><tr>{header}</tr></thead><tbody>{lines}</tbody></table></div>'
 
 
 def _cell(value: Any) -> str:
@@ -168,7 +148,3 @@ def _is_flat(value: Any) -> bool:
 def _fits_in_cell(value: Any) -> bool:
     """Return whether the value is flat, or a list or an object of flat values, so it shows in a table cell with one line for each item."""
     return all(_is_flat(item) for item in _items(value))
-
-
-if __name__ == "__main__":
-    sys.exit(main())

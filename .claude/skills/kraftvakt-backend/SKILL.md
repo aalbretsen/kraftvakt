@@ -28,8 +28,9 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through `config_panel_domain` when the panel is registered.
 - The action lock is shared over reloads, so a new runtime's turn-off commands wait until the previous runtime's actions are done.
-- The diagnostics hold everything the backend keeps in memory. The configuration and what is looked up from it are only in its own section,
-  and callbacks and handles are shown as whether they are set.
+- The diagnostics hold everything the backend keeps in memory. The configuration is in its own section, and what is looked up from it is left out.
+  A part shows a setting only when it keeps its own copy, such as the power limit the engine uses and the action runner's timeout.
+  Callbacks and handles are shown as whether they are set.
   Each object that holds state describes its own with `diagnostics()`, in its own types, and the runtime gives a section per part.
   `plain` in `json_values.py` turns it into JSON: times in ISO 8601 in HA's time zone, durations in seconds, enums as their values, sets as sorted lists and dataclasses as objects.
   The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.

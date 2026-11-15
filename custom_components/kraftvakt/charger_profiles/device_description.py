@@ -15,7 +15,7 @@ DESCRIBING_ATTRIBUTES: Final = frozenset({"device_class", "unit_of_measurement",
 
 
 def device_description(hass: HomeAssistant, device_id: str) -> dict[str, Any] | None:
-    """Return the device's integrations, manufacturer and model, its entities as they are registered with their values, the services of its integrations and its profile.
+    """Return the device's integration, manufacturer and model, its entities as they are registered with their values, the services of its integration and its profile.
 
     Identifiers and unique IDs are left out, since they often hold serial numbers.
     """
@@ -23,18 +23,17 @@ def device_description(hass: HomeAssistant, device_id: str) -> dict[str, Any] | 
     if not isinstance(device, dr.DeviceEntry):
         return None
     integration = device_integration(hass, device)
-    integrations = [] if integration is None else [integration]
     profile, _ = charger_profile_fields(hass, device_id)
     return {
         "profile": None if profile is None else profile.name,
-        "integrations": integrations,
+        "integration": integration,
         "manufacturer": device.manufacturer,
         "model": device.model,
         "model_id": device.model_id,
         "hw_version": device.hw_version,
         "sw_version": device.sw_version,
         "entities": [_entity(hass, entry) for entry in er.async_entries_for_device(er.async_get(hass), device_id, include_disabled_entities=True)],
-        "services": {integration: sorted(hass.services.async_services_for_domain(integration)) for integration in integrations},
+        "services": [] if integration is None else sorted(hass.services.async_services_for_domain(integration)),
     }
 
 

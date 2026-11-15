@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from diagnostics.to_html import main
+from diagnostics.to_html.__main__ import main
 
 
 def test_every_section_of_the_file_is_in_the_document(diagnostics_file: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -47,7 +47,7 @@ def test_runs_as_a_module(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     path = tmp_path / "diagnostics.json"
     path.write_text('{"data": {}}')
     monkeypatch.setattr(sys, "argv", ["to_html", str(path)])
-    monkeypatch.delitem(sys.modules, "diagnostics.to_html")
+    monkeypatch.delitem(sys.modules, "diagnostics.to_html.__main__")
 
     with pytest.raises(SystemExit) as exit_info:
         runpy.run_module("diagnostics.to_html", run_name="__main__")
