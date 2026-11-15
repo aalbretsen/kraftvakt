@@ -37,6 +37,7 @@ from custom_components.kraftvakt.config_reader import (
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.entity import item_name
 from custom_components.kraftvakt.regulation.charging import ChargerState
+from custom_components.kraftvakt.status import status_snapshot
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
 POWER_SENSOR = "sensor.han_power"
@@ -433,9 +434,12 @@ async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as
     actions.clear()
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}"]
+    activated_at = dt_util.utcnow()
 
     await advance_windows(hass, freezer, 2)
-    assert entry.runtime_data.chargers["c1"].state is ChargerState.ACTIVATED
+    row = status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]
+    assert row["state"] == "starting"
+    assert row["starting_until"] == dt_util.as_local(activated_at + timedelta(seconds=180)).isoformat()
     await advance(hass, freezer)
     assert entry.runtime_data.chargers["c1"].state is ChargerState.NOT_CHARGING
 

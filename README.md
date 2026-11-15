@@ -167,8 +167,10 @@ so a car that is connected does not start charging by itself. The charging curre
     is the longest time from when the EV charger is activated until the car draws power and the EV charger reports that it is actively charging.
     The car gets this time to start, when it is longer than two regulation windows.
   - While the car starts, the power reserve of the EV charger is kept free:
-    what is below it in the priority list is turned on only when there is room for it with the power reserve counted as used.
+    what is below it in the priority list is turned on only when there is room for it with the power reserve counted as used,
+    and its waiting time counts the power reserve as used too.
     Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
+    The status page shows the EV charger as **Starting** meanwhile.
 - Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
 - With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
   until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit,
@@ -252,7 +254,7 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
-| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or a power reserve kept free for an EV charger that starts. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |

@@ -131,7 +131,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   chargers not allowed to charge, bypassed chargers, excluded appliances, variant switches, appliances included again,
   and the other charger deactivated when one is activated with one charger at a time.
 - Turn on only when the regulation average is under the limit minus the turn-on margin, and average plus power reserve is at most the limit.
-  The power reserves held for starting chargers above the step count as used, added to the average in both (see EV charging).
+  The power reserves held for starting chargers above the step count as used: they are added to the average in both and in its waiting time (see EV charging).
   Switch off only when the average is above the limit, or to make room. Between limit minus margin and the limit, both included, nothing is turned on,
   and nothing is switched off except to make room. Why: commands run just after a window closes, and a real meter reports the change only at its next update,
   so the window after a decision still holds the consumption from before its commands. The margin keeps an appliance from being turned on on a stale average just under the limit,
@@ -152,6 +152,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit), recalculated at each decision while it runs.
+  The average includes the power reserves held for starting chargers above the step.
   Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5,
   0, 1), the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half the limit, slow at first, and 1 at the limit and above.
   n is the steepness, 1.5–9 in steps of 0.5, default 6.
@@ -244,7 +245,7 @@ All with entity category diagnostic:
   Finishing is judged from what the last decision read (activated, actively charging, car connected),
   so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
-  without the longer waiting time on repeated turn-on. Unavailable without an average.
+  without the longer waiting time on repeated turn-on or a power reserve held for a starting charger. Unavailable without an average.
 
 ## Variants
 
@@ -288,6 +289,7 @@ All with entity category diagnostic:
   Why: a charger that may have no car must not take more power and hold back the appliances below the entry of its group while it is tried.
 - Starting: a cloud-controlled charger on trial within its time to start since activation holds its power reserve.
   The steps after it are turned on only when there is room for them with the reserve counted as used, and room is made below them as usual when there is not.
+  Their waiting time counts the reserve as used too, as it would once the car draws power.
   Why: the car of a cloud-controlled charger may take minutes to draw power, so the average shows its power as free.
   A step turned on in that power would be switched off again when the car starts, and its waiting time would grow.
   A car that never starts holds the reserve for at most the time to start, since the charger is then bypassed.

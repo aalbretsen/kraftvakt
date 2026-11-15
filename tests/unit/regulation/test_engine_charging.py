@@ -13,6 +13,7 @@ from custom_components.kraftvakt.regulation.model import ActivateCharger
 
 from .configs import appliance, charger, charger_group, make_config
 from .scenario import (
+    DECISION_INTERVAL,
     Scenario,
     activate,
     current,
@@ -161,9 +162,12 @@ def test_cloud_controlled_charger_gets_its_start_delay_before_it_is_bypassed(sta
     """Never less than the two windows every charger gets."""
     scenario = one_charger(cloud_controlled=True, start_delay_s=start_delay_s)
     assert scenario.decide(0) == activate("c")
+    activated_at = scenario.now
 
     scenario.decide_many(0, decisions_before_bypassed - 1)
-    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
+    status = scenario.engine.chargers["c"]
+    assert status.state is ChargerState.STARTING
+    assert status.starting_until == activated_at + decisions_before_bypassed * DECISION_INTERVAL
     scenario.decide(0)
     assert scenario.engine.chargers["c"].state is ChargerState.NOT_CHARGING
 
@@ -187,6 +191,20 @@ def test_starting_cloud_controlled_charger_holds_its_power_reserve(cloud_control
     )
 
     assert scenario.decide_many(6000, 6) == expected
+
+
+@pytest.mark.parametrize(
+    ("cloud_controlled", "expected"),
+    [
+        (False, [activate("c"), on("x"), [], [], [], []]),
+        (True, [activate("c"), [], [], [], [], on("x")]),
+    ],
+)
+def test_waiting_time_counts_the_held_power_reserve(cloud_controlled: bool, expected: list) -> None:
+    """There is room for the appliance below, but 5000 W with 4000 W held is close to the limit, so it waits."""
+    scenario = Scenario(make_config("x", chargers=(charger("c", cloud_controlled=cloud_controlled),), priority=("ev", "x"), wait_at_limit_s=300))
+
+    assert scenario.decide_many(5000, 6) == expected
 
 
 def test_held_power_reserve_ends_when_the_car_starts_charging() -> None:

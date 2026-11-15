@@ -197,8 +197,9 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - An appliance's variant is the label of its current variant, or `null`.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: first decision (before the first decision after a start), excluded, outside its charging window,
-  no car connected (bypassed and car connected is false), not charging (bypassed otherwise), queued (waiting), override (allowed only by the override while activated), finishing,
-  charging, activated, deactivated. It is worked out in the engine from the last decision.
+  no car connected (bypassed and car connected is false), not charging (bypassed otherwise), queued (waiting), starting,
+  override (allowed only by the override while activated), finishing, charging, activated, deactivated. It is worked out in the engine from the last decision.
   Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user needs to know that the car is missing.
   Charging is true while the charger is activated and was actively charging at the last decision.
+  A starting charger also has when its time to start ends, `null` for the others.
 - The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the group's current charging priority.

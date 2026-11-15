@@ -210,6 +210,7 @@ export type ChargerState =
   | "no_car"
   | "not_charging"
   | "queued"
+  | "starting"
   | "override"
   | "finishing"
   | "charging"
@@ -225,6 +226,8 @@ export interface ChargerStatus {
   bypassed: boolean;
   /** Activated and actively charging at the last decision. */
   charging: boolean;
+  /** When the time to start of a starting EV charger ends, whose power reserve is kept free until then. */
+  starting_until: string | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */

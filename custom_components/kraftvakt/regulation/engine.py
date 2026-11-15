@@ -400,7 +400,9 @@ class RegulationEngine:
         """Turn on the next step, or make room for it when there is none.
 
         No room is made when the decision has already forced something off,
-        since the average was measured before that.
+        since the average was measured before that. The power reserves held
+        for starting chargers above the step count as used, also for its
+        waiting time.
         """
         steps = self._steps()
         place = next((place for place, step in enumerate(steps) if not step.is_on and step.can_turn_on), None)
@@ -412,7 +414,7 @@ class RegulationEngine:
         if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
             return [] if forced_off else self._make_room_below(candidate.key)
-        if not self._has_waited(candidate, now, average_w):
+        if not self._has_waited(candidate, now, average_w + held_w):
             return []
         return self._switch(candidate.key, turn_on=True, now=now)
 
@@ -421,8 +423,7 @@ class RegulationEngine:
 
         The average must be below the limit by the turn-on margin, since the
         window after a decision still holds some of the consumption from before
-        its commands. The power reserves held for starting chargers above the
-        step count as used.
+        its commands.
         """
         general = self._config.general
         limit_w = general.power_limit_w

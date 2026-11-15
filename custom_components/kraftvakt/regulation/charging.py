@@ -64,6 +64,7 @@ class ChargerState(StrEnum):
     NO_CAR = "no_car"
     NOT_CHARGING = "not_charging"
     QUEUED = "queued"
+    STARTING = "starting"
     OVERRIDE = "override"
     FINISHING = "finishing"
     CHARGING = "charging"
@@ -73,7 +74,10 @@ class ChargerState(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class ChargerStatus:
-    """How a charger stands after the last decision."""
+    """How a charger stands after the last decision.
+
+    `starting_until` is when the time to start of a starting charger ends.
+    """
 
     state: ChargerState
     ampere_steps_on: int
@@ -81,6 +85,7 @@ class ChargerStatus:
     bypassed: bool
     charging: bool
     car_connected: bool | None
+    starting_until: datetime | None = None
 
 
 def ampere_step_count(charger: Charger) -> int:
@@ -210,7 +215,8 @@ class ChargingState:
     A charger on trial may charge but does not charge actively, so it may only
     get its first ampere step. A starting charger is a cloud-controlled
     charger on trial within its time to start, whose power reserve is held
-    for the car that is about to draw power.
+    for the car that is about to draw power; `starting` has when its time to
+    start ends.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -219,7 +225,7 @@ class ChargingState:
     bypassed: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
     on_trial: set[str] = field(default_factory=set)
-    starting: set[str] = field(default_factory=set)
+    starting: dict[str, datetime] = field(default_factory=dict)
     waiting: set[str] = field(default_factory=set)
     rests: dict[str, Rest] = field(default_factory=dict)
     last_readings: dict[str, ChargerReading] = field(default_factory=dict)
@@ -295,6 +301,7 @@ class ChargingState:
             bypassed=charger.id in self.bypassed,
             charging=charging,
             car_connected=reading.car_connected,
+            starting_until=self.starting.get(charger.id),
         )
 
     def _state_of(self, charger_id: str, activated: bool, charging: bool) -> ChargerState:
@@ -311,6 +318,8 @@ class ChargingState:
             return ChargerState.NOT_CHARGING
         if charger_id in self.waiting:
             return ChargerState.QUEUED
+        if charger_id in self.starting:
+            return ChargerState.STARTING
         if permission is ChargingPermission.OVERRIDE and activated:
             return ChargerState.OVERRIDE
         if permission is ChargingPermission.FINISHING:
@@ -387,7 +396,7 @@ class ChargingState:
 
     def _update_starting(self, chargers: Sequence[Charger], now: datetime, window: timedelta) -> None:
         self.starting = {
-            charger.id
+            charger.id: self.activated_at[charger.id] + time_to_start(charger, window)
             for charger in chargers
             if charger.cloud_controlled and charger.id in self.on_trial and charger.id in self.activated_at and not self.activated_long_enough(charger, now, window)
         }

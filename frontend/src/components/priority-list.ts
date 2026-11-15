@@ -3,6 +3,7 @@ import {
   mdiCancel,
   mdiCarElectric,
   mdiCarOff,
+  mdiCloudClockOutline,
   mdiClockEnd,
   mdiClockFast,
   mdiClockOutline,
@@ -51,6 +52,7 @@ const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]
   no_car: [{ kind: "warning", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
   not_charging: [{ kind: "warning", icon: mdiPowerPlugOff }, "status.chip_not_charging", "status.bypassed"],
   queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
+  starting: [{ kind: "info", icon: mdiCloudClockOutline }, "status.chip_starting", "status.starting_until"],
   override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
   finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
   charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
@@ -299,6 +301,9 @@ export class KraftvaktPriorityList extends LitElement {
     if (charger.state === "outside_window" && window) {
       const short = { start: shortTime(window.start), end: shortTime(window.end) };
       return this.renderChip(chip, word, sentence, short, { ...window });
+    }
+    if (charger.starting_until) {
+      return this.renderChip(chip, word, sentence, {}, { time: formatClockTime(this.hass.language, charger.starting_until) });
     }
     return this.renderChip(chip, word, sentence, {}, { current: charger.current_a ?? 0 });
   }

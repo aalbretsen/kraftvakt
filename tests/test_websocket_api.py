@@ -917,6 +917,7 @@ async def test_status_shows_the_chargers(
             "activated": False,
             "current_a": None,
             "bypassed": False,
+            "starting_until": None,
             "charging": False,
             "waiting_since": None,
             "waiting_until": None,
