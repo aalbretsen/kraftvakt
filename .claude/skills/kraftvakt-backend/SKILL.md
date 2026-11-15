@@ -31,8 +31,9 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - The diagnostics hold everything the backend keeps in memory. The configuration and what is looked up from it are only in its own section,
   and callbacks and handles are shown as whether they are set.
   Each object that holds state describes its own with `diagnostics()`, in its own types, and the runtime gives a section per part.
-  `plain` in `diagnostics.py` turns it into JSON: times in ISO 8601 in HA's time zone, durations in seconds, enums as their values, sets as sorted lists and dataclasses as objects.
-  Commands carry their kind, since some kinds have the same fields. State added to the backend is added to its object's `diagnostics()`.
+  `plain` in `json_values.py` turns it into JSON: times in ISO 8601 in HA's time zone, durations in seconds, enums as their values, sets as sorted lists and dataclasses as objects.
+  The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.
+  State added to the backend is added to its object's `diagnostics()`.
 
 ## Modules
 
@@ -61,7 +62,8 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
 | `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, and an entity of an appliance or charger no longer exists. |
-| `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. `plain` turns the state into JSON. |
+| `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. |
+| `json_values.py` | `plain`, which turns the state held in memory into JSON for the diagnostics. |
 
 ## Stored configuration
 

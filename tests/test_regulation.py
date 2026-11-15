@@ -369,7 +369,7 @@ async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
     diagnostics = await get_diagnostics_for_config_entry(hass, hass_client, entry)
     assert diagnostics["recent_decisions"] == [
         {
-            "time": dt_util.now().isoformat(timespec="seconds"),
+            "time": dt_util.now().isoformat(),
             "regulation_average_w": 2000,
             "tariff_average_w": 2000,
             "power_sensor_valid": True,
@@ -377,7 +377,7 @@ async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
             "penalty_active": False,
             "overconsumption_wh": 0.0,
             "waiting": None,
-            "commands": ["TurnOnAppliance(appliance_id='a', variant_id=None)"],
+            "commands": [{"command": "TurnOnAppliance", "appliance_id": "a", "variant_id": None}],
         }
     ]
     assert diagnostics["config"]["appliances"][0]["id"] == "a"

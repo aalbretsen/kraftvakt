@@ -1,8 +1,8 @@
-"""The diagnostics turn the state held in memory into JSON."""
+"""The state held in memory is turned into JSON for the diagnostics."""
 
 import pytest
 
-from custom_components.kraftvakt.diagnostics import plain
+from custom_components.kraftvakt.json_values import plain
 
 
 def test_a_value_the_diagnostics_cannot_show_is_an_error() -> None:
