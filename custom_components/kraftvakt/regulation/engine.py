@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from datetime import datetime, timedelta
+from typing import Any
 
 from ..config_model import Charger, ChargerGroup, KraftvaktConfig
 from .charging import (
@@ -127,6 +128,16 @@ class RegulationEngine:
     def charging_priorities(self) -> Mapping[str, list[str]]:
         """Return the current charging priority of each group, highest first."""
         return {group_id: list(charging.priority) for group_id, charging in self._state.charging_groups.items()}
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "running": self._running,
+            "power_limit_w": self._config.general.power_limit_w,
+            "waiting_curve": self._waiting_curve,
+            "appliance_growth": self._appliance_growth,
+            "ampere_step_growth": self._ampere_step_growth,
+            "state": self._state,
+        }
 
     def start(self, now: datetime) -> list[Command]:
         self._running = True

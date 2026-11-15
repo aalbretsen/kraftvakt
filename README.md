@@ -276,8 +276,9 @@ The entity ID keeps the name from when the appliance or EV charger was added.
 
 ## Diagnostics
 
-**Download diagnostics** on the integration's page gives the configuration, the status, the last decisions and failed actions,
+**Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the last decisions and failed actions,
 and the device of each EV charger with its entities and their values, for a bug report.
+What it holds in memory includes the measurements of the power sensor over the last hour.
 
 ## Template and action examples
 

@@ -28,6 +28,12 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through `config_panel_domain` when the panel is registered.
 - The action lock is shared over reloads, so a new runtime's turn-off commands wait until the previous runtime's actions are done.
+- The diagnostics hold everything the backend keeps in memory. The configuration and what is looked up from it are only in its own section,
+  and callbacks and handles are shown as whether they are set.
+  Each object that holds state describes its own with `diagnostics()`, in its own types, and the runtime gives a section per part.
+  `plain` in `json_values.py` turns it into JSON: times in ISO 8601 in HA's time zone, durations in seconds, enums as their values, sets as sorted lists and dataclasses as objects.
+  The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.
+  State added to the backend is added to its object's `diagnostics()`.
 
 ## Modules
 
@@ -49,14 +55,15 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at absolute times and tells its listeners. |
 | `decision_clock.py` | Counts the closed windows to decisions, and when the next decision and the one that ends a waiting time come. Pure Python. |
 | `decision_input.py` | Reads the conditions, the chargers and the user's switches into the input of a decision. |
-| `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, and keeps the last decisions and failed actions for the diagnostics. |
+| `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, keeps the last decisions and failed actions for the diagnostics, and gives the state of each of its parts for them. |
 | `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and which window overrides are armed (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
 | `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, and an entity of an appliance or charger no longer exists. |
-| `diagnostics.py` | The diagnostics: configuration, status, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. |
+| `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. |
+| `json_values.py` | `plain`, which turns the state held in memory into JSON for the diagnostics. |
 
 ## Stored configuration
 

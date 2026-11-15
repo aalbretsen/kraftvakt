@@ -21,11 +21,12 @@ from .config_model import Issue, KraftvaktConfig
 from .config_validation import missing_items
 from .decision_clock import DecisionClock, first_decision_from
 from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
+from .json_values import plain
 from .measurement import WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput, Waiting
+from .regulation.model import Command, DecisionInput, Waiting, command_dict
 from .regulation.penalty import PenaltyState
 from .repairs import (
     async_check_entities,
@@ -199,6 +200,20 @@ class KraftvaktRuntime:
         """Return the current charging priority of each group, highest first."""
         return self._engine.charging_priorities
 
+    def diagnostics(self) -> dict[str, Any]:
+        """Return what the runtime and each of its parts hold in memory, one section per part."""
+        return {
+            "runtime": {
+                "waiting_for_home_assistant_start": self._cancel_start_when_started is not None,
+                "actions_running": self._action_lock.locked(),
+            },
+            "engine": self._engine.diagnostics(),
+            "measurement": self._measurement.diagnostics(),
+            "decision_clock": self._decisions.diagnostics(),
+            "action_runner": self._actions.diagnostics(),
+            "settings": self._settings.diagnostics(),
+        }
+
     @callback
     def async_start(self) -> None:
         """Start measuring, and start the regulation if it can.
@@ -351,18 +366,19 @@ class KraftvaktRuntime:
 
     def _record_decision(self, decision: DecisionInput, commands: list[Command]) -> None:
         penalty = self._engine.penalty
-        waiting = self._engine.waiting
-        record = {
-            "time": dt_util.as_local(decision.now).isoformat(timespec="seconds"),
-            "regulation_average_w": _rounded(decision.regulation_average_w),
-            "tariff_average_w": _rounded(decision.tariff_average_w),
-            "power_sensor_valid": decision.power_sensor_valid,
-            "safe_state": self._engine.safe_state,
-            "penalty_active": penalty.active,
-            "overconsumption_wh": round(penalty.overconsumption_wh, 1),
-            "waiting": None if waiting is None else f"{waiting.key} until {waiting.until.isoformat(timespec='seconds')}",
-            "commands": [str(command) for command in commands],
-        }
+        record = plain(
+            {
+                "time": decision.now,
+                "regulation_average_w": _rounded(decision.regulation_average_w),
+                "tariff_average_w": _rounded(decision.tariff_average_w),
+                "power_sensor_valid": decision.power_sensor_valid,
+                "safe_state": self._engine.safe_state,
+                "penalty_active": penalty.active,
+                "overconsumption_wh": round(penalty.overconsumption_wh, 1),
+                "waiting": self._engine.waiting,
+                "commands": [command_dict(command) for command in commands],
+            }
+        )
         self._recent_decisions.append(record)
         _LOGGER.debug("Decision: %s", record)
 

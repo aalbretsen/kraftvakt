@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import pairwise
-from typing import Final
+from typing import Any, Final
 
 TARIFF_WINDOW: Final = timedelta(hours=1)
 CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN: Final = 2
@@ -72,6 +72,17 @@ class PowerAverager:
     @property
     def window_end(self) -> datetime:
         return self._window_start + self._window_length
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "window_start": self._window_start,
+            "window_length": self._window_length,
+            "next_window_length": self._next_window_length,
+            "latest_measurement_at": self._latest,
+            "sensor_valid": self._sensor_valid,
+            "consecutive_invalid_closes": self._consecutive_invalid_closes,
+            "power_steps": self._steps,
+        }
 
     def change_window_length(self, window_length: timedelta) -> None:
         self._next_window_length = window_length

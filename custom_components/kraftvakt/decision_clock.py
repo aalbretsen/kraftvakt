@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, timedelta
+from typing import Any
 
 from .measurement import WindowAverages
 
@@ -19,6 +20,9 @@ class DecisionClock:
 
     def __init__(self) -> None:
         self._windows: list[WindowAverages] = []
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {"windows_since_decision": self._windows}
 
     def restart(self) -> None:
         self._windows.clear()
