@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from string import Template
-from typing import Any
+from typing import Any, Protocol
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -24,17 +24,7 @@ def charger_profile_fields(hass: HomeAssistant, device_id: str) -> tuple[Charger
     profile = _profile_of(hass, device) if isinstance(device, dr.DeviceEntry) else None
     if profile is None:
         return None, {}
-    entities = DeviceEntities(er.async_entries_for_device(er.async_get(hass), device_id))
-    fields = {
-        "entity_id": entities.find(profile.entity),
-        "activate": entities.action(profile.activate),
-        "deactivate": entities.action(profile.deactivate),
-        "set_current": entities.action(profile.set_current),
-        "car_connected": entities.condition(profile.car_connected),
-        "actively_charging": entities.condition(profile.actively_charging),
-        "quiet_without_car": profile.quiet_without_car,
-    }
-    return profile, {name: value for name, value in fields.items() if value is not None}
+    return profile, DeviceEntities(er.async_entries_for_device(er.async_get(hass), device_id)).fields(profile)
 
 
 def device_integrations(hass: HomeAssistant, device: dr.DeviceEntry) -> set[str]:
@@ -50,11 +40,40 @@ def _is_for(match: DeviceMatch, device: dr.DeviceEntry, integrations: set[str]) 
     return match.integration in integrations and match.manufacturer in (None, device.manufacturer) and match.model_id in (None, device.model_id)
 
 
+class RegisteredEntity(Protocol):
+    """What a profile finds an entity by: the registry entry, or a description of it, as the diagnostics tools read it."""
+
+    @property
+    def entity_id(self) -> str: ...
+
+    @property
+    def domain(self) -> str: ...
+
+    @property
+    def translation_key(self) -> str | None: ...
+
+    @property
+    def original_name(self) -> str | None: ...
+
+
 class DeviceEntities:
     """The enabled entities of a device, and the stored fields made from them."""
 
-    def __init__(self, entries: Sequence[er.RegistryEntry]) -> None:
+    def __init__(self, entries: Sequence[RegisteredEntity]) -> None:
         self._entries = entries
+
+    def fields(self, profile: ChargerProfile) -> dict[str, Any]:
+        """Return the fields of a charger the profile fills, as stored, leaving out those it cannot fill."""
+        fields = {
+            "entity_id": self.find(profile.entity),
+            "activate": self.action(profile.activate),
+            "deactivate": self.action(profile.deactivate),
+            "set_current": self.action(profile.set_current),
+            "car_connected": self.condition(profile.car_connected),
+            "actively_charging": self.condition(profile.actively_charging),
+            "quiet_without_car": profile.quiet_without_car,
+        }
+        return {name: value for name, value in fields.items() if value is not None}
 
     def find(self, wanted: ProfileEntity) -> str | None:
         """Return the entity ID of the only entity that fits, if there is one."""
@@ -77,7 +96,7 @@ class DeviceEntities:
         return None if entity_id is None else Condition(condition.type, entity_id).to_dict()
 
 
-def _fits(entry: er.RegistryEntry, wanted: ProfileEntity) -> bool:
+def _fits(entry: RegisteredEntity, wanted: ProfileEntity) -> bool:
     if entry.domain != wanted.domain:
         return False
     if wanted.translation_key is not None:

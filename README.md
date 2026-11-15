@@ -367,6 +367,7 @@ uv run mypy
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
 The charger profiles are in `charger_profiles/`, one module per profile in `charger_profiles/profiles/`.
 The tests are in `tests/`, with unit tests in `tests/unit/`, and the panel's tests in `frontend/test/`. The simulator is in `simulator/`, see [SIMULATOR.md](SIMULATOR.md).
+The tools that read a file from **Download diagnostics**, for example to draft a charger profile from it, are in `diagnostics/`, see [DIAGNOSTICS.md](DIAGNOSTICS.md).
 
 ### Panel
 
