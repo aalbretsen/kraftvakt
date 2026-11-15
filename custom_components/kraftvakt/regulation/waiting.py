@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Final
+from typing import Any, Final
 
 GROWTH_FROM_REPEAT: Final = 2
 WAITING_STARTS_AT_UTILIZATION: Final = 0.5
@@ -109,3 +109,6 @@ class RepeatedTurnOnCounter:
         if key == self._last_key:
             self._last_key = None
             self._repeats = 0
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {"last_key": self._last_key, "repeats": self._repeats}

@@ -199,6 +199,20 @@ class KraftvaktRuntime:
         """Return the current charging priority of each group, highest first."""
         return self._engine.charging_priorities
 
+    def diagnostics(self) -> dict[str, Any]:
+        """Return what the runtime and each of its parts hold in memory, one section per part."""
+        return {
+            "runtime": {
+                "waiting_for_home_assistant_start": self._cancel_start_when_started is not None,
+                "actions_running": self._action_lock.locked(),
+            },
+            "engine": self._engine.diagnostics(),
+            "measurement": self._measurement.diagnostics(),
+            "decision_clock": self._decisions.diagnostics(),
+            "action_runner": self._actions.diagnostics(),
+            "settings": self._settings.diagnostics(),
+        }
+
     @callback
     def async_start(self) -> None:
         """Start measuring, and start the regulation if it can.

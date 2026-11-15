@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime, tzinfo
+from typing import Any
 
 from .charging import ChargerReading, ChargingState
 from .penalty import PenaltyState
@@ -65,6 +66,11 @@ class SetChargingCurrent:
 
 
 type Command = TurnOnAppliance | TurnOffAppliance | ActivateCharger | DeactivateCharger | SetChargingCurrent
+
+
+def command_dict(command: Command) -> dict[str, Any]:
+    """Return the command with its kind, since some kinds have the same fields."""
+    return {"command": type(command).__name__, **{command_field.name: getattr(command, command_field.name) for command_field in fields(command)}}
 
 
 def without_superseded(commands: Sequence[Command]) -> list[Command]:

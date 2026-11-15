@@ -38,6 +38,7 @@ from .regulation.model import (
     SetChargingCurrent,
     TurnOffAppliance,
     TurnOnAppliance,
+    command_dict,
     without_superseded,
 )
 
@@ -170,6 +171,15 @@ class ActionRunner:
         self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
         self._queued: list[Command] = []
         self._queued_done: asyncio.Future[None] | None = None
+
+    def diagnostics(self) -> dict[str, Any]:
+        """Return the commands that wait for an action that runs, and the actions made into scripts so far."""
+        return {
+            "action_timeout_s": self._timeout_s,
+            "waiting_for_lock": self._queued_done is not None,
+            "queued_commands": [command_dict(command) for command in self._queued],
+            "scripts": [{"entity_id": entity_id, "owner": owner, "kind": kind} for entity_id, owner, kind in self._scripts],
+        }
 
     async def async_execute(self, commands: Sequence[Command]) -> None:
         """Run the actions for the commands, in order, after any earlier ones."""

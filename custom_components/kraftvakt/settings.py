@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import replace
+from typing import Any
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 
@@ -35,6 +36,14 @@ class Settings:
     @property
     def config(self) -> KraftvaktConfig:
         return self._config
+
+    def diagnostics(self) -> dict[str, Any]:
+        """Return the switches and the armed overrides; the configuration is a section of its own."""
+        return {
+            "appliance_switches": self._appliance_switches,
+            "charger_switches": self._charger_switches,
+            "armed_overrides": self._armed_overrides,
+        }
 
     def appliance_switches(self, appliance_id: str) -> ApplianceSwitches:
         return self._appliance_switches.get(appliance_id, ApplianceSwitches())

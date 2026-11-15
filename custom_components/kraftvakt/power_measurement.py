@@ -7,6 +7,7 @@ from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import partial
+from typing import Any
 
 from homeassistant.components.recorder import get_instance, history
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
@@ -80,6 +81,18 @@ class PowerMeasurement:
     def sensor_lost(self) -> bool:
         """Return whether the power sensor was invalid at each of the last window closes."""
         return len(self._recent_windows) == self._recent_windows.maxlen and not any(window.sensor_valid for window in self._recent_windows)
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "started_at": self._started_at,
+            "power_sensor": self._followed_sensor,
+            "following_power_sensor": bool(self._cancel_sensor_listeners),
+            "window_close_scheduled": self._cancel_window_timer is not None,
+            "reading_history": self._history_task is not None and not self._history_task.done(),
+            "latest_averages": self._latest_averages,
+            "recent_windows": self._recent_windows,
+            "averager": self._averager.diagnostics(),
+        }
 
     @callback
     def async_add_window_listener(self, listener: WindowListener) -> CALLBACK_TYPE:
