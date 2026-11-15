@@ -88,7 +88,7 @@ export class KraftvaktPowerOverview extends LitElement {
     `;
     const entityId = stat.entityId;
     return entityId
-      ? html`<button class="stat" @click=${() => showMoreInfo(this, entityId)}>${content}</button>`
+      ? html`<button class="stat" @click=${(event: Event) => showMoreInfo(event, entityId)}>${content}</button>`
       : html`<div class="stat">${content}</div>`;
   }
 

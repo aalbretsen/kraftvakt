@@ -150,7 +150,7 @@ export class KraftvaktPriorityList extends LitElement {
     }
     const open = (event: Event) => {
       event.preventDefault();
-      showMoreInfo(this, entityId);
+      showMoreInfo(event, entityId);
     };
     return html`
       <div
