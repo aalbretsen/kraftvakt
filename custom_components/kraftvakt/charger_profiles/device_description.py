@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .recognition import charger_profile_fields, device_integrations
+from .recognition import charger_profile_fields, device_integration
 
 # Only the attributes that tell what an entity's values are. Others may hold serial numbers, keys or names of people.
 DESCRIBING_ATTRIBUTES: Final = frozenset({"device_class", "unit_of_measurement", "state_class", "options", "min", "max", "step", "mode"})
@@ -22,7 +22,8 @@ def device_description(hass: HomeAssistant, device_id: str) -> dict[str, Any] | 
     device = dr.async_get(hass).async_get(device_id)
     if not isinstance(device, dr.DeviceEntry):
         return None
-    integrations = sorted(device_integrations(hass, device))
+    integration = device_integration(hass, device)
+    integrations = [] if integration is None else [integration]
     profile, _ = charger_profile_fields(hass, device_id)
     return {
         "profile": None if profile is None else profile.name,
