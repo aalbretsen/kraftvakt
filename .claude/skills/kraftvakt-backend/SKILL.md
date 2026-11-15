@@ -33,6 +33,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
   Callbacks and handles are shown as whether they are set.
   Each object that holds state describes its own with `diagnostics()`, in its own types, and the runtime gives a section per part.
   `plain` in `json_values.py` turns it into JSON: times in ISO 8601 in HA's time zone, durations in seconds, enums as their values, sets as sorted lists and dataclasses as objects.
+  A type it does not know is an error, so the black box tests of the diagnostics find it before a release.
   The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.
   State added to the backend is added to its object's `diagnostics()`.
 
