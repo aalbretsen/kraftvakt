@@ -224,6 +224,7 @@ with a link to the page where it is fixed. While the regulation runs, it shows t
 the safe state and the penalty when they occur, and the priority list as it stands: each appliance at the place of its current variant,
 and each group with its EV chargers in the current charging priority and their charging current. Each row has a label telling how it stands; hover over it for the explanation.
 A dashed line goes under the last entry that is on, with the free power, and a bar shows the time left until the next appliance, or one more ampere, is turned on.
+Press the consumption now, an average or the power limit to open its entity in Home Assistant, with its history.
 
 ## Entities
 

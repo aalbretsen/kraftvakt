@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chargerName, entityName, measuredPowerW, ownEntities } from "../src/entities";
+import { chargerName, entityName, measuredPowerW, ownEntities, ownEntity } from "../src/entities";
 import type { HomeAssistant } from "../src/types";
 import { charger, hass, state } from "./builders";
 
@@ -46,5 +46,16 @@ describe("Kraftvakt's own entities", () => {
       "sensor.house_power": { entity_id: "sensor.house_power", platform: "han" },
     };
     expect(ownEntities({ ...hass(), entities } as HomeAssistant)).toEqual(["sensor.kraftvakt_power_free"]);
+  });
+
+  it("are found by translation key, also when the user has changed the entity ID", () => {
+    const entities = {
+      "sensor.my_average": { entity_id: "sensor.my_average", platform: "kraftvakt", translation_key: "power_tariff_average" },
+      "sensor.other_average": { entity_id: "sensor.other_average", platform: "other", translation_key: "power_regulation_average" },
+    };
+    const home = { ...hass(), entities } as HomeAssistant;
+    expect(ownEntity(home, "power_tariff_average")).toBe("sensor.my_average");
+    expect(ownEntity(home, "power_regulation_average")).toBeNull();
+    expect(ownEntity({ ...hass(), entities: undefined } as unknown as HomeAssistant, "power_limit")).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import type { StatusSnapshot } from "../api";
+import { ownEntity } from "../entities";
 import { formatNumber, formatPower } from "../format";
 import type { Localize } from "../localize";
 import type { HomeAssistant } from "../types";
@@ -29,40 +30,69 @@ export class KraftvaktPowerOverview extends LitElement {
   /** The power sensor's state now, read in the panel so it updates live. */
   @property({ attribute: false }) powerNowW: number | null = null;
 
+  @property({ attribute: false }) powerSensor: string | null = null;
+
   protected render() {
     const status = this.status;
     const language = this.hass.language;
     const overLimit = (value: number | null) => value !== null && value > status.power_limit_w;
     return html`
       <div class="stats">
-        ${this.renderStat("power-now", "status.power_now", formatPower(language, this.powerNowW), this.localize("status.momentary"))}
-        ${this.renderStat(
-          "regulation-average",
-          "status.regulation_average",
-          formatPower(language, status.regulation_average_w),
-          this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
-        )}
-        ${this.renderStat(
-          "tariff-average",
-          "status.tariff_average",
-          formatPower(language, status.tariff_average_w),
-          this.localize("status.average_over_hour"),
-          overLimit(status.tariff_average_w),
-        )}
-        ${this.renderStat("power-limit", "status.power_limit", formatPower(language, status.power_limit_w))}
+        ${this.renderStat({
+          swatch: "power-now",
+          label: "status.power_now",
+          value: formatPower(language, this.powerNowW),
+          period: this.localize("status.momentary"),
+          entityId: this.powerSensor,
+        })}
+        ${this.renderStat({
+          swatch: "regulation-average",
+          label: "status.regulation_average",
+          value: formatPower(language, status.regulation_average_w),
+          period: this.localize("status.average_over_seconds", { seconds: status.regulation_window_s }),
+          entityId: ownEntity(this.hass, "power_regulation_average"),
+        })}
+        ${this.renderStat({
+          swatch: "tariff-average",
+          label: "status.tariff_average",
+          value: formatPower(language, status.tariff_average_w),
+          period: this.localize("status.average_over_hour"),
+          entityId: ownEntity(this.hass, "power_tariff_average"),
+          alarm: overLimit(status.tariff_average_w),
+        })}
+        ${this.renderStat({
+          swatch: "power-limit",
+          label: "status.power_limit",
+          value: formatPower(language, status.power_limit_w),
+          entityId: ownEntity(this.hass, "power_limit"),
+        })}
       </div>
       ${this.renderMeter()}
     `;
   }
 
-  private renderStat(swatch: string, label: Parameters<Localize>[0], value: string, period?: string, alarm = false) {
-    return html`
-      <div class="stat">
-        <div class="stat-label"><span class="swatch ${swatch}"></span>${this.localize(label)}</div>
-        <div class="stat-value ${alarm ? "alarm" : ""}">${value} <small>kW</small></div>
-        ${period ? html`<div class="stat-period">${period}</div>` : nothing}
-      </div>
+  /** A tile with an entity opens Home Assistant's more-info dialog for it, with its history. */
+  private renderStat(stat: {
+    swatch: string;
+    label: Parameters<Localize>[0];
+    value: string;
+    period?: string;
+    entityId: string | null;
+    alarm?: boolean;
+  }) {
+    const content = html`
+      <div class="stat-label"><span class="swatch ${stat.swatch}"></span>${this.localize(stat.label)}</div>
+      <div class="stat-value ${stat.alarm ? "alarm" : ""}">${stat.value} <small>kW</small></div>
+      ${stat.period ? html`<div class="stat-period">${stat.period}</div>` : nothing}
     `;
+    const entityId = stat.entityId;
+    return entityId
+      ? html`<button class="stat" @click=${() => this.showMoreInfo(entityId)}>${content}</button>`
+      : html`<div class="stat">${content}</div>`;
+  }
+
+  private showMoreInfo(entityId: string) {
+    this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true }));
   }
 
   /**
@@ -129,6 +159,21 @@ export class KraftvaktPowerOverview extends LitElement {
       padding: 10px 12px;
       border-radius: var(--ha-border-radius-lg, 12px);
       background: var(--secondary-background-color);
+    }
+    button.stat {
+      border: none;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      text-align: start;
+      cursor: pointer;
+    }
+    button.stat:hover {
+      background: color-mix(in srgb, var(--secondary-background-color), var(--primary-text-color) 6%);
+    }
+    button.stat:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
     }
     .stat-label {
       display: flex;

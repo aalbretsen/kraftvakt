@@ -29,6 +29,14 @@ export function ownEntities(hass: HomeAssistant): string[] {
     .map((entry) => entry.entity_id);
 }
 
+/** Return the entity ID of Kraftvakt's own entity with this translation key, so an entity ID the user has changed is found. */
+export function ownEntity(hass: HomeAssistant, translationKey: string): string | null {
+  return (
+    Object.values(hass.entities ?? {}).find((entry) => entry.platform === "kraftvakt" && entry.translation_key === translationKey)
+      ?.entity_id ?? null
+  );
+}
+
 /** Return the power a power sensor measures now in W, read as the backend reads it. */
 export function measuredPowerW(hass: HomeAssistant, entityId: string): number | null {
   const entity = hass.states[entityId];

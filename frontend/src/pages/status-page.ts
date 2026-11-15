@@ -90,7 +90,8 @@ export class KraftvaktStatusPage extends LitElement {
   }
 
   private renderRunning(status: StatusSnapshot) {
-    const powerNow = measuredPowerW(this.hass, this.config?.config.general.power_sensor ?? "");
+    const powerSensor = this.config?.config.general.power_sensor ?? null;
+    const powerNow = measuredPowerW(this.hass, powerSensor ?? "");
     return html`
       ${status.safe_state ? this.renderSafeState(powerNow !== null) : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <kraftvakt-power-overview
@@ -99,6 +100,7 @@ export class KraftvaktStatusPage extends LitElement {
         .narrow=${this.narrow}
         .status=${status}
         .powerNowW=${powerNow}
+        .powerSensor=${powerSensor}
       ></kraftvakt-power-overview>
     `;
   }

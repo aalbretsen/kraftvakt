@@ -137,6 +137,8 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.
   Consumption now is the power sensor's state read in the panel, so it updates live. Under each average is the time it covers.
+  A tile is a button that fires `hass-more-info` for its entity: the power sensor, or Kraftvakt's own entity found by platform and translation key,
+  so an entity ID the user has changed is still found. A tile without an entity, such as one of Kraftvakt's that is not in the registry, is not a button.
 - The meter is a bar for consumption now. Each other value is a triangle above the bar pointing down at it, in its own colour, and each tile has the same triangle as swatch.
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
 - Appliances and chargers share one full-width priority list card. Each charger group has a row with its name and its own rank at its position,
