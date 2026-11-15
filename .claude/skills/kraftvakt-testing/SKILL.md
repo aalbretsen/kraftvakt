@@ -82,6 +82,8 @@ Read those two files before writing an engine test, and extend them rather than 
 
 ## Manual test against a local Home Assistant
 
+How the simulated devices behave, and which of their entities Kraftvakt uses, is in the `kraftvakt-simulator` skill and `SIMULATOR.md`.
+
 1. Make a config folder outside the repository (the scratchpad) with a real `custom_components/` folder holding two symlinks, one to Kraftvakt and one to the simulator.
    Never print or store a password in the repository.
 2. `configuration.yaml`: `trusted_networks` for `127.0.0.1/32` and `::1/128` with `allow_bypass_login` (block style; flow style does not work), plus `type: homeassistant`;
