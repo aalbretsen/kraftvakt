@@ -11,7 +11,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 
 - Black box tests with the HA test harness are the main tool. They find more faults than unit tests.
 - Complex logic (`regulation/`, `measurement.py`, the configuration) is also proven by itself with unit tests. Error handling that is hard to reach from the outside is unit tested.
-- Aim for coverage, not every permutation. Every line of Kraftvakt and the simulator should be covered, except defensive code that cannot be reached.
+- Aim for coverage, not every permutation. Every line of Kraftvakt, the simulator and the diagnostics tools should be covered, except defensive code that cannot be reached.
   Check the coverage report for new uncovered lines before committing.
 - The panel's logic is unit tested with vitest, one test file per module. Keep logic in modules outside the Lit elements, so it runs without a browser and can be tested.
   Code that needs a browser engine, such as the elements, pages, dialogs and the DOM, is not tested automatically: test it by hand in a browser against a local Home Assistant
@@ -29,7 +29,8 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 ## Checks before every commit
 
 ```bash
-.venv/bin/python -m pytest -q --cov=custom_components/kraftvakt --cov=simulator/custom_components/kraftvakt_simulator --cov-report=term-missing --cov-fail-under=100
+.venv/bin/python -m pytest -q --cov=custom_components/kraftvakt --cov=simulator/custom_components/kraftvakt_simulator --cov=diagnostics \
+  --cov-report=term-missing --cov-fail-under=100
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 .venv/bin/mypy
@@ -56,6 +57,7 @@ A new Home Assistant version also needs the panel tested by hand, see the `kraft
 - `tests/`: black box tests, one file per area. `tests/config_examples.py` has a full configuration that uses every feature.
 - `tests/simulator/` and `tests/unit/simulator/`: the simulator, see the `kraftvakt-simulator` skill.
   `pyproject.toml` puts `simulator` on pytest's `pythonpath`, so both integrations load in every test.
+- `tests/diagnostics/` and `tests/unit/diagnostics/`: the diagnostics tools, tested on a diagnostics file downloaded in the test harness, see the `kraftvakt-diagnostics` skill.
 
 ## Scenario language
 
