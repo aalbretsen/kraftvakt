@@ -21,3 +21,8 @@ export function navigateToPage(page: Page, options: { replace?: boolean } = {}):
   }
   window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: options.replace ?? false } }));
 }
+
+/** Open Home Assistant's more-info dialog for an entity, with its history and settings. */
+export function showMoreInfo(element: EventTarget, entityId: string): void {
+  element.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true }));
+}

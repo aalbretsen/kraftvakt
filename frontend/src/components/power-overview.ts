@@ -5,6 +5,7 @@ import type { StatusSnapshot } from "../api";
 import { ownEntity } from "../entities";
 import { formatNumber, formatPower } from "../format";
 import type { Localize } from "../localize";
+import { showMoreInfo } from "../navigation";
 import type { HomeAssistant } from "../types";
 
 /** The kW steps the meter's scale may use. */
@@ -87,12 +88,8 @@ export class KraftvaktPowerOverview extends LitElement {
     `;
     const entityId = stat.entityId;
     return entityId
-      ? html`<button class="stat" @click=${() => this.showMoreInfo(entityId)}>${content}</button>`
+      ? html`<button class="stat" @click=${() => showMoreInfo(this, entityId)}>${content}</button>`
       : html`<div class="stat">${content}</div>`;
-  }
-
-  private showMoreInfo(entityId: string) {
-    this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true }));
   }
 
   /**

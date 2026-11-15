@@ -22,6 +22,11 @@ export function chargerName(hass: HomeAssistant, names: Record<string, string>, 
   return charger.entity_id ? entityName(hass, names, charger.entity_id) : null;
 }
 
+/** Return the entity ID while Home Assistant has the entity, and null for one that is not set or no longer exists. */
+export function existingEntity(hass: HomeAssistant, entityId: string | null | undefined): string | null {
+  return entityId && hass.states[entityId] ? entityId : null;
+}
+
 /** Return Kraftvakt's own entities, left out where a sensor from another integration is chosen. */
 export function ownEntities(hass: HomeAssistant): string[] {
   return Object.values(hass.entities ?? {})

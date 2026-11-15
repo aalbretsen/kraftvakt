@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chargerName, entityName, measuredPowerW, ownEntities, ownEntity } from "../src/entities";
+import { chargerName, entityName, existingEntity, measuredPowerW, ownEntities, ownEntity } from "../src/entities";
 import type { HomeAssistant } from "../src/types";
 import { charger, hass, state } from "./builders";
 
@@ -57,5 +57,17 @@ describe("Kraftvakt's own entities", () => {
     expect(ownEntity(home, "power_tariff_average")).toBe("sensor.my_average");
     expect(ownEntity(home, "power_regulation_average")).toBeNull();
     expect(ownEntity({ ...hass(), entities: undefined } as unknown as HomeAssistant, "power_limit")).toBeNull();
+  });
+});
+
+describe("an existing entity", () => {
+  const home = hass({ "switch.heater": state("unavailable") });
+
+  it("is the entity while Home Assistant has it, also when it is unavailable", () => {
+    expect(existingEntity(home, "switch.heater")).toBe("switch.heater");
+  });
+
+  it.each([["switch.gone"], [null], [undefined]])("is none for %s", (entityId) => {
+    expect(existingEntity(home, entityId)).toBeNull();
   });
 });

@@ -236,6 +236,8 @@ the safe state and the penalty when they occur, and the priority list as it stan
 and each group with its EV chargers in the current charging priority and their charging current. Each row has a label telling how it stands; hover over it for the explanation.
 A dashed line goes under the last entry that is on, with the free power, and a bar shows the time left until the next appliance, or one more ampere, is turned on.
 Press the consumption now, an average or the power limit to open its entity in Home Assistant, with its history.
+Press an appliance or an EV charger to open its entity: for an EV charger, the entity Kraftvakt activates.
+Press the name of the device in that dialog to get to the device.
 
 ## Entities
 

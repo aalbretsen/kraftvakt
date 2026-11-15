@@ -28,8 +28,10 @@ import {
 } from "../api";
 import "./countdown";
 import { allChargers } from "../draft";
+import { existingEntity } from "../entities";
 import { formatClockTime, formatPercent, formatPower } from "../format";
 import type { Localize, TranslationKey } from "../localize";
+import { showMoreInfo } from "../navigation";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
 import { WidthQuery } from "../width-query";
@@ -141,9 +143,33 @@ export class KraftvaktPriorityList extends LitElement {
     `;
   }
 
-  private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
+  /** A row of an appliance or EV charger opens Home Assistant's more-info dialog for its entity, while the entity exists. */
+  private renderRow(classes: string, entityId: string | null, content: TemplateResult) {
+    if (!entityId) {
+      return html`<div class="row ${classes}">${content}</div>`;
+    }
+    const open = (event: Event) => {
+      event.preventDefault();
+      showMoreInfo(this, entityId);
+    };
     return html`
-      <div class="row appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}">
+      <div
+        class="row ${classes} clickable"
+        role="button"
+        tabindex="0"
+        @click=${open}
+        @keydown=${(event: KeyboardEvent) => (event.key === "Enter" || event.key === " " ? open(event) : undefined)}
+      >
+        ${content}
+      </div>
+    `;
+  }
+
+  private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
+    return this.renderRow(
+      `appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}`,
+      existingEntity(this.hass, this.applianceEntity(appliance)),
+      html`
         ${this.renderRank(rank)}
         <div class="row-title">
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
@@ -153,8 +179,8 @@ export class KraftvaktPriorityList extends LitElement {
         </div>
         ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
         ${this.renderApplianceChip(appliance)}
-      </div>
-    `;
+      `,
+    );
   }
 
   /** The rank column, left out on a phone. */
@@ -185,7 +211,7 @@ export class KraftvaktPriorityList extends LitElement {
    * a default icon.
    */
   private renderApplianceIcon(appliance: ApplianceStatus) {
-    const entityId = this.config?.config.appliances.find((item) => item.id === appliance.id)?.entity_id;
+    const entityId = this.applianceEntity(appliance);
     const stateObj = entityId ? this.hass.states[entityId] : undefined;
     // The slot is one icon wide. The entity's icon pushes the default icon out of it; an icon
     // Home Assistant cannot load takes no width and leaves the default icon in view.
@@ -226,8 +252,10 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   private renderChargerRow(charger: ChargerStatus) {
-    return html`
-      <div class="row charger ${charger.activated ? "" : "off"}">
+    return this.renderRow(
+      `charger ${charger.activated ? "" : "off"}`,
+      existingEntity(this.hass, this.chargerConfig(charger)?.entity_id),
+      html`
         ${this.renderRank(null)}
         <div class="row-title">
           <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
@@ -236,8 +264,8 @@ export class KraftvaktPriorityList extends LitElement {
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
-      </div>
-    `;
+      `,
+    );
   }
 
   /**
@@ -343,6 +371,10 @@ export class KraftvaktPriorityList extends LitElement {
     `;
   }
 
+  private applianceEntity(appliance: ApplianceStatus) {
+    return this.config?.config.appliances.find((item) => item.id === appliance.id)?.entity_id;
+  }
+
   private chargerConfig(charger: ChargerStatus) {
     return this.config && allChargers(this.config.config).find((item) => item.id === charger.id);
   }
@@ -379,6 +411,16 @@ export class KraftvaktPriorityList extends LitElement {
       .row.group,
       .row.charger {
         background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
+      }
+      .row.clickable {
+        cursor: pointer;
+      }
+      .row.clickable:hover {
+        background-image: linear-gradient(color-mix(in srgb, var(--primary-text-color) 6%, transparent) 0 0);
+      }
+      .row.clickable:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: -2px;
       }
       .row.charger {
         min-height: 44px;

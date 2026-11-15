@@ -156,6 +156,8 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
   - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed.
     A charger shows its state from the status, with its charging window as the word when it is outside it.
+  - The row of an appliance or EV charger fires `hass-more-info` for its entity, the entity Kraftvakt turns on and off or activates,
+    since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
   - A resting charger is shown as bypassed, without when it is tried again.
   - A starting charger is shown as starting, and its sentence tells when its time to start ends and that its power reserve is kept free until then,
     since nothing else on the page tells why nothing below it is turned on while power looks free.
