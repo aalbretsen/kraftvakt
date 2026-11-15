@@ -115,7 +115,7 @@ a variant field is addressed through the variant's id, also the variant's own ac
   so adding a profile changes no shared code. Without a profile nothing is filled in.
 - The backend recognises and applies a profile, and the panel only applies the fields it gets back.
   Why: the backend sees the integration, manufacturer, model, translation keys and the integration's own entity names, and the panel keeps no knowledge of chargers.
-- A device has a profile when one of its config entries is of the profile's integration, and its manufacturer and model ID match where the profile names them.
+- A device has a profile when its config entry is of the profile's integration, and its manufacturer and model ID match where the profile names them.
   The first profile in `PROFILES` that fits is used, so profiles must not overlap.
 - An entity is found by what does not change with the language: its translation key, the name the integration gives it (for integrations that do not translate),
   or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,

@@ -27,17 +27,18 @@ def charger_profile_fields(hass: HomeAssistant, device_id: str) -> tuple[Charger
     return profile, DeviceEntities(er.async_entries_for_device(er.async_get(hass), device_id)).fields(profile)
 
 
-def device_integrations(hass: HomeAssistant, device: dr.DeviceEntry) -> set[str]:
-    return {entry.domain for entry_id in device.config_entries if (entry := hass.config_entries.async_get_entry(entry_id)) is not None}
+def device_integration(hass: HomeAssistant, device: dr.DeviceEntry) -> str | None:
+    entry = hass.config_entries.async_get_entry(device.config_entry_id)
+    return None if entry is None else entry.domain
 
 
 def _profile_of(hass: HomeAssistant, device: dr.DeviceEntry) -> ChargerProfile | None:
-    integrations = device_integrations(hass, device)
-    return next((profile for profile in PROFILES if _is_for(profile.device, device, integrations)), None)
+    integration = device_integration(hass, device)
+    return next((profile for profile in PROFILES if _is_for(profile.device, device, integration)), None)
 
 
-def _is_for(match: DeviceMatch, device: dr.DeviceEntry, integrations: set[str]) -> bool:
-    return match.integration in integrations and match.manufacturer in (None, device.manufacturer) and match.model_id in (None, device.model_id)
+def _is_for(match: DeviceMatch, device: dr.DeviceEntry, integration: str | None) -> bool:
+    return match.integration == integration and match.manufacturer in (None, device.manufacturer) and match.model_id in (None, device.model_id)
 
 
 class RegisteredEntity(Protocol):
