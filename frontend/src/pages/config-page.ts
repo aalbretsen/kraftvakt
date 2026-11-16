@@ -1,5 +1,5 @@
 import { mdiPlus } from "@mdi/js";
-import { LitElement, css, html, type CSSResultGroup } from "lit";
+import { LitElement, css, html, nothing, type CSSResultGroup } from "lit";
 import { property } from "lit/decorators.js";
 
 import type { Capabilities, Issue, KraftvaktConfig } from "../api";
@@ -8,12 +8,11 @@ import type { ItemAdded, ListRow } from "../components/sortable-list";
 import { allChargers, fireDraftChanged } from "../draft";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize } from "../localize";
+import { renderDescription, sectionStyles } from "../section-styles";
 import type { HomeAssistant } from "../types";
 
-/** A card with a sortable list of items and a button that adds one. The texts are translated. */
-export interface ListCard {
-  title: string;
-  sub: string;
+/** A sortable list of items with a button that adds one. The texts are translated. */
+export interface ItemList {
   add: string;
   empty: string;
   rows: ListRow[];
@@ -25,6 +24,20 @@ export interface ListCard {
   /** Rows can be dragged between the lists of the same group, which then stay in view while empty. */
   group?: string;
   onAdded?: (event: CustomEvent<ItemAdded>) => void;
+}
+
+/**
+ * A card on a configuration page: a header with the title and an optional
+ * control at the right end, the description, the content, a list from edge
+ * to edge and a footer.
+ */
+export interface Card {
+  title: string;
+  control?: unknown;
+  description?: string;
+  content?: unknown;
+  list?: unknown;
+  footer?: unknown;
 }
 
 /**
@@ -73,83 +86,117 @@ export class ConfigPage extends LitElement {
       .map((item) => item.entity_id as string);
   }
 
-  /**
-   * A sortable list of items in a card. `content` goes between the header and
-   * the list, and `footer` at the bottom of the card.
-   */
-  protected renderListCard(list: ListCard, footer: unknown = "", content: unknown = "") {
+  protected renderCard(card: Card) {
+    const hasContent = card.description || (card.content !== undefined && card.content !== nothing);
     return html`
-      <ha-card class=${list.locked ? "locked" : ""}>
+      <ha-card>
         <div class="card-header">
-          <div class="heading">
-            <span>${list.title}</span>
-            <span class="sub">${list.sub}</span>
-          </div>
-          <ha-button .disabled=${list.locked} @click=${list.onAdd}>
-            <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-            ${list.add}
-          </ha-button>
+          <h2 class="card-title">${card.title}</h2>
+          ${card.control ?? nothing}
         </div>
-        ${content}
-        ${list.rows.length === 0 && !list.group
-          ? html`<div class="empty">${list.empty}</div>`
-          : html`
-              <kraftvakt-sortable-list
-                .localize=${this.localize}
-                .rows=${list.rows}
-                .locked=${list.locked}
-                .group=${list.group}
-                .emptyText=${list.empty}
-                @item-moved=${list.onMoved}
-                @item-added=${list.onAdded}
-                @open-row=${list.onOpen}
-              ></kraftvakt-sortable-list>
-            `}
-        ${footer}
+        ${hasContent
+          ? html`<div class="card-content">${renderDescription(card.description)} ${card.content ?? nothing}</div>`
+          : nothing}
+        ${card.list ?? nothing} ${card.footer ?? nothing}
       </ha-card>
     `;
   }
 
-  static styles: CSSResultGroup = css`
-    :host {
-      display: grid;
-      gap: 16px;
-    }
-    :host([narrow]) {
-      gap: 8px;
-    }
-    /* HA's number field keeps its full text colour when disabled. */
-    :host([locked]) ha-form {
-      opacity: 0.6;
-    }
-    .card-content {
-      padding: 0 16px 16px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 12px 16px;
-    }
-    .heading {
-      flex: 1;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 4px 12px;
-      font-size: var(--ha-font-size-xl, 20px);
-    }
-    .sub {
-      font-size: var(--ha-font-size-m, 14px);
-      color: var(--secondary-text-color);
-    }
-    .empty {
-      padding: 0 16px 16px;
-      color: var(--secondary-text-color);
-    }
-    .locked kraftvakt-sortable-list {
-      opacity: 0.6;
-    }
-  `;
+  /** A footer under a divider at the bottom of a card, with a note to the left of its control. */
+  protected renderCardFooter(note: string, control: unknown) {
+    return html`<div class="card-footer"><span class="note">${note}</span>${control}</div>`;
+  }
+
+  /** The row under the last card, with a note to the left of its control. */
+  protected renderPageFooter(note: string, control: unknown) {
+    return html`<div class="page-footer"><span class="note">${note}</span>${control}</div>`;
+  }
+
+  protected renderAddButton(list: ItemList) {
+    return html`
+      <ha-button .disabled=${list.locked} @click=${list.onAdd}>
+        <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+        ${list.add}
+      </ha-button>
+    `;
+  }
+
+  protected renderItemList(list: ItemList) {
+    return list.rows.length === 0 && !list.group
+      ? html`<div class="empty">${list.empty}</div>`
+      : html`
+          <kraftvakt-sortable-list
+            class=${list.locked ? "locked" : ""}
+            .localize=${this.localize}
+            .rows=${list.rows}
+            .locked=${list.locked}
+            .group=${list.group}
+            .emptyText=${list.empty}
+            @item-moved=${list.onMoved}
+            @item-added=${list.onAdded}
+            @open-row=${list.onOpen}
+          ></kraftvakt-sortable-list>
+        `;
+  }
+
+  static styles: CSSResultGroup = [
+    sectionStyles,
+    css`
+      :host {
+        display: grid;
+        gap: 16px;
+      }
+      :host([narrow]) {
+        gap: 8px;
+      }
+      /* HA's number field keeps its full text colour when disabled. */
+      :host([locked]) ha-form {
+        opacity: 0.6;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        padding: 12px 16px 16px;
+      }
+      .card-title {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: var(--ha-card-header-font-size, var(--ha-font-size-2xl, 24px));
+        font-weight: var(--ha-font-weight-normal, 400);
+        line-height: var(--ha-line-height-expanded, 1.5);
+        letter-spacing: -0.012em;
+        overflow-wrap: anywhere;
+      }
+      .card-content {
+        display: grid;
+        gap: 16px;
+        padding: 0 16px 16px;
+      }
+      .card-footer {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 8px 8px 8px 16px;
+        border-top: 1px solid var(--divider-color);
+      }
+      .page-footer {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-inline-start: 16px;
+      }
+      .empty {
+        padding: 0 16px 16px;
+        color: var(--secondary-text-color);
+      }
+      kraftvakt-sortable-list.locked {
+        opacity: 0.6;
+      }
+    `,
+  ];
 }

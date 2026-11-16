@@ -1,4 +1,4 @@
-import { css, html, nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
@@ -45,24 +45,19 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected renderFields(issues: Issue[]) {
     return html`
-      ${this.renderDevice(issues)} ${this.renderEntity(issues)} ${this.renderSection("charger.allowed_charging")}
-      ${this.renderAction("activate", issues, ENTITY_VARIABLES)}
-      ${this.renderAction("deactivate", issues, ENTITY_VARIABLES)}
-      <div class="info">${this.localize("charger.minimum_first")}</div>
-      ${this.renderSection("charger.charging_current")}
-      ${this.renderForm(
-        [this.numberField("min_current_a", "A", true), this.numberField("max_current_a", "A", true)],
-        issues,
-        (value) =>
-          this.changeDraft({
-            min_current_a: value.min_current_a as number,
-            max_current_a: value.max_current_a as number,
-          }),
-      )}
-      ${this.renderAction("set_current", issues, ["current", "min_current", "max_current", ...ENTITY_VARIABLES], true)}
+      ${this.renderDevice(issues)} ${this.renderEntity(issues)}
       ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
         this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
       )}
+      ${this.renderGroup({
+        title: this.localize("charger.allowed_charging"),
+        description: this.localize("charger.allowed_charging_info"),
+        content: html`
+          ${this.renderAction("activate", issues, ENTITY_VARIABLES)}
+          ${this.renderAction("deactivate", issues, ENTITY_VARIABLES)}
+        `,
+      })}
+      ${this.renderChargingCurrent(issues)}
       ${this.renderConditionGroup(
         "car_connected",
         carConnectedRequired(this.draft, this.oneAtATime)
@@ -73,6 +68,29 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)}
     `;
+  }
+
+  private renderChargingCurrent(issues: Issue[]) {
+    const currents = [
+      {
+        type: "grid",
+        name: "",
+        schema: [this.numberField("min_current_a", "A", true), this.numberField("max_current_a", "A", true)],
+      },
+    ];
+    return this.renderGroup({
+      title: this.localize("charger.charging_current"),
+      description: this.localize("charger.charging_current_info"),
+      content: html`
+        ${this.renderForm(currents, issues, (value) =>
+          this.changeDraft({
+            min_current_a: value.min_current_a as number,
+            max_current_a: value.max_current_a as number,
+          }),
+        )}
+        ${this.renderAction("set_current", issues, ["current", "min_current", "max_current", ...ENTITY_VARIABLES], true)}
+      `,
+    });
   }
 
   private renderDevice(issues: Issue[]) {
@@ -108,10 +126,10 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   private renderConditionGroup(field: "car_connected" | "actively_charging", title: TranslationKey, issues: Issue[]) {
     const issue = issues.find((item) => item.field === field);
     const activelyCharging = field === "actively_charging";
-    return html`
-      <div class="group">
-        <div class="group-title">${this.localize(title)}</div>
-        <div class="info">${this.helper(field)}</div>
+    return this.renderGroup({
+      title: this.localize(title),
+      description: this.helper(field),
+      content: html`
         <kraftvakt-condition-field
           .hass=${this.hass}
           .localize=${this.localize}
@@ -125,8 +143,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
             this.changeDraft({ [field]: event.detail.value })}
         ></kraftvakt-condition-field>
-      </div>
-    `;
+      `,
+    });
   }
 
   /**
@@ -135,97 +153,75 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
    */
   private renderCloudControl(issues: Issue[]) {
     const showDelay = this.draft.cloud_controlled || issues.some((issue) => issue.field === "start_delay_s");
-    const schema = [
-      { name: "cloud_controlled", selector: { boolean: {} } },
-      ...(showDelay ? [this.numberField("start_delay_s", "s", true)] : []),
-    ];
-    return html`
-      <div class="group">
-        ${this.renderForm(schema, issues, (value) =>
-          this.changeDraft({
-            cloud_controlled: !!value.cloud_controlled,
-            start_delay_s: value.start_delay_s as number,
-          }),
-        )}
-      </div>
-    `;
+    return this.renderGroup({
+      title: this.label("cloud_controlled"),
+      description: this.helper("cloud_controlled"),
+      toggle: { checked: this.draft.cloud_controlled, changed: (checked) => this.changeDraft({ cloud_controlled: checked }) },
+      content: showDelay
+        ? this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) =>
+            this.changeDraft({ start_delay_s: value.start_delay_s as number }),
+          )
+        : nothing,
+    });
   }
 
   private renderChargingWindow(issues: Issue[]) {
     const window = this.draft.charging_window;
+    const issue = issues.find((item) => item.field === "charging_window");
+    return this.renderGroup({
+      title: this.label("charging_window"),
+      description: this.helper("charging_window"),
+      toggle: {
+        checked: window !== null,
+        changed: (checked) => this.changeDraft({ charging_window: checked ? { start: "", end: "" } : null }),
+      },
+      content: window ? this.renderWindowFields(issues) : nothing,
+      error: issue ? this.describe(issue) : undefined,
+    });
+  }
+
+  private renderWindowFields(issues: Issue[]) {
+    const window = this.draft.charging_window;
     const schema = [
-      { name: "charging_window", selector: { boolean: {} } },
-      ...(window
-        ? [
-            {
-              type: "grid",
-              name: "",
-              schema: [
-                { name: "start", required: true, selector: { time: { no_second: true } } },
-                { name: "end", required: true, selector: { time: { no_second: true } } },
-              ],
-            },
-            { name: "finish_after_window", selector: { boolean: {} } },
-            {
-              name: "override_ends",
-              required: true,
-              selector: {
-                select: {
-                  mode: "dropdown",
-                  options: OVERRIDE_ENDS.map((value) => ({
-                    value,
-                    label: this.localize(`charger.override_ends.${value}`),
-                  })),
-                },
-              },
-            },
-          ]
-        : []),
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "start", required: true, selector: { time: { no_second: true } } },
+          { name: "end", required: true, selector: { time: { no_second: true } } },
+        ],
+      },
+      { name: "finish_after_window", selector: { boolean: {} } },
+      {
+        name: "override_ends",
+        required: true,
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: OVERRIDE_ENDS.map((value) => ({ value, label: this.localize(`charger.override_ends.${value}`) })),
+          },
+        },
+      },
     ];
     const data = {
-      charging_window: window !== null,
       start: window?.start ?? "",
       end: window?.end ?? "",
       finish_after_window: this.draft.finish_after_window,
       override_ends: this.draft.override_ends,
     };
-    return html`
-      <div class="group">
-        ${this.renderForm(
-          schema,
-          issues,
-          (value) =>
-            this.changeDraft({
-              charging_window: value.charging_window
-                ? { start: wholeMinutes(value.start), end: wholeMinutes(value.end) }
-                : null,
-              finish_after_window: !!value.finish_after_window,
-              override_ends: (value.override_ends as OverrideEnd | undefined) ?? this.draft.override_ends,
-            }),
-          data,
-        )}
-      </div>
-    `;
+    return this.renderForm(
+      schema,
+      issues,
+      (value) =>
+        this.changeDraft({
+          charging_window: { start: wholeMinutes(value.start), end: wholeMinutes(value.end) },
+          finish_after_window: !!value.finish_after_window,
+          override_ends: (value.override_ends as OverrideEnd | undefined) ?? this.draft.override_ends,
+        }),
+      data,
+    );
   }
 
-  static styles = [
-    ItemDialog.styles,
-    css`
-      .group {
-        display: grid;
-        gap: 8px;
-        padding: 12px;
-        border: 1px solid var(--divider-color);
-        border-radius: var(--ha-border-radius-md, 8px);
-      }
-      .group-title {
-        font-weight: 500;
-      }
-      .group .info {
-        margin-top: 0;
-      }
-    `,
-  ];
 }
 
 /** The time selector may give seconds, but the charging window uses whole minutes. */

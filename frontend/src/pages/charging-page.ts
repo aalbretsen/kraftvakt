@@ -10,7 +10,8 @@ import { allChargers, moveItem, newId } from "../draft";
 import { chargerName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
-import { ConfigPage } from "./config-page";
+import { renderDescription, renderSectionHeader } from "../section-styles";
+import { ConfigPage, type ItemList } from "./config-page";
 
 const CHARGER_FIELDS = [
   "device_id",
@@ -42,13 +43,15 @@ export class KraftvaktChargingPage extends ConfigPage {
       ${groups.length === 0
         ? html`<ha-card><div class="card-content no-groups">${this.localize("charging.no_groups")}</div></ha-card>`
         : groups.map((group) => this.renderGroup(group))}
-      <div class="page-footer">
-        <ha-button .disabled=${this.locked} @click=${this.addGroup}>
-          <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-          ${this.localize("charging.add_group")}
-        </ha-button>
-      </div>
-      ${groups.length > 0 ? html`<div class="switches-info">${this.localize("charging.switches_info")}</div>` : nothing}
+      ${this.renderPageFooter(
+        groups.length > 0 ? this.localize("charging.switches_info") : "",
+        html`
+          <ha-button .disabled=${this.locked} @click=${this.addGroup}>
+            <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+            ${this.localize("charging.add_group")}
+          </ha-button>
+        `,
+      )}
       ${allChargers(this.config).length === 0
         ? html`
             <kraftvakt-manual-control-warning
@@ -64,45 +67,45 @@ export class KraftvaktChargingPage extends ConfigPage {
 
   private renderGroup(group: ChargerGroup) {
     const empty = group.chargers.length === 0;
-    return this.renderListCard(
-      {
-        title: group.name.trim() || this.localize("charging.unnamed_group"),
-        sub: this.localize("charging.chargers_sub"),
-        add: this.localize("charging.add"),
-        empty: this.localize("charging.empty"),
-        rows: group.chargers.map((charger) => this.row(charger)),
-        locked: this.locked,
-        group: "kraftvakt-chargers",
-        onAdd: () => this.addCharger(group),
-        onMoved: (event) => this.chargerMoved(group, event),
-        onAdded: (event) => this.chargerAdded(group, event),
-        onOpen: (event) => this.openRow(group, event),
-      },
-      html`
-        <div class="group-footer">
-          <span class="footer-text">${empty ? "" : this.localize("charging.delete_group_not_empty")}</span>
+    const list: ItemList = {
+      add: this.localize("charging.add"),
+      empty: this.localize("charging.empty"),
+      rows: group.chargers.map((charger) => this.row(charger)),
+      locked: this.locked,
+      group: "kraftvakt-chargers",
+      onAdd: () => this.addCharger(group),
+      onMoved: (event) => this.chargerMoved(group, event),
+      onAdded: (event) => this.chargerAdded(group, event),
+      onOpen: (event) => this.openRow(group, event),
+    };
+    return this.renderCard({
+      title: group.name.trim() || this.localize("charging.unnamed_group"),
+      content: html`
+        <ha-form
+          .hass=${this.hass}
+          .data=${group}
+          .schema=${GROUP_SCHEMA}
+          .error=${this.formErrors("charger_groups", group.id)}
+          .disabled=${this.locked}
+          .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
+          .computeHelper=${(field: { name: string }) => this.localize(`charging.${field.name}_sub` as TranslationKey)}
+          .computeError=${(error: string) => error}
+          @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
+        ></ha-form>
+        ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))}
+        ${renderDescription(this.localize("charging.chargers_sub"))}
+      `,
+      list: this.renderItemList(list),
+      footer: this.renderCardFooter(
+        empty ? "" : this.localize("charging.delete_group_not_empty"),
+        html`
           <ha-button variant="danger" appearance="plain" .disabled=${this.locked || !empty} @click=${() => this.deleteGroup(group)}>
             <ha-svg-icon slot="start" .path=${mdiDelete}></ha-svg-icon>
             ${this.localize("charging.delete_group")}
           </ha-button>
-        </div>
-      `,
-      html`
-        <div class="card-content">
-          <ha-form
-            .hass=${this.hass}
-            .data=${group}
-            .schema=${GROUP_SCHEMA}
-            .error=${this.formErrors("charger_groups", group.id)}
-            .disabled=${this.locked}
-            .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
-            .computeHelper=${(field: { name: string }) => this.localize(`charging.${field.name}_sub` as TranslationKey)}
-            .computeError=${(error: string) => error}
-            @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
-          ></ha-form>
-        </div>
-      `,
-    );
+        `,
+      ),
+    });
   }
 
   private renderDialog(charger: Charger, groupId: string, isNew: boolean) {
@@ -279,27 +282,6 @@ export class KraftvaktChargingPage extends ConfigPage {
     css`
       .no-groups {
         padding-top: 16px;
-        color: var(--secondary-text-color);
-      }
-      .group-footer {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 8px 8px 16px;
-        border-top: 1px solid var(--divider-color);
-      }
-      .footer-text {
-        flex: 1;
-        font-size: var(--ha-font-size-s, 12px);
-        color: var(--secondary-text-color);
-      }
-      .page-footer {
-        display: flex;
-        justify-content: flex-end;
-      }
-      .switches-info {
-        padding: 0 16px;
-        font-size: var(--ha-font-size-s, 12px);
         color: var(--secondary-text-color);
       }
     `,

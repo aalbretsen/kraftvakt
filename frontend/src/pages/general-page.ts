@@ -20,31 +20,27 @@ type CardTitle = "general.measurement" | "general.regulation" | "general.penalty
 export class KraftvaktGeneralPage extends SettingsFormPage {
   protected render() {
     return html`
-      ${this.renderCard("general.measurement", [
+      ${this.renderSettingsCard("general.measurement", [
         this.entityField("power_sensor"),
         this.numberField("regulation_window_s"),
       ])}
-      ${this.renderCard("general.regulation", [
+      ${this.renderSettingsCard("general.regulation", [
         this.numberField("power_limit_w"),
         this.numberField("turn_on_margin_w"),
         this.intervalField(),
         this.numberField("wait_at_limit_s"),
       ])}
-      ${this.renderCard(
-        "general.penalty",
-        [this.numberField("penalty_threshold_w")],
-        html`<ha-alert alert-type="info">${this.localize("general.tariff_window_info")}</ha-alert>`,
-      )}
+      ${this.renderSettingsCard("general.penalty", [this.numberField("penalty_threshold_w")], "general.penalty_info")}
       ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 
-  private renderCard(title: CardTitle, schema: FormField[], extra?: unknown) {
-    return html`
-      <ha-card .header=${this.localize(title)}>
-        <div class="card-content">${this.renderForm(schema)} ${extra ?? ""}</div>
-      </ha-card>
-    `;
+  private renderSettingsCard(title: CardTitle, schema: FormField[], description?: "general.penalty_info") {
+    return this.renderCard({
+      title: this.localize(title),
+      description: description && this.localize(description),
+      content: this.renderForm(schema),
+    });
   }
 
   /** Kraftvakt's own averages are left out of the power sensors to choose from. */

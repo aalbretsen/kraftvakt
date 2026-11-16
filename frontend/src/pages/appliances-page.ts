@@ -13,7 +13,7 @@ import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
 import { APPLIANCE_ACTIONS, isOverridden } from "../validation";
-import { ConfigPage } from "./config-page";
+import { ConfigPage, type ItemList } from "./config-page";
 
 const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
 
@@ -28,19 +28,8 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   private variantToOpen?: string;
 
   protected render() {
-    const rows = this.config.priority.map((entry) => this.row(entry));
     return html`
-      ${this.renderListCard({
-        title: this.localize("appliances.priority_title"),
-        sub: this.localize("appliances.priority_sub"),
-        add: this.localize("appliances.add"),
-        empty: this.localize("appliances.empty"),
-        rows,
-        locked: this.locked,
-        onAdd: this.addAppliance,
-        onMoved: this.entryMoved,
-        onOpen: this.openRow,
-      })}
+      ${this.renderPriorityCard()}
       ${this.config.appliances.length === 0
         ? html`
             <kraftvakt-manual-control-warning
@@ -53,6 +42,24 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
       ${this.editingVariant ? this.renderVariantDialog(this.editingVariant.appliance, this.editingVariant.variantId) : ""}
     `;
+  }
+
+  private renderPriorityCard() {
+    const list: ItemList = {
+      add: this.localize("appliances.add"),
+      empty: this.localize("appliances.empty"),
+      rows: this.config.priority.map((entry) => this.row(entry)),
+      locked: this.locked,
+      onAdd: this.addAppliance,
+      onMoved: this.entryMoved,
+      onOpen: this.openRow,
+    };
+    return this.renderCard({
+      title: this.localize("appliances.priority_title"),
+      control: this.renderAddButton(list),
+      description: this.localize("appliances.priority_sub"),
+      list: this.renderItemList(list),
+    });
   }
 
   private renderVariantDialog(appliance: Appliance, variantId: string) {

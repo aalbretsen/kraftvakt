@@ -64,42 +64,43 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
     }
     const conditionIssue = issues.find((issue) => issue.field === `${this.fieldPrefix}condition`);
     return html`
-      ${this.renderSection("variant.condition")}
-      <kraftvakt-condition-field
-        .hass=${this.hass}
-        .localize=${this.localize}
-        .value=${variant.condition}
-        .entityId=${this.draft.entity_id}
-        .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
-        .disabled=${this.locked}
-        @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
-          event.detail.value && this.changeCondition(event.detail.value)}
-      ></kraftvakt-condition-field>
-      ${this.renderSection("appliance.actions")} ${APPLIANCE_ACTIONS.map((name) => this.renderOverride(name, issues))}
+      ${this.renderGroup({
+        title: this.localize("variant.condition"),
+        description: this.localize("variant.condition_info"),
+        content: html`
+          <kraftvakt-condition-field
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .value=${variant.condition}
+            .entityId=${this.draft.entity_id}
+            .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
+            .disabled=${this.locked}
+            @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
+              event.detail.value && this.changeCondition(event.detail.value)}
+          ></kraftvakt-condition-field>
+        `,
+      })}
+      ${APPLIANCE_ACTIONS.map((name) => this.renderOverride(name, issues))}
     `;
   }
 
-  /** The switch to override the action, and the variant's own action while it is on. */
+  /** A group with the switch to override the action, and the variant's own action while it is on. */
   private renderOverride(name: ApplianceAction, issues: Issue[]) {
     const own = this.variant?.actions ?? {};
     const overridden = isOverridden(own, name);
-    const switchName = `override_${name}`;
-    return html`
-      ${this.renderForm(
-        [{ name: switchName, selector: { boolean: {} } }],
-        [],
-        (value) => this.override(name, !!value[switchName]),
-        { [switchName]: overridden },
-      )}
-      ${overridden
+    return this.renderGroup({
+      title: this.label(`override_${name}`),
+      description: this.helper(`override_${name}`),
+      toggle: { checked: overridden, changed: (checked) => this.override(name, checked) },
+      content: overridden
         ? this.renderActionField(
-            { name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null },
+            { name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null, label: "" },
             issues,
             APPLIANCE_ACTION_VARIABLES,
             (value) => this.changeVariant({ actions: { ...own, [name]: value } }),
           )
-        : nothing}
-    `;
+        : nothing,
+    });
   }
 
   private get variant(): Variant | undefined {

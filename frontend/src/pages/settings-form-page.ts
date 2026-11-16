@@ -1,5 +1,5 @@
 import { mdiRestore } from "@mdi/js";
-import { css, html, type CSSResultGroup } from "lit";
+import { html, type CSSResultGroup } from "lit";
 
 import type { GeneralConfig, Range } from "../api";
 import type { TranslationKey } from "../localize";
@@ -64,14 +64,15 @@ export class SettingsFormPage extends ConfigPage {
       const restored = Object.fromEntries(fields.map((name) => [name, defaults[name]]));
       this.changeConfig({ ...this.config, general: { ...general, ...restored } });
     };
-    return html`
-      <div class="restore-defaults">
+    return this.renderPageFooter(
+      "",
+      html`
         <ha-button appearance="plain" .disabled=${this.locked || atDefaults} @click=${restore}>
           <ha-svg-icon slot="start" .path=${mdiRestore}></ha-svg-icon>
           ${this.localize("config.restore_defaults")}
         </ha-button>
-      </div>
-    `;
+      `,
+    );
   }
 
   protected numberField(name: GeneralField): FormField {
@@ -142,21 +143,5 @@ export class SettingsFormPage extends ConfigPage {
     });
   };
 
-  static styles: CSSResultGroup = [
-    ConfigPage.styles,
-    css`
-      .card-content {
-        display: grid;
-        gap: 16px;
-      }
-      .restore-defaults {
-        display: flex;
-        justify-content: flex-end;
-      }
-      .description {
-        margin: 0;
-        color: var(--secondary-text-color);
-      }
-    `,
-  ];
+  static styles: CSSResultGroup = ConfigPage.styles;
 }

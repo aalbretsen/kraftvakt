@@ -152,32 +152,31 @@
     "measurement": "Measurement",
     "regulation": "Regulation",
     "penalty": "Penalty",
-    "tariff_window_info": "The tariff window is fixed at one hour.",
     "interval_option": "{count} × the regulation window",
     "fields": {
       "power_sensor": {
         "label": "Power sensor",
-        "helper": "The sensor that measures the total power of the house, in W or kW."
+        "helper": "The sensor that measures the total power of the house right now, typically from the HAN port of the electricity meter. W or kW."
       },
       "regulation_window_s": {
         "label": "Regulation window",
-        "helper": "The period the regulation average is calculated over. {min}–{max} s, default {default} s."
+        "helper": "Kraftvakt decides from the average consumption over this period, the regulation average. A longer period evens out short peaks, a shorter one reacts faster. {min}–{max} s, default {default} s."
       },
       "power_limit_w": {
         "label": "Power limit",
-        "helper": "The highest allowed tariff average. {min}–{max} W, default {default} W."
+        "helper": "The step in the capacity part of the grid tariff you want to stay below. Kraftvakt keeps the average consumption over the last hour, the tariff average, below it. {min}–{max} W, default {default} W."
       },
       "turn_on_margin_w": {
         "label": "Turn-on margin",
-        "helper": "How far below the power limit the regulation average must be before an appliance is turned on. {min}–{max} W, default {default} W."
+        "helper": "How far below the power limit the regulation average must be before an appliance is turned on, so it is not turned off again at the next decision. {min}–{max} W, default {default} W."
       },
       "regulation_interval": {
         "label": "Regulation interval",
-        "helper": "A decision every {seconds} seconds. Default {default} ×."
+        "helper": "How often Kraftvakt decides whether to turn something on or off: now every {seconds} seconds. Default {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance waits before it is turned on when the regulation average is at the power limit. Shorter when the average is lower. {min}–{max} s, default {default} s."
+        "helper": "How long an appliance waits before it is turned on when the regulation average is close to the power limit, so the consumption can settle first. The waiting time is shorter the more power is free, as the waiting time curve under Advanced shows. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
@@ -217,7 +216,8 @@
         "label": "Power sensor timeout",
         "helper": "How long the power sensor may go without reporting before it counts as invalid. A HAN reader usually reports every 10 seconds. {min}–{max} s, default {default} s."
       }
-    }
+    },
+    "penalty_info": "A safety valve that should never be needed. If the tariff average, the average consumption over the last hour, still goes above the power limit, every appliance and EV charger is kept off until the overconsumption is paid back."
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
@@ -242,7 +242,7 @@
   },
   "appliances": {
     "priority_title": "Priority list",
-    "priority_sub": "Top = highest priority, turned off last",
+    "priority_sub": "Kraftvakt turns on from the top and off from the bottom. Drag to change the order.",
     "add": "Add appliance",
     "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
     "charger_group_sub": "EV chargers: {count} · configured under",
@@ -260,13 +260,13 @@
     "view_title": "Appliance",
     "actions": "Actions",
     "variants": "Variants",
-    "variants_info": "A variant gives the appliance another place in the priority list while its expression is true. The top true expression applies. A new variant is put at the bottom of the priority list. The expression and the actions of a variant are set when you edit the variant. The power reserve applies to every variant.",
+    "variants_info": "Give the appliance another place in the priority list at certain times or in certain conditions, for example a higher priority for the water heater in the morning. A variant applies while its expression is true, and when several are true, the top one in this list applies. A new variant is put at the bottom of the priority list. Edit a variant to set its expression and actions.",
     "add_variant": "Add variant",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
         "label": "Entity",
-        "helper": "The name in Home Assistant becomes the name of the appliance. The entity is available as entity_id and entity (the state object) in templates and actions."
+        "helper": "The entity Kraftvakt turns on and off, for example the switch of a water heater or a thermostat. Its name in Home Assistant becomes the name of the appliance."
       },
       "turn_on": {
         "label": "Turn on"
@@ -276,7 +276,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve (optional)",
-        "helper": "Free power that must be available before the appliance is turned on. Use it for appliances that draw a lot as soon as they are turned on."
+        "helper": "Free power that must be available before the appliance is turned on, for an appliance that draws a lot as soon as it is turned on. Set it to about what the appliance draws, so it is not turned off again at once. Applies to every variant."
       },
       "label": {
         "label": "Label"
@@ -285,20 +285,22 @@
         "label": "Expression"
       },
       "override_turn_on": {
-        "label": "Override the action to turn on",
-        "helper": "Off: the variant uses the appliance's action to turn on. On: the variant has its own, for example another HVAC mode."
+        "label": "Own action to turn on",
+        "helper": "The variant turns the appliance on with its own action instead of the appliance's usual one, for example another HVAC mode."
       },
       "override_turn_off": {
-        "label": "Override the action to turn off",
-        "helper": "Off: the variant uses the appliance's action to turn off. On: the variant has its own."
+        "label": "Own action to turn off",
+        "helper": "The variant turns the appliance off with its own action instead of the appliance's usual one, for example frost protection."
       }
-    }
+    },
+    "actions_info": "How Kraftvakt turns the appliance on and off. Standard works for most entities."
   },
   "variant": {
     "edit_title": "Edit variant {name}",
     "view_title": "Variant {name}",
     "condition": "Expression",
-    "delete": "Delete variant"
+    "delete": "Delete variant",
+    "condition_info": "The variant applies while the expression is true, for example between 05 and 08, or while the room is colder than 18 degrees. Otherwise the appliance has its usual place in the priority list."
   },
   "action": {
     "default": "Standard",
@@ -353,7 +355,8 @@
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "An EV charger that charges may continue until the car is full or disconnected. The others in the group wait.",
+    "one_at_a_time_sub": "An EV charger that charges may go on until the car is full or disconnected, while the others in the group wait. Requires car connected for every EV charger in the group.",
+    "chargers": "EV chargers",
     "chargers_sub": "Charging priority, highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
     "empty": "No EV chargers yet.",
@@ -381,7 +384,7 @@
     "allowed_charging": "Allowed charging",
     "charging_current": "Charging current",
     "actively_charging": "Actively charging",
-    "minimum_first": "The charging current is always set to the minimum before the EV charger is activated or deactivated.",
+    "allowed_charging_info": "How Kraftvakt lets the car start and stop charging. The charging current is always set to the minimum first.",
     "car_connected_required": "Car connected",
     "car_connected_optional": "Car connected (optional)",
     "profile_applied": "Filled in from the charger profile {profile}. Check every field before you save.",
@@ -394,11 +397,11 @@
     "fields": {
       "device_id": {
         "label": "Device",
-        "helper": "The EV charger in Home Assistant. Its name becomes the name of the EV charger, and every entity is chosen among its entities. When Kraftvakt has a charger profile for it, the fields are filled in from the profile."
+        "helper": "The EV charger as a device in Home Assistant. Its name becomes the name of the EV charger, and the entities below are chosen among its entities. Kraftvakt fills in the fields when it has a charger profile for the device."
       },
       "entity_id": {
         "label": "Entity for allowed charging",
-        "helper": "Normally the charger's switch for allowing charging. The entity is available as entity_id and entity in templates and actions."
+        "helper": "The entity Kraftvakt activates to let the car charge, and deactivates to stop it, normally the charger's switch for allowing charging."
       },
       "activate": {
         "label": "Activate"
@@ -410,33 +413,32 @@
         "label": "Minimum charging current"
       },
       "max_current_a": {
-        "label": "Maximum charging current",
-        "helper": "Whole amperes. The minimum cannot be above the maximum."
+        "label": "Maximum charging current"
       },
       "set_current": {
         "label": "Set charging current"
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "The power the EV charger draws when charging starts at the minimum current. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
+        "helper": "The power the EV charger draws when charging starts at the minimum current. Kraftvakt activates the EV charger only when this much power is free. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
       },
       "car_connected": {
-        "helper": "The car counts as connected only when the value is true. Unavailable counts as not connected."
+        "helper": "Tells Kraftvakt whether a car is connected, so EV chargers without a car are not activated in turn. Only true counts as connected, and unavailable counts as not connected."
       },
       "actively_charging": {
-        "helper": "How Kraftvakt sees that the car is charging. Without evidence that it is charging, for example an unavailable entity or a template that fails, it counts as not charging."
+        "helper": "Tells Kraftvakt that the car draws power. Only an EV charger that is actively charging gets more than the minimum current. Without evidence that it charges, for example an unavailable entity or a template that fails, it counts as not charging."
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "Turn it on when the EV charger is controlled through a cloud service, where commands go over the internet and take time. It then gets no repeated commands while no car is connected. Requires car connected."
+        "helper": "Turn it on when the EV charger is controlled through a cloud service, where commands go over the internet, take time and may count against the limits of the service. It then gets no repeated commands while no car is connected, and the car gets the start delay to start charging. Requires car connected."
       },
       "start_delay_s": {
         "label": "Start delay",
         "helper": "The longest time from when the EV charger is activated until the car draws power. Kraftvakt gives the car this long to start charging, and keeps the power free for it meanwhile. {min}–{max} s, default {default} s."
       },
       "charging_window": {
-        "label": "Charging window (optional)",
-        "helper": "Can span midnight. Start and end cannot be the same. Without a charging window, the EV charger is always allowed to charge."
+        "label": "Charging window",
+        "helper": "The EV charger charges only within this time each day, for example at night when electricity is cheaper. It can span midnight, and start and end cannot be the same. Turned off, the EV charger may always charge."
       },
       "start": {
         "label": "Start"
@@ -450,8 +452,9 @@
       },
       "override_ends": {
         "label": "End the override",
-        "helper": "«‹charger› override charging window» waits until the car has charged, or been connected, since it was turned on, so it can be turned on before the car arrives. A sensor without a value does not end it."
+        "helper": "When the switch «‹charger› override charging window», which lets the car charge outside the charging window, turns itself off. It can be turned on before the car arrives, since it waits until the car has charged or been connected. A sensor without a value does not end it."
       }
-    }
+    },
+    "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes."
   }
 }

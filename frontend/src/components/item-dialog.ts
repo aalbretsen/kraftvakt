@@ -6,6 +6,7 @@ import { actionForEntity } from "../actions";
 import { domainActionsFor } from "../domain-actions";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
+import { renderDescription, renderSectionHeader, sectionStyles } from "../section-styles";
 import type { HomeAssistant } from "../types";
 import { defaultActionOf, hasDefaultAction } from "../validation";
 import "./action-field";
@@ -15,7 +16,23 @@ type Item = Appliance | Charger;
 /** A field in the schema of `ha-form`. */
 interface FormField {
   name: string;
+  schema?: FormField[];
   [option: string]: unknown;
+}
+
+/**
+ * A group of fields in a dialog: a box with a header, which has the title
+ * and an optional control at the right end, the description and the content.
+ * A group with a switch in its header is about something that can be turned
+ * on, and shows its content only while it is on.
+ */
+export interface Group {
+  title: string;
+  description?: string;
+  control?: unknown;
+  toggle?: { checked: boolean; changed: (checked: boolean) => void };
+  content?: unknown;
+  error?: string;
 }
 
 /**
@@ -115,7 +132,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
    * and `field` the field the issues address.
    */
   protected renderActionField(
-    action: { name: string; field: string; value: ActionConfig | null },
+    action: { name: string; field: string; value: ActionConfig | null; label?: string },
     issues: Issue[],
     variables: string[],
     changed: (value: ActionConfig | null) => void,
@@ -129,7 +146,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       <kraftvakt-action-field
         .hass=${this.hass}
         .localize=${this.localize}
-        .label=${this.label(name)}
+        .label=${action.label ?? this.label(name)}
         .value=${action.value}
         .entityId=${this.draft.entity_id}
         .defaultAction=${defaultAction}
@@ -157,7 +174,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     changed: (value: Record<string, unknown>) => void,
     data: object = this.draft,
   ) {
-    const fields = schema.map((field) => field.name);
+    const fields = schema.flatMap((field) => field.schema?.map((inner) => inner.name) ?? [field.name]);
     return html`
       <ha-form
         .hass=${this.hass}
@@ -213,8 +230,24 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.localize(key, { min: number(range?.min), max: number(range?.max), default: number(defaults[field]) });
   }
 
-  protected renderSection(title: TranslationKey) {
-    return html`<div class="section">${this.localize(title)}</div>`;
+  protected renderGroup(group: Group) {
+    const toggle = group.toggle;
+    const control = toggle
+      ? html`
+          <ha-switch
+            .checked=${toggle.checked}
+            .disabled=${this.locked}
+            aria-label=${group.title}
+            @change=${(event: Event) => toggle.changed((event.target as HTMLInputElement).checked)}
+          ></ha-switch>
+        `
+      : (group.control ?? nothing);
+    return html`
+      <section class="group ${group.error ? "invalid" : ""}">
+        ${renderSectionHeader(group.title, control)} ${renderDescription(group.description)} ${group.content ?? nothing}
+        ${group.error ? html`<div class="error">${group.error}</div>` : nothing}
+      </section>
+    `;
   }
 
   protected changeDraft(changes: Partial<T>): void {
@@ -272,27 +305,34 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     this.dispatchEvent(new CustomEvent("closed"));
   }
 
-  static styles: CSSResultGroup = css`
-    .content {
-      display: grid;
-      gap: 16px;
-    }
-    .section {
-      margin-top: 8px;
-      font-size: var(--ha-font-size-l, 16px);
-      font-weight: 500;
-    }
-    .info {
-      margin-top: -8px;
-      font-size: var(--ha-font-size-s, 12px);
-      color: var(--secondary-text-color);
-    }
-    .spacer {
-      flex: 1;
-    }
-    div[slot="footer"] {
-      display: flex;
-      align-items: center;
-    }
-  `;
+  static styles: CSSResultGroup = [
+    sectionStyles,
+    css`
+      .content {
+        display: grid;
+        gap: 16px;
+      }
+      .group {
+        display: grid;
+        gap: 12px;
+        padding: 4px 16px 16px;
+        border: 1px solid var(--divider-color);
+        border-radius: var(--ha-card-border-radius, 12px);
+      }
+      .group.invalid {
+        border-color: var(--error-color);
+      }
+      .error {
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--error-color);
+      }
+      .spacer {
+        flex: 1;
+      }
+      div[slot="footer"] {
+        display: flex;
+        align-items: center;
+      }
+    `,
+  ];
 }

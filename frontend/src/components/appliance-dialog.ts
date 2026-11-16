@@ -50,10 +50,15 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
 
   protected renderFields(issues: Issue[]) {
     return html`
-      ${this.renderEntity(issues)} ${this.renderSection("appliance.actions")} ${this.renderActions(issues)}
+      ${this.renderEntity(issues)}
       ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
         this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
       )}
+      ${this.renderGroup({
+        title: this.localize("appliance.actions"),
+        description: this.localize("appliance.actions_info"),
+        content: this.renderActions(issues),
+      })}
       ${this.renderVariants(issues)}
     `;
   }
@@ -72,29 +77,32 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   /** The variants, sorted in the order their expressions are evaluated. */
   private renderVariants(issues: Issue[]) {
     const editable = this.locked || this.errors().length === 0;
-    return html`
-      ${this.renderSection("appliance.variants")}
-      <div class="info">${this.localize("appliance.variants_info")}</div>
-      <ha-sortable handle-selector=".handle" .disabled=${this.locked} @item-moved=${this.variantMoved}>
-        <div class="variants">
-          ${repeat(
-            this.draft.variants,
-            (variant) => variant.id,
-            (variant) => this.renderVariant(variant, issues, editable),
-          )}
-        </div>
-      </ha-sortable>
-      ${this.locked
+    return this.renderGroup({
+      title: this.localize("appliance.variants"),
+      description: this.localize("appliance.variants_info"),
+      control: this.locked
         ? nothing
         : html`
-            <div>
-              <ha-button appearance="outlined" @click=${this.addVariant}>
-                <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
-                ${this.localize("appliance.add_variant")}
-              </ha-button>
-            </div>
-          `}
-    `;
+            <ha-button @click=${this.addVariant}>
+              <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+              ${this.localize("appliance.add_variant")}
+            </ha-button>
+          `,
+      content:
+        this.draft.variants.length === 0
+          ? nothing
+          : html`
+              <ha-sortable handle-selector=".handle" .disabled=${this.locked} @item-moved=${this.variantMoved}>
+                <div class="variants">
+                  ${repeat(
+                    this.draft.variants,
+                    (variant) => variant.id,
+                    (variant) => this.renderVariant(variant, issues, editable),
+                  )}
+                </div>
+              </ha-sortable>
+            `,
+    });
   }
 
   /** The label of the variant, with what else is wrong or missing in the variant under it. */
@@ -175,10 +183,8 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
         cursor: grab;
         color: var(--secondary-text-color);
       }
-      .error {
+      .variant .error {
         margin-top: 4px;
-        font-size: var(--ha-font-size-s, 12px);
-        color: var(--error-color);
       }
     `,
   ];

@@ -101,7 +101,7 @@
     "unsaved": "Ulagrede endringer",
     "fix_before_saving": "Rett de merkede innstillingene før du lagrer.",
     "not_saved": "Konfigurasjonen ble ikke lagret. Rett de merkede innstillingene.",
-    "save_refused_running": "Konfigurasjonen kan ikke lagres mens reguleringen kjører.",
+    "save_refused_running": "Konfigurasjonen kan ikke lagres når reguleringen kjører.",
     "leave_title": "Forkaste ulagrede endringer?",
     "leave_text": "Endringene på konfigurasjonssidene er ikke lagret. De går tapt hvis du går videre.",
     "stay": "Fortsett å redigere",
@@ -152,32 +152,31 @@
     "measurement": "Måling",
     "regulation": "Regulering",
     "penalty": "Straff",
-    "tariff_window_info": "Tariffvinduet er fast én time.",
     "interval_option": "{count} × reguleringsvinduet",
     "fields": {
       "power_sensor": {
         "label": "Effektsensor",
-        "helper": "Sensoren som måler husets totale momentane effekt, i W eller kW."
+        "helper": "Sensoren som måler husets totale effekt akkurat nå, vanligvis fra HAN-porten på strømmåleren. W eller kW."
       },
       "regulation_window_s": {
         "label": "Reguleringsvindu",
-        "helper": "Tidsrommet reguleringssnittet beregnes over. {min}–{max} s, standard {default} s."
+        "helper": "Kraftvakt avgjør ut fra snittforbruket over dette tidsrommet, reguleringssnittet. Et lengre tidsrom jevner ut korte topper, et kortere reagerer raskere. {min}–{max} s, standard {default} s."
       },
       "power_limit_w": {
         "label": "Effektgrense",
-        "helper": "Høyeste tillatte tariffsnitt. {min}–{max} W, standard {default} W."
+        "helper": "Trinnet i kapasitetsleddet i nettleien du vil holde deg under. Kraftvakt holder snittforbruket den siste timen, tariffsnittet, under grensen. {min}–{max} W, standard {default} W."
       },
       "turn_on_margin_w": {
         "label": "Innkoblingsmargin",
-        "helper": "Hvor langt under effektgrensen reguleringssnittet må være før et apparat slås på. {min}–{max} W, standard {default} W."
+        "helper": "Hvor langt under effektgrensen reguleringssnittet må være før et apparat slås på, så det ikke slås av igjen ved neste avgjørelse. {min}–{max} W, standard {default} W."
       },
       "regulation_interval": {
         "label": "Reguleringsintervall",
-        "helper": "Avgjørelse hvert {seconds}. sekund. Standard {default} ×."
+        "helper": "Hvor ofte Kraftvakt avgjør om noe skal slås på eller av: nå hvert {seconds}. sekund. Standard {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",
-        "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er ved effektgrensen. Kortere når snittet er lavere. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge et apparat venter før det slås på når reguleringssnittet er nær effektgrensen, så forbruket får roe seg først. Ventetiden er kortere jo mer effekt som er ledig, slik ventetidskurven under Avansert viser. {min}–{max} s, standard {default} s."
       },
       "penalty_threshold_w": {
         "label": "Straffeterskel",
@@ -217,7 +216,8 @@
         "label": "Tidsavbrudd for effektsensor",
         "helper": "Hvor lenge effektsensoren kan gå uten å rapportere før den regnes som ugyldig. En HAN-leser rapporterer vanligvis hvert 10. sekund. {min}–{max} s, standard {default} s."
       }
-    }
+    },
+    "penalty_info": "En sikkerhetsventil som aldri skal trenges. Hvis tariffsnittet, snittforbruket den siste timen, likevel går over effektgrensen, holdes alle apparater og elbilladere av til overforbruket er tatt igjen."
   },
   "advanced": {
     "wait_curve": "Ventetidskurve",
@@ -242,7 +242,7 @@
   },
   "appliances": {
     "priority_title": "Prioritetsliste",
-    "priority_sub": "Øverst = høyest prioritet, slås av sist",
+    "priority_sub": "Kraftvakt slår på ovenfra og av nedenfra. Dra for å endre rekkefølgen.",
     "add": "Legg til apparat",
     "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
     "charger_group_sub": "elbilladere: {count} · konfigureres under",
@@ -260,13 +260,13 @@
     "view_title": "Apparat",
     "actions": "Handlinger",
     "variants": "Varianter",
-    "variants_info": "En variant gir apparatet en annen plass i prioritetslisten mens uttrykket er sant. Det øverste sanne uttrykket gjelder. En ny variant legges nederst i prioritetslisten. Uttrykket og handlingene til en variant settes når du redigerer varianten. Effektreserven gjelder for alle varianter.",
+    "variants_info": "Gi apparatet en annen plass i prioritetslisten til bestemte tider eller under bestemte forhold, for eksempel høyere prioritet for varmtvannsberederen om morgenen. En variant gjelder når uttrykket er sant, og når flere er sanne, gjelder den øverste i denne listen. En ny variant legges nederst i prioritetslisten. Rediger en variant for å sette uttrykket og handlingene.",
     "add_variant": "Legg til variant",
     "delete": "Slett apparat",
     "fields": {
       "entity_id": {
         "label": "Entitet",
-        "helper": "Navnet i Home Assistant blir apparatets navn. Entiteten er tilgjengelig som entity_id og entity (tilstandsobjektet) i maler og handlinger."
+        "helper": "Entiteten Kraftvakt slår på og av, for eksempel bryteren til en varmtvannsbereder eller en termostat. Navnet i Home Assistant blir apparatets navn."
       },
       "turn_on": {
         "label": "Slå på"
@@ -276,7 +276,7 @@
       },
       "power_reserve_w": {
         "label": "Effektreserve (valgfri)",
-        "helper": "Ledig effekt som må finnes før apparatet slås på. Bruk den for apparater som trekker mye straks de slås på."
+        "helper": "Ledig effekt som må finnes før apparatet slås på, for et apparat som trekker mye straks det slås på. Sett den til omtrent det apparatet trekker, så det ikke slås av igjen med en gang. Gjelder for alle varianter."
       },
       "label": {
         "label": "Merkelapp"
@@ -285,20 +285,22 @@
         "label": "Uttrykk"
       },
       "override_turn_on": {
-        "label": "Overstyr handlingen for å slå på",
-        "helper": "Av: varianten bruker apparatets handling for å slå på. På: varianten har sin egen, for eksempel en annen HVAC-modus."
+        "label": "Egen handling for å slå på",
+        "helper": "Varianten slår på apparatet med sin egen handling i stedet for apparatets vanlige, for eksempel en annen HVAC-modus."
       },
       "override_turn_off": {
-        "label": "Overstyr handlingen for å slå av",
-        "helper": "Av: varianten bruker apparatets handling for å slå av. På: varianten har sin egen."
+        "label": "Egen handling for å slå av",
+        "helper": "Varianten slår av apparatet med sin egen handling i stedet for apparatets vanlige, for eksempel frostsikring."
       }
-    }
+    },
+    "actions_info": "Hvordan Kraftvakt slår apparatet på og av. Standard passer for de fleste entiteter."
   },
   "variant": {
     "edit_title": "Rediger variant {name}",
     "view_title": "Variant {name}",
     "condition": "Uttrykk",
-    "delete": "Slett variant"
+    "delete": "Slett variant",
+    "condition_info": "Varianten gjelder når uttrykket er sant, for eksempel mellom 05 og 08, eller når rommet er kaldere enn 18 grader. Ellers har apparatet sin vanlige plass i prioritetslisten."
   },
   "action": {
     "default": "Standard",
@@ -353,7 +355,8 @@
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. Andre i gruppen venter.",
+    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. De andre i gruppen venter så lenge. Krever bil tilkoblet for alle elbilladerne i gruppen.",
+    "chargers": "Elbilladere",
     "chargers_sub": "Ladeprioritering, høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
     "empty": "Ingen elbilladere ennå.",
@@ -363,7 +366,7 @@
     "unnamed_group": "Gruppe uten navn",
     "delete_group": "Slett gruppe",
     "delete_group_not_empty": "Flytt eller slett elbilladerne for å slette gruppen.",
-    "switches_info": "For hver elbillader lager Kraftvakt tre brytere som kan brukes også mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› fullfør lading etter ladetidsrom».",
+    "switches_info": "For hver elbillader lager Kraftvakt tre brytere som også kan brukes når reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› fullfør lading etter ladetidsrom».",
     "currents": "{min}–{max} A",
     "reserve": "reserve {power} W",
     "window": "ladetidsrom {start}–{end}",
@@ -381,7 +384,7 @@
     "allowed_charging": "Tillatt lading",
     "charging_current": "Ladestrøm",
     "actively_charging": "Lader aktivt",
-    "minimum_first": "Ladestrømmen settes alltid til minste ladestrøm før elbilladeren aktiveres eller deaktiveres.",
+    "allowed_charging_info": "Hvordan Kraftvakt lar bilen starte og stoppe ladingen. Ladestrømmen settes alltid til minste ladestrøm først.",
     "car_connected_required": "Bil tilkoblet",
     "car_connected_optional": "Bil tilkoblet (valgfri)",
     "profile_applied": "Fylt ut fra laderprofilen {profile}. Sjekk alle feltene før du lagrer.",
@@ -394,11 +397,11 @@
     "fields": {
       "device_id": {
         "label": "Enhet",
-        "helper": "Elbilladeren i Home Assistant. Navnet blir elbilladerens navn, og alle entiteter velges blant enhetens entiteter. Når Kraftvakt har en laderprofil for den, fylles feltene ut fra profilen."
+        "helper": "Elbilladeren som enhet i Home Assistant. Navnet blir elbilladerens navn, og entitetene under velges blant enhetens entiteter. Kraftvakt fyller ut feltene når den har en laderprofil for enheten."
       },
       "entity_id": {
         "label": "Entitet for tillatt lading",
-        "helper": "Normalt laderens bryter for å tillate lading. Entiteten er tilgjengelig som entity_id og entity i maler og handlinger."
+        "helper": "Entiteten Kraftvakt aktiverer for å la bilen lade, og deaktiverer for å stoppe den, normalt laderens bryter for å tillate lading."
       },
       "activate": {
         "label": "Aktiver"
@@ -410,33 +413,32 @@
         "label": "Minste ladestrøm"
       },
       "max_current_a": {
-        "label": "Største ladestrøm",
-        "helper": "Hele ampere. Minste kan ikke være større enn største."
+        "label": "Største ladestrøm"
       },
       "set_current": {
         "label": "Sett ladestrøm"
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
+        "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. Kraftvakt aktiverer elbilladeren bare når så mye effekt er ledig. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
-        "helper": "Bilen regnes som tilkoblet bare når verdien er sann. Utilgjengelig regnes som ikke tilkoblet."
+        "helper": "Forteller Kraftvakt om en bil er tilkoblet, så elbilladere uten bil ikke aktiveres etter tur. Bare sann regnes som tilkoblet, og utilgjengelig regnes som ikke tilkoblet."
       },
       "actively_charging": {
-        "helper": "Hvordan Kraftvakt ser at bilen lader. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
+        "helper": "Forteller Kraftvakt at bilen trekker strøm. Bare en elbillader som lader aktivt, får mer enn minste ladestrøm. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Slå det på når elbilladeren styres gjennom en skytjeneste, der kommandoene går over internett og tar tid. Den får da ingen gjentatte kommandoer mens ingen bil er tilkoblet. Krever bil tilkoblet."
+        "helper": "Slå det på når elbilladeren styres gjennom en skytjeneste, der kommandoene går over internett, tar tid og kan telle mot tjenestens grenser. Den får da ingen gjentatte kommandoer når ingen bil er tilkoblet, og bilen får startforsinkelsen på å begynne å lade. Krever bil tilkoblet."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
         "helper": "Lengste tid fra elbilladeren er aktivert til bilen trekker strøm. Kraftvakt gir bilen så lang tid på å begynne å lade, og holder effekten ledig for den så lenge. {min}–{max} s, standard {default} s."
       },
       "charging_window": {
-        "label": "Ladetidsrom (valgfritt)",
-        "helper": "Kan gå over midnatt. Start og slutt kan ikke være like. Uten ladetidsrom har elbilladeren alltid lov til å lade."
+        "label": "Ladetidsrom",
+        "helper": "Elbilladeren lader bare innenfor dette tidsrommet hver dag, for eksempel om natten når strømmen er billigere. Det kan gå over midnatt, og start og slutt kan ikke være like. Slått av, kan elbilladeren alltid lade."
       },
       "start": {
         "label": "Start"
@@ -450,8 +452,9 @@
       },
       "override_ends": {
         "label": "Avslutt overstyringen",
-        "helper": "«‹lader› overstyr ladetidsrom» venter til bilen har ladet, eller vært tilkoblet, siden den ble slått på, så den kan slås på før bilen kommer. En sensor uten verdi avslutter den ikke."
+        "helper": "Når bryteren «‹lader› overstyr ladetidsrom», som lar bilen lade utenfor ladetidsrommet, slår seg av selv. Den kan slås på før bilen kommer, siden den venter til bilen har ladet eller vært tilkoblet. En sensor uten verdi avslutter den ikke."
       }
-    }
+    },
+    "charging_current_info": "Kraftvakt øker og senker strømmen én ampere om gangen, etter hvor mye effekt som er ledig. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler. Hele ampere."
   }
 }

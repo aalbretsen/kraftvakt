@@ -144,7 +144,7 @@ export class KraftvaktConditionField extends LitElement {
     }
     const evidence = this.evidence(this.value);
     return html`
-      ${this.renderNow(evidence === true)}
+      ${this.renderNow(this.value, evidence === true)}
       ${this.value.type === "template" && evidence === null
         ? html`<div class="warning">${this.text("not_boolean", { value: JSON.stringify(this.preview?.result) })}</div>`
         : nothing}
@@ -167,9 +167,17 @@ export class KraftvaktConditionField extends LitElement {
     }
   }
 
-  private renderNow(value: boolean) {
+  /** An entity's state is shown as Home Assistant formats it, before what it counts as. */
+  private renderNow(condition: Condition, value: boolean) {
     const text = this.text(value ? "true" : "false");
-    return html`<div class="preview">${this.localize("condition.now", { value: "" })}<b>${text}</b></div>`;
+    const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
+    return html`
+      <div class="preview">
+        ${this.localize("condition.now", { value: "" })}${stateObj
+          ? html`<b>${this.hass.formatEntityState(stateObj)}</b> · ${text}`
+          : html`<b>${text}</b>`}
+      </div>
+    `;
   }
 
   private text(key: string, params?: Record<string, string | number>): string {
@@ -226,6 +234,12 @@ export class KraftvaktConditionField extends LitElement {
   static styles = css`
     :host {
       display: block;
+    }
+    /* Indented as Home Assistant indents the helper text of a field. */
+    .preview,
+    .error,
+    .warning {
+      padding-inline-start: 16px;
     }
     .preview {
       margin-top: 4px;

@@ -42,6 +42,24 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
 
 ## Behaviour
 
+### Layout of the configuration pages and dialogs
+
+The configuration pages and the dialogs share one set of parts, so the same thing looks the same everywhere, and a dialog is adapted to its smaller room.
+The section header, the description and the footer note are in `section-styles.ts`.
+
+- A page is a stack of cards made by `renderCard` in `ConfigPage`: a header with the title in HA's card header size and an optional control at the right end,
+  such as an add button, then the description, the content, a list from edge to edge and a footer.
+- A part of a card has a section header: a smaller title and an optional control at the right end, then its description and its fields.
+- A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and the power reserve. The rest is in groups.
+  A group is a frame with a section header, a description and its fields, as a card is on a page.
+  A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.
+  Groups are not nested, so a field in a group, such as an action, has no frame of its own.
+- A description under a title is secondary text. A footer has a note to the left of its control: the card footer under a divider, and the page footer under the last card.
+- An alert is only for a state or a warning, such as the lock, the warning against manual control or an applied charger profile, never for an explanation.
+- Fields are HA's own components with their own labels, helper texts and spacing, also where HA puts the label above one field and inside another.
+  The panel's own text under a field, such as under an action or a condition, is indented as HA indents the helper text of a field.
+- Texts tell the user what is configured and why. The more advanced the setting, the more technical the language may be.
+
 ### Configuration pages
 
 - The configuration pages share one draft. Save stores everything, Discard goes back to the saved configuration.
@@ -53,9 +71,10 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   since entities can change the stored configuration at any time. A draft with unsaved changes is kept while stopped.
 - While the regulation runs, the configuration pages are locked and show a banner with a button to stop the regulation, on one line.
   Forms and lists are dimmed, add buttons are disabled and dialogs only show the item.
-- The configuration pages extend `ConfigPage`, which holds what they share: the locked look, the list card with its add button, and the entities other items use.
+- The configuration pages extend `ConfigPage`, which holds what they share: the locked look, the card, its footer, the page footer, the item list with its add button,
+  and the entities other items use.
   The status page and the lock banner share the start and stop button.
-- General and Advanced end with Restore defaults (HA's own words), right aligned under the last card and shared in `SettingsFormPage`:
+- General and Advanced end with Restore defaults (HA's own words) in the page footer, shared in `SettingsFormPage`:
   each page passes the settings it restores, and the defaults come from the capabilities.
   General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor, which has no default.
   It only changes the draft, so it asks for no confirmation, and it is disabled while every setting it restores has its default.
@@ -81,7 +100,7 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
-- Cloud-controlled EV charger is a switch in a box of its own under actively charging, and shows the start delay while it is on or the delay has an error.
+- Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
   The start delay is kept when the switch is turned off, since it has no effect then.
 - Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
@@ -91,8 +110,9 @@ Logic is kept in modules outside the elements, so it is unit tested, see the `kr
   with `entity` as the frontend's state object. A result that is not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A new variant starts as an empty template, which is missing, not an error,
   so the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set», offers a boolean entity first and shows it until one is chosen.
-  Every preview reads the value as the backend does, so only evidence shows as true. Car connected is shown as required when only one charger in the group may charge at a time,
-  or when the charger has a charging window and its override ends when the car is disconnected. A new charger gets the override end from the defaults in the capabilities.
+  Every preview reads the value as the backend does, so only evidence shows as true, and shows an entity's state as HA formats it before what it counts as.
+  Car connected is shown as required when only one charger in the group may charge at a time, when the charger is cloud-controlled,
+  or when it has a charging window and its override ends when the car is disconnected. A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers, and Add group under the cards.
   A new group gets the first free name of «EV chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.

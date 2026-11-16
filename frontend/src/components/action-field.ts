@@ -54,7 +54,7 @@ export class KraftvaktActionField extends LitElement {
     const domainAction = this.domainAction;
     return html`
       <div class="field ${this.error ? "invalid" : ""}">
-        <div class="label">${this.label}</div>
+        ${this.label ? html`<div class="label">${this.label}</div>` : nothing}
         <ha-form
           .hass=${this.hass}
           .data=${{
@@ -233,17 +233,17 @@ export class KraftvaktActionField extends LitElement {
     return `${entityId.split(".")[0]}.${this.defaultAction?.service}`;
   }
 
-    static styles = css`
-    .field {
-      padding: 12px;
-      border: 1px solid var(--divider-color);
-      border-radius: var(--ha-border-radius-md, 8px);
-    }
-    .field.invalid {
-      border-color: var(--error-color);
-    }
+  static styles = css`
     .label {
-      font-weight: 500;
+      font-weight: var(--ha-font-weight-medium, 500);
+    }
+    .invalid .label {
+      color: var(--error-color);
+    }
+    /* Indented as Home Assistant indents the helper text of a field. */
+    .helper,
+    .error {
+      padding-inline-start: 16px;
     }
     .helper {
       margin-top: 4px;

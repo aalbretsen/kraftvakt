@@ -1,6 +1,7 @@
 import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
+import { renderSectionHeader } from "../section-styles";
 import { formatMinutes, formatNumber, formatPower } from "../format";
 import { CURVE_TURN_ONS, repeatedTurnOnWaiting, untilDecision, waitingCurve } from "../waiting";
 import { WidthQuery } from "../width-query";
@@ -65,55 +66,47 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
   }
 
   private renderWaitCurveCard() {
-    return html`
-      <ha-card .header=${this.localize("advanced.wait_curve")}>
-        <div class="card-content">
-          <p class="description">${this.localize("advanced.wait_curve_info")}</p>
-          <div class="sliders">${(["wait_curve_steepness", "wait_curve_pivot"] as const).map((name) => this.renderSlider(name))}</div>
-          ${this.renderWaitCurve()}
-        </div>
-      </ha-card>
-    `;
+    return this.renderCard({
+      title: this.localize("advanced.wait_curve"),
+      description: this.localize("advanced.wait_curve_info"),
+      content: html`
+        <div class="sliders">${(["wait_curve_steepness", "wait_curve_pivot"] as const).map((name) => this.renderSlider(name))}</div>
+        ${this.renderWaitCurve()}
+      `,
+    });
   }
 
   private renderRepeatedTurnOnCard() {
-    return html`
-      <ha-card .header=${this.localize("advanced.repeated_turn_on")}>
-        <div class="card-content">
-          <p class="description">${this.localize("advanced.repeated_turn_on_info")}</p>
-          ${this.renderRepeatedTurnOnSection("advanced.appliances", "appliance_repeat_increment_factor", "appliance_repeat_increments")}
-          ${this.renderRepeatedTurnOnSection("advanced.chargers", "charger_repeat_increment_factor", "charger_repeat_increments")}
-        </div>
-      </ha-card>
-    `;
+    return this.renderCard({
+      title: this.localize("advanced.repeated_turn_on"),
+      description: this.localize("advanced.repeated_turn_on_info"),
+      content: html`
+        ${this.renderRepeatedTurnOnSection("advanced.appliances", "appliance_repeat_increment_factor", "appliance_repeat_increments")}
+        ${this.renderRepeatedTurnOnSection("advanced.chargers", "charger_repeat_increment_factor", "charger_repeat_increments")}
+      `,
+    });
   }
 
   private renderCommandRepeatCard() {
-    return html`
-      <ha-card .header=${this.localize("advanced.command_repeat")}>
-        <div class="card-content">
-          <p class="description">${this.localize("advanced.command_repeat_info")}</p>
-          ${this.renderForm([this.numberField("command_repeat_interval_min")])}
-        </div>
-      </ha-card>
-    `;
+    return this.renderCard({
+      title: this.localize("advanced.command_repeat"),
+      description: this.localize("advanced.command_repeat_info"),
+      content: this.renderForm([this.numberField("command_repeat_interval_min")]),
+    });
   }
 
   private renderTimeoutsCard() {
-    return html`
-      <ha-card .header=${this.localize("advanced.timeouts")}>
-        <div class="card-content">
-          <p class="description">${this.localize("advanced.timeouts_info")}</p>
-          ${this.renderForm([this.numberField("action_timeout_s"), this.numberField("power_sensor_timeout_s")])}
-        </div>
-      </ha-card>
-    `;
+    return this.renderCard({
+      title: this.localize("advanced.timeouts"),
+      description: this.localize("advanced.timeouts_info"),
+      content: this.renderForm([this.numberField("action_timeout_s"), this.numberField("power_sensor_timeout_s")]),
+    });
   }
 
   private renderRepeatedTurnOnSection(title: RepeatTitle, factorField: RepeatFactorField, stepsField: RepeatIncrementsField) {
     const language = this.hass.language;
     return html`
-      <h3>${this.localize(title)}</h3>
+      ${renderSectionHeader(this.localize(title))}
       ${this.renderForm([
         this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`),
         this.selectField(stepsField, (steps) => String(steps)),
@@ -268,11 +261,6 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
   static styles = [
     SettingsFormPage.styles,
     css`
-      h3 {
-        margin: 0 0 -8px;
-        font-size: var(--ha-font-size-m, 14px);
-        font-weight: 500;
-      }
       .sliders {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr) 3em;

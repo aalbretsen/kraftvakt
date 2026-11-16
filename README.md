@@ -65,7 +65,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   and × 1 and 5 increments for EV chargers (300 s increments, at most 1800 s), where each ampere counts on its own.
   With no waiting time at the power limit, the waiting time does not grow.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning.
-  A variant uses the actions of the appliance, or overrides the action to turn on, to turn off or both, for example with another HVAC mode for a thermostat in summer.
+  A variant uses the actions of the appliance, or has its own action to turn on, to turn off or both, for example with another HVAC mode for a thermostat in summer.
   When the variant changes, the appliance is turned off with the turn-off action of the new variant, and comes on again the normal way.
   If it comes on again at the same decision, it only gets the turn-on action, so it is not switched off and on at once.
 - **Excluded appliance:** the switch **‹appliance› excluded from regulation** takes an appliance out of the regulation.
@@ -204,16 +204,17 @@ while it runs, the configuration pages are locked. A saved configuration is used
 
 - **General:** power sensor, power limit, turn-on margin, regulation window, regulation interval, waiting time at the power limit and penalty threshold.
   The helper text under each field shows the valid range and the default.
-- **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity, actions to turn it on and off,
-  an optional power reserve, and its variants. A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
-  and can override the action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
+- **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity, an optional power reserve,
+  actions to turn it on and off, and its variants. A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
+  and can have its own action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
   The power reserve applies to every variant. Each group of EV chargers is in the list under its name, and is moved like an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, and the EV chargers in charging priority.
   Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
-  Then come the actions, the charging current, the power reserve, car connected, actively charging and the charging window.
+  Then come the entity and the power reserve, followed by the actions, the charging current, car connected, actively charging,
+  cloud control and the charging window.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 
