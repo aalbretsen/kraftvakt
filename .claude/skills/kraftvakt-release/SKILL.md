@@ -35,7 +35,7 @@ description: How a Kraftvakt release is made - SemVer versions and how to bump t
    Claude does not run it: it commits and tags on `main` and pushes, which only the owner does.
 
 The script stops unless the version is SemVer and not lower than the current one, the branch is a clean `main` that is not behind `origin/main`, and the tag is new.
-It runs every check from the `kraftvakt-testing` skill, sets the version (only the version text, so the files keep their format),
+It runs `scripts/build.py`, the checks from the `kraftvakt-testing` skill, sets the version (only the version text, so the files keep their format),
 commits "Release v<version>" when the version changed, makes an annotated tag, and asks before it pushes `main` and the tag in one atomic push.
 When the answer is no, it prints how to push later or undo.
 

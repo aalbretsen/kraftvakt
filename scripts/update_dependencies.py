@@ -4,7 +4,8 @@ Home Assistant decides most of the versions, so they follow one chain:
 
 - pytest-homeassistant-custom-component, newest release: Home Assistant and the
   pytest packages it pins,
-- that Home Assistant release: the Home Assistant frontend, ruff, mypy and Python,
+- that Home Assistant release: the Home Assistant frontend, ruff, mypy, the
+  lowest Python and the Python versions it supports,
 - that Home Assistant frontend release: Node, Lit, TypeScript and @mdi/js.
 
 The other build tools of the panel and the GitHub actions get their newest
@@ -12,8 +13,12 @@ release. Run from the repository root, with Node active:
 
     uv run scripts/update_dependencies.py
 
-The script updates the files and the panel's lock file, and prints what
-changed. Install and check the result as the README describes.
+The script asks before it changes the Python used for development to the
+newest Home Assistant supports, which also makes .venv again, and before it
+changes Node to the one the Home Assistant frontend uses. It tells when a newer
+Node LTS release exists. Everything else is updated without asking. At the end
+it prints what changed, and asks whether to run scripts/build.py, which installs
+and checks the result. When Node changed, activate the new one with nvm first.
 """
 
 from __future__ import annotations
@@ -26,6 +31,8 @@ import urllib.request
 from functools import partial
 from pathlib import Path
 from typing import Any
+
+import build
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIREMENTS = ROOT / "requirements_dev.txt"
@@ -46,24 +53,34 @@ PYPI_RELEASE = "https://pypi.org/pypi/{name}/{version}/json"
 NPM_LATEST = "https://registry.npmjs.org/{name}/latest"
 GITHUB_RELEASE = "https://api.github.com/repos/{repository}/releases/latest"
 FRONTEND_MANIFEST = "homeassistant/components/frontend/manifest.json"
+NODE_RELEASES = "https://nodejs.org/dist/index.json"
 ACTION_PIN = re.compile(r"(uses: )([\w.-]+/[\w.-]+)@(v[\d.]+)")
+# Where the minor version of the Python used for development is written, as the
+# first group of each pattern.
+DEVELOPMENT_PYTHON = (
+    (PYPROJECT, r'^python_version = "3\.(\d+)"$'),
+    (PYPROJECT, r'^target-version = "py3(\d+)"$'),
+    (WORKFLOWS / "ci.yml", r'python-version: "3\.(\d+)"'),
+    (ROOT / "README.md", r"uv venv --python 3\.(\d+)"),
+    (ROOT / ".claude" / "skills" / "kraftvakt-testing" / "SKILL.md", r"uv venv --python 3\.(\d+)"),
+)
 
 
 def main() -> None:
     """Update the dependencies and print what changed."""
     changes: list[str] = []
-    frontend_version = update_python(changes)
-    update_panel(frontend_version, changes)
+    pins = update_python(changes)
+    update_python_version(pins["homeassistant"], changes)
+    update_node(pins["home-assistant-frontend"], changes)
+    update_panel(pins["home-assistant-frontend"], changes)
     update_actions(changes)
     print("\n".join(dict.fromkeys(changes)) or "Everything is up to date.")
+    if ask("Build and run the checks now?"):
+        build.main()
 
 
-def update_python(changes: list[str]) -> str:
-    """Update the Python development dependencies.
-
-    Returns the version of the Home Assistant frontend the new Home Assistant
-    release uses.
-    """
+def update_python(changes: list[str]) -> dict[str, str]:
+    """Update the Python development dependencies, and return their new pins."""
     harness = fetch_json(PYPI.format(name=TEST_HARNESS))["info"]
     pins = {TEST_HARNESS: harness["version"]}
     harness_pins = requirement_pins(harness["requires_dist"])
@@ -77,27 +94,54 @@ def update_python(changes: list[str]) -> str:
     for name, version in pins.items():
         text = replace_version(text, rf"^{re.escape(name)}==(\S+)$", name, version, changes)
     REQUIREMENTS.write_text(text)
+    return pins
 
-    ha_release = fetch_json(PYPI_RELEASE.format(name="homeassistant", version=ha_version))
-    python = ha_release["info"]["requires_python"]
+
+def update_python_version(ha_version: str, changes: list[str]) -> None:
+    """Follow the lowest Python of Home Assistant, and offer its newest.
+
+    The newest Python minor version the Home Assistant release supports is
+    offered for development. Accepting it updates the files that name it, and
+    makes .venv again with it.
+    """
+    ha_release = fetch_json(PYPI_RELEASE.format(name="homeassistant", version=ha_version))["info"]
     PYPROJECT.write_text(
         replace_version(
             PYPROJECT.read_text(),
             r'^requires-python = "(\S+)"$',
-            "Python",
-            python,
+            "Lowest Python",
+            ha_release["requires_python"],
             changes,
         )
     )
-    return pins["home-assistant-frontend"]
+    supported = (re.fullmatch(r"Programming Language :: Python :: 3\.(\d+)", classifier) for classifier in ha_release["classifiers"])
+    newest = max(int(match.group(1)) for match in supported if match)
+    written = [re.findall(pattern, path.read_text(), flags=re.MULTILINE) for path, pattern in DEVELOPMENT_PYTHON]
+    if not all(written) or len({version for versions in written for version in versions}) != 1:
+        raise ValueError("The Python used for development is not the same in every file that names it")
+    current = int(written[0][0])
+    if newest == current or not ask(f"Home Assistant {ha_version} supports Python 3.{newest}, development uses 3.{current}. Change to 3.{newest} and make .venv again?"):
+        return
+    for path, pattern in DEVELOPMENT_PYTHON:
+        path.write_text(re.sub(pattern, partial(replace_group, str(newest)), path.read_text(), flags=re.MULTILINE))
+    note_change(changes, "Python for development", f"3.{current}", f"3.{newest}")
+    subprocess.run(["uv", "venv", "--clear", "--python", f"3.{newest}"], cwd=ROOT, check=True)
+
+
+def update_node(frontend_version: str, changes: list[str]) -> None:
+    """Offer the Node the Home Assistant frontend uses, and tell of a newer LTS."""
+    current = NVMRC.read_text().strip()
+    node = fetch_text(FRONTEND_FILE.format(version=frontend_version, path=".nvmrc")).strip()
+    lts = next(release["version"] for release in fetch_json(NODE_RELEASES) if release["lts"])
+    if major(lts) > major(node):
+        print(f"Node {lts.removeprefix('v')} is the newest LTS release. Kraftvakt follows the Home Assistant frontend, which uses Node {node}.")
+    if node != current and ask(f"The Home Assistant frontend uses Node {node}, development uses {current}. Change to {node}?"):
+        note_change(changes, "Node", current, node)
+        NVMRC.write_text(f"{node}\n")
 
 
 def update_panel(frontend_version: str, changes: list[str]) -> None:
-    """Update Node and the panel's packages, and refresh the lock file."""
-    node = fetch_text(FRONTEND_FILE.format(version=frontend_version, path=".nvmrc"))
-    note_change(changes, "Node", NVMRC.read_text().strip(), node.strip())
-    NVMRC.write_text(f"{node.strip()}\n")
-
+    """Update the panel's packages, and refresh the lock file."""
     ha_frontend = json.loads(fetch_text(FRONTEND_FILE.format(version=frontend_version, path="package.json")))
     ha_packages = {**ha_frontend["dependencies"], **ha_frontend["devDependencies"]}
     package = json.loads(PACKAGE_JSON.read_text())
@@ -162,6 +206,20 @@ def replace_version(text: str, pattern: str, name: str, version: str, changes: l
         raise ValueError(f"No line for {name}")
     note_change(changes, name, match.group(1), version)
     return text[: match.start(1)] + version + text[match.end(1) :]
+
+
+def replace_group(value: str, match: re.Match[str]) -> str:
+    """Return the text of the match with its first group replaced by `value`."""
+    start, end = match.start(1) - match.start(), match.end(1) - match.start()
+    return match.group()[:start] + value + match.group()[end:]
+
+
+def major(version: str) -> int:
+    return int(version.removeprefix("v").split(".")[0])
+
+
+def ask(question: str) -> bool:
+    return input(f"{question} [y/N] ").strip().lower() == "y"
 
 
 def note_change(changes: list[str], name: str, current: str, newest: str) -> None:

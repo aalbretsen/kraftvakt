@@ -385,16 +385,22 @@ the EV charger still counts as not charging, but the override does not end.
 ## Development
 
 Requires Python in the version in `pyproject.toml`, the same as the Home Assistant version in `requirements_dev.txt` requires, and [uv](https://docs.astral.sh/uv/).
-The development dependencies are in `requirements_dev.txt`.
+The development dependencies are in `requirements_dev.txt`. Make the virtual environment once:
 
 ```bash
 uv venv --python 3.14
-uv pip install -r requirements_dev.txt
-uv run pytest
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
+nvm use
 ```
+
+Build all with Node active, see [Panel](#panel):
+
+```bash
+uv run scripts/build.py
+```
+
+The script installs the development dependencies of the integration and the panel, runs the tests with the coverage required, ruff and mypy,
+and type checks, tests and builds the panel. It stops at the first step that fails, and tells when the panel bundle has changed and must be committed.
+Every commit passes it.
 
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
 The charger profiles are in `charger_profiles/`, one module per profile in `charger_profiles/profiles/`.
@@ -416,6 +422,7 @@ nvm use
 
 The built bundle, `custom_components/kraftvakt/frontend/kraftvakt-panel.js`, is committed, because HACS installs straight from the repository.
 Build it again after every change in `frontend/`, and commit the source and the bundle together. CI fails if the committed bundle does not match the source.
+`scripts/build.py` builds it with everything else; to work on the panel alone:
 
 ```bash
 cd frontend
@@ -438,11 +445,18 @@ The other build tools of the panel and the GitHub actions get their newest relea
 uv run scripts/update_dependencies.py
 ```
 
-The script prints what changed. Then install again, activate the new Node, and run the checks and the panel build:
+The script asks before it changes the Python used for development or Node, and updates the rest without asking.
+Python is offered in the newest version Home Assistant supports; accepting it changes the version in every file that names it and makes `.venv` again.
+Node is offered in the version the Home Assistant frontend uses, and the script tells when a newer Node LTS release exists.
+At the end, the script prints what changed, and asks whether to build all with `scripts/build.py`.
+When Node has changed, the build stops: activate the new Node, and build again:
 
 ```bash
-uv pip install -r requirements_dev.txt
 nvm install
+```
+
+```bash
+uv run scripts/build.py
 ```
 
 ### Releasing
@@ -453,7 +467,7 @@ Versions follow [SemVer](https://semver.org/). A release is made from an up-to-d
 uv run scripts/release.py 0.2.0
 ```
 
-The script runs the checks, sets the version in `manifest.json`, `pyproject.toml` and the panel's `package.json` and lock file, commits, tags `v0.2.0`,
+The script builds all with `scripts/build.py`, sets the version in `manifest.json`, `pyproject.toml` and the panel's `package.json` and lock file, commits, tags `v0.2.0`,
 and asks before it pushes `main` and the tag. The tag starts the release workflow, which checks the versions and creates a draft release on GitHub.
 Write the release notes there and publish it; HACS offers only published releases.
 A version with a pre-release part, like `0.2.0-beta.1`, becomes a GitHub pre-release, which HACS offers only to users who turn on pre-releases for Kraftvakt.

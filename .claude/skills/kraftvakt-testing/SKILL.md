@@ -28,24 +28,26 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 
 ## Checks before every commit
 
-```bash
-.venv/bin/python -m pytest -q --cov=custom_components/kraftvakt --cov=simulator/custom_components/kraftvakt_simulator --cov=diagnostics \
-  --cov-report=term-missing --cov-fail-under=100
-.venv/bin/ruff check .
-.venv/bin/ruff format --check .
-.venv/bin/mypy
-cd frontend && npm run typecheck && npm test && npm run build && git status --short ../custom_components/kraftvakt/frontend/
-```
-
-The bundle must be unchanged after the build, or be committed with the source. Node must be activated with nvm first, see the `kraftvakt-panel` skill.
-Setup: `uv venv --python 3.14 && uv pip install -r requirements_dev.txt`, and `npm ci` in `frontend/`.
+`uv run scripts/build.py`, with Node active (`fish -c 'nvm use; uv run scripts/build.py'`), runs them all and is the one list of them:
+it installs the dependencies with `uv pip install` and `npm ci`, runs pytest with 100 % coverage of Kraftvakt, the simulator and the diagnostics tools,
+ruff check and format, mypy, and the panel's typecheck, tests and build, and stops at the first failure.
+It refuses to run when the active Node is not the one in `.nvmrc`, since a script cannot activate nvm.
+The bundle must be unchanged after the build, or be committed with the source; the script tells when it changed.
+`scripts/release.py` runs the same build, and `scripts/update_dependencies.py` offers to run it when it is done.
+Setup: `uv venv --python 3.14`.
 
 ## Updating dependencies
 
 `uv run scripts/update_dependencies.py`, with Node active, updates every pin: the Python development dependencies, `pyproject.toml`'s Python, `.nvmrc`,
 the panel's packages and lock file, and the GitHub actions. Most versions follow one chain from the newest `pytest-homeassistant-custom-component`, so the test harness,
 Home Assistant, its frontend, ruff, Node, Lit and TypeScript always fit together; the rest get their newest release.
-Afterwards install again, `nvm install`, run every check and rebuild the panel. Commit the dependency changes on their own.
+Two of them are changed only when the owner answers yes, since they change the tools on the machine:
+- the Python used for development, offered as the newest minor version the Home Assistant release supports (its PyPI classifiers).
+  Yes changes it in every file that names it (`DEVELOPMENT_PYTHON` in the script) and makes `.venv` again with `uv venv --clear`.
+  `requires-python` is Home Assistant's lowest Python and follows it without asking.
+- Node, offered as the version in the Home Assistant frontend's `.nvmrc`. Node follows Home Assistant, not the newest Node LTS release;
+  the script only tells when a newer LTS major version exists.
+It then asks whether to build; when Node changed, the build stops until the new Node is activated with `nvm install`, and is run again. Commit the dependency changes on their own.
 A new Home Assistant version also needs the panel tested by hand, see the `kraftvakt-panel` skill.
 
 ## Layout

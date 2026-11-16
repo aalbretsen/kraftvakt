@@ -4,8 +4,8 @@ Run on an up-to-date main branch with a clean working tree and Node active:
 
     uv run scripts/release.py 0.2.0
 
-The version is SemVer. The script runs every check, sets the version in the
-files that carry it, commits, makes the tag `v<version>`, and asks before it
+The version is SemVer. The script runs scripts/build.py, sets the version in
+the files that carry it, commits, makes the tag `v<version>`, and asks before it
 pushes main and the tag. The pushed tag starts the release workflow. The
 simulator keeps its own version.
 """
@@ -17,9 +17,9 @@ import json
 import re
 import subprocess
 import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+from build import ROOT, BuildError, build, run
+
 MANIFEST = ROOT / "custom_components" / "kraftvakt" / "manifest.json"
 PYPROJECT = ROOT / "pyproject.toml"
 PACKAGE_JSON = ROOT / "frontend" / "package.json"
@@ -41,15 +41,6 @@ JSON_VERSIONS = {
     PACKAGE_LOCK: (("version",), ("packages", "", "version")),
 }
 
-CHECKS = (
-    (".venv/bin/python", "-m", "pytest", "-q"),
-    (".venv/bin/ruff", "check", "."),
-    (".venv/bin/ruff", "format", "--check", "."),
-    (".venv/bin/mypy",),
-    ("npm", "--prefix", "frontend", "run", "typecheck"),
-    ("npm", "--prefix", "frontend", "run", "build"),
-)
-
 
 class ReleaseError(Exception):
     """A reason the release cannot be made."""
@@ -62,7 +53,7 @@ def main() -> None:
     version = parser.parse_args().version
     try:
         release(version)
-    except (ReleaseError, subprocess.CalledProcessError) as error:
+    except (ReleaseError, BuildError, subprocess.CalledProcessError) as error:
         sys.exit(f"Release stopped: {error}")
 
 
@@ -71,11 +62,9 @@ def release(version: str) -> None:
     tag = f"v{version}"
     check_version(version, current_version())
     check_repository(tag)
-    print("Running the checks …", flush=True)
-    for check in CHECKS:
-        run(*check)
+    build()
     if git("status", "--porcelain"):
-        raise ReleaseError("the checks changed files; is the panel bundle built?")
+        raise ReleaseError("the build changed files; is the panel bundle built?")
 
     set_version(version)
     if git("status", "--porcelain"):
@@ -161,12 +150,6 @@ def precedence(version: str) -> tuple:
 def git(*args: str) -> str:
     """Run git in the repository and return its output."""
     return run("git", *args, capture=True)
-
-
-def run(*command: str, capture: bool = False) -> str:
-    """Run a command in the repository, and stop the release if it fails."""
-    result = subprocess.run(command, cwd=ROOT, check=True, text=True, capture_output=capture)
-    return result.stdout.strip() if capture else ""
 
 
 def run_ok(*command: str) -> bool:
