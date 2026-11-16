@@ -58,7 +58,7 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
                         "max_current_a": 7,
                         "power_reserve_w": 0,
                         "car_connected": {"type": "entity", "value": CAR_CONNECTED},
-                        "actively_charging": {"type": "power_sensor", "value": CHARGER_POWER},
+                        "charging_power": {"type": "power_sensor", "value": CHARGER_POWER},
                     }
                 ],
             }
@@ -131,12 +131,16 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "priority": ["c"],
         "ampere_steps_on": {"c": 1},
         "activated_at": {"c": local(now)},
+        "charged": [],
+        "grace": {},
+        "done": [],
         "bypassed": [],
+        "charging": [],
+        "resumed": [],
         "may_charge": ["c"],
         "on_trial": ["c"],
         "starting": {},
         "waiting": [],
-        "rests": {},
         "last_readings": None,
         "last_permissions": {"c": "window"},
     }

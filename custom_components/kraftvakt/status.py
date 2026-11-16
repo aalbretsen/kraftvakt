@@ -109,6 +109,7 @@ def _charger_status(
         "bypassed": status.bypassed,
         "charging": status.charging,
         "starting_until": _local_time(status.starting_until),
+        "grace_until": _local_time(status.grace_until),
         **_waiting_fields(runtime, charger.id),
     }
 

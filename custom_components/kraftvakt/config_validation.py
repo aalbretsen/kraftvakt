@@ -110,12 +110,25 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         if charger.device_id is None:
             missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
         missing += _missing_entity_and_actions("chargers", charger)
-        missing += [
-            Issue(f"missing_{field_name}", "chargers", charger.id, field_name) for field_name in ("car_connected", "actively_charging") if not _is_set(getattr(charger, field_name))
-        ]
+        if not _is_set(charger.car_connected):
+            missing.append(Issue("missing_car_connected", "chargers", charger.id, "car_connected"))
+        if not _is_set(charger.actively_charging) and not _is_set(charger.charging_power):
+            missing.append(Issue("missing_actively_charging", "chargers", charger.id, "actively_charging"))
         if charger.deactivate_on_fault and not _is_set(charger.fault_flag):
             missing.append(Issue("missing_fault_flag", "chargers", charger.id, "fault_flag"))
+    missing += [
+        Issue("missing_charging_power", "chargers", charger.id, "charging_power")
+        for group in config.charger_groups
+        if _shares_by_charging_power(group)
+        for charger in group.chargers
+        if not _is_set(charger.charging_power)
+    ]
     return missing
+
+
+def _shares_by_charging_power(group: ChargerGroup) -> bool:
+    """Return whether the group makes switch-overs, which need the charging power and the power reserve of every charger."""
+    return group.dynamic_order and not group.one_at_a_time
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:
@@ -155,6 +168,8 @@ def _charger_group_issues(groups: Iterable[ChargerGroup]) -> list[Issue]:
             issues.append(location.issue("empty_name", "name"))
         elif names[name] > 1:
             issues.append(location.issue("duplicate_name", "name"))
+        if _shares_by_charging_power(group):
+            issues += [Issue("power_reserve_required", "chargers", charger.id, "power_reserve_w") for charger in group.chargers if charger.power_reserve_w == 0]
     return issues
 
 
@@ -183,12 +198,12 @@ def _charger_issues(charger: Charger) -> list[Issue]:
 
 
 def _is_set(condition: Condition | None) -> bool:
-    """Return whether the condition has a value; an empty one is missing."""
-    return condition is not None and bool(condition.value.strip())
+    """Return whether the condition has a value; an empty one, or a state without a chosen state, is missing."""
+    return condition is not None and bool(condition.value.strip()) and (condition.type is not ConditionType.STATE or bool(condition.states))
 
 
 def _condition_issues(location: IssueLocation, field_name: str, condition: Condition) -> list[Issue]:
-    if not _is_set(condition) or condition.type is ConditionType.TEMPLATE:
+    if not condition.value.strip() or condition.type is ConditionType.TEMPLATE:
         return []
     return _entity_format_issues(location, field_name, condition.value)
 

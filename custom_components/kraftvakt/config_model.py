@@ -90,13 +90,21 @@ class ActionMode(StrEnum):
 class ConditionType(StrEnum):
     """How a true/false value is given.
 
-    `POWER_SENSOR` is true above a fixed power, and is offered only for
-    whether a charger is actively charging.
+    `STATE` is the states of an entity, offered for the conditions of a
+    charger. `POWER_SENSOR` is true above a fixed power, and is offered only
+    for the charging power of a charger, which may also be a template that
+    gives the power.
     """
 
     ENTITY = "entity"
+    STATE = "state"
     TEMPLATE = "template"
     POWER_SENSOR = "power_sensor"
+
+
+VARIANT_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.TEMPLATE)
+CHARGER_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.STATE, ConditionType.TEMPLATE)
+CHARGING_POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
 
 
 class OverrideEnd(StrEnum):
@@ -156,13 +164,22 @@ class ActionConfig:
 
 @dataclass(frozen=True, slots=True)
 class Condition:
-    """A true/false value from a boolean entity, a template or a power sensor."""
+    """A true/false value from a boolean entity, the states of an entity, a template or a power sensor.
+
+    `value` is the entity or the template. For a state, `states` are the
+    chosen states, which count as true, or as false when `states_are_true`
+    is not set, and every other state as the opposite.
+    """
 
     type: ConditionType
     value: str
+    states: tuple[str, ...] = ()
+    states_are_true: bool = True
 
     def to_dict(self) -> dict[str, Any]:
-        return _fields_to_dict(self)
+        if self.type is ConditionType.STATE:
+            return _fields_to_dict(self)
+        return {"type": self.type.value, "value": self.value}
 
 
 APPLIANCE_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {

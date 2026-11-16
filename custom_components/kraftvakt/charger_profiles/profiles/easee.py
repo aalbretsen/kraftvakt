@@ -37,7 +37,7 @@ PROFILE: Final = ChargerProfile(
         "{% set status = states('$status') %}{{ none if status in ['offline', 'unknown', 'unavailable'] else status != 'disconnected' }}",
         status=_STATUS,
     ),
-    actively_charging=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
+    charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
     cloud_controlled=True,
     deactivate_on_fault=True,
     # An erratic car is a fault too, so the user sees why it does not charge. It ends when the car is disconnected.

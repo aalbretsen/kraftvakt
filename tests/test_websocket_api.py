@@ -568,7 +568,7 @@ def config_with_charger(device_id: str, **settings: Any) -> dict[str, Any]:
                         "action": [{"action": "number.set_value"}],
                     },
                     "car_connected": {"type": "entity", "value": "binary_sensor.charger_car"},
-                    "actively_charging": {
+                    "charging_power": {
                         "type": "power_sensor",
                         "value": "sensor.charger_power",
                     },
@@ -608,7 +608,7 @@ async def test_charger_entities_must_belong_to_its_device(
                 "target": "c1",
                 "field": field,
             }
-            for field in ("entity_id", "actively_charging")
+            for field in ("entity_id", "charging_power")
         ],
     }
 
@@ -891,7 +891,7 @@ async def test_status_shows_the_chargers(
                         "mode": "custom",
                         "action": [{"action": "number.set_value"}],
                     },
-                    "actively_charging": {
+                    "charging_power": {
                         "type": "power_sensor",
                         "value": "sensor.charger_power",
                     },
@@ -920,6 +920,7 @@ async def test_status_shows_the_chargers(
             "current_a": None,
             "bypassed": False,
             "starting_until": None,
+            "grace_until": None,
             "charging": False,
             "waiting_since": None,
             "waiting_until": None,
@@ -937,7 +938,7 @@ def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
         "deactivate": DEFAULT,
         "set_current": {"mode": "custom", "action": [{"action": "number.set_value"}]},
         "car_connected": {"type": "entity", "value": f"binary_sensor.{charger_id}_car"},
-        "actively_charging": {
+        "charging_power": {
             "type": "power_sensor",
             "value": f"sensor.{charger_id}_power",
         },
@@ -951,11 +952,12 @@ async def test_status_shows_the_chargers_in_the_current_priority(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """A bypassed charger is shown last."""
+    """With dynamic charging order a bypassed charger is shown last."""
     config["charger_groups"] = [
         {
             "id": "g1",
             "name": "EV chargers",
+            "dynamic_order": True,
             "chargers": [charger("c1"), charger("c2")],
         }
     ]

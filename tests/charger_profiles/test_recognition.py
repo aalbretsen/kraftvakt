@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.kraftvakt.charger_profiles import recognition
-from custom_components.kraftvakt.charger_profiles.profile import ProfileEntity, entity_condition, template_condition
+from custom_components.kraftvakt.charger_profiles.profile import ProfileEntity, entity_condition, state_condition, template_condition
 from custom_components.kraftvakt.charger_profiles.profiles import amina_s_zigbee2mqtt
 
 from .conftest import Command, Device, DeviceEntity, charger_profile, register
@@ -81,3 +81,12 @@ async def test_profile_whose_fault_flag_is_not_found_leaves_deactivate_on_fault_
 
     assert "deactivate_on_fault" not in fields
     assert "fault_flag" not in fields
+
+
+async def test_profile_fills_the_states_of_an_entity(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(amina_s_zigbee2mqtt.PROFILE, car_connected=state_condition(ProfileEntity("binary_sensor", name="Ev connected"), ("off",), states_are_true=False))
+    monkeypatch.setattr(recognition, "PROFILES", (profile,))
+
+    fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
+
+    assert fields["car_connected"] == {"type": "state", "value": "binary_sensor.amina_ev_connected", "states": ["off"], "states_are_true": False}

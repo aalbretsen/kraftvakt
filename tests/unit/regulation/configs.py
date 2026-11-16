@@ -90,9 +90,9 @@ def charger(
 DEFAULT_GROUP = "ev"
 
 
-def charger_group(group_id: str, *chargers: Charger, one_at_a_time: bool = True) -> ChargerGroup:
+def charger_group(group_id: str, *chargers: Charger, one_at_a_time: bool = True, dynamic_order: bool = False) -> ChargerGroup:
     """Return a group of the chargers, named after its id."""
-    return ChargerGroup(id=group_id, name=group_id, one_at_a_time=one_at_a_time, chargers=chargers)
+    return ChargerGroup(id=group_id, name=group_id, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order, chargers=chargers)
 
 
 def priority_entry(text: str) -> PriorityEntry:
@@ -115,6 +115,7 @@ def make_config(
     charger_repeat: tuple[float, int] = (1.0, 5),
     chargers: tuple[Charger, ...] = (),
     one_at_a_time: bool = True,
+    dynamic_order: bool = False,
     groups: tuple[ChargerGroup, ...] = (),
 ) -> KraftvaktConfig:
     """Return a configuration with the appliances in the given priority order.
@@ -146,7 +147,7 @@ def make_config(
         appliances=built,
         priority=tuple(priority_entry(text) for text in priority),
         charger_groups=(
-            *((charger_group(DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time),) if chargers else ()),
+            *((charger_group(DEFAULT_GROUP, *chargers, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order),) if chargers else ()),
             *groups,
         ),
     )

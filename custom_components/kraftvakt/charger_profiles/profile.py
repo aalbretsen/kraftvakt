@@ -42,7 +42,7 @@ class ProfileAction:
 
 @dataclass(frozen=True, slots=True)
 class ProfileCondition:
-    """A condition from an entity or a power sensor of the device, or a template.
+    """A condition from an entity, the states of an entity or a power sensor of the device, or a template.
 
     `$name` in a template is replaced by the entity ID of the entity `name` in `entities`.
     """
@@ -51,12 +51,15 @@ class ProfileCondition:
     entity: ProfileEntity | None = None
     template: str | None = None
     entities: Mapping[str, ProfileEntity] = field(default_factory=dict)
+    states: tuple[str, ...] = ()
+    states_are_true: bool = True
 
 
 @dataclass(frozen=True, slots=True)
 class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
+    A profile has a charging on/off (`actively_charging`), a charging power or both.
     `cloud_controlled` is for chargers controlled through a cloud service.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
@@ -68,7 +71,8 @@ class ChargerProfile:
     deactivate: ProfileAction
     set_current: ProfileAction
     car_connected: ProfileCondition
-    actively_charging: ProfileCondition
+    actively_charging: ProfileCondition | None = None
+    charging_power: ProfileCondition | None = None
     cloud_controlled: bool = False
     deactivate_on_fault: bool = False
     fault_flag: ProfileCondition | None = None
@@ -87,6 +91,10 @@ def entity_action(entity: ProfileEntity) -> ProfileAction:
 
 def entity_condition(entity: ProfileEntity) -> ProfileCondition:
     return ProfileCondition(ConditionType.ENTITY, entity=entity)
+
+
+def state_condition(entity: ProfileEntity, states: tuple[str, ...], *, states_are_true: bool = True) -> ProfileCondition:
+    return ProfileCondition(ConditionType.STATE, entity=entity, states=states, states_are_true=states_are_true)
 
 
 def power_sensor_condition(entity: ProfileEntity) -> ProfileCondition:

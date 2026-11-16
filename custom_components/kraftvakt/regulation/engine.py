@@ -122,12 +122,12 @@ class RegulationEngine:
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
-        return {charger_id: status for group in self._groups for charger_id, status in self._charging(group.id).status(group.chargers).items()}
+        return {charger_id: status for group in self._groups for charger_id, status in self._charging(group.id).status(group).items()}
 
     @property
     def charging_priorities(self) -> Mapping[str, list[str]]:
-        """Return the current charging priority of each group, highest first."""
-        return {group_id: list(charging.priority) for group_id, charging in self._state.charging_groups.items()}
+        """Return the chargers of each group in the order their ampere steps are interleaved, highest first."""
+        return {group.id: self._charging(group.id).order(group) for group in self._groups}
 
     def diagnostics(self) -> dict[str, Any]:
         return {
@@ -253,8 +253,7 @@ class RegulationEngine:
             reading = decision.chargers.get(charger.id, ChargerReading())
             charging = self._charging_of(charger.id)
             activated = charging.ampere_steps_on[charger.id] > 0
-            tried = charging.activated_long_enough(charger, decision.now, window)
-            if override_ended(charger, reading, tried):
+            if override_ended(charger, reading, charging.becomes_done(charger, reading, decision.now, window)):
                 changes.ended.append(charger.id)
             elif override_arms(charger, reading, activated):
                 changes.armed.append(charger.id)
@@ -270,25 +269,18 @@ class RegulationEngine:
                 readings[charger.id],
                 readings[charger.id].window_override and charger.id not in ended_overrides,
                 local_time,
-                self._charging_of(charger.id).ampere_steps_on[charger.id] > 0,
+                self._charging_of(charger.id).counts_as_charging(charger.id, readings[charger.id]),
             )
             for charger in self._chargers.values()
         }
         commands: list[Command] = []
         for group in self._groups:
             charging = self._charging(group.id)
-            newly_bypassed = charging.evaluate(
-                group.chargers,
-                readings,
-                permissions,
-                decision.now,
-                timedelta(seconds=self._config.general.regulation_window_s),
-                group.one_at_a_time,
-            )
+            changes = charging.evaluate(group, readings, permissions, decision.now, timedelta(seconds=self._config.general.regulation_window_s))
             for charger_id in charging.activated():
-                if not charging.is_allowed(charger_id):
+                if not charging.is_allowed(charger_id) or charger_id in charging.done:
                     commands += self._set_ampere_steps_on(charger_id, 0)
-            for charger_id in newly_bypassed:
+            for charger_id in changes.bypassed + changes.grace:
                 if charging.ampere_steps_on[charger_id] > 1:
                     commands += self._set_ampere_steps_on(charger_id, 1)
         return commands
@@ -355,13 +347,15 @@ class RegulationEngine:
             self._state.current_variants,
             self._state.appliances_on,
             self._appliance_growth,
-            {group_id: self._ampere_steps(charging) for group_id, charging in self._state.charging_groups.items()},
+            {group.id: self._ampere_steps(group) for group in self._groups},
             self._state.excluded_appliances,
         )
 
-    def _ampere_steps(self, charging: ChargingState) -> list[Step]:
+    def _ampere_steps(self, group: ChargerGroup) -> list[Step]:
+        charging = self._charging(group.id)
         return ampere_steps(
-            [self._chargers[charger_id] for charger_id in charging.priority],
+            group.id,
+            [[self._chargers[charger_id] for charger_id in block] for block in charging.blocks(group)],
             charging.ampere_steps_on,
             charging.may_charge,
             charging.on_trial,
@@ -397,26 +391,61 @@ class RegulationEngine:
         return self._switch(lowest_on.key, turn_on=False)
 
     def _turn_on_next(self, now: datetime, average_w: float, forced_off: bool) -> list[Command]:
-        """Turn on the next step, or make room for it when there is none.
+        """Make a switch-over, or turn on the next step, or make room for it when there is none.
 
-        No room is made when the decision has already forced something off,
-        since the average was measured before that. The power reserves held
-        for starting chargers above the step count as used, also for its
-        waiting time.
+        No room is made, and no switch-over, when the decision has already
+        forced something off, since the average was measured before that. The
+        power reserves held for starting chargers above the step, and in its
+        own group, count as used, also for its waiting time.
         """
         steps = self._steps()
         place = next((place for place, step in enumerate(steps) if not step.is_on and step.can_turn_on), None)
+        switch_over = None if forced_off else self._switch_over(steps, place, now, average_w)
+        if switch_over is not None:
+            return switch_over
         if place is None:
             self._state.waiting = None
             return []
         candidate = steps[place]
-        held_w = sum(step.power_reserve_w or 0 for step in steps[:place] if step.holds_reserve)
+        held_w = _held_reserves_w(steps, place)
         if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
             return [] if forced_off else self._make_room_below(candidate.key)
         if not self._has_waited(candidate, now, average_w + held_w):
             return []
         return self._switch(candidate.key, turn_on=True, now=now)
+
+    def _switch_over(self, steps: list[Step], place: int | None, now: datetime, average_w: float) -> list[Command] | None:
+        """Return the commands of a switch-over when one is due, an empty list while its waiting time runs, or None.
+
+        The queued charger may start when the free power plus what the chargers
+        that charge above their minimum current draw above their power reserves
+        covers its reserve. Nothing above the group may be waiting for room, and
+        no charger of the group may be starting, since its charging power would
+        then be from before the last switch-over.
+        """
+        for group in self._groups:
+            charging = self._charging(group.id)
+            queued = charging.queued(group)
+            if not charging.shares_by_charging_power(group) or charging.starting or not queued:
+                continue
+            group_places = [index for index, step in enumerate(steps) if step.group_id == group.id]
+            if place is not None and place < group_places[0]:
+                continue
+            above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
+            freed_w = sum(max(0.0, (charging.last_readings[charger_id].charging_power_w or 0.0) - self._chargers[charger_id].power_reserve_w) for charger_id in above_minimum)
+            key = AmpereStepKey(queued[0], 0)
+            step = next(step for step in steps if step.key == key)
+            held_w = _held_reserves_w(steps, group_places[0])
+            if freed_w <= 0 or not self._may_turn_on(step, average_w + held_w - freed_w):
+                continue
+            if not self._has_waited(step, now, average_w + held_w):
+                return []
+            commands: list[Command] = []
+            for charger_id in sorted(above_minimum, key=charging.order(group).index):
+                commands += self._set_ampere_steps_on(charger_id, 1)
+            return commands + self._switch(key, turn_on=True, now=now)
+        return None
 
     def _may_turn_on(self, step: Step, average_w: float) -> bool:
         """Return whether there is room to turn the step on.
@@ -508,3 +537,13 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
+
+
+def _held_reserves_w(steps: list[Step], place: int) -> float:
+    """Return the power reserves held for starting chargers above the place, and in the group of the step at the place."""
+    group_id = steps[place].group_id
+    return sum(
+        step.power_reserve_w or 0
+        for index, step in enumerate(steps)
+        if step.holds_reserve and index != place and (index < place or (group_id is not None and step.group_id == group_id))
+    )

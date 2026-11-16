@@ -12,6 +12,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     custom_action,
     entity_action,
     entity_condition,
+    state_condition,
     template_condition,
 )
 from custom_components.kraftvakt.config_model import ConditionType
@@ -47,7 +48,7 @@ def charger(charger_id: str = "c1", **fields: Any) -> dict[str, Any]:
         "deactivate": {"mode": "default"},
         "set_current": {"mode": "entity", "entity_id": "number.box_current"},
         "car_connected": {"type": "entity", "value": "binary_sensor.box_car"},
-        "actively_charging": {"type": "power_sensor", "value": "sensor.box"},
+        "charging_power": {"type": "power_sensor", "value": "sensor.box"},
         **fields,
     }
 
@@ -72,9 +73,16 @@ def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -
     assert result.profile.activate == DEFAULT_ACTION
     assert result.profile.set_current == entity_action(ProfileEntity("number", name="Current"))
     assert result.profile.car_connected == entity_condition(ProfileEntity("binary_sensor", translation_key="car"))
-    assert result.profile.actively_charging == ProfileCondition(ConditionType.POWER_SENSOR, entity=ProfileEntity("sensor"))
+    assert result.profile.actively_charging is None
+    assert result.profile.charging_power == ProfileCondition(ConditionType.POWER_SENSOR, entity=ProfileEntity("sensor"))
     assert result.profile.cloud_controlled
     assert result.notes == ()
+
+
+def test_the_states_of_an_entity_are_drafted_with_whether_they_count_as_true() -> None:
+    result = draft(car_connected={"type": "state", "value": "binary_sensor.box_car", "states": ["disconnected"], "states_are_true": False})
+
+    assert result.profile.car_connected == state_condition(ProfileEntity("binary_sensor", translation_key="car"), ("disconnected",), states_are_true=False)
 
 
 def test_the_fault_flag_is_drafted_as_the_other_conditions() -> None:
@@ -130,7 +138,7 @@ def test_entities_a_profile_cannot_find_are_noted() -> None:
         entity("binary_sensor.box_car_2", "car", "Car"),
     ]
 
-    result = draft({"entities": entities}, actively_charging={"type": "entity", "value": "binary_sensor.elsewhere"})
+    result = draft({"entities": entities}, actively_charging={"type": "entity", "value": "binary_sensor.elsewhere"}, charging_power=None)
 
     assert result.profile.car_connected == entity_condition(ProfileEntity("binary_sensor", translation_key="car"))
     assert result.profile.actively_charging == ProfileCondition(ConditionType.ENTITY)

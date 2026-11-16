@@ -338,13 +338,16 @@ All with entity category diagnostic:
   so the chargers that wait are queued in the order they fell back.
 - Several at once without dynamic charging order: the ampere steps of all allowed chargers that are not bypassed or done are interleaved:
   the first of each charger in the configured priority, then the second, and so on.
-- Several at once with dynamic charging order: the ampere steps of the chargers that charge, those in grace included, are interleaved in the configured priority,
-  except that a charger that charges again after its grace period is first in each round until it has all its ampere steps on or stops charging.
-  The ampere steps of the queued chargers come after them, in the current charging priority. The first of them is turned on the normal way when it is the next step,
+- Several at once with dynamic charging order: the ampere steps of the chargers that are activated, charging, in grace or on trial,
+  are interleaved in the configured priority, except that a charger that charges again after its grace period is first in each round
+  until it has all its ampere steps on or stops charging.
+  The ampere steps of the queued chargers come after them, interleaved in the current charging priority.
+  Why: a charger activated to start sits among those that charge, so room is never made for them from its first ampere step.
+  The first queued charger is turned on the normal way when it is the next step,
   and a switch-over can make room for it before that.
 - Switch-over: with several at once and dynamic charging order, the first queued charger that is not activated gets its first ampere step,
-  and every charger that charges is set to its minimum current, at the same decision.
-  It is made when the free power plus what the chargers that charge draw above their power reserves, by their charging power, covers the reserve of the queued charger,
+  and every charger that charges above its minimum current is set to it, at the same decision.
+  It is made when the free power plus what those chargers draw above their power reserves, by their charging power, covers the reserve of the queued charger,
   with the turn-on margin as for any step, and after the waiting time of the queued charger's first ampere step. Not above the limit, not at a decision where step 6
   switched off something that was on, and not while a charger of the group is starting, so the charging power read is not from before the last switch-over.
   Why: a charger at the minimum current draws about its power reserve, so the cars can share the power instead of the queued one waiting until the others are full.

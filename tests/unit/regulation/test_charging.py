@@ -8,10 +8,12 @@ import pytest
 
 from custom_components.kraftvakt.config_model import (
     Charger,
+    ChargerGroup,
     ChargingWindow,
     OverrideEnd,
 )
 from custom_components.kraftvakt.regulation.charging import (
+    ChargerChanges,
     ChargerReading,
     ChargerState,
     ChargerStatus,
@@ -165,15 +167,26 @@ def evaluate(
     *,
     allowed: tuple[str, ...] | None = None,
     overridden: tuple[str, ...] = (),
+    faulty: tuple[str, ...] = (),
     now: datetime = NOW,
     one_at_a_time: bool = True,
-) -> list[str]:
+    dynamic_order: bool = False,
+) -> ChargerChanges:
     """Evaluate with each charger allowed by its window unless `allowed` says else."""
-    permissions = {
-        c.id: ChargingPermission.OVERRIDE if c.id in overridden else ChargingPermission.WINDOW if allowed is None or c.id in allowed else ChargingPermission.OUTSIDE_WINDOW
-        for c in configured
-    }
-    return state.evaluate(configured, readings, permissions, now, WINDOW, one_at_a_time)
+
+    def permission(charger_id: str) -> ChargingPermission:
+        if charger_id in faulty:
+            return ChargingPermission.FAULT
+        if charger_id in overridden:
+            return ChargingPermission.OVERRIDE
+        return ChargingPermission.WINDOW if allowed is None or charger_id in allowed else ChargingPermission.OUTSIDE_WINDOW
+
+    group = ChargerGroup("ev", chargers=tuple(configured), one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    return state.evaluate(group, readings, {c.id: permission(c.id) for c in configured}, now, WINDOW)
+
+
+def group_of(configured: list[Charger], *, one_at_a_time: bool = True, dynamic_order: bool = False) -> ChargerGroup:
+    return ChargerGroup("ev", chargers=tuple(configured), one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
 
 
 def test_priority_starts_as_configured() -> None:
@@ -184,80 +197,76 @@ def test_priority_starts_as_configured() -> None:
     assert state.activated() == []
 
 
-def test_charger_without_car_is_bypassed() -> None:
+def test_charger_without_car_is_bypassed_and_moves_back_only_with_dynamic_order() -> None:
     """Also when it has never been activated."""
     configured = chargers("a", "b")
-    state = ChargingState.for_chargers(configured)
+    fixed = ChargingState.for_chargers(configured)
+    dynamic = ChargingState.for_chargers(configured)
+    readings = {"a": ChargerReading(car_connected=False), "b": IDLE}
 
-    newly = evaluate(state, configured, {"a": ChargerReading(car_connected=False), "b": IDLE})
+    assert evaluate(fixed, configured, readings).bypassed == ["a"]
+    evaluate(dynamic, configured, readings, dynamic_order=True)
 
-    assert newly == ["a"]
-    assert state.bypassed == {"a"}
-    assert state.priority == ["b", "a"]
+    assert fixed.bypassed == dynamic.bypassed == {"a"}
+    assert fixed.priority == ["a", "b"]
+    assert dynamic.priority == ["b", "a"]
 
 
-def test_charger_that_does_not_draw_power_is_bypassed_after_two_windows() -> None:
-    """The first ampere step must have been on two windows."""
+def test_car_that_does_not_start_is_done_until_it_is_disconnected() -> None:
+    """The first ampere step must have been on two windows. Only evidence of a disconnected car ends it."""
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
     state.set_ampere_steps_on("a", 1, NOW)
 
-    assert evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW) == []
-    assert evaluate(state, configured, {"a": CHARGING}, now=NOW + 2 * WINDOW) == []
-    assert evaluate(state, configured, {"a": IDLE}, now=NOW + 2 * WINDOW) == ["a"]
-    assert evaluate(state, configured, {"a": IDLE}, now=NOW + 3 * WINDOW) == []
-    assert state.bypassed == {"a"}
-
-
-def test_charger_that_did_not_charge_rests_also_when_deactivated() -> None:
-    """It may be tried again after 15 minutes."""
-    configured = chargers("a")
-    state = ChargingState.for_chargers(configured)
-    state.set_ampere_steps_on("a", 1, NOW)
-    bypassed_at = NOW + 2 * WINDOW
-    evaluate(state, configured, {"a": IDLE}, now=bypassed_at)
+    assert evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW).done == []
+    assert evaluate(state, configured, {"a": IDLE}, now=NOW + 2 * WINDOW).done == ["a"]
     state.set_ampere_steps_on("a", 0)
+    evaluate(state, configured, {"a": ChargerReading()}, now=NOW + 3 * WINDOW)
+    assert state.done == {"a"}
+    assert state.may_charge == set()
 
-    evaluate(state, configured, {"a": IDLE}, now=bypassed_at + timedelta(minutes=14))
-    assert state.bypassed == {"a"}
-    evaluate(state, configured, {"a": IDLE}, now=bypassed_at + timedelta(minutes=15))
-    assert state.bypassed == set()
+    evaluate(state, configured, {"a": ChargerReading(car_disconnected=True)}, now=NOW + 4 * WINDOW)
+    assert state.done == set()
+    evaluate(state, configured, {"a": IDLE}, now=NOW + 5 * WINDOW)
+    assert state.may_charge == {"a"}
 
 
-def test_rest_ends_when_the_charger_charges_or_the_car_is_disconnected() -> None:
-    """The next rest is the first again."""
+def test_car_that_stops_charging_is_in_grace_and_done_when_the_grace_period_ends() -> None:
+    """A car that charges again within the grace period goes on, and starts a new grace period when it stops again."""
+    configured = [charger("a", grace_period_s=300)]
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 3, NOW)
+    evaluate(state, configured, {"a": CHARGING})
+
+    assert evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW).grace == ["a"]
+    assert state.charging == {"a"}
+    assert state.status(group_of(configured))["a"] == ChargerStatus(ChargerState.GRACE, 3, 8, False, True, True, grace_until=NOW + WINDOW + timedelta(minutes=5))
+    assert evaluate(state, configured, {"a": CHARGING}, now=NOW + 5 * WINDOW).resumed == {"a"}
+    assert state.grace == {}
+
+    evaluate(state, configured, {"a": IDLE}, now=NOW + 6 * WINDOW)
+    assert evaluate(state, configured, {"a": IDLE}, now=NOW + 10 * WINDOW).done == []
+    assert evaluate(state, configured, {"a": IDLE}, now=NOW + 11 * WINDOW).done == ["a"]
+    assert state.charging == set()
+
+
+@pytest.mark.parametrize(
+    ("reading", "faulty", "allowed"),
+    [
+        (ChargerReading(car_connected=False), (), None),
+        (IDLE, ("a",), None),
+        (IDLE, (), ()),
+    ],
+)
+def test_charger_without_car_with_a_fault_or_not_allowed_is_neither_in_grace_nor_done(reading: ChargerReading, faulty: tuple[str, ...], allowed: tuple[str, ...] | None) -> None:
     configured = chargers("a")
     state = ChargingState.for_chargers(configured)
-    state.set_ampere_steps_on("a", 1, NOW)
-    later = NOW + 2 * WINDOW
-    evaluate(state, configured, {"a": IDLE}, now=later)
-    evaluate(state, configured, {"a": IDLE}, now=later + timedelta(minutes=15))
-    assert state.rests["a"].count == 1
+    state.set_ampere_steps_on("a", 2, NOW)
+    evaluate(state, configured, {"a": CHARGING})
 
-    evaluate(state, configured, {"a": CHARGING}, now=later + timedelta(minutes=16))
-    assert state.rests == {}
-    evaluate(state, configured, {"a": IDLE}, now=later + timedelta(minutes=17))
-    assert state.rests["a"].count == 0
+    changes = evaluate(state, configured, {"a": reading}, faulty=faulty, allowed=allowed, now=NOW + 10 * WINDOW)
 
-    evaluate(
-        state,
-        configured,
-        {"a": ChargerReading(car_connected=False)},
-        now=later + timedelta(minutes=18),
-    )
-    assert state.rests == {}
-
-
-def test_bypassed_charger_is_no_longer_bypassed_when_a_car_connects() -> None:
-    """It stays at the back until the priority is corrected."""
-    configured = chargers("a", "b")
-    state = ChargingState.for_chargers(configured)
-    evaluate(state, configured, {"a": ChargerReading(car_connected=False), "b": IDLE})
-
-    evaluate(state, configured, {"a": ChargerReading(car_connected=True), "b": IDLE})
-
-    assert state.bypassed == set()
-    assert state.priority == ["b", "a"]
+    assert changes.grace == changes.done == []
 
 
 def test_car_connected_again_gets_two_windows_on_a_charger_that_stayed_activated() -> None:
@@ -267,49 +276,44 @@ def test_car_connected_again_gets_two_windows_on_a_charger_that_stayed_activated
     evaluate(state, configured, {"a": ChargerReading(car_connected=False)}, now=NOW + 10 * WINDOW)
     connected = ChargerReading(car_connected=True)
 
-    assert evaluate(state, configured, {"a": connected}, now=NOW + 11 * WINDOW) == []
-    assert evaluate(state, configured, {"a": connected}, now=NOW + 12 * WINDOW) == []
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 11 * WINDOW).done == []
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 12 * WINDOW).done == []
     assert state.bypassed == set()
-    assert evaluate(state, configured, {"a": connected}, now=NOW + 13 * WINDOW) == ["a"]
+    assert evaluate(state, configured, {"a": connected}, now=NOW + 13 * WINDOW).done == ["a"]
 
 
-def test_chargers_bypassed_at_once_keep_their_order_at_the_back() -> None:
+def test_chargers_that_stop_charging_move_back_with_dynamic_order_keeping_their_order() -> None:
+    """A charger with a fault keeps its place."""
+    configured = chargers("a", "b", "c", "d", "e")
+    state = ChargingState.for_chargers(configured)
+    for charger_id in ("a", "c", "e"):
+        state.set_ampere_steps_on(charger_id, 1, NOW)
+    evaluate(state, configured, {"a": CHARGING, "b": IDLE, "c": CHARGING, "d": IDLE, "e": CHARGING}, one_at_a_time=False, dynamic_order=True)
+
+    state.set_ampere_steps_on("a", 0)
+    state.set_ampere_steps_on("c", 0)
+    evaluate(
+        state,
+        configured,
+        {"a": IDLE, "b": ChargerReading(car_connected=False), "c": IDLE, "d": IDLE, "e": IDLE},
+        faulty=("e",),
+        one_at_a_time=False,
+        dynamic_order=True,
+    )
+
+    assert state.priority == ["d", "e", "a", "b", "c"]
+
+
+def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed_or_done() -> None:
     configured = chargers("a", "b", "c", "d")
     state = ChargingState.for_chargers(configured)
-    no_car = ChargerReading(car_connected=False)
-    evaluate(state, configured, {"a": IDLE, "b": no_car, "c": IDLE, "d": IDLE})
-
-    newly = evaluate(state, configured, {"a": no_car, "b": no_car, "c": no_car, "d": IDLE})
-
-    assert newly == ["a", "c"]
-    assert state.priority == ["d", "b", "a", "c"]
-
-
-def test_priority_is_corrected_when_a_charger_has_all_ampere_steps_on() -> None:
-    """Bypassed chargers stay at the back."""
-    configured = [charger("a"), charger("b"), charger("c", min_a=6, max_a=7)]
-    state = ChargingState.for_chargers(configured)
-    no_car = ChargerReading(car_connected=False)
-    evaluate(state, configured, {"a": no_car, "b": no_car, "c": IDLE})
-    assert state.priority == ["c", "a", "b"]
-    evaluate(state, configured, {"a": IDLE, "b": no_car, "c": IDLE})
-    assert state.priority == ["c", "a", "b"]
-
-    state.set_ampere_steps_on("c", 2, NOW)
-    evaluate(state, configured, {"a": IDLE, "b": no_car, "c": CHARGING})
-
-    assert state.priority == ["a", "c", "b"]
-
-
-def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed() -> None:
-    configured = chargers("a", "b", "c")
-    state = ChargingState.for_chargers(configured)
+    state.done = {"d"}
 
     evaluate(
         state,
         configured,
-        {"a": IDLE, "b": IDLE, "c": ChargerReading(car_connected=False)},
-        allowed=("a", "c"),
+        {"a": IDLE, "b": IDLE, "c": ChargerReading(car_connected=False), "d": IDLE},
+        allowed=("a", "c", "d"),
         one_at_a_time=False,
     )
 
@@ -317,22 +321,40 @@ def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed() -> None:
     assert state.waiting == set()
 
 
-def test_one_at_a_time_without_charging_takes_the_first_allowed() -> None:
+def test_with_dynamic_order_the_chargers_that_charge_come_first_and_the_others_are_queued() -> None:
+    """The chargers that charge are in the configured priority, one that charges again after its grace period first."""
+    configured = chargers("a", "b", "c", "d")
+    group = group_of(configured, one_at_a_time=False, dynamic_order=True)
+    state = ChargingState.for_chargers(configured)
+    for charger_id in ("b", "c", "d"):
+        state.set_ampere_steps_on(charger_id, 2, NOW)
+    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING, "d": CHARGING}, one_at_a_time=False, dynamic_order=True)
+    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING, "d": IDLE}, one_at_a_time=False, dynamic_order=True)
+    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING, "d": CHARGING}, one_at_a_time=False, dynamic_order=True)
+
+    assert state.order(group) == ["d", "b", "c", "a"]
+    assert state.queued(group) == ["a"]
+    assert state.waiting == {"a"}
+    assert state.status(group)["a"].state is ChargerState.QUEUED
+
+
+def test_one_at_a_time_without_dynamic_order_takes_the_first_allowed_whatever_charges() -> None:
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("c", 3, NOW)
 
-    evaluate(state, configured, {"a": IDLE, "b": IDLE, "c": IDLE}, allowed=("b", "c"))
+    evaluate(state, configured, {"a": IDLE, "b": IDLE, "c": CHARGING}, allowed=("b", "c"))
 
     assert state.may_charge == {"b"}
-    assert state.waiting == set()
+    assert state.waiting == {"c"}
 
 
-def test_one_at_a_time_the_charging_charger_goes_first() -> None:
-    """The others are waiting, whatever their priority."""
+def test_one_at_a_time_with_dynamic_order_the_charging_charger_goes_first() -> None:
+    """The others are queued, whatever their priority."""
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
-    evaluate(state, configured, {"a": IDLE, "b": IDLE, "c": CHARGING})
+    evaluate(state, configured, {"a": IDLE, "b": IDLE, "c": CHARGING}, dynamic_order=True)
 
     assert state.may_charge == {"c"}
     assert state.waiting == {"a", "b"}
@@ -343,12 +365,7 @@ def test_one_at_a_time_charging_charger_not_allowed_does_not_hold_others() -> No
     configured = chargers("a", "b", "c")
     state = ChargingState.for_chargers(configured)
 
-    evaluate(
-        state,
-        configured,
-        {"a": ChargerReading(), "b": CHARGING, "c": IDLE},
-        allowed=("c",),
-    )
+    evaluate(state, configured, {"a": ChargerReading(), "b": CHARGING, "c": IDLE}, allowed=("c",), dynamic_order=True)
 
     assert state.may_charge == {"c"}
     assert state.waiting == set()
@@ -360,11 +377,11 @@ def test_one_at_a_time_the_activated_one_of_several_charging_goes_first() -> Non
     state = ChargingState.for_chargers(configured)
     state.set_ampere_steps_on("c", 3, NOW)
 
-    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING})
+    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING}, dynamic_order=True)
     assert state.may_charge == {"c"}
 
     state.set_ampere_steps_on("c", 0)
-    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING})
+    evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING}, dynamic_order=True)
     assert state.may_charge == {"b"}
     assert state.waiting == {"a", "c"}
 
@@ -374,39 +391,33 @@ def test_bypassed_charger_does_not_stand_in_the_way() -> None:
     configured = chargers("a", "b")
     state = ChargingState.for_chargers(configured)
 
-    evaluate(
-        state,
-        configured,
-        {"a": ChargerReading(actively_charging=True, car_connected=False), "b": IDLE},
-    )
+    evaluate(state, configured, {"a": ChargerReading(actively_charging=True, car_connected=False), "b": IDLE}, dynamic_order=True)
 
     assert state.may_charge == {"b"}
 
 
 def test_status_of_each_charger() -> None:
-    configured = chargers("a", "b", "c", "d")
+    configured = chargers("a", "b", "c", "d", "e")
+    group = group_of(configured, one_at_a_time=False)
     state = ChargingState.for_chargers(configured)
-    assert state.status(configured)["a"].state is ChargerState.FIRST_DECISION
+    assert state.status(group)["a"].state is ChargerState.FIRST_DECISION
     state.set_ampere_steps_on("a", 4, NOW)
+    state.done = {"e"}
     evaluate(
         state,
         configured,
-        {
-            "a": ChargerReading(actively_charging=True, car_connected=True),
-            "b": IDLE,
-            "c": ChargerReading(car_connected=False),
-            "d": IDLE,
-        },
-        allowed=("a", "c", "d"),
+        {"a": CHARGING, "b": IDLE, "c": ChargerReading(car_connected=False), "d": IDLE, "e": IDLE},
+        allowed=("a", "c", "d", "e"),
         overridden=("a",),
         one_at_a_time=False,
     )
 
-    assert state.status(configured) == {
+    assert state.status(group) == {
         "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, False, True, True),
         "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, True),
         "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
         "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True),
+        "e": ChargerStatus(ChargerState.DONE, 0, None, False, False, True),
     }
 
 
@@ -419,8 +430,27 @@ def test_charging_needs_an_activated_charger() -> None:
 
     state.set_ampere_steps_on("a", 0)
 
-    assert not state.status(configured)["a"].charging
-    assert not state.status(configured)["b"].charging
+    assert not state.status(group_of(configured))["a"].charging
+    assert not state.status(group_of(configured))["b"].charging
+
+
+@pytest.mark.parametrize(
+    ("cloud_controlled", "one_at_a_time", "dynamic_order", "starting"),
+    [(True, True, False, True), (False, False, True, True), (False, False, False, False), (False, True, True, False)],
+)
+def test_charger_on_trial_holds_its_reserve_when_cloud_controlled_or_sharing_by_charging_power(
+    cloud_controlled: bool, one_at_a_time: bool, dynamic_order: bool, starting: bool
+) -> None:
+    """Until it has charged, and for at most its time to start."""
+    configured = [charger("a", cloud_controlled=cloud_controlled, start_delay_s=0)]
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 1, NOW)
+
+    evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    assert ("a" in state.starting) is starting
+    evaluate(state, configured, {"a": CHARGING}, now=NOW + WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    assert state.starting == {}
 
 
 def test_activating_needs_the_time() -> None:

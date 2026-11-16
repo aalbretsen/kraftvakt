@@ -11,6 +11,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     custom_action,
     entity_action,
     power_sensor_condition,
+    state_condition,
     template_condition,
 )
 from custom_components.kraftvakt.config_model import ConditionType
@@ -65,8 +66,9 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
         activate=DEFAULT_ACTION,
         deactivate=DEFAULT_ACTION,
         set_current=DEFAULT_ACTION,
-        car_connected=ProfileCondition(ConditionType.ENTITY, entity=ProfileEntity("binary_sensor", translation_key="car")),
-        actively_charging=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
+        car_connected=state_condition(ProfileEntity("sensor", translation_key="status"), ("disconnected",), states_are_true=False),
+        actively_charging=state_condition(ProfileEntity("sensor", translation_key="status"), ("charging",)),
+        charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
     )
     draft = ProfileDraft(module="acme", profile=profile, manufacturer=None, model_id=None, entities=(), charger_id="c1", notes=())
 

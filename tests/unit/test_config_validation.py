@@ -130,18 +130,17 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
-        ("power_reserve_w", 0, None),
+        ("power_reserve_w", 0, "power_reserve_required"),
+        ("power_reserve_w", 1, None),
         ("power_reserve_w", 5000, None),
         ("power_reserve_w", 5001, "out_of_range"),
         ("min_current_a", 1, None),
         ("min_current_a", 0, "out_of_range"),
         ("entity_id", "switch", "invalid_entity_id"),
-        (
-            "actively_charging",
-            {"type": "power_sensor", "value": "Sensor.X"},
-            "invalid_entity_id",
-        ),
-        ("actively_charging", {"type": "power_sensor", "value": ""}, None),
+        ("charging_power", {"type": "power_sensor", "value": "Sensor.X"}, "invalid_entity_id"),
+        ("charging_power", {"type": "power_sensor", "value": ""}, None),
+        ("actively_charging", {"type": "state", "value": "Sensor.X", "states": ["charging"]}, "invalid_entity_id"),
+        ("actively_charging", {"type": "state", "value": "sensor.x", "states": []}, None),
         ("set_current", {"mode": "entity", "entity_id": "number.x"}, None),
         ("set_current", {"mode": "entity", "entity_id": "Number"}, "invalid_entity_id"),
     ],
@@ -272,10 +271,48 @@ def test_entity_is_unique_across_appliances_and_chargers() -> None:
     ]
 
 
+def test_power_reserve_may_be_0_without_sharing_by_charging_power() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        data["charger_groups"][0]["dynamic_order"] = False
+        data["charger_groups"][0]["chargers"][0]["power_reserve_w"] = 0
+
+    assert _issues_after(mutate) == []
+
+
+@pytest.mark.parametrize(
+    ("field", "condition"),
+    [
+        ("actively_charging", {"type": "power_sensor", "value": "sensor.x"}),
+        ("charging_power", {"type": "entity", "value": "binary_sensor.x"}),
+        ("car_connected", {"type": "state", "value": "sensor.x", "states": "connected"}),
+        ("fault_flag", {"type": "state", "value": "sensor.x", "states": ["error"], "states_are_true": "no"}),
+    ],
+)
+async def test_each_charger_condition_takes_its_own_kinds(hass: HomeAssistant, field: str, condition: dict[str, Any]) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["charging_power"] = {"type": "power_sensor", "value": "sensor.garage_charger_power"}
+    data["charger_groups"][0]["chargers"][0][field] = condition
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", field)]
+
+
+async def test_variant_condition_has_no_states(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    data["appliances"][0]["variants"][0]["condition"] = {"type": "state", "value": "sensor.x", "states": ["on"]}
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_type", "appliances", "a1", "variants.v1.condition")]
+
+
 def test_entity_uniqueness_ignores_sensors_and_conditions() -> None:
     def mutate(data: dict[str, Any]) -> None:
         charger = data["charger_groups"][0]["chargers"][0]
-        charger["actively_charging"] = {
+        charger["charging_power"] = {
             "type": "power_sensor",
             "value": "sensor.han_power",
         }

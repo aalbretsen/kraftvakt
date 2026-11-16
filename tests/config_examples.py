@@ -103,8 +103,10 @@ def full_config_data() -> dict[str, Any]:
                         "grace_period_s": 120,
                         "power_reserve_w": 3000,
                         "car_connected": {
-                            "type": "entity",
-                            "value": "binary_sensor.garage_charger_car",
+                            "type": "state",
+                            "value": "sensor.garage_charger_status",
+                            "states": ["disconnected"],
+                            "states_are_true": False,
                         },
                         "charging_window": {"start": "22:00", "end": "06:00"},
                         "finish_after_window": True,

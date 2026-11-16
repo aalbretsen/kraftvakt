@@ -21,6 +21,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     entity_action,
     entity_condition,
     power_sensor_condition,
+    state_condition,
     template_condition,
 )
 from custom_components.kraftvakt.charger_profiles.recognition import DeviceEntities
@@ -137,7 +138,8 @@ class ProfileDrafting:
             deactivate=self._action("deactivate", charger.deactivate),
             set_current=self._action("set_current", charger.set_current),
             car_connected=self._condition("car_connected", charger.car_connected),
-            actively_charging=self._condition("actively_charging", charger.actively_charging),
+            actively_charging=None if charger.actively_charging is None and charger.charging_power is not None else self._condition("actively_charging", charger.actively_charging),
+            charging_power=None if charger.charging_power is None else self._condition("charging_power", charger.charging_power),
             cloud_controlled=charger.cloud_controlled,
             deactivate_on_fault=charger.deactivate_on_fault,
             fault_flag=None if charger.fault_flag is None else self._condition("fault_flag", charger.fault_flag),
@@ -258,6 +260,8 @@ class ProfileDrafting:
         entity = self._profile_entity(field, condition.value)
         if entity is None:
             return missing
+        if condition.type is ConditionType.STATE:
+            return state_condition(entity, condition.states, states_are_true=condition.states_are_true)
         return power_sensor_condition(entity) if condition.type is ConditionType.POWER_SENSOR else entity_condition(entity)
 
     def _template_condition(self, field: str, template: str) -> ProfileCondition:

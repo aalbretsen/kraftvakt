@@ -15,6 +15,9 @@ from typing import Any
 
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
+    CHARGER_CONDITION_TYPES,
+    CHARGING_POWER_TYPES,
+    VARIANT_CONDITION_TYPES,
     ActionConfig,
     ActionMode,
     Appliance,
@@ -127,7 +130,7 @@ class ConfigReader:
         return Variant(
             id=variant_id,
             label=self._text(values, "label", location) or "",
-            condition=self._condition(values.get("condition"), "condition", location) or Condition(ConditionType.TEMPLATE, ""),
+            condition=self._condition(values.get("condition"), "condition", location, VARIANT_CONDITION_TYPES) or Condition(ConditionType.TEMPLATE, ""),
             actions={name: self._action(actions, name, location) for name in APPLIANCE_ACTION_KINDS if name in actions},
         )
 
@@ -165,6 +168,10 @@ class ConfigReader:
         charger_id = self._id(values, IssueLocation("chargers"))
         location = IssueLocation("chargers", charger_id)
         defaults = Charger(id=charger_id)
+        actively_charging, charging_power = values.get("actively_charging"), values.get("charging_power")
+        if charging_power is None and isinstance(actively_charging, Mapping) and actively_charging.get("type") == ConditionType.POWER_SENSOR:
+            # A power sensor given as actively charging is the charging power.
+            actively_charging, charging_power = None, actively_charging
         return Charger(
             id=charger_id,
             device_id=self._text(values, "device_id", location),
@@ -175,9 +182,9 @@ class ConfigReader:
             min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
             power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
-            car_connected=self._condition(values.get("car_connected"), "car_connected", location),
-            actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, power_sensor_allowed=True),
-            charging_power=self._condition(values.get("charging_power"), "charging_power", location, power_sensor_allowed=True),
+            car_connected=self._condition(values.get("car_connected"), "car_connected", location, CHARGER_CONDITION_TYPES),
+            actively_charging=self._condition(actively_charging, "actively_charging", location, CHARGER_CONDITION_TYPES),
+            charging_power=self._condition(charging_power, "charging_power", location, CHARGING_POWER_TYPES),
             grace_period_s=self._integer(values, "grace_period_s", defaults.grace_period_s, location),
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
@@ -185,7 +192,7 @@ class ConfigReader:
             cloud_controlled=self._bool(values, "cloud_controlled", defaults.cloud_controlled, location),
             start_delay_s=self._integer(values, "start_delay_s", defaults.start_delay_s, location),
             deactivate_on_fault=self._bool(values, "deactivate_on_fault", defaults.deactivate_on_fault, location),
-            fault_flag=self._condition(values.get("fault_flag"), "fault_flag", location),
+            fault_flag=self._condition(values.get("fault_flag"), "fault_flag", location, CHARGER_CONDITION_TYPES),
         )
 
     def _action(
@@ -223,8 +230,7 @@ class ConfigReader:
         condition: Any,
         field_name: str,
         location: IssueLocation,
-        *,
-        power_sensor_allowed: bool = False,
+        allowed: tuple[ConditionType, ...],
     ) -> Condition | None:
         if condition is None:
             return None
@@ -233,11 +239,15 @@ class ConfigReader:
             return None
         condition_type = condition.get("type")
         value = condition.get("value", "")
-        allowed = tuple(ConditionType) if power_sensor_allowed else (ConditionType.ENTITY, ConditionType.TEMPLATE)
-        if condition_type not in allowed or not isinstance(value, str):
+        states = condition.get("states", [])
+        states_are_true = condition.get("states_are_true", True)
+        valid_states = isinstance(states, list) and all(isinstance(state, str) for state in states) and isinstance(states_are_true, bool)
+        if condition_type not in allowed or not isinstance(value, str) or not valid_states:
             self.issues.append(location.issue("invalid_type", field_name))
             return None
-        return Condition(ConditionType(condition_type), value)
+        if condition_type != ConditionType.STATE:
+            return Condition(ConditionType(condition_type), value)
+        return Condition(ConditionType.STATE, value, tuple(states), states_are_true)
 
     def _charging_window(self, values: Mapping[str, Any], location: IssueLocation) -> ChargingWindow | None:
         data = values.get("charging_window")

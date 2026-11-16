@@ -135,6 +135,7 @@ class Step:
     can_turn_on: bool = True
     can_turn_off: bool = True
     holds_reserve: bool = False
+    group_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

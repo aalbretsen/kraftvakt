@@ -49,19 +49,31 @@ def test_charger_needs_device_entity_actions_and_conditions() -> None:
         Issue("missing_action", "chargers", "c2", "set_current"),
         Issue("missing_car_connected", "chargers", "c2", "car_connected"),
         Issue("missing_actively_charging", "chargers", "c2", "actively_charging"),
+        Issue("missing_charging_power", "chargers", "c2", "charging_power"),
     ]
 
 
 def test_empty_charger_conditions_are_missing() -> None:
     data = full_config_data()
     charger = data["charger_groups"][0]["chargers"][0]
-    charger["actively_charging"] = {"type": "power_sensor", "value": ""}
+    charger["actively_charging"] = {"type": "state", "value": "sensor.garage_charger_status", "states": []}
+    charger["charging_power"] = {"type": "power_sensor", "value": ""}
     charger["car_connected"] = {"type": "template", "value": " "}
 
     assert _missing(data) == [
         Issue("missing_car_connected", "chargers", "c1", "car_connected"),
         Issue("missing_actively_charging", "chargers", "c1", "actively_charging"),
+        Issue("missing_charging_power", "chargers", "c1", "charging_power"),
     ]
+
+
+def test_charging_power_is_needed_only_to_share_by_charging_power() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["charging_power"] = None
+    assert _missing(data) == [Issue("missing_charging_power", "chargers", "c1", "charging_power")]
+
+    data["charger_groups"][0]["one_at_a_time"] = True
+    assert _missing(data) == []
 
 
 @pytest.mark.parametrize("flag", [None, {"type": "template", "value": " "}])

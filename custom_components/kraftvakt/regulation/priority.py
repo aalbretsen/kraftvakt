@@ -54,6 +54,21 @@ def build_steps(
 
 
 def ampere_steps(
+    group_id: str,
+    blocks: Sequence[Sequence[Charger]],
+    ampere_steps_on: Mapping[str, int],
+    may_charge: Collection[str],
+    on_trial: Collection[str],
+    bypassed: Collection[str],
+    starting: Collection[str],
+    growth: RepeatedTurnOnGrowth,
+) -> list[Step]:
+    """Return the ampere steps of the group: those of each block interleaved, the first of each charger, then the second, one block after the other."""
+    return [step for chargers in blocks for step in _interleaved(group_id, chargers, ampere_steps_on, may_charge, on_trial, bypassed, starting, growth)]
+
+
+def _interleaved(
+    group_id: str,
     chargers: Sequence[Charger],
     ampere_steps_on: Mapping[str, int],
     may_charge: Collection[str],
@@ -72,6 +87,7 @@ def ampere_steps(
             can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in on_trial),
             can_turn_off=charger.id not in bypassed,
             holds_reserve=index == 0 and charger.id in starting and ampere_steps_on.get(charger.id, 0) > 0,
+            group_id=group_id,
         )
         for index in range(rounds)
         for charger in chargers

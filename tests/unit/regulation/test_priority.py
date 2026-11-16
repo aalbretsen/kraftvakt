@@ -90,7 +90,8 @@ def test_ampere_steps_are_interleaved_between_chargers() -> None:
     chargers = [charger("a", 6, 8), charger("b", 10, 11), charger("c", 6, 6)]
 
     steps = ampere_steps(
-        chargers,
+        "ev",
+        [chargers],
         {},
         may_charge={"a", "b", "c"},
         on_trial=(),
@@ -112,7 +113,8 @@ def test_ampere_steps_are_interleaved_between_chargers() -> None:
 def test_only_the_first_ampere_step_has_the_power_reserve() -> None:
     """All of them get the growth of the ampere steps."""
     steps = ampere_steps(
-        [charger("a", 6, 8, reserve_w=3500)],
+        "ev",
+        [[charger("a", 6, 8, reserve_w=3500)]],
         {"a": 2},
         {"a"},
         (),
@@ -122,15 +124,16 @@ def test_only_the_first_ampere_step_has_the_power_reserve() -> None:
     )
 
     assert steps == [
-        Step(AmpereStepKey("a", 0), True, 3500, AMPERE_STEP_GROWTH),
-        Step(AmpereStepKey("a", 1), True, None, AMPERE_STEP_GROWTH),
-        Step(AmpereStepKey("a", 2), False, None, AMPERE_STEP_GROWTH),
+        Step(AmpereStepKey("a", 0), True, 3500, AMPERE_STEP_GROWTH, group_id="ev"),
+        Step(AmpereStepKey("a", 1), True, None, AMPERE_STEP_GROWTH, group_id="ev"),
+        Step(AmpereStepKey("a", 2), False, None, AMPERE_STEP_GROWTH, group_id="ev"),
     ]
 
 
 def test_ampere_steps_of_chargers_that_may_not_charge_or_are_bypassed() -> None:
     steps = ampere_steps(
-        [charger("a", 6, 6), charger("b", 6, 6)],
+        "ev",
+        [[charger("a", 6, 6), charger("b", 6, 6)]],
         {"a": 1},
         may_charge={"b"},
         on_trial=(),
@@ -147,7 +150,8 @@ def test_ampere_steps_of_chargers_that_may_not_charge_or_are_bypassed() -> None:
 
 def test_charger_on_trial_can_only_get_its_first_ampere_step() -> None:
     steps = ampere_steps(
-        [charger("a", 6, 8)],
+        "ev",
+        [[charger("a", 6, 8)]],
         {"a": 1},
         may_charge={"a"},
         on_trial={"a"},
@@ -161,7 +165,8 @@ def test_charger_on_trial_can_only_get_its_first_ampere_step() -> None:
 
 def test_only_the_first_ampere_step_of_a_starting_charger_holds_its_reserve() -> None:
     steps = ampere_steps(
-        [charger("a", 6, 7), charger("b", 6, 6)],
+        "ev",
+        [[charger("a", 6, 7), charger("b", 6, 6)]],
         {"a": 1},
         may_charge={"a", "b"},
         on_trial={"a"},

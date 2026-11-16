@@ -71,7 +71,8 @@ class DeviceEntities:
             "deactivate": self.action(profile.deactivate),
             "set_current": self.action(profile.set_current),
             "car_connected": self.condition(profile.car_connected),
-            "actively_charging": self.condition(profile.actively_charging),
+            "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),
+            "charging_power": None if profile.charging_power is None else self.condition(profile.charging_power),
             "cloud_controlled": profile.cloud_controlled,
         }
         fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)
@@ -98,7 +99,7 @@ class DeviceEntities:
                 return None
             return Condition(condition.type, Template(condition.template).substitute(entity_ids)).to_dict()
         entity_id = None if condition.entity is None else self.find(condition.entity)
-        return None if entity_id is None else Condition(condition.type, entity_id).to_dict()
+        return None if entity_id is None else Condition(condition.type, entity_id, condition.states, condition.states_are_true).to_dict()
 
 
 def _fits(entry: RegisteredEntity, wanted: ProfileEntity) -> bool:

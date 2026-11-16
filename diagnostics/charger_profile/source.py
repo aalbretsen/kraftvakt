@@ -29,8 +29,11 @@ def profile_source(draft: ProfileDraft) -> str:
         "deactivate": writer.action(profile.deactivate),
         "set_current": writer.action(profile.set_current),
         "car_connected": writer.condition(profile.car_connected),
-        "actively_charging": writer.condition(profile.actively_charging),
     }
+    if profile.actively_charging is not None:
+        fields["actively_charging"] = writer.condition(profile.actively_charging)
+    if profile.charging_power is not None:
+        fields["charging_power"] = writer.condition(profile.charging_power)
     if profile.cloud_controlled:
         fields["cloud_controlled"] = "True"
     if profile.deactivate_on_fault:
@@ -128,6 +131,9 @@ class _ProfileWriter:
         if condition.type is ConditionType.TEMPLATE and condition.template is not None:
             entities = [f"{name}={self.entity(entity)}" for name, entity in condition.entities.items()]
             return self._call("template_condition", repr(condition.template), *entities)
+        if condition.entity is not None and condition.type is ConditionType.STATE:
+            states_are_true = [] if condition.states_are_true else ["states_are_true=False"]
+            return self._call("state_condition", self.entity(condition.entity), repr(condition.states), *states_are_true)
         if condition.entity is not None:
             return self._call(CONDITION_HELPERS[condition.type], self.entity(condition.entity))
         self.uses_condition_type = True
