@@ -75,8 +75,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
             .entityId=${this.draft.entity_id}
             .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
             .disabled=${this.locked}
-            @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
-              event.detail.value && this.changeCondition(event.detail.value)}
+            @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeCondition(event.detail.value)}
           ></kraftvakt-condition-field>
         `,
       })}

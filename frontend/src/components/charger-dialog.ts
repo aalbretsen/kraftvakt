@@ -124,7 +124,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           .kind=${activelyCharging ? "actively_charging" : "condition"}
           .error=${issue ? this.describe(issue) : undefined}
           .disabled=${this.locked}
-          @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>
+          @value-changed=${(event: CustomEvent<{ value: Condition }>) =>
             this.changeDraft({ [field]: event.detail.value })}
         ></kraftvakt-condition-field>
       `,

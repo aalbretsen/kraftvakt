@@ -23,9 +23,9 @@ class ChargerReading:
 
     `car_connected` and `actively_charging` hold only with evidence that they
     are true, and `car_disconnected` and `charging_stopped` only with evidence
-    that they are false. `override_armed` is whether
-    what ends the override has been seen at a decision since it was switched
-    on: the car connected, or the charger activated and actively charging.
+    that they are false. `override_armed` is whether what ends the override
+    has been seen at a decision since it was switched on: the car connected,
+    or the charger activated and actively charging.
     """
 
     actively_charging: bool = False

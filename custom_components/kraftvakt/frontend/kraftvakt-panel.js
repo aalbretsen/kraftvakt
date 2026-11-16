@@ -677,7 +677,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
             .entityId=${this.draft.entity_id}
             .error=${i?this.describe(i):void 0}
             .disabled=${this.locked}
-            @value-changed=${e=>e.detail.value&&this.changeCondition(e.detail.value)}
+            @value-changed=${e=>this.changeCondition(e.detail.value)}
           ></kraftvakt-condition-field>
         `})}
       ${ei.map(t=>this.renderOverride(t,e))}
