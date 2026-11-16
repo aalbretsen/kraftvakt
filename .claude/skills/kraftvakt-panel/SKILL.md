@@ -92,7 +92,8 @@ The section header, the description and the footer note are in `section-styles.t
 - Each action of an appliance or charger has a group of its own, as the variant dialog has one per action it can override,
   except set charging current, which is in the charging current group with the currents it sets.
 - The appliance dialog lists the variants by label, with drag and edit, and Add variant. In view mode the group is left out when there are no variants.
-  What else is wrong or missing in a variant is shown under its label.
+  What else is wrong in a variant is shown under its label. What is missing, such as the expression of a new variant, is not:
+  it is set in the variant dialog, and the priority list shows it, so here it would look like a fault to fix in this dialog.
   A variant's edit button, and its row in the priority list, open the variant dialog: the expression and one switch per action to override it, both off by default.
   Switched on, the action starts from what it had while the dialog is open, or else a copy of the appliance's.
   The variant dialog edits a copy of the whole appliance; its Delete removes the variant with `item-changed`, since it changes the appliance.

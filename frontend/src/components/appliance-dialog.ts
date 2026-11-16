@@ -54,7 +54,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
       ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
         this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
       )}
-      ${this.renderActions(issues)} ${this.renderVariants(issues)}
+      ${this.renderActions(issues)} ${this.renderVariants()}
     `;
   }
 
@@ -62,11 +62,12 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     return APPLIANCE_ACTIONS.map((name) => this.renderActionGroup(name, issues, APPLIANCE_ACTION_VARIABLES));
   }
 
-  /** The variants, sorted in the order their expressions are evaluated. Left out in view mode when there are none. */
-  private renderVariants(issues: Issue[]) {
+  /** The variants, sorted in the order their expressions are evaluated, with their errors. Left out in view mode when there are none. */
+  private renderVariants() {
     if (this.locked && this.draft.variants.length === 0) {
       return nothing;
     }
+    const errors = [...this.errors(), ...this.saveErrors];
     const editable = this.locked || this.errors().length === 0;
     return this.renderGroup({
       title: this.localize("appliance.variants"),
@@ -88,7 +89,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
                   ${repeat(
                     this.draft.variants,
                     (variant) => variant.id,
-                    (variant) => this.renderVariant(variant, issues, editable),
+                    (variant) => this.renderVariant(variant, errors, editable),
                   )}
                 </div>
               </ha-sortable>
@@ -96,7 +97,10 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     });
   }
 
-  /** The label of the variant, with what else is wrong or missing in the variant under it. */
+  /**
+   * The label of the variant, with what else is wrong in the variant under it.
+   * What is missing is shown in the priority list and the variant dialog, where it is set.
+   */
   private renderVariant(variant: Variant, issues: Issue[], editable: boolean) {
     const prefix = `variants.${variant.id}.`;
     const variantIssues = issues
