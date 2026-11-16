@@ -341,11 +341,16 @@
     "invalid": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som usann."
   },
   "actively_charging": {
+    "type_label": "Lading på/av fra",
     "entity": "Entitet",
-    "entity_label": "Lading på/av",
+    "template": "Mal",
+    "entity_label": "Boolsk entitet",
+    "template_label": "Mal",
     "entity_helper": "En boolsk entitet på elbilladeren som er på mens bilen lader. Av og utilgjengelig regnes ikke som lading.",
+    "template_helper": "Bare den boolske verdien sann regnes som lading, for eksempel fra en statussensor på elbilladeren. Alt annet, også en feil, regnes ikke som lading. Variabler: entity_id, entity.",
     "true": "lader",
-    "false": "lader ikke"
+    "false": "lader ikke",
+    "invalid": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor ikke som lading."
   },
   "charging_power": {
     "type_label": "Ladeeffekt fra",
@@ -396,6 +401,7 @@
     "car_from": "bil tilkoblet fra {source}",
     "car_template": "bil tilkoblet fra mal",
     "charging_from": "lader aktivt fra {source}",
+    "charging_template": "lader aktivt fra mal",
     "power_from": "ladeeffekt fra {source}",
     "power_template": "ladeeffekt fra mal",
     "deactivated_on_fault": "deaktiveres ved feil"

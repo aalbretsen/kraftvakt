@@ -154,7 +154,11 @@ export class KraftvaktChargingPage extends ConfigPage {
       );
     }
     if (charger.actively_charging?.value) {
-      details.push(this.localize("charging.charging_from", { source: charger.actively_charging.value }));
+      details.push(
+        charger.actively_charging.type === "template"
+          ? this.localize("charging.charging_template")
+          : this.localize("charging.charging_from", { source: charger.actively_charging.value }),
+      );
     }
     if (charger.charging_power?.value) {
       details.push(

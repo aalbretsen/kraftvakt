@@ -341,11 +341,16 @@
     "invalid": "The template gives {value}, which is not true or false, so it counts as false."
   },
   "actively_charging": {
+    "type_label": "Charging on/off from",
     "entity": "Entity",
-    "entity_label": "Charging on/off",
+    "template": "Template",
+    "entity_label": "Boolean entity",
+    "template_label": "Template",
     "entity_helper": "A boolean entity of the EV charger that is on while the car charges. Off and unavailable count as not charging.",
+    "template_helper": "Only the boolean value true counts as charging, for example from a status sensor of the EV charger. Anything else, also an error, counts as not charging. Variables: entity_id, entity.",
     "true": "charging",
-    "false": "not charging"
+    "false": "not charging",
+    "invalid": "The template gives {value}, which is not true or false, so it counts as not charging."
   },
   "charging_power": {
     "type_label": "Charging power from",
@@ -396,6 +401,7 @@
     "car_from": "car connected from {source}",
     "car_template": "car connected from a template",
     "charging_from": "actively charging from {source}",
+    "charging_template": "actively charging from a template",
     "power_from": "charging power from {source}",
     "power_template": "charging power from a template",
     "deactivated_on_fault": "deactivated on fault"

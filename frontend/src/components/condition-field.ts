@@ -14,7 +14,7 @@ export type ConditionKind = "condition" | "actively_charging" | "charging_power"
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
-  actively_charging: ["entity"],
+  actively_charging: ["entity", "template"],
   charging_power: ["power_sensor", "template"],
   fault: ["entity", "template"],
 };
@@ -95,13 +95,8 @@ export class KraftvaktConditionField extends LitElement {
     return this.value?.type ?? TYPES[this.kind][0];
   }
 
-  /** A kind with one type has no choice of type. */
   private schema(type: Condition["type"]) {
-    const types = TYPES[this.kind];
-    if (types.length === 1) {
-      return this.valueField(type);
-    }
-    const options = types.map((value) => ({ value, label: this.text(value) }));
+    const options = TYPES[this.kind].map((value) => ({ value, label: this.text(value) }));
     return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
   }
 
