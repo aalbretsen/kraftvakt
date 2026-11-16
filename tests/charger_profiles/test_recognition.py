@@ -36,6 +36,8 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
         "deactivate": {"mode": "default"},
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "cloud_controlled": False,
+        "deactivate_on_fault": True,
+        "fault_flags": [{"type": "entity", "value": "binary_sensor.amina_alarm_active"}],
     }
 
 

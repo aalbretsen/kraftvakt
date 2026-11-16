@@ -22,6 +22,8 @@ def _service(service: str, **data: Any) -> dict[str, Any]:
     return {"action": f"easee.{service}", "data": {"device_id": "{{ device_id(entity_id) }}", **data}}
 
 
+_STATUS: Final = ProfileEntity("sensor", translation_key="easee_status")
+
 # The access level lasts, so a car plugged in while the charger is deactivated does not start charging by itself.
 # Authorizing one charging session would not do: a charger stays activated when the car leaves, and is not activated again when it comes back.
 PROFILE: Final = ChargerProfile(
@@ -33,8 +35,16 @@ PROFILE: Final = ChargerProfile(
     set_current=custom_action(_service("set_charger_dynamic_limit", current="{{ current }}")),
     car_connected=template_condition(
         "{% set status = states('$status') %}{{ none if status in ['offline', 'unknown', 'unavailable'] else status != 'disconnected' }}",
-        status=ProfileEntity("sensor", translation_key="easee_status"),
+        status=_STATUS,
     ),
     actively_charging=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
     cloud_controlled=True,
+    deactivate_on_fault=True,
+    # An erratic car is a fault too, so the user sees why it does not charge. It ends when the car is disconnected.
+    fault_flags=(
+        template_condition(
+            "{{ states('$status') in ['error', 'error_temperature_too_high', 'error_dead_powerboard', 'error_overcurrent', 'error_pen_fault', 'erratic_ev'] }}",
+            status=_STATUS,
+        ),
+    ),
 )
