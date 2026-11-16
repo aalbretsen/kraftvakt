@@ -95,8 +95,8 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
-- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected** and **Actively charging**,
-  and with **Deactivate on fault** a fault flag.
+- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected**, a charging on/off or a charging power,
+  with **Deactivate on fault** a fault flag, and in a group with several at once and dynamic charging order a charging power.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
@@ -140,24 +140,39 @@ Kraftvakt sets the charging current of each EV charger one ampere at a time, by 
 The place of the group in the priority list decides where its EV chargers are in the order. An EV charger charges only when Kraftvakt has activated it,
 so a car that is connected does not start charging by itself. The charging current is set to the minimum before the EV charger is activated or deactivated.
 
-- **Car connected** is read at every decision, from a boolean entity, where on counts as connected, or a template, where the boolean value true does.
-  Anything else counts as not connected, also an unavailable entity and a template that fails. An EV charger without a car connected is bypassed, see below.
-- **Actively charging** is read at every decision, from one of:
-  - a sensor for charging power: above 100 W counts as charging. It may report W or kW,
-  - a boolean entity: on counts as charging,
-  - a template: the boolean value true counts as charging.
+- **Car connected**, the **charging on/off** and the **fault flag** are conditions. A condition is one of:
+  - a boolean entity: on counts as true,
+  - the states of an entity, for example a status sensor of the EV charger: choose the states that count as true, or the states that count as false,
+    so that every other state counts as true. Unknown and unavailable never count as true,
+  - a template: the boolean value true counts as true.
 
-  Anything else counts as not charging, also an unavailable sensor or entity and a template that fails or gives something else than true or false.
-  An EV charger that has lost power or its connection reports unavailable, and does not charge.
+  Anything else counts as false, also an unavailable entity and a template that fails.
+- **Car connected** is read at every decision. An EV charger without a car connected is bypassed, see below.
+- **Actively charging** is read at every decision from the **charging on/off**, a condition, and the **charging power**,
+  a sensor in W or kW or a template that gives the power in W, where above 100 W counts as charging. Give one of them or both: the car charges when either shows it.
+  The charging on/off often tells that the car has started before the power does. An EV charger that has lost power or its connection reports unavailable, and does not charge.
 - An EV charger gets more than the minimum current only when it is actively charging. While it is being tried, the appliances below its group can be turned on.
-  When it charges, or is tried again, they are turned off one at a time while it needs room, see **Decisions**.
-- An EV charger that is not charging, because no car is connected or because it is not actively charging when its time to start has passed since it was activated, is bypassed.
+  When it charges, they are turned off one at a time while it needs room, see **Decisions**.
+- A car that is not actively charging when its time to start has passed since the EV charger was activated is **done**.
   The time to start is two regulation windows, or the start delay of a cloud-controlled EV charger when that is longer.
-  It gets no more than the minimum current, stays activated if it is, and does not stand in the way of other EV chargers in the group.
-- An EV charger that is not charging rests before it is tried again: 15 minutes the first time, then 30, and then 60 minutes each time the car still does not charge.
-  It stays bypassed while it rests. If the car is disconnected and connected again, or starts charging, it is tried at once,
-  and a car connected again gets its time to start.
-- When only one EV charger in a group may charge at a time, an EV charger that is actively charging may continue until it is done, and the others in the group wait.
+- A car that has charged and stops gets the **grace period**, 300 seconds by default, from 10 to 900: the EV charger keeps the minimum current,
+  so the appliances below can use the power, and the car goes on charging if it starts again within the grace period, for example after balancing its battery.
+  When the grace period ends without charging, the car is done. The status page shows the EV charger as **Paused** meanwhile.
+- A done EV charger is deactivated and stays off until the car is disconnected, by a known value: a car sensor that is unavailable, or a template that fails, does not count.
+  It is tried again at once when a car is connected again. Every start of the regulation begins without done EV chargers, so a full car is tried once after each start.
+  A car that charges on its own schedule, or whose charge limit is raised in its app after it is full, does not charge again until it is unplugged:
+  let the charging window decide when the car charges, or turn on the override.
+- An EV charger without a car connected is bypassed: it gets no more than the minimum current, stays activated if it is, and does not stand in the way of other EV chargers.
+- **Dynamic charging order**, a setting of each group, off by default, decides whether an EV charger that charges keeps its place ahead of a car connected later:
+  - Off, the charging priority of the group always applies. A car connected to an EV charger higher up goes first, and takes the room of the one below it:
+    with one EV charger at a time the one below is deactivated, and with several at once it is turned down, and turned off when there is still not room.
+  - On, with one EV charger at a time, an EV charger that is charging goes on until it is done, and the others in the group wait as **Queued**.
+  - On, with several at once, the EV chargers that charge share the power in the charging priority, and a car connected later waits as **Queued**
+    until the others are at their maximum current, or until a **switch-over** makes room: when what the charging EV chargers draw above their power reserves,
+    by their charging power, plus the free power covers the power reserve of the queued one, they are set to their minimum current at once, and it is activated.
+    Every EV charger of such a group needs a charging power and a power reserve above 0 W, which should be about what it draws at its minimum current.
+  - With dynamic charging order, an EV charger that stops charging, becomes done or has no car moves to the back of the queue.
+    A car that starts again within its grace period is first in each round until it is at its maximum current.
 - Turn on **Cloud-controlled EV charger**, off by default, for an EV charger controlled through a cloud service,
   where every command goes over the internet and may count against the limits of the service, and charging may take minutes to start:
   - It gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected.
@@ -165,9 +180,9 @@ so a car that is connected does not start charging by itself. The charging curre
   - **Start delay**, 300 seconds by default and at most 900,
     is the longest time from when the EV charger is activated until the car draws power and the EV charger reports that it is actively charging.
     The car gets this time to start, when it is longer than two regulation windows.
-  - While the car starts, the power reserve of the EV charger is kept free:
-    what is below it in the priority list is turned on only when there is room for it with the power reserve counted as used,
-    and its waiting time counts the power reserve as used too.
+  - While the car starts, the power reserve of the EV charger is kept free, as it also is after a switch-over:
+    what is below it in the priority list, and the other EV chargers of its group, are turned on only when there is room with the power reserve counted as used,
+    and their waiting time counts the power reserve as used too.
     Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
     The status page shows the EV charger as **Starting** meanwhile.
 - Turn on **Deactivate on fault**, off by default, and give a **fault flag** for an EV charger that reports its faults,
@@ -175,20 +190,20 @@ so a car that is connected does not start charging by itself. The charging curre
   While the fault flag shows a fault, the EV charger is deactivated, gets no current, and does not stand in the way of the others in its group.
   It gets the command to deactivate again with the command repeat. The status page shows it as **Fault**.
   When the flag no longer shows a fault, the EV charger is regulated as before from the next decision, and tried again at once.
-  A fault flag is a boolean entity of the EV charger's device, where on means a fault, or a template, where the boolean value true does.
-  Anything else is no fault, also an unavailable entity and a template that fails, so a cloud service that is down does not stop the charging.
+  The fault flag is a condition of the EV charger's device, see above,
+  so an unavailable entity or a template that fails is no fault, and a cloud service that is down does not stop the charging.
   A fault does not end or arm the override of the charging window, and it ends finishing after the charging window, as any deactivation does.
 - Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
 - With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
-  until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit,
+  until it stops. Charging has stopped when the car is done, or when it is deactivated for any reason, for example above the power limit,
   a disconnected car, an excluded EV charger or a stopped regulation. It is then not turned on again before the charging window starts.
   An EV charger that is activated but not yet actively charging when the window ends is deactivated.
   The setting is also the switch **‹charger› finish charging after charging window**.
 - The switch **‹charger› override charging window** lets the EV charger charge outside the charging window. A charging window that starts does not end it.
   **End the override** chooses when it turns itself off:
   - **When I turn it off**, the default: it stays on until you turn it off.
-  - **When the car no longer charges**: at the first decision where the EV charger has been activated for its time to start and is not actively charging,
-    once it has been actively charging since the switch was turned on. A full car ends it, so the car heating in the morning does not charge.
+  - **When the car no longer charges**: when the car is done, once it has been actively charging since the switch was turned on,
+    and the charging on/off and the charging power tell that it does not charge. A full car ends it, so the car heating in the morning does not charge.
     An EV charger that Kraftvakt has deactivated, for example above the power limit, does not end it, and the car gets time to start again when it is activated again.
     A car that never starts charging, for example one that is already full, does not end it.
   - **When the car is disconnected**: at the first decision where the car is not connected, once a car has been connected since the switch was turned on.
@@ -215,7 +230,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   actions to turn it on and off, and its variants. A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
   and can have its own action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
   The power reserve applies to every variant. Each group of EV chargers is in the list under its name, and is moved like an appliance.
-- **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, and the EV chargers in charging priority.
+- **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, dynamic charging order, and the EV chargers in charging priority.
   Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
@@ -328,13 +343,19 @@ A template is true only when it gives the boolean value true. Anything else, inc
 {{ entity.attributes.current_temperature | float(99) < 18 }}
 ```
 
-**Car connected** from the status sensor of the charger:
+**Car connected** from the status sensor of the charger, the same as the states of the entity with `disconnected` as the state for disconnected:
 
 ```jinja
 {{ states('sensor.garage_charger_status') in ['connected', 'charging', 'awaiting_start'] }}
 ```
 
-**Actively charging** from a sensor with the charging current the charger reports:
+**Charging power** from a sensor in kW whose unit is not set, in W:
+
+```jinja
+{{ states('sensor.garage_charger_power_kw') | float * 1000 }}
+```
+
+**Charging on/off** from a sensor with the charging current the charger reports:
 
 ```jinja
 {{ states('sensor.garage_charger_current') | float(0) > 1 }}

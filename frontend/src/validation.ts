@@ -63,13 +63,18 @@ export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities,
   ];
 }
 
-/** Return the groups whose names are empty or used by another group. */
+/** Return the groups whose names are empty or used by another group, and the chargers without a power reserve where it is needed. */
 function chargerGroupErrors(groups: ChargerGroup[]): Issue[] {
   const names = groups.map((group) => group.name.trim());
   return groups.flatMap((group, index): Issue[] => {
     const name = names[index];
     const code = !name ? "empty_name" : names.filter((other) => other === name).length > 1 ? "duplicate_name" : undefined;
-    return code ? [{ code, section: "charger_groups", target: group.id, field: "name" }] : [];
+    const reserves = sharesByChargingPower(group)
+      ? group.chargers
+          .filter((charger) => charger.power_reserve_w === 0)
+          .map((charger): Issue => ({ code: "power_reserve_required", section: "chargers", target: charger.id, field: "power_reserve_w" }))
+      : [];
+    return [...(code ? [{ code, section: "charger_groups" as const, target: group.id, field: "name" }] : []), ...reserves];
   });
 }
 
@@ -80,7 +85,18 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
     missing.push({ code: "missing_power_sensor", section: "general", field: "power_sensor" });
   }
   missing.push(...config.appliances.flatMap(missingInAppliance), ...allChargers(config).flatMap(missingInCharger));
+  missing.push(
+    ...config.charger_groups
+      .filter(sharesByChargingPower)
+      .flatMap((group) => group.chargers.filter((charger) => !isSet(charger.charging_power)))
+      .map((charger): Issue => ({ code: "missing_charging_power", section: "chargers", target: charger.id, field: "charging_power" })),
+  );
   return missing;
+}
+
+/** A group that makes switch-overs needs the charging power and the power reserve of every charger, as the backend says. */
+function sharesByChargingPower(group: ChargerGroup): boolean {
+  return group.dynamic_order && !group.one_at_a_time;
 }
 
 export function missingInAppliance(appliance: Appliance): Issue[] {

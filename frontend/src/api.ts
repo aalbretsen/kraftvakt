@@ -232,9 +232,10 @@ export type ChargerState =
   | "excluded"
   | "outside_window"
   | "no_car"
-  | "not_charging"
+  | "done"
   | "queued"
   | "starting"
+  | "grace"
   | "override"
   | "finishing"
   | "charging"
@@ -248,10 +249,12 @@ export interface ChargerStatus {
   activated: boolean;
   current_a: number | null;
   bypassed: boolean;
-  /** Activated and actively charging at the last decision. */
+  /** Activated and actively charging, or in grace, at the last decision. */
   charging: boolean;
   /** When the time to start of a starting EV charger ends, whose power reserve is kept free until then. */
   starting_until: string | null;
+  /** When the grace period of an EV charger whose car has stopped charging ends. */
+  grace_until: string | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */

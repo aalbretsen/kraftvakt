@@ -1,6 +1,6 @@
 /** The checks of the draft, which mirror what the backend validates and finds missing. */
 import { describe, expect, it } from "vitest";
-import type { Charger, KraftvaktConfig } from "../src/api";
+import type { Charger, ChargerGroup, KraftvaktConfig } from "../src/api";
 import { draftErrors, isActionAvailable, isMissingAction, issuesFor, missingItems } from "../src/validation";
 import { appliance, CAPABILITIES, charger, config, group, hass, state, variant } from "./builders";
 
@@ -74,6 +74,14 @@ describe("missing items", () => {
     expect(missing({ actively_charging: { type: "entity", value: "" }, charging_power: null })).toEqual([
       { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
     ]);
+  });
+
+  it("include the charging power of every charger in a group with several at once and dynamic charging order", () => {
+    const draft = (parts: Partial<ChargerGroup>) =>
+      config({ charger_groups: [group("garage", [charger("garage", { charging_power: null })], { one_at_a_time: false, dynamic_order: true, ...parts })] });
+    expect(missingItems(draft({}))).toEqual([{ code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" }]);
+    expect(missingItems(draft({ dynamic_order: false }))).toEqual([]);
+    expect(missingItems(draft({ one_at_a_time: true }))).toEqual([]);
   });
 
   it("include the fault flag only while the charger is deactivated on fault", () => {
@@ -159,6 +167,14 @@ describe("the device of a charger", () => {
     expect(draftErrors(draft, CAPABILITIES, hass())).toEqual([
       { code: "unknown_device", section: "chargers", target: "garage", field: "device_id" },
     ]);
+  });
+
+  it("needs a power reserve above 0 W in a group with several at once and dynamic charging order", () => {
+    const draft = (dynamic_order: boolean) =>
+      config({ charger_groups: [group("garage", [charger("garage", { power_reserve_w: 0 })], { one_at_a_time: false, dynamic_order })] });
+    const reserveIssues = (dynamic_order: boolean) => draftErrors(draft(dynamic_order), CAPABILITIES, hass()).filter((issue) => issue.field === "power_reserve_w");
+    expect(reserveIssues(true)).toEqual([{ code: "power_reserve_required", section: "chargers", target: "garage", field: "power_reserve_w" }]);
+    expect(reserveIssues(false)).toEqual([]);
   });
 
   it("holds every entity the charger names, but templates are not checked", () => {

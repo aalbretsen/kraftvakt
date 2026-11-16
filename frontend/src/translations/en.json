@@ -50,9 +50,8 @@
     "delayed_turn_on": "Delayed turn-on",
     "charging_at": "Charging at {current} A",
     "first_decision": "Waiting for the first decision",
-    "bypassed": "Bypassed: not charging",
     "bypassed_no_car": "Bypassed: no car connected",
-    "waiting_charger": "Waiting: another EV charger in the group is charging",
+    "waiting_charger": "Queued: another EV charger in the group has its turn",
     "starting_until": "Waiting until {time} for the car to start charging. Its power reserve is kept free until then.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
@@ -63,7 +62,6 @@
     "window_overridden": "The charging window is overridden",
     "finishing_at": "Finishing the charging that went on when the charging window ended, at {current} A",
     "chip_charging": "Charging",
-    "chip_not_charging": "Not charging",
     "chip_no_car": "No car connected",
     "chip_queued": "Queued",
     "chip_starting": "Starting",
@@ -75,7 +73,12 @@
     "chip_fault": "Fault",
     "fault": "A fault flag shows a fault, so the EV charger is deactivated until the fault clears",
     "free_power": "{power} kW ({share}) free",
-    "power_runs_out": "The power runs out here. What is below waits for free power."
+    "power_runs_out": "The power runs out here. What is below waits for free power.",
+    "chip_done": "Done",
+    "done": "Done: the car stopped charging or did not start. It is tried again when the car is disconnected and connected again.",
+    "chip_grace": "Paused",
+    "grace_until": "The car has stopped charging. It keeps the minimum current until {time}, in case it starts again.",
+    "queued_for_room": "Queued: waiting for room beside the EV chargers that charge"
   },
   "missing": {
     "missing_power_sensor": "The power sensor is not chosen.",
@@ -95,7 +98,8 @@
       "activate": "activate it",
       "deactivate": "deactivate it",
       "set_current": "set the charging current"
-    }
+    },
+    "missing_charging_power": "{item}: «charging power» is missing, which the dynamic charging order of its group needs."
   },
   "config": {
     "save": "Save",
@@ -144,7 +148,9 @@
     "domain_action_unavailable": "The action is not available for the entity. Choose another action.",
     "unsupported_option": "The entity does not support this value.",
     "outside_entity_range": "Outside the range of the entity.",
-    "unknown": "Invalid value ({code})."
+    "unknown": "Invalid value ({code}).",
+    "charging_power_required": "Needed for the dynamic charging order of a group with several EV chargers at once.",
+    "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once."
   },
   "dialog": {
     "ok": "OK",

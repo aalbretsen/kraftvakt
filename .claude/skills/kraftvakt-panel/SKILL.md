@@ -105,6 +105,14 @@ The section header, the description and the footer note are in `section-styles.t
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
+- Actively charging is one group with the charging on/off (a condition of the kind actively charging), the charging power (Sensor or Template) and the grace period.
+  The on/off and the charging power are optional each, so either may be left empty, and missing actively charging is shown when both are.
+  A charging power template is previewed as W.
+- Car connected, the charging on/off and the fault flag also offer State: an entity of the device, a choice of whether the chosen states are those for true
+  (for example States for connected) or those for false (States for disconnected), and the states.
+  The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
+  and a state that is typed is taken too. Choosing another entity clears the states.
+- Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
 - Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
@@ -117,7 +125,7 @@ The section header, the description and the footer note are in `section-styles.t
   with `entity` as the frontend's state object. A result that is not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A new variant starts as an empty template, which is missing, not an error,
   so the appliance can be confirmed before the variant gets its expression.
-  Car connected and actively charging have no «not set», offer a boolean entity first and show it until one is chosen.
+  Car connected has no «not set», offers a boolean entity first and shows it until one is chosen.
   Every preview reads the value as the backend does, so only evidence shows as true, and shows an entity's state as HA formats it before what it counts as;
   a boolean entity that is on or off shows only its state, which says the same.
   A new charger gets the override end from the defaults in the capabilities.
@@ -189,7 +197,8 @@ The section header, the description and the footer note are in `section-styles.t
     since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
     A row or tile clicked with the mouse lets go of the focus before the dialog opens, since Home Assistant gives the focus back when the dialog closes,
     and the focus ring would look like a selection. Opened from the keyboard, it keeps the focus.
-  - A resting charger is shown as bypassed, without when it is tried again.
+  - A done charger is shown as Done, a charger in grace as Paused with when its grace period ends,
+    and a queued charger as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
   - A starting charger is shown as starting, and its sentence tells when its time to start ends and that its power reserve is kept free until then,
     since nothing else on the page tells why nothing below it is turned on while power looks free.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.

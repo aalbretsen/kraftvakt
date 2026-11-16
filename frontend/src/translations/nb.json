@@ -50,9 +50,8 @@
     "delayed_turn_on": "Forsinket innkobling",
     "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
-    "bypassed": "Forbigått: lader ikke",
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
-    "waiting_charger": "I kø: en annen elbillader i gruppen lader",
+    "waiting_charger": "I kø: en annen elbillader i gruppen har tur",
     "starting_until": "Venter til {time} på at bilen begynner å lade. Effektreserven holdes ledig så lenge.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
@@ -63,7 +62,6 @@
     "window_overridden": "Ladetidsrommet er overstyrt",
     "finishing_at": "Fullfører ladingen som pågikk da ladetidsrommet sluttet, med {current} A",
     "chip_charging": "Lader",
-    "chip_not_charging": "Lader ikke",
     "chip_no_car": "Ingen bil tilkoblet",
     "chip_queued": "I kø",
     "chip_starting": "Starter",
@@ -75,7 +73,12 @@
     "chip_fault": "Feil",
     "fault": "Et feilflagg viser feil, så elbilladeren er deaktivert til feilen er borte",
     "free_power": "{power} kW ({share}) ledig",
-    "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt."
+    "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt.",
+    "chip_done": "Ferdig",
+    "done": "Ferdig: bilen sluttet å lade eller begynte ikke. Den prøves igjen når bilen kobles fra og til igjen.",
+    "chip_grace": "Pause",
+    "grace_until": "Bilen har sluttet å lade. Den beholder minste ladestrøm til {time} i tilfelle den begynner igjen.",
+    "queued_for_room": "I kø: venter på plass ved siden av elbilladerne som lader"
   },
   "missing": {
     "missing_power_sensor": "Effektsensor er ikke valgt.",
@@ -95,7 +98,8 @@
       "activate": "aktivere",
       "deactivate": "deaktivere",
       "set_current": "sette ladestrøm"
-    }
+    },
+    "missing_charging_power": "{item}: «ladeeffekt» mangler, og trengs for den dynamiske ladeprioriteten i gruppen."
   },
   "config": {
     "save": "Lagre",
@@ -144,7 +148,9 @@
     "domain_action_unavailable": "Handlingen er ikke tilgjengelig for entiteten. Velg en annen handling.",
     "unsupported_option": "Entiteten støtter ikke denne verdien.",
     "outside_entity_range": "Utenfor området til entiteten.",
-    "unknown": "Ugyldig verdi ({code})."
+    "unknown": "Ugyldig verdi ({code}).",
+    "charging_power_required": "Trengs for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
+    "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen."
   },
   "dialog": {
     "ok": "OK",
