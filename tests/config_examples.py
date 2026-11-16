@@ -72,6 +72,7 @@ def full_config_data() -> dict[str, Any]:
                 "id": "g1",
                 "name": "EV chargers",
                 "one_at_a_time": False,
+                "dynamic_order": True,
                 "chargers": [
                     {
                         "id": "c1",
@@ -92,9 +93,14 @@ def full_config_data() -> dict[str, Any]:
                         "min_current_a": 6,
                         "max_current_a": 32,
                         "actively_charging": {
+                            "type": "entity",
+                            "value": "binary_sensor.garage_charger_charging",
+                        },
+                        "charging_power": {
                             "type": "power_sensor",
                             "value": "sensor.garage_charger_power",
                         },
+                        "grace_period_s": 120,
                         "power_reserve_w": 3000,
                         "car_connected": {
                             "type": "entity",

@@ -24,6 +24,8 @@ const CHARGER_FIELDS = [
   "power_reserve_w",
   "car_connected",
   "actively_charging",
+  "charging_power",
+  "grace_period_s",
   "cloud_controlled",
   "start_delay_s",
   "charging_window",
@@ -35,6 +37,7 @@ const CHARGER_FIELDS = [
 const GROUP_SCHEMA = [
   { name: "name", required: true, selector: { text: {} } },
   { name: "one_at_a_time", selector: { boolean: {} } },
+  { name: "dynamic_order", selector: { boolean: {} } },
 ];
 
 /** The groups of EV chargers, each with its settings and its chargers. */
@@ -150,11 +153,14 @@ export class KraftvaktChargingPage extends ConfigPage {
           : this.localize("charging.car_template"),
       );
     }
-    if (charger.actively_charging) {
+    if (charger.actively_charging?.value) {
+      details.push(this.localize("charging.charging_from", { source: charger.actively_charging.value }));
+    }
+    if (charger.charging_power?.value) {
       details.push(
-        charger.actively_charging.type === "template"
-          ? this.localize("charging.charging_template")
-          : this.localize("charging.charging_from", { source: charger.actively_charging.value }),
+        charger.charging_power.type === "template"
+          ? this.localize("charging.power_template")
+          : this.localize("charging.power_from", { source: charger.charging_power.value }),
       );
     }
     if (charger.deactivate_on_fault) {
@@ -187,8 +193,13 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   private groupChanged(group: ChargerGroup, event: CustomEvent<{ value: Partial<ChargerGroup> }>): void {
-    const { name, one_at_a_time } = event.detail.value;
-    this.changeGroup({ ...group, name: name ?? "", one_at_a_time: one_at_a_time ?? group.one_at_a_time });
+    const { name, one_at_a_time, dynamic_order } = event.detail.value;
+    this.changeGroup({
+      ...group,
+      name: name ?? "",
+      one_at_a_time: one_at_a_time ?? group.one_at_a_time,
+      dynamic_order: dynamic_order ?? group.dynamic_order,
+    });
   }
 
   /** A new group is named so that its name is not used by another group. */
@@ -248,6 +259,8 @@ export class KraftvaktChargingPage extends ConfigPage {
       power_reserve_w: defaults.power_reserve_w,
       car_connected: null,
       actively_charging: null,
+      charging_power: null,
+      grace_period_s: defaults.grace_period_s,
       charging_window: null,
       finish_after_window: false,
       override_ends: defaults.override_ends,

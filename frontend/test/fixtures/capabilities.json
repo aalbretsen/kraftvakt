@@ -451,6 +451,11 @@
         "min": 0,
         "max": 900,
         "resolution": 1
+      },
+      "grace_period_s": {
+        "min": 10,
+        "max": 900,
+        "resolution": 1
       }
     }
   },
@@ -477,14 +482,16 @@
       "power_reserve_w": null
     },
     "charger_groups": {
-      "one_at_a_time": true
+      "one_at_a_time": true,
+      "dynamic_order": false
     },
     "chargers": {
       "min_current_a": 6,
       "max_current_a": 16,
       "power_reserve_w": 4000,
       "override_ends": "manual",
-      "start_delay_s": 300
+      "start_delay_s": 300,
+      "grace_period_s": 300
     }
   }
 }

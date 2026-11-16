@@ -19,6 +19,7 @@ export function chargerDeviceEntities(charger: Charger): [string, string][] {
     ["set_current", charger.set_current?.mode === "entity" ? charger.set_current.entity_id : null],
     ["car_connected", entityOfCondition(charger.car_connected)],
     ["actively_charging", entityOfCondition(charger.actively_charging)],
+    ["charging_power", entityOfCondition(charger.charging_power)],
     ...charger.fault_flags.map((flag, index): [string, string | null] => [`fault_flags.${index}`, entityOfCondition(flag)]),
   ];
   return entities.filter((entry): entry is [string, string] => !!entry[1]);
@@ -44,6 +45,7 @@ export function changesForDevice(charger: Charger, deviceId: string | null, hass
     set_current: setCurrent?.mode === "entity" && !kept(setCurrent.entity_id) ? { mode: "entity", entity_id: null } : setCurrent,
     car_connected: keptCondition(charger.car_connected),
     actively_charging: keptCondition(charger.actively_charging),
+    charging_power: keptCondition(charger.charging_power),
     fault_flags: charger.fault_flags.map((flag) => keptCondition(flag) ?? { type: flag.type, value: "" }),
   };
 }

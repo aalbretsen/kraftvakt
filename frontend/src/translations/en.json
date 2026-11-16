@@ -338,21 +338,26 @@
     "true": "true",
     "false": "false",
     "error": "Error: {message}",
-    "not_boolean": "The template gives {value}, which is not true or false, so it counts as false."
+    "invalid": "The template gives {value}, which is not true or false, so it counts as false."
   },
   "actively_charging": {
-    "power_sensor": "Charging power",
     "entity": "Entity",
+    "entity_label": "Charging on/off",
+    "entity_helper": "A boolean entity of the EV charger that is on while the car charges. Off and unavailable count as not charging.",
+    "true": "charging",
+    "false": "not charging"
+  },
+  "charging_power": {
+    "type_label": "Charging power from",
+    "power_sensor": "Sensor",
     "template": "Template",
     "power_sensor_label": "Sensor for charging power",
-    "entity_label": "Boolean entity",
-    "template_label": "Template",
-    "power_sensor_helper": "Above 100 W, in W or kW, counts as charging. Unavailable counts as not charging.",
-    "entity_helper": "On counts as charging. Off and unavailable count as not charging.",
-    "template_helper": "Only the boolean value true counts as charging. Anything else, also an error, counts as not charging. Variables: entity_id, entity.",
+    "template_label": "Template for charging power",
+    "power_sensor_helper": "Above 100 W counts as charging. W or kW. Unavailable counts as not charging.",
+    "template_helper": "Gives the charging power as a number in W; multiply a value in kW by 1000. Above 100 W counts as charging, and anything that is not a number counts as not charging. Variables: entity_id, entity.",
     "true": "charging",
     "false": "not charging",
-    "not_boolean": "The template gives {value}, which is not true or false, so it counts as not charging."
+    "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
   },
   "fault": {
     "entity": "Entity",
@@ -363,13 +368,15 @@
     "template_helper": "Only the boolean value true means a fault. Anything else, also an error, counts as no fault. Variables: entity_id, entity.",
     "true": "fault",
     "false": "no fault",
-    "not_boolean": "The template gives {value}, which is not true or false, so it counts as no fault."
+    "invalid": "The template gives {value}, which is not true or false, so it counts as no fault."
   },
   "charging": {
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "An EV charger that charges may go on until the car is full or disconnected, while the others in the group wait.",
+    "one_at_a_time_sub": "Only one EV charger in the group charges at a time, while the others wait.",
+    "dynamic_order": "Dynamic charging order",
+    "dynamic_order_sub": "Off: the charging priority is fixed, so a car connected to an EV charger higher up stops the one charging below it. On: an EV charger that charges keeps its place, and a car connected later waits for its turn. With more than one EV charger at a time, every EV charger needs a charging power and a power reserve, and a waiting car starts when the others can be lowered to their minimum current to make room for it.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
@@ -389,7 +396,8 @@
     "car_from": "car connected from {source}",
     "car_template": "car connected from a template",
     "charging_from": "actively charging from {source}",
-    "charging_template": "actively charging from a template",
+    "power_from": "charging power from {source}",
+    "power_template": "charging power from a template",
     "deactivated_on_fault": "deactivated on fault"
   },
   "charger": {
@@ -440,7 +448,14 @@
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "Tells Kraftvakt that the car draws power. Only an EV charger that is actively charging gets more than the minimum current. Without evidence that it charges, for example an unavailable entity or a template that fails, it counts as not charging."
+        "helper": "Tells Kraftvakt that the car draws power. Give a charging on/off, a charging power or both: the car charges when either of them shows it. Only an EV charger that is actively charging gets more than the minimum current."
+      },
+      "charging_power": {
+        "label": "Charging power"
+      },
+      "grace_period_s": {
+        "label": "Grace period",
+        "helper": "How long the car may stop charging and still count as charging, so a short pause does not end it. Meanwhile the EV charger keeps only the minimum current. A car that has not charged again when it ends is done until it is disconnected. {min}–{max} s, default {default} s."
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",

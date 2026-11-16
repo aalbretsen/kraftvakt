@@ -62,6 +62,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "max_current_a": CHARGING_CURRENT_A,
         "power_reserve_w": Range(0, 5000, 1),
         "start_delay_s": Range(0, 900, 1),
+        "grace_period_s": Range(10, 900, 1),
     },
 }
 
@@ -288,6 +289,8 @@ class Charger:
     power_reserve_w: int = 4000
     car_connected: Condition | None = None
     actively_charging: Condition | None = None
+    charging_power: Condition | None = None
+    grace_period_s: int = 300
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
@@ -302,7 +305,7 @@ class Charger:
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""
-        for field_name in ("car_connected", "actively_charging"):
+        for field_name in ("car_connected", "actively_charging", "charging_power"):
             condition = getattr(self, field_name)
             if condition is not None:
                 yield field_name, condition
@@ -333,6 +336,7 @@ class ChargerGroup:
     id: str
     name: str = ""
     one_at_a_time: bool = True
+    dynamic_order: bool = False
     chargers: tuple[Charger, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:

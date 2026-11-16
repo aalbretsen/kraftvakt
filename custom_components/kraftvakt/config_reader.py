@@ -156,6 +156,7 @@ class ConfigReader:
             id=group_id,
             name=self._text(values, "name", location) or "",
             one_at_a_time=self._bool(values, "one_at_a_time", defaults.one_at_a_time, location),
+            dynamic_order=self._bool(values, "dynamic_order", defaults.dynamic_order, location),
             chargers=tuple(self._charger(item) for item in self._list(values.get("chargers"), location, "chargers")),
         )
 
@@ -176,6 +177,8 @@ class ConfigReader:
             power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
             car_connected=self._condition(values.get("car_connected"), "car_connected", location),
             actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, power_sensor_allowed=True),
+            charging_power=self._condition(values.get("charging_power"), "charging_power", location, power_sensor_allowed=True),
+            grace_period_s=self._integer(values, "grace_period_s", defaults.grace_period_s, location),
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
             override_ends=self._override_end(values, defaults.override_ends, location),

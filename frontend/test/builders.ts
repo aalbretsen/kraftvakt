@@ -41,6 +41,8 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     power_reserve_w: 4000,
     car_connected: { type: "entity", value: `binary_sensor.${id}_car` },
     actively_charging: { type: "entity", value: `binary_sensor.${id}_charging` },
+    charging_power: null,
+    grace_period_s: 300,
     charging_window: null,
     finish_after_window: false,
     override_ends: "manual",
@@ -53,7 +55,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
 }
 
 export function group(id: string, chargers: Charger[], parts: Partial<ChargerGroup> = {}): ChargerGroup {
-  return { id, name: id, one_at_a_time: true, chargers, ...parts };
+  return { id, name: id, one_at_a_time: true, dynamic_order: false, chargers, ...parts };
 }
 
 /** Home Assistant with the given states, and the devices of the chargers with their entities on them. */

@@ -91,7 +91,12 @@ export interface Charger {
   max_current_a: number;
   power_reserve_w: number;
   car_connected: Condition | null;
+  /** A boolean entity that is on while the car charges. */
   actively_charging: Condition | null;
+  /** A power sensor or a template giving the charging power. */
+  charging_power: Condition | null;
+  /** How long the car may stop charging and still count as charging. */
+  grace_period_s: number;
   charging_window: ChargingWindow | null;
   /** Whether ongoing charging may finish after the charging window has ended. */
   finish_after_window: boolean;
@@ -115,6 +120,8 @@ export interface ChargerGroup {
   id: string;
   name: string;
   one_at_a_time: boolean;
+  /** Whether a charger that charges keeps its place ahead of a car connected later. */
+  dynamic_order: boolean;
   /** In the configured charging priority. */
   chargers: Charger[];
 }
@@ -187,8 +194,15 @@ export interface Capabilities {
   defaults: {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
-    charger_groups: { one_at_a_time: boolean };
-    chargers: { min_current_a: number; max_current_a: number; power_reserve_w: number; override_ends: OverrideEnd; start_delay_s: number };
+    charger_groups: { one_at_a_time: boolean; dynamic_order: boolean };
+    chargers: {
+      min_current_a: number;
+      max_current_a: number;
+      power_reserve_w: number;
+      override_ends: OverrideEnd;
+      start_delay_s: number;
+      grace_period_s: number;
+    };
   };
 }
 

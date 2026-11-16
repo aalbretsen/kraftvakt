@@ -225,6 +225,7 @@ def capabilities() -> dict[str, Any]:
             "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},
             "charger_groups": {
                 "one_at_a_time": group.one_at_a_time,
+                "dynamic_order": group.dynamic_order,
             },
             "chargers": {
                 "min_current_a": charger.min_current_a,
@@ -232,6 +233,7 @@ def capabilities() -> dict[str, Any]:
                 "power_reserve_w": charger.power_reserve_w,
                 "override_ends": charger.override_ends.value,
                 "start_delay_s": charger.start_delay_s,
+                "grace_period_s": charger.grace_period_s,
             },
         },
     }

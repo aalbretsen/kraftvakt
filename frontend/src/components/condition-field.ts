@@ -10,11 +10,12 @@ import type { HomeAssistant } from "../types";
 const ACTIVELY_CHARGING_ABOVE_W = 100;
 
 /** What the field gives, also the prefix of its texts. Only evidence counts as true. */
-export type ConditionKind = "condition" | "actively_charging" | "fault";
+export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "fault";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
-  actively_charging: ["entity", "power_sensor", "template"],
+  actively_charging: ["entity"],
+  charging_power: ["power_sensor", "template"],
   fault: ["entity", "template"],
 };
 
@@ -25,7 +26,8 @@ interface TemplateResult {
 
 /**
  * A true/false value from a boolean entity, a template or a power sensor, with
- * what it gives now, read as the backend reads it.
+ * what it gives now, read as the backend reads it. A charging power template
+ * gives a number in W.
  *
  * The template is previewed with Home Assistant's `render_template`
  * subscription while the user writes. It gets `entity_id` and `entity`
@@ -51,6 +53,9 @@ export class KraftvaktConditionField extends LitElement {
   @property() error?: string;
 
   @property({ type: Boolean }) disabled = false;
+
+  /** Whether the field may be left empty. */
+  @property({ type: Boolean }) optional = false;
 
   @state() private preview?: TemplateResult;
 
@@ -90,8 +95,13 @@ export class KraftvaktConditionField extends LitElement {
     return this.value?.type ?? TYPES[this.kind][0];
   }
 
+  /** A kind with one type has no choice of type. */
   private schema(type: Condition["type"]) {
-    const options = TYPES[this.kind].map((value) => ({ value, label: this.text(value) }));
+    const types = TYPES[this.kind];
+    if (types.length === 1) {
+      return this.valueField(type);
+    }
+    const options = types.map((value) => ({ value, label: this.text(value) }));
     return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
   }
 
@@ -101,7 +111,7 @@ export class KraftvaktConditionField extends LitElement {
         return [
           {
             name: "value",
-            required: true,
+            required: !this.optional,
             selector: { entity: { filter: { domain: BOOLEAN_DOMAINS }, include_entities: this.includeEntities } },
           },
         ];
@@ -109,7 +119,7 @@ export class KraftvaktConditionField extends LitElement {
         return [
           {
             name: "value",
-            required: true,
+            required: !this.optional,
             selector: {
               entity: {
                 filter: { domain: "sensor", device_class: "power" },
@@ -120,7 +130,7 @@ export class KraftvaktConditionField extends LitElement {
           },
         ];
       case "template":
-        return [{ name: "value", required: true, selector: { template: {} } }];
+        return [{ name: "value", required: !this.optional, selector: { template: {} } }];
     }
   }
 
@@ -138,7 +148,7 @@ export class KraftvaktConditionField extends LitElement {
     return html`
       ${this.renderNow(this.value, evidence === true)}
       ${this.value.type === "template" && evidence === null
-        ? html`<div class="warning">${this.text("not_boolean", { value: JSON.stringify(this.preview?.result) })}</div>`
+        ? html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>`
         : nothing}
     `;
   }
@@ -147,6 +157,10 @@ export class KraftvaktConditionField extends LitElement {
   private evidence(condition: Condition): boolean | null {
     switch (condition.type) {
       case "template":
+        if (this.kind === "charging_power") {
+          const power = templatePowerW(this.preview?.result);
+          return power === null ? null : power > ACTIVELY_CHARGING_ABOVE_W;
+        }
         return typeof this.preview?.result === "boolean" ? this.preview.result : null;
       case "power_sensor": {
         const power = measuredPowerW(this.hass, condition.value);
@@ -167,11 +181,14 @@ export class KraftvaktConditionField extends LitElement {
     const text = this.text(value ? "true" : "false");
     const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
     const onOrOff = condition.type === "entity" && (stateObj?.state === "on" || stateObj?.state === "off");
+    const templatePower = condition.type === "template" && this.kind === "charging_power" ? templatePowerW(this.preview?.result) : null;
     return html`
       <div class="preview">
         ${this.localize("condition.now", { value: "" })}${stateObj
           ? html`<b>${this.hass.formatEntityState(stateObj)}</b>${onOrOff ? nothing : html` · ${text}`}`
-          : html`<b>${text}</b>`}
+          : templatePower !== null
+            ? html`<b>${new Intl.NumberFormat(this.hass.language).format(templatePower)} W</b> · ${text}`
+            : html`<b>${text}</b>`}
       </div>
     `;
   }
@@ -180,8 +197,14 @@ export class KraftvaktConditionField extends LitElement {
     return this.localize(`${this.kind}.${key}` as TranslationKey, params);
   }
 
+  /** A text the kind may leave out, empty when it does. */
+  private optionalText(key: string): string {
+    const text = this.text(key);
+    return text === `${this.kind}.${key}` ? "" : text;
+  }
+
   private computeLabel = (field: { name: string }): string =>
-    field.name === "value" ? this.text(`${this.shownType()}_label`) : "";
+    field.name === "value" ? this.text(`${this.shownType()}_label`) : this.optionalText("type_label");
 
   private computeHelper = (field: { name: string }): string =>
     field.name === "value" ? this.text(`${this.shownType()}_helper`) : "";
@@ -253,6 +276,12 @@ export class KraftvaktConditionField extends LitElement {
       color: var(--warning-color);
     }
   `;
+}
+
+/** A template's result read as power in W, as the backend reads it: a number, or null. */
+function templatePowerW(result: unknown): number | null {
+  const power = typeof result === "string" && result.trim() !== "" ? Number(result) : result;
+  return typeof power === "number" && Number.isFinite(power) ? Math.max(power, 0) : null;
 }
 
 declare global {

@@ -63,6 +63,15 @@ describe("missing items", () => {
     expect(missingItems(draft)).toEqual([{ code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" }]);
   });
 
+  it("include actively charging only when neither the charging on/off nor the charging power is set", () => {
+    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
+    const power = { type: "power_sensor" as const, value: "sensor.garage_power" };
+    expect(missing({ actively_charging: null, charging_power: power })).toEqual([]);
+    expect(missing({ actively_charging: { type: "entity", value: "" }, charging_power: null })).toEqual([
+      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
+    ]);
+  });
+
   it("include the fault flags while the charger is deactivated on fault: at least one, and none empty", () => {
     const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
     const flag = { type: "entity" as const, value: "binary_sensor.garage_error" };

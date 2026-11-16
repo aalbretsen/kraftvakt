@@ -6,6 +6,7 @@ import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type 
 import { changesForDevice, deviceEntities } from "../charger-device";
 import { chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
+import type { ConditionKind } from "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
 const ENTITY_VARIABLES = ["entity_id", "entity"];
@@ -52,8 +53,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)}
       ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}
       ${this.renderChargingCurrent(issues)}
-      ${this.renderConditionGroup("car_connected", issues)}
-      ${this.renderConditionGroup("actively_charging", issues)}
+      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
@@ -111,27 +111,53 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     }
   }
 
-  private renderConditionGroup(field: "car_connected" | "actively_charging", issues: Issue[]) {
-    const issue = issues.find((item) => item.field === field);
-    const activelyCharging = field === "actively_charging";
+  private renderCarConnected(issues: Issue[]) {
     return this.renderGroup({
-      title: this.label(field),
-      description: this.helper(field),
+      title: this.label("car_connected"),
+      description: this.helper("car_connected"),
+      content: this.renderCondition("car_connected", "condition", issues),
+    });
+  }
+
+  /**
+   * The charging on/off and the charging power together tell whether the car charges, and the grace period
+   * how long it may pause. Either source is enough, so each may be left empty while the other is set.
+   */
+  private renderActivelyCharging(issues: Issue[]) {
+    return this.renderGroup({
+      title: this.label("actively_charging"),
+      description: this.helper("actively_charging"),
       content: html`
-        <kraftvakt-condition-field
-          .hass=${this.hass}
-          .localize=${this.localize}
-          .value=${this.draft[field]}
-          .entityId=${this.draft.entity_id}
-          .includeEntities=${this.entityScope}
-          .kind=${activelyCharging ? "actively_charging" : "condition"}
-          .error=${issue ? this.describe(issue) : undefined}
-          .disabled=${this.locked}
-          @value-changed=${(event: CustomEvent<{ value: Condition }>) =>
-            this.changeDraft({ [field]: event.detail.value })}
-        ></kraftvakt-condition-field>
+        ${this.renderCondition("actively_charging", "actively_charging", issues, true)}
+        ${this.renderCondition("charging_power", "charging_power", issues, true)}
+        ${this.renderForm([this.numberField("grace_period_s", "s", true)], issues, (value) =>
+          this.changeDraft({ grace_period_s: value.grace_period_s as number }),
+        )}
       `,
     });
+  }
+
+  private renderCondition(
+    field: "car_connected" | "actively_charging" | "charging_power",
+    kind: ConditionKind,
+    issues: Issue[],
+    optional = false,
+  ) {
+    const issue = issues.find((item) => item.field === field);
+    return html`
+      <kraftvakt-condition-field
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .value=${this.draft[field]}
+        .entityId=${this.draft.entity_id}
+        .includeEntities=${this.entityScope}
+        .kind=${kind}
+        .optional=${optional}
+        .error=${issue ? this.describe(issue) : undefined}
+        .disabled=${this.locked}
+        @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeDraft({ [field]: event.detail.value })}
+      ></kraftvakt-condition-field>
+    `;
   }
 
   /**

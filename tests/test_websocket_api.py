@@ -202,13 +202,14 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "power_sensor_timeout_s": 300,
         },
         "appliances": {"power_reserve_w": None},
-        "charger_groups": {"one_at_a_time": True},
+        "charger_groups": {"one_at_a_time": True, "dynamic_order": False},
         "chargers": {
             "min_current_a": 6,
             "max_current_a": 16,
             "power_reserve_w": 4000,
             "override_ends": "manual",
             "start_delay_s": 300,
+            "grace_period_s": 300,
         },
     }
 

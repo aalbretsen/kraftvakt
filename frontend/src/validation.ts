@@ -97,10 +97,11 @@ export function missingInCharger(charger: Charger): Issue[] {
     ? []
     : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
   missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
-  for (const field of ["car_connected", "actively_charging"] as const) {
-    if (!isSet(charger[field])) {
-      missing.push({ code: `missing_${field}`, section: "chargers", target: charger.id, field });
-    }
+  if (!isSet(charger.car_connected)) {
+    missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
+  }
+  if (!isSet(charger.actively_charging) && !isSet(charger.charging_power)) {
+    missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
   missing.push(...missingFaultFlags(charger));
   return missing;

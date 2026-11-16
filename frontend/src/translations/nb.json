@@ -338,21 +338,26 @@
     "true": "sann",
     "false": "usann",
     "error": "Feil: {message}",
-    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som usann."
+    "invalid": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som usann."
   },
   "actively_charging": {
-    "power_sensor": "Ladeeffekt",
     "entity": "Entitet",
+    "entity_label": "Lading på/av",
+    "entity_helper": "En boolsk entitet på elbilladeren som er på mens bilen lader. Av og utilgjengelig regnes ikke som lading.",
+    "true": "lader",
+    "false": "lader ikke"
+  },
+  "charging_power": {
+    "type_label": "Ladeeffekt fra",
+    "power_sensor": "Sensor",
     "template": "Mal",
     "power_sensor_label": "Sensor for ladeeffekt",
-    "entity_label": "Boolsk entitet",
-    "template_label": "Mal",
-    "power_sensor_helper": "Over 100 W, i W eller kW, regnes som lading. Utilgjengelig regnes ikke som lading.",
-    "entity_helper": "På regnes som lading. Av og utilgjengelig regnes ikke som lading.",
-    "template_helper": "Bare den boolske verdien sann regnes som lading. Alt annet, også en feil, regnes ikke som lading. Variabler: entity_id, entity.",
+    "template_label": "Mal for ladeeffekt",
+    "power_sensor_helper": "Over 100 W regnes som lading. W eller kW. Utilgjengelig regnes ikke som lading.",
+    "template_helper": "Gir ladeeffekten som et tall i W; gang en verdi i kW med 1000. Over 100 W regnes som lading, og alt som ikke er et tall, regnes ikke som lading. Variabler: entity_id, entity.",
     "true": "lader",
     "false": "lader ikke",
-    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor ikke som lading."
+    "invalid": "Malen gir {value}, som ikke er et tall, og regnes derfor ikke som lading."
   },
   "fault": {
     "entity": "Entitet",
@@ -363,13 +368,15 @@
     "template_helper": "Bare den boolske verdien sann betyr feil. Alt annet, også en feil i malen, regnes som ingen feil. Variabler: entity_id, entity.",
     "true": "feil",
     "false": "ingen feil",
-    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som ingen feil."
+    "invalid": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som ingen feil."
   },
   "charging": {
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. De andre i gruppen venter så lenge.",
+    "one_at_a_time_sub": "Bare én elbillader i gruppen lader om gangen, mens de andre venter.",
+    "dynamic_order": "Dynamisk ladeprioritet",
+    "dynamic_order_sub": "Av: ladeprioriteten er fast, så en bil som kobles til en elbillader høyere opp, stopper den som lader under. På: en elbillader som lader, beholder plassen sin, og en bil som kobles til senere, venter på tur. Med flere elbilladere om gangen trenger hver elbillader ladeeffekt og effektreserve, og en bil som venter, starter når de andre kan senkes til minste ladestrøm for å gi plass.",
     "chargers": "Ladeprioritet",
     "chargers_sub": "Høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
@@ -389,7 +396,8 @@
     "car_from": "bil tilkoblet fra {source}",
     "car_template": "bil tilkoblet fra mal",
     "charging_from": "lader aktivt fra {source}",
-    "charging_template": "lader aktivt fra mal",
+    "power_from": "ladeeffekt fra {source}",
+    "power_template": "ladeeffekt fra mal",
     "deactivated_on_fault": "deaktiveres ved feil"
   },
   "charger": {
@@ -440,7 +448,14 @@
       },
       "actively_charging": {
         "label": "Lader aktivt",
-        "helper": "Forteller Kraftvakt at bilen trekker strøm. Bare en elbillader som lader aktivt, får mer enn minste ladestrøm. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
+        "helper": "Forteller Kraftvakt at bilen trekker strøm. Angi lading på/av, ladeeffekt eller begge: bilen lader når en av dem viser det. Bare en elbillader som lader aktivt, får mer enn minste ladestrøm."
+      },
+      "charging_power": {
+        "label": "Ladeeffekt"
+      },
+      "grace_period_s": {
+        "label": "Respittid",
+        "helper": "Hvor lenge bilen kan stoppe å lade og fortsatt regnes som ladende, så en kort pause ikke avslutter ladingen. Så lenge får elbilladeren bare minste ladestrøm. En bil som ikke har ladet igjen når tiden er ute, er ferdig til den kobles fra. {min}–{max} s, standard {default} s."
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
