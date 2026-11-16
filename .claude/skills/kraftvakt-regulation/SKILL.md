@@ -244,7 +244,7 @@ All with entity category diagnostic:
 - Power free: the power limit minus the last regulation average, negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike. Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision that turns on the waiting step (an appliance or a charger's next ampere), so it is the real time left,
-  a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop.
+  a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing is judged from what the last decision read (activated, actively charging, car connected),

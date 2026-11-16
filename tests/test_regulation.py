@@ -1138,13 +1138,17 @@ async def test_missed_windows_are_skipped_without_decisions(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """After a paused event loop, the regulation goes on at the next window end
-    in the cadence, with the pause counted with the last valid value. A pause
-    longer than the command repeat interval repeats the commands."""
+    in the cadence, with the pause counted with the last valid value. The status
+    is sent at once. A pause longer than the command repeat interval repeats the
+    commands."""
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     await advance(hass, freezer)
     actions.clear()
     paused_at = dt_util.now()
+    runtime = entry.runtime_data
+    next_decisions = []
+    runtime.async_add_status_listener(lambda: next_decisions.append(runtime.next_decision_at))
 
     freezer.tick(timedelta(hours=1))
     for _ in range(3):
@@ -1152,6 +1156,7 @@ async def test_missed_windows_are_skipped_without_decisions(
         await hass.async_block_till_done(wait_background_tasks=True)
     assert len(entry.runtime_data.recent_decisions) == 1
     assert actions == []
+    assert next_decisions == [dt_util.utcnow() + WINDOW]
     assert "Skipped the windows from" in caplog.text
     averager = plain(entry.runtime_data.diagnostics())["measurement"]["averager"]
     assert averager["last_missed_windows"] == {"start": paused_at.isoformat(), "end": dt_util.now().isoformat()}

@@ -48,11 +48,14 @@ class PowerMeasurement:
     The windows keep their own cadence from the start, at absolute times, and
     every listener gets the averages when a window closes. `general` gives the
     settings in use, so a saved configuration applies without a new instance.
+    `windows_skipped` is called when missed windows are skipped, since the
+    next window end has then moved without a window closing.
     """
 
-    def __init__(self, hass: HomeAssistant, general: Callable[[], GeneralConfig]) -> None:
+    def __init__(self, hass: HomeAssistant, general: Callable[[], GeneralConfig], windows_skipped: Callable[[], None]) -> None:
         self._hass = hass
         self._general = general
+        self._windows_skipped = windows_skipped
         self._started_at = dt_util.utcnow()
         self._averager = PowerAverager(timedelta(seconds=general().regulation_window_s), self._started_at)
         self._latest_averages: WindowAverages | None = None
@@ -193,6 +196,7 @@ class PowerMeasurement:
                 dt_util.as_local(missed.end).isoformat(timespec="seconds"),
             )
             self._schedule_window_close()
+            self._windows_skipped()
             return
         self._invalidate_silent_power_sensor()
         averages = self._averager.close_window()

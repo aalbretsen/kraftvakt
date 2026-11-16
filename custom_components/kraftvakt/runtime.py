@@ -82,7 +82,7 @@ class KraftvaktRuntime:
         self._actions = self._action_runner(config)
         self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=100)
         self._failed_actions: deque[dict[str, Any]] = deque(maxlen=20)
-        self._measurement = PowerMeasurement(hass, lambda: self.config.general)
+        self._measurement = PowerMeasurement(hass, lambda: self.config.general, self._notify_status)
         self._decisions = DecisionClock()
         self._status_listeners: list[StatusListener] = []
         self._cancel_start_when_started: CALLBACK_TYPE | None = None

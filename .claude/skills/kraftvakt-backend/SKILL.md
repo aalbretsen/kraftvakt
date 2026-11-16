@@ -180,7 +180,7 @@ All commands require an administrator. Commands that need the runtime fail with 
 | `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
 | `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
 | `kraftvakt/regulation/set_running` | `running` | The new state. Start refused with `config_incomplete`. |
-| `kraftvakt/status/subscribe` | – | Empty result, then status events: at once, at every window, decision, start, stop and save. Survives a reload. Events may arrive before the result of another command on the same connection. |
+| `kraftvakt/status/subscribe` | – | Empty result, then status events: at once, at every window, decision, start, stop and save, and when missed windows are skipped. Survives a reload. Events may arrive before the result of another command on the same connection. |
 
 A saved configuration is used from the next start without a reload.
 

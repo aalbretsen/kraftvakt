@@ -277,6 +277,7 @@ The time Home Assistant was down is counted with the last value before it stoppe
 
 When Home Assistant has been paused, for example on a host that sleeps or in a virtual machine that is paused, the regulation windows it missed are skipped,
 with a warning in the log. The regulation goes on at the next regulation window, by the clock as it is then, and the pause is counted with the last valid value.
+The status page and the sensors are updated at once.
 
 A new value in **Power limit** is stored at once and used from the next decision, also while the regulation runs, without starting it again.
 Above a lower limit, appliances are turned off one at each decision as usual.
@@ -470,7 +471,7 @@ The panel talks to the integration over its own WebSocket commands. All of them 
 | `kraftvakt/config/get` | Gives the configuration, the names of the entities and what is missing. |
 | `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
 | `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |
-| `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save. |
+| `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save, and when missed regulation windows are skipped. |
 
 ### Logo and icon
 
