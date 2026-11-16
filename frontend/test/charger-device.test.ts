@@ -15,13 +15,18 @@ function device(id: string, entityIds: string[]): HomeAssistant {
 }
 
 describe("moving a charger to a device", () => {
-  const cabin = device("cabin", ["switch.cabin", "binary_sensor.cabin_charging"]);
+  const cabin = device("cabin", ["switch.cabin", "binary_sensor.cabin_charging", "binary_sensor.cabin_error"]);
 
   it("keeps the entities on the new device, the templates and the actions, and clears the other entities", () => {
     const garage = charger("garage", {
       entity_id: "switch.cabin",
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
+      fault_flags: [
+        { type: "entity", value: "binary_sensor.cabin_error" },
+        { type: "entity", value: "binary_sensor.garage_error" },
+        { type: "template", value: "{{ false }}" },
+      ],
     });
     expect(changesForDevice(garage, "device_cabin", cabin)).toEqual({
       device_id: "device_cabin",
@@ -29,6 +34,11 @@ describe("moving a charger to a device", () => {
       set_current: { mode: "entity", entity_id: null },
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
+      fault_flags: [
+        { type: "entity", value: "binary_sensor.cabin_error" },
+        { type: "entity", value: "" },
+        { type: "template", value: "{{ false }}" },
+      ],
     });
   });
 
@@ -44,6 +54,7 @@ describe("moving a charger to a device", () => {
       set_current: { mode: "entity", entity_id: null },
       car_connected: null,
       actively_charging: null,
+      fault_flags: [],
     });
     expect(deviceEntities(cabin, null)).toEqual([]);
   });

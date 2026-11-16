@@ -146,6 +146,9 @@
       "car_fully_charged": {
         "name": "Bil fulladet"
       },
+      "fault": {
+        "name": "Feil"
+      },
       "unplugged": {
         "name": "Frakoblet"
       }

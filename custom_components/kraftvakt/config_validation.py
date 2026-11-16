@@ -113,7 +113,18 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         missing += [
             Issue(f"missing_{field_name}", "chargers", charger.id, field_name) for field_name in ("car_connected", "actively_charging") if not _is_set(getattr(charger, field_name))
         ]
+        missing += _missing_fault_flags(charger)
     return missing
+
+
+def _missing_fault_flags(charger: Charger) -> list[Issue]:
+    """Return the fault flags that are missing; they are kept, and not needed, while the setting is off."""
+    if not charger.deactivate_on_fault:
+        return []
+    location = IssueLocation("chargers", charger.id)
+    if not charger.fault_flags:
+        return [location.issue("missing_fault_flags", "fault_flags")]
+    return [location.issue("missing_fault_flag", f"fault_flags.{index}") for index, flag in enumerate(charger.fault_flags) if not _is_set(flag)]
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:
@@ -169,8 +180,8 @@ def _charger_issues(charger: Charger) -> list[Issue]:
     ]
     if charger.min_current_a > charger.max_current_a:
         issues.append(location.issue("min_current_above_max", "min_current_a"))
-    for field_name in ("car_connected", "actively_charging"):
-        issues += _condition_issues(location, field_name, getattr(charger, field_name))
+    for field_name, condition in charger.conditions():
+        issues += _condition_issues(location, field_name, condition)
     window = charger.charging_window
     if window is not None:
         if window.start.second or window.end.second:
@@ -185,8 +196,8 @@ def _is_set(condition: Condition | None) -> bool:
     return condition is not None and bool(condition.value.strip())
 
 
-def _condition_issues(location: IssueLocation, field_name: str, condition: Condition | None) -> list[Issue]:
-    if condition is None or not _is_set(condition) or condition.type is ConditionType.TEMPLATE:
+def _condition_issues(location: IssueLocation, field_name: str, condition: Condition) -> list[Issue]:
+    if not _is_set(condition) or condition.type is ConditionType.TEMPLATE:
         return []
     return _entity_format_issues(location, field_name, condition.value)
 
@@ -288,10 +299,8 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
                 variant.condition,
             )
     for charger in config.chargers:
-        for field_name in ("car_connected", "actively_charging"):
-            condition = getattr(charger, field_name)
-            if condition is not None:
-                yield "chargers", charger.id, field_name, condition
+        for field_name, condition in charger.conditions():
+            yield "chargers", charger.id, field_name, condition
 
 
 def _missing_entity_and_actions(section: str, item: Appliance | Charger) -> list[Issue]:

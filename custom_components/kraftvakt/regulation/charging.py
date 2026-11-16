@@ -25,7 +25,8 @@ class ChargerReading:
     are true, and `car_disconnected` and `charging_stopped` only with evidence
     that they are false. `override_armed` is whether what ends the override
     has been seen at a decision since it was switched on: the car connected,
-    or the charger activated and actively charging.
+    or the charger activated and actively charging. `fault` is whether a fault
+    flag shows a fault while the charger is deactivated on fault.
     """
 
     actively_charging: bool = False
@@ -36,11 +37,13 @@ class ChargerReading:
     window_override: bool = False
     override_armed: bool = False
     finish_after_window: bool = False
+    fault: bool = False
 
 
 class ChargingPermission(StrEnum):
     """Whether a charger may charge, and why."""
 
+    FAULT = "fault"
     EXCLUDED = "excluded"
     OUTSIDE_WINDOW = "outside_window"
     WINDOW = "window"
@@ -60,6 +63,7 @@ class ChargerState(StrEnum):
     """How a charger stands after the last decision, the most important first."""
 
     FIRST_DECISION = "first_decision"
+    FAULT = "fault"
     EXCLUDED = "excluded"
     OUTSIDE_WINDOW = "outside_window"
     NO_CAR = "no_car"
@@ -157,7 +161,8 @@ def override_ended(charger: Charger, reading: ChargerReading, activated_long_eno
 
 
 def _override_may_end(charger: Charger, reading: ChargerReading) -> bool:
-    return charger.charging_window is not None and charger.override_ends is not OverrideEnd.MANUAL and reading.window_override
+    """Return whether the override can arm or end; a fault does neither, so charging goes on when it clears."""
+    return charger.charging_window is not None and charger.override_ends is not OverrideEnd.MANUAL and reading.window_override and not reading.fault
 
 
 def charging_permission(
@@ -174,6 +179,8 @@ def charging_permission(
     until the window allows charging again.
     """
     window = charger.charging_window
+    if reading.fault:
+        return ChargingPermission.FAULT
     if reading.excluded:
         return ChargingPermission.EXCLUDED
     if window is None or in_charging_window(window, local_time):
@@ -194,11 +201,12 @@ def charging_allowed_now(
 ) -> bool:
     """Return whether the charger may charge at `local_time`.
 
-    The charging window follows the clock, while finishing is judged from what
-    the last decision read, so a charger that was charging when its window
-    ended stays allowed until a decision ends the finishing.
+    The charging window follows the clock, while finishing and a fault are
+    judged from what the last decision read, so a charger that was charging
+    when its window ended stays allowed until a decision ends the finishing.
     """
     reading = ChargerReading(
+        fault=status is not None and status.state is ChargerState.FAULT,
         actively_charging=status is not None and status.charging,
         car_connected=status is not None and status.car_connected,
         excluded=excluded,
@@ -309,6 +317,8 @@ class ChargingState:
         permission = self.last_permissions.get(charger_id)
         if permission is None:
             return ChargerState.FIRST_DECISION
+        if permission is ChargingPermission.FAULT:
+            return ChargerState.FAULT
         if permission is ChargingPermission.EXCLUDED:
             return ChargerState.EXCLUDED
         if permission is ChargingPermission.OUTSIDE_WINDOW:
@@ -363,7 +373,9 @@ class ChargingState:
         """Update the rest of the charger and return whether it is bypassed.
 
         Without a rest, two chargers with full cars take turns being activated
-        forever when only one may charge at a time.
+        forever when only one may charge at a time. A charger with a fault
+        stops charging because of the fault, not the car, so it gets no rest
+        and is tried again as soon as the fault clears.
         """
         charger_id = charger.id
         charges = charger_id in self.activated_at and reading.actively_charging
@@ -371,6 +383,8 @@ class ChargingState:
             self.rests.pop(charger_id, None)
         if not reading.car_connected:
             return True
+        if reading.fault:
+            return False
         rest = self.rests.get(charger_id)
         not_charging = not charges and self.activated_long_enough(charger, now, window)
         if not_charging and (rest is None or rest.until <= now):

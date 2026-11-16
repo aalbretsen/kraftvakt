@@ -105,6 +105,10 @@ The section header, the description and the footer note are in `section-styles.t
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
 - Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
+- Deactivate on fault is the last group, with a switch. It shows the fault flags while it is on or a flag has an error, and keeps them when it is turned off.
+  Each flag is a condition field of the kind fault, with a button to remove it, a divider between the flags, and Add fault flag under them.
+  Turning it on with no flags adds an empty one, so there is something to fill in. Choosing another device leaves a flag whose entity is not on it empty,
+  so the user sees what to fill in. An issue for a flag in the list on the EV charging page is named by the flag's place, from 1.
   The start delay is kept when the switch is turned off, since it has no effect then.
 - Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
@@ -181,7 +185,7 @@ The section header, the description and the footer note are in `section-styles.t
   - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
   - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed.
-    A charger shows its state from the status, with its charging window as the word when it is outside it.
+    A charger shows its state from the status, with its charging window as the word when it is outside it. Fault is in the alarm colour.
   - The row of an appliance or EV charger fires `hass-more-info` for its entity, the entity Kraftvakt turns on and off or activates,
     since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
     A row or tile clicked with the mouse lets go of the focus before the dialog opens, since Home Assistant gives the focus back when the dialog closes,

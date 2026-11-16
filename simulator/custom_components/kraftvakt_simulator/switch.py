@@ -71,6 +71,13 @@ CHARGER_SWITCHES: Final[tuple[SimulatorSwitchDescription[SimulatedCharger], ...]
         is_on_fn=lambda charger: charger.state.car_fully_charged,
         set_fn=lambda charger, on: charger.async_set_car_fully_charged(on),
     ),
+    SimulatorSwitchDescription(
+        key="fault",
+        translation_key="fault",
+        entity_category=EntityCategory.CONFIG,
+        is_on_fn=lambda charger: charger.state.fault,
+        set_fn=lambda charger, on: charger.async_set_fault(on),
+    ),
 )
 
 

@@ -127,7 +127,7 @@ class ConfigReader:
         return Variant(
             id=variant_id,
             label=self._text(values, "label", location) or "",
-            condition=self._condition(values, "condition", location) or Condition(ConditionType.TEMPLATE, ""),
+            condition=self._condition(values.get("condition"), "condition", location) or Condition(ConditionType.TEMPLATE, ""),
             actions={name: self._action(actions, name, location) for name in APPLIANCE_ACTION_KINDS if name in actions},
         )
 
@@ -174,14 +174,20 @@ class ConfigReader:
             min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
             power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
-            car_connected=self._condition(values, "car_connected", location),
-            actively_charging=self._condition(values, "actively_charging", location, power_sensor_allowed=True),
+            car_connected=self._condition(values.get("car_connected"), "car_connected", location),
+            actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, power_sensor_allowed=True),
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
             override_ends=self._override_end(values, defaults.override_ends, location),
             cloud_controlled=self._bool(values, "cloud_controlled", defaults.cloud_controlled, location),
             start_delay_s=self._integer(values, "start_delay_s", defaults.start_delay_s, location),
+            deactivate_on_fault=self._bool(values, "deactivate_on_fault", defaults.deactivate_on_fault, location),
+            fault_flags=self._fault_flags(values, location),
         )
+
+    def _fault_flags(self, values: Mapping[str, Any], location: IssueLocation) -> tuple[Condition, ...]:
+        flags = self._list(values.get("fault_flags"), location, "fault_flags")
+        return tuple(self._condition(flag, f"fault_flags.{index}", location) or Condition(ConditionType.ENTITY, "") for index, flag in enumerate(flags))
 
     def _action(
         self,
@@ -215,23 +221,22 @@ class ConfigReader:
 
     def _condition(
         self,
-        values: Mapping[str, Any],
-        key: str,
+        condition: Any,
+        field_name: str,
         location: IssueLocation,
         *,
         power_sensor_allowed: bool = False,
     ) -> Condition | None:
-        condition = values.get(key)
         if condition is None:
             return None
         if not isinstance(condition, Mapping):
-            self.issues.append(location.issue("invalid_type", key))
+            self.issues.append(location.issue("invalid_type", field_name))
             return None
         condition_type = condition.get("type")
         value = condition.get("value", "")
         allowed = tuple(ConditionType) if power_sensor_allowed else (ConditionType.ENTITY, ConditionType.TEMPLATE)
         if condition_type not in allowed or not isinstance(value, str):
-            self.issues.append(location.issue("invalid_type", key))
+            self.issues.append(location.issue("invalid_type", field_name))
             return None
         return Condition(ConditionType(condition_type), value)
 

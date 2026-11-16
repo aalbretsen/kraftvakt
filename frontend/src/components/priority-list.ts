@@ -1,4 +1,5 @@
 import {
+  mdiAlertCircleOutline,
   mdiArrowDown,
   mdiCancel,
   mdiCarElectric,
@@ -38,7 +39,7 @@ import { WidthQuery } from "../width-query";
 
 /** How a chip looks: its colour and its icon, or a dot without one. */
 interface Chip {
-  kind: "on" | "off" | "warning" | "outline" | "info";
+  kind: "on" | "off" | "warning" | "alarm" | "outline" | "info";
   icon?: string;
 }
 
@@ -49,6 +50,7 @@ const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
 /** The chip, its word and its sentence for each state of an EV charger. */
 const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
   first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
+  fault: [{ kind: "alarm", icon: mdiAlertCircleOutline }, "status.chip_fault", "status.fault"],
   excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
   outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
   no_car: [{ kind: "warning", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],

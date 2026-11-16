@@ -101,6 +101,10 @@ export interface Charger {
   cloud_controlled: boolean;
   /** How long a cloud-controlled EV charger may take from activation until the car draws power. */
   start_delay_s: number;
+  /** Whether the EV charger is deactivated while a fault flag shows a fault. */
+  deactivate_on_fault: boolean;
+  /** Each tells that the EV charger has a fault. Kept while deactivate on fault is off. */
+  fault_flags: Condition[];
 }
 
 export const OVERRIDE_ENDS = ["manual", "charging_stopped", "car_disconnected"] as const;
@@ -205,6 +209,7 @@ export interface ApplianceStatus {
 /** How an EV charger stands after the last decision, the most important first. */
 export type ChargerState =
   | "first_decision"
+  | "fault"
   | "excluded"
   | "outside_window"
   | "no_car"

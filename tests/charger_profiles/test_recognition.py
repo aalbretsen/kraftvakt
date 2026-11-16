@@ -2,8 +2,13 @@
 
 from dataclasses import replace
 
+import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+
+from custom_components.kraftvakt.charger_profiles import recognition
+from custom_components.kraftvakt.charger_profiles.profile import ProfileEntity, entity_condition, template_condition
+from custom_components.kraftvakt.charger_profiles.profiles import amina_s_zigbee2mqtt
 
 from .conftest import Command, Device, DeviceEntity, charger_profile, register
 from .profiles.test_amina_s_zigbee2mqtt import AMINA_S
@@ -50,3 +55,34 @@ async def test_template_needs_every_entity_it_names(hass: HomeAssistant, command
 
     assert "car_connected" not in fields
     assert fields["entity_id"] == "switch.garage_charger_enabled"
+
+
+async def test_profile_fills_the_fault_flags_it_finds(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(
+        amina_s_zigbee2mqtt.PROFILE,
+        deactivate_on_fault=True,
+        fault_flags=(
+            entity_condition(ProfileEntity("binary_sensor", name="Alarm active")),
+            template_condition("{{ states('$alarms') not in ['', '[]'] }}", alarms=ProfileEntity("sensor", name="Alarms")),
+            entity_condition(ProfileEntity("binary_sensor", name="Missing")),
+        ),
+    )
+    monkeypatch.setattr(recognition, "PROFILES", (profile,))
+
+    fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
+
+    assert fields["deactivate_on_fault"] is True
+    assert fields["fault_flags"] == [
+        {"type": "entity", "value": "binary_sensor.amina_alarm_active"},
+        {"type": "template", "value": "{{ states('sensor.amina_alarms') not in ['', '[]'] }}"},
+    ]
+
+
+async def test_profile_whose_fault_flags_are_not_found_leaves_deactivate_on_fault_alone(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(amina_s_zigbee2mqtt.PROFILE, deactivate_on_fault=True, fault_flags=(entity_condition(ProfileEntity("binary_sensor", name="Missing")),))
+    monkeypatch.setattr(recognition, "PROFILES", (profile,))
+
+    fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
+
+    assert "deactivate_on_fault" not in fields
+    assert "fault_flags" not in fields

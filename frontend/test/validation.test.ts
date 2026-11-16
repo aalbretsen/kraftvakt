@@ -63,6 +63,17 @@ describe("missing items", () => {
     expect(missingItems(draft)).toEqual([{ code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" }]);
   });
 
+  it("include the fault flags while the charger is deactivated on fault: at least one, and none empty", () => {
+    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
+    const flag = { type: "entity" as const, value: "binary_sensor.garage_error" };
+    const empty = { type: "template" as const, value: " " };
+    expect(missing({ deactivate_on_fault: true })).toEqual([{ code: "missing_fault_flags", section: "chargers", target: "garage", field: "fault_flags" }]);
+    expect(missing({ deactivate_on_fault: true, fault_flags: [flag, empty] })).toEqual([
+      { code: "missing_fault_flag", section: "chargers", target: "garage", field: "fault_flags.1" },
+    ]);
+    expect(missing({ deactivate_on_fault: false, fault_flags: [empty] })).toEqual([]);
+  });
+
   it("an action that is set is not missing", () => {
     expect(isMissingAction({ mode: "custom", action: [{ action: "light.turn_on" }] })).toBe(false);
     expect(isMissingAction({ mode: "domain", domain_action: "climate_hvac_mode", data: { hvac_mode: "heat" } })).toBe(false);
@@ -139,11 +150,25 @@ describe("the device of a charger", () => {
   });
 
   it("holds every entity the charger names, but templates are not checked", () => {
-    const item = charger("garage", { car_connected: { type: "template", value: "{{ true }}" } });
+    const item = charger("garage", {
+      car_connected: { type: "template", value: "{{ true }}" },
+      fault_flags: [
+        { type: "template", value: "{{ false }}" },
+        { type: "entity", value: "binary_sensor.garage_error" },
+      ],
+    });
     const onDevice = hass({}, [item]);
-    const elsewhere = { ...onDevice, entities: { ...onDevice.entities, "number.garage_current": { entity_id: "number.garage_current", device_id: "other" } } };
+    const elsewhere = {
+      ...onDevice,
+      entities: {
+        ...onDevice.entities,
+        "number.garage_current": { entity_id: "number.garage_current", device_id: "other" },
+        "binary_sensor.garage_error": { entity_id: "binary_sensor.garage_error", device_id: "other" },
+      },
+    };
     expect(draftErrors(config({ charger_groups: [group("garage", [item])] }), CAPABILITIES, elsewhere)).toEqual([
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "set_current" },
+      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "fault_flags.1" },
     ]);
   });
 });

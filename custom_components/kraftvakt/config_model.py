@@ -293,10 +293,21 @@ class Charger:
     override_ends: OverrideEnd = OverrideEnd.MANUAL
     cloud_controlled: bool = False
     start_delay_s: int = 300
+    deactivate_on_fault: bool = False
+    fault_flags: tuple[Condition, ...] = ()
 
     def action_fields(self) -> Iterator[ActionField]:
         for name, kind in CHARGER_ACTION_KINDS.items():
             yield ActionField(name, kind, getattr(self, name))
+
+    def conditions(self) -> Iterator[tuple[str, Condition]]:
+        """Return each condition that is given, with the field issues address."""
+        for field_name in ("car_connected", "actively_charging"):
+            condition = getattr(self, field_name)
+            if condition is not None:
+                yield field_name, condition
+        for index, flag in enumerate(self.fault_flags):
+            yield f"fault_flags.{index}", flag
 
     def device_entities(self) -> Iterator[tuple[str, str]]:
         """Return each field and entity that must belong to the device."""
@@ -304,9 +315,8 @@ class Charger:
             yield "entity_id", self.entity_id
         if self.set_current is not None and self.set_current.entity_id is not None:
             yield "set_current", self.set_current.entity_id
-        for field_name in ("car_connected", "actively_charging"):
-            condition = getattr(self, field_name)
-            if condition is not None and condition.type is not ConditionType.TEMPLATE and condition.value:
+        for field_name, condition in self.conditions():
+            if condition.type is not ConditionType.TEMPLATE and condition.value:
                 yield field_name, condition.value
 
     def to_dict(self) -> dict[str, Any]:

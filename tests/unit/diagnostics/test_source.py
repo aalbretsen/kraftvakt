@@ -10,6 +10,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     ProfileEntity,
     custom_action,
     entity_action,
+    entity_condition,
     power_sensor_condition,
     template_condition,
 )
@@ -37,6 +38,11 @@ PROFILE = ChargerProfile(
     car_connected=template_condition("{{ states('$power') != '$$' }}", power=ProfileEntity("sensor", translation_key="power")),
     actively_charging=ProfileCondition(ConditionType.ENTITY),
     cloud_controlled=True,
+    deactivate_on_fault=True,
+    fault_flags=(
+        entity_condition(ProfileEntity("binary_sensor", name="Error")),
+        template_condition("{{ is_state('$power', 'error') }}", power=ProfileEntity("sensor", translation_key="power")),
+    ),
 )
 
 DRAFT = ProfileDraft(module="acme_box_mqtt", profile=PROFILE, manufacturer="Acme", model_id="B-1", entities=ENTITIES[1:], charger_id="c1", notes=())
@@ -71,6 +77,7 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
     source = profile_source(draft)
 
     assert "cloud_controlled" not in source
+    assert "fault" not in source
     assert "ConditionType" not in source
     assert draft.profile == load(written(tmp_path, source, "acme"), PROFILES_PACKAGE).PROFILE
 

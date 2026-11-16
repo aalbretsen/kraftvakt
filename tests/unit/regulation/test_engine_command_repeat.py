@@ -70,6 +70,16 @@ def test_charger_gets_its_current_while_activated_and_off_while_deactivated() ->
     assert scenario.repeat(2 * DECISION_INTERVAL) == current("c1", 8)
 
 
+def test_charger_with_a_fault_is_kept_deactivated() -> None:
+    scenario = Scenario(make_config(chargers=(charger("c1"),), wait_at_limit_s=0))
+    scenario.set_charger("c1", actively_charging=True)
+    assert scenario.decide(2000) == activate("c1")
+    scenario.set_charger("c1", fault=True)
+    assert scenario.decide(2000) == deactivate("c1")
+
+    assert scenario.repeat(REPEAT_INTERVAL) == deactivate("c1")
+
+
 def test_excluded_appliances_and_chargers_are_left_alone() -> None:
     scenario = Scenario(make_config("a", "b", chargers=(charger("c1"), charger("c2"))))
     scenario.exclude("a")

@@ -376,6 +376,10 @@ class SimulatedCharger(PluggedInDevice):
         self._async_update(car_fully_charged=fully_charged)
 
     @callback
+    def async_set_fault(self, fault: bool) -> None:
+        self._async_update(fault=fault)
+
+    @callback
     def async_set_current(self, current_a: float) -> None:
         """Set the charging current, kept between the minimum and maximum."""
         clamped = min(max(current_a, self.min_current_a), self.max_current_a)

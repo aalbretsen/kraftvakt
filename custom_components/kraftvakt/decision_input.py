@@ -63,4 +63,5 @@ def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) 
         window_override=switches.window_override,
         override_armed=settings.override_armed(charger.id),
         finish_after_window=charger.finish_after_window,
+        fault=charger.deactivate_on_fault and any(evaluate_condition(hass, flag, charger.entity_id) for flag in charger.fault_flags),
     )

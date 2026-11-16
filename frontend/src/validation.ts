@@ -102,7 +102,20 @@ export function missingInCharger(charger: Charger): Issue[] {
       missing.push({ code: `missing_${field}`, section: "chargers", target: charger.id, field });
     }
   }
+  missing.push(...missingFaultFlags(charger));
   return missing;
+}
+
+/** The fault flags are kept, and not needed, while deactivate on fault is off. */
+function missingFaultFlags(charger: Charger): Issue[] {
+  if (!charger.deactivate_on_fault) {
+    return [];
+  }
+  const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
+  if (charger.fault_flags.length === 0) {
+    return [issue("missing_fault_flags", "fault_flags")];
+  }
+  return charger.fault_flags.flatMap((flag, index) => (isSet(flag) ? [] : [issue("missing_fault_flag", `fault_flags.${index}`)]));
 }
 
 export function defaultActionOf(capabilities: Capabilities, section: ActionSection, field: string): DefaultAction {

@@ -95,7 +95,8 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
-- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected** and **Actively charging**.
+- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected** and **Actively charging**,
+  and with **Deactivate on fault** at least one fault flag, none of them empty.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
@@ -169,6 +170,14 @@ so a car that is connected does not start charging by itself. The charging curre
     and its waiting time counts the power reserve as used too.
     Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
     The status page shows the EV charger as **Starting** meanwhile.
+- Turn on **Deactivate on fault**, off by default, and add one or more **fault flags** for an EV charger that reports its faults,
+  for example a binary sensor for a problem, or a template that is true when its status is an error.
+  While any fault flag shows a fault, the EV charger is deactivated, gets no current, and does not stand in the way of the others in its group.
+  It gets the command to deactivate again with the command repeat. The status page shows it as **Fault**.
+  When no flag shows a fault any longer, it is regulated as before from the next decision, and tried again at once.
+  A fault flag is a boolean entity of the EV charger's device, where on means a fault, or a template, where the boolean value true does.
+  Anything else is no fault, also an unavailable entity and a template that fails, so a cloud service that is down does not stop the charging.
+  A fault does not end or arm the override of the charging window, and it ends finishing after the charging window, as any deactivation does.
 - Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
 - With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
   until it stops. Charging has stopped at the first decision where it is not actively charging, or when it is deactivated for any reason, for example above the power limit,
@@ -212,7 +221,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
   Then come the entity and the power reserve, followed by the actions, the charging current, car connected, actively charging,
-  cloud control and the charging window.
+  cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 
@@ -265,7 +274,7 @@ All entities belong to the service device **Kraftvakt**.
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
 | `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish ongoing charging after the charging window** in the panel. Can be changed while the regulation runs. |
-| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, and it has no charging window, is inside it, has **‹charger› override charging window** on, or is finishing the charging after the charging window. It follows the clock, also while the regulation is stopped, and stays on without a break when the charging window ends with an EV charger that goes on finishing. |
+| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, no fault flag showed a fault at the last decision, and it has no charging window, is inside it, has **‹charger› override charging window** on, or is finishing the charging after the charging window. It follows the clock, also while the regulation is stopped, and stays on without a break when the charging window ends with an EV charger that goes on finishing. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,
 and after two regulation windows in a row closed without a valid value from the power sensor, also while the regulation is stopped.
@@ -334,6 +343,12 @@ A template is true only when it gives the boolean value true. Anything else, inc
 When the sensor is unavailable, `float(0)` gives 0 and the template gives false, so the EV charger counts as not charging,
 and as stopped for **End the override**. Leave out the default, `| float`, to let an unavailable sensor give no value instead:
 the EV charger still counts as not charging, but the override does not end.
+
+**Fault flag** from the status sensor of the charger:
+
+```jinja
+{{ is_state('sensor.garage_charger_status', 'error') }}
+```
 
 **Turn on** an appliance by setting a temperature instead of turning it on:
 
