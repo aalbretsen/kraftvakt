@@ -48,15 +48,23 @@ The ranges and defaults below are part of the specification; the code holds them
 | Cloud-controlled charger | A charger setting, off by default, for a charger controlled through a cloud service: no command repeat while no car is connected, and its start delay. |
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging. |
 | Time to start | How long a car gets to start charging after its charger is activated: two windows, or the start delay of a cloud-controlled charger when that is longer. |
-| Starting charger | A cloud-controlled charger on trial within its time to start. Its power reserve is held for the car that is about to draw power. |
+| Starting charger | A charger on trial within its time to start whose power reserve is held for the car that is about to draw power: a cloud-controlled charger, or any charger in a group with several at once and dynamic charging order. |
 | Deactivate on fault | A charger setting, off by default, with its fault flag: the charger has a fault while it shows one. |
-| Fault flag | A boolean entity of the charger's device or a template that tells that the charger has a fault. |
+| Fault flag | A condition of the charger that tells that it has a fault. |
 | Charger with a fault | A charger whose fault flag showed a fault at the last decision, with deactivate on fault on. It behaves as a deactivated charger, not allowed to charge. |
 | Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
 | Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Ampere step | One ampere of an EV charger's current, treated by the regulation as an appliance. |
-| Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |
-| Waiting charger | With one charger at a time: a charger that may not charge because another in its group is actively charging. |
+| Charging on/off | A condition of the charger that is true while the car charges. |
+| Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. |
+| Actively charging | The car draws power: the charging on/off or the charging power shows it. A charger has at least one of them, and either is enough. |
+| Grace period | 10–900 s, default 300 s. How long a car that has charged since its charger was activated may stop charging and still count as charging. |
+| Charger in grace | A charger whose car has charged since activation and has not charged for less than the grace period. It is held at its first ampere step. |
+| Done charger | A charger whose car did not start within its time to start, or stopped charging for the grace period. Deactivated until evidence that the car is disconnected. |
+| Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
+| Dynamic charging order | A group setting, off by default. On, a charger that charges keeps its place ahead of a car connected later. Off, the configured charging priority always applies. |
+| Queued charger | A charger that may charge and has a car, but waits for its turn: with one charger at a time behind the one that charges, and with several at once and dynamic charging order behind the chargers that charge. |
+| Switch-over | With several at once and dynamic charging order: the chargers that charge are set to their minimum current at once to make room for a queued charger. |
 | Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
 | Allowed to charge | A charger without a fault that is not excluded, and has no charging window, is inside it, has an active window override, or is finishing. |
 | Window override | A charger's switch that allows charging outside its charging window, until it is switched off or its override end ends it. |
@@ -81,13 +89,16 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The configuration can only be changed while the regulation is stopped, except the user's switches (one per appliance, two per charger),
   finish after window (see EV charging) and the power limit (see Power limit entity).
   Everything is off while stopped, so removed appliances are already off and new ones are controlled from the next start.
-- The state of the regulation (on/off, waiting times, repeated turn-on counters, overconsumption, penalty, current charging priority, bypassed chargers, rests, current variants,
-  excluded appliances, when each appliance and charger last got a command) starts again with defaults at every start: HA or integration start, user start,
-  after the safe state and after a penalty. The configuration and the switch positions are kept over any restart.
-- True/false from HA (variant expressions, car connected, actively charging, the fault flag) is a boolean entity or a template, and for actively charging also a power sensor.
-  Only evidence makes it true: an entity that is `on`, a template that gives the boolean true, or a valid power above 100 W.
-  Everything else is false, also unavailable entities and sensors and failing templates. The one exception is the override end (see EV charging), which needs evidence of false.
-  Settings are named so that true means the thing is the case.
+- The state of the regulation (on/off, waiting times, repeated turn-on counters, overconsumption, penalty, current charging priority,
+  bypassed, done chargers and chargers in grace, current variants, excluded appliances, when each appliance and charger last got a command)
+  starts again with defaults at every start: HA or integration start, user start, after the safe state and after a penalty.
+  The configuration and the switch positions are kept over any restart.
+- True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, the charging on/off and the fault flag)
+  also the states of an entity. The chosen states count as true, or, when the user chooses so, as false, and every other state as the opposite.
+  The charging power is a power sensor or a template that gives a number.
+  Only evidence makes it true: an entity that is `on`, a state that counts as true, a template that gives the boolean true, or a valid power above 100 W.
+  Everything else is false, also unavailable entities and sensors, `unknown` and `unavailable` of an entity with states, and failing templates.
+  The exceptions are the override end and the end of a done charger (see EV charging), which need evidence of false. Settings are named so that true means the thing is the case.
 
 ## Measurement
 
@@ -110,7 +121,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - A window that would close a whole window or more after its end is missed, as when HA's event loop was paused (a host that sleeps, a paused virtual machine, a blocked loop).
   It and the windows after it that have ended are skipped: they make no decision and no command repeat, and do not count towards the regulation interval.
   The window running when it is noticed closes next, in the same cadence. The time missed counts with the last valid value, like the time HA was down,
-  but not in the overconsumption, which counts closed windows only. Waiting times, rests, the time to start and the command repeat count it as time that has passed.
+  but not in the overconsumption, which counts closed windows only. Waiting times, grace periods, the time to start and the command repeat count it as time that has passed.
   A warning is logged. Why: closing the missed windows one by one would replay their decisions at once, by the old clock.
 - Saving a configuration does not restart the averages. A new power sensor is followed from the save, a new window length applies from the next window.
 
@@ -123,30 +134,32 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   2. Window overrides that end are switched off (see Override end).
   3. Overconsumption.
   4. Penalty.
-  5. EV chargers: allowed, bypassed, current priority, waiting.
-  6. Forced switch-offs: chargers not allowed to charge (all ampere steps off and deactivate), newly bypassed chargers down to one ampere step, excluded appliances,
-     appliances that switch variant or are included again.
+  5. EV chargers: allowed, bypassed, grace, done, current priority, queued.
+  6. Forced switch-offs: chargers not allowed to charge and done chargers (all ampere steps off and deactivate),
+     newly bypassed chargers and chargers that start their grace period down to one ampere step, excluded appliances, appliances that switch variant or are included again.
   7. Build the ordered steps (current variants, ampere steps in place of the entry of their group).
   8. Above the limit: switch off the lowest priority step that is on and not a bypassed charger's, without waiting, and cancel any waiting.
      When step 6 switched off something that was on, nothing more is switched off; the waiting is still cancelled and nothing is turned on.
      Why: the average was measured before the forced switch-off, so switching off one more would often be too much.
-  9. Turn on: only the first step that is off and not skipped may be turned on. Without room for it, room is made below it instead (see Making room).
+  9. Turn on: a switch-over when one may be made (see EV charging), or else the first step that is off and not skipped.
+     Without room for it, room is made below it instead (see Making room).
 - An appliance gets at most one command per decision, the last one. Turned off and on again at the same decision, it only gets the turn-on.
   Why: switching a device off and on at once wears its relays, for example in a thermostat.
   A charger gets only its last activation or deactivation, with the current set before it, and its last current after it.
 - Only one step is turned on or off per decision based on free power.
   Several may be switched off at once only when consumption must drop at once or switching does not change consumption: start and stop, safe state, penalty,
-  chargers not allowed to charge, bypassed chargers, excluded appliances, variant switches, appliances included again,
-  and the other charger deactivated when one is activated with one charger at a time.
+  chargers not allowed to charge, bypassed, done chargers and chargers that start their grace period, excluded appliances, variant switches, appliances included again,
+  the other charger deactivated when one is activated with one charger at a time, and a switch-over.
 - Turn on only when the regulation average is under the limit minus the turn-on margin, and average plus power reserve is at most the limit.
-  The power reserves held for starting chargers above the step count as used: they are added to the average in both and in its waiting time (see EV charging).
+  The power reserves held for starting chargers above the step, and for those in the step's own group, count as used:
+  they are added to the average in both and in its waiting time (see EV charging).
   Switch off only when the average is above the limit, or to make room. Between limit minus margin and the limit, both included, nothing is turned on,
   and nothing is switched off except to make room. Why: commands run just after a window closes, and a real meter reports the change only at its next update,
   so the window after a decision still holds the consumption from before its commands. The margin keeps an appliance from being turned on on a stale average just under the limit,
   only for one to be switched off at the next decision. The margin is below the limit only, so the regulation never accepts being above it.
 - Fixed order: a step is never turned on before all above it are on.
   Skipped: entries that are not the current variant, excluded appliances, and the ampere steps the EV charging rules hold back: of chargers that are not allowed to charge,
-  are bypassed, are waiting or are not chosen when only one may charge, and all but the first of a charger on trial.
+  are bypassed or done, are queued with one charger at a time or are not chosen when only one may charge, and all but the first of a charger on trial or in grace.
 - Making room: when the first step that is off and not skipped may not be turned on for lack of room (the average is at or above the limit minus the margin,
   or its reserve does not fit) while steps below it are on, the lowest of them that is not a bypassed charger's is switched off, without waiting,
   one per decision until it fits or none is left. Not at a decision where step 6 switched off something that was on, for the same reason as in step 8.
@@ -160,7 +173,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit), recalculated at each decision while it runs.
-  The average includes the power reserves held for starting chargers above the step.
+  The average includes the power reserves held for starting chargers above the step and in its own group.
   Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5,
   0, 1), the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half the limit, slow at first, and 1 at the limit and above.
   n is the steepness, 1.5–9 in steps of 0.5, default 6.
@@ -209,7 +222,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions, car connected and actively charging, and with deactivate on fault a fault flag.
+  activate, deactivate and set-current actions, car connected, a charging on/off or a charging power, with deactivate on fault a fault flag,
+  and with several at once and dynamic charging order a charging power.
 
 ## Command repeat
 
@@ -289,43 +303,61 @@ All with entity category diagnostic:
 - First ampere step on: set current to min, then activate, and only the first has the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new current.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
   The set-current action always gets a current between min and max.
-- Car connected: required for every charger, read at each decision from a boolean entity or a template, true only with evidence (see Ground rules).
+- Car connected: required for every charger, read at each decision, true only with evidence (see Ground rules).
   Why: without it, a car could only be found by activating the charger, and chargers without a car would be activated in turn.
-- Actively charging: read at each decision, also when deactivated, from a charging power sensor (above 100 W, not configurable, in W or kW), a boolean entity or a template,
-  true only with evidence (see Ground rules). Why: a charger that has lost power or its connection reports unavailable, and it does not charge.
-- On trial: a charger that may charge but does not charge actively gets only its first ampere step, so it stays at the minimum current until it charges actively.
+- Actively charging: read at each decision, also when deactivated, from the charging on/off and the charging power, true when either gives evidence (see Ground rules).
+  A charger has at least one of them. Evidence that it does not charge needs each of them that is given to show it.
+  Why: the on/off often reports a car that starts sooner than the power, and a charger that has lost power or its connection reports unavailable, and does not charge.
+- On trial: a charger that may charge but has not charged since it was activated gets only its first ampere step, so it stays at the minimum current until it charges actively.
   Meanwhile the steps after it may be turned on.
   Why: a charger that may have no car must not take more power and hold back the appliances below the entry of its group while it is tried.
-- Starting: a cloud-controlled charger on trial within its time to start since activation holds its power reserve.
-  The steps after it are turned on only when there is room for them with the reserve counted as used, and room is made below them as usual when there is not.
-  Their waiting time counts the reserve as used too, as it would once the car draws power.
-  Why: the car of a cloud-controlled charger may take minutes to draw power, so the average shows its power as free.
+- Starting: a charger on trial within its time to start since activation holds its power reserve when it is cloud-controlled,
+  or is in a group with several at once and dynamic charging order.
+  The steps after it, and the other steps of its group, are turned on only when there is room for them with the reserve counted as used,
+  and room is made below them as usual when there is not. Their waiting time counts the reserve as used too, as it would once the car draws power.
+  Why: the car may take a while to draw power, minutes for a cloud-controlled charger, so the average shows its power as free.
   A step turned on in that power would be switched off again when the car starts, and its waiting time would grow.
-  A car that never starts holds the reserve for at most the time to start, since the charger is then bypassed.
-  A car that starts slowly gets its second ampere a decision later.
-- Bypassed: car connected is false, or not actively charging while the first ampere step has been on for at least its time to start.
-  Evaluated at each decision, ends as soon as neither holds. A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
+  A car that never starts holds the reserve for at most the time to start, since the charger is then done. A car that starts slowly gets its second ampere a decision later.
+- Grace: a charger whose car has charged since it was activated, and does not charge actively, is in grace for the grace period from the first decision where it does not.
+  When the grace starts, all ampere steps but the first are switched off at once. It keeps its first ampere step and stays activated, and still counts as charging.
+  When the car charges actively again within the grace period, the grace ends and the charger gets its amperes back the normal way.
+  Why: a car may stop for a while, for example while it balances its battery, and must not lose its place for that.
+- Done: a charger that has been activated for its time to start without charging, or whose grace period ends without charging, is done.
+  It is deactivated at once, gets no ampere steps, and does not stand in the way of others, until car connected gives evidence that the car is disconnected:
+  an entity that is off, a state that counts as false, or a template that gives false. A car that is connected again is tried at once.
+  Every start begins without done chargers, so a full car is tried once after each start.
+  Why: a full car would otherwise be tried again and again, and with one charger at a time stop the car of another charger each time.
+- Bypassed: car connected is false. Evaluated at each decision, ends as soon as it does not hold, and a car that is connected again gets its time to start,
+  also on a charger that stayed activated. A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
   is not switched off above the limit and does not stand in the way of others. When it becomes bypassed, all ampere steps but the first are switched off at once.
-- Rest: a charger that becomes bypassed because it does not charge rests. It stays bypassed while it rests, also after it is deactivated,
-  and may be tried again when the rest is over: 15 min the first time, then 30 min, then 60 min each time it is tried and still does not charge.
-  The rest ends at once, and the next one is the first again,
-  when car connected is false at a decision (a car that is connected again is tried at once,
-  and gets its time to start, also on a charger that stayed activated) or when the charger charges actively while activated. Every start begins without rests.
-  Why: without a rest, two chargers with full cars would take turns being activated forever when only one may charge at a time,
-  and the appliances below the entry of their group would never be turned on.
-- Current charging priority: equal to the configured one at each start.
-  Newly bypassed chargers move to the back, keeping their order, and stay there even after they stop being bypassed, until it is corrected:
-  when a charger has all its ampere steps on, the priority is set to the configured order for the chargers that are not bypassed; bypassed ones stay at the back.
-- Several at once: the ampere steps of all allowed, not bypassed chargers are interleaved: the first of each charger in current priority, then the second, and so on.
-- One at a time: an actively charging charger that is allowed to charge and not bypassed may go on charging, whatever the priority; others that want to charge are waiting.
-  If several are actively charging, the activated one wins, otherwise the first in current priority.
-  When none charges, the first allowed and not bypassed in current priority gets ampere steps.
-  Before a charger is activated, any other activated charger is deactivated at the same decision (never more than one activated).
+- Dynamic charging order (per group setting, default off): whether a charger that charges keeps its place ahead of a car connected later.
+  Off, the configured charging priority always applies, so a car connected to a charger higher up goes first and takes the room of a charger below it.
+  On, the current charging priority below decides, and with several at once every charger of the group needs a charging power and a power reserve above 0.
+- Current charging priority: equal to the configured one at each start, and always the configured one without dynamic charging order.
+  With dynamic charging order, a charger that stops charging, becomes done or becomes bypassed moves to the back, keeping the order of those that move at once,
+  so the chargers that wait are queued in the order they fell back.
+- Several at once without dynamic charging order: the ampere steps of all allowed chargers that are not bypassed or done are interleaved:
+  the first of each charger in the configured priority, then the second, and so on.
+- Several at once with dynamic charging order: the ampere steps of the chargers that charge, those in grace included, are interleaved in the configured priority,
+  except that a charger that charges again after its grace period is first in each round until it has all its ampere steps on or stops charging.
+  The ampere steps of the queued chargers come after them, in the current charging priority. The first of them is turned on the normal way when it is the next step,
+  and a switch-over can make room for it before that.
+- Switch-over: with several at once and dynamic charging order, the first queued charger that is not activated gets its first ampere step,
+  and every charger that charges is set to its minimum current, at the same decision.
+  It is made when the free power plus what the chargers that charge draw above their power reserves, by their charging power, covers the reserve of the queued charger,
+  with the turn-on margin as for any step, and after the waiting time of the queued charger's first ampere step. Not above the limit, not at a decision where step 6
+  switched off something that was on, and not while a charger of the group is starting, so the charging power read is not from before the last switch-over.
+  Why: a charger at the minimum current draws about its power reserve, so the cars can share the power instead of the queued one waiting until the others are full.
+- One at a time without dynamic charging order: the first allowed charger that is not bypassed or done in the configured priority gets ampere steps, whatever the others do.
+- One at a time with dynamic charging order: an actively charging charger that is allowed to charge, those in grace included, may go on charging, whatever the priority;
+  the others that want to charge are queued. If several are actively charging, the activated one wins, otherwise the first in current priority.
+  When none charges, the first allowed charger that is not bypassed or done in current priority gets ampere steps.
+- One at a time: before a charger is activated, any other activated charger is deactivated at the same decision (never more than one activated).
 - A charger charges only when the regulation has activated it, so a car that is connected to a deactivated charger never starts by itself.
 - Allowed to charge: no fault, not excluded, and no charging window, inside it, with an active override, or finishing.
   A charger that is not allowed has all ampere steps switched off at once and is deactivated at the first decision.
-- Finishing (per charger setting finish after window, default off): outside the window, without an active override, a charger may go on while it is activated, actively charging,
-  not excluded and car connected is true. It is regulated as inside the window, so it may get and lose amperes.
+- Finishing (per charger setting finish after window, default off): outside the window, without an active override, a charger may go on while it is activated,
+  actively charging or in grace, not excluded and car connected is true. It is regulated as inside the window, so it may get and lose amperes.
   The first decision where one of these does not hold ends it, and a deactivation for any reason (the limit taking its last ampere, a stop, safe state, penalty,
   a start) ends it too, since a deactivated charger is never allowed outside the window. A charger on trial at the end of the window is not actively charging, so it is deactivated.
   The setting is configuration, but also a switch that may be changed while the regulation runs; it applies from the next decision without a restart.
@@ -334,7 +366,7 @@ All with entity category diagnostic:
   Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,
   and must not stop charging for that. The fault flag is kept while the setting is off, and is then neither read nor needed.
   A charger with a fault is not allowed to charge, so it is switched off and deactivated at once, does not stand in the way of the others in its group,
-  and gets the command repeat of a deactivated charger. It gets no rest for not charging, and does not move back in the current charging priority,
+  and gets the command repeat of a deactivated charger. It does not become done, and does not move back in the current charging priority,
   since it stops charging because of the fault, not the car. A fault neither arms nor ends a window override. Nothing is kept about a fault:
   when no flag shows one, the charger is regulated as before from the next decision.
 - Override switch (per charger, default off): allows charging outside the charging window until it is switched off. A window that starts does not end it.
@@ -344,13 +376,13 @@ All with entity category diagnostic:
   When it ends, the switch is set back to off.
   - Manual (default): never ends by itself.
   - When the car no longer charges: armed when the charger is activated and actively charging;
-    ends at the first decision where it has been activated for at least its time to start, as for bypassed, and is not actively charging.
+    ends at the decision where the charger becomes done, when the charging on/off and the charging power give evidence that it does not charge.
     A charger the regulation has deactivated neither arms nor ends it, and one it has activated again gives the car the same time to start.
     A car that never starts charging, as one that is already full, never arms it.
   - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false.
-- Only evidence of false ends an override: car connected from an entity that is off or a template that gives false, and not actively charging from a valid power of at most 100 W,
-  an entity that is off or a template that gives false. Why: an override that has ended does not come back, so a sensor that is unavailable for a moment,
-  as while a cloud service is down, must not stop the charging the user asked for. This is the only exception to the evidence rule in Ground rules.
+- Only evidence of false ends an override: car connected from an entity that is off, a state that counts as false or a template that gives false,
+  and not actively charging from each source that is given: a valid power of at most 100 W, an entity that is off, a state that counts as false or a template that gives false.
+  Why: an override that has ended does not come back, so a sensor that is unavailable for a moment, as while a cloud service is down, must not stop the charging the user asked for.
 - Whether an override is armed is kept in memory over stops, the safe state and penalties, and lost at a restart of HA or the integration and when its override end is changed;
   a car still connected or charging arms it again. Decisions in the safe state neither arm nor end it. The setting is configuration only, without a switch.
 - Both switches can be used while the regulation runs, are saved at once, and take effect at the next decision;
