@@ -47,14 +47,14 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `config_reader.py` | Reads stored and received data into the model and collects type errors. |
 | `config_validation.py` | Validation and completeness. Parsing a configuration from the panel must run in the event loop, since templates are checked there. |
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
-| `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes. |
+| `measurement.py` | Time-weighted windows, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes, skipping missed windows. |
 | `conditions.py` | True/false from an entity or a template, and for actively charging also a power sensor, both as a value and as evidence of true or false. |
 | `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
 | `charger_profiles/` | The charger profiles: `profile.py` describes a profile, `recognition.py` finds the profile of a device and fills a charger from it, `device_description.py` describes a charger's device for the diagnostics, and `profiles/` has one module per profile, listed in `PROFILES`. |
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, commands that wait merged, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
-| `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at absolute times and tells its listeners. |
+| `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at absolute times, skips the missed ones, and tells its listeners. |
 | `decision_clock.py` | Counts the closed windows to decisions, and when the next decision and the one that ends a waiting time come. Pure Python. |
 | `decision_input.py` | Reads the conditions, the chargers and the user's switches into the input of a decision. |
 | `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, keeps the last decisions and failed actions for the diagnostics, and gives the state of each of its parts for them. |

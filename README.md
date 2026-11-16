@@ -275,6 +275,9 @@ When the power sensor gives a valid value again, the measurements from before ar
 When Kraftvakt starts, the hour before is read from the history of the power sensor in the Home Assistant recorder, so the tariff average is right also just after a restart.
 The time Home Assistant was down is counted with the last value before it stopped. Without history, the first measurement is used back in time.
 
+When Home Assistant has been paused, for example on a host that sleeps or in a virtual machine that is paused, the regulation windows it missed are skipped,
+with a warning in the log. The regulation goes on at the next regulation window, by the clock as it is then, and the pause is counted with the last valid value.
+
 A new value in **Power limit** is stored at once and used from the next decision, also while the regulation runs, without starting it again.
 Above a lower limit, appliances are turned off one at each decision as usual.
 

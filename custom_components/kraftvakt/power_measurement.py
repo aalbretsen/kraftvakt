@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -35,6 +36,8 @@ from .measurement import (
     WindowAverages,
     power_w,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 type WindowListener = Callable[[WindowAverages], None]
 
@@ -182,7 +185,15 @@ class PowerMeasurement:
         self._cancel_window_timer = async_track_point_in_utc_time(self._hass, self._async_window_ended, self._averager.window_end)
 
     @callback
-    def _async_window_ended(self, _now: datetime) -> None:
+    def _async_window_ended(self, _window_end: datetime) -> None:
+        if missed := self._averager.skip_missed_windows(dt_util.utcnow()):
+            _LOGGER.warning(
+                "Skipped the windows from %s to %s, missed while the event loop of Home Assistant was paused",
+                dt_util.as_local(missed.start).isoformat(timespec="seconds"),
+                dt_util.as_local(missed.end).isoformat(timespec="seconds"),
+            )
+            self._schedule_window_close()
+            return
         self._invalidate_silent_power_sensor()
         averages = self._averager.close_window()
         self._latest_averages = averages
