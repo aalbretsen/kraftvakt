@@ -24,7 +24,12 @@ const CHARGER_FIELDS = [
   "power_reserve_w",
   "car_connected",
   "actively_charging",
+  "cloud_controlled",
+  "start_delay_s",
   "charging_window",
+  "finish_after_window",
+  "override_ends",
+  "deactivate_on_fault",
 ] as const;
 
 const GROUP_SCHEMA = [

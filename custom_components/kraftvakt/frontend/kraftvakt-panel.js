@@ -793,7 +793,7 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
         flex: 1;
         min-width: 0;
       }
-    `]}};function Wi(e){return"string"==typeof e?e.slice(0,5):""}e([xe()],Ii.prototype,"profile",void 0),Ii=e([ye("kraftvakt-charger-dialog")],Ii);const Ri=["device_id","entity_id","activate","deactivate","set_current","min_current_a","max_current_a","power_reserve_w","car_connected","actively_charging","charging_window"],Ui=[{name:"name",required:!0,selector:{text:{}}},{name:"one_at_a_time",selector:{boolean:{}}}];let Bi=class extends Ft{render(){const e=this.config.charger_groups;return Y`
+    `]}};function Wi(e){return"string"==typeof e?e.slice(0,5):""}e([xe()],Ii.prototype,"profile",void 0),Ii=e([ye("kraftvakt-charger-dialog")],Ii);const Ri=["device_id","entity_id","activate","deactivate","set_current","min_current_a","max_current_a","power_reserve_w","car_connected","actively_charging","cloud_controlled","start_delay_s","charging_window","finish_after_window","override_ends","deactivate_on_fault"],Ui=[{name:"name",required:!0,selector:{text:{}}},{name:"one_at_a_time",selector:{boolean:{}}}];let Bi=class extends Ft{render(){const e=this.config.charger_groups;return Y`
       ${0===e.length?Y`<div class="empty">${this.localize("charging.no_groups")}</div>`:e.map(e=>this.renderGroup(e))}
       ${this.renderPageFooter(e.length>0?this.localize("charging.switches_info"):"",Y`
           <ha-button .disabled=${this.locked} @click=${this.addGroup}>
