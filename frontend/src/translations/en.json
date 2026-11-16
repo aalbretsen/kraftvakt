@@ -376,7 +376,7 @@
     "one_at_a_time": "One EV charger at a time",
     "one_at_a_time_sub": "Only one EV charger in the group charges at a time, while the others wait.",
     "dynamic_order": "Dynamic charging order",
-    "dynamic_order_sub": "Off: the charging priority is fixed, so a car connected to an EV charger higher up stops the one charging below it.\nOn: an EV charger that charges keeps its place, and a car connected later waits for its turn. With more than one EV charger at a time, every EV charger needs a charging power and a power reserve, and a waiting car starts when the others can be lowered to their minimum current to make room for it.",
+    "dynamic_order_sub": "Off: the charging priority is fixed, so a car connected to an EV charger higher up stops the one charging below it.\nOn: an EV charger that charges keeps its place, and a car connected later waits for its turn. With more than one EV charger at a time, every EV charger needs a charging power and a power reserve, and a waiting car starts when the others can be lowered to their lowest charging power to make room for it.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
@@ -455,7 +455,7 @@
       },
       "grace_period_s": {
         "label": "Grace period",
-        "helper": "How long the car may stop charging and still count as charging, so a short pause does not end it. Meanwhile the EV charger keeps only the minimum current. A car that has not charged again when it ends is done until it is disconnected. {min}–{max} s, default {default} s."
+        "helper": "How long the car may stop charging and still count as charging, so a short pause does not end it. Meanwhile the EV charger is held at its lowest charging power. A car that has not charged again when it ends is done until it is disconnected. {min}–{max} s, default {default} s."
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",

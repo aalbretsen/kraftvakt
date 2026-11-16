@@ -376,7 +376,7 @@
     "one_at_a_time": "Én elbillader om gangen",
     "one_at_a_time_sub": "Bare én elbillader i gruppen lader om gangen, mens de andre venter.",
     "dynamic_order": "Dynamisk ladeprioritet",
-    "dynamic_order_sub": "Av: ladeprioriteten er fast, så en bil som kobles til en elbillader høyere opp, stopper den som lader under.\nPå: en elbillader som lader, beholder plassen sin, og en bil som kobles til senere, venter på tur. Med flere elbilladere om gangen trenger hver elbillader ladeeffekt og effektreserve, og en bil som venter, starter når de andre kan senkes til minste ladestrøm for å gi plass.",
+    "dynamic_order_sub": "Av: ladeprioriteten er fast, så en bil som kobles til en elbillader høyere opp, stopper den som lader under.\nPå: en elbillader som lader, beholder plassen sin, og en bil som kobles til senere, venter på tur. Med flere elbilladere om gangen trenger hver elbillader ladeeffekt og effektreserve, og en bil som venter, starter når de andre kan senkes til laveste ladeeffekt for å gi plass.",
     "chargers": "Ladeprioritet",
     "chargers_sub": "Høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
@@ -455,7 +455,7 @@
       },
       "grace_period_s": {
         "label": "Respittid",
-        "helper": "Hvor lenge bilen kan stoppe å lade og fortsatt regnes som ladende, så en kort pause ikke avslutter ladingen. Så lenge får elbilladeren bare minste ladestrøm. En bil som ikke har ladet igjen når tiden er ute, er ferdig til den kobles fra. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge bilen kan stoppe å lade og fortsatt regnes som ladende, så en kort pause ikke avslutter ladingen. Så lenge holdes elbilladeren på laveste ladeeffekt. En bil som ikke har ladet igjen når tiden er ute, er ferdig til den kobles fra. {min}–{max} s, standard {default} s."
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
