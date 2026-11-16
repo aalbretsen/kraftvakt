@@ -23,8 +23,8 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
 ## Structure
 
 `frontend/src/` has the panel element (routing on `hass.route`, the top menu, the draft, the save bar and the lock of the configuration pages), one module per page in `pages/`,
-shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting, the width query
-and the styles the status page shares with its components.
+shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting, the width query,
+the styles the status page shares with its components, and the parts the configuration pages and the dialogs share (`section-styles.ts`).
 The status page holds the regulation card; the power tiles with the meter, and the priority list, are components of their own.
 One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
 
@@ -91,7 +91,8 @@ The section header, the description and the footer note are in `section-styles.t
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance or charger has a group of its own, as the variant dialog has one per action it can override,
   except set charging current, which is in the charging current group with the currents it sets.
-- The appliance dialog lists the variants by label, with drag and edit, and Add variant. What else is wrong or missing in a variant is shown under its label.
+- The appliance dialog lists the variants by label, with drag and edit, and Add variant. In view mode the group is left out when there are no variants.
+  What else is wrong or missing in a variant is shown under its label.
   A variant's edit button, and its row in the priority list, open the variant dialog: the expression and one switch per action to override it, both off by default.
   Switched on, the action starts from what it had while the dialog is open, or else a copy of the appliance's.
   The variant dialog edits a copy of the whole appliance; its Delete removes the variant with `item-changed`, since it changes the appliance.
@@ -117,7 +118,8 @@ The section header, the description and the footer note are in `section-styles.t
   Car connected is shown as required when only one charger in the group may charge at a time, when the charger is cloud-controlled,
   or when it has a charging window and its override ends when the car is disconnected. A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
-- The EV charging page has one card per charger group, with its name, its settings and its chargers, and Add group under the cards.
+- The EV charging page has one card per charger group, with its name, its settings and its chargers in charging priority, and Add group under the cards.
+  Without groups, a line of text says so, as an empty list does.
   A new group gets the first free name of «EV chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.
 - A charger moves to another group by dragging it to that group's list, with `ha-sortable`'s `group`, which puts the dragged row back so the lists follow the draft.
   An empty list stays in view as a place to drop on.

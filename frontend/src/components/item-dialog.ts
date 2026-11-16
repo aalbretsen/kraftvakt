@@ -116,10 +116,13 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
   }
 
-  /** One of the item's own action fields; `entityAllowed` offers to give it as an entity with the same default action. */
-  protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false) {
+  /**
+   * One of the item's own action fields; `entityAllowed` offers to give it as
+   * an entity with the same default action, and `label` replaces the field's.
+   */
+  protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false, label?: string) {
     return this.renderActionField(
-      { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field] },
+      { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field], label },
       issues,
       variables,
       (value) => this.changeDraft({ [field]: value } as Partial<T>),
@@ -132,12 +135,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return this.renderGroup({
       title: this.label(field),
       description: this.helper(field),
-      content: this.renderActionField(
-        { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field], label: "" },
-        issues,
-        variables,
-        (value) => this.changeDraft({ [field]: value } as Partial<T>),
-      ),
+      content: this.renderAction(field, issues, variables, false, ""),
     });
   }
 

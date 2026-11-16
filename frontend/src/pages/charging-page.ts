@@ -1,5 +1,5 @@
 import { mdiDelete, mdiEvStation, mdiPlus } from "@mdi/js";
-import { css, html, nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Charger, ChargerGroup, Issue } from "../api";
@@ -41,7 +41,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const groups = this.config.charger_groups;
     return html`
       ${groups.length === 0
-        ? html`<ha-card><div class="card-content no-groups">${this.localize("charging.no_groups")}</div></ha-card>`
+        ? html`<div class="empty">${this.localize("charging.no_groups")}</div>`
         : groups.map((group) => this.renderGroup(group))}
       ${this.renderPageFooter(
         groups.length > 0 ? this.localize("charging.switches_info") : "",
@@ -277,15 +277,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     this.changeConfig({ ...this.config, charger_groups: groups });
   }
 
-  static styles = [
-    ConfigPage.styles,
-    css`
-      .no-groups {
-        padding-top: 16px;
-        color: var(--secondary-text-color);
-      }
-    `,
-  ];
+  static styles = ConfigPage.styles;
 }
 
 declare global {

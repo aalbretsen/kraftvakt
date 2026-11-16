@@ -62,8 +62,11 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     return APPLIANCE_ACTIONS.map((name) => this.renderActionGroup(name, issues, APPLIANCE_ACTION_VARIABLES));
   }
 
-  /** The variants, sorted in the order their expressions are evaluated. */
+  /** The variants, sorted in the order their expressions are evaluated. Left out in view mode when there are none. */
   private renderVariants(issues: Issue[]) {
+    if (this.locked && this.draft.variants.length === 0) {
+      return nothing;
+    }
     const editable = this.locked || this.errors().length === 0;
     return this.renderGroup({
       title: this.localize("appliance.variants"),
