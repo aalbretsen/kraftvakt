@@ -90,7 +90,6 @@ IDs are short UUIDs, so entities can change without losing the place in the list
 An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen).
 A condition is an entity or a template, and for car connected, the charging on/off and the fault flag also the states of an entity (`states`, and `states_are_true`,
 which is false when the chosen states count as false). The charging power is a power sensor or a template.
-A power sensor stored under the charging on/off is read as the charging power, so such a configuration still starts.
 HA's action editor adds empty `data`; stored actions must tolerate that.
 
 ## Validation and completeness

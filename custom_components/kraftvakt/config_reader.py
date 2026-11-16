@@ -168,10 +168,6 @@ class ConfigReader:
         charger_id = self._id(values, IssueLocation("chargers"))
         location = IssueLocation("chargers", charger_id)
         defaults = Charger(id=charger_id)
-        actively_charging, charging_power = values.get("actively_charging"), values.get("charging_power")
-        if charging_power is None and isinstance(actively_charging, Mapping) and actively_charging.get("type") == ConditionType.POWER_SENSOR:
-            # A power sensor given as actively charging is the charging power.
-            actively_charging, charging_power = None, actively_charging
         return Charger(
             id=charger_id,
             device_id=self._text(values, "device_id", location),
@@ -183,8 +179,8 @@ class ConfigReader:
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
             power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
             car_connected=self._condition(values.get("car_connected"), "car_connected", location, CHARGER_CONDITION_TYPES),
-            actively_charging=self._condition(actively_charging, "actively_charging", location, CHARGER_CONDITION_TYPES),
-            charging_power=self._condition(charging_power, "charging_power", location, CHARGING_POWER_TYPES),
+            actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, CHARGER_CONDITION_TYPES),
+            charging_power=self._condition(values.get("charging_power"), "charging_power", location, CHARGING_POWER_TYPES),
             grace_period_s=self._integer(values, "grace_period_s", defaults.grace_period_s, location),
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
