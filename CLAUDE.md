@@ -28,10 +28,11 @@ Read the skill for the kind of task before starting:
 - When the owner settles a question about behaviour, record it in the skill it belongs to, as the documentation rules say.
 - When finished with a task, review your own work, and check that the rules in this file and the skills for the task are followed.
 - Review with more than a developer's eyes, and question the code, the tests and the documentation alike, since any of them can be wrong:
-  - developer: correctness, readability, and code that could follow a shared concept instead of repeating almost the same thing;
-  - tester: what is not tested, what can fail, how a failure is noticed, and edge cases such as a restart or a sensor that stops reporting;
-  - software architect: separation of concerns, one owner for each piece of state, and Home Assistant's rules for integrations;
-  - functional architect: whether the behaviour matches the specification, and whether code, tests, panel and documentation use the same concepts;
+  - developer: correctness, readability, and code that could follow a shared concept instead of repeating almost the same thing.
+  - tester: what is not tested, what can fail, how a failure is noticed, and edge cases such as a restart or a sensor that stops reporting.
+  - software architect: separation of concerns, one owner for each piece of state, and Home Assistant's rules for integrations.
+  - functional architect: whether the behaviour matches the specification, and whether code, tests, panel and documentation use the same concepts.
+  - ux designer: consistent use of ui concepts, and concepts in general - also text balance between enough and to little information.
   - business developer: whether it serves the users and the tariff it is made for, stays easy for most users and possible for experts,
     and what happens when devices, cloud services or the network fail.
 - Verify a finding by running it, in a test or against a local Home Assistant with the simulator, before reporting it.
