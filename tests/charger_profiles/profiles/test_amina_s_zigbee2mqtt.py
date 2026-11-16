@@ -1,6 +1,7 @@
 """Amina S with Zigbee2MQTT (the definition "amina S" in zigbee-herdsman-converters) and its Home Assistant discovery.
 
 Zigbee2MQTT names the entities in English in every language. The on/off switch is the main entity of the device, without a name of its own.
+«Alarm active» is on while any of the charger's alarms is set, which «Alarms» lists, such as a welded relay, a leakage, overcurrent or a car communication error.
 """
 
 from homeassistant.core import HomeAssistant
@@ -54,6 +55,8 @@ async def test_amina_s_has_entities_for_every_field(hass: HomeAssistant, command
             "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
             "actively_charging": {"type": "entity", "value": "binary_sensor.amina_charging"},
             "cloud_controlled": False,
+            "deactivate_on_fault": True,
+            "fault_flags": [{"type": "entity", "value": "binary_sensor.amina_alarm_active"}],
         },
     }
     saved = await save_charger(command, device_id, result["fields"])
