@@ -188,7 +188,8 @@ The section header, the description and the footer note are in `section-styles.t
     the rank, the variant, the charger count, the ampere bars, the waiting bar and the text that there are no chargers are left out.
     The rows share no columns there: each row puts its chip at the right end, what it has of the current and the waiting icon just before it,
     and gives the name the rest, since a shared column would be as wide as the widest chip or current in any row.
-  - Icons instead of short texts, each with its sentence as a tooltip, and no legend. A group's row shows how many of its chargers are charging of all.
+  - Icons instead of short texts, each with its sentence as a tooltip, and no legend.
+    A group's row shows how many of its chargers are charging of all; a charger in grace is not counted, since its car has stopped.
   - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
   - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed.

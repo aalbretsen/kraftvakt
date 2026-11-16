@@ -1115,7 +1115,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         ${i?X`<ha-state-icon .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:te}
         <ha-svg-icon .path=${"M7,2V13H10V22L17,10H13L17,2H7Z"}></ha-svg-icon>
       </span>
-    `}renderChargerGroup(e,i){const r=e.chargers,a=r.filter(e=>e.charging).length;return X`
+    `}renderChargerGroup(e,i){const r=e.chargers,a=r.filter(e=>e.charging&&"grace"!==e.state).length;return X`
       <div class="row group">
         ${this.renderRank(i)}
         <div class="row-title">

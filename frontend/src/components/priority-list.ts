@@ -229,7 +229,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   private renderChargerGroup(group: ChargerGroupStatus, rank: number) {
     const chargers = group.chargers;
-    const charging = chargers.filter((charger) => charger.charging).length;
+    const charging = chargers.filter((charger) => charger.charging && charger.state !== "grace").length;
     return html`
       <div class="row group">
         ${this.renderRank(rank)}
