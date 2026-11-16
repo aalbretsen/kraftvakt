@@ -652,7 +652,7 @@ async def test_manual_override_stays_until_switched_off(
     await advance(hass, freezer, timedelta(minutes=10))
     hass.states.async_set(CAR_CONNECTED, STATE_OFF)
 
-    await advance(hass, freezer, timedelta(days=1))
+    await advance_until(hass, freezer, "2026-11-08T12:10")
     assert switch_state(hass, "c1", "window_override") == STATE_ON
 
     actions.clear()
