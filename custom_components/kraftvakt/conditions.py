@@ -35,12 +35,14 @@ def evaluate_condition(hass: HomeAssistant, condition: Condition, entity_id: str
     return condition_evidence(hass, condition, entity_id) is True
 
 
-def condition_evidence(hass: HomeAssistant, condition: Condition, entity_id: str | None) -> bool | None:
+def condition_evidence(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> bool | None:
     """Return the value of the condition when there is evidence for it, else None.
 
     Evidence is an entity that is on or off, a template that renders a
-    boolean, or a valid power.
+    boolean, or a valid power. A condition that is not set gives none.
     """
+    if condition is None:
+        return None
     if condition.type is ConditionType.TEMPLATE:
         try:
             result = Template(condition.value, hass).async_render(context_variables(hass, entity_id))

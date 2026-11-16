@@ -82,7 +82,7 @@
     "missing_action": "{item}: handling for å {action} mangler.",
     "missing_condition": "{item}: uttrykket mangler.",
     "missing_actively_charging": "{item}: «lader aktivt» mangler.",
-    "missing_car_connected": "{item}: «bil tilkoblet» mangler. Den er påkrevd når bare én elbillader i gruppen kan lade om gangen, og når overstyringen avsluttes når bilen kobles fra.",
+    "missing_car_connected": "{item}: «bil tilkoblet» mangler.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
     "charger_without_entity": "En elbillader uten entitet",
@@ -118,7 +118,6 @@
   },
   "errors": {
     "required": "Påkrevd.",
-    "car_connected_required": "Påkrevd når bare én elbillader i gruppen kan lade om gangen, og når overstyringen avsluttes når bilen kobles fra.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
     "invalid_resolution": "Må være et multiplum av {resolution}.",
@@ -324,7 +323,6 @@
     "parameter_range": "{min}–{max} {unit} for entiteten."
   },
   "condition": {
-    "none": "Ikke angitt",
     "entity": "Entitet",
     "template": "Mal",
     "entity_label": "Boolsk entitet",
@@ -355,7 +353,7 @@
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. De andre i gruppen venter så lenge. Krever bil tilkoblet for alle elbilladerne i gruppen.",
+    "one_at_a_time_sub": "En elbillader som lader, får fortsette til bilen er fulladet eller koblet fra. De andre i gruppen venter så lenge.",
     "chargers": "Ladeprioritet",
     "chargers_sub": "Høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
@@ -382,9 +380,6 @@
     "edit_title": "Rediger elbillader",
     "view_title": "Elbillader",
     "charging_current": "Ladestrøm",
-    "actively_charging": "Lader aktivt",
-    "car_connected_required": "Bil tilkoblet",
-    "car_connected_optional": "Bil tilkoblet (valgfri)",
     "profile_applied": "Fylt ut fra laderprofilen {profile}. Sjekk alle feltene før du lagrer.",
     "override_ends": {
       "manual": "Når jeg slår den av",
@@ -423,14 +418,16 @@
         "helper": "Effekten elbilladeren trekker når lading starter på minste ladestrøm. Kraftvakt aktiverer elbilladeren bare når så mye effekt er ledig. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
       },
       "car_connected": {
-        "helper": "Forteller Kraftvakt om en bil er tilkoblet, så elbilladere uten bil ikke aktiveres etter tur. Bare sann regnes som tilkoblet, og utilgjengelig regnes som ikke tilkoblet."
+        "label": "Bil tilkoblet",
+        "helper": "Forteller Kraftvakt om en bil er tilkoblet, så en elbillader uten bil ikke aktiveres. Bare sann regnes som tilkoblet, og utilgjengelig regnes som ikke tilkoblet."
       },
       "actively_charging": {
+        "label": "Lader aktivt",
         "helper": "Forteller Kraftvakt at bilen trekker strøm. Bare en elbillader som lader aktivt, får mer enn minste ladestrøm. Uten bevis for at den lader, for eksempel en utilgjengelig entitet eller en mal som feiler, regnes det som at den ikke lader."
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Slå det på når elbilladeren styres gjennom en skytjeneste, der kommandoene går over internett, tar tid og kan telle mot tjenestens grenser. Den får da ingen gjentatte kommandoer når ingen bil er tilkoblet, og bilen får startforsinkelsen på å begynne å lade. Krever bil tilkoblet."
+        "helper": "Slå det på når elbilladeren styres gjennom en skytjeneste, der kommandoene går over internett, tar tid og kan telle mot tjenestens grenser. Den får da ingen gjentatte kommandoer når ingen bil er tilkoblet, og bilen får startforsinkelsen på å begynne å lade."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",

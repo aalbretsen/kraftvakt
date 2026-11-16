@@ -201,8 +201,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions and actively charging, and also car connected when only one charger in its group may charge at a time,
-  when it is cloud-controlled, or when it has a charging window and its override ends when the car is disconnected.
+  activate, deactivate and set-current actions, car connected and actively charging.
 
 ## Command repeat
 
@@ -282,6 +281,8 @@ All with entity category diagnostic:
 - First ampere step on: set current to min, then activate, and only the first has the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new current.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
   The set-current action always gets a current between min and max.
+- Car connected: required for every charger, read at each decision from a boolean entity or a template, true only with evidence (see Ground rules).
+  Why: without it, a car could only be found by activating the charger, and chargers without a car would be activated in turn.
 - Actively charging: read at each decision, also when deactivated, from a charging power sensor (above 100 W, not configurable, in W or kW), a boolean entity or a template,
   true only with evidence (see Ground rules). Why: a charger that has lost power or its connection reports unavailable, and it does not charge.
 - On trial: a charger that may charge but does not charge actively gets only its first ampere step, so it stays at the minimum current until it charges actively.
@@ -294,7 +295,7 @@ All with entity category diagnostic:
   A step turned on in that power would be switched off again when the car starts, and its waiting time would grow.
   A car that never starts holds the reserve for at most the time to start, since the charger is then bypassed.
   A car that starts slowly gets its second ampere a decision later.
-- Bypassed: car connected is set and false, or not actively charging while the first ampere step has been on for at least its time to start.
+- Bypassed: car connected is false, or not actively charging while the first ampere step has been on for at least its time to start.
   Evaluated at each decision, ends as soon as neither holds. A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
   is not switched off above the limit and does not stand in the way of others. When it becomes bypassed, all ampere steps but the first are switched off at once.
 - Rest: a charger that becomes bypassed because it does not charge rests. It stays bypassed while it rests, also after it is deactivated,
@@ -316,7 +317,7 @@ All with entity category diagnostic:
 - Allowed to charge: not excluded, and no charging window, inside it, with an active override, or finishing.
   A charger that is not allowed has all ampere steps switched off at once and is deactivated at the first decision.
 - Finishing (per charger setting finish after window, default off): outside the window, without an active override, a charger may go on while it is activated, actively charging,
-  not excluded and car connected is not false. It is regulated as inside the window, so it may get and lose amperes.
+  not excluded and car connected is true. It is regulated as inside the window, so it may get and lose amperes.
   The first decision where one of these does not hold ends it, and a deactivation for any reason (the limit taking its last ampere, a stop, safe state, penalty,
   a start) ends it too, since a deactivated charger is never allowed outside the window. A charger on trial at the end of the window is not actively charging, so it is deactivated.
   The setting is configuration, but also a switch that may be changed while the regulation runs; it applies from the next decision without a restart.
@@ -331,7 +332,7 @@ All with entity category diagnostic:
     ends at the first decision where it has been activated for at least its time to start, as for bypassed, and is not actively charging.
     A charger the regulation has deactivated neither arms nor ends it, and one it has activated again gives the car the same time to start.
     A car that never starts charging, as one that is already full, never arms it.
-  - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false. Car connected is required.
+  - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false.
 - Only evidence of false ends an override: car connected from an entity that is off or a template that gives false, and not actively charging from a valid power of at most 100 W,
   an entity that is off or a template that gives false. Why: an override that has ended does not come back, so a sensor that is unavailable for a moment,
   as while a cloud service is down, must not stop the charging the user asked for. This is the only exception to the evidence rule in Ground rules.

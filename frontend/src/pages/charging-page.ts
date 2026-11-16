@@ -109,7 +109,6 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   private renderDialog(charger: Charger, groupId: string, isNew: boolean) {
-    const group = this.config.charger_groups.find((item) => item.id === groupId);
     return html`
       <kraftvakt-charger-dialog
         .hass=${this.hass}
@@ -117,7 +116,6 @@ export class KraftvaktChargingPage extends ConfigPage {
         .capabilities=${this.capabilities}
         .item=${charger}
         .isNew=${isNew}
-        .oneAtATime=${group?.one_at_a_time ?? false}
         .usedEntities=${this.entitiesUsedBesides(charger.id)}
         .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
         .locked=${this.locked}

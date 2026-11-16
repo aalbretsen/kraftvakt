@@ -87,7 +87,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   missing_action: "errors.required",
   missing_condition: "errors.required",
   missing_actively_charging: "errors.required",
-  missing_car_connected: "errors.car_connected_required",
+  missing_car_connected: "errors.required",
   not_integer: "errors.not_integer",
   invalid_entity_id: "errors.invalid_entity_id",
   empty_label: "errors.empty_label",

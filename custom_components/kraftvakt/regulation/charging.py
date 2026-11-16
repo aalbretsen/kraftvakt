@@ -19,16 +19,17 @@ RETRY_PAUSES: Final = (
 
 @dataclass(frozen=True, slots=True)
 class ChargerReading:
-    """What a decision reads for a charger; `car_connected` is None when not set.
+    """What a decision reads for a charger.
 
-    `car_disconnected` and `charging_stopped` hold only with evidence that no
-    car is connected or that it does not charge. `override_armed` is whether
+    `car_connected` and `actively_charging` hold only with evidence that they
+    are true, and `car_disconnected` and `charging_stopped` only with evidence
+    that they are false. `override_armed` is whether
     what ends the override has been seen at a decision since it was switched
     on: the car connected, or the charger activated and actively charging.
     """
 
     actively_charging: bool = False
-    car_connected: bool | None = None
+    car_connected: bool = False
     car_disconnected: bool = False
     charging_stopped: bool = False
     excluded: bool = False
@@ -84,7 +85,7 @@ class ChargerStatus:
     current_a: int | None
     bypassed: bool
     charging: bool
-    car_connected: bool | None
+    car_connected: bool
     starting_until: datetime | None = None
 
 
@@ -134,7 +135,7 @@ def override_arms(charger: Charger, reading: ChargerReading, activated: bool) ->
     if not _override_may_end(charger, reading):
         return False
     if charger.override_ends is OverrideEnd.CAR_DISCONNECTED:
-        return reading.car_connected is True
+        return reading.car_connected
     return activated and reading.actively_charging
 
 
@@ -179,7 +180,7 @@ def charging_permission(
         return ChargingPermission.WINDOW
     if override_active:
         return ChargingPermission.OVERRIDE
-    if reading.finish_after_window and activated and reading.actively_charging and reading.car_connected is not False:
+    if reading.finish_after_window and activated and reading.actively_charging and reading.car_connected:
         return ChargingPermission.FINISHING
     return ChargingPermission.OUTSIDE_WINDOW
 
@@ -199,7 +200,7 @@ def charging_allowed_now(
     """
     reading = ChargerReading(
         actively_charging=status is not None and status.charging,
-        car_connected=None if status is None else status.car_connected,
+        car_connected=status is not None and status.car_connected,
         excluded=excluded,
         window_override=window_override,
         finish_after_window=charger.finish_after_window,
@@ -313,7 +314,7 @@ class ChargingState:
         if permission is ChargingPermission.OUTSIDE_WINDOW:
             return ChargerState.OUTSIDE_WINDOW
         if charger_id in self.bypassed:
-            if self.last_readings[charger_id].car_connected is False:
+            if not self.last_readings[charger_id].car_connected:
                 return ChargerState.NO_CAR
             return ChargerState.NOT_CHARGING
         if charger_id in self.waiting:
@@ -339,7 +340,7 @@ class ChargingState:
         for charger in chargers:
             reading = self.last_readings[charger.id]
             previous = previous_readings.get(charger.id)
-            if previous is not None and previous.car_connected is False and reading.car_connected is True:
+            if previous is not None and not previous.car_connected and reading.car_connected:
                 self._restart_trial(charger.id, now)
             if self._update_rest(charger, reading, now, window):
                 bypassed.add(charger.id)
@@ -366,9 +367,9 @@ class ChargingState:
         """
         charger_id = charger.id
         charges = charger_id in self.activated_at and reading.actively_charging
-        if reading.car_connected is False or charges:
+        if not reading.car_connected or charges:
             self.rests.pop(charger_id, None)
-        if reading.car_connected is False:
+        if not reading.car_connected:
             return True
         rest = self.rests.get(charger_id)
         not_charging = not charges and self.activated_long_enough(charger, now, window)

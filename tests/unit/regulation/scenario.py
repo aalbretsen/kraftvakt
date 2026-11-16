@@ -63,8 +63,8 @@ def current(charger_id: str, current_a: int) -> list[Command]:
 class Scenario:
     """Drives a started engine through decisions.
 
-    Every charger reads as idle with a valid charging power until the test
-    changes it with `set_charger`, and no appliance is excluded until the test
+    Every charger reads as idle with a car connected and a valid charging
+    power until the test changes it with `set_charger`, and no appliance is excluded until the test
     changes it with `exclude`.
     """
 
@@ -77,7 +77,7 @@ class Scenario:
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone
-        self.chargers = {charger.id: ChargerReading(actively_charging=False) for charger in config.chargers}
+        self.chargers = {charger.id: ChargerReading(car_connected=True) for charger in config.chargers}
         self.excluded_appliances: frozenset[str] = frozenset()
         self.overrides = OverrideChanges()
         self.start_commands = self.engine.start(self.now)

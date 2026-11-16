@@ -101,7 +101,7 @@ def test_cloud_controlled_charger_gets_no_repeated_commands_while_no_car_is_conn
 
     assert scenario.repeat(REPEAT_INTERVAL) == deactivate("local")
 
-    scenario.set_charger("cloud", car_connected=None, car_disconnected=False)
+    scenario.set_charger("cloud", car_disconnected=False)
     assert scenario.repeat(REPEAT_INTERVAL) == deactivate("cloud") + deactivate("local")
 
 

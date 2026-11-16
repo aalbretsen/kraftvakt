@@ -95,9 +95,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
-- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, and **Actively charging**,
-  and also **Car connected** when only one EV charger in its group may charge at a time, when it is a **Cloud-controlled EV charger**,
-  or when it has a charging window and **End the override** is **When the car is disconnected**.
+- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected** and **Actively charging**.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
@@ -141,6 +139,8 @@ Kraftvakt sets the charging current of each EV charger one ampere at a time, by 
 The place of the group in the priority list decides where its EV chargers are in the order. An EV charger charges only when Kraftvakt has activated it,
 so a car that is connected does not start charging by itself. The charging current is set to the minimum before the EV charger is activated or deactivated.
 
+- **Car connected** is read at every decision, from a boolean entity, where on counts as connected, or a template, where the boolean value true does.
+  Anything else counts as not connected, also an unavailable entity and a template that fails. An EV charger without a car connected is bypassed, see below.
 - **Actively charging** is read at every decision, from one of:
   - a sensor for charging power: above 100 W counts as charging. It may report W or kW,
   - a boolean entity: on counts as charging,
@@ -157,11 +157,9 @@ so a car that is connected does not start charging by itself. The charging curre
   It stays bypassed while it rests. If the car is disconnected and connected again, or starts charging, it is tried at once,
   and a car connected again gets its time to start.
 - When only one EV charger in a group may charge at a time, an EV charger that is actively charging may continue until it is done, and the others in the group wait.
-  **Car connected** is then required for every EV charger in the group.
-  Without it, Kraftvakt could only find a connected car by activating the EV charger, and EV chargers without a car would be activated in turn.
 - Turn on **Cloud-controlled EV charger**, off by default, for an EV charger controlled through a cloud service,
   where every command goes over the internet and may count against the limits of the service, and charging may take minutes to start:
-  - It gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected, so **Car connected** is required.
+  - It gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected.
     A car sensor that is unavailable, or a template that fails, does not count as no car, so the commands are repeated then.
   - **Start delay**, 300 seconds by default and at most 900,
     is the longest time from when the EV charger is activated until the car draws power and the EV charger reports that it is actively charging.
@@ -185,7 +183,7 @@ so a car that is connected does not start charging by itself. The charging curre
     An EV charger that Kraftvakt has deactivated, for example above the power limit, does not end it, and the car gets time to start again when it is activated again.
     A car that never starts charging, for example one that is already full, does not end it.
   - **When the car is disconnected**: at the first decision where the car is not connected, once a car has been connected since the switch was turned on.
-    It lasts through a full car and the car heating in the morning. **Car connected** is then required.
+    It lasts through a full car and the car heating in the morning.
 
   The last two can be turned on before the car arrives, since they wait for the car. Only a known value ends the override: a car sensor that is unavailable,
   or a template that fails, does not, so a cloud service that is down for a moment does not stop the charging you asked for.

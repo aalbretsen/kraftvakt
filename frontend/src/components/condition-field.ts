@@ -17,8 +17,6 @@ const TYPES: Record<ConditionKind, Condition["type"][]> = {
   actively_charging: ["entity", "power_sensor", "template"],
 };
 
-type ConditionType = Condition["type"] | "none";
-
 interface TemplateResult {
   result?: unknown;
   error?: string;
@@ -31,8 +29,7 @@ interface TemplateResult {
  * The template is previewed with Home Assistant's `render_template`
  * subscription while the user writes. It gets `entity_id` and `entity`
  * of the appliance or charger, as in the regulation. Fires
- * `value-changed` with the new condition, or `null` when an optional one is
- * not set.
+ * `value-changed` with the new condition.
  */
 @customElement("kraftvakt-condition-field")
 export class KraftvaktConditionField extends LitElement {
@@ -47,9 +44,6 @@ export class KraftvaktConditionField extends LitElement {
 
   /** The only entities that may be chosen, when they are limited. */
   @property({ attribute: false }) includeEntities?: string[];
-
-  /** Whether the condition may be left out, like «car connected». */
-  @property({ type: Boolean }) optional = false;
 
   @property() kind: ConditionKind = "condition";
 
@@ -90,18 +84,17 @@ export class KraftvaktConditionField extends LitElement {
     `;
   }
 
-  /** The type shown: a required condition that is not set yet shows its first type. */
-  private shownType(): ConditionType {
-    return this.value?.type ?? (this.optional ? "none" : TYPES[this.kind][0]);
+  /** The type shown: a condition that is not set yet shows its first type. */
+  private shownType(): Condition["type"] {
+    return this.value?.type ?? TYPES[this.kind][0];
   }
 
-  private schema(type: ConditionType) {
-    const types: ConditionType[] = [...(this.optional ? ["none" as const] : []), ...TYPES[this.kind]];
-    const options = types.map((value) => ({ value, label: this.text(value) }));
+  private schema(type: Condition["type"]) {
+    const options = TYPES[this.kind].map((value) => ({ value, label: this.text(value) }));
     return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
   }
 
-  private valueField(type: ConditionType) {
+  private valueField(type: Condition["type"]) {
     switch (type) {
       case "entity":
         return [
@@ -127,8 +120,6 @@ export class KraftvaktConditionField extends LitElement {
         ];
       case "template":
         return [{ name: "value", required: true, selector: { template: {} } }];
-      default:
-        return [];
     }
   }
 
@@ -194,11 +185,11 @@ export class KraftvaktConditionField extends LitElement {
   private computeHelper = (field: { name: string }): string =>
     field.name === "value" ? this.text(`${this.shownType()}_helper`) : "";
 
-  private valueChanged(event: CustomEvent<{ value: { type: ConditionType; value?: string } }>): void {
+  private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string } }>): void {
     event.stopPropagation();
     const { type, value } = event.detail.value;
     const sameType = type === this.shownType();
-    const condition: Condition | null = type === "none" ? null : { type, value: sameType ? (value ?? "") : "" };
+    const condition: Condition = { type, value: sameType ? (value ?? "") : "" };
     this.dispatchEvent(new CustomEvent("value-changed", { detail: { value: condition } }));
   }
 

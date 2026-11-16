@@ -113,11 +113,11 @@ The section header, the description and the footer note are in `section-styles.t
 - The boolean entity picker offers binary sensors, input booleans, switches and schedules. Templates are previewed with HA's `render_template` subscription,
   with `entity` as the frontend's state object. A result that is not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A new variant starts as an empty template, which is missing, not an error,
-  so the appliance can be confirmed before the variant gets its expression. Actively charging has no «not set», offers a boolean entity first and shows it until one is chosen.
+  so the appliance can be confirmed before the variant gets its expression.
+  Car connected and actively charging have no «not set», offer a boolean entity first and show it until one is chosen.
   Every preview reads the value as the backend does, so only evidence shows as true, and shows an entity's state as HA formats it before what it counts as;
   a boolean entity that is on or off shows only its state, which says the same.
-  Car connected is shown as required when only one charger in the group may charge at a time, when the charger is cloud-controlled,
-  or when it has a charging window and its override ends when the car is disconnected. A new charger gets the override end from the defaults in the capabilities.
+  A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers in charging priority, and Add group under the cards.
   Without groups, a line of text says so, as an empty list does.

@@ -521,7 +521,7 @@ async def test_saved_chargers_get_their_switches(
 ) -> None:
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
-    changed = config_with_charger(register_device(hass, "switch.charger", "sensor.charger_power"))
+    changed = config_with_charger(register_device(hass, "switch.charger", "binary_sensor.charger_car", "sensor.charger_power"))
 
     response = await send(client, "kraftvakt/config/save", config=changed)
     await hass.async_block_till_done()
@@ -566,6 +566,7 @@ def config_with_charger(device_id: str, **settings: Any) -> dict[str, Any]:
                         "mode": "custom",
                         "action": [{"action": "number.set_value"}],
                     },
+                    "car_connected": {"type": "entity", "value": "binary_sensor.charger_car"},
                     "actively_charging": {
                         "type": "power_sensor",
                         "value": "sensor.charger_power",
@@ -587,7 +588,7 @@ async def test_charger_entities_must_belong_to_its_device(
     custom actions are not checked."""
     await switch_regulation(hass, "turn_off")
     client = await hass_ws_client(hass)
-    register_device(hass, "switch.charger", "sensor.charger_power")
+    register_device(hass, "switch.charger", "binary_sensor.charger_car", "sensor.charger_power")
     other_device = register_device(hass, "number.other_current", "binary_sensor.other_car")
     changed = config_with_charger(
         other_device,
@@ -934,6 +935,7 @@ def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
         "activate": DEFAULT,
         "deactivate": DEFAULT,
         "set_current": {"mode": "custom", "action": [{"action": "number.set_value"}]},
+        "car_connected": {"type": "entity", "value": f"binary_sensor.{charger_id}_car"},
         "actively_charging": {
             "type": "power_sensor",
             "value": f"sensor.{charger_id}_power",
@@ -953,16 +955,7 @@ async def test_status_shows_the_chargers_in_the_current_priority(
         {
             "id": "g1",
             "name": "EV chargers",
-            "chargers": [
-                charger(
-                    "c1",
-                    car_connected={"type": "entity", "value": "binary_sensor.c1_car"},
-                ),
-                charger(
-                    "c2",
-                    car_connected={"type": "entity", "value": "binary_sensor.c2_car"},
-                ),
-            ],
+            "chargers": [charger("c1"), charger("c2")],
         }
     ]
     config["priority"].append({"type": "charger_group", "group_id": "g1"})
@@ -1024,8 +1017,9 @@ async def test_status_places_charger_groups_among_the_current_variants(
         {"type": "appliance", "appliance_id": "b", "variant_id": None},
         {"type": "charger_group", "group_id": "g2"},
     ]
-    hass.states.async_set("sensor.c1_power", "0")
-    hass.states.async_set("sensor.c2_power", "0")
+    for charger_id in ("c1", "c2"):
+        hass.states.async_set(f"binary_sensor.{charger_id}_car", "on")
+        hass.states.async_set(f"sensor.{charger_id}_power", "0")
     set_power(hass, "1000")
     await setup_entry(hass)
     client = await hass_ws_client(hass)

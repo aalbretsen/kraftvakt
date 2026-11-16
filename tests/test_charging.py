@@ -67,6 +67,7 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
         },
         "min_current_a": 6,
         "max_current_a": 8,
+        "car_connected": {"type": "entity", "value": CAR_CONNECTED},
         "actively_charging": {"type": "power_sensor", "value": CHARGER_POWER},
         "power_reserve_w": 4000,
     }
@@ -126,6 +127,8 @@ def actions(hass: HomeAssistant) -> list[str]:
 async def setup_kraftvakt(hass: HomeAssistant, config: dict[str, Any]):
     async def setup() -> MockConfigEntry:
         hass.states.async_set(CHARGER, STATE_OFF, {ATTR_FRIENDLY_NAME: "Garage"})
+        if hass.states.get(CAR_CONNECTED) is None:
+            hass.states.async_set(CAR_CONNECTED, STATE_ON)
         set_power(hass, POWER_SENSOR, "2000")
         entry = MockConfigEntry(domain=DOMAIN)
         entry.add_to_hass(hass)
@@ -226,19 +229,18 @@ async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freez
     assert steps_switched_on(hass) == "0"
 
 
+@pytest.mark.parametrize("car_state", [STATE_OFF, STATE_UNAVAILABLE])
 async def test_charger_without_car_is_not_activated(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     actions,
     config,
     setup_kraftvakt,
+    car_state: str,
 ) -> None:
-    config["charger_groups"][0]["chargers"][0]["car_connected"] = {
-        "type": "entity",
-        "value": CAR_CONNECTED,
-    }
+    """Only evidence of a car counts as connected."""
     set_power(hass, CHARGER_POWER, "0")
-    hass.states.async_set(CAR_CONNECTED, STATE_OFF)
+    hass.states.async_set(CAR_CONNECTED, car_state)
     entry = await setup_kraftvakt()
     actions.clear()
 
@@ -403,7 +405,6 @@ async def test_cloud_controlled_charger_gets_no_repeated_commands_until_a_car_is
     config["general"]["command_repeat_interval_min"] = 10
     charger = config["charger_groups"][0]["chargers"][0]
     charger["cloud_controlled"] = True
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_OFF)
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
@@ -427,7 +428,6 @@ async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as
     charger = config["charger_groups"][0]["chargers"][0]
     charger["cloud_controlled"] = True
     charger["start_delay_s"] = 180
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     set_power(hass, CHARGER_POWER, "0")
     entry = await setup_kraftvakt()
@@ -466,7 +466,6 @@ async def test_override_lasts_until_the_car_has_been_disconnected(
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_OFF)
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
@@ -517,7 +516,6 @@ async def test_override_ends_on_a_disconnect_while_stopped(
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     await setup_kraftvakt()
     await use_switch(hass, "c1", "window_override", "turn_on")
@@ -547,7 +545,6 @@ async def test_override_outlasts_a_car_sensor_without_a_value(
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     set_power(hass, CHARGER_POWER, "4100")
     await setup_kraftvakt()
@@ -615,7 +612,6 @@ async def test_override_end_changed_waits_for_its_own_start(
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     set_power(hass, CHARGER_POWER, "0")
     entry = await setup_kraftvakt()
@@ -649,7 +645,6 @@ async def test_manual_override_stays_until_switched_off(
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "13:00", "end": "14:00"}
     charger["override_ends"] = "manual"
-    charger["car_connected"] = {"type": "entity", "value": CAR_CONNECTED}
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     set_power(hass, CHARGER_POWER, "4100")
     await setup_kraftvakt()

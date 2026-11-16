@@ -25,7 +25,6 @@ from .config_model import (
     Issue,
     IssueLocation,
     KraftvaktConfig,
-    OverrideEnd,
     PriorityEntry,
     PriorityEntryType,
     Range,
@@ -91,12 +90,7 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
 
 
 def missing_items(config: KraftvaktConfig) -> list[Issue]:
-    """Return what is missing before the regulation can start.
-
-    When only one charger may charge at a time, each charger needs «car
-    connected». Without it, chargers without a car would take turns being
-    activated.
-    """
+    """Return what is missing before the regulation can start."""
     missing = []
     if config.general.power_sensor is None:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
@@ -112,27 +106,14 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
             for variant in appliance.variants
             if not _is_set(variant.condition)
         ]
-    for group in config.charger_groups:
-        for charger in group.chargers:
-            if charger.device_id is None:
-                missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
-            missing += _missing_entity_and_actions("chargers", charger)
-            if not _is_set(charger.actively_charging):
-                missing.append(
-                    Issue(
-                        "missing_actively_charging",
-                        "chargers",
-                        charger.id,
-                        "actively_charging",
-                    )
-                )
-            if _car_connected_required(group, charger) and not _is_set(charger.car_connected):
-                missing.append(Issue("missing_car_connected", "chargers", charger.id, "car_connected"))
+    for charger in config.chargers:
+        if charger.device_id is None:
+            missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
+        missing += _missing_entity_and_actions("chargers", charger)
+        missing += [
+            Issue(f"missing_{field_name}", "chargers", charger.id, field_name) for field_name in ("car_connected", "actively_charging") if not _is_set(getattr(charger, field_name))
+        ]
     return missing
-
-
-def _car_connected_required(group: ChargerGroup, charger: Charger) -> bool:
-    return group.one_at_a_time or charger.cloud_controlled or (charger.charging_window is not None and charger.override_ends is OverrideEnd.CAR_DISCONNECTED)
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:

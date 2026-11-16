@@ -82,6 +82,10 @@ async def test_missing_entity_is_no_evidence(hass: HomeAssistant) -> None:
     assert condition_evidence(hass, entity("binary_sensor.borte"), CHARGER) is None
 
 
+async def test_condition_that_is_not_set_is_no_evidence(hass: HomeAssistant) -> None:
+    assert condition_evidence(hass, None, CHARGER) is None
+
+
 async def test_template_gets_the_entity_of_the_appliance(hass: HomeAssistant) -> None:
     """Templates can use `entity_id` and `entity` without naming it."""
     hass.states.async_set(APPLIANCE, "on", {"temperature": 55})

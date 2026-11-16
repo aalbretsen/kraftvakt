@@ -1,7 +1,7 @@
 /** The checks of the draft, which mirror what the backend validates and finds missing. */
 import { describe, expect, it } from "vitest";
 import type { Charger, KraftvaktConfig } from "../src/api";
-import { carConnectedRequired, draftErrors, isActionAvailable, isMissingAction, issuesFor, missingItems } from "../src/validation";
+import { draftErrors, isActionAvailable, isMissingAction, issuesFor, missingItems } from "../src/validation";
 import { appliance, CAPABILITIES, charger, config, group, hass, state, variant } from "./builders";
 
 const CLIMATE = state("heat", { hvac_modes: ["off", "heat"], min_temp: 7, max_temp: 35 });
@@ -53,22 +53,14 @@ describe("missing items", () => {
       { code: "missing_condition", section: "appliances", target: "heater", field: "variants.morning.condition" },
       { code: "missing_device", section: "chargers", target: "garage", field: "device_id" },
       { code: "missing_action", section: "chargers", target: "garage", field: "set_current" },
-      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
       { code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" },
+      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
     ]);
   });
 
-  it.each([
-    [true, null, "manual", true],
-    [false, null, "car_disconnected", false],
-    [false, { start: "22:00", end: "06:00" }, "charging_stopped", false],
-    [false, { start: "22:00", end: "06:00" }, "car_disconnected", true],
-  ] as const)("car connected with one at a time %s, window %o and override end %s is required: %s", (oneAtATime, window, ends, required) => {
-    expect(carConnectedRequired(charger("garage", { charging_window: window, override_ends: ends }), oneAtATime)).toBe(required);
-  });
-
-  it("car connected is required for a cloud-controlled charger", () => {
-    expect(carConnectedRequired(charger("garage", { cloud_controlled: true }), false)).toBe(true);
+  it("include car connected also for a charger that may charge with others, without cloud control or charging window", () => {
+    const draft = config({ charger_groups: [group("garage", [charger("garage", { car_connected: null })], { one_at_a_time: false })] });
+    expect(missingItems(draft)).toEqual([{ code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" }]);
   });
 
   it("an action that is set is not missing", () => {

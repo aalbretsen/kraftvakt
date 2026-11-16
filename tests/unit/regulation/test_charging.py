@@ -31,8 +31,8 @@ NIGHT = ChargingWindow(time(22, 0), time(6, 0))
 DAY = ChargingWindow(time(9, 0), time(15, 30))
 NOW = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 WINDOW = timedelta(minutes=1)
-CHARGING = ChargerReading(actively_charging=True)
-IDLE = ChargerReading(actively_charging=False)
+CHARGING = ChargerReading(actively_charging=True, car_connected=True)
+IDLE = ChargerReading(car_connected=True)
 
 
 def charger(charger_id: str = "c", min_a: int = 6, max_a: int = 16, **settings) -> Charger:
@@ -113,7 +113,7 @@ def test_override_arms_when_the_car_is_connected_or_charging() -> None:
 def test_charging_permission() -> None:
     night = charger(charging_window=NIGHT)
     excluded = ChargerReading(excluded=True)
-    finishing = ChargerReading(actively_charging=True, finish_after_window=True)
+    finishing = replace(CHARGING, finish_after_window=True)
 
     assert charging_permission(charger(), IDLE, False, time(12), False) == "window"
     assert charging_permission(charger(), excluded, True, time(12), True) == "excluded"
@@ -134,9 +134,9 @@ def test_finishing_ends_without_a_car() -> None:
 def test_charging_allowed_now() -> None:
     """Finishing is judged from the status after the last decision."""
     night = charger(charging_window=NIGHT, finish_after_window=True)
-    charging = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, None)
+    charging = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, True)
     no_car = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, False)
-    deactivated = ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, None)
+    deactivated = ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True)
 
     assert charging_allowed_now(charger(), None, False, False, time(12))
     assert not charging_allowed_now(charger(), None, True, False, time(12))
@@ -399,9 +399,9 @@ def test_status_of_each_charger() -> None:
 
     assert state.status(configured) == {
         "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, False, True, True),
-        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, None),
+        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, True),
         "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
-        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, None),
+        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True),
     }
 
 

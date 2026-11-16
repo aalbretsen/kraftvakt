@@ -1,10 +1,9 @@
 import { html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
 import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
 import { changesForDevice, deviceEntities } from "../charger-device";
-import type { TranslationKey } from "../localize";
-import { carConnectedRequired, chargerErrors, missingInCharger } from "../validation";
+import { chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
@@ -25,8 +24,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     };
   }
 
-  @property({ type: Boolean }) oneAtATime = false;
-
   /** The charger profile that filled in the fields when the device was chosen. */
   @state() private profile: string | null = null;
 
@@ -40,7 +37,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   protected missing(): Issue[] {
-    return missingInCharger(this.draft, this.oneAtATime);
+    return missingInCharger(this.draft);
   }
 
   protected renderFields(issues: Issue[]) {
@@ -52,14 +49,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)}
       ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}
       ${this.renderChargingCurrent(issues)}
-      ${this.renderConditionGroup(
-        "car_connected",
-        carConnectedRequired(this.draft, this.oneAtATime)
-          ? "charger.car_connected_required"
-          : "charger.car_connected_optional",
-        issues,
-      )}
-      ${this.renderConditionGroup("actively_charging", "charger.actively_charging", issues)}
+      ${this.renderConditionGroup("car_connected", issues)}
+      ${this.renderConditionGroup("actively_charging", issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)}
     `;
   }
@@ -117,11 +108,11 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     }
   }
 
-  private renderConditionGroup(field: "car_connected" | "actively_charging", title: TranslationKey, issues: Issue[]) {
+  private renderConditionGroup(field: "car_connected" | "actively_charging", issues: Issue[]) {
     const issue = issues.find((item) => item.field === field);
     const activelyCharging = field === "actively_charging";
     return this.renderGroup({
-      title: this.localize(title),
+      title: this.label(field),
       description: this.helper(field),
       content: html`
         <kraftvakt-condition-field
@@ -131,7 +122,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           .entityId=${this.draft.entity_id}
           .includeEntities=${this.entityScope}
           .kind=${activelyCharging ? "actively_charging" : "condition"}
-          .optional=${!activelyCharging}
           .error=${issue ? this.describe(issue) : undefined}
           .disabled=${this.locked}
           @value-changed=${(event: CustomEvent<{ value: Condition | null }>) =>

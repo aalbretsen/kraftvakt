@@ -79,10 +79,7 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   if (!config.general.power_sensor) {
     missing.push({ code: "missing_power_sensor", section: "general", field: "power_sensor" });
   }
-  missing.push(...config.appliances.flatMap(missingInAppliance));
-  for (const group of config.charger_groups) {
-    missing.push(...group.chargers.flatMap((charger) => missingInCharger(charger, group.one_at_a_time)));
-  }
+  missing.push(...config.appliances.flatMap(missingInAppliance), ...allChargers(config).flatMap(missingInCharger));
   return missing;
 }
 
@@ -95,20 +92,15 @@ export function missingInAppliance(appliance: Appliance): Issue[] {
   ];
 }
 
-export function carConnectedRequired(charger: Charger, oneAtATime: boolean): boolean {
-  return oneAtATime || charger.cloud_controlled || (charger.charging_window !== null && charger.override_ends === "car_disconnected");
-}
-
-export function missingInCharger(charger: Charger, oneAtATime: boolean): Issue[] {
+export function missingInCharger(charger: Charger): Issue[] {
   const missing: Issue[] = charger.device_id
     ? []
     : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
   missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
-  if (!isSet(charger.actively_charging)) {
-    missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
-  }
-  if (carConnectedRequired(charger, oneAtATime) && !isSet(charger.car_connected)) {
-    missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
+  for (const field of ["car_connected", "actively_charging"] as const) {
+    if (!isSet(charger[field])) {
+      missing.push({ code: `missing_${field}`, section: "chargers", target: charger.id, field });
+    }
   }
   return missing;
 }

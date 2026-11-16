@@ -69,7 +69,7 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
         current_a=8,
         bypassed=False,
         charging=True,
-        car_connected=None,
+        car_connected=True,
     )
 
 
@@ -282,7 +282,7 @@ def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
     scenario.turn_on("x")
     scenario.set_charger("c", **NO_CAR)
     assert scenario.decide(0) == []
-    scenario.set_charger("c", car_connected=None, actively_charging=False)
+    scenario.set_charger("c", car_connected=True, actively_charging=False)
     assert scenario.decide(0) == activate("c")
     scenario.set_charger("c", **NO_CAR)
     scenario.decide(0)

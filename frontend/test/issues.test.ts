@@ -62,7 +62,7 @@ describe("the error at a field", () => {
 
   it("has a text for each code, and shows a code it does not know", () => {
     expect(text({ code: "missing_car_connected", section: "chargers", target: "c", field: "car_connected" })).toBe(
-      localize("errors.car_connected_required"),
+      localize("errors.required"),
     );
     expect(text({ code: "something_new", section: "general", field: "power_limit_w" })).toBe(localize("errors.unknown", { code: "something_new" }));
   });
