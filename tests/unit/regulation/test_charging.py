@@ -96,6 +96,7 @@ def test_override_ends_on_evidence_once_it_is_armed() -> None:
     assert not override_ended(DISCONNECTING, replace(gone, override_armed=False), True)
     assert not override_ended(DISCONNECTING, replace(gone, window_override=False), True)
     assert not override_ended(charger(override_ends=OverrideEnd.CAR_DISCONNECTED), gone, True)
+    assert not override_ended(DISCONNECTING, replace(gone, fault=True), False)
 
 
 def test_override_arms_when_the_car_is_connected_or_charging() -> None:
@@ -108,6 +109,7 @@ def test_override_arms_when_the_car_is_connected_or_charging() -> None:
     assert not override_arms(STOPPING, charging, False)
     assert not override_arms(STOPPING, replace(charging, window_override=False), True)
     assert not override_arms(MANUAL, replace(charging, car_connected=True), True)
+    assert not override_arms(DISCONNECTING, replace(connected, fault=True), False)
 
 
 def test_charging_permission() -> None:
@@ -117,6 +119,7 @@ def test_charging_permission() -> None:
 
     assert charging_permission(charger(), IDLE, False, time(12), False) == "window"
     assert charging_permission(charger(), excluded, True, time(12), True) == "excluded"
+    assert charging_permission(night, replace(excluded, fault=True), True, time(23), True) == "fault"
     assert charging_permission(night, IDLE, False, time(23), False) == "window"
     assert charging_permission(night, IDLE, True, time(23), False) == "window"
     assert charging_permission(night, IDLE, True, time(12), False) == "override"
@@ -137,6 +140,7 @@ def test_charging_allowed_now() -> None:
     charging = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, True)
     no_car = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, False)
     deactivated = ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True)
+    fault = ChargerStatus(ChargerState.FAULT, 0, None, False, False, True)
 
     assert charging_allowed_now(charger(), None, False, False, time(12))
     assert not charging_allowed_now(charger(), None, True, False, time(12))
@@ -147,6 +151,7 @@ def test_charging_allowed_now() -> None:
     assert not charging_allowed_now(night, no_car, False, False, time(12))
     assert not charging_allowed_now(night, deactivated, False, False, time(12))
     assert not charging_allowed_now(charger(charging_window=NIGHT), charging, False, False, time(12))
+    assert not charging_allowed_now(charger(), fault, False, False, time(12))
 
 
 def chargers(*ids: str) -> list[Charger]:

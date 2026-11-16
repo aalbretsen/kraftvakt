@@ -72,6 +72,8 @@
     "chip_override": "Override",
     "chip_finishing": "Finishing",
     "chip_first_decision": "First decision",
+    "chip_fault": "Fault",
+    "fault": "A fault flag shows a fault, so the EV charger is deactivated until the fault clears",
     "free_power": "{power} kW ({share}) free",
     "power_runs_out": "The power runs out here. What is below waits for free power."
   },
@@ -83,6 +85,8 @@
     "missing_condition": "{item}: the expression is missing.",
     "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing.",
+    "missing_fault_flags": "{item}: no fault flag is given.",
+    "missing_fault_flag": "{item}: a fault flag is missing.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
     "charger_without_entity": "An EV charger without an entity",
@@ -118,6 +122,7 @@
   },
   "errors": {
     "required": "Required.",
+    "fault_flags_required": "Add a fault flag, or turn the setting off.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
     "invalid_resolution": "Must be a multiple of {resolution}.",
@@ -349,6 +354,17 @@
     "false": "not charging",
     "not_boolean": "The template gives {value}, which is not true or false, so it counts as not charging."
   },
+  "fault": {
+    "entity": "Entity",
+    "template": "Template",
+    "entity_label": "Boolean entity",
+    "template_label": "Template",
+    "entity_helper": "On means a fault. Off and unavailable count as no fault.",
+    "template_helper": "Only the boolean value true means a fault. Anything else, also an error, counts as no fault. Variables: entity_id, entity.",
+    "true": "fault",
+    "false": "no fault",
+    "not_boolean": "The template gives {value}, which is not true or false, so it counts as no fault."
+  },
   "charging": {
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
@@ -373,7 +389,8 @@
     "car_from": "car connected from {source}",
     "car_template": "car connected from a template",
     "charging_from": "actively charging from {source}",
-    "charging_template": "actively charging from a template"
+    "charging_template": "actively charging from a template",
+    "deactivated_on_fault": "deactivated on fault"
   },
   "charger": {
     "add_title": "Add EV charger",
@@ -433,6 +450,13 @@
         "label": "Start delay",
         "helper": "The longest time from when the EV charger is activated until the car draws power. Kraftvakt gives the car this long to start charging, and keeps the power free for it meanwhile. {min}–{max} s, default {default} s."
       },
+      "deactivate_on_fault": {
+        "label": "Deactivate on fault",
+        "helper": "While any fault flag below shows a fault, Kraftvakt deactivates the EV charger and leaves it out of the regulation. When the fault clears, it is regulated as before. An unavailable entity or a template that fails is not a fault."
+      },
+      "fault_flags": {
+        "label": "Fault flag"
+      },
       "charging_window": {
         "label": "Charging window",
         "helper": "The EV charger charges only within this time each day, for example at night when electricity is cheaper. It can span midnight, and start and end cannot be the same. Turned off, the EV charger may always charge."
@@ -452,6 +476,8 @@
         "helper": "When the switch «‹charger› override charging window», which lets the car charge outside the charging window, turns itself off. It can be turned on before the car arrives, since it waits until the car has charged or been connected. A sensor without a value does not end it."
       }
     },
-    "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes."
+    "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes.",
+    "add_fault_flag": "Add fault flag",
+    "remove_fault_flag": "Remove fault flag"
   }
 }

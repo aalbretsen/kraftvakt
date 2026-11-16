@@ -146,6 +146,9 @@
       "car_fully_charged": {
         "name": "Car fully charged"
       },
+      "fault": {
+        "name": "Fault"
+      },
       "unplugged": {
         "name": "Unplugged"
       }

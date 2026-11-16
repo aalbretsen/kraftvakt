@@ -211,6 +211,29 @@ def test_car_connected_condition(condition: dict[str, str], code: str | None) ->
     assert _issues_after(_set("charger_groups.0.chargers.0.car_connected", condition)) == expected
 
 
+@pytest.mark.parametrize(
+    ("flag", "code"),
+    [
+        ({"type": "entity", "value": "binary_sensor.error"}, None),
+        ({"type": "entity", "value": "error"}, "invalid_entity_id"),
+        ({"type": "entity", "value": ""}, None),
+    ],
+)
+def test_fault_flag_is_checked_as_the_other_conditions(flag: dict[str, str], code: str | None) -> None:
+    expected = [] if code is None else [Issue(code, "chargers", "c1", "fault_flags.1")]
+
+    assert _issues_after(_set("charger_groups.0.chargers.0.fault_flags.1", flag)) == expected
+
+
+def test_fault_flags_are_checked_also_while_deactivate_on_fault_is_off() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        charger = data["charger_groups"][0]["chargers"][0]
+        charger["deactivate_on_fault"] = False
+        charger["fault_flags"][0]["value"] = "error"
+
+    assert _issues_after(mutate) == [Issue("invalid_entity_id", "chargers", "c1", "fault_flags.0")]
+
+
 def test_empty_variant_condition_is_missing_not_an_error() -> None:
     issues = _issues_after(_set("appliances.0.variants.0.condition", {"type": "entity", "value": ""}))
 
@@ -486,6 +509,34 @@ async def test_parse_config_rejects_invalid_template(hass: HomeAssistant) -> Non
         Issue("invalid_template", "appliances", "a1", "variants.v1.condition"),
         Issue("invalid_template", "chargers", "c1", "car_connected"),
     ]
+
+
+async def test_parse_config_rejects_invalid_fault_flag_template(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["fault_flags"][1]["value"] = "{% if %}"
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_template", "chargers", "c1", "fault_flags.1")]
+
+
+@pytest.mark.parametrize(
+    ("fault_flags", "field"),
+    [
+        ({"type": "entity", "value": "binary_sensor.error"}, "fault_flags"),
+        (["binary_sensor.error"], "fault_flags.0"),
+        ([{"type": "power_sensor", "value": "sensor.power"}], "fault_flags.0"),
+    ],
+)
+async def test_fault_flags_are_a_list_of_entity_or_template_conditions(hass: HomeAssistant, fault_flags: Any, field: str) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["fault_flags"] = fault_flags
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", field)]
 
 
 async def test_parse_config_rejects_invalid_action(hass: HomeAssistant) -> None:

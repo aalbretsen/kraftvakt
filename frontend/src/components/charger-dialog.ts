@@ -1,4 +1,5 @@
-import { html, nothing } from "lit";
+import { mdiDelete, mdiPlus } from "@mdi/js";
+import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
@@ -8,6 +9,8 @@ import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
 const ENTITY_VARIABLES = ["entity_id", "entity"];
+
+const EMPTY_FAULT_FLAG: Condition = { type: "entity", value: "" };
 
 /** Adds or edits one EV charger. */
 @customElement("kraftvakt-charger-dialog")
@@ -51,7 +54,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderChargingCurrent(issues)}
       ${this.renderConditionGroup("car_connected", issues)}
       ${this.renderConditionGroup("actively_charging", issues)}
-      ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)}
+      ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
 
@@ -149,6 +152,82 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
+  /**
+   * The fault flags are kept while the switch is off, since they have no effect then.
+   * They stay in view while one has an error, so the error that keeps the draft from being saved can be seen.
+   */
+  private renderDeactivateOnFault(issues: Issue[]) {
+    const showFlags = this.draft.deactivate_on_fault || issues.some((issue) => issue.field?.startsWith("fault_flags."));
+    const missing = issues.find((issue) => issue.field === "fault_flags");
+    return this.renderGroup({
+      title: this.label("deactivate_on_fault"),
+      description: this.helper("deactivate_on_fault"),
+      toggle: { checked: this.draft.deactivate_on_fault, changed: (checked) => this.deactivateOnFaultChanged(checked) },
+      content: showFlags
+        ? html`
+            ${this.draft.fault_flags.map((flag, index) => this.renderFaultFlag(flag, index, issues))}
+            ${this.locked
+              ? nothing
+              : html`
+                  <div>
+                    <ha-button appearance="plain" @click=${this.addFaultFlag}>
+                      <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
+                      ${this.localize("charger.add_fault_flag")}
+                    </ha-button>
+                  </div>
+                `}
+          `
+        : nothing,
+      error: missing ? this.describe(missing) : undefined,
+    });
+  }
+
+  private renderFaultFlag(flag: Condition, index: number, issues: Issue[]) {
+    const issue = issues.find((item) => item.field === `fault_flags.${index}`);
+    return html`
+      <div class="fault-flag">
+        <kraftvakt-condition-field
+          .hass=${this.hass}
+          .localize=${this.localize}
+          .value=${flag}
+          .entityId=${this.draft.entity_id}
+          .includeEntities=${this.entityScope}
+          kind="fault"
+          .error=${issue ? this.describe(issue) : undefined}
+          .disabled=${this.locked}
+          @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeFaultFlag(index, event.detail.value)}
+        ></kraftvakt-condition-field>
+        ${this.locked
+          ? nothing
+          : html`
+              <ha-icon-button
+                .path=${mdiDelete}
+                .label=${this.localize("charger.remove_fault_flag")}
+                @click=${() => this.removeFaultFlag(index)}
+              ></ha-icon-button>
+            `}
+      </div>
+    `;
+  }
+
+  /** Turning it on starts with an empty flag, so there is something to fill in. */
+  private deactivateOnFaultChanged(checked: boolean): void {
+    const flags = this.draft.fault_flags;
+    this.changeDraft({ deactivate_on_fault: checked, fault_flags: checked && flags.length === 0 ? [EMPTY_FAULT_FLAG] : flags });
+  }
+
+  private addFaultFlag(): void {
+    this.changeDraft({ fault_flags: [...this.draft.fault_flags, EMPTY_FAULT_FLAG] });
+  }
+
+  private changeFaultFlag(index: number, flag: Condition): void {
+    this.changeDraft({ fault_flags: this.draft.fault_flags.map((existing, position) => (position === index ? flag : existing)) });
+  }
+
+  private removeFaultFlag(index: number): void {
+    this.changeDraft({ fault_flags: this.draft.fault_flags.filter((_, position) => position !== index) });
+  }
+
   private renderChargingWindow(issues: Issue[]) {
     const window = this.draft.charging_window;
     const issue = issues.find((item) => item.field === "charging_window");
@@ -206,6 +285,24 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     );
   }
 
+  static styles = [
+    ItemDialog.styles,
+    css`
+      .fault-flag {
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .fault-flag + .fault-flag {
+        padding-top: 12px;
+        border-top: 1px solid var(--divider-color);
+      }
+      .fault-flag kraftvakt-condition-field {
+        flex: 1;
+        min-width: 0;
+      }
+    `,
+  ];
 }
 
 /** The time selector may give seconds, but the charging window uses whole minutes. */

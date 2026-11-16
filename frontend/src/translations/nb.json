@@ -72,6 +72,8 @@
     "chip_override": "Overstyrt",
     "chip_finishing": "Fullfører",
     "chip_first_decision": "Første avgjørelse",
+    "chip_fault": "Feil",
+    "fault": "Et feilflagg viser feil, så elbilladeren er deaktivert til feilen er borte",
     "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt."
   },
@@ -83,6 +85,8 @@
     "missing_condition": "{item}: uttrykket mangler.",
     "missing_actively_charging": "{item}: «lader aktivt» mangler.",
     "missing_car_connected": "{item}: «bil tilkoblet» mangler.",
+    "missing_fault_flags": "{item}: ingen feilflagg er gitt.",
+    "missing_fault_flag": "{item}: et feilflagg mangler.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
     "charger_without_entity": "En elbillader uten entitet",
@@ -118,6 +122,7 @@
   },
   "errors": {
     "required": "Påkrevd.",
+    "fault_flags_required": "Legg til et feilflagg, eller slå innstillingen av.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
     "invalid_resolution": "Må være et multiplum av {resolution}.",
@@ -349,6 +354,17 @@
     "false": "lader ikke",
     "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor ikke som lading."
   },
+  "fault": {
+    "entity": "Entitet",
+    "template": "Mal",
+    "entity_label": "Boolsk entitet",
+    "template_label": "Mal",
+    "entity_helper": "På betyr feil. Av og utilgjengelig regnes som ingen feil.",
+    "template_helper": "Bare den boolske verdien sann betyr feil. Alt annet, også en feil i malen, regnes som ingen feil. Variabler: entity_id, entity.",
+    "true": "feil",
+    "false": "ingen feil",
+    "not_boolean": "Malen gir {value}, som ikke er sann eller usann, og regnes derfor som ingen feil."
+  },
   "charging": {
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
@@ -373,7 +389,8 @@
     "car_from": "bil tilkoblet fra {source}",
     "car_template": "bil tilkoblet fra mal",
     "charging_from": "lader aktivt fra {source}",
-    "charging_template": "lader aktivt fra mal"
+    "charging_template": "lader aktivt fra mal",
+    "deactivated_on_fault": "deaktiveres ved feil"
   },
   "charger": {
     "add_title": "Legg til elbillader",
@@ -433,6 +450,13 @@
         "label": "Startforsinkelse",
         "helper": "Lengste tid fra elbilladeren er aktivert til bilen trekker strøm. Kraftvakt gir bilen så lang tid på å begynne å lade, og holder effekten ledig for den så lenge. {min}–{max} s, standard {default} s."
       },
+      "deactivate_on_fault": {
+        "label": "Deaktiver ved feil",
+        "helper": "Så lenge et feilflagg under viser feil, deaktiverer Kraftvakt elbilladeren og holder den utenfor reguleringen. Når feilen er borte, reguleres den som før. En utilgjengelig entitet eller en mal som feiler, regnes ikke som feil."
+      },
+      "fault_flags": {
+        "label": "Feilflagg"
+      },
       "charging_window": {
         "label": "Ladetidsrom",
         "helper": "Elbilladeren lader bare innenfor dette tidsrommet hver dag, for eksempel om natten når strømmen er billigere. Det kan gå over midnatt, og start og slutt kan ikke være like. Slått av, kan elbilladeren alltid lade."
@@ -452,6 +476,8 @@
         "helper": "Når bryteren «‹lader› overstyr ladetidsrom», som lar bilen lade utenfor ladetidsrommet, slår seg av selv. Den kan slås på før bilen kommer, siden den venter til bilen har ladet eller vært tilkoblet. En sensor uten verdi avslutter den ikke."
       }
     },
-    "charging_current_info": "Kraftvakt øker og senker strømmen én ampere om gangen, etter hvor mye effekt som er ledig. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler. Hele ampere."
+    "charging_current_info": "Kraftvakt øker og senker strømmen én ampere om gangen, etter hvor mye effekt som er ledig. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler. Hele ampere.",
+    "add_fault_flag": "Legg til feilflagg",
+    "remove_fault_flag": "Fjern feilflagg"
   }
 }

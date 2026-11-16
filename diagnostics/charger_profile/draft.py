@@ -139,6 +139,8 @@ class ProfileDrafting:
             car_connected=self._condition("car_connected", charger.car_connected),
             actively_charging=self._condition("actively_charging", charger.actively_charging),
             cloud_controlled=charger.cloud_controlled,
+            deactivate_on_fault=charger.deactivate_on_fault,
+            fault_flags=tuple(self._condition(f"fault_flags.{index}", flag) for index, flag in enumerate(charger.fault_flags)),
         )
         return ProfileDraft(
             module=slugify(name) or "charger",

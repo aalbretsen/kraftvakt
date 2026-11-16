@@ -194,6 +194,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(hass: Ho
             [
                 "switch.charger_car_connected",
                 "switch.charger_car_fully_charged",
+                "switch.charger_fault",
                 "switch.charger_unplugged",
             ],
         ),

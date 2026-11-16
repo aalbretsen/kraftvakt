@@ -59,7 +59,8 @@ class ChargerState:
     """What decides the power of a simulated EV charger.
 
     A car that wants power draws none while `starting`, as when a charger
-    controlled through a cloud service takes time to start charging.
+    controlled through a cloud service takes time to start charging. A
+    charger with a `fault` gives no power.
     """
 
     charging_allowed: bool
@@ -67,10 +68,11 @@ class ChargerState:
     car_connected: bool
     car_fully_charged: bool
     starting: bool = False
+    fault: bool = False
 
     @property
     def wants_power(self) -> bool:
-        return self.charging_allowed and self.car_connected and not self.car_fully_charged
+        return self.charging_allowed and self.car_connected and not self.car_fully_charged and not self.fault
 
     @property
     def power_w(self) -> float:

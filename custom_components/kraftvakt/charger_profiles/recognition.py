@@ -65,7 +65,7 @@ class DeviceEntities:
 
     def fields(self, profile: ChargerProfile) -> dict[str, Any]:
         """Return the fields of a charger the profile fills, as stored, leaving out those it cannot fill."""
-        fields = {
+        fields: dict[str, Any] = {
             "entity_id": self.find(profile.entity),
             "activate": self.action(profile.activate),
             "deactivate": self.action(profile.deactivate),
@@ -74,6 +74,10 @@ class DeviceEntities:
             "actively_charging": self.condition(profile.actively_charging),
             "cloud_controlled": profile.cloud_controlled,
         }
+        fault_flags = [flag for condition in profile.fault_flags if (flag := self.condition(condition)) is not None]
+        if fault_flags:
+            fields["deactivate_on_fault"] = profile.deactivate_on_fault
+            fields["fault_flags"] = fault_flags
         return {name: value for name, value in fields.items() if value is not None}
 
     def find(self, wanted: ProfileEntity) -> str | None:

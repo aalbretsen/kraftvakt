@@ -490,6 +490,68 @@ def test_excluded_charger_stops_at_once_and_never_charges() -> None:
     assert scenario.engine.chargers["c"].state is ChargerState.EXCLUDED
 
 
+def test_charger_with_a_fault_stops_at_once_and_charges_again_when_it_clears() -> None:
+    """All ampere steps off at once, and from the minimum current again when the fault has cleared."""
+    scenario = one_charger()
+    scenario.set_charger("c", **CHARGING)
+    scenario.charge("c", 8)
+
+    scenario.set_charger("c", fault=True)
+
+    assert scenario.decide(0) == deactivate("c")
+    assert scenario.decide_many(0, 3) == [[], [], []]
+    assert scenario.engine.chargers["c"].state is ChargerState.FAULT
+    scenario.set_charger("c", excluded=True)
+    assert scenario.decide(0) == []
+    assert scenario.engine.chargers["c"].state is ChargerState.FAULT
+
+    scenario.set_charger("c", fault=False, excluded=False)
+    assert scenario.decide_many(0, 2) == [activate("c"), current("c", 7)]
+
+
+def test_charger_that_stops_charging_with_a_fault_gets_no_rest() -> None:
+    """A charger in fault draws no power, but it is tried again as soon as the fault clears, and keeps its place."""
+    scenario = two_chargers(one_at_a_time=True)
+    scenario.set_charger("a", **CHARGING)
+    assert scenario.decide(0) == activate("a")
+    scenario.decide_many(0, 3)
+
+    scenario.set_charger("a", actively_charging=False, fault=True)
+    assert scenario.decide(0) == deactivate("a") + activate("b")
+    assert list(scenario.engine.charging_priorities.values()) == [["a", "b"]]
+
+    scenario.set_charger("a", fault=False)
+    assert scenario.decide(0) == deactivate("b") + activate("a")
+
+
+def test_charger_with_a_fault_that_counts_as_charging_lets_the_other_charge() -> None:
+    scenario = two_chargers(one_at_a_time=True)
+    scenario.set_charger("a", **CHARGING)
+    assert scenario.decide(0) == activate("a")
+
+    scenario.set_charger("a", fault=True)
+    scenario.set_charger("b", **CHARGING)
+
+    assert scenario.decide(0) == deactivate("a") + activate("b")
+
+
+def test_fault_neither_arms_nor_ends_the_override() -> None:
+    """The car charges outside the window again when the fault clears."""
+    scenario = one_charger(max_a=6, window="22:00-06:00", override_ends=OverrideEnd.CAR_DISCONNECTED)
+    scenario.set_charger("c", **CHARGING, window_override=True, fault=True)
+
+    assert scenario.decide(0) == []
+    assert scenario.overrides.armed == []
+
+    scenario.set_charger("c", car_connected=False, car_disconnected=True, override_armed=True)
+    assert scenario.decide(0) == []
+    assert scenario.overrides.ended == []
+
+    scenario.set_charger("c", car_connected=True, car_disconnected=False, fault=False)
+    assert scenario.decide(0) == activate("c")
+    assert scenario.engine.chargers["c"].state is ChargerState.OVERRIDE
+
+
 def test_charger_charges_only_inside_its_charging_window() -> None:
     """Charging stops at the first decision after the window ends."""
     scenario = Scenario(

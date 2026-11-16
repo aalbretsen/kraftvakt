@@ -49,13 +49,16 @@ The ranges and defaults below are part of the specification; the code holds them
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging. |
 | Time to start | How long a car gets to start charging after its charger is activated: two windows, or the start delay of a cloud-controlled charger when that is longer. |
 | Starting charger | A cloud-controlled charger on trial within its time to start. Its power reserve is held for the car that is about to draw power. |
+| Deactivate on fault | A charger setting, off by default, with its fault flags: the charger has a fault while any of them shows one. |
+| Fault flag | A boolean entity of the charger's device or a template that tells that the charger has a fault. |
+| Charger with a fault | A charger whose fault flag showed a fault at the last decision, with deactivate on fault on. It behaves as a deactivated charger, not allowed to charge. |
 | Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
 | Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Ampere step | One ampere of an EV charger's current, treated by the regulation as an appliance. |
 | Bypassed charger | A charger that does not draw power and so must not stand in the way of others. |
 | Waiting charger | With one charger at a time: a charger that may not charge because another in its group is actively charging. |
 | Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
-| Allowed to charge | A charger that is not excluded, and has no charging window, is inside it, has an active window override, or is finishing. |
+| Allowed to charge | A charger without a fault that is not excluded, and has no charging window, is inside it, has an active window override, or is finishing. |
 | Window override | A charger's switch that allows charging outside its charging window, until it is switched off or its override end ends it. |
 | Override end | What switches a window override off besides the user: manual, when the car no longer charges, or when the car is disconnected. |
 | Armed override | A window override where what ends it has started since it was switched on: the car charging or connected. Only an armed override ends. |
@@ -81,7 +84,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The state of the regulation (on/off, waiting times, repeated turn-on counters, overconsumption, penalty, current charging priority, bypassed chargers, rests, current variants,
   excluded appliances, when each appliance and charger last got a command) starts again with defaults at every start: HA or integration start, user start,
   after the safe state and after a penalty. The configuration and the switch positions are kept over any restart.
-- True/false from HA (variant expressions, car connected, actively charging) is a boolean entity or a template, and for actively charging also a power sensor.
+- True/false from HA (variant expressions, car connected, actively charging, fault flags) is a boolean entity or a template, and for actively charging also a power sensor.
   Only evidence makes it true: an entity that is `on`, a template that gives the boolean true, or a valid power above 100 W.
   Everything else is false, also unavailable entities and sensors and failing templates. The one exception is the override end (see EV charging), which needs evidence of false.
   Settings are named so that true means the thing is the case.
@@ -201,7 +204,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions, car connected and actively charging.
+  activate, deactivate and set-current actions, car connected and actively charging, and with deactivate on fault at least one fault flag, none empty.
 
 ## Command repeat
 
@@ -241,7 +244,7 @@ All with entity category diagnostic:
   a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
-  Finishing is judged from what the last decision read (activated, actively charging, car connected),
+  Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),
   so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
   without the longer waiting time on repeated turn-on or a power reserve held for a starting charger. Unavailable without an average.
@@ -314,7 +317,7 @@ All with entity category diagnostic:
   When none charges, the first allowed and not bypassed in current priority gets ampere steps.
   Before a charger is activated, any other activated charger is deactivated at the same decision (never more than one activated).
 - A charger charges only when the regulation has activated it, so a car that is connected to a deactivated charger never starts by itself.
-- Allowed to charge: not excluded, and no charging window, inside it, with an active override, or finishing.
+- Allowed to charge: no fault, not excluded, and no charging window, inside it, with an active override, or finishing.
   A charger that is not allowed has all ampere steps switched off at once and is deactivated at the first decision.
 - Finishing (per charger setting finish after window, default off): outside the window, without an active override, a charger may go on while it is activated, actively charging,
   not excluded and car connected is true. It is regulated as inside the window, so it may get and lose amperes.
@@ -322,6 +325,13 @@ All with entity category diagnostic:
   a start) ends it too, since a deactivated charger is never allowed outside the window. A charger on trial at the end of the window is not actively charging, so it is deactivated.
   The setting is configuration, but also a switch that may be changed while the regulation runs; it applies from the next decision without a restart.
 - Excluded switch (per charger, default off): while on, the charger never charges.
+- Deactivate on fault (per charger setting, default off): a charger has a fault while any of its fault flags shows one, read at each decision.
+  Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,
+  and must not stop charging for that. The fault flags are kept while the setting is off, and are then neither read nor needed.
+  A charger with a fault is not allowed to charge, so it is switched off and deactivated at once, does not stand in the way of the others in its group,
+  and gets the command repeat of a deactivated charger. It gets no rest for not charging, and does not move back in the current charging priority,
+  since it stops charging because of the fault, not the car. A fault neither arms nor ends a window override. Nothing is kept about a fault:
+  when no flag shows one, the charger is regulated as before from the next decision.
 - Override switch (per charger, default off): allows charging outside the charging window until it is switched off. A window that starts does not end it.
   No effect for a charger without charging window. Switching it off stops charging outside the window like the window ending.
 - Override end (per charger setting, only with a charging window): what switches the override off besides the user.

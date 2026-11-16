@@ -152,6 +152,9 @@ export class KraftvaktChargingPage extends ConfigPage {
           : this.localize("charging.charging_from", { source: charger.actively_charging.value }),
       );
     }
+    if (charger.deactivate_on_fault) {
+      details.push(this.localize("charging.deactivated_on_fault"));
+    }
     const issues = this.issues.filter((issue) => issue.section === "chargers" && issue.target === charger.id);
     return {
       key: charger.id,
@@ -163,8 +166,16 @@ export class KraftvaktChargingPage extends ConfigPage {
     };
   }
 
+  /** A fault flag is named by its place in the list, and the list itself by its setting. */
   private fieldLabel(issue: Issue): string {
     const field = issue.field ?? "";
+    const flag = /^fault_flags\.(\d+)$/.exec(field);
+    if (flag) {
+      return `${this.localize("charger.fields.fault_flags.label")} ${Number(flag[1]) + 1}`;
+    }
+    if (field === "fault_flags") {
+      return this.localize("charger.fields.deactivate_on_fault.label");
+    }
     return (CHARGER_FIELDS as readonly string[]).includes(field)
       ? this.localize(`charger.fields.${field}.label` as TranslationKey)
       : field;
@@ -237,6 +248,8 @@ export class KraftvaktChargingPage extends ConfigPage {
       override_ends: defaults.override_ends,
       cloud_controlled: false,
       start_delay_s: defaults.start_delay_s,
+      deactivate_on_fault: false,
+      fault_flags: [],
     };
     this.editing = { charger, groupId: group.id, isNew: true };
   }

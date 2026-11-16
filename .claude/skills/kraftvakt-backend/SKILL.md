@@ -20,7 +20,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - The entities of appliances and chargers are added and removed when the configuration is saved, without reloading the config entry (a reload would start the regulation).
   Registry entries of removed items are removed.
 - A charger is a device in HA, stored as its `device_id`, and every entity it names (its own, the set-current entity,
-  and the car connected and actively charging entities or power sensor) must belong to that device. Templates and custom actions are not checked,
+  the car connected and actively charging entities or power sensor, and the entities of its fault flags) must belong to that device. Templates and custom actions are not checked,
   and cover a charger whose values are elsewhere. Why: integrations group a charger's entities as a device, so picking them from it keeps the setup easy for most users.
 - A charger is named after its device (the user's name for the device first), and after its entity while the device is missing or unknown; an appliance is named after its entity.
   The status, the entity names sent to the panel and the charger switches use the same function for this, and the panel mirrors it for a charger that is not saved yet.
@@ -77,7 +77,8 @@ The format is defined by the dataclasses and their serialization in `config_mode
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
   deactivate and set-current actions, min and max current, power reserve, car connected, actively charging, an optional charging window,
-  finish after window, the override end, cloud-controlled and the start delay. A charger is nested in its group, so it cannot be in two.
+  finish after window, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flags.
+  A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger. Finish after window is a field of the charger, not a switch position.
 
@@ -109,7 +110,9 @@ An invalid configuration is not saved:
 An incomplete configuration can be saved, but the regulation cannot start. A charger without a device is missing, not an error.
 An empty condition is missing, not an error; a variant is added in the appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a target (the id of the appliance or charger) and a field;
-a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`). Every issue code needs a text in the panel's translations.
+a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
+and a fault flag through its place in the list (`fault_flags.<index>`). With deactivate on fault, no flags at all is `missing_fault_flags` on `fault_flags`,
+and an empty flag is `missing_fault_flag` on the flag. Every issue code needs a text in the panel's translations.
 
 ## Charger profiles
 
@@ -122,6 +125,8 @@ a variant field is addressed through the variant's id, also the variant's own ac
 - An entity is found by what does not change with the language: its translation key, the name the integration gives it (for integrations that do not translate),
   or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,
   and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
+- A profile may have fault flags. It fills them, with its setting for deactivate on fault, only when it finds at least one of them,
+  so choosing a device never turns the setting on without a flag.
 - The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.
 - A profile is not validated when it is loaded; its test saves a charger made from it, which the backend must accept.
 - `DeviceEntities` finds entities in anything with an entity ID, a domain, a translation key and an original name, so the charger profile extractor in `diagnostics/`
@@ -196,9 +201,10 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   and the decision that turns it on, the first at or after the end of the waiting time.
 - An appliance's variant is the label of its current variant, or `null`.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
-- A charger's state is the first that holds of: first decision (before the first decision after a start), excluded, outside its charging window,
+- A charger's state is the first that holds of: first decision (before the first decision after a start), fault, excluded, outside its charging window,
   no car connected (bypassed and car connected is false), not charging (bypassed otherwise), queued (waiting), starting,
   override (allowed only by the override while activated), finishing, charging, activated, deactivated. It is worked out in the engine from the last decision.
+  Fault comes first, since the user needs to know that the charger is broken.
   Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user needs to know that the car is missing.
   Charging is true while the charger is activated and was actively charging at the last decision.
   A starting charger also has when its time to start ends, `null` for the others.

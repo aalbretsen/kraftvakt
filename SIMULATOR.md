@@ -16,9 +16,10 @@ Add the integration under **Settings → Devices & services**, and add one devic
   In heat, heat/cool and auto it heats in the cycle while the target temperature is above the room temperature; otherwise it uses nothing.
   The cycle starts again every time it starts heating. Turning it on returns it to the last heating mode, the first heating mode it supports at first.
   It can only be turned off when off is one of its modes. It starts in off, or in its first mode when off is not one of them.
-- **EV charger:** three-phase 400 V with a minimum and maximum current. It has the switches **Charging allowed**, **Car connected** and **Car fully charged**,
+- **EV charger:** three-phase 400 V with a minimum and maximum current. It has the switches **Charging allowed**, **Car connected**, **Car fully charged** and **Fault**,
   **Charging current** (A), the sensor **Charging power** and the binary sensor **Charging**, on while it draws power.
-  It draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging is allowed, a car is connected and the car is not fully charged.
+  It draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging is allowed, a car is connected, the car is not fully charged and it has no fault.
+  Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
   With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
   as with a charger controlled through a cloud service; set the same or a longer start delay on a cloud-controlled EV charger in Kraftvakt.
 
@@ -26,7 +27,8 @@ Heating devices, thermostats and EV chargers also have the switch **Unplugged**.
 The cycle of a heating device runs on while it is unplugged.
 
 What controls the simulation and does not belong to a real device is under **Configuration** on the device page, and can be changed while Home Assistant runs: **Background power**,
-**Heating power**, **Duty cycle**, **Period**, **Room temperature**, **Car connected**, **Car fully charged** and **Unplugged**. The settings can be changed with **Reconfigure**.
+**Heating power**, **Duty cycle**, **Period**, **Room temperature**, **Car connected**, **Car fully charged**, **Fault** and **Unplugged**.
+The settings can be changed with **Reconfigure**.
 The switches, the charging current, and the mode and target temperature of a thermostat keep their state over a restart.
 
 Then set up Kraftvakt against the simulator: the power sensor of the HAN as the power sensor, the switches of the heating devices and the thermostats as appliances,

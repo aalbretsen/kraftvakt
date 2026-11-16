@@ -10,11 +10,12 @@ import type { HomeAssistant } from "../types";
 const ACTIVELY_CHARGING_ABOVE_W = 100;
 
 /** What the field gives, also the prefix of its texts. Only evidence counts as true. */
-export type ConditionKind = "condition" | "actively_charging";
+export type ConditionKind = "condition" | "actively_charging" | "fault";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
   actively_charging: ["entity", "power_sensor", "template"],
+  fault: ["entity", "template"],
 };
 
 interface TemplateResult {

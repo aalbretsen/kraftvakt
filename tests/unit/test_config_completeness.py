@@ -62,6 +62,29 @@ def test_empty_charger_conditions_are_missing() -> None:
     ]
 
 
+def test_deactivate_on_fault_needs_a_fault_flag() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["fault_flags"] = []
+
+    assert _missing(data) == [Issue("missing_fault_flags", "chargers", "c1", "fault_flags")]
+
+
+def test_empty_fault_flags_are_missing() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["fault_flags"].append({"type": "template", "value": " "})
+
+    assert _missing(data) == [Issue("missing_fault_flag", "chargers", "c1", "fault_flags.2")]
+
+
+def test_fault_flags_are_not_needed_while_deactivate_on_fault_is_off() -> None:
+    data = full_config_data()
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["deactivate_on_fault"] = False
+    charger["fault_flags"] = [{"type": "entity", "value": ""}]
+
+    assert _missing(data) == []
+
+
 def test_charging_current_entity_must_be_chosen() -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"][0]["set_current"] = {"mode": "entity"}
