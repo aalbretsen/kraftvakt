@@ -104,6 +104,11 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   Why: the first value after the gap is only the background (everything is off in the safe state) or a short peak while the appliances are turned off,
   so it cannot stand for the time before.
 - Before the first valid value there is no average. Windows without any measurement count as invalid.
+- A window that would close a whole window or more after its end is missed, as when HA's event loop was paused (a host that sleeps, a paused virtual machine, a blocked loop).
+  It and the windows after it that have ended are skipped: they make no decision and no command repeat, and do not count towards the regulation interval.
+  The window running when it is noticed closes next, in the same cadence. The time missed counts with the last valid value, like the time HA was down,
+  but not in the overconsumption, which counts closed windows only. Waiting times, rests, the time to start and the command repeat count it as time that has passed.
+  A warning is logged. Why: closing the missed windows one by one would replay their decisions at once, by the old clock.
 - Saving a configuration does not restart the averages. A new power sensor is followed from the save, a new window length applies from the next window.
 
 ## Decisions
@@ -238,7 +243,7 @@ All with entity category diagnostic:
 - Power free: the power limit minus the last regulation average, negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike. Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision that turns on the waiting step (an appliance or a charger's next ampere), so it is the real time left,
-  a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop.
+  a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing is judged from what the last decision read (activated, actively charging, car connected),

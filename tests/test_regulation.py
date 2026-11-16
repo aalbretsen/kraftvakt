@@ -38,6 +38,7 @@ from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from custom_components.kraftvakt.config_model import Issue
 from custom_components.kraftvakt.config_reader import read_config
 from custom_components.kraftvakt.const import DOMAIN
+from custom_components.kraftvakt.json_values import plain
 from custom_components.kraftvakt.regulation.waiting import WaitingCurve
 from custom_components.kraftvakt.status import status_snapshot
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
@@ -1127,3 +1128,43 @@ async def test_next_turn_on_sensor_is_disabled_by_default(hass: HomeAssistant, s
     registry_entry = er.async_get(hass).async_get(entity_id(hass, "sensor", "waiting_time_next_turn_on"))
     assert registry_entry is not None
     assert registry_entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+
+
+async def test_missed_windows_are_skipped_without_decisions(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    setup_kraftvakt,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """After a paused event loop, the regulation goes on at the next window end
+    in the cadence, with the pause counted with the last valid value. The status
+    is sent at once. A pause longer than the command repeat interval repeats the
+    commands."""
+    set_power(hass, "2000")
+    entry = await setup_kraftvakt()
+    await advance(hass, freezer)
+    actions.clear()
+    paused_at = dt_util.now()
+    runtime = entry.runtime_data
+    next_decisions = []
+    runtime.async_add_status_listener(lambda: next_decisions.append(runtime.next_decision_at))
+
+    freezer.tick(timedelta(hours=1))
+    for _ in range(3):
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(entry.runtime_data.recent_decisions) == 1
+    assert actions == []
+    assert next_decisions == [dt_util.utcnow() + WINDOW]
+    assert "Skipped the windows from" in caplog.text
+    averager = plain(entry.runtime_data.diagnostics())["measurement"]["averager"]
+    assert averager["last_missed_windows"] == {"start": paused_at.isoformat(), "end": dt_util.now().isoformat()}
+
+    set_power(hass, "6000")
+    await advance(hass, freezer)
+    assert actions == ["on light.b", "on light.a"]
+    decision = entry.runtime_data.recent_decisions[-1]
+    assert decision["time"] == dt_util.now().isoformat()
+    assert decision["regulation_average_w"] == 6000
+    assert decision["tariff_average_w"] == round((2000 * 3540 + 6000 * 60) / 3600)

@@ -8,6 +8,7 @@ import pytest
 
 from custom_components.kraftvakt.measurement import (
     TARIFF_WINDOW,
+    MissedWindows,
     PowerAverager,
     WindowAverages,
     power_w,
@@ -90,6 +91,49 @@ def test_new_window_length_applies_from_the_next_window() -> None:
     assert (second.start, second.end) == (at(60), at(90))
     assert second.regulation_average_w == pytest.approx((10 * 2.0 + 20 * 5.0) / 30)
     assert second.tariff_average_w == pytest.approx((3580 * 2.0 + 20 * 5.0) / 3600)
+
+
+def test_window_closed_less_than_a_window_late_is_not_missed() -> None:
+    averager = PowerAverager(WINDOW, START)
+
+    assert averager.skip_missed_windows(at(60)) is None
+    assert averager.skip_missed_windows(at(119.9)) is None
+    assert averager.window_end == at(60)
+
+
+def test_missed_windows_are_skipped_in_the_cadence() -> None:
+    """The window running at the time it is noticed is the next to close."""
+    averager = PowerAverager(WINDOW, START)
+
+    assert averager.skip_missed_windows(at(120)) == MissedWindows(at(0), at(120))
+    assert (averager.window_start, averager.window_end) == (at(120), at(180))
+    assert averager.skip_missed_windows(at(3630)) == MissedWindows(at(120), at(3600))
+    assert (averager.window_start, averager.window_end) == (at(3600), at(3660))
+    assert averager.diagnostics()["last_missed_windows"] == MissedWindows(at(120), at(3600))
+
+
+def test_missed_windows_follow_a_new_window_length() -> None:
+    averager = PowerAverager(WINDOW, START)
+    averager.change_window_length(timedelta(seconds=30))
+
+    assert averager.skip_missed_windows(at(100)) == MissedWindows(at(0), at(90))
+    assert (averager.window_start, averager.window_end) == (at(90), at(120))
+
+
+def test_missed_time_counts_with_the_last_valid_measurement() -> None:
+    """Nothing is measured while the event loop is paused, as while Home
+    Assistant is down. A late report counts from the window start."""
+    averager = PowerAverager(WINDOW, START)
+    averager.add_measurement(at(0), 2.0)
+    averager.add_measurement(at(30), None)
+
+    averager.skip_missed_windows(at(1830))
+    averager.add_measurement(at(1790), 8.0)
+    averages = averager.close_window()
+
+    assert (averages.start, averages.end) == (at(1800), at(1860))
+    assert averages.regulation_average_w == 8.0
+    assert averages.tariff_average_w == pytest.approx((2.0 * 3540 + 8.0 * 60) / 3600)
 
 
 def test_first_measurement_fills_both_windows_backwards() -> None:

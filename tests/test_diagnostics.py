@@ -164,6 +164,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "latest_measurement_at": local(now),
         "sensor_valid": True,
         "consecutive_invalid_closes": 0,
+        "last_missed_windows": None,
         "power_steps": [{"start": local(started_at), "power_w": 2000}],
     }
     assert diagnostics["decision_clock"] == {"windows_since_decision": []}

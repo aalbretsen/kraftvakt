@@ -41,6 +41,14 @@ class WindowAverages:
 
 
 @dataclass(frozen=True, slots=True)
+class MissedWindows:
+    """Windows that were never closed, from `start` to `end`."""
+
+    start: datetime
+    end: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class _Step:
     """Power that applies from `start` until the next step starts."""
 
@@ -64,6 +72,7 @@ class PowerAverager:
         self._steps: list[_Step] = []
         self._sensor_valid = False
         self._consecutive_invalid_closes = 0
+        self._last_missed: MissedWindows | None = None
 
     @property
     def window_start(self) -> datetime:
@@ -81,6 +90,7 @@ class PowerAverager:
             "latest_measurement_at": self._latest,
             "sensor_valid": self._sensor_valid,
             "consecutive_invalid_closes": self._consecutive_invalid_closes,
+            "last_missed_windows": self._last_missed,
             "power_steps": self._steps,
         }
 
@@ -118,6 +128,23 @@ class PowerAverager:
         if self._steps and history and history[-1].power_w == self._steps[0].power_w:
             self._steps[0] = history.pop()
         self._steps[:0] = history
+
+    def skip_missed_windows(self, now: datetime) -> MissedWindows | None:
+        """Skip the current window and those after it that ended at or before `now`.
+
+        A window is missed when it is closed a whole window or more after its
+        end, as after a paused event loop. The cadence is kept, so the window
+        running at `now` is next. The time missed counts with the last valid
+        measurement, since nothing was measured meanwhile.
+        """
+        missed = (now - self.window_end) // self._next_window_length
+        if missed < 1:
+            return None
+        self._last_missed = MissedWindows(self._window_start, self.window_end + missed * self._next_window_length)
+        self._window_start = self._last_missed.end
+        self._window_length = self._next_window_length
+        self._latest = max(self._latest, self._window_start)
+        return self._last_missed
 
     def close_window(self) -> WindowAverages:
         """Close the current regulation window and start the next one.
