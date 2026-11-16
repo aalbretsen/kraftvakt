@@ -96,7 +96,7 @@ export class KraftvaktChargingPage extends ConfigPage {
           .error=${this.formErrors("charger_groups", group.id)}
           .disabled=${this.locked}
           .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
-          .computeHelper=${(field: { name: string }) => this.localize(`charging.${field.name}_sub` as TranslationKey)}
+          .computeHelper=${(field: { name: string }) => withLineBreaks(this.localize(`charging.${field.name}_sub` as TranslationKey))}
           .computeError=${(error: string) => error}
           @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
         ></ha-form>
@@ -307,6 +307,11 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   static styles = ConfigPage.styles;
+}
+
+/** A helper text keeps its line breaks, since Home Assistant shows it as one paragraph. */
+function withLineBreaks(text: string) {
+  return text.split("\n").map((line, index) => (index === 0 ? line : html`<br />${line}`));
 }
 
 declare global {
