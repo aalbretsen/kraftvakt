@@ -127,6 +127,20 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     );
   }
 
+  /** One of the item's own action fields in a group of its own, with the field's label as title and its helper as description. */
+  protected renderActionGroup(field: string, issues: Issue[], variables: string[]) {
+    return this.renderGroup({
+      title: this.label(field),
+      description: this.helper(field),
+      content: this.renderActionField(
+        { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field], label: "" },
+        issues,
+        variables,
+        (value) => this.changeDraft({ [field]: value } as Partial<T>),
+      ),
+    });
+  }
+
   /**
    * An action field. `name` is the field in the capabilities and the texts,
    * and `field` the field the issues address.

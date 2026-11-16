@@ -381,10 +381,8 @@
     "add_title": "Legg til elbillader",
     "edit_title": "Rediger elbillader",
     "view_title": "Elbillader",
-    "allowed_charging": "Tillatt lading",
     "charging_current": "Ladestrøm",
     "actively_charging": "Lader aktivt",
-    "allowed_charging_info": "Hvordan Kraftvakt lar bilen starte og stoppe ladingen. Ladestrømmen settes alltid til minste ladestrøm først.",
     "car_connected_required": "Bil tilkoblet",
     "car_connected_optional": "Bil tilkoblet (valgfri)",
     "profile_applied": "Fylt ut fra laderprofilen {profile}. Sjekk alle feltene før du lagrer.",
@@ -404,10 +402,12 @@
         "helper": "Entiteten Kraftvakt aktiverer for å la bilen lade, og deaktiverer for å stoppe den, normalt laderens bryter for å tillate lading."
       },
       "activate": {
-        "label": "Aktiver"
+        "label": "Handling for å aktivere",
+        "helper": "Hvordan Kraftvakt lar bilen begynne å lade. Ladestrømmen settes til minste ladestrøm først."
       },
       "deactivate": {
-        "label": "Deaktiver"
+        "label": "Handling for å deaktivere",
+        "helper": "Hvordan Kraftvakt stopper ladingen. Ladestrømmen settes til minste ladestrøm først."
       },
       "min_current_a": {
         "label": "Minste ladestrøm"

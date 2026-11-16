@@ -49,14 +49,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
         this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
       )}
-      ${this.renderGroup({
-        title: this.localize("charger.allowed_charging"),
-        description: this.localize("charger.allowed_charging_info"),
-        content: html`
-          ${this.renderAction("activate", issues, ENTITY_VARIABLES)}
-          ${this.renderAction("deactivate", issues, ENTITY_VARIABLES)}
-        `,
-      })}
+      ${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)}
+      ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}
       ${this.renderChargingCurrent(issues)}
       ${this.renderConditionGroup(
         "car_connected",

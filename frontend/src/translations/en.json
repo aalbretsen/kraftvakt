@@ -381,10 +381,8 @@
     "add_title": "Add EV charger",
     "edit_title": "Edit EV charger",
     "view_title": "EV charger",
-    "allowed_charging": "Allowed charging",
     "charging_current": "Charging current",
     "actively_charging": "Actively charging",
-    "allowed_charging_info": "How Kraftvakt lets the car start and stop charging. The charging current is always set to the minimum first.",
     "car_connected_required": "Car connected",
     "car_connected_optional": "Car connected (optional)",
     "profile_applied": "Filled in from the charger profile {profile}. Check every field before you save.",
@@ -404,10 +402,12 @@
         "helper": "The entity Kraftvakt activates to let the car charge, and deactivates to stop it, normally the charger's switch for allowing charging."
       },
       "activate": {
-        "label": "Activate"
+        "label": "Action to activate",
+        "helper": "How Kraftvakt lets the car start charging. The charging current is set to the minimum first."
       },
       "deactivate": {
-        "label": "Deactivate"
+        "label": "Action to deactivate",
+        "helper": "How Kraftvakt stops the charging. The charging current is set to the minimum first."
       },
       "min_current_a": {
         "label": "Minimum charging current"

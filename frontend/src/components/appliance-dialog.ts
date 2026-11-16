@@ -58,20 +58,8 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     `;
   }
 
-  /** One group per action, as the variant dialog has one per action it can override. */
   private renderActions(issues: Issue[]) {
-    return APPLIANCE_ACTIONS.map((name) =>
-      this.renderGroup({
-        title: this.label(name),
-        description: this.helper(name),
-        content: this.renderActionField(
-          { name, field: name, value: this.draft[name], label: "" },
-          issues,
-          APPLIANCE_ACTION_VARIABLES,
-          (value) => this.changeDraft({ [name]: value }),
-        ),
-      }),
-    );
+    return APPLIANCE_ACTIONS.map((name) => this.renderActionGroup(name, issues, APPLIANCE_ACTION_VARIABLES));
   }
 
   /** The variants, sorted in the order their expressions are evaluated. */
