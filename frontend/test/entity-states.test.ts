@@ -20,10 +20,16 @@ describe("the states offered for an entity", () => {
 });
 
 describe("a state as evidence", () => {
-  it("is true for a chosen state, false for another state, and nothing without a state", () => {
-    expect(stateEvidence("charging", ["charging", "awaiting_start"])).toBe(true);
-    expect(stateEvidence("completed", ["charging"])).toBe(false);
-    expect(stateEvidence("unavailable", ["charging"])).toBeNull();
-    expect(stateEvidence(undefined, ["charging"])).toBeNull();
+  it("is true for a chosen state that counts as true, false for another state, and nothing without a state", () => {
+    expect(stateEvidence("charging", ["charging", "awaiting_start"], true)).toBe(true);
+    expect(stateEvidence("completed", ["charging"], true)).toBe(false);
+    expect(stateEvidence("unavailable", ["charging"], true)).toBeNull();
+    expect(stateEvidence(undefined, ["charging"], true)).toBeNull();
+  });
+
+  it("is true for any other state when the chosen states count as false, but never for unavailable", () => {
+    expect(stateEvidence("charging", ["disconnected"], false)).toBe(true);
+    expect(stateEvidence("disconnected", ["disconnected"], false)).toBe(false);
+    expect(stateEvidence("unavailable", ["disconnected"], false)).toBeNull();
   });
 });

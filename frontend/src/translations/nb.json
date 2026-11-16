@@ -336,8 +336,8 @@
     "state": "Tilstand",
     "state_label": "Entitet med tilstand",
     "state_helper": "For eksempel en statussensor på elbilladeren.",
-    "states_label": "Tilstander som regnes som sann",
-    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander, og utilgjengelig, regnes som usann.",
+    "states_label": "Tilstander",
+    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander regnes som det motsatte, og utilgjengelig regnes som usann.",
     "template_helper": "Sann bare når malen gir den boolske verdien sann. Variabler: entity_id, entity.",
     "now": "Nå: {value}",
     "true": "sann",
@@ -355,8 +355,8 @@
     "state": "Tilstand",
     "state_label": "Entitet med tilstand",
     "state_helper": "For eksempel en statussensor på elbilladeren.",
-    "states_label": "Tilstander som regnes som lading",
-    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander, og utilgjengelig, regnes ikke som lading.",
+    "states_label": "Tilstander",
+    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander regnes som det motsatte, og utilgjengelig regnes ikke som lading.",
     "template_helper": "Bare den boolske verdien sann regnes som lading, for eksempel fra en statussensor på elbilladeren. Alt annet, også en feil, regnes ikke som lading. Variabler: entity_id, entity.",
     "true": "lader",
     "false": "lader ikke",
@@ -383,8 +383,8 @@
     "state": "Tilstand",
     "state_label": "Entitet med tilstand",
     "state_helper": "For eksempel en statussensor på elbilladeren.",
-    "states_label": "Tilstander som betyr feil",
-    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander, og utilgjengelig, regnes som ingen feil.",
+    "states_label": "Tilstander",
+    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander regnes som det motsatte, og utilgjengelig regnes som ingen feil.",
     "template_helper": "Bare den boolske verdien sann betyr feil. Alt annet, også en feil i malen, regnes som ingen feil. Variabler: entity_id, entity.",
     "true": "feil",
     "false": "ingen feil",
@@ -514,6 +514,20 @@
     },
     "charging_current_info": "Kraftvakt øker og senker strømmen én ampere om gangen, etter hvor mye effekt som er ledig. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler. Hele ampere.",
     "add_fault_flag": "Legg til feilflagg",
-    "remove_fault_flag": "Fjern feilflagg"
+    "remove_fault_flag": "Fjern feilflagg",
+    "state_choices": {
+      "car_connected": {
+        "true": "Tilstander for tilkoblet",
+        "false": "Tilstander for frakoblet"
+      },
+      "actively_charging": {
+        "true": "Tilstander for lading",
+        "false": "Tilstander for ikke lading"
+      },
+      "fault_flags": {
+        "true": "Tilstander for feil",
+        "false": "Tilstander for ingen feil"
+      }
+    }
   }
 }

@@ -20,8 +20,10 @@ export interface Condition {
   type: "entity" | "state" | "template" | "power_sensor";
   /** The entity, or the template. */
   value: string;
-  /** The states of the entity that count as true, for a state. */
+  /** The chosen states of the entity, for a state. */
   states?: string[];
+  /** Whether the chosen states count as true, or every other state does. */
+  states_are_true?: boolean;
 }
 
 export interface ActionConfig {

@@ -137,6 +137,13 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
+  private stateChoices(field: "car_connected" | "actively_charging" | "fault_flags") {
+    return {
+      true: this.localize(`charger.state_choices.${field}.true`),
+      false: this.localize(`charger.state_choices.${field}.false`),
+    };
+  }
+
   private renderCondition(
     field: "car_connected" | "actively_charging" | "charging_power",
     kind: ConditionKind,
@@ -153,7 +160,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
         .includeEntities=${this.entityScope}
         .kind=${kind}
         .optional=${optional}
-        .withState=${field !== "charging_power"}
+        .stateChoices=${field === "charging_power" ? undefined : this.stateChoices(field)}
         .error=${issue ? this.describe(issue) : undefined}
         .disabled=${this.locked}
         @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeDraft({ [field]: event.detail.value })}
@@ -220,7 +227,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           .entityId=${this.draft.entity_id}
           .includeEntities=${this.entityScope}
           kind="fault"
-          withState
+          .stateChoices=${this.stateChoices("fault_flags")}
           .error=${issue ? this.describe(issue) : undefined}
           .disabled=${this.locked}
           @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeFaultFlag(index, event.detail.value)}

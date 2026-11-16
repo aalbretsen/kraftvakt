@@ -58,8 +58,11 @@ export class KraftvaktConditionField extends LitElement {
   /** Whether the field may be left empty. */
   @property({ type: Boolean }) optional = false;
 
-  /** Whether the condition may be states of an entity, as for an EV charger. */
-  @property({ type: Boolean }) withState = false;
+  /**
+   * The names of the chosen states when they count as true and when they count as false,
+   * when the condition may be states of an entity, as for an EV charger.
+   */
+  @property({ attribute: false }) stateChoices?: { true: string; false: string };
 
   /** The states the chosen entity has reported in Home Assistant's history, with the entity they belong to. */
   @state() private history: { entityId: string; states: string[] } = { entityId: "", states: [] };
@@ -89,7 +92,12 @@ export class KraftvaktConditionField extends LitElement {
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{ type, value: this.value?.value ?? "", states: this.value?.states ?? [] }}
+        .data=${{
+          type,
+          value: this.value?.value ?? "",
+          states_are_true: String(this.value?.states_are_true ?? true),
+          states: this.value?.states ?? [],
+        }}
         .schema=${this.schema(type)}
         .disabled=${this.disabled}
         .computeLabel=${this.computeLabel}
@@ -108,7 +116,7 @@ export class KraftvaktConditionField extends LitElement {
   /** A state comes right after a boolean entity, since both name an entity. */
   private types(): Condition["type"][] {
     const types = TYPES[this.kind];
-    return this.withState ? types.flatMap((type) => (type === "entity" ? [type, "state" as const] : [type])) : types;
+    return this.stateChoices ? types.flatMap((type) => (type === "entity" ? [type, "state" as const] : [type])) : types;
   }
 
   private schema(type: Condition["type"]) {
@@ -143,8 +151,22 @@ export class KraftvaktConditionField extends LitElement {
       case "state":
         return [
           { name: "value", required: !this.optional, selector: { entity: { include_entities: this.includeEntities } } },
-          ...(this.value?.value
-            ? [{ name: "states", required: !this.optional, selector: { select: { multiple: true, custom_value: true, options: this.stateOptions() } } }]
+          ...(this.value?.value && this.stateChoices
+            ? [
+                {
+                  name: "states_are_true",
+                  selector: {
+                    select: {
+                      mode: "list",
+                      options: [
+                        { value: "true", label: this.stateChoices.true },
+                        { value: "false", label: this.stateChoices.false },
+                      ],
+                    },
+                  },
+                },
+                { name: "states", required: !this.optional, selector: { select: { multiple: true, custom_value: true, options: this.stateOptions() } } },
+              ]
             : []),
         ];
       case "template":
@@ -211,7 +233,7 @@ export class KraftvaktConditionField extends LitElement {
         return power === null ? null : power > ACTIVELY_CHARGING_ABOVE_W;
       }
       case "state":
-        return stateEvidence(this.hass.states[condition.value]?.state, condition.states ?? []);
+        return stateEvidence(this.hass.states[condition.value]?.state, condition.states ?? [], condition.states_are_true ?? true);
       default: {
         const state = this.hass.states[condition.value]?.state;
         return state === "on" ? true : state === "off" ? false : null;
@@ -271,14 +293,18 @@ export class KraftvaktConditionField extends LitElement {
     }
   };
 
-  /** Another type starts empty, and another entity starts without chosen states. */
-  private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[] } }>): void {
+  /** Another type starts empty, and another entity starts without chosen states, which count as true. */
+  private valueChanged(
+    event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[]; states_are_true?: string } }>,
+  ): void {
     event.stopPropagation();
-    const { type, value, states } = event.detail.value;
+    const { type, value, states, states_are_true } = event.detail.value;
     const sameType = type === this.shownType();
     const condition: Condition = { type, value: sameType ? (value ?? "") : "" };
     if (type === "state") {
-      condition.states = sameType && condition.value === this.value?.value ? (states ?? []) : [];
+      const sameEntity = sameType && condition.value === this.value?.value;
+      condition.states = sameEntity ? (states ?? []) : [];
+      condition.states_are_true = !sameEntity || states_are_true !== "false";
     }
     this.dispatchEvent(new CustomEvent("value-changed", { detail: { value: condition } }));
   }

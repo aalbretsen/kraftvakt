@@ -336,8 +336,8 @@
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
-    "states_label": "States that count as true",
-    "states_helper": "Choose among the states the entity has reported, or type one. Any other state, and unavailable, counts as false.",
+    "states_label": "States",
+    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as false.",
     "template_helper": "True only when the template gives the boolean value true. Variables: entity_id, entity.",
     "now": "Now: {value}",
     "true": "true",
@@ -355,8 +355,8 @@
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
-    "states_label": "States that count as charging",
-    "states_helper": "Choose among the states the entity has reported, or type one. Any other state, and unavailable, counts as not charging.",
+    "states_label": "States",
+    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as not charging.",
     "template_helper": "Only the boolean value true counts as charging, for example from a status sensor of the EV charger. Anything else, also an error, counts as not charging. Variables: entity_id, entity.",
     "true": "charging",
     "false": "not charging",
@@ -383,8 +383,8 @@
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
-    "states_label": "States that mean a fault",
-    "states_helper": "Choose among the states the entity has reported, or type one. Any other state, and unavailable, counts as no fault.",
+    "states_label": "States",
+    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as no fault.",
     "template_helper": "Only the boolean value true means a fault. Anything else, also an error, counts as no fault. Variables: entity_id, entity.",
     "true": "fault",
     "false": "no fault",
@@ -514,6 +514,20 @@
     },
     "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes.",
     "add_fault_flag": "Add fault flag",
-    "remove_fault_flag": "Remove fault flag"
+    "remove_fault_flag": "Remove fault flag",
+    "state_choices": {
+      "car_connected": {
+        "true": "States for connected",
+        "false": "States for disconnected"
+      },
+      "actively_charging": {
+        "true": "States for charging",
+        "false": "States for not charging"
+      },
+      "fault_flags": {
+        "true": "States for a fault",
+        "false": "States for no fault"
+      }
+    }
   }
 }

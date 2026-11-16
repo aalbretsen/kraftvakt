@@ -15,9 +15,12 @@ export function reportedStates(stateObj: HassEntity | undefined, history: string
   return [...new Set(candidates.filter((state) => !NO_STATE.has(state)))];
 }
 
-/** Return whether the state is one of the chosen ones, or null when the entity has no state, as the backend reads it. */
-export function stateEvidence(state: string | undefined, chosen: string[]): boolean | null {
-  return state === undefined || NO_STATE.has(state) ? null : chosen.includes(state);
+/**
+ * Return what the state shows, as the backend reads it: true for a chosen state when they count as true, and for
+ * any other state when they count as false. Null when the entity has no state, so unavailable is never true.
+ */
+export function stateEvidence(state: string | undefined, chosen: string[], statesAreTrue: boolean): boolean | null {
+  return state === undefined || NO_STATE.has(state) ? null : chosen.includes(state) === statesAreTrue;
 }
 
 /** Return the states the entity has reported in Home Assistant's history over the last days. */
