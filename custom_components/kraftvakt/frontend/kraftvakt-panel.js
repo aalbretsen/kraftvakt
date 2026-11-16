@@ -751,8 +751,8 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       `})}renderCloudControl(e){const t=this.draft.cloud_controlled||e.some(e=>"start_delay_s"===e.field);return this.renderGroup({title:this.label("cloud_controlled"),description:this.helper("cloud_controlled"),toggle:{checked:this.draft.cloud_controlled,changed:e=>this.changeDraft({cloud_controlled:e})},content:t?this.renderForm([this.numberField("start_delay_s","s",!0)],e,e=>this.changeDraft({start_delay_s:e.start_delay_s})):ie})}renderDeactivateOnFault(e){const t=this.draft.deactivate_on_fault||e.some(e=>e.field?.startsWith("fault_flags.")),i=e.find(e=>"fault_flags"===e.field);return this.renderGroup({title:this.label("deactivate_on_fault"),description:this.helper("deactivate_on_fault"),toggle:{checked:this.draft.deactivate_on_fault,changed:e=>this.deactivateOnFaultChanged(e)},content:t?Y`
             ${this.draft.fault_flags.map((t,i)=>this.renderFaultFlag(t,i,e))}
             ${this.locked?ie:Y`
-                  <div>
-                    <ha-button appearance="plain" @click=${this.addFaultFlag}>
+                  <div class="add-fault-flag">
+                    <ha-button @click=${this.addFaultFlag}>
                       <ha-svg-icon slot="start" .path=${l}></ha-svg-icon>
                       ${this.localize("charger.add_fault_flag")}
                     </ha-button>
@@ -792,6 +792,11 @@ function e(e,t,i,a){var r,n=arguments.length,s=n<3?t:null===a?a=Object.getOwnPro
       .fault-flag kraftvakt-condition-field {
         flex: 1;
         min-width: 0;
+      }
+      /* The group's header holds its switch, so the add button goes at the right end under the list. */
+      .add-fault-flag {
+        display: flex;
+        justify-content: flex-end;
       }
     `]}};function Wi(e){return"string"==typeof e?e.slice(0,5):""}e([xe()],Ii.prototype,"profile",void 0),Ii=e([ye("kraftvakt-charger-dialog")],Ii);const Ri=["device_id","entity_id","activate","deactivate","set_current","min_current_a","max_current_a","power_reserve_w","car_connected","actively_charging","cloud_controlled","start_delay_s","charging_window","finish_after_window","override_ends","deactivate_on_fault"],Ui=[{name:"name",required:!0,selector:{text:{}}},{name:"one_at_a_time",selector:{boolean:{}}}];let Bi=class extends Ft{render(){const e=this.config.charger_groups;return Y`
       ${0===e.length?Y`<div class="empty">${this.localize("charging.no_groups")}</div>`:e.map(e=>this.renderGroup(e))}

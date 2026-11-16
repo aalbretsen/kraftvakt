@@ -169,8 +169,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
             ${this.locked
               ? nothing
               : html`
-                  <div>
-                    <ha-button appearance="plain" @click=${this.addFaultFlag}>
+                  <div class="add-fault-flag">
+                    <ha-button @click=${this.addFaultFlag}>
                       <ha-svg-icon slot="start" .path=${mdiPlus}></ha-svg-icon>
                       ${this.localize("charger.add_fault_flag")}
                     </ha-button>
@@ -300,6 +300,11 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       .fault-flag kraftvakt-condition-field {
         flex: 1;
         min-width: 0;
+      }
+      /* The group's header holds its switch, so the add button goes at the right end under the list. */
+      .add-fault-flag {
+        display: flex;
+        justify-content: flex-end;
       }
     `,
   ];

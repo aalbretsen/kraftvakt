@@ -53,6 +53,7 @@ The section header, the description and the footer note are in `section-styles.t
 - A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and the power reserve. The rest is in groups.
   A group is a frame with a section header, a description and its fields, as a card is on a page.
   A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.
+  An add button is a filled button at the right end of a header; where the header holds a switch, it goes at the right end under the list.
   Groups are not nested, so a field in a group, such as an action, has no frame of its own.
 - A description under a title is secondary text. A footer has a note to the left of its control: the card footer under a divider, and the page footer under the last card.
 - An alert is only for a state or a warning, such as the lock, the warning against manual control or an applied charger profile, never for an explanation.
