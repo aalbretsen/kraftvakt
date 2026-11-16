@@ -89,7 +89,8 @@ The section header, the description and the footer note are in `section-styles.t
   and adapts the actions to the new entity as a new entity does. It then asks the backend for the device's charger profile,
   and when there is one, the fields it fills replace those in the draft and an info under the device names the profile. Without a profile, nothing is filled in.
   The panel has no knowledge of chargers of its own.
-- The appliance dialog lists the variants by label, with drag and edit, and Add variant. What else is wrong or missing in a variant is shown under its label.
+- The appliance dialog has one group per action, as the variant dialog has one per action it can override.
+  It lists the variants by label, with drag and edit, and Add variant. What else is wrong or missing in a variant is shown under its label.
   A variant's edit button, and its row in the priority list, open the variant dialog: the expression and one switch per action to override it, both off by default.
   Switched on, the action starts from what it had while the dialog is open, or else a copy of the appliance's.
   The variant dialog edits a copy of the whole appliance; its Delete removes the variant with `item-changed`, since it changes the appliance.

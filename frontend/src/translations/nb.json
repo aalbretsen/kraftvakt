@@ -258,7 +258,6 @@
     "add_title": "Legg til apparat",
     "edit_title": "Rediger apparat",
     "view_title": "Apparat",
-    "actions": "Handlinger",
     "variants": "Varianter",
     "variants_info": "Gi apparatet en annen plass i prioritetslisten til bestemte tider eller under bestemte forhold, for eksempel høyere prioritet for varmtvannsberederen om morgenen. En variant gjelder når uttrykket er sant, og når flere er sanne, gjelder den øverste i denne listen. En ny variant legges nederst i prioritetslisten. Rediger en variant for å sette uttrykket og handlingene.",
     "add_variant": "Legg til variant",
@@ -269,10 +268,12 @@
         "helper": "Entiteten Kraftvakt slår på og av, for eksempel bryteren til en varmtvannsbereder eller en termostat. Navnet i Home Assistant blir apparatets navn."
       },
       "turn_on": {
-        "label": "Slå på"
+        "label": "Handling for å slå på",
+        "helper": "Hvordan Kraftvakt slår apparatet på. Standard passer for de fleste entiteter."
       },
       "turn_off": {
-        "label": "Slå av"
+        "label": "Handling for å slå av",
+        "helper": "Hvordan Kraftvakt slår apparatet av. Standard passer for de fleste entiteter."
       },
       "power_reserve_w": {
         "label": "Effektreserve (valgfri)",
@@ -292,8 +293,7 @@
         "label": "Egen handling for å slå av",
         "helper": "Varianten slår av apparatet med sin egen handling i stedet for apparatets vanlige, for eksempel frostsikring."
       }
-    },
-    "actions_info": "Hvordan Kraftvakt slår apparatet på og av. Standard passer for de fleste entiteter."
+    }
   },
   "variant": {
     "edit_title": "Rediger variant {name}",

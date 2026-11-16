@@ -54,23 +54,23 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
       ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
         this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
       )}
-      ${this.renderGroup({
-        title: this.localize("appliance.actions"),
-        description: this.localize("appliance.actions_info"),
-        content: this.renderActions(issues),
-      })}
-      ${this.renderVariants(issues)}
+      ${this.renderActions(issues)} ${this.renderVariants(issues)}
     `;
   }
 
+  /** One group per action, as the variant dialog has one per action it can override. */
   private renderActions(issues: Issue[]) {
     return APPLIANCE_ACTIONS.map((name) =>
-      this.renderActionField(
-        { name, field: name, value: this.draft[name] },
-        issues,
-        APPLIANCE_ACTION_VARIABLES,
-        (value) => this.changeDraft({ [name]: value }),
-      ),
+      this.renderGroup({
+        title: this.label(name),
+        description: this.helper(name),
+        content: this.renderActionField(
+          { name, field: name, value: this.draft[name], label: "" },
+          issues,
+          APPLIANCE_ACTION_VARIABLES,
+          (value) => this.changeDraft({ [name]: value }),
+        ),
+      }),
     );
   }
 

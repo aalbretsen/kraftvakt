@@ -258,7 +258,6 @@
     "add_title": "Add appliance",
     "edit_title": "Edit appliance",
     "view_title": "Appliance",
-    "actions": "Actions",
     "variants": "Variants",
     "variants_info": "Give the appliance another place in the priority list at certain times or in certain conditions, for example a higher priority for the water heater in the morning. A variant applies while its expression is true, and when several are true, the top one in this list applies. A new variant is put at the bottom of the priority list. Edit a variant to set its expression and actions.",
     "add_variant": "Add variant",
@@ -269,10 +268,12 @@
         "helper": "The entity Kraftvakt turns on and off, for example the switch of a water heater or a thermostat. Its name in Home Assistant becomes the name of the appliance."
       },
       "turn_on": {
-        "label": "Turn on"
+        "label": "Action to turn on",
+        "helper": "How Kraftvakt turns the appliance on. Standard works for most entities."
       },
       "turn_off": {
-        "label": "Turn off"
+        "label": "Action to turn off",
+        "helper": "How Kraftvakt turns the appliance off. Standard works for most entities."
       },
       "power_reserve_w": {
         "label": "Power reserve (optional)",
@@ -292,8 +293,7 @@
         "label": "Own action to turn off",
         "helper": "The variant turns the appliance off with its own action instead of the appliance's usual one, for example frost protection."
       }
-    },
-    "actions_info": "How Kraftvakt turns the appliance on and off. Standard works for most entities."
+    }
   },
   "variant": {
     "edit_title": "Edit variant {name}",
