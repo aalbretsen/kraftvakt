@@ -134,6 +134,17 @@
       },
       "charging_power": {
         "name": "Ladeeffekt"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "disconnected": "Frakoblet",
+          "awaiting_start": "Venter på start",
+          "starting": "Starter",
+          "charging": "Lader",
+          "completed": "Fullført",
+          "error": "Feil"
+        }
       }
     },
     "switch": {

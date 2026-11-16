@@ -6,6 +6,7 @@ import pytest
 
 from custom_components.kraftvakt_simulator.model import (
     ChargerState,
+    ChargerStatus,
     DutyCycle,
     thermostat_heats,
     three_phase_power_w,
@@ -90,6 +91,30 @@ def test_the_charger_draws_power_only_for_a_car_that_charges(allowed: bool, conn
     )
 
     assert state.power_w == power_w
+
+
+@pytest.mark.parametrize(
+    ("allowed", "connected", "fully_charged", "starting", "fault", "status"),
+    [
+        (True, True, False, False, False, ChargerStatus.CHARGING),
+        (True, True, False, True, False, ChargerStatus.STARTING),
+        (False, True, False, False, False, ChargerStatus.AWAITING_START),
+        (False, True, True, False, False, ChargerStatus.COMPLETED),
+        (True, False, False, False, False, ChargerStatus.DISCONNECTED),
+        (True, False, False, False, True, ChargerStatus.ERROR),
+    ],
+)
+def test_the_charger_reports_its_status(allowed: bool, connected: bool, fully_charged: bool, starting: bool, fault: bool, status: ChargerStatus) -> None:
+    state = ChargerState(
+        charging_allowed=allowed,
+        current_a=10,
+        car_connected=connected,
+        car_fully_charged=fully_charged,
+        starting=starting,
+        fault=fault,
+    )
+
+    assert state.status is status
 
 
 @pytest.mark.parametrize(

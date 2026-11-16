@@ -18,8 +18,9 @@ from homeassistant.helpers.event import async_track_time_interval
 
 from . import SimulatorConfigEntry, kind_of
 from .const import DeviceKind
-from .devices import Observable, SimulatedDevice, async_get_power_board
+from .devices import Observable, SimulatedCharger, SimulatedDevice, async_get_power_board
 from .entity import SimulatorEntity
+from .model import ChargerStatus
 
 
 def power_description(key: str) -> SensorEntityDescription:
@@ -40,6 +41,13 @@ DESCRIPTIONS: Final = {
     DeviceKind.CHARGER: power_description("charging_power"),
 }
 
+CHARGER_STATUS: Final = SensorEntityDescription(
+    key="status",
+    translation_key="status",
+    device_class=SensorDeviceClass.ENUM,
+    options=[status.value for status in ChargerStatus],
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -49,7 +57,10 @@ async def async_setup_entry(
     """Add the power sensor of the device, or the house total for the HAN."""
     kind = kind_of(entry)
     sensor_class = HousePowerSensor if kind is DeviceKind.HAN else PowerSensor
-    async_add_entities([sensor_class(entry, entry.runtime_data, DESCRIPTIONS[kind])])
+    sensors: list[SensorEntity] = [sensor_class(entry, entry.runtime_data, DESCRIPTIONS[kind])]
+    if isinstance(entry.runtime_data, SimulatedCharger):
+        sensors.append(ChargerStatusSensor(entry, entry.runtime_data, CHARGER_STATUS))
+    async_add_entities(sensors)
 
 
 class PowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
@@ -58,6 +69,18 @@ class PowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
     @property
     def native_value(self) -> float:
         return self.device.power_w
+
+
+class ChargerStatusSensor(SimulatorEntity[SimulatedCharger], SensorEntity):
+    """The status of the simulated EV charger, unavailable while it is unplugged, as a charger without power is."""
+
+    @property
+    def available(self) -> bool:
+        return not self.device.unplugged
+
+    @property
+    def native_value(self) -> str:
+        return self.device.state.status.value
 
 
 class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):

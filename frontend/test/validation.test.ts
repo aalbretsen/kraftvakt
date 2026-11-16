@@ -67,6 +67,10 @@ describe("missing items", () => {
     const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
     const power = { type: "power_sensor" as const, value: "sensor.garage_power" };
     expect(missing({ actively_charging: null, charging_power: power })).toEqual([]);
+    expect(missing({ actively_charging: { type: "state", value: "sensor.garage_status", states: ["charging"] }, charging_power: null })).toEqual([]);
+    expect(missing({ actively_charging: { type: "state", value: "sensor.garage_status", states: [] }, charging_power: null })).toEqual([
+      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
+    ]);
     expect(missing({ actively_charging: { type: "entity", value: "" }, charging_power: null })).toEqual([
       { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
     ]);

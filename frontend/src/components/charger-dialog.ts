@@ -153,6 +153,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
         .includeEntities=${this.entityScope}
         .kind=${kind}
         .optional=${optional}
+        .withState=${field !== "charging_power"}
         .error=${issue ? this.describe(issue) : undefined}
         .disabled=${this.locked}
         @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeDraft({ [field]: event.detail.value })}
@@ -219,6 +220,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           .entityId=${this.draft.entity_id}
           .includeEntities=${this.entityScope}
           kind="fault"
+          withState
           .error=${issue ? this.describe(issue) : undefined}
           .disabled=${this.locked}
           @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeFaultFlag(index, event.detail.value)}

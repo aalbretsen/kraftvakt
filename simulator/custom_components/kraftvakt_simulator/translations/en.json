@@ -134,6 +134,17 @@
       },
       "charging_power": {
         "name": "Charging power"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "disconnected": "Disconnected",
+          "awaiting_start": "Awaiting start",
+          "starting": "Starting",
+          "charging": "Charging",
+          "completed": "Completed",
+          "error": "Error"
+        }
       }
     },
     "switch": {

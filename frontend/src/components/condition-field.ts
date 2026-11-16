@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import type { Condition } from "../api";
 import { BOOLEAN_DOMAINS, measuredPowerW, ownEntities } from "../entities";
+import { reportedStates, stateEvidence, stateHistory } from "../entity-states";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
 
@@ -25,9 +26,9 @@ interface TemplateResult {
 }
 
 /**
- * A true/false value from a boolean entity, a template or a power sensor, with
- * what it gives now, read as the backend reads it. A charging power template
- * gives a number in W.
+ * A true/false value from a boolean entity, the states of an entity, a template
+ * or a power sensor, with what it gives now, read as the backend reads it. A
+ * charging power template gives a number in W.
  *
  * The template is previewed with Home Assistant's `render_template`
  * subscription while the user writes. It gets `entity_id` and `entity`
@@ -57,6 +58,12 @@ export class KraftvaktConditionField extends LitElement {
   /** Whether the field may be left empty. */
   @property({ type: Boolean }) optional = false;
 
+  /** Whether the condition may be states of an entity, as for an EV charger. */
+  @property({ type: Boolean }) withState = false;
+
+  /** The states the chosen entity has reported in Home Assistant's history, with the entity they belong to. */
+  @state() private history: { entityId: string; states: string[] } = { entityId: "", states: [] };
+
   @state() private preview?: TemplateResult;
 
   private previewTimer?: number;
@@ -72,6 +79,9 @@ export class KraftvaktConditionField extends LitElement {
     if (changed.has("value") || changed.has("entityId")) {
       this.schedulePreview();
     }
+    if (changed.has("value")) {
+      this.loadHistory();
+    }
   }
 
   protected render() {
@@ -79,7 +89,7 @@ export class KraftvaktConditionField extends LitElement {
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{ type, value: this.value?.value ?? "" }}
+        .data=${{ type, value: this.value?.value ?? "", states: this.value?.states ?? [] }}
         .schema=${this.schema(type)}
         .disabled=${this.disabled}
         .computeLabel=${this.computeLabel}
@@ -92,11 +102,17 @@ export class KraftvaktConditionField extends LitElement {
 
   /** The type shown: a condition that is not set yet shows its first type. */
   private shownType(): Condition["type"] {
-    return this.value?.type ?? TYPES[this.kind][0];
+    return this.value?.type ?? this.types()[0];
+  }
+
+  /** A state comes right after a boolean entity, since both name an entity. */
+  private types(): Condition["type"][] {
+    const types = TYPES[this.kind];
+    return this.withState ? types.flatMap((type) => (type === "entity" ? [type, "state" as const] : [type])) : types;
   }
 
   private schema(type: Condition["type"]) {
-    const options = TYPES[this.kind].map((value) => ({ value, label: this.text(value) }));
+    const options = this.types().map((value) => ({ value, label: this.text(value) }));
     return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
   }
 
@@ -124,9 +140,42 @@ export class KraftvaktConditionField extends LitElement {
             },
           },
         ];
+      case "state":
+        return [
+          { name: "value", required: !this.optional, selector: { entity: { include_entities: this.includeEntities } } },
+          ...(this.value?.value
+            ? [{ name: "states", required: !this.optional, selector: { select: { multiple: true, custom_value: true, options: this.stateOptions() } } }]
+            : []),
+        ];
       case "template":
         return [{ name: "value", required: !this.optional, selector: { template: {} } }];
     }
+  }
+
+  /** Each state the entity reports, named as Home Assistant shows it, with the state itself when that differs. */
+  private stateOptions() {
+    const entityId = this.value?.value ?? "";
+    const stateObj = this.hass.states[entityId];
+    const history = this.history.entityId === entityId ? this.history.states : [];
+    return reportedStates(stateObj, history, this.value?.states ?? []).map((state) => {
+      const shown = stateObj ? this.hass.formatEntityState(stateObj, state) : state;
+      return { value: state, label: shown === state ? state : `${shown} (${state})` };
+    });
+  }
+
+  private loadHistory(): void {
+    const entityId = this.value?.type === "state" ? this.value.value : "";
+    if (!entityId || this.history.entityId === entityId) {
+      return;
+    }
+    this.history = { entityId, states: [] };
+    stateHistory(this.hass, entityId)
+      .then((states) => {
+        if (this.history.entityId === entityId) {
+          this.history = { entityId, states };
+        }
+      })
+      .catch(() => undefined);
   }
 
   private renderPreview() {
@@ -161,6 +210,8 @@ export class KraftvaktConditionField extends LitElement {
         const power = measuredPowerW(this.hass, condition.value);
         return power === null ? null : power > ACTIVELY_CHARGING_ABOVE_W;
       }
+      case "state":
+        return stateEvidence(this.hass.states[condition.value]?.state, condition.states ?? []);
       default: {
         const state = this.hass.states[condition.value]?.state;
         return state === "on" ? true : state === "off" ? false : null;
@@ -198,17 +249,37 @@ export class KraftvaktConditionField extends LitElement {
     return text === `${this.kind}.${key}` ? "" : text;
   }
 
-  private computeLabel = (field: { name: string }): string =>
-    field.name === "value" ? this.text(`${this.shownType()}_label`) : this.optionalText("type_label");
+  private computeLabel = (field: { name: string }): string => {
+    switch (field.name) {
+      case "value":
+        return this.text(`${this.shownType()}_label`);
+      case "states":
+        return this.text("states_label");
+      default:
+        return this.optionalText("type_label");
+    }
+  };
 
-  private computeHelper = (field: { name: string }): string =>
-    field.name === "value" ? this.text(`${this.shownType()}_helper`) : "";
+  private computeHelper = (field: { name: string }): string => {
+    switch (field.name) {
+      case "value":
+        return this.text(`${this.shownType()}_helper`);
+      case "states":
+        return this.text("states_helper");
+      default:
+        return "";
+    }
+  };
 
-  private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string } }>): void {
+  /** Another type starts empty, and another entity starts without chosen states. */
+  private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[] } }>): void {
     event.stopPropagation();
-    const { type, value } = event.detail.value;
+    const { type, value, states } = event.detail.value;
     const sameType = type === this.shownType();
     const condition: Condition = { type, value: sameType ? (value ?? "") : "" };
+    if (type === "state") {
+      condition.states = sameType && condition.value === this.value?.value ? (states ?? []) : [];
+    }
     this.dispatchEvent(new CustomEvent("value-changed", { detail: { value: condition } }));
   }
 

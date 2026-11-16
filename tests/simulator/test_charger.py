@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import (
@@ -25,6 +25,7 @@ FAULT = "switch.charger_fault"
 CURRENT = "number.charger_charging_current"
 CHARGING_POWER = "sensor.charger_charging_power"
 CHARGING = "binary_sensor.charger_charging"
+STATUS = "sensor.charger_status"
 
 
 def restored_current(value: float) -> dict[str, Any]:
@@ -161,3 +162,21 @@ async def test_restored_current_is_kept_within_a_changed_range(hass: HomeAssista
     await add_device(DeviceKind.CHARGER, "Charger", max_current_a=10)
 
     assert float(state(hass, CURRENT)) == 10
+
+
+async def test_charger_reports_its_status_and_none_while_unplugged(hass: HomeAssistant, add_device: AddDevice) -> None:
+    await add_device(DeviceKind.CHARGER, "Charger")
+    status = hass.states.get(STATUS)
+    assert status is not None
+    assert status.state == "disconnected"
+    assert status.attributes["options"] == ["disconnected", "awaiting_start", "starting", "charging", "completed", "error"]
+
+    await call(hass, "switch", "turn_on", CONNECTED)
+    assert state(hass, STATUS) == "awaiting_start"
+    await call(hass, "switch", "turn_on", ALLOWED)
+    assert state(hass, STATUS) == "charging"
+
+    await call(hass, "switch", "turn_on", UNPLUGGED)
+    assert state(hass, STATUS) == STATE_UNAVAILABLE
+    await call(hass, "switch", "turn_off", UNPLUGGED)
+    assert state(hass, STATUS) == "charging"

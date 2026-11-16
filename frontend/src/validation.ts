@@ -206,9 +206,9 @@ function applianceIssue(appliance: Appliance, code: string, field: string): Issu
   return { code, section: "appliances", target: appliance.id, field };
 }
 
-/** An empty condition is missing, not a mistake. */
+/** An empty condition is missing, not a mistake, and so is a state without a chosen state. */
 function isSet(condition: Condition | null): boolean {
-  return condition !== null && condition.value.trim() !== "";
+  return condition !== null && condition.value.trim() !== "" && (condition.type !== "state" || (condition.states ?? []).length > 0);
 }
 
 /** Optional settings that are not given are only checked when `required` is set. */

@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import timedelta
+from enum import StrEnum
 from typing import Final
 
 HEATING_MODES: Final = ("heat", "heat_cool", "auto")
@@ -54,6 +55,17 @@ def three_phase_power_w(current_a: float) -> float:
     return math.sqrt(3) * 400 * current_a
 
 
+class ChargerStatus(StrEnum):
+    """What a simulated EV charger reports as its status, as many real chargers do."""
+
+    DISCONNECTED = "disconnected"
+    AWAITING_START = "awaiting_start"
+    STARTING = "starting"
+    CHARGING = "charging"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+
 @dataclass(frozen=True)
 class ChargerState:
     """What decides the power of a simulated EV charger.
@@ -77,3 +89,15 @@ class ChargerState:
     @property
     def power_w(self) -> float:
         return three_phase_power_w(self.current_a) if self.wants_power and not self.starting else 0.0
+
+    @property
+    def status(self) -> ChargerStatus:
+        if self.fault:
+            return ChargerStatus.ERROR
+        if not self.car_connected:
+            return ChargerStatus.DISCONNECTED
+        if self.car_fully_charged:
+            return ChargerStatus.COMPLETED
+        if not self.charging_allowed:
+            return ChargerStatus.AWAITING_START
+        return ChargerStatus.STARTING if self.starting else ChargerStatus.CHARGING

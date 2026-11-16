@@ -17,7 +17,8 @@ Add the integration under **Settings → Devices & services**, and add one devic
   The cycle starts again every time it starts heating. Turning it on returns it to the last heating mode, the first heating mode it supports at first.
   It can only be turned off when off is one of its modes. It starts in off, or in its first mode when off is not one of them.
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has the switches **Charging allowed**, **Car connected**, **Car fully charged** and **Fault**,
-  **Charging current** (A), the sensor **Charging power** and the binary sensor **Charging**, on while it draws power.
+  **Charging current** (A), the sensor **Charging power**, the binary sensor **Charging**, on while it draws power,
+  and the sensor **Status**: disconnected, awaiting start, starting, charging, completed or error, and unavailable while it is unplugged.
   It draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging is allowed, a car is connected, the car is not fully charged and it has no fault.
   Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
   With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
@@ -40,7 +41,7 @@ and for each EV charger, filled in by hand (the entity IDs follow the language o
 | Entity for allowed charging | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |
-| Actively charging | Entity: `binary_sensor.<charger>_charging`, or Charging power: `sensor.<charger>_charging_power` |
-| Car connected | `switch.<charger>_car_connected` |
+| Actively charging | Charging on/off: `binary_sensor.<charger>_charging`, or the state `charging` of `sensor.<charger>_status`; charging power: `sensor.<charger>_charging_power` |
+| Car connected | `switch.<charger>_car_connected`, or every state but `disconnected` of `sensor.<charger>_status` |
 
 Change the background power and the switches for the car, and watch the regulation on the status page.

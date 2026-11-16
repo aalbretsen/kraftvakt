@@ -16,9 +16,12 @@ export interface Issue {
 }
 
 export interface Condition {
-  /** A power sensor is only used for whether an EV charger is actively charging. */
-  type: "entity" | "template" | "power_sensor";
+  /** A power sensor is only used for the charging power of an EV charger, and a state only for an EV charger. */
+  type: "entity" | "state" | "template" | "power_sensor";
+  /** The entity, or the template. */
   value: string;
+  /** The states of the entity that count as true, for a state. */
+  states?: string[];
 }
 
 export interface ActionConfig {
