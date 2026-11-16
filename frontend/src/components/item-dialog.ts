@@ -315,7 +315,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       .group {
         display: grid;
         gap: 12px;
-        padding: 4px 16px 16px;
+        padding: 16px;
         border: 1px solid var(--divider-color);
         border-radius: var(--ha-card-border-radius, 12px);
       }

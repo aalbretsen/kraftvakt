@@ -167,14 +167,18 @@ export class KraftvaktConditionField extends LitElement {
     }
   }
 
-  /** An entity's state is shown as Home Assistant formats it, before what it counts as. */
+  /**
+   * An entity's state is shown as Home Assistant formats it, before what it
+   * counts as. On and off count as just that, so they are shown alone.
+   */
   private renderNow(condition: Condition, value: boolean) {
     const text = this.text(value ? "true" : "false");
     const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
+    const onOrOff = condition.type === "entity" && (stateObj?.state === "on" || stateObj?.state === "off");
     return html`
       <div class="preview">
         ${this.localize("condition.now", { value: "" })}${stateObj
-          ? html`<b>${this.hass.formatEntityState(stateObj)}</b> · ${text}`
+          ? html`<b>${this.hass.formatEntityState(stateObj)}</b>${onOrOff ? nothing : html` · ${text}`}`
           : html`<b>${text}</b>`}
       </div>
     `;
