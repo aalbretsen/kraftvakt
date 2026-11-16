@@ -49,7 +49,7 @@ async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor
     assert result["profile"] == "Easee"
     fields = dict(result["fields"])
     car_connected = fields.pop("car_connected")
-    [fault_flag] = fields.pop("fault_flags")
+    fault_flag = fields.pop("fault_flag")
     assert fields == {
         "entity_id": "switch.garage_charger_enabled",
         "activate": {"mode": "custom", "action": [service("set_charger_access", access_level="open_for_all")]},
@@ -81,7 +81,7 @@ async def test_easee_car_is_connected_by_its_status(hass: HomeAssistant, command
 async def test_easee_has_a_fault_by_its_status(hass: HomeAssistant, command: Command) -> None:
     """The error states of the charger, and an erratic car, so the user sees why it does not charge. A status that is not known is no fault."""
     device_id = register(hass, EASEE)
-    [fault_flag] = (await charger_profile(command, device_id))["fields"]["fault_flags"]
+    fault_flag = (await charger_profile(command, device_id))["fields"]["fault_flag"]
     template = Template(fault_flag["value"], hass)
 
     faults = ["error", "error_temperature_too_high", "error_dead_powerboard", "error_overcurrent", "error_pen_fault", "erratic_ev"]

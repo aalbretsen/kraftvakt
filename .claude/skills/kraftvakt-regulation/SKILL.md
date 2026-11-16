@@ -49,7 +49,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging. |
 | Time to start | How long a car gets to start charging after its charger is activated: two windows, or the start delay of a cloud-controlled charger when that is longer. |
 | Starting charger | A cloud-controlled charger on trial within its time to start. Its power reserve is held for the car that is about to draw power. |
-| Deactivate on fault | A charger setting, off by default, with its fault flags: the charger has a fault while any of them shows one. |
+| Deactivate on fault | A charger setting, off by default, with its fault flag: the charger has a fault while it shows one. |
 | Fault flag | A boolean entity of the charger's device or a template that tells that the charger has a fault. |
 | Charger with a fault | A charger whose fault flag showed a fault at the last decision, with deactivate on fault on. It behaves as a deactivated charger, not allowed to charge. |
 | Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
@@ -84,7 +84,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The state of the regulation (on/off, waiting times, repeated turn-on counters, overconsumption, penalty, current charging priority, bypassed chargers, rests, current variants,
   excluded appliances, when each appliance and charger last got a command) starts again with defaults at every start: HA or integration start, user start,
   after the safe state and after a penalty. The configuration and the switch positions are kept over any restart.
-- True/false from HA (variant expressions, car connected, actively charging, fault flags) is a boolean entity or a template, and for actively charging also a power sensor.
+- True/false from HA (variant expressions, car connected, actively charging, the fault flag) is a boolean entity or a template, and for actively charging also a power sensor.
   Only evidence makes it true: an entity that is `on`, a template that gives the boolean true, or a valid power above 100 W.
   Everything else is false, also unavailable entities and sensors and failing templates. The one exception is the override end (see EV charging), which needs evidence of false.
   Settings are named so that true means the thing is the case.
@@ -209,7 +209,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions, car connected and actively charging, and with deactivate on fault at least one fault flag, none empty.
+  activate, deactivate and set-current actions, car connected and actively charging, and with deactivate on fault a fault flag.
 
 ## Command repeat
 
@@ -330,9 +330,9 @@ All with entity category diagnostic:
   a start) ends it too, since a deactivated charger is never allowed outside the window. A charger on trial at the end of the window is not actively charging, so it is deactivated.
   The setting is configuration, but also a switch that may be changed while the regulation runs; it applies from the next decision without a restart.
 - Excluded switch (per charger, default off): while on, the charger never charges.
-- Deactivate on fault (per charger setting, default off): a charger has a fault while any of its fault flags shows one, read at each decision.
+- Deactivate on fault (per charger setting, default off): a charger has a fault while its fault flag shows one, read at each decision.
   Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,
-  and must not stop charging for that. The fault flags are kept while the setting is off, and are then neither read nor needed.
+  and must not stop charging for that. The fault flag is kept while the setting is off, and is then neither read nor needed.
   A charger with a fault is not allowed to charge, so it is switched off and deactivated at once, does not stand in the way of the others in its group,
   and gets the command repeat of a deactivated charger. It gets no rest for not charging, and does not move back in the current charging priority,
   since it stops charging because of the fault, not the car. A fault neither arms nor ends a window override. Nothing is kept about a fault:

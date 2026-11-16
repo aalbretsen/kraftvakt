@@ -64,7 +64,7 @@ describe("the error at a field", () => {
     expect(text({ code: "missing_car_connected", section: "chargers", target: "c", field: "car_connected" })).toBe(
       localize("errors.required"),
     );
-    expect(text({ code: "missing_fault_flags", section: "chargers", target: "c", field: "fault_flags" })).toBe(localize("errors.fault_flags_required"));
+    expect(text({ code: "missing_fault_flag", section: "chargers", target: "c", field: "fault_flag" })).toBe(localize("errors.fault_flag_required"));
     expect(text({ code: "something_new", section: "general", field: "power_limit_w" })).toBe(localize("errors.unknown", { code: "something_new" }));
   });
 

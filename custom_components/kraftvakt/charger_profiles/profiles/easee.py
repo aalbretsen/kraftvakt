@@ -41,10 +41,8 @@ PROFILE: Final = ChargerProfile(
     cloud_controlled=True,
     deactivate_on_fault=True,
     # An erratic car is a fault too, so the user sees why it does not charge. It ends when the car is disconnected.
-    fault_flags=(
-        template_condition(
-            "{{ states('$status') in ['error', 'error_temperature_too_high', 'error_dead_powerboard', 'error_overcurrent', 'error_pen_fault', 'erratic_ev'] }}",
-            status=_STATUS,
-        ),
+    fault_flag=template_condition(
+        "{{ states('$status') in ['error', 'error_temperature_too_high', 'error_dead_powerboard', 'error_overcurrent', 'error_pen_fault', 'erratic_ev'] }}",
+        status=_STATUS,
     ),
 )

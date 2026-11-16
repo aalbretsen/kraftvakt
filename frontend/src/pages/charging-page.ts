@@ -32,6 +32,7 @@ const CHARGER_FIELDS = [
   "finish_after_window",
   "override_ends",
   "deactivate_on_fault",
+  "fault_flag",
 ] as const;
 
 const GROUP_SCHEMA = [
@@ -181,16 +182,8 @@ export class KraftvaktChargingPage extends ConfigPage {
     };
   }
 
-  /** A fault flag is named by its place in the list, and the list itself by its setting. */
   private fieldLabel(issue: Issue): string {
     const field = issue.field ?? "";
-    const flag = /^fault_flags\.(\d+)$/.exec(field);
-    if (flag) {
-      return `${this.localize("charger.fields.fault_flags.label")} ${Number(flag[1]) + 1}`;
-    }
-    if (field === "fault_flags") {
-      return this.localize("charger.fields.deactivate_on_fault.label");
-    }
     return (CHARGER_FIELDS as readonly string[]).includes(field)
       ? this.localize(`charger.fields.${field}.label` as TranslationKey)
       : field;
@@ -271,7 +264,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       cloud_controlled: false,
       start_delay_s: defaults.start_delay_s,
       deactivate_on_fault: false,
-      fault_flags: [],
+      fault_flag: null,
     };
     this.editing = { charger, groupId: group.id, isNew: true };
   }

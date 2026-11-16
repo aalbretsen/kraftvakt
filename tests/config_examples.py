@@ -112,10 +112,7 @@ def full_config_data() -> dict[str, Any]:
                         "start_delay_s": 120,
                         "override_ends": "car_disconnected",
                         "deactivate_on_fault": True,
-                        "fault_flags": [
-                            {"type": "entity", "value": "binary_sensor.garage_charger_error"},
-                            {"type": "template", "value": "{{ is_state('sensor.garage_charger_status', 'error') }}"},
-                        ],
+                        "fault_flag": {"type": "template", "value": "{{ is_state('sensor.garage_charger_status', 'error') }}"},
                     }
                 ],
             }

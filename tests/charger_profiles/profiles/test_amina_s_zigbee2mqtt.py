@@ -56,7 +56,7 @@ async def test_amina_s_has_entities_for_every_field(hass: HomeAssistant, command
             "actively_charging": {"type": "entity", "value": "binary_sensor.amina_charging"},
             "cloud_controlled": False,
             "deactivate_on_fault": True,
-            "fault_flags": [{"type": "entity", "value": "binary_sensor.amina_alarm_active"}],
+            "fault_flag": {"type": "entity", "value": "binary_sensor.amina_alarm_active"},
         },
     }
     saved = await save_charger(command, device_id, result["fields"])

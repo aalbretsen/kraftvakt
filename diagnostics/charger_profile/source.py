@@ -35,8 +35,8 @@ def profile_source(draft: ProfileDraft) -> str:
         fields["cloud_controlled"] = "True"
     if profile.deactivate_on_fault:
         fields["deactivate_on_fault"] = "True"
-    if profile.fault_flags:
-        fields["fault_flags"] = f"({', '.join(writer.condition(flag) for flag in profile.fault_flags)},)"
+    if profile.fault_flag is not None:
+        fields["fault_flag"] = writer.condition(profile.fault_flag)
     imports = [f"from ..profile import {', '.join(sorted(writer.profile_names, key=_import_order))}"]
     if writer.uses_condition_type:
         imports.insert(0, "from ...config_model import ConditionType")

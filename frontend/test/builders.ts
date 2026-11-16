@@ -49,7 +49,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     cloud_controlled: false,
     start_delay_s: 300,
     deactivate_on_fault: false,
-    fault_flags: [],
+    fault_flag: null,
     ...parts,
   };
 }

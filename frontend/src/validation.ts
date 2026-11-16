@@ -103,21 +103,12 @@ export function missingInCharger(charger: Charger): Issue[] {
   if (!isSet(charger.actively_charging) && !isSet(charger.charging_power)) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
-  missing.push(...missingFaultFlags(charger));
+  if (charger.deactivate_on_fault && !isSet(charger.fault_flag)) {
+    missing.push({ code: "missing_fault_flag", section: "chargers", target: charger.id, field: "fault_flag" });
+  }
   return missing;
 }
 
-/** The fault flags are kept, and not needed, while deactivate on fault is off. */
-function missingFaultFlags(charger: Charger): Issue[] {
-  if (!charger.deactivate_on_fault) {
-    return [];
-  }
-  const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
-  if (charger.fault_flags.length === 0) {
-    return [issue("missing_fault_flags", "fault_flags")];
-  }
-  return charger.fault_flags.flatMap((flag, index) => (isSet(flag) ? [] : [issue("missing_fault_flag", `fault_flags.${index}`)]));
-}
 
 export function defaultActionOf(capabilities: Capabilities, section: ActionSection, field: string): DefaultAction {
   return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];

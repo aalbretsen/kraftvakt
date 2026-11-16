@@ -140,7 +140,7 @@ class ProfileDrafting:
             actively_charging=self._condition("actively_charging", charger.actively_charging),
             cloud_controlled=charger.cloud_controlled,
             deactivate_on_fault=charger.deactivate_on_fault,
-            fault_flags=tuple(self._condition(f"fault_flags.{index}", flag) for index, flag in enumerate(charger.fault_flags)),
+            fault_flag=None if charger.fault_flag is None else self._condition("fault_flag", charger.fault_flag),
         )
         return ProfileDraft(
             module=slugify(name) or "charger",

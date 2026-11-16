@@ -113,8 +113,8 @@ export interface Charger {
   start_delay_s: number;
   /** Whether the EV charger is deactivated while a fault flag shows a fault. */
   deactivate_on_fault: boolean;
-  /** Each tells that the EV charger has a fault. Kept while deactivate on fault is off. */
-  fault_flags: Condition[];
+  /** Tells that the EV charger has a fault. Kept while deactivate on fault is off. */
+  fault_flag: Condition | null;
 }
 
 export const OVERRIDE_ENDS = ["manual", "charging_stopped", "car_disconnected"] as const;

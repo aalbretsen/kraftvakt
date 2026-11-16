@@ -58,7 +58,7 @@ class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
     `cloud_controlled` is for chargers controlled through a cloud service.
-    A profile with fault flags also sets whether the charger is deactivated on fault.
+    A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
 
     name: str
@@ -71,7 +71,7 @@ class ChargerProfile:
     actively_charging: ProfileCondition
     cloud_controlled: bool = False
     deactivate_on_fault: bool = False
-    fault_flags: tuple[ProfileCondition, ...] = ()
+    fault_flag: ProfileCondition | None = None
 
 
 DEFAULT_ACTION = ProfileAction(ActionMode.DEFAULT)

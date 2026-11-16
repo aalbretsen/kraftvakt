@@ -85,8 +85,7 @@
     "missing_condition": "{item}: the expression is missing.",
     "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing.",
-    "missing_fault_flags": "{item}: no fault flag is given.",
-    "missing_fault_flag": "{item}: a fault flag is missing.",
+    "missing_fault_flag": "{item}: «fault flag» is missing.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
     "charger_without_entity": "An EV charger without an entity",
@@ -122,7 +121,7 @@
   },
   "errors": {
     "required": "Required.",
-    "fault_flags_required": "Add a fault flag, or turn the setting off.",
+    "fault_flag_required": "Choose a fault flag, or turn the setting off.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
     "invalid_resolution": "Must be a multiple of {resolution}.",
@@ -488,9 +487,9 @@
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",
-        "helper": "While any fault flag below shows a fault, Kraftvakt deactivates the EV charger and leaves it out of the regulation. When the fault clears, it is regulated as before. An unavailable entity or a template that fails is not a fault."
+        "helper": "While the fault flag below shows a fault, Kraftvakt deactivates the EV charger and leaves it out of the regulation. When the fault clears, it is regulated as before. An unavailable entity or a template that fails is not a fault."
       },
-      "fault_flags": {
+      "fault_flag": {
         "label": "Fault flag"
       },
       "charging_window": {
@@ -513,8 +512,6 @@
       }
     },
     "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes.",
-    "add_fault_flag": "Add fault flag",
-    "remove_fault_flag": "Remove fault flag",
     "state_choices": {
       "car_connected": {
         "true": "States for connected",
@@ -524,7 +521,7 @@
         "true": "States for charging",
         "false": "States for not charging"
       },
-      "fault_flags": {
+      "fault_flag": {
         "true": "States for a fault",
         "false": "States for no fault"
       }

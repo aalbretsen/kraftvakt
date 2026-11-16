@@ -113,18 +113,9 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
         missing += [
             Issue(f"missing_{field_name}", "chargers", charger.id, field_name) for field_name in ("car_connected", "actively_charging") if not _is_set(getattr(charger, field_name))
         ]
-        missing += _missing_fault_flags(charger)
+        if charger.deactivate_on_fault and not _is_set(charger.fault_flag):
+            missing.append(Issue("missing_fault_flag", "chargers", charger.id, "fault_flag"))
     return missing
-
-
-def _missing_fault_flags(charger: Charger) -> list[Issue]:
-    """Return the fault flags that are missing; they are kept, and not needed, while the setting is off."""
-    if not charger.deactivate_on_fault:
-        return []
-    location = IssueLocation("chargers", charger.id)
-    if not charger.fault_flags:
-        return [location.issue("missing_fault_flags", "fault_flags")]
-    return [location.issue("missing_fault_flag", f"fault_flags.{index}") for index, flag in enumerate(charger.fault_flags) if not _is_set(flag)]
 
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:

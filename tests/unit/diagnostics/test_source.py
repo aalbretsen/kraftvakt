@@ -10,7 +10,6 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     ProfileEntity,
     custom_action,
     entity_action,
-    entity_condition,
     power_sensor_condition,
     template_condition,
 )
@@ -39,10 +38,7 @@ PROFILE = ChargerProfile(
     actively_charging=ProfileCondition(ConditionType.ENTITY),
     cloud_controlled=True,
     deactivate_on_fault=True,
-    fault_flags=(
-        entity_condition(ProfileEntity("binary_sensor", name="Error")),
-        template_condition("{{ is_state('$power', 'error') }}", power=ProfileEntity("sensor", translation_key="power")),
-    ),
+    fault_flag=template_condition("{{ is_state('$power', 'error') }}", power=ProfileEntity("sensor", translation_key="power")),
 )
 
 DRAFT = ProfileDraft(module="acme_box_mqtt", profile=PROFILE, manufacturer="Acme", model_id="B-1", entities=ENTITIES[1:], charger_id="c1", notes=())

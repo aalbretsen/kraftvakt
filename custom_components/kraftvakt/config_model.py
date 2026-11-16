@@ -297,7 +297,7 @@ class Charger:
     cloud_controlled: bool = False
     start_delay_s: int = 300
     deactivate_on_fault: bool = False
-    fault_flags: tuple[Condition, ...] = ()
+    fault_flag: Condition | None = None
 
     def action_fields(self) -> Iterator[ActionField]:
         for name, kind in CHARGER_ACTION_KINDS.items():
@@ -305,12 +305,10 @@ class Charger:
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""
-        for field_name in ("car_connected", "actively_charging", "charging_power"):
+        for field_name in ("car_connected", "actively_charging", "charging_power", "fault_flag"):
             condition = getattr(self, field_name)
             if condition is not None:
                 yield field_name, condition
-        for index, flag in enumerate(self.fault_flags):
-            yield f"fault_flags.{index}", flag
 
     def device_entities(self) -> Iterator[tuple[str, str]]:
         """Return each field and entity that must belong to the device."""

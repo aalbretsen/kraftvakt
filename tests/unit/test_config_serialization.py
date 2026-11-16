@@ -60,7 +60,7 @@ def test_full_config_is_read_into_model() -> None:
     assert charger.charging_window == ChargingWindow(time(22, 0), time(6, 0))
     assert charger.car_connected == Condition(ConditionType.ENTITY, "binary_sensor.garage_charger_car")
     assert charger.deactivate_on_fault
-    assert charger.fault_flags[0] == Condition(ConditionType.ENTITY, "binary_sensor.garage_charger_error")
+    assert charger.fault_flag == Condition(ConditionType.TEMPLATE, "{{ is_state('sensor.garage_charger_status', 'error') }}")
 
 
 def test_empty_data_gives_default_config() -> None:

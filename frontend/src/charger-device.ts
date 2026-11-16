@@ -20,7 +20,7 @@ export function chargerDeviceEntities(charger: Charger): [string, string][] {
     ["car_connected", entityOfCondition(charger.car_connected)],
     ["actively_charging", entityOfCondition(charger.actively_charging)],
     ["charging_power", entityOfCondition(charger.charging_power)],
-    ...charger.fault_flags.map((flag, index): [string, string | null] => [`fault_flags.${index}`, entityOfCondition(flag)]),
+    ["fault_flag", entityOfCondition(charger.fault_flag)],
   ];
   return entities.filter((entry): entry is [string, string] => !!entry[1]);
 }
@@ -31,7 +31,6 @@ function entityOfCondition(condition: Condition | null): string | null {
 
 /**
  * Return the changes that move the charger to a device: every entity that is not on the device is cleared, and templates are kept.
- * A fault flag whose entity is cleared stays in the list as an empty flag, so the user sees what to fill in.
  */
 export function changesForDevice(charger: Charger, deviceId: string | null, hass: HomeAssistant): Partial<Charger> {
   const onDevice = new Set(deviceEntities(hass, deviceId));
@@ -46,6 +45,6 @@ export function changesForDevice(charger: Charger, deviceId: string | null, hass
     car_connected: keptCondition(charger.car_connected),
     actively_charging: keptCondition(charger.actively_charging),
     charging_power: keptCondition(charger.charging_power),
-    fault_flags: charger.fault_flags.map((flag) => keptCondition(flag) ?? { type: flag.type, value: "" }),
+    fault_flag: keptCondition(charger.fault_flag),
   };
 }

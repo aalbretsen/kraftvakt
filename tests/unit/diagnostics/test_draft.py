@@ -77,17 +77,11 @@ def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -
     assert result.notes == ()
 
 
-def test_the_fault_flags_are_drafted_as_the_other_conditions() -> None:
-    result = draft(
-        deactivate_on_fault=True,
-        fault_flags=[{"type": "entity", "value": "binary_sensor.box_car"}, {"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"}],
-    )
+def test_the_fault_flag_is_drafted_as_the_other_conditions() -> None:
+    result = draft(deactivate_on_fault=True, fault_flag={"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"})
 
     assert result.profile.deactivate_on_fault
-    assert result.profile.fault_flags == (
-        entity_condition(ProfileEntity("binary_sensor", translation_key="car")),
-        template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor")),
-    )
+    assert result.profile.fault_flag == template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor"))
 
 
 def test_chargers_without_a_device_of_their_own_kind_are_skipped() -> None:

@@ -445,15 +445,11 @@ async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as
 
 
 async def test_charger_with_a_fault_is_deactivated_until_the_fault_clears(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
-    """Any flag that shows a fault counts. Only evidence is a fault, so an unavailable flag is not."""
+    """Only evidence is a fault, so an unavailable flag is not."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger["deactivate_on_fault"] = True
-    charger["fault_flags"] = [
-        {"type": "entity", "value": "binary_sensor.charger_error"},
-        {"type": "template", "value": "{{ is_state('sensor.charger_status', 'error') }}"},
-    ]
+    charger["fault_flag"] = {"type": "entity", "value": "binary_sensor.charger_error"}
     hass.states.async_set("binary_sensor.charger_error", STATE_OFF)
-    hass.states.async_set("sensor.charger_status", "charging")
     set_power(hass, CHARGER_POWER, "4100")
     entry = await setup_kraftvakt()
     await advance(hass, freezer)
@@ -470,14 +466,14 @@ async def test_charger_with_a_fault_is_deactivated_until_the_fault_clears(hass: 
     assert actions[2:] == ["current 6", f"on {CHARGER}"]
     assert allowed_sensor_state(hass, "c1") == STATE_ON
 
-    hass.states.async_set("sensor.charger_status", "error")
+    hass.states.async_set("binary_sensor.charger_error", STATE_ON)
     await advance(hass, freezer)
     assert actions[4:] == ["current 6", f"off {CHARGER}"]
     assert entry.runtime_data.chargers["c1"].state is ChargerState.FAULT
 
 
-async def test_fault_flags_are_not_read_while_deactivate_on_fault_is_off(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
-    config["charger_groups"][0]["chargers"][0]["fault_flags"] = [{"type": "entity", "value": "binary_sensor.charger_error"}]
+async def test_fault_flag_is_not_read_while_deactivate_on_fault_is_off(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+    config["charger_groups"][0]["chargers"][0]["fault_flag"] = {"type": "entity", "value": "binary_sensor.charger_error"}
     hass.states.async_set("binary_sensor.charger_error", STATE_ON)
     set_power(hass, CHARGER_POWER, "4100")
     await setup_kraftvakt()

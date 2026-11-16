@@ -85,8 +85,7 @@
     "missing_condition": "{item}: uttrykket mangler.",
     "missing_actively_charging": "{item}: «lader aktivt» mangler.",
     "missing_car_connected": "{item}: «bil tilkoblet» mangler.",
-    "missing_fault_flags": "{item}: ingen feilflagg er gitt.",
-    "missing_fault_flag": "{item}: et feilflagg mangler.",
+    "missing_fault_flag": "{item}: «feilflagg» mangler.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
     "charger_without_entity": "En elbillader uten entitet",
@@ -122,7 +121,7 @@
   },
   "errors": {
     "required": "Påkrevd.",
-    "fault_flags_required": "Legg til et feilflagg, eller slå innstillingen av.",
+    "fault_flag_required": "Velg et feilflagg, eller slå innstillingen av.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
     "invalid_resolution": "Må være et multiplum av {resolution}.",
@@ -488,9 +487,9 @@
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",
-        "helper": "Så lenge et feilflagg under viser feil, deaktiverer Kraftvakt elbilladeren og holder den utenfor reguleringen. Når feilen er borte, reguleres den som før. En utilgjengelig entitet eller en mal som feiler, regnes ikke som feil."
+        "helper": "Så lenge feilflagget under viser feil, deaktiverer Kraftvakt elbilladeren og holder den utenfor reguleringen. Når feilen er borte, reguleres den som før. En utilgjengelig entitet eller en mal som feiler, regnes ikke som feil."
       },
-      "fault_flags": {
+      "fault_flag": {
         "label": "Feilflagg"
       },
       "charging_window": {
@@ -513,8 +512,6 @@
       }
     },
     "charging_current_info": "Kraftvakt øker og senker strømmen én ampere om gangen, etter hvor mye effekt som er ledig. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler. Hele ampere.",
-    "add_fault_flag": "Legg til feilflagg",
-    "remove_fault_flag": "Fjern feilflagg",
     "state_choices": {
       "car_connected": {
         "true": "Tilstander for tilkoblet",
@@ -524,7 +521,7 @@
         "true": "Tilstander for lading",
         "false": "Tilstander for ikke lading"
       },
-      "fault_flags": {
+      "fault_flag": {
         "true": "Tilstander for feil",
         "false": "Tilstander for ingen feil"
       }

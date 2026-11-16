@@ -37,7 +37,7 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "cloud_controlled": False,
         "deactivate_on_fault": True,
-        "fault_flags": [{"type": "entity", "value": "binary_sensor.amina_alarm_active"}],
+        "fault_flag": {"type": "entity", "value": "binary_sensor.amina_alarm_active"},
     }
 
 
@@ -59,32 +59,25 @@ async def test_template_needs_every_entity_it_names(hass: HomeAssistant, command
     assert fields["entity_id"] == "switch.garage_charger_enabled"
 
 
-async def test_profile_fills_the_fault_flags_it_finds(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_profile_fills_the_fault_flag_it_finds(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
     profile = replace(
         amina_s_zigbee2mqtt.PROFILE,
         deactivate_on_fault=True,
-        fault_flags=(
-            entity_condition(ProfileEntity("binary_sensor", name="Alarm active")),
-            template_condition("{{ states('$alarms') not in ['', '[]'] }}", alarms=ProfileEntity("sensor", name="Alarms")),
-            entity_condition(ProfileEntity("binary_sensor", name="Missing")),
-        ),
+        fault_flag=template_condition("{{ states('$alarms') not in ['', '[]'] }}", alarms=ProfileEntity("sensor", name="Alarms")),
     )
     monkeypatch.setattr(recognition, "PROFILES", (profile,))
 
     fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
 
     assert fields["deactivate_on_fault"] is True
-    assert fields["fault_flags"] == [
-        {"type": "entity", "value": "binary_sensor.amina_alarm_active"},
-        {"type": "template", "value": "{{ states('sensor.amina_alarms') not in ['', '[]'] }}"},
-    ]
+    assert fields["fault_flag"] == {"type": "template", "value": "{{ states('sensor.amina_alarms') not in ['', '[]'] }}"}
 
 
-async def test_profile_whose_fault_flags_are_not_found_leaves_deactivate_on_fault_alone(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
-    profile = replace(amina_s_zigbee2mqtt.PROFILE, deactivate_on_fault=True, fault_flags=(entity_condition(ProfileEntity("binary_sensor", name="Missing")),))
+async def test_profile_whose_fault_flag_is_not_found_leaves_deactivate_on_fault_alone(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(amina_s_zigbee2mqtt.PROFILE, deactivate_on_fault=True, fault_flag=entity_condition(ProfileEntity("binary_sensor", name="Missing")))
     monkeypatch.setattr(recognition, "PROFILES", (profile,))
 
     fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
 
     assert "deactivate_on_fault" not in fields
-    assert "fault_flags" not in fields
+    assert "fault_flag" not in fields

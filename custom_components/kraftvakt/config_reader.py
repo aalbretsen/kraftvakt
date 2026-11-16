@@ -185,12 +185,8 @@ class ConfigReader:
             cloud_controlled=self._bool(values, "cloud_controlled", defaults.cloud_controlled, location),
             start_delay_s=self._integer(values, "start_delay_s", defaults.start_delay_s, location),
             deactivate_on_fault=self._bool(values, "deactivate_on_fault", defaults.deactivate_on_fault, location),
-            fault_flags=self._fault_flags(values, location),
+            fault_flag=self._condition(values.get("fault_flag"), "fault_flag", location),
         )
-
-    def _fault_flags(self, values: Mapping[str, Any], location: IssueLocation) -> tuple[Condition, ...]:
-        flags = self._list(values.get("fault_flags"), location, "fault_flags")
-        return tuple(self._condition(flag, f"fault_flags.{index}", location) or Condition(ConditionType.ENTITY, "") for index, flag in enumerate(flags))
 
     def _action(
         self,

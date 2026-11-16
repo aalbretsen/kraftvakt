@@ -74,10 +74,10 @@ class DeviceEntities:
             "actively_charging": self.condition(profile.actively_charging),
             "cloud_controlled": profile.cloud_controlled,
         }
-        fault_flags = [flag for condition in profile.fault_flags if (flag := self.condition(condition)) is not None]
-        if fault_flags:
+        fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)
+        if fault_flag is not None:
             fields["deactivate_on_fault"] = profile.deactivate_on_fault
-            fields["fault_flags"] = fault_flags
+            fields["fault_flag"] = fault_flag
         return {name: value for name, value in fields.items() if value is not None}
 
     def find(self, wanted: ProfileEntity) -> str | None:

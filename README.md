@@ -96,7 +96,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
 - every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected** and **Actively charging**,
-  and with **Deactivate on fault** at least one fault flag, none of them empty.
+  and with **Deactivate on fault** a fault flag.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
@@ -170,11 +170,11 @@ so a car that is connected does not start charging by itself. The charging curre
     and its waiting time counts the power reserve as used too.
     Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
     The status page shows the EV charger as **Starting** meanwhile.
-- Turn on **Deactivate on fault**, off by default, and add one or more **fault flags** for an EV charger that reports its faults,
+- Turn on **Deactivate on fault**, off by default, and give a **fault flag** for an EV charger that reports its faults,
   for example a binary sensor for a problem, or a template that is true when its status is an error.
-  While any fault flag shows a fault, the EV charger is deactivated, gets no current, and does not stand in the way of the others in its group.
+  While the fault flag shows a fault, the EV charger is deactivated, gets no current, and does not stand in the way of the others in its group.
   It gets the command to deactivate again with the command repeat. The status page shows it as **Fault**.
-  When no flag shows a fault any longer, it is regulated as before from the next decision, and tried again at once.
+  When the flag no longer shows a fault, the EV charger is regulated as before from the next decision, and tried again at once.
   A fault flag is a boolean entity of the EV charger's device, where on means a fault, or a template, where the boolean value true does.
   Anything else is no fault, also an unavailable entity and a template that fails, so a cloud service that is down does not stop the charging.
   A fault does not end or arm the override of the charging window, and it ends finishing after the charging window, as any deactivation does.

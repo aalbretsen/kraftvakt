@@ -106,10 +106,8 @@ The section header, the description and the footer note are in `section-styles.t
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
 - Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
-- Deactivate on fault is the last group, with a switch. It shows the fault flags while it is on or a flag has an error, and keeps them when it is turned off.
-  Each flag is a condition field of the kind fault, with a button to remove it, a divider between the flags, and Add fault flag under them.
-  Turning it on with no flags adds an empty one, so there is something to fill in. Choosing another device leaves a flag whose entity is not on it empty,
-  so the user sees what to fill in. An issue for a flag in the list on the EV charging page is named by the flag's place, from 1.
+- Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
+  and keeps it when it is turned off.
   The start delay is kept when the switch is turned off, since it has no effect then.
 - Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.

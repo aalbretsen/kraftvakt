@@ -76,15 +76,14 @@ describe("missing items", () => {
     ]);
   });
 
-  it("include the fault flags while the charger is deactivated on fault: at least one, and none empty", () => {
+  it("include the fault flag only while the charger is deactivated on fault", () => {
     const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
-    const flag = { type: "entity" as const, value: "binary_sensor.garage_error" };
     const empty = { type: "template" as const, value: " " };
-    expect(missing({ deactivate_on_fault: true })).toEqual([{ code: "missing_fault_flags", section: "chargers", target: "garage", field: "fault_flags" }]);
-    expect(missing({ deactivate_on_fault: true, fault_flags: [flag, empty] })).toEqual([
-      { code: "missing_fault_flag", section: "chargers", target: "garage", field: "fault_flags.1" },
-    ]);
-    expect(missing({ deactivate_on_fault: false, fault_flags: [empty] })).toEqual([]);
+    const issue = { code: "missing_fault_flag", section: "chargers", target: "garage", field: "fault_flag" };
+    expect(missing({ deactivate_on_fault: true })).toEqual([issue]);
+    expect(missing({ deactivate_on_fault: true, fault_flag: empty })).toEqual([issue]);
+    expect(missing({ deactivate_on_fault: true, fault_flag: { type: "entity", value: "binary_sensor.garage_error" } })).toEqual([]);
+    expect(missing({ deactivate_on_fault: false, fault_flag: empty })).toEqual([]);
   });
 
   it("an action that is set is not missing", () => {
@@ -165,10 +164,7 @@ describe("the device of a charger", () => {
   it("holds every entity the charger names, but templates are not checked", () => {
     const item = charger("garage", {
       car_connected: { type: "template", value: "{{ true }}" },
-      fault_flags: [
-        { type: "template", value: "{{ false }}" },
-        { type: "entity", value: "binary_sensor.garage_error" },
-      ],
+      fault_flag: { type: "entity", value: "binary_sensor.garage_error" },
     });
     const onDevice = hass({}, [item]);
     const elsewhere = {
@@ -181,7 +177,7 @@ describe("the device of a charger", () => {
     };
     expect(draftErrors(config({ charger_groups: [group("garage", [item])] }), CAPABILITIES, elsewhere)).toEqual([
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "set_current" },
-      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "fault_flags.1" },
+      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "fault_flag" },
     ]);
   });
 });
