@@ -508,7 +508,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least 30 % of it, a bit less than a car charging on one phase. Set it to about what the car draws at the minimum current. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
+        "helper": "The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least half of it. Set it to what the car draws at the minimum current, about 1400 W for a car that charges on one phase. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
       },
       "car_connected": {
         "label": "Car connected",

@@ -25,7 +25,17 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     template_condition,
 )
 from custom_components.kraftvakt.charger_profiles.recognition import DeviceEntities
-from custom_components.kraftvakt.config_model import CHARGER_ACTION_KINDS, ActionConfig, ActionMode, Charger, Condition, ConditionType, ConfigValidationError
+from custom_components.kraftvakt.config_model import (
+    CHARGER_ACTION_KINDS,
+    CHARGER_CONDITION_TYPES,
+    POWER_TYPES,
+    ActionConfig,
+    ActionMode,
+    Charger,
+    Condition,
+    ConditionType,
+    ConfigValidationError,
+)
 from custom_components.kraftvakt.config_reader import read_config
 from custom_components.kraftvakt.domain_actions import domain_action_steps
 
@@ -138,8 +148,8 @@ class ProfileDrafting:
             deactivate=None if charger.switched_by_current else self._action("deactivate", charger.deactivate),
             switched_by_current=charger.switched_by_current,
             set_current=self._action("set_current", charger.set_current),
-            car_connected=self._condition("car_connected", charger.car_connected),
-            charging_power=self._condition("charging_power", charger.charging_power),
+            car_connected=self._condition("car_connected", charger.car_connected, required=True),
+            charging_power=self._condition("charging_power", charger.charging_power, required=True, kinds=POWER_TYPES),
             actively_charging=None if charger.actively_charging is None else self._condition("actively_charging", charger.actively_charging),
             cloud_controlled=charger.cloud_controlled,
             start_delay_s=charger.start_delay_s,
@@ -252,10 +262,18 @@ class ProfileDrafting:
         result: dict[str, Any] = general(None, step)
         return result
 
-    def _condition(self, field: str, condition: Condition | None) -> ProfileCondition:
-        missing = ProfileCondition(ConditionType.ENTITY)
+    def _condition(
+        self,
+        field: str,
+        condition: Condition | None,
+        required: bool = False,
+        kinds: tuple[ConditionType, ...] = CHARGER_CONDITION_TYPES,
+    ) -> ProfileCondition:
+        """Return the condition as a profile finds it, or an empty one of the first of the field's `kinds`, which fills nothing."""
+        missing = ProfileCondition(kinds[0])
         if condition is None or not condition.value:
-            self._notes.append(f"{field}: not set. Fill in the condition, or leave it out if the integration has nothing for it.")
+            leave_out = "" if required else ", or leave it out if the integration has nothing for it"
+            self._notes.append(f"{field}: not set. Fill in the condition{leave_out}.")
             return missing
         if condition.type is ConditionType.TEMPLATE:
             return self._template_condition(field, condition.value)

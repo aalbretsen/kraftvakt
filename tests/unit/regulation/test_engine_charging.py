@@ -199,7 +199,7 @@ def test_car_that_draws_power_again_gets_more_current() -> None:
     assert scenario.decide_many(0, 3) == [current("c", 7), current("c", 8), []]
 
 
-def test_car_that_draws_less_than_30_percent_of_the_power_reserve_is_held_at_its_minimum() -> None:
+def test_car_that_draws_less_than_half_of_the_power_reserve_is_held_at_its_minimum() -> None:
     """One that has more is set back to its minimum at once."""
     scenario = one_charger()
     scenario.set_charger("c", actively_charging=True, charging_power_w=1100)
@@ -871,6 +871,23 @@ def test_variant_switch_makes_room_by_switching_off_an_ampere_step() -> None:
     scenario.charge("c", 7)
 
     assert scenario.decide(9900, true=("morning",)) == off("h:morning") + current("c", 6)
+
+
+def test_variant_switch_makes_room_past_a_charger_whose_car_does_not_draw() -> None:
+    """Switching it off would free nothing, so the appliance above it gives room."""
+    scenario = Scenario(
+        make_config(
+            appliance("d", variants=("up",), reserve_w=20_000),
+            "x",
+            chargers=(charger("c"),),
+            priority=("d:up", "x", "ev", "d"),
+            wait_at_limit_s=0,
+        )
+    )
+    assert scenario.decide_many(0, 2) == [on("x"), activate("c")]
+
+    assert scenario.decide(9950, true=("up",)) == off("d:up") + off("x")
+    assert scenario.engine.chargers["c"].current_a == 6
 
 
 def two_groups() -> Scenario:

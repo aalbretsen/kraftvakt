@@ -160,13 +160,13 @@ def test_charging_allowed_now() -> None:
 @pytest.mark.parametrize(
     ("reading", "expected"),
     [
-        (ChargerReading(actively_charging=True, charging_power_w=1200), True),
-        (ChargerReading(actively_charging=True, charging_power_w=1199), False),
+        (ChargerReading(actively_charging=True, charging_power_w=2000), True),
+        (ChargerReading(actively_charging=True, charging_power_w=1999), False),
         (ChargerReading(actively_charging=True), False),
-        (ChargerReading(charging_power_w=1200), False),
+        (ChargerReading(charging_power_w=2000), False),
     ],
 )
-def test_car_may_step_up_when_it_charges_with_30_percent_of_the_power_reserve(reading: ChargerReading, expected: bool) -> None:
+def test_car_may_step_up_when_it_charges_with_half_of_the_power_reserve(reading: ChargerReading, expected: bool) -> None:
     assert may_step_up(charger(power_reserve_w=4000), reading) is expected
 
 
@@ -244,7 +244,7 @@ def test_charger_without_car_is_bypassed_and_moves_back_only_with_dynamic_order(
 
 
 def test_car_that_does_not_draw_enough_is_held_at_minimum() -> None:
-    """A car that charges with less than 30 % of the power reserve, or does not charge, is held. Kraftvakt never guesses that it is done."""
+    """A car that charges with less than half of the power reserve, or does not charge, is held. Kraftvakt never guesses that it is done."""
     configured = chargers("a", "b", "c")
     state = activated(configured, a=3, b=3, c=3)
 

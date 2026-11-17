@@ -65,8 +65,9 @@ The tools help a developer read a diagnostics file, for example one from a bug r
   and a `$` already in the template becomes `$$`. Quoted entity IDs left in the template are noted as entities from another device.
 - Script steps: a `device_id` equal to the charger's device becomes `{{ device_id(entity_id) }}`, and an `entity_id` equal to the charger's entity becomes `{{ entity_id }}`.
   Other devices and entities, and entities of the device inside larger strings, are noted. A domain action becomes the script steps `domain_action_steps` gives.
-- A field that is not set, or cannot be found, is written as an empty action (`custom_action()`) or an empty condition (`ProfileCondition(ConditionType.ENTITY)`),
-  which fill nothing.
+- A field that is not set, or cannot be found, is written as an empty action (`custom_action()`) or an empty condition of the field's first kind,
+  as `ProfileCondition(ConditionType.ENTITY)` or `ProfileCondition(ConditionType.POWER_SENSOR)` for the charging power, which fill nothing.
+  The note for a required condition, car connected or the charging power, does not offer to leave it out.
 - The drafted test registers the device with every entity of the file, named `TEST_DEVICE_NAME`, and expects the fields `DeviceEntities.fields` gives for the entity IDs
   the test harness makes from the device and entity names. The source is not formatted; the developer runs ruff on it.
 

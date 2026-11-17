@@ -296,10 +296,10 @@ export class KraftvaktConditionField extends LitElement {
   /**
    * An entity's state is shown as Home Assistant formats it, before what it
    * counts as. On and off count as just that, so they are shown alone. No
-   * evidence counts as false, unless the kind tells that it gives no answer.
+   * evidence counts as false.
    */
   private renderNow(condition: Condition, evidence: boolean | null) {
-    const text = (evidence === null && this.optionalText("no_answer")) || this.text(evidence === true ? "true" : "false");
+    const text = this.text(evidence === true ? "true" : "false");
     const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
     const onOrOff = condition.type === "entity" && (stateObj?.state === "on" || stateObj?.state === "off");
     const templatePower = condition.type === "template" && this.kind === "charging_power" ? templatePowerW(this.preview?.result) : null;

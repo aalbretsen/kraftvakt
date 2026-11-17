@@ -99,8 +99,14 @@ def test_the_fault_flag_is_drafted_as_the_other_conditions() -> None:
 def test_a_charger_without_a_charging_power_is_noted() -> None:
     result = draft(charging_power=None)
 
-    assert result.profile.charging_power == ProfileCondition(ConditionType.ENTITY)
-    assert result.notes == ("charging_power: not set. Fill in the condition, or leave it out if the integration has nothing for it.",)
+    assert result.profile.charging_power == ProfileCondition(ConditionType.POWER_SENSOR)
+    assert result.notes == ("charging_power: not set. Fill in the condition.",)
+
+
+def test_an_optional_condition_that_is_not_set_may_be_left_out() -> None:
+    result = draft(actively_charging={"type": "entity", "value": ""})
+
+    assert result.notes == ("actively_charging: not set. Fill in the condition, or leave it out if the integration has nothing for it.",)
 
 
 def test_a_charger_switched_by_its_current_gives_a_profile_without_actions_to_activate_and_deactivate() -> None:
@@ -181,7 +187,7 @@ def test_fields_that_are_not_set_are_noted_and_left_empty() -> None:
         "entity_id: not set. Fill in the entity that is activated.",
         "activate: not set. Fill in the action.",
         "set_current: number.elsewhere is not an entity of the charger's device, so a profile cannot find it.",
-        "car_connected: not set. Fill in the condition, or leave it out if the integration has nothing for it.",
+        "car_connected: not set. Fill in the condition.",
     )
 
 

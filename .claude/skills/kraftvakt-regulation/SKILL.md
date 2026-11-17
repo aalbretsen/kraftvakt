@@ -60,7 +60,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charging on/off | An optional condition of the charger that is true while the car charges. |
 | Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. Every charger has one. |
 | Actively charging | The car draws power: the charging power or the charging on/off shows it, and either is enough. |
-| Held at minimum | A charger whose car does not charge actively with at least 30 % of the charger's power reserve. It gets no more than its first ampere step. |
+| Held at minimum | A charger whose car does not charge actively with at least 50 % of the charger's power reserve. It gets no more than its first ampere step. |
 | Estimated draw | What a charger draws with fewer ampere steps on: its charging power, at most its current times its power reserve divided by its minimum current, and 0 deactivated. |
 | Freeing power | Switching off steps from the lowest until their estimated draw covers the power needed, at once. |
 | Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
@@ -287,8 +287,9 @@ All with entity category diagnostic:
   Every command for an appliance uses the actions of its current variant. Not for chargers or charger groups.
 - Evaluated at each decision. When an appliance switches variant: it is off afterwards at the new place and comes on again the normal way.
   It is sent the turn-off action of the new variant also when it was off, since variants may turn it off in different ways (for example a thermostat in heat or cool mode).
-  The appliance itself is the variant before the first decision after a start. If it was off and its new place is above the lowest step that is on,
-  that lowest step is switched off to give room at once, and more room is made at the next decisions if needed (see Making room).
+  The appliance itself is the variant before the first decision after a start. If it was off and its new place is above a step that is on,
+  the lowest step below it that may be switched off for room is switched off to give room at once, and more room is made at the next decisions if needed (see Making room).
+  As in Freeing power, a bypassed charger and a charger whose car does not charge actively are passed, since switching them off frees nothing.
   Its waiting time and repeated turn-on counter are reset.
 - Several switching at the same decision are handled one by one in the order of their new place, highest first,
   together with the appliances included again (see Excluded appliances). One that must go off anyway can be the one that gives room.
@@ -298,7 +299,8 @@ All with entity category diagnostic:
 - Excluded switch (per appliance, default off): while on, the appliance is never turned on.
   It keeps its place in the priority list, and the regulation passes it as if it was not there. Not for charger groups; chargers have their own switch.
 - Read at each decision. An excluded appliance that is on is switched off.
-- An appliance included again is handled like an appliance that switches variant: if its place is above the lowest step that is on, that lowest step is switched off to give room,
+- An appliance included again is handled like an appliance that switches variant: if its place is above a step that is on, the lowest step below it
+  that may be switched off for room is switched off to give room,
   and its waiting time and repeated turn-on counter are reset. An excluded appliance that switches variant gives no room.
 - The switch can be used while the regulation runs, is saved at once, and takes effect at the next decision, for the command repeat at the next window close.
   It does not restart the regulation.
@@ -337,11 +339,12 @@ All with entity category diagnostic:
   Why: the on/off often reports a car that starts sooner than the power, and a charger that has lost power or its connection reports unavailable, and does not charge.
 - A charger that charges is activated and charges actively. Kraftvakt never guesses that a car is done: a car that is full stays activated at its minimum current,
   and may draw power again at any time, as when it heats before a trip, or the user raises its charging limit.
-- Held at minimum: a charger whose car does not charge actively with at least 30 % of its power reserve gets only its first ampere step,
+- Held at minimum: a charger whose car does not charge actively with at least 50 % of its power reserve gets only its first ampere step,
   and one that has more is set back to its minimum current at once. Meanwhile the steps after it may be turned on.
   Why: a car may start drawing power at any time, and at its minimum current it can only take about its power reserve, which a fast reaction can free.
-  So a car that draws little or nothing, as one that is full, is not given more. 30 % is a bit less than a car charging on one phase draws,
-  since the power reserve is what the minimum current draws on three phases, so such a car still gets more.
+  So a car that draws little or nothing, as one that is full, is not given more.
+- The power reserve is the user's setting for what the car and charger draw at the minimum current, as about 1400 W for a car that charges on one phase.
+  The regulation relies on it: for when a car may get more than its minimum current, and for its power per ampere in the estimated draw.
 - Starting: an activated cloud-controlled charger within its start delay since activation, whose car does not charge actively yet, holds its power reserve.
   The steps after it, and the other steps of its group, are turned on only when there is room for them with the reserve counted as used,
   and room is made below them as usual when there is not. Their waiting time counts the reserve as used too, as it would once the car draws power.

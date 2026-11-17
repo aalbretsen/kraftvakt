@@ -99,14 +99,13 @@ def charging_current(charger: Charger, ampere_steps_on: int) -> int:
 def may_step_up(charger: Charger, reading: ChargerReading) -> bool:
     """Return whether the car draws enough power to get more than the minimum current.
 
-    It must charge actively and draw at least 30 % of the power reserve, what
-    the charger draws at its minimum current on three phases. That is a bit
-    less than a car charging on one phase draws, so such a car still gets
-    more, while a car that draws little or nothing, as one that is full,
-    cannot suddenly draw much more.
+    It must charge actively and draw at least half of the power reserve,
+    which the user sets to what the car draws at the minimum current, so a
+    car that draws little or nothing, as one that is full, cannot suddenly
+    draw much more.
     """
     power_w = reading.charging_power_w
-    return reading.actively_charging and power_w is not None and power_w >= 0.3 * charger.power_reserve_w
+    return reading.actively_charging and power_w is not None and power_w >= 0.5 * charger.power_reserve_w
 
 
 def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int) -> float:
