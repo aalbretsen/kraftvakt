@@ -144,7 +144,7 @@
     "window_start_equals_end": "Start og slutt kan ikke være like.",
     "duplicate_entity": "Entiteten brukes allerede av et annet apparat eller en elbillader.",
     "unknown_device": "Enheten finnes ikke lenger i Home Assistant.",
-    "entity_not_on_device": "Entiteten hører ikke til elbilladerens enhet.",
+    "entity_not_on_device": "Entiteten hører ikke til enheten til elbilladeren, eller til apparatets entitet.",
     "invalid_action": "Home Assistant kan ikke lese handlingen.",
     "invalid_template": "Malen har en syntaksfeil.",
     "default_action_unavailable": "Entiteten har ingen standardhandling. Velg egendefinert handling.",
@@ -409,8 +409,8 @@
     "template": "Mal",
     "power_sensor_label": "Effekt",
     "template_label": "Mal for effekt",
-    "power_sensor_helper": "W eller kW.",
-    "template_helper": "Effekten i W. Variabler: entity_id, entity.",
+    "power_sensor_helper": "En sensor på samme enhet som entiteten. W eller kW.",
+    "template_helper": "Effekten i W, også fra en annen enhet. Variabler: entity_id, entity.",
     "no_value": "ingen verdi",
     "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
   },
@@ -420,7 +420,7 @@
     "template": "Mal",
     "temperature_sensor_label": "Temperatur",
     "template_label": "Mal for temperatur",
-    "temperature_sensor_helper": "En hvilken som helst temperatur du vil se, som vanntemperaturen.",
+    "temperature_sensor_helper": "En hvilken som helst temperatur på samme enhet som entiteten, som vanntemperaturen.",
     "template_helper": "En temperatur i enheten til Home Assistant, som innstilt temperatur på en termostat: {{ state_attr(entity_id, 'temperature') }}. Variabler: entity_id, entity.",
     "no_value": "ingen verdi",
     "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."

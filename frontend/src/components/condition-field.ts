@@ -167,7 +167,7 @@ export class KraftvaktConditionField extends LitElement {
           {
             name: "value",
             required: !this.optional,
-            selector: { entity: { filter: { domain: "sensor", device_class: "temperature" } } },
+            selector: { entity: { filter: { domain: "sensor", device_class: "temperature" }, include_entities: this.includeEntities } },
           },
         ];
       case "state":

@@ -144,7 +144,7 @@
     "window_start_equals_end": "Start and end cannot be the same.",
     "duplicate_entity": "The entity is already used by another appliance or EV charger.",
     "unknown_device": "The device no longer exists in Home Assistant.",
-    "entity_not_on_device": "The entity does not belong to the EV charger's device.",
+    "entity_not_on_device": "The entity does not belong to the device of the EV charger, or of the appliance's entity.",
     "invalid_action": "Home Assistant cannot read the action.",
     "invalid_template": "The template has a syntax error.",
     "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
@@ -409,8 +409,8 @@
     "template": "Template",
     "power_sensor_label": "Power",
     "template_label": "Template for power",
-    "power_sensor_helper": "W or kW.",
-    "template_helper": "The power in W. Variables: entity_id, entity.",
+    "power_sensor_helper": "A sensor of the same device as the entity. W or kW.",
+    "template_helper": "The power in W, also from another device. Variables: entity_id, entity.",
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },
@@ -420,7 +420,7 @@
     "template": "Template",
     "temperature_sensor_label": "Temperature",
     "template_label": "Template for temperature",
-    "temperature_sensor_helper": "Any temperature you want to see, such as the water temperature.",
+    "temperature_sensor_helper": "Any temperature of the same device as the entity, such as the water temperature.",
     "template_helper": "A temperature in the unit of Home Assistant, such as the set temperature of a thermostat: {{ state_attr(entity_id, 'temperature') }}. Variables: entity_id, entity.",
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."

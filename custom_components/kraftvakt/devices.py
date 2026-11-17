@@ -1,4 +1,4 @@
-"""The devices of chargers, which every entity a charger uses belongs to."""
+"""The devices of chargers and appliances, which the entities they use belong to."""
 
 from __future__ import annotations
 
@@ -23,9 +23,18 @@ def device_name(hass: HomeAssistant, device_id: str | None) -> str | None:
 
 
 def device_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
-    """Return devices that do not exist and entities outside their charger's device."""
+    """Return devices that do not exist, entities outside their charger's device, and display sensors outside the device of their appliance's entity.
+
+    An appliance whose entity has no device may show any sensor.
+    """
     devices = dr.async_get(hass)
     issues = []
+    for appliance in config.appliances:
+        device_id = None if appliance.entity_id is None else device_of_entity(hass, appliance.entity_id)
+        if device_id is None:
+            continue
+        location = IssueLocation("appliances", appliance.id)
+        issues += [location.issue("entity_not_on_device", field_name) for field_name, entity_id in appliance.display_sensors() if device_of_entity(hass, entity_id) != device_id]
     for charger in config.chargers:
         if charger.device_id is None:
             continue

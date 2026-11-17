@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
-import { changesForDevice, deviceEntities } from "../charger-device";
+import { changesForDevice, deviceEntities } from "../devices";
 import { chargerErrors, missingInCharger } from "../validation";
 import "./condition-field";
 import type { ConditionKind } from "./condition-field";

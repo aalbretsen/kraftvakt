@@ -34,7 +34,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
   }
 
   protected errors(): Issue[] {
-    return this.ofVariant(applianceErrors(this.draft, this.capabilities, this.hass.states));
+    return this.ofVariant(applianceErrors(this.draft, this.capabilities, this.hass));
   }
 
   protected missing(): Issue[] {

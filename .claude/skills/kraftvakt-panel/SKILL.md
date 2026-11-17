@@ -99,6 +99,8 @@ The section header, the description and the footer note are in `section-styles.t
   except set charging current, which is in the charging current group with the currents it sets.
 - The appliance dialog has, after the entity, the actions, the group Essential appliance with a switch, Fixed load with a switch and the power reserve,
   the variants, and Display values with the display power and temperature, condition fields of the kinds display power and display temperature that preview the value.
+  The display sensors offer only the entities of the device of the appliance's entity, or any sensor when it has none,
+  and a new entity clears the display sensors that are not on its device, as a new device does for a charger.
   Fixed load turned off clears the power reserve; its helper warns against it for an appliance with control of its own, since most users would set it otherwise.
   An essential appliance has neither Fixed load nor the variants, and its switch is disabled while the appliance has variants.
   Turned on, it clears the power reserve.

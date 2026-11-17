@@ -613,6 +613,30 @@ async def test_charger_entities_must_belong_to_its_device(
     }
 
 
+async def test_display_sensors_must_belong_to_the_device_of_the_appliance(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """Templates are not checked, and an appliance whose entity has no device may show any sensor."""
+    await switch_regulation(hass, "turn_off")
+    client = await hass_ws_client(hass)
+    data = config_data()
+    register_device(hass, data["appliances"][0]["entity_id"], "sensor.a_power")
+    register_device(hass, "sensor.other_power", "sensor.other_temperature")
+    data["appliances"][0]["display_power"] = {"type": "power_sensor", "value": "sensor.a_power"}
+    data["appliances"][0]["display_temperature"] = {"type": "temperature_sensor", "value": "sensor.other_temperature"}
+    data["appliances"][1]["display_power"] = {"type": "power_sensor", "value": "sensor.other_power"}
+    data["appliances"][1]["display_temperature"] = {"type": "template", "value": "{{ 20 }}"}
+
+    response = await send(client, "kraftvakt/config/save", config=data)
+
+    assert response["result"] == {
+        "saved": False,
+        "errors": [{"code": "entity_not_on_device", "section": "appliances", "target": "a", "field": "display_temperature"}],
+    }
+
+
 async def test_charger_device_must_exist(
     hass: HomeAssistant,
     entry: MockConfigEntry,

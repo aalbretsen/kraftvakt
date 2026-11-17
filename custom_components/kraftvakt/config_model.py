@@ -270,6 +270,12 @@ class Appliance:
             if condition is not None:
                 yield field_name, condition
 
+    def display_sensors(self) -> Iterator[tuple[str, str]]:
+        """Return each display value given as a sensor, with its field, which must belong to the device of the appliance's entity."""
+        for field_name, condition in self.conditions():
+            if field_name.startswith("display_") and condition.type is not ConditionType.TEMPLATE and condition.value:
+                yield field_name, condition.value
+
     def to_dict(self) -> dict[str, Any]:
         return _fields_to_dict(self)
 

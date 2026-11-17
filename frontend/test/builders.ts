@@ -1,6 +1,6 @@
 /** Builders of complete configurations and of the parts of Home Assistant the panel reads, for the panel's tests. */
 import type { ActionConfig, Appliance, Capabilities, Charger, ChargerGroup, KraftvaktConfig, Variant } from "../src/api";
-import { chargerDeviceEntities } from "../src/charger-device";
+import { chargerDeviceEntities } from "../src/devices";
 import type { HassEntity, HomeAssistant } from "../src/types";
 import capabilities from "./fixtures/capabilities.json";
 

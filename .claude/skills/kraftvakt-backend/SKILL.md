@@ -22,6 +22,8 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - A charger is a device in HA, stored as its `device_id`, and every entity it names (its own, the set-current entity,
   the entities of car connected, the charging on/off, the charging power, the done flag and the fault flag) must belong to that device.
   Templates and custom actions are not checked, and cover a charger whose values are elsewhere.
+- The display sensors of an appliance must belong to the device of its entity, `entity_not_on_device` otherwise; templates are not checked.
+  An appliance whose entity has no device, as a helper or a template switch, may show any sensor.
   Why: integrations group a charger's entities as a device, so picking them from it keeps the setup easy for most users.
 - A charger is named after its device (the user's name for the device first), and after its entity while the device is missing or unknown; an appliance is named after its entity.
   The status, the entity names sent to the panel and the charger switches use the same function for this, and the panel mirrors it for a charger that is not saved yet.

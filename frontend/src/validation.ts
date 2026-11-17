@@ -12,7 +12,7 @@ import {
   type KraftvaktConfig,
   type Range,
 } from "./api";
-import { chargerDeviceEntities } from "./charger-device";
+import { chargerDeviceEntities, deviceOfEntity, displaySensors } from "./devices";
 import { allChargers } from "./draft";
 import { availableDomainAction, parameterIssues } from "./domain-actions";
 import type { HassEntity, HomeAssistant } from "./types";
@@ -73,7 +73,7 @@ function maySet0A(charger: Charger, states: States): boolean {
 export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   return [
     ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true),
-    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, hass.states)),
+    ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, hass)),
     ...chargerGroupErrors(config.charger_groups),
     ...allChargers(config).flatMap((charger) => chargerErrors(charger, capabilities, hass)),
   ];
@@ -188,11 +188,17 @@ export function isMissingAction(action: ActionConfig | null): boolean {
   );
 }
 
-export function applianceErrors(appliance: Appliance, capabilities: Capabilities, states: States): Issue[] {
+export function applianceErrors(appliance: Appliance, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   const labels = appliance.variants.map((variant) => variant.label.trim());
+  const deviceId = deviceOfEntity(hass, appliance.entity_id);
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
-    ...actionIssues("appliances", appliance, applianceActions(appliance), capabilities, states),
+    ...actionIssues("appliances", appliance, applianceActions(appliance), capabilities, hass.states),
+    ...(deviceId
+      ? displaySensors(appliance)
+          .filter(([, entityId]) => deviceOfEntity(hass, entityId) !== deviceId)
+          .map(([field]) => applianceIssue(appliance, "entity_not_on_device", field))
+      : []),
     ...appliance.variants.flatMap((variant, index): Issue[] => {
       const field = `variants.${variant.id}.label`;
       if (labels[index] === "") {

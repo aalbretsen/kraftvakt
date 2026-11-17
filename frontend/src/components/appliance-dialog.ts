@@ -4,6 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import type { Appliance, Condition, Issue, Variant } from "../api";
+import { displaySensorScope, displayValuesForEntity } from "../devices";
 import { moveItem, newId } from "../draft";
 import { APPLIANCE_ACTIONS, applianceErrors, missingInAppliance } from "../validation";
 import "./condition-field";
@@ -39,8 +40,10 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     }
   }
 
+  /** Also clears the display sensors that are not on the device of the new entity. */
   protected actionsForEntity(entityId: string | null): Partial<Appliance> {
     return {
+      ...displayValuesForEntity(this.draft, entityId, this.hass),
       turn_on: this.actionForEntity("turn_on", this.draft.turn_on, entityId),
       turn_off: this.actionForEntity("turn_off", this.draft.turn_off, entityId),
       variants: this.draft.variants.map((variant) => ({
@@ -56,7 +59,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   }
 
   protected errors(): Issue[] {
-    return applianceErrors(this.draft, this.capabilities, this.hass.states);
+    return applianceErrors(this.draft, this.capabilities, this.hass);
   }
 
   protected missing(): Issue[] {
@@ -133,6 +136,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
         .localize=${this.localize}
         .value=${this.draft[field]}
         .entityId=${this.draft.entity_id}
+        .includeEntities=${displaySensorScope(this.hass, this.draft)}
         .kind=${field}
         optional
         .error=${issue ? this.describe(issue) : undefined}
