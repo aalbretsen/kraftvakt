@@ -98,14 +98,10 @@ function cutOffIndex(entries: PriorityEntry[]): number {
   return last >= 0 && regulatedBelow ? last : -1;
 }
 
-/** Return whether some row has a temperature, which only appliances have, and whether some row has a power. */
-function measuredColumns(status: StatusSnapshot): { temperature: boolean; power: boolean } {
-  const appliances = status.priority.filter((row): row is ApplianceStatus => row.type === "appliance");
-  const chargers = status.priority.flatMap((row) => (row.type === "charger_group" ? row.chargers : []));
-  return {
-    temperature: appliances.some((row) => row.temperature !== null),
-    power: [...appliances, ...chargers].some((row) => row.power_w !== null),
-  };
+/** Return whether some row, an appliance or an EV charger, has a power. */
+function hasPower(status: StatusSnapshot): boolean {
+  const rows = status.priority.flatMap((row): (ApplianceStatus | ChargerStatus)[] => (row.type === "appliance" ? [row] : row.chargers));
+  return rows.some((row) => row.power_w !== null);
 }
 
 /** Return «22» for «22:00», and the time as it is otherwise. */
@@ -133,13 +129,13 @@ export class KraftvaktPriorityList extends LitElement {
     return this.phoneQuery.matches;
   }
 
-  /** The measured columns some row has a value for; the others are left out, so they take no room and no gap. */
-  private measured = { temperature: false, power: false };
+  /** Whether some row has a power; without one, the column is left out, so it takes no room and no gap. */
+  private hasPower = false;
 
   protected render() {
     const entries = priorityEntries(this.status);
     const cutAfter = cutOffIndex(entries);
-    this.measured = measuredColumns(this.status);
+    this.hasPower = hasPower(this.status);
     return html`
       <ha-card>
         <div class="card-header">
@@ -162,16 +158,16 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   /**
-   * The columns of the list: rank, name, current, temperature, power, waiting and state.
+   * The columns of the list: rank, name, current, power, waiting and state.
    * The name takes the room that is left, so the other columns, as wide as their content, line up at the right.
+   * An appliance's temperature is in the current column, since an EV charger never has one.
    */
   private columns(): string {
     const columns = [
       "minmax(24px, max-content)",
       "minmax(0, 1fr)",
       "max-content",
-      ...(this.measured.temperature ? ["max-content"] : []),
-      ...(this.measured.power ? ["max-content"] : []),
+      ...(this.hasPower ? ["max-content"] : []),
       "var(--waiting-width)",
       "max-content",
     ];
@@ -200,9 +196,11 @@ export class KraftvaktPriorityList extends LitElement {
     `;
   }
 
+  /** The name takes the current column too, unless the appliance has a temperature to show there. */
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
+    const temperature = appliance.temperature !== null && !this.phone;
     return this.renderRow(
-      `appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""} ${appliance.essential ? "essential" : ""}`,
+      `appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""} ${appliance.essential ? "essential" : ""} ${temperature ? "with-temperature" : ""}`,
       existingEntity(this.hass, this.applianceEntity(appliance)),
       html`
         ${this.renderRank(rank)}
@@ -298,7 +296,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.measured.temperature ? this.renderWideOnly(html`<span></span>`) : nothing} ${this.renderPower(charger.power_w)}
+        ${this.renderPower(charger.power_w)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       `,
@@ -334,7 +332,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   /** The power in kW, left out on a phone and when no row has one. */
   private renderPower(powerW: number | null) {
-    if (!this.measured.power) {
+    if (!this.hasPower) {
       return nothing;
     }
     return this.renderWideOnly(
@@ -344,19 +342,15 @@ export class KraftvaktPriorityList extends LitElement {
     );
   }
 
-  /** The temperature with one decimal and its unit, left out on a phone and when no row has one. */
+  /** The temperature with one decimal and its unit, right aligned in the current column with the ampere bars. Left out on a phone. */
   private renderTemperature(appliance: ApplianceStatus) {
     const temperature = appliance.temperature;
-    if (!this.measured.temperature) {
+    if (temperature === null || this.phone) {
       return nothing;
     }
-    return this.renderWideOnly(
-      html`<span class="measured" title=${this.localize("status.temperature")}
-        >${temperature === null
-          ? nothing
-          : `${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}`}</span
-      >`,
-    );
+    return html`<span class="measured" title=${this.localize("status.temperature")}
+      >${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}</span
+    >`;
   }
 
   /** The current, and one bar per ampere from the minimum to the maximum, filled up to the current. */
@@ -522,7 +516,7 @@ export class KraftvaktPriorityList extends LitElement {
       .row.excluded .row-title {
         opacity: 0.5;
       }
-      .row.appliance .row-title {
+      .row.appliance:not(.with-temperature) .row-title {
         grid-column: span 2;
       }
       .row.charger .row-title {
