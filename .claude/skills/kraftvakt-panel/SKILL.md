@@ -97,7 +97,7 @@ The section header, the description and the footer note are in `section-styles.t
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance or charger has a group of its own, as the variant dialog has one per action it can override,
   except set charging current, which is in the charging current group with the currents it sets.
-- The appliance dialog has, after the entity, the group Essential appliance with a switch, the actions, Fixed load with a switch and the power reserve,
+- The appliance dialog has, after the entity, the actions, the group Essential appliance with a switch, Fixed load with a switch and the power reserve,
   the variants, and Display values with the display power and temperature, condition fields of the kinds display power and display temperature that preview the value.
   Fixed load turned off clears the power reserve; its helper warns against it for an appliance with control of its own, since most users would set it otherwise.
   An essential appliance has neither Fixed load nor the variants, and its switch is disabled while the appliance has variants.

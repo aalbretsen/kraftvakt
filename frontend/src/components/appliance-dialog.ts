@@ -66,7 +66,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected renderFields(issues: Issue[]) {
     const essential = this.draft.essential;
     return html`
-      ${this.renderEntity(issues)} ${this.renderEssential(issues)} ${this.renderActions(issues)}
+      ${this.renderEntity(issues)} ${this.renderActions(issues)} ${this.renderEssential(issues)}
       ${essential ? nothing : this.renderFixedLoad(issues)} ${essential ? nothing : this.renderVariants()}
       ${this.renderDisplayValues(issues)}
     `;
