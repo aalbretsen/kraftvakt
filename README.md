@@ -218,7 +218,7 @@ All entities belong to the service device **Kraftvakt**.
 | **Regulation** | |
 | `switch.kraftvakt_regulation` (Regulation) | On while the regulation runs. Turn off to stop the regulation, and on to start it again. |
 | `binary_sensor.kraftvakt_regulation_safe_state` (Regulation safe state) | On while the regulation is in safe state. Can trigger an automation that notifies you. |
-| `sensor.kraftvakt_regulation_steps_on` (Regulation steps on) | Diagnostic. The number of steps that are on: each appliance is one step, and each ampere of an EV charger, from the minimum current up, is one step. |
+| `sensor.kraftvakt_regulation_steps_on` (Regulation steps on) | Diagnostic. The number of steps that are on: each appliance that is not essential is one step, and each ampere of an EV charger, from the minimum current up, is one step. |
 | **Power** | |
 | `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs. |
 | `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in W. |

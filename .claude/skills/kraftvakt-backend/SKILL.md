@@ -106,7 +106,8 @@ An invalid configuration is not saved:
 - The priority list has exactly one entry per appliance and variant, and one per charger group. Missing entries are added at the bottom.
   Duplicates and unknown entries are rejected.
 - Labels are non-empty and unique per appliance. Group names are non-empty and unique among the groups.
-- An essential appliance has no variants (`essential_with_variants` on `essential`), and its entry is above every other entry (`essential_not_at_top` in `priority`).
+- An essential appliance has no variants (`essential_with_variants` on `essential`) and no power reserve (`essential_with_power_reserve` on `essential`),
+  and its entry is above every other entry (`essential_not_at_top` in `priority`).
   A missing entry of an essential appliance is added after the last essential entry, the others at the bottom.
 - Charger ids are unique across all groups.
 - The entity that identifies an appliance or charger is unique in the whole configuration. Sensors, conditions and actions may reuse entities.

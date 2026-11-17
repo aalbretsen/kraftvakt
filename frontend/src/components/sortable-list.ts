@@ -16,8 +16,8 @@ export interface ListRow {
   errors: string[];
   /** Whether the row opens a dialog to edit or show it. */
   openable: boolean;
-  /** An essential appliance, shown with the background that sets the essential appliances apart. */
-  essential?: boolean;
+  /** Shown with a background that sets the row apart. */
+  highlighted?: boolean;
 }
 
 /** A row dragged in from another list: its key and its new index. */
@@ -70,7 +70,7 @@ export class KraftvaktSortableList extends LitElement {
 
   private renderRow(row: ListRow, index: number) {
     return html`
-      <div class="row ${row.essential ? "essential" : ""}" data-key=${row.key}>
+      <div class="row ${row.highlighted ? "highlighted" : ""}" data-key=${row.key}>
         ${this.locked
           ? nothing
           : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant} title=${this.localize("list.drag")}></ha-svg-icon>`}
@@ -135,7 +135,7 @@ export class KraftvaktSortableList extends LitElement {
       box-sizing: border-box;
       background: var(--card-background-color);
     }
-    .row.essential {
+    .row.highlighted {
       background: linear-gradient(var(--kraftvakt-essential-background), var(--kraftvakt-essential-background)),
         var(--card-background-color);
     }

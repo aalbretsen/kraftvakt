@@ -152,7 +152,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       details: appliance ? (variant ? this.variantDetails(variant) : this.applianceDetails(appliance)) : [],
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
       openable: true,
-      essential: appliance?.essential,
+      highlighted: appliance?.essential,
     };
   }
 

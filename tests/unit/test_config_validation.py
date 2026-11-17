@@ -617,11 +617,19 @@ def test_essential_appliance_has_no_variants() -> None:
     ]
 
 
+def test_essential_appliance_has_no_power_reserve() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        data["appliances"][1] |= {"essential": True, "power_reserve_w": 800}
+        data["priority"].insert(0, data["priority"].pop(2))
+
+    assert _issues_after(mutate) == [Issue("essential_with_power_reserve", "appliances", "a2", "essential")]
+
+
 def test_essential_appliance_must_be_above_every_other_entry() -> None:
     """Each of its entries is reported, and an essential entry at the top is valid."""
 
     def mutate(data: dict[str, Any]) -> None:
-        data["appliances"][1]["essential"] = True
+        data["appliances"][1] |= {"essential": True, "power_reserve_w": None}
 
     assert _issues_after(mutate) == [Issue("essential_not_at_top", "priority", "a2")]
 
@@ -634,7 +642,7 @@ def test_essential_appliance_must_be_above_every_other_entry() -> None:
 
 async def test_parse_config_adds_a_missing_essential_entry_after_the_last_essential_one(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["appliances"][1]["essential"] = True
+    data["appliances"][1] |= {"essential": True, "power_reserve_w": None}
     data["appliances"].append({**data["appliances"][1], "id": "a3", "entity_id": "switch.freezer"})
     data["priority"].insert(0, data["priority"].pop(2))
 

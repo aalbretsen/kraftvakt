@@ -167,6 +167,8 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
         issues.append(location.issue("not_a_thermostat", "display_temperature"))
     if appliance.essential and appliance.variants:
         issues.append(location.issue("essential_with_variants", "essential"))
+    if appliance.essential and appliance.power_reserve_w is not None:
+        issues.append(location.issue("essential_with_power_reserve", "essential"))
     return issues
 
 

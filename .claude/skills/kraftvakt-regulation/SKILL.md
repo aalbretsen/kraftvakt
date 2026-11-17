@@ -316,7 +316,7 @@ All with entity category diagnostic:
 - An excluded essential appliance is turned off at the next decision, as any excluded appliance, and counts as a forced switch-off.
   Included again, it is turned on at once at the next decision, unless a penalty lasts. A start or stop with it excluded turns it off.
 - It gets the command repeat for its state, as any appliance.
-- It has no variants and no power reserve, and its entries sit above every other entry in the priority list; the backend rejects a configuration where they do not.
+- It has no variants and no power reserve, and its entries sit above every other entry in the priority list; the backend refuses a configuration where it does not.
 
 ## EV charging
 

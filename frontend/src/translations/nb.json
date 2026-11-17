@@ -159,6 +159,7 @@
     "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
     "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen.",
     "essential_with_variants": "Et nødvendig apparat kan ikke ha varianter. Slett dem, eller slå av innstillingen.",
+    "essential_with_power_reserve": "Et nødvendig apparat har ingen effektreserve. Slå av innstillingen, eller slå av Fast last først.",
     "essential_not_at_top": "Et nødvendig apparat må stå over alle andre i prioritetslisten.",
     "not_a_thermostat": "Velg en termostat, en climate-entitet."
   },

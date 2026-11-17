@@ -159,6 +159,7 @@
     "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once.",
     "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current.",
     "essential_with_variants": "An essential appliance cannot have variants. Delete them, or turn the setting off.",
+    "essential_with_power_reserve": "An essential appliance has no power reserve. Turn the setting off, or turn off Fixed load first.",
     "essential_not_at_top": "An essential appliance must be above every other entry in the priority list.",
     "not_a_thermostat": "Choose a thermostat, a climate entity."
   },
