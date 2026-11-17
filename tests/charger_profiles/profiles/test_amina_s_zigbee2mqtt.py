@@ -2,7 +2,7 @@
 
 Zigbee2MQTT names the entities in English in every language. The on/off switch is the main entity of the device, without a name of its own.
 «Alarm active» is on while any of the charger's alarms is set, which «Alarms» lists, such as a welded relay, a leakage, overcurrent or a car communication error.
-«Total active power» is the charging power of all phases in W, the profile's charging power.
+«Total active power» is the charging power of all phases in W, the profile's charging power. A car that charges on one phase draws on that phase only, so it shows that phase.
 """
 
 from homeassistant.core import HomeAssistant

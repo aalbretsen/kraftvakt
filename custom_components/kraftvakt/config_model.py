@@ -60,7 +60,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "chargers": {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
-        "power_reserve_w": Range(1, 5000, 1),
+        "power_reserve_w": Range(1000, 5000, 1),
         "start_delay_s": Range(0, 900, 1),
     },
 }

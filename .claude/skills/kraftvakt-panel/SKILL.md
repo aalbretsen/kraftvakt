@@ -223,6 +223,7 @@ The section header, the description and the footer note are in `section-styles.t
     and the focus ring would look like a selection. Opened from the keyboard, it keeps the focus.
   - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
     An activated charger whose car does not charge tells that it waits at the minimum current.
+    A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
   - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that its power reserve is kept free until then,
     since nothing else on the page tells why nothing below it is turned on while power looks free.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.

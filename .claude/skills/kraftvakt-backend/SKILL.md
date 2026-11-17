@@ -128,7 +128,7 @@ Missing items and validation errors are both issues with a code, a section, a ta
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
 and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
 A charger without a charging power is `missing_charging_power`; the charging on/off is optional.
-A charger's power reserve is at least 1 W, since the regulation estimates from it what the charger draws per ampere.
+A charger's power reserve is at least 1000 W, since the regulation estimates from it what the charger draws per ampere, and when its car may get more than the minimum current.
 Every issue code needs a text in the panel's translations.
 
 ## Charger profiles

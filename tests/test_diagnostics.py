@@ -56,7 +56,7 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
                         "set_current": {"mode": "entity", "entity_id": "input_number.current"},
                         "min_current_a": 6,
                         "max_current_a": 7,
-                        "power_reserve_w": 0,
+                        "power_reserve_w": 1000,
                         "car_connected": {"type": "entity", "value": CAR_CONNECTED},
                         "charging_power": {"type": "power_sensor", "value": CHARGER_POWER},
                     }
