@@ -57,7 +57,7 @@ def test_charger_defaults() -> None:
 
     assert charger.min_current_a == 6
     assert charger.max_current_a == 16
-    assert charger.power_reserve_w == 4000
+    assert charger.power_reserve_w == 4157
     assert charger.car_connected is None
     assert charger.charging_window is None
 

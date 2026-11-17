@@ -328,7 +328,7 @@ class Charger:
     set_current: ActionConfig | None = None
     min_current_a: int = 6
     max_current_a: int = 16
-    power_reserve_w: int = 4000
+    power_reserve_w: int = 4157
     car_connected: Condition | None = None
     actively_charging: Condition | None = None
     charging_power: Condition | None = None

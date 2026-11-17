@@ -530,7 +530,7 @@
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Elbilladeren aktiveres bare når så mye effekt er ledig. Sett den til omtrent det den trekker på minste ladestrøm. {min}–{max} W, standard {default} W (ca. 6 A på tre faser, 400 V)."
+        "helper": "Elbilladeren aktiveres bare når så mye effekt er ledig. Sett den til omtrent det den trekker på minste ladestrøm. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
       },
       "car_connected": {
         "label": "Bil tilkoblet",

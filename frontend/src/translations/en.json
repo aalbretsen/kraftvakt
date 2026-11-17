@@ -530,7 +530,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "The EV charger is activated only when this much power is free. Set it to about what it draws at the minimum current. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
+        "helper": "The EV charger is activated only when this much power is free. Set it to about what it draws at the minimum current. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
       },
       "car_connected": {
         "label": "Car connected",

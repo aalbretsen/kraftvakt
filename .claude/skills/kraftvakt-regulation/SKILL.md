@@ -326,7 +326,8 @@ All with entity category diagnostic:
 - One charger at a time: default yes. The chargers of a group are sorted in its configured charging priority.
 - Each charger is split into ampere steps, one per ampere from min to max current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min + number on − 1.
   None on means deactivated. The ampere steps sit at the place of the entry of their group.
-- First ampere step on: set current to min, then activate, and only the first has the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new current.
+- First ampere step on: set current to min, then activate, and only the first has the charger's power reserve
+  (0–5000 W, default 4157 W, what 6 A draws on three phases at 400 V). Later ones: set the new current.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
   The set-current action always gets a current between min and max, except 0 A for a charger switched by its current.
 - Switched by current (per charger setting, default off): for a charger that can only be told a current. It gets only the current:
