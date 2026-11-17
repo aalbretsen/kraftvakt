@@ -465,7 +465,7 @@
       },
       "entity_id": {
         "label": "Laderentitet",
-        "helper": "Entiteten som slår lading på og av, eller, for en elbillader som slås på og av med strømmen, den som setter strømmen."
+        "helper": "Vanligvis bryteren som tillater lading."
       },
       "activate": {
         "label": "Handling for å aktivere",

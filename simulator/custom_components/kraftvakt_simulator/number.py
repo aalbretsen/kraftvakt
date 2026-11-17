@@ -117,13 +117,13 @@ ROOM_TEMPERATURE: Final[SimulatorNumberDescription[SimulatedThermostat]] = Simul
 
 
 def charging_current(charger: SimulatedCharger) -> NumberEntityDescription:
-    """Return the description of the charging current, within the charger's range."""
+    """Return the description of the charging current, from 0 A to the charger's maximum."""
     return NumberEntityDescription(
         key="charging_current",
         translation_key="charging_current",
         device_class=NumberDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-        native_min_value=charger.min_current_a,
+        native_min_value=0,
         native_max_value=charger.max_current_a,
         native_step=1,
         mode=NumberMode.SLIDER,

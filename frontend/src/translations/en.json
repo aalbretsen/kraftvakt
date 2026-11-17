@@ -465,7 +465,7 @@
       },
       "entity_id": {
         "label": "Charger entity",
-        "helper": "The entity that turns charging on and off, or, for an EV charger turned on and off by its current, the one that sets the current."
+        "helper": "Usually the switch that allows charging."
       },
       "activate": {
         "label": "Action to activate",

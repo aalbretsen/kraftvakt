@@ -40,6 +40,8 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
 - Power, duty cycle and period are also number entities, changeable while HA runs.
   A change while the switch is on restarts the cycle in its on part; an unchanged value does nothing.
 - An EV charger is 400 V three-phase with power factor 1: `P = √3 · 400 V · I`. It has a minimum and maximum current in whole amperes.
+  Its charging current goes from 0 A to the maximum; a current below the minimum is 0 A, where it does not charge.
+  Why: a charger switched by its current is stopped with 0 A.
   It draws power only while charging is allowed, a car is connected, the car is not fully charged and its fault switch is off.
   The fault switch is meant as a fault flag of Kraftvakt's deactivate on fault, so it has no binary sensor of its own.
   Its charging binary sensor is on while it draws power, so Kraftvakt's actively charging can be tested from an entity.

@@ -48,7 +48,7 @@ async def test_charger_starts_without_car_and_charging_not_allowed(hass: HomeAss
     assert power(hass, CHARGING_POWER) == 0
     current = hass.states.get(CURRENT)
     assert current is not None
-    assert current.attributes["min"] == 6
+    assert current.attributes["min"] == 0
     assert current.attributes["max"] == 16
     assert current.attributes["step"] == 1
     assert current.attributes["unit_of_measurement"] == "A"
@@ -133,6 +133,20 @@ async def test_current_outside_the_charger_range_is_refused(hass: HomeAssistant,
         await call(hass, "number", "set_value", CURRENT, value=20)
 
     assert float(state(hass, CURRENT)) == 6
+
+
+@pytest.mark.parametrize("current", [0, 3])
+async def test_current_below_the_minimum_stops_charging(hass: HomeAssistant, add_device: AddDevice, current: int) -> None:
+    """A charger switched by its current is stopped with 0 A."""
+    await add_device(DeviceKind.CHARGER, "Charger")
+    await call(hass, "switch", "turn_on", CONNECTED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+
+    await call(hass, "number", "set_value", CURRENT, value=current)
+
+    assert float(state(hass, CURRENT)) == 0
+    assert power(hass, CHARGING_POWER) == 0
+    assert state(hass, STATUS) == "awaiting_start"
 
 
 async def test_charger_states_are_restored(hass: HomeAssistant, add_device: AddDevice) -> None:

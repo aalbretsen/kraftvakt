@@ -381,9 +381,9 @@ class SimulatedCharger(PluggedInDevice):
 
     @callback
     def async_set_current(self, current_a: float) -> None:
-        """Set the charging current, kept between the minimum and maximum."""
-        clamped = min(max(current_a, self.min_current_a), self.max_current_a)
-        self._async_update(current_a=clamped)
+        """Set the charging current, at most the maximum; below the minimum it is 0 A, and the charger does not charge."""
+        kept = 0.0 if current_a < self.min_current_a else min(current_a, self.max_current_a)
+        self._async_update(current_a=kept)
 
     @callback
     def async_stop(self) -> None:

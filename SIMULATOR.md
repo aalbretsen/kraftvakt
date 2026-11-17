@@ -20,6 +20,8 @@ Add the integration under **Settings → Devices & services**, and add one devic
   **Charging current** (A), the sensor **Charging power**, the binary sensor **Charging**, on while it draws power,
   and the sensor **Status**: disconnected, awaiting start, starting, charging, completed or error, and unavailable while it is unplugged.
   It draws √3 × 400 V × the charging current (6 A gives 4.16 kW) when charging is allowed, a car is connected, the car is not fully charged and it has no fault.
+  The charging current goes from 0 A to the maximum, and below the minimum it is 0 A and the charger does not charge,
+  so an EV charger whose charging is turned on and off by the charging current can be tested.
   Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
   Use **Status** with the state completed as the done flag, and turn it unavailable with **Unplugged** to test a done flag that gives no answer.
   With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,

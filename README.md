@@ -72,8 +72,9 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
-- every EV charger has a device, an entity, actions to activate, deactivate and set the charging current, **Car connected**, a charging on/off or a charging power,
-  with **Deactivate on fault** a fault flag, and in a group with several at once and dynamic charging order a charging power.
+- every EV charger has a device, an entity, an action to set the charging current, actions to activate and deactivate unless charging is turned on and off by the current,
+  **Car connected**, a charging on/off or a charging power, with **Deactivate on fault** a fault flag,
+  and in a group with several at once and dynamic charging order a charging power.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
