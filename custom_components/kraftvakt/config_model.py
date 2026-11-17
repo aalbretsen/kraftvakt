@@ -300,6 +300,7 @@ class Charger:
     entity_id: str | None = None
     activate: ActionConfig | None = None
     deactivate: ActionConfig | None = None
+    switched_by_current: bool = False
     set_current: ActionConfig | None = None
     min_current_a: int = 6
     max_current_a: int = 16
@@ -318,8 +319,10 @@ class Charger:
     fault_flag: Condition | None = None
 
     def action_fields(self) -> Iterator[ActionField]:
+        """Return the actions the charger uses; one switched by its current keeps its actions to activate and deactivate, but uses neither."""
         for name, kind in CHARGER_ACTION_KINDS.items():
-            yield ActionField(name, kind, getattr(self, name))
+            if not self.switched_by_current or kind is ActionKind.SET_CURRENT:
+                yield ActionField(name, kind, getattr(self, name))
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""

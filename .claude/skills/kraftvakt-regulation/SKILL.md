@@ -45,6 +45,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
+| Switched by current | A charger setting, off by default, for a charger that can only be told a current: its minimum current activates it, and 0 A deactivates it. |
 | Cloud-controlled charger | A charger setting, off by default, for a charger controlled through a cloud service: no command repeat while no car is connected, and its start delay. |
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging. |
 | Time to start | How long a car gets to start charging after its charger is activated: two windows, or the start delay of a cloud-controlled charger when that is longer. |
@@ -309,7 +310,9 @@ All with entity category diagnostic:
   None on means deactivated. The ampere steps sit at the place of the entry of their group.
 - First ampere step on: set current to min, then activate, and only the first has the charger's power reserve (0–5000 W, default 4000 W). Later ones: set the new current.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
-  The set-current action always gets a current between min and max.
+  The set-current action always gets a current between min and max, except 0 A for a charger switched by its current.
+- Switched by current (per charger setting, default off): for a charger that can only be told a current. It gets only the current:
+  its minimum to activate it, and 0 A to deactivate it, one command each. Its actions to activate and deactivate are kept, and neither used nor needed.
 - Car connected: required for every charger, read at each decision, true only with evidence (see Ground rules).
   Why: without it, a car could only be found by activating the charger, and chargers without a car would be activated in turn.
 - Actively charging: read at each decision, also when deactivated, from the charging on/off and the charging power, true when either gives evidence (see Ground rules).

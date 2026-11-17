@@ -18,6 +18,7 @@ const CHARGER_FIELDS = [
   "entity_id",
   "activate",
   "deactivate",
+  "switched_by_current",
   "set_current",
   "min_current_a",
   "max_current_a",
@@ -169,6 +170,9 @@ export class KraftvaktChargingPage extends ConfigPage {
           : this.localize("charging.power_from", { source: charger.charging_power.value }),
       );
     }
+    if (charger.switched_by_current) {
+      details.push(this.localize("charging.switched_by_current"));
+    }
     if (charger.deactivate_on_fault) {
       details.push(this.localize("charging.deactivated_on_fault"));
     }
@@ -251,6 +255,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       entity_id: null,
       activate: null,
       deactivate: null,
+      switched_by_current: false,
       set_current: null,
       min_current_a: defaults.min_current_a,
       max_current_a: defaults.max_current_a,

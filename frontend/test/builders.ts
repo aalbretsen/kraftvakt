@@ -46,6 +46,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     charging_window: null,
     finish_after_window: false,
     override_ends: "manual",
+    switched_by_current: false,
     cloud_controlled: false,
     start_delay_s: 300,
     deactivate_on_fault: false,

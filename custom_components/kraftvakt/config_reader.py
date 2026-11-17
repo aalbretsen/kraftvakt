@@ -174,6 +174,7 @@ class ConfigReader:
             entity_id=self._text(values, "entity_id", location),
             activate=self._action(values, "activate", location),
             deactivate=self._action(values, "deactivate", location),
+            switched_by_current=self._bool(values, "switched_by_current", defaults.switched_by_current, location),
             set_current=self._action(values, "set_current", location, entity_allowed=True),
             min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),

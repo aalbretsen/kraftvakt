@@ -256,6 +256,18 @@ def test_bypassed_charger_keeps_its_current_when_room_is_made() -> None:
     assert scenario.engine.chargers["c"].current_a == 6
 
 
+def test_charger_switched_by_its_current_gets_only_the_current() -> None:
+    """Its minimum current activates it and 0 A deactivates it, also at the start, the stop and the command repeat."""
+    scenario = one_charger(switched_by_current=True)
+    assert scenario.start_commands == current("c", 0)
+    scenario.set_charger("c", **CHARGING)
+
+    assert scenario.decide_many(0, 3) == [current("c", 6), current("c", 7), current("c", 8)]
+    assert scenario.decide_many(ABOVE_LIMIT, 3) == [current("c", 7), current("c", 6), current("c", 0)]
+    assert scenario.repeat(timedelta(minutes=30)) == current("c", 0)
+    assert scenario.engine.stop() == current("c", 0)
+
+
 def test_charger_on_trial_gets_more_current_when_the_car_draws_power() -> None:
     scenario = one_charger()
     scenario.decide(0)

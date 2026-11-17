@@ -443,7 +443,8 @@
     "charging_template": "lader aktivt fra mal",
     "power_from": "ladeeffekt fra {source}",
     "power_template": "ladeeffekt fra mal",
-    "deactivated_on_fault": "deaktiveres ved feil"
+    "deactivated_on_fault": "deaktiveres ved feil",
+    "switched_by_current": "slås på og av med strømmen"
   },
   "charger": {
     "add_title": "Legg til elbillader",
@@ -463,8 +464,8 @@
         "helper": "Elbilladeren i Home Assistant. Entitetene velges under, og fylles ut når Kraftvakt kjenner laderen."
       },
       "entity_id": {
-        "label": "Entitet som tillater lading",
-        "helper": "Aktiveres for å la bilen lade, deaktiveres for å stoppe den."
+        "label": "Laderentitet",
+        "helper": "Entiteten som slår lading på og av, eller, for en elbillader som slås på og av med strømmen, den som setter strømmen."
       },
       "activate": {
         "label": "Handling for å aktivere",
@@ -538,6 +539,10 @@
       "override_ends": {
         "label": "Avslutt overstyringen",
         "helper": "Når bryteren «‹lader› overstyr ladetidsrom» slår seg av selv. Den kan slås på før bilen kommer. Overstyringen lar bilen lade utenfor ladetidsrommet, men flytter den ikke foran de andre i gruppen."
+      },
+      "switched_by_current": {
+        "label": "Lading slås på og av med",
+        "helper": "Velg strømmen for en elbillader som ikke kan slå lading på og av: 0 A stopper den."
       }
     },
     "charging_current_info": "Strømmen økes og senkes én ampere om gangen etter ledig effekt. Minste ladestrøm er den laveste strømmen bilen lader med, vanligvis 6 A, og største det elbilladeren og sikringen tåler.",
@@ -558,6 +563,10 @@
         "true": "Tilstander for feil",
         "false": "Tilstander for ingen feil"
       }
+    },
+    "switched_by": {
+      "actions": "Handlinger for å aktivere og deaktivere",
+      "current": "Ladestrømmen"
     }
   }
 }

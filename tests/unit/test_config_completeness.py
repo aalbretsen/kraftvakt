@@ -93,6 +93,16 @@ def test_fault_flag_is_not_needed_while_deactivate_on_fault_is_off() -> None:
     assert _missing(data) == []
 
 
+def test_actions_to_activate_and_deactivate_are_not_needed_for_a_charger_switched_by_its_current() -> None:
+    data = full_config_data()
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["switched_by_current"] = True
+    charger["activate"] = None
+    charger["deactivate"] = {"mode": "custom", "steps": []}
+
+    assert _missing(data) == []
+
+
 def test_charging_current_entity_must_be_chosen() -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"][0]["set_current"] = {"mode": "entity"}

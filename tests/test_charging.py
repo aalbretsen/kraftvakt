@@ -229,6 +229,23 @@ async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freez
     assert steps_switched_on(hass) == "0"
 
 
+async def test_charger_switched_by_its_current_is_set_to_0_a_instead_of_deactivated(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+    """Its actions to activate and deactivate are kept but never run."""
+    config["charger_groups"][0]["chargers"][0] |= {"switched_by_current": True, "activate": None}
+    set_power(hass, CHARGER_POWER, "0")
+    await setup_kraftvakt()
+    assert actions == ["current 0"]
+    actions.clear()
+
+    await advance(hass, freezer)
+    set_power(hass, CHARGER_POWER, "4100")
+    await advance(hass, freezer)
+    set_power(hass, POWER_SENSOR, "11000")
+    await advance_windows(hass, freezer, 2)
+
+    assert actions == ["current 6", "current 7", "current 6", "current 0"]
+
+
 @pytest.mark.parametrize("car_state", [STATE_OFF, STATE_UNAVAILABLE])
 async def test_charger_without_car_is_not_activated(
     hass: HomeAssistant,

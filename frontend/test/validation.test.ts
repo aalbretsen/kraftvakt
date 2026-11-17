@@ -94,6 +94,12 @@ describe("missing items", () => {
     expect(missing({ deactivate_on_fault: false, fault_flag: empty })).toEqual([]);
   });
 
+  it("leave out the actions to activate and deactivate of a charger switched by its current", () => {
+    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", { activate: null, ...parts })])] }));
+    expect(missing({})).toEqual([{ code: "missing_action", section: "chargers", target: "garage", field: "activate" }]);
+    expect(missing({ switched_by_current: true })).toEqual([]);
+  });
+
   it("an action that is set is not missing", () => {
     expect(isMissingAction({ mode: "custom", action: [{ action: "light.turn_on" }] })).toBe(false);
     expect(isMissingAction({ mode: "domain", domain_action: "climate_hvac_mode", data: { hvac_mode: "heat" } })).toBe(false);

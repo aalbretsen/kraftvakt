@@ -174,6 +174,11 @@ def test_current_is_kept_between_min_and_max(current: int, expected: int) -> Non
     }
 
 
+@pytest.mark.parametrize(("switched_by_current", "expected"), [(False, 6), (True, 0)])
+def test_only_a_charger_switched_by_its_current_is_set_to_0_a(switched_by_current: bool, expected: int) -> None:
+    assert set_current_variables(replace(charger("switch.charger"), switched_by_current=switched_by_current), 0)["current"] == expected
+
+
 async def test_default_actions_call_the_domain_service(hass: HomeAssistant) -> None:
     turned_on = async_mock_service(hass, "switch", "turn_on")
     turned_off = async_mock_service(hass, "light", "turn_off")

@@ -522,16 +522,21 @@ class RegulationEngine:
         for index in range(min(before, count), max(before, count)):
             self._record_switch(AmpereStepKey(charger_id, index), turn_on)
         charging.set_ampere_steps_on(charger_id, count, now)
-        commands = self._charger_commands(self._chargers[charger_id], count)
-        if before == 0 and count > 0:
-            commands.append(ActivateCharger(charger_id))
-        return commands
+        return self._charger_commands(self._chargers[charger_id], count, activate=before == 0 and count > 0)
 
-    def _charger_commands(self, charger: Charger, count: int) -> list[Command]:
-        """Return the commands for the charger, always setting the current first."""
+    def _charger_commands(self, charger: Charger, count: int, activate: bool = False) -> list[Command]:
+        """Return the commands for the charger, always setting the current first.
+
+        A charger switched by its current gets only the current: 0 A to
+        deactivate it, and its minimum current to activate it.
+        """
+        if charger.switched_by_current:
+            return [SetChargingCurrent(charger.id, charging_current(charger, count) if count else 0)]
         commands: list[Command] = [SetChargingCurrent(charger.id, charging_current(charger, count))]
         if count == 0:
             commands.append(DeactivateCharger(charger.id))
+        elif activate:
+            commands.append(ActivateCharger(charger.id))
         return commands
 
     def _record_commands(self, commands: list[Command], now: datetime) -> list[Command]:

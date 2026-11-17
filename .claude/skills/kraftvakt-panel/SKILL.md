@@ -88,6 +88,8 @@ The section header, the description and the footer note are in `section-styles.t
   A custom action starts as the default action. The rule is in `actions.ts`.
 - The entity picker of an appliance or charger leaves out the entities that other appliances and chargers use.
 - The charger dialog starts with the device, required, and every entity picker in it offers only the device's entities, none before a device is chosen.
+- Whether charging is turned on and off by actions or by the charging current is a choice of two (a list of radio buttons) before the actions to activate and deactivate,
+  which are left out of view, and kept, while it is the current.
   The panel checks, as the backend does, that the device exists and each entity belongs to it.
 - Choosing another device clears every entity field that is not on the new device, keeps templates and custom actions,
   and adapts the actions to the new entity as a new entity does. It then asks the backend for the device's charger profile,

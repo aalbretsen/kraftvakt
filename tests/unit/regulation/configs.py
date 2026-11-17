@@ -63,6 +63,7 @@ def charger(
     override_ends: OverrideEnd = OverrideEnd.MANUAL,
     cloud_controlled: bool = False,
     start_delay_s: int = 300,
+    switched_by_current: bool = False,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""
     charging_window = None
@@ -83,6 +84,7 @@ def charger(
         charging_window=charging_window,
         override_ends=override_ends,
         cloud_controlled=cloud_controlled,
+        switched_by_current=switched_by_current,
         start_delay_s=start_delay_s,
     )
 

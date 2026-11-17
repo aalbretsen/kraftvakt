@@ -133,8 +133,10 @@ def domain_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
+    """Return the variables of the set-current action, with the current between the minimum and maximum, or 0 A to switch off a charger switched by its current."""
+    switched_off = charger.switched_by_current and current == 0
     return {
-        "current": min(max(current, charger.min_current_a), charger.max_current_a),
+        "current": 0 if switched_off else min(max(current, charger.min_current_a), charger.max_current_a),
         "min_current": charger.min_current_a,
         "max_current": charger.max_current_a,
     }

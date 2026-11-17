@@ -142,6 +142,8 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   and the car gets the **Start delay** to start charging, while its power reserve is kept free. The status page shows it as **Starting** meanwhile.
 - **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
   The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
+- An EV charger that cannot turn charging on and off, only take a current, is set to turn charging on and off by **the charging current**:
+  it is started with its minimum current and stopped with 0 A.
 - To keep an EV charger from charging for a while, turn on its switch **‹charger› excluded from regulation**.
 
 The helper texts in the panel tell what each setting does.
@@ -167,8 +169,8 @@ while it runs, the configuration pages are locked. A saved configuration is used
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
-  Then come the entity and the power reserve, followed by the actions, the charging current, car connected, actively charging, the done flag,
-  cloud control, the charging window and deactivate on fault.
+  Then come the entity and the power reserve, whether charging is turned on and off by actions or by the charging current,
+  followed by the actions, the charging current, car connected, actively charging, the done flag, cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 
@@ -259,7 +261,8 @@ Templates use the template language of Home Assistant (Jinja2), and actions are 
 In the action editor you can switch to YAML from the ⋮ menu and paste the examples.
 Every template and action gets the variables `entity_id` (the entity of the appliance or EV charger) and `entity` (its state object,
 for example `entity.state` and `entity.attributes`), so the templates keep working when the entity is replaced.
-The action for the charging current also gets `current`, `min_current` and `max_current`. `current` is always between the minimum and maximum charging current.
+The action for the charging current also gets `current`, `min_current` and `max_current`. `current` is always between the minimum and maximum charging current,
+except 0 for an EV charger whose charging is turned on and off by the charging current.
 
 A template is true only when it gives the boolean value true. Anything else, including an error in the template, counts as false. An entity is true only when it is `on`.
 

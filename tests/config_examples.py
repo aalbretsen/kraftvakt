@@ -80,6 +80,7 @@ def full_config_data() -> dict[str, Any]:
                         "entity_id": "switch.garage_charger",
                         "activate": {"mode": "default"},
                         "deactivate": {"mode": "default"},
+                        "switched_by_current": False,
                         "set_current": {
                             "mode": "custom",
                             "action": [

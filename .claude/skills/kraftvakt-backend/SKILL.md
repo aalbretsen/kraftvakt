@@ -77,7 +77,7 @@ The format is defined by the dataclasses and their serialization in `config_mode
   In a variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
-  deactivate and set-current actions, min and max current, power reserve, car connected, the charging on/off (`actively_charging`), the charging power,
+  deactivate and set-current actions, switched by current, min and max current, power reserve, car connected, the charging on/off (`actively_charging`), the charging power,
   the grace period, the done flag, an optional charging window, finish after window, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flag.
   A group has its name, one at a time and dynamic charging order.
   A charger is nested in its group, so it cannot be in two.
@@ -157,7 +157,8 @@ Every issue code needs a text in the panel's translations.
     A value that is not chosen (`null`) is missing, not an error. Issues for a parameter are addressed as `<field>.<parameter>`.
 - The commands for an appliance carry its current variant, and the action runner runs the variant's action if it overrides it, otherwise the appliance's.
 - All templates and actions get `entity_id` and `entity` (the state object of the appliance's or charger's entity, `none` when missing).
-  The set-current action also gets `current`, `min_current` and `max_current`; `current` is clamped between min and max.
+  The set-current action also gets `current`, `min_current` and `max_current`; `current` is clamped between min and max,
+  except 0 A for a charger switched by its current that is deactivated.
 
 ## Entities
 

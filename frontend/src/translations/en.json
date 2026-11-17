@@ -443,7 +443,8 @@
     "charging_template": "actively charging from a template",
     "power_from": "charging power from {source}",
     "power_template": "charging power from a template",
-    "deactivated_on_fault": "deactivated on fault"
+    "deactivated_on_fault": "deactivated on fault",
+    "switched_by_current": "turned on and off by the current"
   },
   "charger": {
     "add_title": "Add EV charger",
@@ -463,8 +464,8 @@
         "helper": "The EV charger in Home Assistant. Its entities are chosen below, and filled in when Kraftvakt knows the charger."
       },
       "entity_id": {
-        "label": "Entity that allows charging",
-        "helper": "Activated to let the car charge, deactivated to stop it."
+        "label": "Charger entity",
+        "helper": "The entity that turns charging on and off, or, for an EV charger turned on and off by its current, the one that sets the current."
       },
       "activate": {
         "label": "Action to activate",
@@ -538,6 +539,10 @@
       "override_ends": {
         "label": "End the override",
         "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives. The override lets the car charge outside the charging window, but does not move it ahead of the others in the group."
+      },
+      "switched_by_current": {
+        "label": "Charging is turned on and off by",
+        "helper": "Choose the current for an EV charger that has no way to turn charging on and off: 0 A stops it."
       }
     },
     "charging_current_info": "The current is raised and lowered one ampere at a time by the free power. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow.",
@@ -558,6 +563,10 @@
         "true": "States for a fault",
         "false": "States for no fault"
       }
+    },
+    "switched_by": {
+      "actions": "Actions to activate and deactivate",
+      "current": "The charging current"
     }
   }
 }

@@ -109,6 +109,8 @@ export interface Charger {
   finish_after_window: boolean;
   /** What ends the override of the charging window, besides the user. */
   override_ends: OverrideEnd;
+  /** Whether the EV charger is turned on and off by its charging current, 0 A being off, instead of its actions to activate and deactivate. */
+  switched_by_current: boolean;
   /** Whether the EV charger is controlled through a cloud service. */
   cloud_controlled: boolean;
   /** How long a cloud-controlled EV charger may take from activation until the car draws power. */

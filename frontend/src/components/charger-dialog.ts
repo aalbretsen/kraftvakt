@@ -47,12 +47,25 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
         this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
       )}
-      ${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)}
-      ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}
+      ${this.renderSwitchedBy(issues)}
+      ${this.draft.switched_by_current
+        ? nothing
+        : html`${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)} ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}`}
       ${this.renderChargingCurrent(issues)}
       ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderDone(issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
+  }
+
+  /** The actions to activate and deactivate are kept while the charger is switched by its current, since it uses neither. */
+  private renderSwitchedBy(issues: Issue[]) {
+    const options = (["actions", "current"] as const).map((value) => ({ value, label: this.localize(`charger.switched_by.${value}`) }));
+    return this.renderForm(
+      [{ name: "switched_by_current", required: true, selector: { select: { mode: "list", options } } }],
+      issues,
+      (value) => this.changeDraft({ switched_by_current: value.switched_by_current === "current" }),
+      { switched_by_current: this.draft.switched_by_current ? "current" : "actions" },
+    );
   }
 
   private renderChargingCurrent(issues: Issue[]) {

@@ -49,8 +49,10 @@ export function isOverridden(actions: Partial<ApplianceActions> | undefined, nam
   return actions?.[name] !== undefined;
 }
 
+/** A charger switched by its current keeps its actions to activate and deactivate, but uses neither. */
 function chargerActions(charger: Charger): ActionEntry[] {
-  return (["activate", "deactivate", "set_current"] as const).map((name) => ({ name, field: name, action: charger[name] }));
+  const names = charger.switched_by_current ? (["set_current"] as const) : (["activate", "deactivate", "set_current"] as const);
+  return names.map((name) => ({ name, field: name, action: charger[name] }));
 }
 
 /** Return the mistakes in the draft that stop it from being saved. */
