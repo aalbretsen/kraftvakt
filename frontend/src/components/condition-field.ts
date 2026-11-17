@@ -11,12 +11,13 @@ import type { HomeAssistant } from "../types";
 const ACTIVELY_CHARGING_ABOVE_W = 100;
 
 /** What the field gives, also the prefix of its texts. Only evidence counts as true. */
-export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "fault";
+export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "done" | "fault";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
   actively_charging: ["entity", "template"],
   charging_power: ["power_sensor", "template"],
+  done: ["entity", "template"],
   fault: ["entity", "template"],
 };
 
@@ -212,7 +213,7 @@ export class KraftvaktConditionField extends LitElement {
     }
     const evidence = this.evidence(this.value);
     return html`
-      ${this.renderNow(this.value, evidence === true)}
+      ${this.renderNow(this.value, evidence)}
       ${this.value.type === "template" && evidence === null
         ? html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>`
         : nothing}
@@ -243,10 +244,11 @@ export class KraftvaktConditionField extends LitElement {
 
   /**
    * An entity's state is shown as Home Assistant formats it, before what it
-   * counts as. On and off count as just that, so they are shown alone.
+   * counts as. On and off count as just that, so they are shown alone. No
+   * evidence counts as false, unless the kind tells that it gives no answer.
    */
-  private renderNow(condition: Condition, value: boolean) {
-    const text = this.text(value ? "true" : "false");
+  private renderNow(condition: Condition, evidence: boolean | null) {
+    const text = (evidence === null && this.optionalText("no_answer")) || this.text(evidence === true ? "true" : "false");
     const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
     const onOrOff = condition.type === "entity" && (stateObj?.state === "on" || stateObj?.state === "off");
     const templatePower = condition.type === "template" && this.kind === "charging_power" ? templatePowerW(this.preview?.result) : null;

@@ -338,6 +338,9 @@ export class KraftvaktPriorityList extends LitElement {
     if (until) {
       return this.renderChip(chip, word, sentence, {}, { time: formatClockTime(this.hass.language, until) });
     }
+    if (charger.state === "starting" || charger.state === "grace") {
+      return this.renderChip(chip, word, `status.${charger.state}_awaits_done`);
+    }
     if (charger.state === "queued" && this.sharesByChargingPower(charger)) {
       return this.renderChip(chip, word, "status.queued_for_room");
     }

@@ -73,6 +73,7 @@ class ChargerProfile:
     car_connected: ProfileCondition
     actively_charging: ProfileCondition | None = None
     charging_power: ProfileCondition | None = None
+    done_flag: ProfileCondition | None = None
     cloud_controlled: bool = False
     deactivate_on_fault: bool = False
     fault_flag: ProfileCondition | None = None

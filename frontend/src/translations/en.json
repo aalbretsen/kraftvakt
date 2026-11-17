@@ -53,6 +53,7 @@
     "bypassed_no_car": "Bypassed: no car connected",
     "waiting_charger": "Queued: another EV charger in the group has its turn",
     "starting_until": "Waiting until {time} for the car to start charging. Its power reserve is kept free until then.",
+    "starting_awaits_done": "Waiting for the car to start charging, or for the done flag to show whether it is done. Its power reserve is kept free meanwhile.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
     "next_ampere_at": "One more ampere at the decision at {time}",
@@ -75,9 +76,10 @@
     "free_power": "{power} kW ({share}) free",
     "power_runs_out": "The power runs out here. What is below waits for free power.",
     "chip_done": "Done",
-    "done": "Done: the car stopped charging or did not start. It is tried again when the car is disconnected and connected again.",
+    "done": "Done: the done flag shows done, or the car stopped charging or did not start. It is tried again when the car is disconnected and connected again.",
     "chip_grace": "Paused",
     "grace_until": "The car has stopped charging. It keeps the minimum current until {time}, in case it starts again.",
+    "grace_awaits_done": "The car has stopped charging. It keeps the minimum current until it starts again, or the done flag shows whether it is done.",
     "queued_for_room": "Queued: waiting for room beside the EV chargers that charge"
   },
   "missing": {
@@ -379,6 +381,23 @@
     "false": "not charging",
     "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
   },
+  "done": {
+    "entity": "Entity",
+    "template": "Template",
+    "entity_label": "Boolean entity",
+    "template_label": "Template",
+    "entity_helper": "On means done, off not done. Unavailable gives no answer.",
+    "state": "State",
+    "state_label": "Entity with a state",
+    "state_helper": "For example a status sensor of the EV charger with a state for completed.",
+    "states_label": "States",
+    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable gives no answer.",
+    "template_helper": "The boolean value true means done, and false not done. Anything else, also an error, gives no answer. Variables: entity_id, entity.",
+    "true": "done",
+    "false": "not done",
+    "no_answer": "no answer",
+    "invalid": "The template gives {value}, which is not true or false, so it gives no answer."
+  },
   "fault": {
     "entity": "Entity",
     "template": "Template",
@@ -483,6 +502,10 @@
         "label": "Grace period",
         "helper": "How long the car may stop charging and still count as charging, so a short pause does not end it. Meanwhile the EV charger is held at its lowest charging power. A car that has not charged again when it ends is done until it is disconnected. {min}–{max} s, default {default} s."
       },
+      "done_flag": {
+        "label": "Done flag",
+        "helper": "Optional. Tells Kraftvakt that the car is done charging, for example full, as many EV chargers report. The EV charger is then done at once, without waiting for the car to start or for the grace period, also right after a start, and is not activated again until the car is disconnected. A car that charges is never done. While the done flag gives no answer, for example while a cloud service is down, the car waits for it instead of being done when the time runs out."
+      },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
         "helper": "Turn it on when the EV charger is controlled through a cloud service, where commands go over the internet, take time and may count against the limits of the service. It then gets no repeated commands while no car is connected, and the car gets the start delay to start charging."
@@ -526,6 +549,10 @@
       "actively_charging": {
         "true": "States for charging",
         "false": "States for not charging"
+      },
+      "done_flag": {
+        "true": "States for done",
+        "false": "States for not done"
       },
       "fault_flag": {
         "true": "States for a fault",

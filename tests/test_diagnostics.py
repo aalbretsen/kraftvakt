@@ -143,6 +143,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "waiting": [],
         "last_readings": None,
         "last_permissions": {"c": "window"},
+        "last_decision": local(now),
     }
     assert state["charging_groups"]["g"]["last_readings"]["c"]["car_connected"] is True
     assert state["appliances_commanded_at"] == {"a": local(now - WINDOW)}

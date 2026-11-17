@@ -102,6 +102,8 @@ export interface Charger {
   charging_power: Condition | null;
   /** How long the car may stop charging and still count as charging. */
   grace_period_s: number;
+  /** Tells that the car is done charging, so it is done at once. */
+  done_flag: Condition | null;
   charging_window: ChargingWindow | null;
   /** Whether ongoing charging may finish after the charging window has ended. */
   finish_after_window: boolean;

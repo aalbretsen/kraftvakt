@@ -14,10 +14,10 @@ from ..config_model import Charger, ChargerGroup, ChargingWindow, OverrideEnd
 class ChargerReading:
     """What a decision reads for a charger.
 
-    `car_connected` and `actively_charging` hold only with evidence that they
-    are true, and `car_disconnected` and `charging_stopped` only with evidence
-    that they are false. `charging_power_w` is the power the charger reports,
-    None without a valid value. `override_armed` is whether what ends the override
+    `car_connected`, `actively_charging` and `car_done` hold only with evidence
+    that they are true, and `car_disconnected`, `charging_stopped` and
+    `car_not_done` only with evidence that they are false. `charging_power_w`
+    is the power the charger reports, None without a valid value. `override_armed` is whether what ends the override
     has been seen at a decision since it was switched on: the car connected,
     or the charger activated and actively charging. `fault` is whether a fault
     flag shows a fault while the charger is deactivated on fault.
@@ -28,6 +28,8 @@ class ChargerReading:
     car_connected: bool = False
     car_disconnected: bool = False
     charging_stopped: bool = False
+    car_done: bool = False
+    car_not_done: bool = False
     excluded: bool = False
     window_override: bool = False
     override_armed: bool = False
@@ -229,6 +231,7 @@ class ChargingState:
     waiting: set[str] = field(default_factory=set)
     last_readings: dict[str, ChargerReading] = field(default_factory=dict)
     last_permissions: dict[str, ChargingPermission] = field(default_factory=dict)
+    last_decision: datetime | None = None
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -268,11 +271,30 @@ class ChargingState:
         return charger_id in self.activated_at and (reading.actively_charging or charger_id in self.charged)
 
     def becomes_done(self, charger: Charger, reading: ChargerReading, now: datetime, window: timedelta) -> bool:
-        """Return whether an activated charger that does not charge has had its time to start, or its grace period, without charging."""
-        if charger.id not in self.activated_at or reading.actively_charging:
+        """Return whether a charger whose car does not charge becomes done.
+
+        It does when its done flag shows done, also when it is not activated,
+        so a full car is not tried after a start. An activated charger is also
+        done when its time to start, or its grace period, has passed without
+        charging, but not while a done flag gives no evidence, as while a cloud
+        service is down, since a car that is not full would stay done until it
+        is disconnected.
+        """
+        if charger.id in self.done or reading.actively_charging:
             return False
-        grace_started = self.grace.get(charger.id)
+        if reading.car_done:
+            return True
+        if not self._timers_may_end(charger, reading):
+            return False
+        return self._time_ran_out(charger, now, window)
+
+    def _timers_may_end(self, charger: Charger, reading: ChargerReading) -> bool:
+        return charger.id in self.activated_at and (charger.done_flag is None or reading.car_not_done)
+
+    def _time_ran_out(self, charger: Charger, now: datetime, window: timedelta) -> bool:
+        """Return whether the time to start, or the grace period of a car that has charged, has passed."""
         if charger.id in self.charged:
+            grace_started = self.grace.get(charger.id)
             return grace_started is not None and now - grace_started >= timedelta(seconds=charger.grace_period_s)
         return self.activated_long_enough(charger, now, window)
 
@@ -298,6 +320,7 @@ class ChargingState:
         previously_charging = self.charging
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
+        self.last_decision = now
         changes = ChargerChanges()
         for charger in chargers:
             self._evaluate_charger(charger, previous_readings.get(charger.id), now, window, changes)
@@ -336,16 +359,17 @@ class ChargingState:
             self.bypassed.add(charger_id)
         else:
             self.bypassed.discard(charger_id)
-        if charger_id not in self.activated_at or not reading.car_connected or not self.is_allowed(charger_id):
-            return
-        if reading.actively_charging:
-            self.charged.add(charger_id)
-            if self.grace.pop(charger_id, None) is not None:
-                changes.resumed.add(charger_id)
+        if not reading.car_connected or not self.is_allowed(charger_id):
             return
         if self.becomes_done(charger, reading, now, window):
             self.done.add(charger_id)
             changes.done.append(charger_id)
+        elif charger_id not in self.activated_at:
+            return
+        elif reading.actively_charging:
+            self.charged.add(charger_id)
+            if self.grace.pop(charger_id, None) is not None:
+                changes.resumed.add(charger_id)
         elif charger_id in self.charged and charger_id not in self.grace:
             self.grace[charger_id] = now
             changes.grace.append(charger_id)
@@ -420,9 +444,13 @@ class ChargingState:
             bypassed=charger.id in self.bypassed,
             charging=charging,
             car_connected=reading.car_connected,
-            starting_until=self.starting.get(charger.id),
-            grace_until=None if grace_started is None else grace_started + timedelta(seconds=charger.grace_period_s),
+            starting_until=self._while_timing(charger, self.starting.get(charger.id)),
+            grace_until=None if grace_started is None else self._while_timing(charger, grace_started + timedelta(seconds=charger.grace_period_s)),
         )
+
+    def _while_timing(self, charger: Charger, until: datetime | None) -> datetime | None:
+        """Return when the time to start or the grace period ends, or None once it has passed and the charger waits for its done flag."""
+        return until if until is None or self.last_decision is None or until > self.last_decision else None
 
     def _state_of(self, charger_id: str, activated: bool, charging: bool) -> ChargerState:
         permission = self.last_permissions.get(charger_id)
@@ -469,7 +497,7 @@ class ChargingState:
             and charger.id in self.on_trial
             and charger.id in self.activated_at
             and charger.id not in self.charged
-            and not self.activated_long_enough(charger, now, window)
+            and not (self.activated_long_enough(charger, now, window) and self._timers_may_end(charger, self.last_readings[charger.id]))
         }
 
     def _select(self, group: ChargerGroup) -> None:

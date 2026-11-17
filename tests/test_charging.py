@@ -498,6 +498,40 @@ async def test_fault_flag_is_not_read_while_deactivate_on_fault_is_off(hass: Hom
     assert actions == ["current 6", f"on {CHARGER}"]
 
 
+async def test_full_car_is_done_by_its_done_flag_without_being_tried(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+    config["charger_groups"][0]["chargers"][0]["done_flag"] = {"type": "entity", "value": "binary_sensor.charger_done"}
+    hass.states.async_set("binary_sensor.charger_done", STATE_ON)
+    set_power(hass, CHARGER_POWER, "0")
+    entry = await setup_kraftvakt()
+    actions.clear()
+
+    await advance(hass, freezer)
+
+    assert actions == []
+    assert status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]["state"] == "done"
+
+
+async def test_car_stays_in_grace_until_its_done_flag_shows_done(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+    """A done flag that is unavailable, as while a cloud service is down, gives no evidence, so the grace period does not end."""
+    config["charger_groups"][0]["chargers"][0]["done_flag"] = {"type": "entity", "value": "binary_sensor.charger_done"}
+    hass.states.async_set("binary_sensor.charger_done", STATE_UNAVAILABLE)
+    set_power(hass, CHARGER_POWER, "4100")
+    entry = await setup_kraftvakt()
+    await advance_windows(hass, freezer, 2)
+    set_power(hass, CHARGER_POWER, "0")
+
+    await advance_windows(hass, freezer, 10)
+    row = status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]
+    assert row["state"] == "grace"
+    assert row["grace_until"] is None
+    actions.clear()
+
+    hass.states.async_set("binary_sensor.charger_done", STATE_ON)
+    await advance(hass, freezer)
+    assert actions == ["current 6", f"off {CHARGER}"]
+    assert entry.runtime_data.chargers["c1"].state is ChargerState.DONE
+
+
 async def advance_until(hass: HomeAssistant, freezer: FrozenDateTimeFactory, local_time: str) -> None:
     """Close windows of ten minutes until the time of day in Oslo."""
     target = datetime.fromisoformat(local_time).replace(tzinfo=OSLO)

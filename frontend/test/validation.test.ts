@@ -180,6 +180,7 @@ describe("the device of a charger", () => {
   it("holds every entity the charger names, but templates are not checked", () => {
     const item = charger("garage", {
       car_connected: { type: "template", value: "{{ true }}" },
+      done_flag: { type: "entity", value: "binary_sensor.garage_done" },
       fault_flag: { type: "entity", value: "binary_sensor.garage_error" },
     });
     const onDevice = hass({}, [item]);
@@ -188,11 +189,13 @@ describe("the device of a charger", () => {
       entities: {
         ...onDevice.entities,
         "number.garage_current": { entity_id: "number.garage_current", device_id: "other" },
+        "binary_sensor.garage_done": { entity_id: "binary_sensor.garage_done", device_id: "other" },
         "binary_sensor.garage_error": { entity_id: "binary_sensor.garage_error", device_id: "other" },
       },
     };
     expect(draftErrors(config({ charger_groups: [group("garage", [item])] }), CAPABILITIES, elsewhere)).toEqual([
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "set_current" },
+      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "done_flag" },
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "fault_flag" },
     ]);
   });

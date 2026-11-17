@@ -140,13 +140,13 @@ Kraftvakt sets the charging current of each EV charger one ampere at a time, by 
 The place of the group in the priority list decides where its EV chargers are in the order. An EV charger charges only when Kraftvakt has activated it,
 so a car that is connected does not start charging by itself. The charging current is set to the minimum before the EV charger is activated or deactivated.
 
-- **Car connected**, the **charging on/off** and the **fault flag** are conditions. A condition is one of:
+- **Car connected**, the **charging on/off**, the **done flag** and the **fault flag** are conditions. A condition is one of:
   - a boolean entity: on counts as true,
   - the states of an entity, for example a status sensor of the EV charger: choose the states that count as true, or the states that count as false,
     so that every other state counts as true. Unknown and unavailable never count as true,
   - a template: the boolean value true counts as true.
 
-  Anything else counts as false, also an unavailable entity and a template that fails.
+  Anything else counts as false, also an unavailable entity and a template that fails. The done flag is the exception, see below.
 - **Car connected** is read at every decision. An EV charger without a car connected is bypassed, see below.
 - **Actively charging** is read at every decision from the **charging on/off**, a condition, and the **charging power**,
   a sensor in W or kW or a template that gives the power in W, where above 100 W counts as charging. Give one of them or both: the car charges when either shows it.
@@ -158,8 +158,15 @@ so a car that is connected does not start charging by itself. The charging curre
 - A car that has charged and stops gets the **grace period**, 300 seconds by default, from 10 to 900: the EV charger keeps the minimum current,
   so the appliances below can use the power, and the car goes on charging if it starts again within the grace period, for example after balancing its battery.
   When the grace period ends without charging, the car is done. The status page shows the EV charger as **Paused** meanwhile.
+- The **done flag**, optional, tells that the car is done charging, for example from a status sensor of the EV charger with a state for completed.
+  When it shows done, the car is done at once, without waiting for the time to start or the grace period,
+  and also right after a start, so a full car is not tried. A car that is actively charging is never done.
+  While the done flag gives no answer, an unavailable entity or a template that does not give true or false, for example while a cloud service is down,
+  the time to start and the grace period do not make the car done: it keeps the minimum current until the done flag answers or the car charges.
+  So a car that is not full does not stay done until it is unplugged because the cloud service was down for a while.
 - A done EV charger is deactivated and stays off until the car is disconnected, by a known value: a car sensor that is unavailable, or a template that fails, does not count.
-  It is tried again at once when a car is connected again. Every start of the regulation begins without done EV chargers, so a full car is tried once after each start.
+  It is tried again at once when a car is connected again.
+  Every start of the regulation begins without done EV chargers, so a full car is tried once after each start, unless its done flag shows done.
   A car that charges on its own schedule, or whose charge limit is raised in its app after it is full, does not charge again until it is unplugged:
   let the charging window decide when the car charges, or turn on the override.
 - An EV charger without a car connected is bypassed: it gets no more than the minimum current, stays activated if it is, and does not stand in the way of other EV chargers.
@@ -204,7 +211,8 @@ so a car that is connected does not start charging by itself. The charging curre
   - **When I turn it off**, the default: it stays on until you turn it off.
   - **When the car no longer charges**: when the car is done, once it has been actively charging since the switch was turned on,
     and the charging on/off and the charging power tell that it does not charge. A full car ends it, so the car heating in the morning does not charge.
-    An EV charger that Kraftvakt has deactivated, for example above the power limit, does not end it, and the car gets time to start again when it is activated again.
+    An EV charger that Kraftvakt has deactivated, for example above the power limit, does not end it unless its done flag shows done,
+    and the car gets time to start again when it is activated again.
     A car that never starts charging, for example one that is already full, does not end it.
   - **When the car is disconnected**: at the first decision where the car is not connected, once a car has been connected since the switch was turned on.
     It lasts through a full car and the car heating in the morning.
@@ -235,7 +243,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
-  Then come the entity and the power reserve, followed by the actions, the charging current, car connected, actively charging,
+  Then come the entity and the power reserve, followed by the actions, the charging current, car connected, actively charging, the done flag,
   cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
@@ -364,6 +372,12 @@ A template is true only when it gives the boolean value true. Anything else, inc
 When the sensor is unavailable, `float(0)` gives 0 and the template gives false, so the EV charger counts as not charging,
 and as stopped for **End the override**. Leave out the default, `| float`, to let an unavailable sensor give no value instead:
 the EV charger still counts as not charging, but the override does not end.
+
+**Done flag** from the status sensor of the charger, with no answer while the charger is offline:
+
+```jinja
+{% set status = states('sensor.garage_charger_status') %}{{ none if status in ['offline', 'unknown', 'unavailable'] else status == 'completed' }}
+```
 
 **Fault flag** from the status sensor of the charger:
 

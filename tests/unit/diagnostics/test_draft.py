@@ -85,9 +85,14 @@ def test_the_states_of_an_entity_are_drafted_with_whether_they_count_as_true() -
     assert result.profile.car_connected == state_condition(ProfileEntity("binary_sensor", translation_key="car"), ("disconnected",), states_are_true=False)
 
 
-def test_the_fault_flag_is_drafted_as_the_other_conditions() -> None:
-    result = draft(deactivate_on_fault=True, fault_flag={"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"})
+def test_the_done_and_fault_flags_are_drafted_as_the_other_conditions() -> None:
+    result = draft(
+        done_flag={"type": "template", "value": "{{ is_state('sensor.box', 'completed') }}"},
+        deactivate_on_fault=True,
+        fault_flag={"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"},
+    )
 
+    assert result.profile.done_flag == template_condition("{{ is_state('$sensor', 'completed') }}", sensor=ProfileEntity("sensor"))
     assert result.profile.deactivate_on_fault
     assert result.profile.fault_flag == template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor"))
 

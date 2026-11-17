@@ -10,6 +10,8 @@ from custom_components.kraftvakt.config_model import (
     Charger,
     ChargerGroup,
     ChargingWindow,
+    Condition,
+    ConditionType,
     OverrideEnd,
 )
 from custom_components.kraftvakt.regulation.charging import (
@@ -35,6 +37,9 @@ NOW = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 WINDOW = timedelta(minutes=1)
 CHARGING = ChargerReading(actively_charging=True, car_connected=True)
 IDLE = ChargerReading(car_connected=True)
+FULL = ChargerReading(car_connected=True, car_done=True)
+NOT_FULL = ChargerReading(car_connected=True, car_not_done=True)
+DONE_FLAG = Condition(ConditionType.ENTITY, "binary_sensor.done")
 
 
 def charger(charger_id: str = "c", min_a: int = 6, max_a: int = 16, **settings) -> Charger:
@@ -248,6 +253,63 @@ def test_car_that_stops_charging_is_in_grace_and_done_when_the_grace_period_ends
     assert evaluate(state, configured, {"a": IDLE}, now=NOW + 10 * WINDOW).done == []
     assert evaluate(state, configured, {"a": IDLE}, now=NOW + 11 * WINDOW).done == ["a"]
     assert state.charging == set()
+
+
+@pytest.mark.parametrize("charged", [False, True])
+def test_done_flag_makes_a_charger_on_trial_or_in_grace_done_at_once(charged: bool) -> None:
+    configured = [charger("a", done_flag=DONE_FLAG)]
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 2, NOW)
+    if charged:
+        evaluate(state, configured, {"a": CHARGING})
+        evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW)
+
+    assert evaluate(state, configured, {"a": FULL}, now=NOW + WINDOW).done == ["a"]
+
+
+def test_done_flag_makes_a_charger_done_before_it_is_tried() -> None:
+    """So a full car is not tried after a start. Not while it charges, nor without a car, or when it may not charge."""
+    configured = [charger(charger_id, done_flag=DONE_FLAG) for charger_id in ("a", "b", "c", "d")]
+    state = ChargingState.for_chargers(configured)
+    full_without_car = ChargerReading(car_done=True)
+    full_and_charging = replace(CHARGING, car_done=True)
+
+    changes = evaluate(state, configured, {"a": FULL, "b": full_and_charging, "c": full_without_car, "d": FULL}, allowed=("a", "b", "c"), one_at_a_time=False)
+
+    assert changes.done == ["a"]
+    assert state.may_charge == {"b"}
+    assert evaluate(state, configured, {"a": FULL, "d": FULL}, now=NOW + WINDOW, one_at_a_time=False).done == ["d"]
+
+
+def test_without_evidence_from_the_done_flag_neither_the_time_to_start_nor_the_grace_period_ends() -> None:
+    """The car stays on trial or in grace until the done flag tells whether it is done."""
+    configured = [charger("a", done_flag=DONE_FLAG, grace_period_s=60), charger("b", done_flag=DONE_FLAG)]
+    group = group_of(configured, one_at_a_time=False)
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 2, NOW)
+    state.set_ampere_steps_on("b", 1, NOW)
+    evaluate(state, configured, {"a": CHARGING, "b": IDLE}, one_at_a_time=False)
+    evaluate(state, configured, {"a": IDLE, "b": IDLE}, now=NOW + WINDOW, one_at_a_time=False)
+
+    assert evaluate(state, configured, {"a": IDLE, "b": IDLE}, now=NOW + 10 * WINDOW, one_at_a_time=False).done == []
+    assert state.grace == {"a": NOW + WINDOW}
+    assert state.on_trial == {"a", "b"}
+    assert state.status(group)["a"].grace_until is None
+    assert evaluate(state, configured, {"a": NOT_FULL, "b": NOT_FULL}, now=NOW + 11 * WINDOW, one_at_a_time=False).done == ["a", "b"]
+
+
+def test_charger_waiting_for_its_done_flag_holds_its_reserve() -> None:
+    configured = [charger("a", done_flag=DONE_FLAG, cloud_controlled=True, start_delay_s=0)]
+    group = group_of(configured)
+    state = ChargingState.for_chargers(configured)
+    state.set_ampere_steps_on("a", 1, NOW)
+
+    evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW)
+    assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, True, starting_until=NOW + 2 * WINDOW)
+    evaluate(state, configured, {"a": IDLE}, now=NOW + 5 * WINDOW)
+    assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, True)
+    evaluate(state, configured, {"a": NOT_FULL}, now=NOW + 6 * WINDOW)
+    assert state.starting == {}
 
 
 @pytest.mark.parametrize(

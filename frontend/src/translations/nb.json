@@ -53,6 +53,7 @@
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
     "waiting_charger": "I kø: en annen elbillader i gruppen har tur",
     "starting_until": "Venter til {time} på at bilen begynner å lade. Effektreserven holdes ledig så lenge.",
+    "starting_awaits_done": "Venter på at bilen begynner å lade, eller på at ferdigflagget viser om den er ferdig. Effektreserven holdes ledig så lenge.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
     "next_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
@@ -75,9 +76,10 @@
     "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt.",
     "chip_done": "Ferdig",
-    "done": "Ferdig: bilen sluttet å lade eller begynte ikke. Den prøves igjen når bilen kobles fra og til igjen.",
+    "done": "Ferdig: ferdigflagget viser ferdig, eller bilen sluttet å lade eller begynte ikke. Den prøves igjen når bilen kobles fra og til igjen.",
     "chip_grace": "Pause",
     "grace_until": "Bilen har sluttet å lade. Den beholder minste ladestrøm til {time} i tilfelle den begynner igjen.",
+    "grace_awaits_done": "Bilen har sluttet å lade. Den beholder minste ladestrøm til den begynner igjen, eller ferdigflagget viser om den er ferdig.",
     "queued_for_room": "I kø: venter på plass ved siden av elbilladerne som lader"
   },
   "missing": {
@@ -379,6 +381,23 @@
     "false": "lader ikke",
     "invalid": "Malen gir {value}, som ikke er et tall, og regnes derfor ikke som lading."
   },
+  "done": {
+    "entity": "Entitet",
+    "template": "Mal",
+    "entity_label": "Boolsk entitet",
+    "template_label": "Mal",
+    "entity_helper": "På betyr ferdig, av ikke ferdig. Utilgjengelig gir ikke noe svar.",
+    "state": "Tilstand",
+    "state_label": "Entitet med tilstand",
+    "state_helper": "For eksempel en statussensor på elbilladeren med en tilstand for fullført.",
+    "states_label": "Tilstander",
+    "states_helper": "Velg blant tilstandene entiteten har rapportert, eller skriv inn en. Alle andre tilstander regnes som det motsatte, og utilgjengelig gir ikke noe svar.",
+    "template_helper": "Den boolske verdien sann betyr ferdig, og usann ikke ferdig. Alt annet, også en feil i malen, gir ikke noe svar. Variabler: entity_id, entity.",
+    "true": "ferdig",
+    "false": "ikke ferdig",
+    "no_answer": "ikke noe svar",
+    "invalid": "Malen gir {value}, som ikke er sann eller usann, og gir derfor ikke noe svar."
+  },
   "fault": {
     "entity": "Entitet",
     "template": "Mal",
@@ -487,6 +506,10 @@
         "label": "Skystyrt elbillader",
         "helper": "Slå det på når elbilladeren styres gjennom en skytjeneste, der kommandoene går over internett, tar tid og kan telle mot tjenestens grenser. Den får da ingen gjentatte kommandoer når ingen bil er tilkoblet, og bilen får startforsinkelsen på å begynne å lade."
       },
+      "done_flag": {
+        "label": "Ferdigflagg",
+        "helper": "Valgfritt. Forteller Kraftvakt at bilen er ferdig ladet, for eksempel full, slik mange elbilladere rapporterer. Elbilladeren er da ferdig med en gang, uten å vente på at bilen begynner å lade eller på respittiden, også rett etter en start, og aktiveres ikke igjen før bilen kobles fra. En bil som lader, er aldri ferdig. Så lenge ferdigflagget ikke gir noe svar, for eksempel mens en skytjeneste er nede, venter bilen på svaret i stedet for å bli ferdig når tiden er ute."
+      },
       "start_delay_s": {
         "label": "Startforsinkelse",
         "helper": "Lengste tid fra elbilladeren er aktivert til bilen trekker strøm. Kraftvakt gir bilen så lang tid på å begynne å lade, og holder effekten ledig for den så lenge. {min}–{max} s, standard {default} s."
@@ -526,6 +549,10 @@
       "actively_charging": {
         "true": "Tilstander for lading",
         "false": "Tilstander for ikke lading"
+      },
+      "done_flag": {
+        "true": "Tilstander for ferdig",
+        "false": "Tilstander for ikke ferdig"
       },
       "fault_flag": {
         "true": "Tilstander for feil",

@@ -73,6 +73,7 @@ class DeviceEntities:
             "car_connected": self.condition(profile.car_connected),
             "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),
             "charging_power": None if profile.charging_power is None else self.condition(profile.charging_power),
+            "done_flag": None if profile.done_flag is None else self.condition(profile.done_flag),
             "cloud_controlled": profile.cloud_controlled,
         }
         fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)

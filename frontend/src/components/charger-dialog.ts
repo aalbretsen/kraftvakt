@@ -50,7 +50,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       ${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)}
       ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}
       ${this.renderChargingCurrent(issues)}
-      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)}
+      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderDone(issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
@@ -134,7 +134,15 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
-  private stateChoices(field: "car_connected" | "actively_charging" | "fault_flag") {
+  private renderDone(issues: Issue[]) {
+    return this.renderGroup({
+      title: this.label("done_flag"),
+      description: this.helper("done_flag"),
+      content: this.renderCondition("done_flag", "done", issues, true),
+    });
+  }
+
+  private stateChoices(field: "car_connected" | "actively_charging" | "done_flag" | "fault_flag") {
     return {
       true: this.localize(`charger.state_choices.${field}.true`),
       false: this.localize(`charger.state_choices.${field}.false`),
@@ -142,7 +150,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   private renderCondition(
-    field: "car_connected" | "actively_charging" | "charging_power" | "fault_flag",
+    field: "car_connected" | "actively_charging" | "charging_power" | "done_flag" | "fault_flag",
     kind: ConditionKind,
     issues: Issue[],
     optional = false,

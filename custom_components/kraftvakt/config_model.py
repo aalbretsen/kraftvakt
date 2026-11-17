@@ -308,6 +308,7 @@ class Charger:
     actively_charging: Condition | None = None
     charging_power: Condition | None = None
     grace_period_s: int = 300
+    done_flag: Condition | None = None
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
@@ -322,7 +323,7 @@ class Charger:
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""
-        for field_name in ("car_connected", "actively_charging", "charging_power", "fault_flag"):
+        for field_name in ("car_connected", "actively_charging", "charging_power", "done_flag", "fault_flag"):
             condition = getattr(self, field_name)
             if condition is not None:
                 yield field_name, condition

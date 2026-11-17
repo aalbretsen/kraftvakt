@@ -286,6 +286,7 @@ def test_power_reserve_may_be_0_without_sharing_by_charging_power() -> None:
         ("charging_power", {"type": "entity", "value": "binary_sensor.x"}),
         ("car_connected", {"type": "state", "value": "sensor.x", "states": "connected"}),
         ("fault_flag", {"type": "state", "value": "sensor.x", "states": ["error"], "states_are_true": "no"}),
+        ("done_flag", {"type": "power_sensor", "value": "sensor.x"}),
     ],
 )
 async def test_each_charger_condition_takes_its_own_kinds(hass: HomeAssistant, field: str, condition: dict[str, Any]) -> None:

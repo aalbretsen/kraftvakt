@@ -34,6 +34,8 @@ def profile_source(draft: ProfileDraft) -> str:
         fields["actively_charging"] = writer.condition(profile.actively_charging)
     if profile.charging_power is not None:
         fields["charging_power"] = writer.condition(profile.charging_power)
+    if profile.done_flag is not None:
+        fields["done_flag"] = writer.condition(profile.done_flag)
     if profile.cloud_controlled:
         fields["cloud_controlled"] = "True"
     if profile.deactivate_on_fault:

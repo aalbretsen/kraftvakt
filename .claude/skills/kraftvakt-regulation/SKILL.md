@@ -48,7 +48,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Cloud-controlled charger | A charger setting, off by default, for a charger controlled through a cloud service: no command repeat while no car is connected, and its start delay. |
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging. |
 | Time to start | How long a car gets to start charging after its charger is activated: two windows, or the start delay of a cloud-controlled charger when that is longer. |
-| Starting charger | A charger on trial within its time to start whose power reserve is held for the car that is about to draw power: a cloud-controlled charger, or any charger in a group with several at once and dynamic charging order. |
+| Starting charger | A charger on trial within its time to start, or waiting for its done flag after it, whose power reserve is held for the car that is about to draw power: a cloud-controlled charger, or any charger in a group with several at once and dynamic charging order. |
 | Deactivate on fault | A charger setting, off by default, with its fault flag: the charger has a fault while it shows one. |
 | Fault flag | A condition of the charger that tells that it has a fault. |
 | Charger with a fault | A charger whose fault flag showed a fault at the last decision, with deactivate on fault on. It behaves as a deactivated charger, not allowed to charge. |
@@ -59,8 +59,9 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. |
 | Actively charging | The car draws power: the charging on/off or the charging power shows it. A charger has at least one of them, and either is enough. |
 | Grace period | 10–900 s, default 300 s. How long a car that has charged since its charger was activated may stop charging and still count as charging. |
-| Charger in grace | A charger whose car has charged since activation and has not charged for less than the grace period. It is held at its first ampere step. |
-| Done charger | A charger whose car did not start within its time to start, or stopped charging for the grace period. Deactivated until evidence that the car is disconnected. |
+| Charger in grace | A charger whose car has charged since activation and has not charged for less than the grace period, or longer while it waits for its done flag. It is held at its first ampere step. |
+| Done flag | An optional condition of the charger that tells whether the car is done charging, as when the charger reports that charging is completed. |
+| Done charger | A charger whose done flag shows done, or whose car did not start within its time to start or stopped charging for the grace period. Deactivated until evidence that the car is disconnected. |
 | Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
 | Dynamic charging order | A group setting, off by default. On, a charger that charges keeps its place ahead of a car connected later. Off, the configured charging priority always applies. |
 | Queued charger | A charger that may charge and has a car, but waits for its turn: with one charger at a time behind the one that charges, and with several at once and dynamic charging order behind the chargers that charge. |
@@ -93,12 +94,13 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   bypassed, done chargers and chargers in grace, current variants, excluded appliances, when each appliance and charger last got a command)
   starts again with defaults at every start: HA or integration start, user start, after the safe state and after a penalty.
   The configuration and the switch positions are kept over any restart.
-- True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, the charging on/off and the fault flag)
+- True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, the charging on/off, the done flag and the fault flag)
   also the states of an entity. The chosen states count as true, or, when the user chooses so, as false, and every other state as the opposite.
   The charging power is a power sensor or a template that gives a number.
   Only evidence makes it true: an entity that is `on`, a state that counts as true, a template that gives the boolean true, or a valid power above 100 W.
   Everything else is false, also unavailable entities and sensors, `unknown` and `unavailable` of an entity with states, and failing templates.
-  The exceptions are the override end and the end of a done charger (see EV charging), which need evidence of false. Settings are named so that true means the thing is the case.
+  The exceptions are the override end, the end of a done charger and the done flag (see EV charging), which need evidence of false.
+  Settings are named so that true means the thing is the case.
 
 ## Measurement
 
@@ -317,15 +319,24 @@ All with entity category diagnostic:
   and room is made below them as usual when there is not. Their waiting time counts the reserve as used too, as it would once the car draws power.
   Why: the car may take a while to draw power, minutes for a cloud-controlled charger, so the average shows its power as free.
   A step turned on in that power would be switched off again when the car starts, and its waiting time would grow.
-  A car that never starts holds the reserve for at most the time to start, since the charger is then done. A car that starts slowly gets its second ampere a decision later.
+  A car that never starts holds the reserve for at most the time to start, since the charger is then done, or until its done flag gives evidence.
+  A car that starts slowly gets its second ampere a decision later.
 - Grace: a charger whose car has charged since it was activated, and does not charge actively, is in grace for the grace period from the first decision where it does not.
   When the grace starts, all ampere steps but the first are switched off at once. It keeps its first ampere step and stays activated, and still counts as charging.
   When the car charges actively again within the grace period, the grace ends and the charger gets its amperes back the normal way.
   Why: a car may stop for a while, for example while it balances its battery, and must not lose its place for that.
 - Done: a charger that has been activated for its time to start without charging, or whose grace period ends without charging, is done.
-  It is deactivated at once, gets no ampere steps, and does not stand in the way of others, until car connected gives evidence that the car is disconnected:
+- Done flag (per charger, optional): read at each decision. A charger whose done flag shows done is done at once,
+  on trial, in grace, and also when it is not activated, as at the first decision after a start, so a full car is not tried.
+  Only a charger that is allowed to charge, has a car connected and does not charge actively becomes done; a car that charges is never done, whatever the flag shows.
+  With a done flag, the time to start and the grace period make a charger done only when the flag gives evidence that the car is not done.
+  While it gives none, the charger stays on trial, a starting charger holding its reserve, or in grace, until the flag gives evidence or the car charges.
+  Why: a cloud service that is down leaves every sensor of the charger unavailable, and a car that is not full would otherwise be done, and not charge, until it is disconnected.
+  The done flag does not end done: only evidence that the car is disconnected does.
+  Why: a charger may stop reporting done once it is deactivated, and a full car would then be tried again and again.
+- A done charger is deactivated at once, gets no ampere steps, and does not stand in the way of others, until car connected gives evidence that the car is disconnected:
   an entity that is off, a state that counts as false, or a template that gives false. A car that is connected again is tried at once.
-  Every start begins without done chargers, so a full car is tried once after each start.
+  Every start begins without done chargers, so a full car is tried once after each start, unless its done flag shows done.
   Why: a full car would otherwise be tried again and again, and with one charger at a time stop the car of another charger each time.
 - Bypassed: car connected is false. Evaluated at each decision, ends as soon as it does not hold, and a car that is connected again gets its time to start,
   also on a charger that stayed activated. A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
@@ -380,7 +391,7 @@ All with entity category diagnostic:
   - Manual (default): never ends by itself.
   - When the car no longer charges: armed when the charger is activated and actively charging;
     ends at the decision where the charger becomes done, when the charging on/off and the charging power give evidence that it does not charge.
-    A charger the regulation has deactivated neither arms nor ends it, and one it has activated again gives the car the same time to start.
+    A charger the regulation has deactivated neither arms nor ends it, unless its done flag makes it done, and one it has activated again gives the car the same time to start.
     A car that never starts charging, as one that is already full, never arms it.
   - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false.
 - Only evidence of false ends an override: car connected from an entity that is off, a state that counts as false or a template that gives false,

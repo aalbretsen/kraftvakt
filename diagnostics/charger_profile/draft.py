@@ -140,6 +140,7 @@ class ProfileDrafting:
             car_connected=self._condition("car_connected", charger.car_connected),
             actively_charging=None if charger.actively_charging is None and charger.charging_power is not None else self._condition("actively_charging", charger.actively_charging),
             charging_power=None if charger.charging_power is None else self._condition("charging_power", charger.charging_power),
+            done_flag=None if charger.done_flag is None else self._condition("done_flag", charger.done_flag),
             cloud_controlled=charger.cloud_controlled,
             deactivate_on_fault=charger.deactivate_on_fault,
             fault_flag=None if charger.fault_flag is None else self._condition("fault_flag", charger.fault_flag),
