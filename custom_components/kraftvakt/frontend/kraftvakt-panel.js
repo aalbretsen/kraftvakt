@@ -1099,7 +1099,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
     background: rgba(var(--rgb-info-color, 3, 155, 229), 0.16);
     color: var(--info-color, #039be5);
   }
-`,cr={kind:"on"},hr={kind:"off"},pr={kind:"outline",icon:"M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"},ur={first_decision:[{kind:"off",icon:l},"status.chip_first_decision","status.first_decision"],fault:[{kind:"alarm",icon:"M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z"},"status.chip_fault","status.fault"],excluded:[pr,"status.chip_excluded","status.excluded"],outside_window:[{kind:"outline",icon:"M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"},"status.chip_window","status.outside_window"],no_car:[{kind:"warning",icon:"M20.5,19.85L6.41,5.76L2.41,1.76L1.11,3L4.57,6.46L3,11V19A1,1 0 0,0 4,20H5A1,1 0 0,0 6,19V18H16.11L20.84,22.73L22.11,21.46L20.5,19.85M6.5,15A1.5,1.5 0 0,1 5,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,15M5,10L5.78,7.67L8.11,10H5M17.5,5.5L19,10H13.2L16.12,12.92C16.5,12.17 17.37,11.86 18.12,12.21C18.87,12.57 19.18,13.47 18.83,14.21C18.68,14.5 18.43,14.77 18.12,14.92L21,17.8V11L18.92,5C18.71,4.4 18.14,4 17.5,4H7.2L8.7,5.5H17.5Z"},"status.chip_no_car","status.bypassed_no_car"],done:[{kind:"off",icon:"M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.59 7.58L10 14.17L7.41 11.59L6 13L10 17L18 9L16.59 7.58Z"},"status.chip_done","status.done"],queued:[{kind:"off",icon:l},"status.chip_queued","status.waiting_charger"],starting:[{kind:"info",icon:"M23 15.5C23 14.79 22.84 14.14 22.55 13.54C21.89 11.79 20.56 10.38 18.86 9.62C18.61 8.26 18 7.06 16.96 6.04C15.6 4.68 13.95 4 12 4C10.42 4 9 4.47 7.75 5.43S5.67 7.62 5.25 9.15C4 9.43 2.96 10.08 2.17 11.1S1 13.28 1 14.58C1 16.09 1.54 17.38 2.61 18.43C3.69 19.5 5 20 6.5 20H10.26C11.53 21.81 13.62 23 16 23C19.87 23 23 19.87 23 16C23 15.89 23 15.79 23 15.68C23 15.62 23 15.56 23 15.5M6.5 18C5.53 18 4.71 17.66 4.03 17C3.34 16.29 3 15.47 3 14.5S3.34 12.71 4.03 12.03C4.71 11.34 5.53 11 6.5 11H7C7 9.62 7.5 8.44 8.46 7.46C9.44 6.5 10.62 6 12 6S14.56 6.5 15.54 7.46C16 7.93 16.35 8.46 16.59 9.03C16.4 9 16.2 9 16 9C12.13 9 9 12.13 9 16C9 16.7 9.11 17.37 9.29 18H6.5M16 21C13.24 21 11 18.76 11 16S13.24 11 16 11 21 13.24 21 16 18.76 21 16 21M16.5 16.25L19.36 17.94L18.61 19.16L15 17V12H16.5V16.25Z"},"status.chip_starting","status.starting_until"],grace:[{kind:"info",icon:"M13,16V8H15V16H13M9,16V8H11V16H9M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"},"status.chip_grace","status.grace_until"],override:[{kind:"info",icon:"M15,4A8,8 0 0,1 23,12A8,8 0 0,1 15,20A8,8 0 0,1 7,12A8,8 0 0,1 15,4M15,6A6,6 0 0,0 9,12A6,6 0 0,0 15,18A6,6 0 0,0 21,12A6,6 0 0,0 15,6M14,8H15.5V11.78L17.83,14.11L16.77,15.17L14,12.4V8M2,18A1,1 0 0,1 1,17A1,1 0 0,1 2,16H5.83C6.14,16.71 6.54,17.38 7,18H2M3,13A1,1 0 0,1 2,12A1,1 0 0,1 3,11H5.05L5,12L5.05,13H3M4,8A1,1 0 0,1 3,7A1,1 0 0,1 4,6H7C6.54,6.62 6.14,7.29 5.83,8H4Z"},"status.chip_override","status.window_overridden"],finishing:[{kind:"info",icon:"M12,1C8.14,1 5,4.14 5,8A7,7 0 0,0 12,15C15.86,15 19,11.87 19,8C19,4.14 15.86,1 12,1M12,3.15C14.67,3.15 16.85,5.32 16.85,8C16.85,10.68 14.67,12.85 12,12.85A4.85,4.85 0 0,1 7.15,8A4.85,4.85 0 0,1 12,3.15M11,5V8.69L14.19,10.53L14.94,9.23L12.5,7.82V5M15,16V19H3V21H15V24L19,20M19,20V24H21V16H19"},"status.chip_finishing","status.finishing_at"],charging:[{kind:"on",icon:n},"status.chip_charging","status.charging_at"],activated:[cr,"status.activated","status.activated_not_charging"],deactivated:[hr,"status.deactivated","status.deactivated"]};function gr(e){return e.endsWith(":00")?e.slice(0,-3):e}let fr=class extends me{constructor(){super(...arguments),this.narrow=!1,this.phoneQuery=new wt(this,600)}get phone(){return this.phoneQuery.matches}render(){const e=function(e){return e.priority.map(e=>"appliance"===e.type?{kind:"appliance",appliance:e,on:e.on}:{kind:"charger_group",group:e,on:e.chargers.some(e=>e.activated&&!e.bypassed)})}(this.status),t=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(e);return X`
+`,cr={kind:"on"},hr={kind:"off"},pr={kind:"outline",icon:"M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"},ur={first_decision:[{kind:"off",icon:l},"status.chip_first_decision","status.first_decision"],fault:[{kind:"alarm",icon:"M11,15H13V17H11V15M11,7H13V13H11V7M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20Z"},"status.chip_fault","status.fault"],excluded:[pr,"status.chip_excluded","status.excluded"],outside_window:[{kind:"outline",icon:"M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"},"status.chip_window","status.outside_window"],no_car:[{kind:"warning",icon:"M20.5,19.85L6.41,5.76L2.41,1.76L1.11,3L4.57,6.46L3,11V19A1,1 0 0,0 4,20H5A1,1 0 0,0 6,19V18H16.11L20.84,22.73L22.11,21.46L20.5,19.85M6.5,15A1.5,1.5 0 0,1 5,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,15M5,10L5.78,7.67L8.11,10H5M17.5,5.5L19,10H13.2L16.12,12.92C16.5,12.17 17.37,11.86 18.12,12.21C18.87,12.57 19.18,13.47 18.83,14.21C18.68,14.5 18.43,14.77 18.12,14.92L21,17.8V11L18.92,5C18.71,4.4 18.14,4 17.5,4H7.2L8.7,5.5H17.5Z"},"status.chip_no_car","status.bypassed_no_car"],done:[{kind:"off",icon:"M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.59 7.58L10 14.17L7.41 11.59L6 13L10 17L18 9L16.59 7.58Z"},"status.chip_done","status.done"],queued:[{kind:"off",icon:l},"status.chip_queued","status.waiting_charger"],starting:[{kind:"info",icon:"M23 15.5C23 14.79 22.84 14.14 22.55 13.54C21.89 11.79 20.56 10.38 18.86 9.62C18.61 8.26 18 7.06 16.96 6.04C15.6 4.68 13.95 4 12 4C10.42 4 9 4.47 7.75 5.43S5.67 7.62 5.25 9.15C4 9.43 2.96 10.08 2.17 11.1S1 13.28 1 14.58C1 16.09 1.54 17.38 2.61 18.43C3.69 19.5 5 20 6.5 20H10.26C11.53 21.81 13.62 23 16 23C19.87 23 23 19.87 23 16C23 15.89 23 15.79 23 15.68C23 15.62 23 15.56 23 15.5M6.5 18C5.53 18 4.71 17.66 4.03 17C3.34 16.29 3 15.47 3 14.5S3.34 12.71 4.03 12.03C4.71 11.34 5.53 11 6.5 11H7C7 9.62 7.5 8.44 8.46 7.46C9.44 6.5 10.62 6 12 6S14.56 6.5 15.54 7.46C16 7.93 16.35 8.46 16.59 9.03C16.4 9 16.2 9 16 9C12.13 9 9 12.13 9 16C9 16.7 9.11 17.37 9.29 18H6.5M16 21C13.24 21 11 18.76 11 16S13.24 11 16 11 21 13.24 21 16 18.76 21 16 21M16.5 16.25L19.36 17.94L18.61 19.16L15 17V12H16.5V16.25Z"},"status.chip_starting","status.starting_until"],grace:[{kind:"info",icon:"M13,16V8H15V16H13M9,16V8H11V16H9M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z"},"status.chip_grace","status.grace_until"],override:[{kind:"info",icon:"M15,4A8,8 0 0,1 23,12A8,8 0 0,1 15,20A8,8 0 0,1 7,12A8,8 0 0,1 15,4M15,6A6,6 0 0,0 9,12A6,6 0 0,0 15,18A6,6 0 0,0 21,12A6,6 0 0,0 15,6M14,8H15.5V11.78L17.83,14.11L16.77,15.17L14,12.4V8M2,18A1,1 0 0,1 1,17A1,1 0 0,1 2,16H5.83C6.14,16.71 6.54,17.38 7,18H2M3,13A1,1 0 0,1 2,12A1,1 0 0,1 3,11H5.05L5,12L5.05,13H3M4,8A1,1 0 0,1 3,7A1,1 0 0,1 4,6H7C6.54,6.62 6.14,7.29 5.83,8H4Z"},"status.chip_override","status.window_overridden"],finishing:[{kind:"info",icon:"M12,1C8.14,1 5,4.14 5,8A7,7 0 0,0 12,15C15.86,15 19,11.87 19,8C19,4.14 15.86,1 12,1M12,3.15C14.67,3.15 16.85,5.32 16.85,8C16.85,10.68 14.67,12.85 12,12.85A4.85,4.85 0 0,1 7.15,8A4.85,4.85 0 0,1 12,3.15M11,5V8.69L14.19,10.53L14.94,9.23L12.5,7.82V5M15,16V19H3V21H15V24L19,20M19,20V24H21V16H19"},"status.chip_finishing","status.finishing_at"],charging:[{kind:"on",icon:n},"status.chip_charging","status.charging_at"],activated:[cr,"status.activated","status.activated_not_charging"],deactivated:[hr,"status.deactivated","status.deactivated"]};function gr(e){return e.endsWith(":00")?e.slice(0,-3):e}let fr=class extends me{constructor(){super(...arguments),this.narrow=!1,this.phoneQuery=new wt(this,600),this.measured={temperature:!1,power:!1}}get phone(){return this.phoneQuery.matches}render(){const e=function(e){return e.priority.map(e=>"appliance"===e.type?{kind:"appliance",appliance:e,on:e.on}:{kind:"charger_group",group:e,on:e.chargers.some(e=>e.activated&&!e.bypassed)})}(this.status),t=function(e){const t=e.map(e=>e.on).lastIndexOf(!0),i=e.slice(t+1).some(e=>"charger_group"===e.kind||!e.appliance.excluded);return t>=0&&i?t:-1}(e);return this.measured=function(e){const t=e.priority.filter(e=>"appliance"===e.type),i=e.priority.flatMap(e=>"charger_group"===e.type?e.chargers:[]);return{temperature:t.some(e=>null!==e.temperature),power:[...t,...i].some(e=>null!==e.power_w)}}(this.status),X`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("status.appliances_and_chargers")}</span>
@@ -1111,7 +1111,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
                 `)}
             </div>`}
       </ha-card>
-    `}columns(){const e=this.status.priority.filter(e=>"appliance"===e.type),t=this.status.priority.flatMap(e=>"charger_group"===e.type?e.chargers:[]),i=e=>e?"max-content":"0",r=i([...e,...t].some(e=>null!==e.power_w));return`grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${i(e.some(e=>null!==e.temperature))} ${r} 120px max-content`}renderRow(e,t,i){if(!t)return X`<div class="row ${e}">${i}</div>`;const r=e=>{e.preventDefault(),dt(e,t)};return X`
+    `}columns(){return`grid-template-columns: ${["minmax(24px, max-content)","minmax(0, 1fr)","max-content",...this.measured.temperature?["max-content"]:[],...this.measured.power?["max-content"]:[],"var(--waiting-width)","max-content"].join(" ")}`}renderRow(e,t,i){if(!t)return X`<div class="row ${e}">${i}</div>`;const r=e=>{e.preventDefault(),dt(e,t)};return X`
       <div
         class="row ${e} clickable"
         role="button"
@@ -1158,7 +1158,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${this.renderName(e.name)}
         </div>
         ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)}
-        ${this.renderWideOnly(X`<span></span>`)} ${this.renderPower(e.power_w)}
+        ${this.measured.temperature?this.renderWideOnly(X`<span></span>`):te} ${this.renderPower(e.power_w)}
         ${this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at")}
         ${this.renderChargerChip(e)}
       `)}renderWaiting(e,t,i,r){if(!e.waiting_since||!e.waiting_ends_at)return this.phone?te:X`<span></span>`;const a=mt(this.hass.language,e.waiting_ends_at);return X`
@@ -1169,11 +1169,11 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
             .end=${Date.parse(e.waiting_ends_at)}
           ></kraftvakt-countdown-bar>`)}
       </span>
-    `}renderPower(e){return this.renderWideOnly(X`<span class="measured" title=${this.localize("status.power")}
+    `}renderPower(e){return this.measured.power?this.renderWideOnly(X`<span class="measured" title=${this.localize("status.power")}
         >${null===e?te:`${gt(this.hass.language,e)} kW`}</span
-      >`)}renderTemperature(e){const t=e.temperature;return this.renderWideOnly(X`<span class="measured" title=${this.localize("status.temperature")}
+      >`):te}renderTemperature(e){const t=e.temperature;return this.measured.temperature?this.renderWideOnly(X`<span class="measured" title=${this.localize("status.temperature")}
         >${null===t?te:`${ut(this.hass.language,t.value,1)} ${t.unit}`}</span
-      >`)}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,r=null===e.current_a?0:e.current_a-t.min_current_a+1,a=e.bypassed?"on bypassed":"on";return X`
+      >`):te}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,r=null===e.current_a?0:e.current_a-t.min_current_a+1,a=e.bypassed?"on bypassed":"on";return X`
       <span class="amperes">
         <span class="current ${null===e.current_a?"none":""}"
           >${null===e.current_a?"–":this.localize("status.amperes",{current:e.current_a})}</span
@@ -1193,8 +1193,20 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         ${r>0?this.localize("status.free_power",{power:gt(t,r),share:_t(t,r/e.power_limit_w)}):te}
       </div>
     `}applianceEntity(e){return this.config?.config.appliances.find(t=>t.id===e.id)?.entity_id}chargerConfig(e){return this.config&&it(this.config.config).find(t=>t.id===e.id)}sharesByChargingPower(e){const t=this.config?.config.charger_groups.find(t=>t.chargers.some(t=>t.id===e.id));return!!t&&t.dynamic_order&&!t.one_at_a_time}static{this.styles=[lr,dr,g`
+      /* Roomy spacing while the list is wide, tighter below, so the names keep their room. */
       :host {
         display: block;
+        container-type: inline-size;
+        --column-gap: 20px;
+        --waiting-width: 96px;
+        --row-padding-end: 24px;
+      }
+      @container (max-width: 760px) {
+        ha-card {
+          --column-gap: 12px;
+          --waiting-width: 72px;
+          --row-padding-end: 16px;
+        }
       }
       .empty {
         padding: 0 16px 16px;
@@ -1202,7 +1214,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       }
       .list {
         display: grid;
-        column-gap: 12px;
+        column-gap: var(--column-gap);
       }
       .row {
         grid-column: 1 / -1;
@@ -1210,12 +1222,12 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         grid-template-columns: subgrid;
         align-items: center;
         min-height: 48px;
-        padding: 4px 16px;
+        padding: 4px var(--row-padding-end) 4px 16px;
         border-top: 1px solid var(--divider-color);
         box-sizing: border-box;
       }
       :host([narrow]) .row {
-        padding: 4px 12px;
+        padding-inline-start: 12px;
       }
       .row.group,
       .row.charger {

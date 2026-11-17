@@ -98,6 +98,16 @@ function cutOffIndex(entries: PriorityEntry[]): number {
   return last >= 0 && regulatedBelow ? last : -1;
 }
 
+/** Return whether some row has a temperature, which only appliances have, and whether some row has a power. */
+function measuredColumns(status: StatusSnapshot): { temperature: boolean; power: boolean } {
+  const appliances = status.priority.filter((row): row is ApplianceStatus => row.type === "appliance");
+  const chargers = status.priority.flatMap((row) => (row.type === "charger_group" ? row.chargers : []));
+  return {
+    temperature: appliances.some((row) => row.temperature !== null),
+    power: [...appliances, ...chargers].some((row) => row.power_w !== null),
+  };
+}
+
 /** Return «22» for «22:00», and the time as it is otherwise. */
 function shortTime(time: string): string {
   return time.endsWith(":00") ? time.slice(0, -3) : time;
@@ -123,9 +133,13 @@ export class KraftvaktPriorityList extends LitElement {
     return this.phoneQuery.matches;
   }
 
+  /** The measured columns some row has a value for; the others are left out, so they take no room and no gap. */
+  private measured = { temperature: false, power: false };
+
   protected render() {
     const entries = priorityEntries(this.status);
     const cutAfter = cutOffIndex(entries);
+    this.measured = measuredColumns(this.status);
     return html`
       <ha-card>
         <div class="card-header">
@@ -149,15 +163,19 @@ export class KraftvaktPriorityList extends LitElement {
 
   /**
    * The columns of the list: rank, name, current, temperature, power, waiting and state.
-   * The power and the temperature take room only when a row has one.
+   * The name takes the room that is left, so the other columns, as wide as their content, line up at the right.
    */
   private columns(): string {
-    const appliances = this.status.priority.filter((row): row is ApplianceStatus => row.type === "appliance");
-    const chargers = this.status.priority.flatMap((row) => (row.type === "charger_group" ? row.chargers : []));
-    const shown = (has: boolean) => (has ? "max-content" : "0");
-    const power = shown([...appliances, ...chargers].some((row) => row.power_w !== null));
-    const temperature = shown(appliances.some((row) => row.temperature !== null));
-    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${temperature} ${power} 120px max-content`;
+    const columns = [
+      "minmax(24px, max-content)",
+      "minmax(0, 1fr)",
+      "max-content",
+      ...(this.measured.temperature ? ["max-content"] : []),
+      ...(this.measured.power ? ["max-content"] : []),
+      "var(--waiting-width)",
+      "max-content",
+    ];
+    return `grid-template-columns: ${columns.join(" ")}`;
   }
 
   /** A row of an appliance or EV charger opens Home Assistant's more-info dialog for its entity, while the entity exists. */
@@ -280,7 +298,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.renderWideOnly(html`<span></span>`)} ${this.renderPower(charger.power_w)}
+        ${this.measured.temperature ? this.renderWideOnly(html`<span></span>`) : nothing} ${this.renderPower(charger.power_w)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       `,
@@ -314,8 +332,11 @@ export class KraftvaktPriorityList extends LitElement {
     `;
   }
 
-  /** The power in kW, left out on a phone. */
+  /** The power in kW, left out on a phone and when no row has one. */
   private renderPower(powerW: number | null) {
+    if (!this.measured.power) {
+      return nothing;
+    }
     return this.renderWideOnly(
       html`<span class="measured" title=${this.localize("status.power")}
         >${powerW === null ? nothing : `${formatPower(this.hass.language, powerW)} kW`}</span
@@ -323,9 +344,12 @@ export class KraftvaktPriorityList extends LitElement {
     );
   }
 
-  /** The temperature with one decimal and its unit, left out on a phone. */
+  /** The temperature with one decimal and its unit, left out on a phone and when no row has one. */
   private renderTemperature(appliance: ApplianceStatus) {
     const temperature = appliance.temperature;
+    if (!this.measured.temperature) {
+      return nothing;
+    }
     return this.renderWideOnly(
       html`<span class="measured" title=${this.localize("status.temperature")}
         >${temperature === null
@@ -435,8 +459,20 @@ export class KraftvaktPriorityList extends LitElement {
     cardHeaderStyles,
     chipStyles,
     css`
+      /* Roomy spacing while the list is wide, tighter below, so the names keep their room. */
       :host {
         display: block;
+        container-type: inline-size;
+        --column-gap: 20px;
+        --waiting-width: 96px;
+        --row-padding-end: 24px;
+      }
+      @container (max-width: 760px) {
+        ha-card {
+          --column-gap: 12px;
+          --waiting-width: 72px;
+          --row-padding-end: 16px;
+        }
       }
       .empty {
         padding: 0 16px 16px;
@@ -444,7 +480,7 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .list {
         display: grid;
-        column-gap: 12px;
+        column-gap: var(--column-gap);
       }
       .row {
         grid-column: 1 / -1;
@@ -452,12 +488,12 @@ export class KraftvaktPriorityList extends LitElement {
         grid-template-columns: subgrid;
         align-items: center;
         min-height: 48px;
-        padding: 4px 16px;
+        padding: 4px var(--row-padding-end) 4px 16px;
         border-top: 1px solid var(--divider-color);
         box-sizing: border-box;
       }
       :host([narrow]) .row {
-        padding: 4px 12px;
+        padding-inline-start: 12px;
       }
       .row.group,
       .row.charger {

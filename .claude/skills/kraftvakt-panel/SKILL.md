@@ -203,7 +203,10 @@ The section header, the description and the footer note are in `section-styles.t
   and its chargers are indented under it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank,
   name with the variant after it, current, temperature, power, waiting and state chip. An appliance has no current, so its name also takes the current column.
   The power is an appliance's display power or a charger's charging power, in kW, and the temperature an appliance's display temperature with one decimal;
-  each column takes room only when a row has a value. An essential appliance's row has a light golden background.
+  each is left out when no row has a value. An essential appliance's row has a light golden background.
+  The name takes the room that is left, and the other columns are as wide as their content, so they line up at the right.
+  The gaps, the waiting bar and the space at the right end are roomy while the list is wider than 760 px, and tighter below,
+  a container query on the list's own width, so the names keep their room.
   The rank is right aligned with digits of equal width.
   A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first, down to a few letters.
   - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current, the waiting icon and the state chip:
