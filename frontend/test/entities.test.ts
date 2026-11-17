@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { chargerName, entityName, existingEntity, measuredPowerW, ownEntities, ownEntity } from "../src/entities";
+import {
+  chargerName,
+  entityName,
+  existingEntity,
+  measuredPowerW,
+  ownEntities,
+  ownEntity,
+  temperatureSources,
+  thermostatTemperature,
+} from "../src/entities";
 import type { HomeAssistant } from "../src/types";
 import { charger, hass, state } from "./builders";
 
@@ -69,5 +78,28 @@ describe("an existing entity", () => {
 
   it.each([["switch.gone"], [null], [undefined]])("is none for %s", (entityId) => {
     expect(existingEntity(home, entityId)).toBeNull();
+  });
+});
+
+describe("the temperatures of a device", () => {
+  const home = hass({
+    "climate.floor": state("heat", { current_temperature: 19.5, temperature: 22 }),
+    "sensor.floor_temperature": state("23", { device_class: "temperature" }),
+    "sensor.floor_power": state("800", { device_class: "power" }),
+    "switch.floor": state("on"),
+  });
+
+  it("are each temperature sensor and a thermostat's current and set temperature, in the order of the entities", () => {
+    expect(temperatureSources(home, ["climate.floor", "sensor.floor_power", "sensor.floor_temperature", "switch.floor"])).toEqual([
+      { type: "current_temperature", entityId: "climate.floor" },
+      { type: "target_temperature", entityId: "climate.floor" },
+      { type: "temperature_sensor", entityId: "sensor.floor_temperature" },
+    ]);
+  });
+
+  it("are read from the thermostat's attributes, as the backend reads them", () => {
+    expect(thermostatTemperature(home, { type: "current_temperature", entityId: "climate.floor" })).toBe(19.5);
+    expect(thermostatTemperature(home, { type: "target_temperature", entityId: "climate.floor" })).toBe(22);
+    expect(thermostatTemperature(home, { type: "target_temperature", entityId: "climate.gone" })).toBeNull();
   });
 });

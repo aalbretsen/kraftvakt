@@ -136,6 +136,10 @@ async def test_missing_power_sensor_is_false(hass: HomeAssistant) -> None:
         (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.offline"), None),
         (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.gone"), None),
         (template("{{ state_attr(entity_id, 'temperature') }}"), (22.0, "°C")),
+        (Condition(ConditionType.CURRENT_TEMPERATURE, "climate.bathroom"), (19.5, "°C")),
+        (Condition(ConditionType.TARGET_TEMPERATURE, "climate.bathroom"), (22.0, "°C")),
+        (Condition(ConditionType.CURRENT_TEMPERATURE, "climate.gone"), None),
+        (Condition(ConditionType.TARGET_TEMPERATURE, "sensor.tank"), None),
         (template("{{ true }}"), None),
         (template("{{ 'warm' }}"), None),
         (template("{{ 'nan' }}"), None),
@@ -147,6 +151,6 @@ async def test_temperature_is_a_number_with_its_unit(hass: HomeAssistant, condit
     hass.states.async_set("sensor.tank", "61.5", {"unit_of_measurement": "°C"})
     hass.states.async_set("sensor.outdoor", "-4")
     hass.states.async_set("sensor.offline", "unavailable")
-    hass.states.async_set("climate.bathroom", "heat", {"temperature": 22})
+    hass.states.async_set("climate.bathroom", "heat", {"temperature": 22, "current_temperature": 19.5})
 
     assert temperature_value(hass, condition, "climate.bathroom") == expected

@@ -20,6 +20,7 @@ from .const import (
     CONF_PERIOD_MIN,
     CONF_POWER_W,
     CONF_ROOM_TEMPERATURE,
+    CONF_TEMPERATURE,
     DEFAULT_TARGET_TEMPERATURE,
     DOMAIN,
 )
@@ -162,7 +163,8 @@ class SimulatedHeater(PluggedInDevice):
     """A heating device with a duty cycle and an on/off switch in front of it.
 
     The cycle starts in its on part each time the switch is turned on or the
-    cycle is changed, and runs on while the device is unplugged.
+    cycle is changed, and runs on while the device is unplugged. Its
+    temperature, of the water or the floor, changes only when it is set.
     """
 
     def __init__(
@@ -171,10 +173,12 @@ class SimulatedHeater(PluggedInDevice):
         consumer_id: str,
         cycle: DutyCycle,
         store_setting: StoreSetting,
+        temperature: float,
     ) -> None:
-        """Start switched off, and store every change of the cycle with the callback."""
+        """Start switched off, and store every change of the cycle and the temperature with the callback."""
         super().__init__(hass, consumer_id)
         self.cycle = cycle
+        self.temperature = temperature
         self._store_setting = store_setting
         self._switched_on_at: datetime | None = None
         self._cancel_timer: CALLBACK_TYPE | None = None
@@ -224,6 +228,12 @@ class SimulatedHeater(PluggedInDevice):
             CONF_PERIOD_MIN,
             int(period_min),
         )
+
+    @callback
+    def async_set_temperature(self, temperature: float) -> None:
+        self.temperature = temperature
+        self._store_setting(CONF_TEMPERATURE, temperature)
+        self._async_notify()
 
     @callback
     def async_stop(self) -> None:
@@ -285,11 +295,12 @@ class SimulatedThermostat(SimulatedHeater):
         consumer_id: str,
         cycle: DutyCycle,
         store_setting: StoreSetting,
+        temperature: float,
         hvac_modes: list[HVACMode],
         room_temperature: float,
     ) -> None:
         """Start in off, or its first mode without off, at the default target."""
-        super().__init__(hass, consumer_id, cycle, store_setting)
+        super().__init__(hass, consumer_id, cycle, store_setting, temperature)
         self.hvac_modes = hvac_modes
         self.room_temperature = room_temperature
         self.hvac_mode = HVACMode.OFF if HVACMode.OFF in hvac_modes else hvac_modes[0]

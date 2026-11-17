@@ -31,6 +31,7 @@ from .const import (
     MAX_HEATER_POWER_W,
     MAX_PERIOD_MIN,
     MAX_ROOM_TEMPERATURE,
+    MAX_TEMPERATURE,
     MIN_ROOM_TEMPERATURE,
     TEMPERATURE_STEP,
     DeviceKind,
@@ -116,6 +117,21 @@ ROOM_TEMPERATURE: Final[SimulatorNumberDescription[SimulatedThermostat]] = Simul
 )
 
 
+def temperature(translation_key: str) -> SimulatorNumberDescription[SimulatedHeater]:
+    """Return the setting of a heating device's temperature, named as its sensor is for the kind of device."""
+    return SimulatorNumberDescription(
+        key="temperature",
+        translation_key=translation_key,
+        device_class=NumberDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        native_min_value=MIN_ROOM_TEMPERATURE,
+        native_max_value=MAX_TEMPERATURE,
+        native_step=TEMPERATURE_STEP,
+        value_fn=lambda heater: heater.temperature,
+        set_fn=lambda heater, value: heater.async_set_temperature(value),
+    )
+
+
 def charging_current(charger: SimulatedCharger) -> NumberEntityDescription:
     """Return the description of the charging current, from 0 A to the charger's maximum."""
     return NumberEntityDescription(
@@ -141,9 +157,9 @@ async def async_setup_entry(
         case DeviceKind.HAN:
             descriptions: tuple[SimulatorNumberDescription[Any], ...] = (BACKGROUND_POWER,)
         case DeviceKind.HEATER:
-            descriptions = HEATER_NUMBERS
+            descriptions = (*HEATER_NUMBERS, temperature("temperature"))
         case DeviceKind.THERMOSTAT:
-            descriptions = (*HEATER_NUMBERS, ROOM_TEMPERATURE)
+            descriptions = (*HEATER_NUMBERS, ROOM_TEMPERATURE, temperature("floor_temperature"))
         case DeviceKind.CHARGER:
             charger = device_of(entry, SimulatedCharger)
             async_add_entities([ChargingCurrentNumber(entry, charger, charging_current(charger))])

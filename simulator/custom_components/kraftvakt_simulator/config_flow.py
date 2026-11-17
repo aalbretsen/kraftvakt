@@ -41,13 +41,16 @@ from .const import (
     CONF_POWER_W,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
+    CONF_TEMPERATURE,
     DEFAULT_ROOM_TEMPERATURE,
+    DEFAULT_TEMPERATURE,
     DOMAIN,
     MAX_BACKGROUND_W,
     MAX_CURRENT_A,
     MAX_HEATER_POWER_W,
     MAX_PERIOD_MIN,
     MAX_ROOM_TEMPERATURE,
+    MAX_TEMPERATURE,
     MIN_ROOM_TEMPERATURE,
     TEMPERATURE_STEP,
     DeviceKind,
@@ -71,6 +74,18 @@ DUTY_CYCLE_FIELDS = {
     vol.Required(CONF_PERIOD_MIN, default=60): whole_number(1, MAX_PERIOD_MIN, "min"),
 }
 
+TEMPERATURE_FIELD = {
+    vol.Required(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE): NumberSelector(
+        NumberSelectorConfig(
+            min=MIN_ROOM_TEMPERATURE,
+            max=MAX_TEMPERATURE,
+            step=TEMPERATURE_STEP,
+            mode=NumberSelectorMode.BOX,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+        )
+    ),
+}
+
 SCHEMAS = {
     DeviceKind.HAN: vol.Schema(
         {
@@ -89,6 +104,7 @@ SCHEMAS = {
                 )
             ),
             **DUTY_CYCLE_FIELDS,
+            **TEMPERATURE_FIELD,
         }
     ),
     DeviceKind.THERMOSTAT: vol.Schema(
@@ -112,6 +128,7 @@ SCHEMAS = {
                     unit_of_measurement=UnitOfTemperature.CELSIUS,
                 )
             ),
+            **TEMPERATURE_FIELD,
         }
     ),
     DeviceKind.CHARGER: vol.Schema(

@@ -1,8 +1,8 @@
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import type { Condition } from "../api";
-import { BOOLEAN_DOMAINS, measuredPowerW, ownEntities } from "../entities";
+import type { Condition, TemperatureSource } from "../api";
+import { BOOLEAN_DOMAINS, measuredPowerW, ownEntities, temperatureSources, thermostatTemperature } from "../entities";
 import { reportedStates, stateEvidence, stateHistory } from "../entity-states";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
@@ -32,6 +32,9 @@ const TYPES: Record<ConditionKind, Condition["type"][]> = {
   display_power: ["power_sensor", "template"],
   display_temperature: ["temperature_sensor", "template"],
 };
+
+/** A thermostat's temperatures are offered with the temperature sensors, under the same choice. */
+const THERMOSTAT_TYPES: Condition["type"][] = ["current_temperature", "target_temperature"];
 
 interface TemplateResult {
   result?: unknown;
@@ -108,7 +111,7 @@ export class KraftvaktConditionField extends LitElement {
         .hass=${this.hass}
         .data=${{
           type,
-          value: this.value?.value ?? "",
+          value: this.listsTemperatures(type) && this.value?.value ? sourceKey(this.value) : (this.value?.value ?? ""),
           states_are_true: String(this.value?.states_are_true ?? true),
           states: this.value?.states ?? [],
         }}
@@ -122,9 +125,15 @@ export class KraftvaktConditionField extends LitElement {
     `;
   }
 
-  /** The type shown: a condition that is not set yet shows its first type. */
+  /** The type shown: a condition that is not set yet shows its first type, and a thermostat's temperature the temperature sensors. */
   private shownType(): Condition["type"] {
-    return this.value?.type ?? this.types()[0];
+    const type = this.value?.type ?? this.types()[0];
+    return THERMOSTAT_TYPES.includes(type) ? "temperature_sensor" : type;
+  }
+
+  /** The temperatures of the limited entities are a list of their own, with each thermostat's current and set temperature among the sensors. */
+  private listsTemperatures(type: Condition["type"]): boolean {
+    return type === "temperature_sensor" && this.includeEntities !== undefined;
   }
 
   /** A state comes right after a boolean entity, since both name an entity. */
@@ -163,6 +172,11 @@ export class KraftvaktConditionField extends LitElement {
           },
         ];
       case "temperature_sensor":
+      case "current_temperature":
+      case "target_temperature":
+        if (this.listsTemperatures(type)) {
+          return [{ name: "value", required: !this.optional, selector: { select: { mode: "dropdown", options: this.temperatureOptions() } } }];
+        }
         return [
           {
             name: "value",
@@ -194,6 +208,21 @@ export class KraftvaktConditionField extends LitElement {
       case "template":
         return [{ name: "value", required: !this.optional, selector: { template: {} } }];
     }
+  }
+
+  /** The temperatures of the limited entities, and the chosen one also when it is not among them. */
+  private temperatureOptions() {
+    const sources = temperatureSources(this.hass, this.includeEntities ?? []);
+    const chosen = this.value?.value ? { type: this.value.type as TemperatureSource["type"], entityId: this.value.value } : undefined;
+    if (chosen && !sources.some((source) => sourceKey(source) === sourceKey(chosen))) {
+      sources.push(chosen);
+    }
+    return sources.map((source) => ({ value: sourceKey(source), label: this.temperatureLabel(source) }));
+  }
+
+  private temperatureLabel(source: TemperatureSource): string {
+    const name = this.hass.states[source.entityId]?.attributes.friendly_name ?? source.entityId;
+    return source.type === "temperature_sensor" ? name : this.text(source.type, { name });
   }
 
   /** Each state the entity reports, named as Home Assistant shows it, with the state itself when that differs. */
@@ -289,8 +318,14 @@ export class KraftvaktConditionField extends LitElement {
 
   /** A sensor's state as Home Assistant formats it, or a template's number with its unit, as the status page shows it. */
   private renderDisplayValue(condition: Condition) {
-    const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
-    const number = condition.type === "template" ? templateNumber(this.preview?.result) : null;
+    const thermostat = THERMOSTAT_TYPES.includes(condition.type);
+    const stateObj = condition.type === "template" || thermostat ? undefined : this.hass.states[condition.value];
+    const number =
+      condition.type === "template"
+        ? templateNumber(this.preview?.result)
+        : thermostat
+          ? thermostatTemperature(this.hass, { type: condition.type as TemperatureSource["type"], entityId: condition.value })
+          : null;
     if (condition.type === "template" && number === null) {
       return html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>`;
     }
@@ -336,14 +371,20 @@ export class KraftvaktConditionField extends LitElement {
     }
   };
 
-  /** Another type starts empty, and another entity starts without chosen states, which count as true. */
+  /**
+   * Another type starts empty, and another entity starts without chosen states, which count as true.
+   * A temperature from the list gives its own type, a thermostat's or a sensor's.
+   */
   private valueChanged(
     event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[]; states_are_true?: string } }>,
   ): void {
     event.stopPropagation();
     const { type, value, states, states_are_true } = event.detail.value;
     const sameType = type === this.shownType();
-    const condition: Condition = { type, value: sameType ? (value ?? "") : "" };
+    const source = sameType && this.listsTemperatures(type) && value ? parseSourceKey(value) : undefined;
+    const condition: Condition = source
+      ? { type: source.type, value: source.entityId }
+      : { type, value: sameType ? (value ?? "") : "" };
     if (type === "state") {
       const sameEntity = sameType && condition.value === this.value?.value;
       condition.states = sameEntity ? (states ?? []) : [];
@@ -411,6 +452,16 @@ export class KraftvaktConditionField extends LitElement {
       color: var(--warning-color);
     }
   `;
+}
+
+/** The key of a temperature in the list: its type and its entity. */
+function sourceKey(source: TemperatureSource | Condition): string {
+  return "entityId" in source ? `${source.type}|${source.entityId}` : `${source.type}|${source.value}`;
+}
+
+function parseSourceKey(key: string): TemperatureSource {
+  const [type, entityId] = key.split("|");
+  return { type: type as TemperatureSource["type"], entityId };
 }
 
 /** A template's result read as power in W, as the backend reads it: a number, or null. */

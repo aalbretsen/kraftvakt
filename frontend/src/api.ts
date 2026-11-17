@@ -15,12 +15,22 @@ export interface Issue {
   field?: string;
 }
 
+/**
+ * Where an appliance's display temperature comes from: a temperature sensor,
+ * or the current or set temperature of a thermostat, its climate entity.
+ */
+export interface TemperatureSource {
+  type: "temperature_sensor" | "current_temperature" | "target_temperature";
+  entityId: string;
+}
+
 export interface Condition {
   /**
    * A power sensor gives a power, for the charging power of an EV charger and the display power of an appliance.
-   * A temperature sensor gives the display temperature of an appliance. A state is only for an EV charger.
+   * A temperature sensor, or a thermostat's current or target temperature, gives the display temperature of an appliance.
+   * A state is only for an EV charger.
    */
-  type: "entity" | "state" | "template" | "power_sensor" | "temperature_sensor";
+  type: "entity" | "state" | "template" | "power_sensor" | TemperatureSource["type"];
   /** The entity, or the template. */
   value: string;
   /** The chosen states of the entity, for a state. */

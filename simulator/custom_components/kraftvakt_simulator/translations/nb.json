@@ -29,12 +29,14 @@
           "heater_type": "Type",
           "power_w": "Effekt",
           "duty_cycle_pct": "Driftsandel",
-          "period_min": "Periode"
+          "period_min": "Periode",
+          "temperature": "Temperatur"
         },
         "data_description": {
           "power_w": "Effekt mens apparatet varmer.",
           "duty_cycle_pct": "Andelen av perioden apparatet varmer.",
-          "period_min": "Lengden på én syklus i minutter."
+          "period_min": "Lengden på én syklus i minutter.",
+          "temperature": "Temperaturen i enheten, som vannet eller gulvet. Den endrer seg ikke av seg selv, men kan endres mens Home Assistant kjører."
         }
       },
       "thermostat": {
@@ -46,14 +48,16 @@
           "duty_cycle_pct": "Driftsandel",
           "period_min": "Periode",
           "hvac_modes": "HVAC-moduser",
-          "room_temperature": "Romtemperatur"
+          "room_temperature": "Romtemperatur",
+          "temperature": "Gulvtemperatur"
         },
         "data_description": {
           "power_w": "Effekt mens apparatet varmer.",
           "duty_cycle_pct": "Andelen av perioden apparatet varmer.",
           "period_min": "Lengden på én syklus i minutter.",
           "hvac_modes": "Minst én varmemodus: varme, varme/kjøling eller auto.",
-          "room_temperature": "Temperaturen i rommet. Den endrer seg ikke av seg selv, men kan endres mens Home Assistant kjører."
+          "room_temperature": "Temperaturen i rommet. Den endrer seg ikke av seg selv, men kan endres mens Home Assistant kjører.",
+          "temperature": "Temperaturen i gulvet. Den endrer seg ikke av seg selv, men kan endres mens Home Assistant kjører."
         }
       },
       "charger": {
@@ -123,6 +127,12 @@
       },
       "room_temperature": {
         "name": "Romtemperatur"
+      },
+      "temperature": {
+        "name": "Simulert temperatur"
+      },
+      "floor_temperature": {
+        "name": "Simulert gulvtemperatur"
       }
     },
     "sensor": {
@@ -145,6 +155,12 @@
           "completed": "Fullført",
           "error": "Feil"
         }
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "floor_temperature": {
+        "name": "Gulvtemperatur"
       }
     },
     "switch": {

@@ -93,7 +93,9 @@ class ConditionType(StrEnum):
     `STATE` is the states of an entity, offered for the conditions of a
     charger. `POWER_SENSOR` gives a power, true above a fixed power for the
     charging power of a charger. `TEMPERATURE_SENSOR` gives a temperature to
-    show. A template may give a power or a temperature instead of a sensor.
+    show, and `CURRENT_TEMPERATURE` and `TARGET_TEMPERATURE` give the current
+    and the set temperature of a thermostat. A template may give a power or a
+    temperature instead.
     """
 
     ENTITY = "entity"
@@ -101,12 +103,15 @@ class ConditionType(StrEnum):
     TEMPLATE = "template"
     POWER_SENSOR = "power_sensor"
     TEMPERATURE_SENSOR = "temperature_sensor"
+    CURRENT_TEMPERATURE = "current_temperature"
+    TARGET_TEMPERATURE = "target_temperature"
 
 
 VARIANT_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.TEMPLATE)
 CHARGER_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.STATE, ConditionType.TEMPLATE)
 POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
-TEMPERATURE_TYPES: Final = (ConditionType.TEMPERATURE_SENSOR, ConditionType.TEMPLATE)
+THERMOSTAT_TEMPERATURE_TYPES: Final = (ConditionType.CURRENT_TEMPERATURE, ConditionType.TARGET_TEMPERATURE)
+TEMPERATURE_TYPES: Final = (ConditionType.TEMPERATURE_SENSOR, *THERMOSTAT_TEMPERATURE_TYPES, ConditionType.TEMPLATE)
 
 
 class OverrideEnd(StrEnum):

@@ -117,6 +117,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   current_off_unsupported: "errors.current_off_unsupported",
   essential_with_variants: "errors.essential_with_variants",
   essential_not_at_top: "errors.essential_not_at_top",
+  not_a_thermostat: "errors.not_a_thermostat",
 };
 
 const LIMIT_SECTIONS: Partial<Record<Issue["section"], keyof Capabilities["limits"]>> = {

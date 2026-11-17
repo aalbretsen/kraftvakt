@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.common import mock_restore_cache
 
 from custom_components.kraftvakt_simulator.const import DeviceKind
 
-from .conftest import AddDevice, advance, call, power, state
+from .conftest import SETTINGS, AddDevice, advance, call, power, state
 
 SWITCH = "switch.heating_cable"
 UNPLUGGED = "switch.heating_cable_unplugged"
@@ -174,6 +174,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(hass: Ho
                 "number.heating_cable_heating_power",
                 "number.heating_cable_duty_cycle",
                 "number.heating_cable_period",
+                "number.heating_cable_simulated_temperature",
                 UNPLUGGED,
             ],
         ),
@@ -185,6 +186,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(hass: Ho
                 "number.thermostat_duty_cycle",
                 "number.thermostat_period",
                 "number.thermostat_room_temperature",
+                "number.thermostat_simulated_floor_temperature",
                 "switch.thermostat_unplugged",
             ],
         ),
@@ -214,3 +216,23 @@ async def test_simulation_controls_are_in_the_configuration_category(
     for registry_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
         expected = EntityCategory.CONFIG if registry_entry.entity_id in entity_ids else None
         assert registry_entry.entity_category is expected, registry_entry.entity_id
+
+
+@pytest.mark.parametrize(
+    ("kind", "title", "sensor", "number"),
+    [
+        (DeviceKind.HEATER, "Heating cable", "sensor.heating_cable_temperature", "number.heating_cable_simulated_temperature"),
+        (DeviceKind.THERMOSTAT, "Thermostat", "sensor.thermostat_floor_temperature", "number.thermostat_simulated_floor_temperature"),
+    ],
+)
+async def test_temperature_sensor_shows_the_set_temperature(hass: HomeAssistant, add_device: AddDevice, kind: DeviceKind, title: str, sensor: str, number: str) -> None:
+    """The temperature changes only when it is set, and the setting is kept in the config entry."""
+    entry = await add_device(kind, title)
+    before = float(state(hass, sensor))
+
+    await call(hass, "number", "set_value", number, value=35.5)
+
+    assert before == SETTINGS[kind]["temperature"]
+    assert float(state(hass, sensor)) == 35.5
+    assert hass.states.get(sensor).attributes["device_class"] == "temperature"
+    assert entry.data["temperature"] == 35.5

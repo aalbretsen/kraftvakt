@@ -159,7 +159,8 @@
     "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once.",
     "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current.",
     "essential_with_variants": "An essential appliance cannot have variants. Delete them, or turn the setting off.",
-    "essential_not_at_top": "An essential appliance must be above every other entry in the priority list."
+    "essential_not_at_top": "An essential appliance must be above every other entry in the priority list.",
+    "not_a_thermostat": "Choose a thermostat, a climate entity."
   },
   "dialog": {
     "ok": "OK",
@@ -418,12 +419,14 @@
   },
   "display_temperature": {
     "type_label": "Temperature from",
-    "temperature_sensor": "Sensor",
+    "temperature_sensor": "Entity",
     "template": "Template",
+    "current_temperature": "{name}: current temperature",
+    "target_temperature": "{name}: set temperature",
     "temperature_sensor_label": "Temperature",
     "template_label": "Template for temperature",
-    "temperature_sensor_helper": "Any temperature of the same device as the entity, such as the water temperature.",
-    "template_helper": "A temperature in the unit of Home Assistant, such as the set temperature of a thermostat: {{ state_attr(entity_id, 'temperature') }}. Variables: entity_id, entity.",
+    "temperature_sensor_helper": "A temperature sensor of the same device as the entity, or a thermostat's current or set temperature.",
+    "template_helper": "A temperature in the unit of Home Assistant, also from another device. Variables: entity_id, entity.",
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },

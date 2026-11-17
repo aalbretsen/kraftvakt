@@ -11,11 +11,14 @@ Add the integration under **Settings → Devices & services**, and add one devic
 - **Heating device:** heating cable, water heater or panel heater, with power (W), duty cycle (0–100 %) and period (minutes). It has a switch and a power sensor.
   While the switch is on, it heats in a fixed cycle that starts with the on part: 750 W, 25 % and 60 minutes give 15 minutes on and 45 minutes off, over and over.
   The cycle starts again every time the switch is turned on or the cycle is changed. With the switch off, it uses nothing.
+  It has the sensor **Temperature**, of the water or the floor, set with **Simulated temperature** (20 °C by default); it does not change by itself.
 - **Thermostat:** a heating device controlled by a thermostat, with the same power, duty cycle and period, the HVAC modes it supports (off, heat and auto by default,
   at least one heating mode) and a room temperature (5 °C by default). Its climate entity has the chosen modes and a target temperature.
   In heat, heat/cool and auto it heats in the cycle while the target temperature is above the room temperature; otherwise it uses nothing.
   The cycle starts again every time it starts heating. Turning it on returns it to the last heating mode, the first heating mode it supports at first.
   It can only be turned off when off is one of its modes. It starts in off, or in its first mode when off is not one of them.
+  It has the sensor **Floor temperature**, set with **Simulated floor temperature** (20 °C by default),
+  so a thermostat's own temperatures and a floor sensor can be shown together.
 - **EV charger:** three-phase 400 V with a minimum and maximum current. It has the switches **Charging allowed**, **Car connected**, **Car fully charged** and **Fault**,
   **Charging current** (A), the sensor **Charging power**, the binary sensor **Charging**, on while it draws power,
   and the sensor **Status**: disconnected, awaiting start, starting, charging, completed or error, and unavailable while it is unplugged.
@@ -30,8 +33,9 @@ Add the integration under **Settings → Devices & services**, and add one devic
 Heating devices, thermostats and EV chargers also have the switch **Unplugged**. While it is on, the device uses nothing, whatever the other switches are set to.
 The cycle of a heating device runs on while it is unplugged.
 
-What controls the simulation and does not belong to a real device is under **Configuration** on the device page, and can be changed while Home Assistant runs: **Background power**,
-**Heating power**, **Duty cycle**, **Period**, **Room temperature**, **Car connected**, **Car fully charged**, **Fault** and **Unplugged**.
+What controls the simulation and does not belong to a real device is under **Configuration** on the device page, and can be changed while Home Assistant runs:
+**Background power**, **Heating power**, **Duty cycle**, **Period**, **Room temperature**, **Simulated temperature**, **Simulated floor temperature**,
+**Car connected**, **Car fully charged**, **Fault** and **Unplugged**.
 The settings can be changed with **Reconfigure**.
 The switches, the charging current, and the mode and target temperature of a thermostat keep their state over a restart.
 

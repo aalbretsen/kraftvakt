@@ -6,7 +6,8 @@ import logging
 import math
 from typing import Any, Final
 
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.components.climate import ATTR_CURRENT_TEMPERATURE
+from homeassistant.const import ATTR_TEMPERATURE, ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
@@ -75,17 +76,22 @@ def power_value_w(hass: HomeAssistant, condition: Condition | None, entity_id: s
 
 
 def temperature_value(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> tuple[float, str] | None:
-    """Return the temperature and its unit from a temperature sensor, or a template that gives a number in Home Assistant's unit, or None without a valid value."""
+    """Return the temperature and its unit, or None without a valid value.
+
+    A temperature sensor gives its own unit. A thermostat's current or set
+    temperature, and a template, give Home Assistant's unit.
+    """
     if condition is None:
         return None
     unit = hass.config.units.temperature_unit
-    if condition.type is ConditionType.TEMPERATURE_SENSOR:
-        state = hass.states.get(condition.value)
-        if state is None:
-            return None
+    if condition.type is ConditionType.TEMPLATE:
+        value = _render(hass, condition, entity_id)
+    elif (state := hass.states.get(condition.value)) is None:
+        return None
+    elif condition.type is ConditionType.TEMPERATURE_SENSOR:
         value, unit = state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) or unit
     else:
-        value = _render(hass, condition, entity_id)
+        value = state.attributes.get(ATTR_CURRENT_TEMPERATURE if condition.type is ConditionType.CURRENT_TEMPERATURE else ATTR_TEMPERATURE)
     if isinstance(value, bool):
         return None
     try:

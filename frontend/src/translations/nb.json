@@ -159,7 +159,8 @@
     "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
     "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen.",
     "essential_with_variants": "Et nødvendig apparat kan ikke ha varianter. Slett dem, eller slå av innstillingen.",
-    "essential_not_at_top": "Et nødvendig apparat må stå over alle andre i prioritetslisten."
+    "essential_not_at_top": "Et nødvendig apparat må stå over alle andre i prioritetslisten.",
+    "not_a_thermostat": "Velg en termostat, en climate-entitet."
   },
   "dialog": {
     "ok": "OK",
@@ -418,12 +419,14 @@
   },
   "display_temperature": {
     "type_label": "Temperatur fra",
-    "temperature_sensor": "Sensor",
+    "temperature_sensor": "Entitet",
     "template": "Mal",
+    "current_temperature": "{name}: nåværende temperatur",
+    "target_temperature": "{name}: innstilt temperatur",
     "temperature_sensor_label": "Temperatur",
     "template_label": "Mal for temperatur",
-    "temperature_sensor_helper": "En hvilken som helst temperatur på samme enhet som entiteten, som vanntemperaturen.",
-    "template_helper": "En temperatur i enheten til Home Assistant, som innstilt temperatur på en termostat: {{ state_attr(entity_id, 'temperature') }}. Variabler: entity_id, entity.",
+    "temperature_sensor_helper": "En temperatursensor på samme enhet som entiteten, eller en termostats nåværende eller innstilte temperatur.",
+    "template_helper": "En temperatur i enheten til Home Assistant, også fra en annen enhet. Variabler: entity_id, entity.",
     "no_value": "ingen verdi",
     "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
   },

@@ -29,12 +29,14 @@
           "heater_type": "Type",
           "power_w": "Power",
           "duty_cycle_pct": "Duty cycle",
-          "period_min": "Period"
+          "period_min": "Period",
+          "temperature": "Temperature"
         },
         "data_description": {
           "power_w": "Power while heating.",
           "duty_cycle_pct": "Share of the period the device heats.",
-          "period_min": "Length of one cycle in minutes."
+          "period_min": "Length of one cycle in minutes.",
+          "temperature": "The temperature of the device, such as the water or the floor. It does not change by itself, but can be changed while Home Assistant runs."
         }
       },
       "thermostat": {
@@ -46,14 +48,16 @@
           "duty_cycle_pct": "Duty cycle",
           "period_min": "Period",
           "hvac_modes": "HVAC modes",
-          "room_temperature": "Room temperature"
+          "room_temperature": "Room temperature",
+          "temperature": "Floor temperature"
         },
         "data_description": {
           "power_w": "Power while heating.",
           "duty_cycle_pct": "Share of the period the device heats.",
           "period_min": "Length of one cycle in minutes.",
           "hvac_modes": "At least one heating mode: heat, heat/cool or auto.",
-          "room_temperature": "The temperature in the room. It does not change by itself, but can be changed while Home Assistant runs."
+          "room_temperature": "The temperature in the room. It does not change by itself, but can be changed while Home Assistant runs.",
+          "temperature": "The temperature of the floor. It does not change by itself, but can be changed while Home Assistant runs."
         }
       },
       "charger": {
@@ -123,6 +127,12 @@
       },
       "room_temperature": {
         "name": "Room temperature"
+      },
+      "temperature": {
+        "name": "Simulated temperature"
+      },
+      "floor_temperature": {
+        "name": "Simulated floor temperature"
       }
     },
     "sensor": {
@@ -145,6 +155,12 @@
           "completed": "Completed",
           "error": "Error"
         }
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "floor_temperature": {
+        "name": "Floor temperature"
       }
     },
     "switch": {

@@ -37,6 +37,9 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   Turning it on returns to the last heating mode (the first supported heating mode at first), as `climate.turn_on` does on real thermostats.
   Why: Kraftvakt's default climate actions and its thermostat actions (HVAC mode, temperature, or both, and the fallbacks when a thermostat lacks heat or off) can be tested.
   Turning off is offered only when off is one of its modes. It starts in off, or in its first mode when off is not one of them.
+- A heating device has a temperature, of the water or the floor, that changes only when it is set: a temperature sensor and a number in the configuration category.
+  A thermostat names them floor temperature, since its climate entity already has a current temperature, the room temperature.
+  Why: Kraftvakt's display temperature can be tested from a sensor and from a thermostat on the same device.
 - Power, duty cycle and period are also number entities, changeable while HA runs.
   A change while the switch is on restarts the cycle in its on part; an unchanged value does nothing.
 - An EV charger is 400 V three-phase with power factor 1: `P = √3 · 400 V · I`. It has a minimum and maximum current in whole amperes.
@@ -50,12 +53,12 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
 - Heating devices, thermostats and chargers have an unplugged switch. While it is on, the device uses no power whatever its other switches say.
   A heater's cycle runs on while unplugged. The HAN has no such switch: set its background power instead.
 - Entities that control the simulation and are not part of a real device have `EntityCategory.CONFIG`, so HA shows them under Configuration on the device page: background power,
-  heating power, duty cycle, period, room temperature, car connected, car fully charged, fault and unplugged.
+  heating power, duty cycle, period, room temperature, temperature, car connected, car fully charged, fault and unplugged.
   Charging allowed, the charging current, the heater switch and the sensors are the device's own and stay main entities.
 - A heating device's switch and a thermostat's climate entity have the device's name. The other entities are named by their translation key.
 - After a restart every entity gets its state back. The switches,
   the charging current (clamped to the current range) and a thermostat's mode and target temperature restore themselves. The settings that are numbers (background power,
-  heating power, duty cycle, period, room temperature) are kept in the config entry data instead, so reconfiguring the device changes them.
+  heating power, duty cycle, period, room temperature, temperature) are kept in the config entry data instead, so reconfiguring the device changes them.
 - Every kind has a reconfigure flow with the same form as when it was added. It reloads the entry.
 
 ## Modules

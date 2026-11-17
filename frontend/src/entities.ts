@@ -1,4 +1,4 @@
-import type { Charger } from "./api";
+import type { Charger, TemperatureSource } from "./api";
 import type { HomeAssistant } from "./types";
 
 /** The domains whose entities are on or off, and so can be boolean entities. */
@@ -20,6 +20,30 @@ export function chargerName(hass: HomeAssistant, names: Record<string, string>, 
     return deviceName;
   }
   return charger.entity_id ? entityName(hass, names, charger.entity_id) : null;
+}
+
+/**
+ * Return the temperatures the entities give, in their order: each temperature sensor,
+ * and the current and set temperature of each thermostat.
+ */
+export function temperatureSources(hass: HomeAssistant, entityIds: string[]): TemperatureSource[] {
+  return entityIds.flatMap((entityId): TemperatureSource[] => {
+    if (entityId.startsWith("climate.")) {
+      return [
+        { type: "current_temperature", entityId },
+        { type: "target_temperature", entityId },
+      ];
+    }
+    const isTemperatureSensor = entityId.startsWith("sensor.") && hass.states[entityId]?.attributes.device_class === "temperature";
+    return isTemperatureSensor ? [{ type: "temperature_sensor", entityId }] : [];
+  });
+}
+
+/** Return the temperature a thermostat gives now, its current or set temperature, or null without one. */
+export function thermostatTemperature(hass: HomeAssistant, source: TemperatureSource): number | null {
+  const attribute = source.type === "current_temperature" ? "current_temperature" : "temperature";
+  const value = hass.states[source.entityId]?.attributes[attribute];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /** Return the entity ID while Home Assistant has the entity, and null for one that is not set or no longer exists. */

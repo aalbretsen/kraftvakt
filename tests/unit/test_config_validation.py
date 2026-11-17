@@ -650,6 +650,8 @@ async def test_parse_config_adds_a_missing_essential_entry_after_the_last_essent
         ("display_temperature", {"type": "temperature_sensor", "value": "not an entity"}, "invalid_entity_id"),
         ("display_power", {"type": "temperature_sensor", "value": "sensor.temperature"}, "invalid_type"),
         ("display_temperature", {"type": "entity", "value": "binary_sensor.warm"}, "invalid_type"),
+        ("display_temperature", {"type": "target_temperature", "value": "sensor.temperature"}, "not_a_thermostat"),
+        ("display_temperature", {"type": "current_temperature", "value": "not an entity"}, "invalid_entity_id"),
     ],
 )
 async def test_display_value_is_a_sensor_of_its_kind_or_a_template(hass: HomeAssistant, field: str, value: Any, issue: str) -> None:

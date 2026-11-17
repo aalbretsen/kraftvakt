@@ -173,6 +173,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   The power reserve, under **Fixed load**, is only for an appliance that always draws the same power while it is on, such as a ceiling fan,
   and applies to every variant. Set for an appliance with a thermostat, it makes the regulation work worse.
   The display values, a power and a temperature from a sensor of the entity's device or from a template, are only shown on the status page.
+  The temperature can also be the current or set temperature of a thermostat on the device, listed with its temperature sensors.
   Each group of EV chargers is in the list under its name, and is moved like an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, dynamic charging order, and the EV chargers in charging priority.
   Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.

@@ -36,6 +36,7 @@ CONF_MAX_CURRENT_A: Final = "max_current_a"
 CONF_START_DELAY_S: Final = "start_delay_s"
 CONF_HVAC_MODES: Final = "hvac_modes"
 CONF_ROOM_TEMPERATURE: Final = "room_temperature"
+CONF_TEMPERATURE: Final = "temperature"
 
 MAX_BACKGROUND_W: Final = 50_000
 MAX_HEATER_POWER_W: Final = 20_000
@@ -47,4 +48,6 @@ MAX_TARGET_TEMPERATURE: Final = 30.0
 DEFAULT_ROOM_TEMPERATURE: Final = 5.0
 MIN_ROOM_TEMPERATURE: Final = -10.0
 MAX_ROOM_TEMPERATURE: Final = 30.0
+DEFAULT_TEMPERATURE: Final = 20.0
+MAX_TEMPERATURE: Final = 95.0
 TEMPERATURE_STEP: Final = 0.5

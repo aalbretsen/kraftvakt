@@ -27,6 +27,8 @@ from .const import (
     CONF_POWER_W,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
+    CONF_TEMPERATURE,
+    DEFAULT_TEMPERATURE,
     DeviceKind,
 )
 from .devices import (
@@ -93,13 +95,14 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
         case DeviceKind.HAN:
             return SimulatedHan(hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting)
         case DeviceKind.HEATER:
-            return SimulatedHeater(hass, entry.entry_id, _duty_cycle(data), store_setting)
+            return SimulatedHeater(hass, entry.entry_id, _duty_cycle(data), store_setting, _temperature(data))
         case DeviceKind.THERMOSTAT:
             return SimulatedThermostat(
                 hass,
                 entry.entry_id,
                 _duty_cycle(data),
                 store_setting,
+                _temperature(data),
                 [HVACMode(mode) for mode in data[CONF_HVAC_MODES]],
                 data[CONF_ROOM_TEMPERATURE],
             )
@@ -119,6 +122,11 @@ def _duty_cycle(data: Mapping[str, Any]) -> DutyCycle:
         duty_cycle_pct=data[CONF_DUTY_CYCLE_PCT],
         period=timedelta(minutes=data[CONF_PERIOD_MIN]),
     )
+
+
+def _temperature(data: Mapping[str, Any]) -> float:
+    """Return the temperature, the default for a device set up before it was a setting."""
+    return float(data.get(CONF_TEMPERATURE, DEFAULT_TEMPERATURE))
 
 
 def _store_setting(hass: HomeAssistant, entry: ConfigEntry, key: str, value: float) -> None:

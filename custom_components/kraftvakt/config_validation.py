@@ -9,11 +9,12 @@ from dataclasses import replace
 from typing import Any
 
 import probatio as vol
-from homeassistant.core import valid_entity_id
+from homeassistant.core import split_entity_id, valid_entity_id
 from homeassistant.helpers import config_validation as cv
 
 from .config_model import (
     SETTING_RANGES,
+    THERMOSTAT_TEMPERATURE_TYPES,
     ActionConfig,
     Appliance,
     Charger,
@@ -161,6 +162,9 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
         condition = getattr(appliance, field_name)
         if condition is not None:
             issues += _condition_issues(location, field_name, condition)
+    temperature = appliance.display_temperature
+    if temperature is not None and temperature.type in THERMOSTAT_TEMPERATURE_TYPES and valid_entity_id(temperature.value) and split_entity_id(temperature.value)[0] != "climate":
+        issues.append(location.issue("not_a_thermostat", "display_temperature"))
     if appliance.essential and appliance.variants:
         issues.append(location.issue("essential_with_variants", "essential"))
     return issues

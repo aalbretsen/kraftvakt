@@ -22,6 +22,7 @@ HEATER = {
     "power_w": 750,
     "duty_cycle_pct": 25,
     "period_min": 60,
+    "temperature": 20.0,
 }
 THERMOSTAT = {
     "power_w": 750,
@@ -29,6 +30,7 @@ THERMOSTAT = {
     "period_min": 60,
     "hvac_modes": ["off", "heat", "auto"],
     "room_temperature": 5.0,
+    "temperature": 22.0,
 }
 CHARGER = {"min_current_a": 6, "max_current_a": 16, "start_delay_s": 0}
 SETTINGS = {
