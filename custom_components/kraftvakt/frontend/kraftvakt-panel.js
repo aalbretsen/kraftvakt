@@ -1111,7 +1111,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
                 `)}
             </div>`}
       </ha-card>
-    `}columns(){const e=this.status.priority.filter(e=>"appliance"===e.type),t=this.status.priority.flatMap(e=>"charger_group"===e.type?e.chargers:[]),i=e=>e?"max-content":"0";return`grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${i([...e,...t].some(e=>null!==e.power_w))} ${i(e.some(e=>null!==e.temperature))} 120px max-content`}renderRow(e,t,i){if(!t)return X`<div class="row ${e}">${i}</div>`;const r=e=>{e.preventDefault(),dt(e,t)};return X`
+    `}columns(){const e=this.status.priority.filter(e=>"appliance"===e.type),t=this.status.priority.flatMap(e=>"charger_group"===e.type?e.chargers:[]),i=e=>e?"max-content":"0",r=i([...e,...t].some(e=>null!==e.power_w));return`grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${i(e.some(e=>null!==e.temperature))} ${r} 120px max-content`}renderRow(e,t,i){if(!t)return X`<div class="row ${e}">${i}</div>`;const r=e=>{e.preventDefault(),dt(e,t)};return X`
       <div
         class="row ${e} clickable"
         role="button"
@@ -1127,7 +1127,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${this.renderApplianceIcon(e)}${this.renderName(e.name)}
           ${e.variant&&!this.phone?X`<span class="variant" title=${e.variant}>${e.variant}</span>`:te}
         </div>
-        ${this.renderPower(e.power_w)} ${this.renderTemperature(e)}
+        ${this.renderTemperature(e)} ${this.renderPower(e.power_w)}
         ${this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at")}
         ${this.renderApplianceChip(e)}
       `)}renderRank(e){return this.renderWideOnly(X`<span class="rank">${e??te}</span>`)}renderWideOnly(e){return this.phone?te:e}renderName(e){return X`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(pr,"status.chip_excluded","status.excluded"):e.on?this.renderChip(cr,"status.on","status.on"):this.renderChip(hr,"status.off","status.off")}renderApplianceIcon(e){const t=this.applianceEntity(e),i=t?this.hass.states[t]:void 0;return X`
@@ -1158,7 +1158,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${this.renderName(e.name)}
         </div>
         ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)}
-        ${this.renderPower(e.power_w)} ${this.renderWideOnly(X`<span></span>`)}
+        ${this.renderWideOnly(X`<span></span>`)} ${this.renderPower(e.power_w)}
         ${this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at")}
         ${this.renderChargerChip(e)}
       `)}renderWaiting(e,t,i,r){if(!e.waiting_since||!e.waiting_ends_at)return this.phone?te:X`<span></span>`;const a=mt(this.hass.language,e.waiting_ends_at);return X`

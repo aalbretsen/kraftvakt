@@ -201,7 +201,7 @@ The section header, the description and the footer note are in `section-styles.t
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
 - Appliances and chargers share one full-width card, Appliances and EV chargers, in priority order. Each charger group has a row with its name and its own rank at its position,
   and its chargers are indented under it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank,
-  name with the variant after it, current, power, temperature, waiting and state chip. An appliance has no current, so its name also takes the current column.
+  name with the variant after it, current, temperature, power, waiting and state chip. An appliance has no current, so its name also takes the current column.
   The power is an appliance's display power or a charger's charging power, in kW, and the temperature an appliance's display temperature with one decimal;
   each column takes room only when a row has a value. An essential appliance's row has a light golden background.
   The rank is right aligned with digits of equal width.

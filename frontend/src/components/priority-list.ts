@@ -148,7 +148,7 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   /**
-   * The columns of the list: rank, name, current, power, temperature, waiting and state.
+   * The columns of the list: rank, name, current, temperature, power, waiting and state.
    * The power and the temperature take room only when a row has one.
    */
   private columns(): string {
@@ -157,7 +157,7 @@ export class KraftvaktPriorityList extends LitElement {
     const shown = (has: boolean) => (has ? "max-content" : "0");
     const power = shown([...appliances, ...chargers].some((row) => row.power_w !== null));
     const temperature = shown(appliances.some((row) => row.temperature !== null));
-    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${power} ${temperature} 120px max-content`;
+    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${temperature} ${power} 120px max-content`;
   }
 
   /** A row of an appliance or EV charger opens Home Assistant's more-info dialog for its entity, while the entity exists. */
@@ -194,7 +194,7 @@ export class KraftvaktPriorityList extends LitElement {
             ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
             : nothing}
         </div>
-        ${this.renderPower(appliance.power_w)} ${this.renderTemperature(appliance)}
+        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)}
         ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
         ${this.renderApplianceChip(appliance)}
       `,
@@ -280,7 +280,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.renderPower(charger.power_w)} ${this.renderWideOnly(html`<span></span>`)}
+        ${this.renderWideOnly(html`<span></span>`)} ${this.renderPower(charger.power_w)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       `,
