@@ -453,20 +453,18 @@ export class KraftvaktPriorityList extends LitElement {
     cardHeaderStyles,
     chipStyles,
     css`
-      /* Roomy spacing while the list is wide, tighter below, so the names keep their room. */
       :host {
         display: block;
         container-type: inline-size;
-        --column-gap: 20px;
-        --waiting-width: 96px;
-        --row-padding-end: 24px;
       }
-      @container (max-width: 760px) {
-        ha-card {
-          --column-gap: 12px;
-          --waiting-width: 72px;
-          --row-padding-end: 16px;
-        }
+      /*
+       * The spacing grows with the list's width, from tight just above the phone layout (600 px)
+       * to the widest list the panel gets (1040 px), where the columns after the name take its right half.
+       */
+      ha-card {
+        --column-gap: clamp(12px, 5.455cqi - 20.7px, 36px);
+        --waiting-width: clamp(72px, 14.545cqi - 15.3px, 136px);
+        --row-padding-end: clamp(16px, 3.636cqi - 5.8px, 32px);
       }
       .empty {
         padding: 0 16px 16px;
@@ -525,7 +523,9 @@ export class KraftvaktPriorityList extends LitElement {
       :host([narrow]) .row.charger .row-title {
         padding-inline-start: 16px;
       }
+      /* The rank stays close to the name, whatever the gap between the columns. */
       .rank {
+        margin-inline-end: calc(12px - var(--column-gap));
         text-align: end;
         font-variant-numeric: tabular-nums;
         color: var(--secondary-text-color);

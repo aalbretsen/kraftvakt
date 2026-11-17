@@ -206,8 +206,9 @@ The section header, the description and the footer note are in `section-styles.t
   An appliance's display temperature, with one decimal, is in the current column, right aligned with the ampere bars, since an EV charger never has one;
   an appliance without one lets its name take the current column. An essential appliance's row has a light golden background.
   The name takes the room that is left, and the other columns are as wide as their content, so they line up at the right.
-  The gaps, the waiting bar and the space at the right end are roomy while the list is wider than 760 px, and tighter below,
-  a container query on the list's own width, so the names keep their room.
+  The gaps, the waiting bar and the space at the right end grow with the list's own width (container query units),
+  from tight just above the phone layout to the widest list the panel gets, where the columns after the name take its right half.
+  The rank keeps a small fixed distance to the name.
   The rank is right aligned with digits of equal width.
   A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first, down to a few letters.
   - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current, the waiting icon and the state chip:
