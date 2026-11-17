@@ -166,17 +166,17 @@ def test_charging_allowed_now() -> None:
         (ChargerReading(charging_power_w=2000), False),
     ],
 )
-def test_car_may_step_up_when_it_charges_with_half_of_the_power_reserve(reading: ChargerReading, expected: bool) -> None:
-    assert may_step_up(charger(power_reserve_w=4000), reading) is expected
+def test_car_may_step_up_when_it_charges_with_half_of_the_power_at_minimum_current(reading: ChargerReading, expected: bool) -> None:
+    assert may_step_up(charger(min_current_power_w=4000), reading) is expected
 
 
 def test_estimated_draw_follows_the_current_and_never_exceeds_what_the_car_draws() -> None:
     """With 4000 W at 6 A, an ampere is about 667 W."""
-    reserve_4000 = charger(power_reserve_w=4000)
+    at_4000_w = charger(min_current_power_w=4000)
 
-    assert estimated_draw_w(reserve_4000, 10_000, 4) == pytest.approx(6000)
-    assert estimated_draw_w(reserve_4000, 5000, 4) == 5000
-    assert estimated_draw_w(reserve_4000, 5000, 0) == 0
+    assert estimated_draw_w(at_4000_w, 10_000, 4) == pytest.approx(6000)
+    assert estimated_draw_w(at_4000_w, 5000, 4) == 5000
+    assert estimated_draw_w(at_4000_w, 5000, 0) == 0
 
 
 def chargers(*ids: str) -> list[Charger]:
@@ -244,7 +244,7 @@ def test_charger_without_car_is_bypassed_and_moves_back_only_with_dynamic_order(
 
 
 def test_car_that_does_not_draw_enough_is_held_at_minimum() -> None:
-    """A car that charges with less than half of the power reserve, or does not charge, is held. Kraftvakt never guesses that it is done."""
+    """A car that charges with less than half of the power at minimum current, or does not charge, is held. Kraftvakt never guesses that it is done."""
     configured = chargers("a", "b", "c")
     state = activated(configured, a=3, b=3, c=3)
 
@@ -390,7 +390,7 @@ def test_charging_needs_an_activated_charger() -> None:
 
 
 @pytest.mark.parametrize(("cloud_controlled", "one_at_a_time", "dynamic_order", "starting"), [(True, True, False, True), (False, False, True, False)])
-def test_cloud_controlled_charger_holds_its_reserve_in_its_start_delay_until_it_charges(cloud_controlled: bool, one_at_a_time: bool, dynamic_order: bool, starting: bool) -> None:
+def test_cloud_controlled_charger_holds_its_power_in_its_start_delay_until_it_charges(cloud_controlled: bool, one_at_a_time: bool, dynamic_order: bool, starting: bool) -> None:
     configured = [charger("a", cloud_controlled=cloud_controlled, start_delay_s=300)]
     group = group_of(configured, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
     state = activated(configured, a=1)

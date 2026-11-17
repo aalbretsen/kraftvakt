@@ -54,7 +54,7 @@
     "first_decision": "Venter på første avgjørelse",
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
     "waiting_charger": "I kø: en annen elbillader i gruppen har tur",
-    "starting_until": "Venter til {time} på at bilen begynner å lade. Effektreserven holdes ledig så lenge.",
+    "starting_until": "Venter til {time} på at bilen begynner å lade. Effekten ved minste ladestrøm holdes ledig så lenge.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
     "next_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
@@ -455,7 +455,7 @@
     "delete_group_not_empty": "Flytt eller slett elbilladerne for å slette gruppen.",
     "switches_info": "Hver elbillader får tre brytere du kan bruke når reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› fullfør lading etter ladetidsrom».",
     "currents": "{min}–{max} A",
-    "reserve": "reserve {power} W",
+    "min_current_power": "{power} W ved minste ladestrøm",
     "window": "ladetidsrom {start}–{end}",
     "finishes_after_window": "fullfører pågående lading etter tidsrommet",
     "always_allowed": "alltid lov til å lade",
@@ -506,9 +506,9 @@
       "set_current": {
         "label": "Sett ladestrøm"
       },
-      "power_reserve_w": {
-        "label": "Effektreserve",
-        "helper": "Elbilladeren aktiveres bare når så mye effekt er ledig, og bilen får mer enn minste ladestrøm bare mens den trekker minst halvparten av den. Sett den til det bilen trekker på minste ladestrøm, omtrent 1400 W for en bil som lader på én fase. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
+      "min_current_power_w": {
+        "label": "Effekt ved minste ladestrøm",
+        "helper": "Det bilen trekker på minste ladestrøm, omtrent 1400 W for en bil som lader på én fase. Elbilladeren aktiveres bare når så mye effekt er ledig, og bilen får mer enn minste ladestrøm bare mens den trekker minst halvparten av den. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
       },
       "car_connected": {
         "label": "Bil tilkoblet",
@@ -523,11 +523,11 @@
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og effektreserven holdes ledig i startforsinkelsen mens bilen begynner å lade."
+        "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og effekten ved minste ladestrøm holdes ledig i startforsinkelsen mens bilen begynner å lade."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
-        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Effektreserven holdes ledig så lenge. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Effekten ved minste ladestrøm holdes ledig så lenge. {min}–{max} s, standard {default} s."
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",

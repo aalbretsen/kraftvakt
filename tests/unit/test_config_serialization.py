@@ -87,7 +87,7 @@ def test_missing_settings_get_defaults() -> None:
     assert appliance.power_reserve_w is None
     charger = config.chargers[0]
     assert (charger.min_current_a, charger.max_current_a) == (6, 16)
-    assert charger.power_reserve_w == 4157
+    assert charger.min_current_power_w == 4157
 
 
 def test_empty_strings_count_as_not_set() -> None:

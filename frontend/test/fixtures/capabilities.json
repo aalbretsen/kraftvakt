@@ -442,7 +442,7 @@
         "max": null,
         "resolution": 1
       },
-      "power_reserve_w": {
+      "min_current_power_w": {
         "min": 1000,
         "max": 5000,
         "resolution": 1
@@ -483,7 +483,7 @@
     "chargers": {
       "min_current_a": 6,
       "max_current_a": 16,
-      "power_reserve_w": 4157,
+      "min_current_power_w": 4157,
       "override_ends": "manual",
       "start_delay_s": 300
     }

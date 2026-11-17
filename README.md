@@ -118,8 +118,8 @@ Kraftvakt sets the charging current one ampere at a time, by how much power is f
 so a car that is connected does not start charging by itself. Kraftvakt reads whether a car is connected, and how much it draws from the **charging power**:
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
-- An EV charger with a car is activated when there is room for its power reserve, and keeps the minimum current
-  until the car draws at least half of the power reserve. Only then does it get more. Set the power reserve to what the car draws at the minimum current:
+- An EV charger with a car is activated when there is room for its **power at minimum current**, and keeps the minimum current
+  until the car draws at least half of it. Only then does it get more. Set the power at minimum current to what the car draws at the minimum current:
   the default fits 6 A on three phases, and a car that charges on one phase draws about 1400 W.
 - Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
   for example to heat in the morning, or when you raise its charging limit.
@@ -134,7 +134,7 @@ The settings of the group decide how its cars share the power:
 | | Dynamic charging order off | Dynamic charging order on |
 |---|---|---|
 | **One EV charger at a time** | While no car charges, every car waits at the minimum current. The first in the charging priority that draws power charges, and the ones below it wait as **Queued**. A car higher up that draws power takes over. | While no car charges, every car waits at the minimum current. The first that draws power charges until it stops, and the others wait as **Queued**. |
-| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power reserve is free, if need be after the others are set to their minimum current. |
+| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power at minimum current is free, if need be after the others are set to their minimum current. |
 
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.
@@ -146,7 +146,7 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   The last two wait for the car, so the switch can be turned on before the car arrives.
   The override only allows charging: it does not move the EV charger ahead of the others in its group.
 - **Cloud-controlled EV charger:** for an EV charger controlled over the internet. It gets no repeated commands while no car is connected,
-  and its power reserve is kept free for the **Start delay** after it is activated, while the car starts charging. The status page shows it as **Starting** meanwhile.
+  and its power at minimum current is kept free for the **Start delay** after it is activated, while the car starts charging. The status page shows it as **Starting** meanwhile.
 - **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
   The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
 - An EV charger that cannot turn charging on and off, only take a current, is set to turn charging on and off by **the charging current**:
@@ -182,7 +182,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
-  Then come the entity and the power reserve, whether charging is turned on and off by actions or by the charging current,
+  Then come the entity and the power at minimum current, whether charging is turned on and off by actions or by the charging current,
   followed by the actions, the charging current, car connected, actively charging with the charging power, cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
@@ -228,7 +228,7 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
-| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or a power reserve kept free for an EV charger that starts. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power kept free for an EV charger that starts. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |

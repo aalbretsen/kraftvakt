@@ -130,10 +130,10 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
-        ("power_reserve_w", 999, "out_of_range"),
-        ("power_reserve_w", 1000, None),
-        ("power_reserve_w", 5000, None),
-        ("power_reserve_w", 5001, "out_of_range"),
+        ("min_current_power_w", 999, "out_of_range"),
+        ("min_current_power_w", 1000, None),
+        ("min_current_power_w", 5000, None),
+        ("min_current_power_w", 5001, "out_of_range"),
         ("min_current_a", 1, None),
         ("min_current_a", 0, "out_of_range"),
         ("entity_id", "switch", "invalid_entity_id"),

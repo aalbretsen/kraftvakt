@@ -1,6 +1,6 @@
 """Scenario tests for EV charging in the regulation engine.
 
-The chargers have a power reserve of 4000 W at 6 A, so an ampere is about 667 W.
+The chargers draw 4000 W at their minimum current of 6 A, so an ampere is about 667 W.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -74,8 +74,8 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
     )
 
 
-def test_only_the_first_ampere_step_needs_the_power_reserve() -> None:
-    scenario = one_charger(reserve_w=4000)
+def test_only_the_first_ampere_step_needs_the_power_at_minimum_current_free() -> None:
+    scenario = one_charger(min_current_power_w=4000)
     scenario.draw("c")
 
     assert scenario.decide(6010) == []
@@ -199,7 +199,7 @@ def test_car_that_draws_power_again_gets_more_current() -> None:
     assert scenario.decide_many(0, 3) == [current("c", 7), current("c", 8), []]
 
 
-def test_car_that_draws_less_than_half_of_the_power_reserve_is_held_at_its_minimum() -> None:
+def test_car_that_draws_less_than_half_of_the_power_at_minimum_current_is_held_at_its_minimum() -> None:
     """One that has more is set back to its minimum at once."""
     scenario = one_charger()
     scenario.set_charger("c", actively_charging=True, charging_power_w=1100)
@@ -234,7 +234,7 @@ def test_car_that_pauses_is_held_at_its_minimum_and_gets_its_amperes_back() -> N
         (True, [activate("c"), [], [], [], [], on("x")]),
     ],
 )
-def test_starting_cloud_controlled_charger_holds_its_power_reserve(cloud_controlled: bool, expected: list) -> None:
+def test_starting_cloud_controlled_charger_holds_its_power_at_minimum_current(cloud_controlled: bool, expected: list) -> None:
     """The appliance below has room only when the car that is about to draw power is left out, for at most the start delay."""
     scenario = Scenario(
         make_config(
@@ -267,14 +267,14 @@ def test_starting_charger_shows_when_its_start_delay_ends() -> None:
         (True, [activate("c"), [], [], [], [], on("x")]),
     ],
 )
-def test_waiting_time_counts_the_held_power_reserve(cloud_controlled: bool, expected: list) -> None:
+def test_waiting_time_counts_the_held_power_at_minimum_current(cloud_controlled: bool, expected: list) -> None:
     """There is room for the appliance below, but 5000 W with 4000 W held is close to the limit, so it waits."""
     scenario = Scenario(make_config("x", chargers=(charger("c", cloud_controlled=cloud_controlled),), priority=("ev", "x"), wait_at_limit_s=300))
 
     assert scenario.decide_many(5000, 6) == expected
 
 
-def test_held_power_reserve_ends_when_the_car_starts_charging() -> None:
+def test_held_power_at_minimum_current_ends_when_the_car_starts_charging() -> None:
     scenario = Scenario(make_config("x", chargers=(charger("c", max_a=7, cloud_controlled=True),), priority=("ev", "x"), wait_at_limit_s=0))
     assert scenario.decide_many(6000, 2) == [activate("c"), []]
 
@@ -376,7 +376,7 @@ def test_charger_without_a_car_keeps_its_minimum_unless_dynamic_order_knows_the_
 
 
 def test_car_connected_again_waits_in_the_queue_with_dynamic_order() -> None:
-    """b was deactivated when its car left, so the car does not draw power before there is room for its reserve."""
+    """b was deactivated when its car left, so the car does not draw power before there is room for its power at minimum current."""
     scenario = two_chargers(one_at_a_time=False, max_a=16, dynamic_order=True)
     scenario.set_charger("a", **NO_CAR)
     scenario.draw("b")
@@ -466,7 +466,7 @@ def test_one_at_a_time_with_dynamic_order_the_charger_that_draws_keeps_its_turn(
 
 
 def test_one_at_a_time_charger_higher_up_that_gets_a_car_gets_room_from_the_one_that_charges() -> None:
-    """Without dynamic charging order, the 4000 W reserve of a takes 3000 W from b at 16 A: five amperes, at once."""
+    """Without dynamic charging order, the 4000 W of a at its minimum current takes 3000 W from b at 16 A: five amperes, at once."""
     scenario = two_chargers(one_at_a_time=True, max_a=16)
     scenario.set_charger("a", **NO_CAR)
     scenario.draw("b")
@@ -489,7 +489,7 @@ def test_excluded_charger_that_seems_to_charge_lets_the_other_charge() -> None:
 
 
 def test_new_car_takes_the_room_of_a_charger_below_without_dynamic_order() -> None:
-    """The configured priority applies, so b gives up what the reserve of a needs at once: 1000 W, two amperes."""
+    """The configured priority applies, so b gives up what a needs at its minimum current at once: 1000 W, two amperes."""
     scenario = two_chargers(one_at_a_time=False, max_a=16)
     scenario.set_charger("a", **NO_CAR)
     scenario.draw("b")
@@ -541,8 +541,8 @@ def test_charger_that_charges_keeps_its_room_from_a_car_connected_later() -> Non
     assert scenario.engine.charging_priorities["ev"] == ["b", "a"]
 
 
-def test_switch_over_shares_the_power_when_it_covers_the_reserve() -> None:
-    """b at 11 A draws 3000 W above its reserve, which is not enough for the 4000 W reserve of a, but 4300 W is."""
+def test_switch_over_shares_the_power_when_it_covers_the_power_at_minimum_current() -> None:
+    """b at 11 A draws 3000 W above its power at minimum current, which is not enough for the 4000 W a draws at its minimum, but 4300 W is."""
     scenario = sharing_chargers(b_amperes=11)
     scenario.set_charger("b", charging_power_w=7000)
     assert scenario.decide(9950) == []
@@ -554,7 +554,7 @@ def test_switch_over_shares_the_power_when_it_covers_the_reserve() -> None:
     assert scenario.engine.chargers["a"].state is ChargerState.ACTIVATED
 
 
-def test_switch_over_when_the_free_power_alone_covers_the_reserve() -> None:
+def test_switch_over_when_the_free_power_alone_covers_the_power_at_minimum_current() -> None:
     """b at its minimum gives nothing up, and a starts beside it before b gets more current."""
     scenario = sharing_chargers(b_amperes=6)
     scenario.set_charger("b", charging_power_w=4100)
@@ -594,7 +594,7 @@ def test_switch_over_waits_for_the_waiting_time() -> None:
     assert scenario.decide(9100) == current("b", 6) + activate("a")
 
 
-def test_starting_charger_holds_its_reserve_from_the_charger_that_charges() -> None:
+def test_starting_charger_holds_its_power_from_the_charger_that_charges() -> None:
     """b does not take the power the car of the cloud-controlled a is about to draw, and no second switch-over is made on b's old charging power."""
     scenario = sharing_chargers(b_amperes=12, cloud_controlled=True)
     scenario.set_charger("b", charging_power_w=8300)

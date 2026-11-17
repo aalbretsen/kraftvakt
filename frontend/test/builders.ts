@@ -49,7 +49,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     set_current: { mode: "entity", entity_id: `number.${id}_current` },
     min_current_a: 6,
     max_current_a: 16,
-    power_reserve_w: 4000,
+    min_current_power_w: 4000,
     car_connected: { type: "entity", value: `binary_sensor.${id}_car` },
     actively_charging: { type: "entity", value: `binary_sensor.${id}_charging` },
     charging_power: { type: "power_sensor", value: `sensor.${id}_power` },

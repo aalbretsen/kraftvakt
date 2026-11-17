@@ -487,8 +487,9 @@ class RegulationEngine:
         """Return the commands of a switch-over when one is due, an empty list while its waiting time runs, or None.
 
         The queued charger may start when the free power, plus what the chargers
-        that charge above their minimum current draw above their power reserves,
-        covers its reserve, also when none of them is above its minimum.
+        that charge above their minimum current draw above their power at
+        minimum current, covers its power at minimum current, also when none of
+        them is above its minimum.
         Nothing above the group may be waiting for room, and no charger of the
         group may be starting, since its charging power would then be from
         before the last switch-over.
@@ -502,7 +503,7 @@ class RegulationEngine:
             if place is not None and place < group_places[0]:
                 continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
-            freed_w = sum(max(0.0, (charging.last_readings[charger_id].charging_power_w or 0.0) - self._chargers[charger_id].power_reserve_w) for charger_id in above_minimum)
+            freed_w = sum(max(0.0, (charging.last_readings[charger_id].charging_power_w or 0.0) - self._chargers[charger_id].min_current_power_w) for charger_id in above_minimum)
             key = AmpereStepKey(queued[0], 0)
             step = next(step for step in steps if step.key == key)
             held_w = _held_reserves_w(steps, group_places[0])

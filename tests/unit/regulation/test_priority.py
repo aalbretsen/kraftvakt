@@ -81,8 +81,8 @@ def test_each_charger_group_entry_is_replaced_by_its_ampere_steps() -> None:
     assert keys(steps) == ["a", "ev", "b", "g2"]
 
 
-def charger(charger_id: str, min_a: int, max_a: int, reserve_w: int = 4000) -> Charger:
-    return Charger(charger_id, min_current_a=min_a, max_current_a=max_a, power_reserve_w=reserve_w)
+def charger(charger_id: str, min_a: int, max_a: int, min_current_power_w: int = 4000) -> Charger:
+    return Charger(charger_id, min_current_a=min_a, max_current_a=max_a, min_current_power_w=min_current_power_w)
 
 
 def test_ampere_steps_are_interleaved_between_chargers() -> None:
@@ -114,7 +114,7 @@ def test_only_the_first_ampere_step_has_the_power_reserve() -> None:
     """All of them get the growth of the ampere steps."""
     steps = ampere_steps(
         "ev",
-        [[charger("a", 6, 8, reserve_w=3500)]],
+        [[charger("a", 6, 8, min_current_power_w=3500)]],
         {"a": 2},
         {"a"},
         (),

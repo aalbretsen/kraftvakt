@@ -50,7 +50,7 @@ The section header, the description and the footer note are in `section-styles.t
 - A page is a stack of cards made by `renderCard` in `ConfigPage`: a header with the title in HA's card header size and an optional control at the right end,
   such as an add button, then the description, the content, a list from edge to edge and a footer.
 - A part of a card has a section header: a smaller title and an optional control at the right end, then its description and its fields.
-- A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and a charger's power reserve. The rest is in groups.
+- A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and a charger's power at minimum current. The rest is in groups.
   A group is a frame with a section header, a description and its fields, as a card is on a page.
   A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.
   An add button is a filled button at the right end of a header; where the header holds a switch, it goes at the right end under the list.
@@ -224,7 +224,7 @@ The section header, the description and the footer note are in `section-styles.t
   - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
     An activated charger whose car does not charge tells that it waits at the minimum current.
     A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
-  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that its power reserve is kept free until then,
+  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that its power at minimum current is kept free until then,
     since nothing else on the page tells why nothing below it is turned on while power looks free.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.
     It is hidden when nothing is on, or when only excluded appliances are below the last entry that is on, so something that can be turned on is always below it.

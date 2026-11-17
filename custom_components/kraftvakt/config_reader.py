@@ -182,7 +182,7 @@ class ConfigReader:
             set_current=self._action(values, "set_current", location, entity_allowed=True),
             min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
-            power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
+            min_current_power_w=self._integer(values, "min_current_power_w", defaults.min_current_power_w, location),
             car_connected=self._condition(values.get("car_connected"), "car_connected", location, CHARGER_CONDITION_TYPES),
             actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, CHARGER_CONDITION_TYPES),
             charging_power=self._condition(values.get("charging_power"), "charging_power", location, POWER_TYPES),

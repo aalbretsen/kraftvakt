@@ -54,7 +54,7 @@
     "first_decision": "Waiting for the first decision",
     "bypassed_no_car": "Bypassed: no car connected",
     "waiting_charger": "Queued: another EV charger in the group has its turn",
-    "starting_until": "Waiting until {time} for the car to start charging. Its power reserve is kept free until then.",
+    "starting_until": "Waiting until {time} for the car to start charging. Its power at minimum current is kept free until then.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
     "next_ampere_at": "One more ampere at the decision at {time}",
@@ -455,7 +455,7 @@
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
     "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› finish charging after charging window».",
     "currents": "{min}–{max} A",
-    "reserve": "reserve {power} W",
+    "min_current_power": "{power} W at minimum current",
     "window": "charging window {start}–{end}",
     "finishes_after_window": "finishes ongoing charging after the window",
     "always_allowed": "always allowed to charge",
@@ -506,9 +506,9 @@
       "set_current": {
         "label": "Set charging current"
       },
-      "power_reserve_w": {
-        "label": "Power reserve",
-        "helper": "The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least half of it. Set it to what the car draws at the minimum current, about 1400 W for a car that charges on one phase. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
+      "min_current_power_w": {
+        "label": "Power at minimum current",
+        "helper": "What the car draws at the minimum current, about 1400 W for a car that charges on one phase. The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least half of it. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
       },
       "car_connected": {
         "label": "Car connected",
@@ -523,11 +523,11 @@
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and its power reserve is kept free for the start delay while the car starts charging."
+        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and its power at minimum current is kept free for the start delay while the car starts charging."
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "How long the car may take to start charging after the EV charger is activated. Its power reserve is kept free meanwhile. {min}–{max} s, default {default} s."
+        "helper": "How long the car may take to start charging after the EV charger is activated. Its power at minimum current is kept free meanwhile. {min}–{max} s, default {default} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",

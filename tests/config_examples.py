@@ -107,7 +107,7 @@ def full_config_data() -> dict[str, Any]:
                             "type": "power_sensor",
                             "value": "sensor.garage_charger_power",
                         },
-                        "power_reserve_w": 3000,
+                        "min_current_power_w": 3000,
                         "car_connected": {
                             "type": "state",
                             "value": "sensor.garage_charger_status",

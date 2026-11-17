@@ -69,7 +69,7 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
         "max_current_a": 8,
         "car_connected": {"type": "entity", "value": CAR_CONNECTED},
         "charging_power": {"type": "power_sensor", "value": CHARGER_POWER},
-        "power_reserve_w": 4000,
+        "min_current_power_w": 4000,
     }
 
 
@@ -304,7 +304,7 @@ async def test_actively_charging_from_the_charging_power_or_the_charging_on_off(
     charging: str,
     attributes: dict[str, str],
 ) -> None:
-    """Above 100 W counts as charging, and a charging power template gives W. A car that draws less than half of the power reserve gets no more current."""
+    """Above 100 W counts as charging, and a charging power template gives W. A car that draws less than half of the power at minimum current gets no more current."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger[field] = condition
     set_power(hass, CHARGER_POWER, "0")
@@ -357,7 +357,9 @@ async def test_charger_without_evidence_counts_as_not_charging(
     assert entry.runtime_data.chargers["c1"].state is ChargerState.ACTIVATED
 
 
-async def test_car_gets_more_current_only_while_it_draws_half_of_its_reserve(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+async def test_car_gets_more_current_only_while_it_draws_half_of_its_power_at_minimum_current(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt
+) -> None:
     """The charging on/off may tell that the car charges, but only the charging power tells that it uses the current it has."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger["actively_charging"] = {"type": "entity", "value": "binary_sensor.charger_charging"}

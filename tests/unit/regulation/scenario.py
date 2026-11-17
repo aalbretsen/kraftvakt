@@ -107,7 +107,7 @@ class Scenario:
         for charger_id in self.drawing:
             charger = self.configured_chargers[charger_id]
             current_a = self.engine.chargers[charger_id].current_a
-            power_w = 0.0 if current_a is None else current_a * charger.power_reserve_w / charger.min_current_a
+            power_w = 0.0 if current_a is None else current_a * charger.min_current_power_w / charger.min_current_a
             readings[charger_id] = replace(readings[charger_id], actively_charging=current_a is not None, charging_power_w=power_w)
         return readings
 

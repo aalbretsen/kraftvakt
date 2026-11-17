@@ -60,7 +60,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "chargers": {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
-        "power_reserve_w": Range(1000, 5000, 1),
+        "min_current_power_w": Range(1000, 5000, 1),
         "start_delay_s": Range(0, 900, 1),
     },
 }
@@ -332,7 +332,7 @@ class Charger:
     set_current: ActionConfig | None = None
     min_current_a: int = 6
     max_current_a: int = 16
-    power_reserve_w: int = 4157
+    min_current_power_w: int = 4157
     car_connected: Condition | None = None
     actively_charging: Condition | None = None
     charging_power: Condition | None = None

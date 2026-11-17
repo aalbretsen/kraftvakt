@@ -22,7 +22,7 @@ const CHARGER_FIELDS = [
   "set_current",
   "min_current_a",
   "max_current_a",
-  "power_reserve_w",
+  "min_current_power_w",
   "car_connected",
   "actively_charging",
   "charging_power",
@@ -139,7 +139,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const language = this.hass.language;
     const details = [
       this.localize("charging.currents", { min: charger.min_current_a, max: charger.max_current_a }),
-      this.localize("charging.reserve", { power: formatNumber(language, charger.power_reserve_w, 0) }),
+      this.localize("charging.min_current_power", { power: formatNumber(language, charger.min_current_power_w, 0) }),
       charger.charging_window
         ? this.localize("charging.window", { ...charger.charging_window })
         : this.localize("charging.always_allowed"),
@@ -257,7 +257,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       set_current: null,
       min_current_a: defaults.min_current_a,
       max_current_a: defaults.max_current_a,
-      power_reserve_w: defaults.power_reserve_w,
+      min_current_power_w: defaults.min_current_power_w,
       car_connected: null,
       actively_charging: null,
       charging_power: null,

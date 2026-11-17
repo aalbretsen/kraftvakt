@@ -144,7 +144,7 @@ def test_optional_settings_are_not_required() -> None:
     charger["charging_window"] = None
     del charger["min_current_a"]
     del charger["max_current_a"]
-    del charger["power_reserve_w"]
+    del charger["min_current_power_w"]
 
     assert _missing(data) == []
 

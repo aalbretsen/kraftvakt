@@ -87,7 +87,7 @@ def _interleaved(
         Step(
             key=AmpereStepKey(charger.id, index),
             is_on=index < ampere_steps_on.get(charger.id, 0),
-            power_reserve_w=charger.power_reserve_w if index == 0 else None,
+            power_reserve_w=charger.min_current_power_w if index == 0 else None,
             growth=growth,
             can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in held_at_min),
             can_turn_off=charger.id in may_switch_off,

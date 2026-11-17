@@ -44,8 +44,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   protected renderFields(issues: Issue[]) {
     return html`
       ${this.renderDevice(issues)} ${this.renderEntity(issues)}
-      ${this.renderForm([this.numberField("power_reserve_w", "W", true)], issues, (value) =>
-        this.changeDraft({ power_reserve_w: value.power_reserve_w as number }),
+      ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) =>
+        this.changeDraft({ min_current_power_w: value.min_current_power_w as number }),
       )}
       ${this.renderSwitchedBy(issues)}
       ${this.draft.switched_by_current

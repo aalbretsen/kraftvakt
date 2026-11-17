@@ -99,24 +99,24 @@ def charging_current(charger: Charger, ampere_steps_on: int) -> int:
 def may_step_up(charger: Charger, reading: ChargerReading) -> bool:
     """Return whether the car draws enough power to get more than the minimum current.
 
-    It must charge actively and draw at least half of the power reserve,
-    which the user sets to what the car draws at the minimum current, so a
-    car that draws little or nothing, as one that is full, cannot suddenly
-    draw much more.
+    It must charge actively and draw at least half of the power at minimum
+    current, which the user sets to what the car draws at the minimum current,
+    so a car that draws little or nothing, as one that is full, cannot
+    suddenly draw much more.
     """
     power_w = reading.charging_power_w
-    return reading.actively_charging and power_w is not None and power_w >= 0.5 * charger.power_reserve_w
+    return reading.actively_charging and power_w is not None and power_w >= 0.5 * charger.min_current_power_w
 
 
 def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int) -> float:
     """Return what a charger that draws `power_w` now is estimated to draw with `ampere_steps_on` ampere steps on.
 
-    Its power per ampere is its power reserve divided by its minimum current,
+    Its power per ampere is its power at minimum current divided by its minimum current,
     and a car that draws less than its current allows goes on drawing that.
     """
     if not ampere_steps_on:
         return 0.0
-    allowed_w = charging_current(charger, ampere_steps_on) * charger.power_reserve_w / charger.min_current_a
+    allowed_w = charging_current(charger, ampere_steps_on) * charger.min_current_power_w / charger.min_current_a
     return min(power_w, allowed_w)
 
 

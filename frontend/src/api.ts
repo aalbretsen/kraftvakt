@@ -112,7 +112,8 @@ export interface Charger {
   set_current: ActionConfig | null;
   min_current_a: number;
   max_current_a: number;
-  power_reserve_w: number;
+  /** What the car draws at the minimum current. */
+  min_current_power_w: number;
   car_connected: Condition | null;
   /** An optional condition that is true while the car charges. */
   actively_charging: Condition | null;
@@ -221,7 +222,7 @@ export interface Capabilities {
     chargers: {
       min_current_a: number;
       max_current_a: number;
-      power_reserve_w: number;
+      min_current_power_w: number;
       override_ends: OverrideEnd;
       start_delay_s: number;
     };
@@ -273,7 +274,7 @@ export interface ChargerStatus {
   bypassed: boolean;
   /** Activated and actively charging at the last decision. */
   charging: boolean;
-  /** When the start delay of a starting EV charger ends, whose power reserve is kept free until then. */
+  /** When the start delay of a starting EV charger ends, whose power at minimum current is kept free until then. */
   starting_until: string | null;
   waiting_since: string | null;
   waiting_until: string | null;

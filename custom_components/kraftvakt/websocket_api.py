@@ -230,7 +230,7 @@ def capabilities() -> dict[str, Any]:
             "chargers": {
                 "min_current_a": charger.min_current_a,
                 "max_current_a": charger.max_current_a,
-                "power_reserve_w": charger.power_reserve_w,
+                "min_current_power_w": charger.min_current_power_w,
                 "override_ends": charger.override_ends.value,
                 "start_delay_s": charger.start_delay_s,
             },

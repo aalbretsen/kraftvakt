@@ -181,7 +181,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "resolution": 0.25,
     }
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
-    assert result["limits"]["chargers"]["power_reserve_w"]["max"] == 5000
+    assert result["limits"]["chargers"]["min_current_power_w"]["max"] == 5000
     assert result["defaults"] == {
         "general": {
             "power_sensor": None,
@@ -206,7 +206,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "chargers": {
             "min_current_a": 6,
             "max_current_a": 16,
-            "power_reserve_w": 4157,
+            "min_current_power_w": 4157,
             "override_ends": "manual",
             "start_delay_s": 300,
         },

@@ -80,8 +80,8 @@ The format is defined by the dataclasses and their serialization in `config_mode
   In a variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
-  deactivate and set-current actions, switched by current, min and max current, power reserve, car connected, the charging on/off (`actively_charging`), the charging power,
-  an optional charging window, finish after window, the override end, cloud-controlled, the start delay,
+  deactivate and set-current actions, switched by current, min and max current, power at minimum current (`min_current_power_w`), car connected,
+  the charging on/off (`actively_charging`), the charging power, an optional charging window, finish after window, the override end, cloud-controlled, the start delay,
   deactivate on fault and its fault flag.
   A group has its name, one at a time and dynamic charging order.
   A charger is nested in its group, so it cannot be in two.
@@ -128,7 +128,8 @@ Missing items and validation errors are both issues with a code, a section, a ta
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
 and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
 A charger without a charging power is `missing_charging_power`; the charging on/off is optional.
-A charger's power reserve is at least 1000 W, since the regulation estimates from it what the charger draws per ampere, and when its car may get more than the minimum current.
+A charger's power at minimum current is at least 1000 W, since the regulation estimates from it what the charger draws per ampere,
+and when its car may get more than the minimum current.
 Every issue code needs a text in the panel's translations.
 
 ## Charger profiles
@@ -146,7 +147,7 @@ Every issue code needs a text in the panel's translations.
   It has actions to activate and deactivate, unless the charger is switched by its current.
   It always fills switched by current, cloud-controlled and the start delay, the last with the charger default when the profile leaves it out,
   so choosing a device never keeps the settings of the charger's previous device.
-  The other settings, such as the currents, the power reserve and the charging window, are not part of a profile and follow the standard defaults.
+  The other settings, such as the currents, the power at minimum current and the charging window, are not part of a profile and follow the standard defaults.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
   so choosing a device never turns the setting on without a flag.
 - The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.
