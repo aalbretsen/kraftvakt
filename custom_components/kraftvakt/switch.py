@@ -77,20 +77,16 @@ class ItemSwitch(ItemEntity, SwitchEntity):
         return bool(getattr(self._positions(), self._setting))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Switch on and save at once."""
         await self._async_set(True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Switch off and save at once."""
         await self._async_set(False)
 
     @abstractmethod
-    def _positions(self) -> ItemSwitches:
-        """Return the positions of the switches of the item."""
+    def _positions(self) -> ItemSwitches: ...
 
     @abstractmethod
-    async def _async_set(self, position: bool) -> None:
-        """Set the position of this switch and save it at once."""
+    async def _async_set(self, position: bool) -> None: ...
 
 
 class ApplianceSwitch(ItemSwitch):

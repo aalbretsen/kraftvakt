@@ -86,11 +86,6 @@ class Settings:
         self._apply_charger(charger_id, None, False)
         self._hass.async_create_task(self.async_save(), "kraftvakt save switches")
 
-    async def async_update_config(self, config: KraftvaktConfig) -> None:
-        """Use a new configuration and save it with the switches."""
-        self.async_use_config(config)
-        await self.async_save()
-
     @callback
     def async_use_config(self, config: KraftvaktConfig) -> None:
         """Use a new configuration and keep the switches of its items; not saved yet.

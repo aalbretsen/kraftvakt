@@ -93,8 +93,8 @@ class Scenario:
         """Let the car draw what the current of its charger allows from now on, or stop drawing.
 
         While it draws, the charger reads as actively charging with a charging
-        power of its current times its power reserve divided by its minimum
-        current, and as not charging with 0 W while it is deactivated.
+        power of its current times its power at minimum current divided by its
+        minimum current, and as not charging with 0 W while it is deactivated.
         """
         if drawing:
             self.drawing.add(charger_id)

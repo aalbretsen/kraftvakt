@@ -90,8 +90,7 @@ class ConditionType(StrEnum):
     """How a true/false value, or a measured value, is given.
 
     `STATE` is the states of an entity, offered for the conditions of a
-    charger. `POWER_SENSOR` gives a power, true above a fixed power for the
-    charging power of a charger. `TEMPERATURE_SENSOR` gives a temperature to
+    charger. `POWER_SENSOR` gives a power. `TEMPERATURE_SENSOR` gives a temperature to
     show, and `CURRENT_TEMPERATURE` and `TARGET_TEMPERATURE` give the current
     and the set temperature of a thermostat. A template may give a power or a
     temperature instead.
@@ -170,7 +169,7 @@ class ActionConfig:
 
 @dataclass(frozen=True, slots=True)
 class Condition:
-    """A true/false value from a boolean entity, the states of an entity, a template or a power sensor.
+    """A true/false value from a boolean entity, the states of an entity or a template, or a value from a sensor.
 
     `value` is the entity or the template. For a state, `states` are the
     chosen states, which count as true, or as false when `states_are_true`

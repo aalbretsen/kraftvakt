@@ -118,7 +118,6 @@ class KraftvaktRuntime:
 
     @property
     def steps_on(self) -> int:
-        """Return how many appliances and amperes of the chargers are on."""
         return self._engine.steps_on
 
     @property
@@ -131,12 +130,10 @@ class KraftvaktRuntime:
 
     @property
     def current_variants(self) -> Mapping[str, str | None]:
-        """Return the current variant id of each appliance, None for none."""
         return self._engine.current_variants
 
     @property
     def waiting(self) -> Waiting | None:
-        """Return the waiting time that runs for the next step, if any."""
         return self._engine.waiting
 
     @property
@@ -177,7 +174,6 @@ class KraftvaktRuntime:
 
     @property
     def settings(self) -> Settings:
-        """Return the stored configuration and the user's switches."""
         return self._settings
 
     @property
@@ -192,12 +188,10 @@ class KraftvaktRuntime:
 
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
-        """Return how each charger stands after the last decision."""
         return self._engine.chargers
 
     @property
     def charging_priorities(self) -> Mapping[str, list[str]]:
-        """Return the current charging priority of each group, highest first."""
         return self._engine.charging_priorities
 
     def diagnostics(self) -> dict[str, Any]:
@@ -324,7 +318,6 @@ class KraftvaktRuntime:
 
     @callback
     def async_add_window_listener(self, listener: WindowListener) -> CALLBACK_TYPE:
-        """Call `listener` with the averages each time a window closes."""
         return self._measurement.async_add_window_listener(listener)
 
     @callback
@@ -387,13 +380,7 @@ class KraftvaktRuntime:
 
     def _action_failed(self, action: str, error: str) -> None:
         """Remember the failure for the diagnostics, and look for removed entities."""
-        self._failed_actions.append(
-            {
-                "time": dt_util.now().isoformat(timespec="seconds"),
-                "action": action,
-                "error": error,
-            }
-        )
+        self._failed_actions.append(plain({"time": dt_util.utcnow(), "action": action, "error": error}))
         async_check_entities(self._hass, self.config)
 
     def _repeat_commands(self, now: datetime) -> None:

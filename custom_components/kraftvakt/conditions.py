@@ -1,4 +1,4 @@
-"""True/false values from a boolean entity, the states of an entity, a template or a power sensor, and powers and temperatures from a sensor or a template."""
+"""True/false values from a boolean entity, the states of an entity or a template, and powers and temperatures from a sensor or a template."""
 
 from __future__ import annotations
 
@@ -41,8 +41,8 @@ def condition_evidence(hass: HomeAssistant, condition: Condition | None, entity_
     """Return the value of the condition when there is evidence for it, else None.
 
     Evidence is an entity that is on or off, a state of an entity that has
-    one, a template that renders a boolean, or a valid power. A condition
-    that is not set gives none.
+    one, or a template that renders a boolean. A condition that is not set
+    gives none.
     """
     if condition is None:
         return None
@@ -52,14 +52,16 @@ def condition_evidence(hass: HomeAssistant, condition: Condition | None, entity_
     state = hass.states.get(condition.value)
     if state is None:
         return None
-    if condition.type is ConditionType.POWER_SENSOR:
-        power = power_w(state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
-        return None if power is None else power > ACTIVELY_CHARGING_ABOVE_W
     if condition.type is ConditionType.STATE:
         if state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return None
         return (state.state in condition.states) is condition.states_are_true
     return {STATE_ON: True, STATE_OFF: False}.get(state.state)
+
+
+def charging_evidence(charging_power_w: float | None) -> bool | None:
+    """Return whether the charging power shows that the car charges, None without a valid value."""
+    return None if charging_power_w is None else charging_power_w > ACTIVELY_CHARGING_ABOVE_W
 
 
 def power_value_w(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> float | None:

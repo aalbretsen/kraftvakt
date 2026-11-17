@@ -10,6 +10,7 @@ import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize } from "../localize";
 import { renderDescription, sectionStyles } from "../section-styles";
 import type { HomeAssistant } from "../types";
+import { issuesFor } from "../validation";
 
 /** A sortable list of items with a button that adds one. The texts are translated. */
 export interface ItemList {
@@ -75,8 +76,7 @@ export class ConfigPage extends LitElement {
     fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
   protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
-    const issues = this.issues.filter((issue) => issue.section === section && issue.target === target);
-    return errorsByField(issues, prefix, this.describeIssue);
+    return errorsByField(issuesFor(this.issues, section, target), prefix, this.describeIssue);
   }
 
   /** Return the entities other appliances and EV chargers than the item use, which it cannot use as well. */

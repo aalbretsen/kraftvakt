@@ -30,7 +30,7 @@ from .config_validation import (
 from .const import DOMAIN
 from .devices import device_issues
 from .entity import item_name
-from .runtime import ConfigIncompleteError, KraftvaktRuntime
+from .runtime import ConfigIncompleteError, KraftvaktRuntime, RegulationRunningError
 from .status import status_snapshot
 
 SIGNAL_STATUS: Final = f"{DOMAIN}_status"
@@ -248,11 +248,7 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
 
 
 def _send_regulation_running(connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
-    connection.send_error(
-        msg["id"],
-        "regulation_running",
-        "The regulation must be stopped to change the configuration",
-    )
+    connection.send_error(msg["id"], "regulation_running", str(RegulationRunningError()))
 
 
 def _loaded_runtime(

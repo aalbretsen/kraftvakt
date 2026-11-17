@@ -11,6 +11,7 @@ import { chargerName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { renderDescription, renderSectionHeader } from "../section-styles";
+import { issuesFor } from "../validation";
 import { ConfigPage, type ItemList } from "./config-page";
 
 const CHARGER_FIELDS = [
@@ -126,7 +127,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         .item=${charger}
         .isNew=${isNew}
         .usedEntities=${this.entitiesUsedBesides(charger.id)}
-        .saveErrors=${this.saveErrors.filter((issue) => issue.section === "chargers" && issue.target === charger.id)}
+        .saveErrors=${issuesFor(this.saveErrors, "chargers", charger.id)}
         .locked=${this.locked}
         @item-changed=${(event: CustomEvent<Charger>) => this.chargerChanged(groupId, event.detail)}
         @item-deleted=${this.chargerDeleted}
@@ -174,7 +175,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     if (charger.deactivate_on_fault) {
       details.push(this.localize("charging.deactivated_on_fault"));
     }
-    const issues = this.issues.filter((issue) => issue.section === "chargers" && issue.target === charger.id);
+    const issues = issuesFor(this.issues, "chargers", charger.id);
     return {
       key: charger.id,
       title: chargerName(this.hass, this.entityNames, charger) ?? this.localize("missing.charger_without_entity"),

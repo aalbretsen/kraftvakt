@@ -281,7 +281,7 @@
       },
       "essential": {
         "label": "Nødvendig apparat",
-        "helper": "For et apparat som alltid må gå, som en fryser. Kraftvakt holder det på, og slår det av bare i en straffeperiode. Nødvendige apparater står øverst i prioritetslisten. Ikke for et apparat med varianter."
+        "helper": "For et apparat som alltid må gå, som en fryser. Det holdes på, og slås av bare i en straffeperiode. Ikke for et apparat med varianter."
       },
       "turn_on": {
         "label": "Handling for å slå på",
@@ -293,7 +293,7 @@
       },
       "fixed_load": {
         "label": "Fast last",
-        "helper": "Nesten aldri nødvendig. Bare for et apparat som alltid bruker samme effekt mens det er på, som en takvifte. Det slås da på bare når effektreserven er ledig. Ikke bruk den for et apparat med termostat eller annen egen styring: da virker reguleringen dårligere, ikke bedre."
+        "helper": "Bare for et apparat som alltid bruker samme effekt mens det er på, som en takvifte. Aldri for et apparat med termostat eller annen egen styring: da virker reguleringen dårligere."
       },
       "power_reserve_w": {
         "label": "Effektreserve",
@@ -508,7 +508,7 @@
       },
       "min_current_power_w": {
         "label": "Effekt ved minste ladestrøm",
-        "helper": "Det bilen trekker på minste ladestrøm, omtrent 1400 W for en bil som lader på én fase. Elbilladeren aktiveres bare når så mye effekt er ledig, og bilen får mer enn minste ladestrøm bare mens den trekker minst halvparten av den. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
+        "helper": "Det bilen trekker på minste ladestrøm, omtrent 1400 W på én fase. Bilen begynner å lade bare når så mye effekt er ledig. {min}–{max} W, standard {default} W, 6 A på tre faser."
       },
       "car_connected": {
         "label": "Bil tilkoblet",
@@ -523,7 +523,7 @@
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og effekten ved minste ladestrøm holdes ledig i startforsinkelsen mens bilen begynner å lade."
+        "helper": "For en elbillader som styres over internett. Den får færre gjentatte kommandoer, og effekten holdes ledig mens bilen begynner å lade."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
@@ -552,7 +552,7 @@
       },
       "override_ends": {
         "label": "Avslutt overstyringen",
-        "helper": "Når bryteren «‹lader› overstyr ladetidsrom» slår seg av selv. Den kan slås på før bilen kommer. Overstyringen lar bilen lade utenfor ladetidsrommet, men flytter den ikke foran de andre i gruppen."
+        "helper": "Når bryteren «‹lader› overstyr ladetidsrom» slår seg av selv. Den kan slås på før bilen kommer."
       },
       "switched_by_current": {
         "label": "Lading slås på og av med",

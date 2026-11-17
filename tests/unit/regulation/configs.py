@@ -82,7 +82,7 @@ def charger(
         max_current_a=max_a,
         min_current_power_w=min_current_power_w,
         car_connected=Condition(ConditionType.ENTITY, f"binary_sensor.{charger_id}_car"),
-        actively_charging=Condition(ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"),
+        charging_power=Condition(ConditionType.POWER_SENSOR, f"sensor.{charger_id}_power"),
         charging_window=charging_window,
         override_ends=override_ends,
         cloud_controlled=cloud_controlled,

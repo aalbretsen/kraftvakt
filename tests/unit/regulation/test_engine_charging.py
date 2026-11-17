@@ -565,7 +565,7 @@ def test_switch_over_when_the_free_power_alone_covers_the_power_at_minimum_curre
 def test_no_switch_over_while_an_entry_above_the_group_waits_for_room() -> None:
     """The appliance above gets room from b first, by the fixed order.
 
-    Included again, it takes b's lowest ampere step, and then b gives up what its 5000 W reserve needs: b at its minimum would free too little, so it is deactivated.
+    Included again, it takes b's lowest ampere step, and then b gives up what its 5000 W at minimum current needs: b at its minimum would free too little, so it is deactivated.
     """
     scenario = Scenario(make_config(appliance("x", reserve_w=5000), chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True, wait_at_limit_s=0))
     scenario.set_charger("a", **NO_CAR)

@@ -12,7 +12,7 @@ import { entityName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
-import { APPLIANCE_ACTIONS, isOverridden } from "../validation";
+import { APPLIANCE_ACTIONS, isOverridden, issuesFor } from "../validation";
 import { ConfigPage, type ItemList } from "./config-page";
 
 const APPLIANCE_FIELDS = [
@@ -109,7 +109,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   }
 
   private applianceSaveErrors(appliance: Appliance): Issue[] {
-    return this.saveErrors.filter((issue) => issue.section === "appliances" && issue.target === appliance.id);
+    return issuesFor(this.saveErrors, "appliances", appliance.id);
   }
 
   private applianceDialogClosed(): void {
@@ -139,11 +139,8 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     }
     const appliance = this.config.appliances.find((item) => item.id === entry.appliance_id);
     const variant = appliance?.variants.find((item) => item.id === entry.variant_id);
-    const issues = this.issues.filter(
-      (issue) =>
-        issue.section === "appliances" &&
-        issue.target === entry.appliance_id &&
-        (variant ? issue.field?.startsWith(`variants.${variant.id}.`) : !issue.field?.startsWith("variants.")),
+    const issues = issuesFor(this.issues, "appliances", entry.appliance_id).filter((issue) =>
+      variant ? issue.field?.startsWith(`variants.${variant.id}.`) : !issue.field?.startsWith("variants."),
     );
     return {
       key: priorityKey(entry),

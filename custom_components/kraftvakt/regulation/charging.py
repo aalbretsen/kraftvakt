@@ -257,7 +257,6 @@ class ChargingState:
         self.ampere_steps_on[charger_id] = count
 
     def charges(self, charger_id: str, reading: ChargerReading) -> bool:
-        """Return whether the charger is activated and charges actively."""
         return charger_id in self.activated_at and reading.actively_charging
 
     def must_deactivate(self, group: ChargerGroup, charger_id: str) -> bool:
@@ -357,7 +356,6 @@ class ChargingState:
         return [charger_id for charger_id in self.order(group) if charger_id in self.may_charge and not self.ampere_steps_on.get(charger_id)]
 
     def status(self, group: ChargerGroup) -> dict[str, ChargerStatus]:
-        """Return how each charger stands after the last decision."""
         return {charger.id: self._status(charger) for charger in group.chargers}
 
     def _status(self, charger: Charger) -> ChargerStatus:

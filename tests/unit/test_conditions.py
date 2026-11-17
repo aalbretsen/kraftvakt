@@ -1,11 +1,13 @@
-"""Tests of true/false values from an entity, a template or a power sensor, and of temperatures."""
+"""Tests of true/false values from an entity or a template, of the charging power as evidence of charging, and of temperatures."""
 
 import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.kraftvakt.conditions import (
+    charging_evidence,
     condition_evidence,
     evaluate_condition,
+    power_value_w,
     temperature_value,
 )
 from custom_components.kraftvakt.config_model import Condition, ConditionType
@@ -67,13 +69,10 @@ async def test_failing_template_is_false(hass: HomeAssistant, value: str) -> Non
         (template("{{ is_state('binary_sensor.car', 'on') }}"), "off", False),
         (template("{{ states('binary_sensor.car') }}"), "off", None),
         (template("{{ 1 / 0 }}"), "off", None),
-        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "4100", True),
-        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "50", False),
-        (Condition(ConditionType.POWER_SENSOR, "binary_sensor.car"), "unknown", None),
     ],
 )
 async def test_evidence_either_way_or_none(hass: HomeAssistant, condition: Condition, state: str, expected: bool | None) -> None:
-    """Only an entity that is on or off, a boolean or a valid power is evidence."""
+    """Only an entity that is on or off, or a boolean, is evidence."""
     hass.states.async_set("binary_sensor.car", state)
 
     assert condition_evidence(hass, condition, CHARGER) is expected
@@ -110,22 +109,22 @@ async def test_entity_variable_is_none_when_the_entity_is_missing(
         ("0.1", "kW", False),
         ("110", None, True),
         ("-500", "W", False),
-        ("200", "A", False),
-        ("unavailable", "W", False),
-        ("unknown", "W", False),
+        ("200", "A", None),
+        ("unavailable", "W", None),
+        ("unknown", "W", None),
     ],
 )
-async def test_power_sensor_is_true_above_100_watt(hass: HomeAssistant, state: str, unit: str | None, expected: bool) -> None:
+async def test_charging_power_shows_charging_above_100_watt(hass: HomeAssistant, state: str, unit: str | None, expected: bool | None) -> None:
     hass.states.async_set("sensor.charger_power", state, {"unit_of_measurement": unit})
     condition = Condition(ConditionType.POWER_SENSOR, "sensor.charger_power")
 
-    assert evaluate_condition(hass, condition, CHARGER) is expected
+    assert charging_evidence(power_value_w(hass, condition, CHARGER)) is expected
 
 
-async def test_missing_power_sensor_is_false(hass: HomeAssistant) -> None:
+async def test_missing_power_sensor_is_no_evidence(hass: HomeAssistant) -> None:
     condition = Condition(ConditionType.POWER_SENSOR, "sensor.gone")
 
-    assert not evaluate_condition(hass, condition, CHARGER)
+    assert charging_evidence(power_value_w(hass, condition, CHARGER)) is None
 
 
 @pytest.mark.parametrize(

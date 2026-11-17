@@ -281,7 +281,7 @@
       },
       "essential": {
         "label": "Essential appliance",
-        "helper": "For an appliance that must always run, such as a freezer. Kraftvakt keeps it on, and turns it off only during a penalty period. Essential appliances are at the top of the priority list. Not for an appliance with variants."
+        "helper": "For an appliance that must always run, such as a freezer. It is kept on, and turned off only during a penalty period. Not for an appliance with variants."
       },
       "turn_on": {
         "label": "Action to turn on",
@@ -293,7 +293,7 @@
       },
       "fixed_load": {
         "label": "Fixed load",
-        "helper": "Almost never needed. Only for an appliance that always draws the same power while it is on, such as a ceiling fan. It is then turned on only when its power reserve is free. Do not use it for an appliance with a thermostat or other control of its own: the regulation then works worse, not better."
+        "helper": "Only for an appliance that always draws the same power while it is on, such as a ceiling fan. Never for one with a thermostat or other control of its own: the regulation then works worse."
       },
       "power_reserve_w": {
         "label": "Power reserve",
@@ -508,7 +508,7 @@
       },
       "min_current_power_w": {
         "label": "Power at minimum current",
-        "helper": "What the car draws at the minimum current, about 1400 W for a car that charges on one phase. The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least half of it. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
+        "helper": "What the car draws at the minimum current, about 1400 W on one phase. The car starts charging only when this much power is free. {min}–{max} W, default {default} W, 6 A on three phases."
       },
       "car_connected": {
         "label": "Car connected",
@@ -523,7 +523,7 @@
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and its power at minimum current is kept free for the start delay while the car starts charging."
+        "helper": "For an EV charger controlled over the internet. It gets fewer repeated commands, and its power is kept free while the car starts charging."
       },
       "start_delay_s": {
         "label": "Start delay",
@@ -552,7 +552,7 @@
       },
       "override_ends": {
         "label": "End the override",
-        "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives. The override lets the car charge outside the charging window, but does not move it ahead of the others in the group."
+        "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives."
       },
       "switched_by_current": {
         "label": "Charging is turned on and off by",

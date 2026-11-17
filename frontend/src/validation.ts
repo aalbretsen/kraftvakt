@@ -159,7 +159,7 @@ export function hasDefaultAction(
 }
 
 /** Return the issues that belong to one appliance or charger. */
-export function issuesFor(issues: Issue[], section: Issue["section"], target: string): Issue[] {
+export function issuesFor(issues: Issue[], section: Issue["section"], target: string | undefined): Issue[] {
   return issues.filter((issue) => issue.section === section && issue.target === target);
 }
 

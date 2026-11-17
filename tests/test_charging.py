@@ -961,20 +961,21 @@ async def test_allowed_sensor_follows_the_configuration_without_reload(
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
     entry = await setup_kraftvakt()
-    settings = entry.runtime_data.settings
+    runtime = entry.runtime_data
+    runtime.async_stop_regulation()
     data = deepcopy(config)
     data["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
     }
 
-    await settings.async_update_config(read_config(data))
+    await runtime.async_save_config(read_config(data))
     await hass.async_block_till_done()
     assert allowed_sensor_state(hass, "c1") == STATE_OFF
 
     hass.states.async_set("input_boolean.carport", STATE_OFF)
     data["charger_groups"][0]["chargers"] = [charger_data("c2", "input_boolean.carport")]
-    await settings.async_update_config(read_config(data))
+    await runtime.async_save_config(read_config(data))
     await hass.async_block_till_done()
 
     assert allowed_sensor_id(hass, "c1") is None
@@ -1044,9 +1045,10 @@ async def test_charger_switches_follow_the_configuration_without_reload(
     hass.states.async_set("input_boolean.carport", STATE_OFF)
     data = deepcopy(config)
     data["charger_groups"][0]["chargers"] = [charger_data("c2", "input_boolean.carport")]
-    settings = entry.runtime_data.settings
+    runtime = entry.runtime_data
+    runtime.async_stop_regulation()
 
-    await settings.async_update_config(read_config(data))
+    await runtime.async_save_config(read_config(data))
     await hass.async_block_till_done()
 
     assert switch_id(hass, "c1", "excluded") is None
