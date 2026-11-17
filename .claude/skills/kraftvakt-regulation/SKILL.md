@@ -60,7 +60,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charging on/off | An optional condition of the charger that is true while the car charges. |
 | Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. Every charger has one. |
 | Actively charging | The car draws power: the charging power or the charging on/off shows it, and either is enough. |
-| Held at minimum | A charger whose car does not charge actively with at least 90 % of the charger's power reserve. It gets no more than its first ampere step. |
+| Held at minimum | A charger whose car does not charge actively with at least 30 % of the charger's power reserve. It gets no more than its first ampere step. |
 | Estimated draw | What a charger draws with fewer ampere steps on: its charging power, at most its current times its power reserve divided by its minimum current, and 0 deactivated. |
 | Freeing power | Switching off steps from the lowest until their estimated draw covers the power needed, at once. |
 | Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
@@ -337,10 +337,11 @@ All with entity category diagnostic:
   Why: the on/off often reports a car that starts sooner than the power, and a charger that has lost power or its connection reports unavailable, and does not charge.
 - A charger that charges is activated and charges actively. Kraftvakt never guesses that a car is done: a car that is full stays activated at its minimum current,
   and may draw power again at any time, as when it heats before a trip, or the user raises its charging limit.
-- Held at minimum: a charger whose car does not charge actively with at least 90 % of its power reserve gets only its first ampere step,
+- Held at minimum: a charger whose car does not charge actively with at least 30 % of its power reserve gets only its first ampere step,
   and one that has more is set back to its minimum current at once. Meanwhile the steps after it may be turned on.
   Why: a car may start drawing power at any time, and at its minimum current it can only take about its power reserve, which a fast reaction can free.
-  So a car that does not use the current it has, as one that is full or on one phase, is not given more.
+  So a car that draws little or nothing, as one that is full, is not given more. 30 % is a bit less than a car charging on one phase draws,
+  since the power reserve is what the minimum current draws on three phases, so such a car still gets more.
 - Starting: an activated cloud-controlled charger within its start delay since activation, whose car does not charge actively yet, holds its power reserve.
   The steps after it, and the other steps of its group, are turned on only when there is room for them with the reserve counted as used,
   and room is made below them as usual when there is not. Their waiting time counts the reserve as used too, as it would once the car draws power.

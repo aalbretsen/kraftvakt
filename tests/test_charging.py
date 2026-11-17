@@ -304,7 +304,7 @@ async def test_actively_charging_from_the_charging_power_or_the_charging_on_off(
     charging: str,
     attributes: dict[str, str],
 ) -> None:
-    """Above 100 W counts as charging, and a charging power template gives W. A car that draws less than 90 % of the power reserve gets no more current."""
+    """Above 100 W counts as charging, and a charging power template gives W. A car that draws less than 30 % of the power reserve gets no more current."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger[field] = condition
     set_power(hass, CHARGER_POWER, "0")
@@ -357,7 +357,7 @@ async def test_charger_without_evidence_counts_as_not_charging(
     assert entry.runtime_data.chargers["c1"].state is ChargerState.ACTIVATED
 
 
-async def test_car_gets_more_current_only_while_it_draws_90_percent_of_its_reserve(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+async def test_car_gets_more_current_only_while_it_draws_30_percent_of_its_reserve(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
     """The charging on/off may tell that the car charges, but only the charging power tells that it uses the current it has."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger["actively_charging"] = {"type": "entity", "value": "binary_sensor.charger_charging"}
@@ -369,15 +369,15 @@ async def test_car_gets_more_current_only_while_it_draws_90_percent_of_its_reser
 
     hass.states.async_set("binary_sensor.charger_charging", STATE_ON)
     await advance(hass, freezer)
-    set_power(hass, CHARGER_POWER, "3500")
+    set_power(hass, CHARGER_POWER, "1100")
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}"]
 
-    set_power(hass, CHARGER_POWER, "3600")
+    set_power(hass, CHARGER_POWER, "1200")
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}", "current 7"]
 
-    set_power(hass, CHARGER_POWER, "3500")
+    set_power(hass, CHARGER_POWER, "1100")
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}", "current 7", "current 6"]
 
@@ -571,7 +571,8 @@ async def test_override_lasts_until_the_car_has_been_disconnected(
     await advance_until(hass, freezer, "2026-11-08T07:00")
     set_power(hass, CHARGER_POWER, "2000")
     await advance_until(hass, freezer, "2026-11-08T07:20")
-    assert set(actions) == {"current 6"}
+    assert "current 7" in actions
+    assert f"on {CHARGER}" not in actions
     assert entry_charger_state(hass) is ChargerState.OVERRIDE
     assert status_snapshot(hass, hass.config_entries.async_entries(DOMAIN)[0].runtime_data)["priority"][0]["chargers"][0]["charging"]
     assert switch_state(hass, "c1", "window_override") == STATE_ON

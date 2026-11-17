@@ -119,7 +119,7 @@ so a car that is connected does not start charging by itself. Kraftvakt reads wh
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
 - An EV charger with a car is activated when there is room for its power reserve, and keeps the minimum current
-  until the car draws at least 90 % of the power reserve. Only then does it get more.
+  until the car draws at least 30 % of the power reserve, a bit less than a car charging on one phase draws. Only then does it get more.
 - Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
   for example to heat in the morning, or when you raise its charging limit.
 - A car that suddenly draws more than the regulation counted on, as a full car that starts heating, is cut back at once:

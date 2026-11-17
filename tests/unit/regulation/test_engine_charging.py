@@ -199,16 +199,16 @@ def test_car_that_draws_power_again_gets_more_current() -> None:
     assert scenario.decide_many(0, 3) == [current("c", 7), current("c", 8), []]
 
 
-def test_car_that_draws_less_than_90_percent_of_the_power_reserve_is_held_at_its_minimum() -> None:
+def test_car_that_draws_less_than_30_percent_of_the_power_reserve_is_held_at_its_minimum() -> None:
     """One that has more is set back to its minimum at once."""
     scenario = one_charger()
-    scenario.set_charger("c", actively_charging=True, charging_power_w=3500)
+    scenario.set_charger("c", actively_charging=True, charging_power_w=1100)
     assert scenario.decide_many(0, 3) == [activate("c"), [], []]
     scenario.draw("c")
     scenario.charge("c", 8)
 
     scenario.draw("c", drawing=False)
-    scenario.set_charger("c", actively_charging=True, charging_power_w=3500)
+    scenario.set_charger("c", actively_charging=True, charging_power_w=1100)
 
     assert scenario.decide(0) == current("c", 6)
     assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
