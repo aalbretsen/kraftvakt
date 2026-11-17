@@ -39,7 +39,9 @@
     "penalty_chip": "Straffeperiode",
     "next_decision": "Neste avgjørelse",
     "next_decision_at": "Neste avgjørelse kl. {time}",
-    "priority_list": "Prioritetsliste",
+    "appliances_and_chargers": "Apparater og elbilladere",
+    "power": "Effekt",
+    "temperature": "Temperatur",
     "no_chargers": "Ingen elbilladere i gruppen.",
     "no_appliances": "Ingen apparater er konfigurert.",
     "on": "På",
@@ -153,7 +155,9 @@
     "unknown": "Ugyldig verdi ({code}).",
     "charging_power_required": "Trengs for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
     "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
-    "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen."
+    "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen.",
+    "essential_with_variants": "Et nødvendig apparat kan ikke ha varianter. Slett dem, eller slå av innstillingen.",
+    "essential_not_at_top": "Et nødvendig apparat må stå over alle andre i prioritetslisten."
   },
   "dialog": {
     "ok": "OK",
@@ -259,6 +263,7 @@
     "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
     "charger_group_sub": "elbilladere: {count} · konfigureres under",
     "power_reserve": "effektreserve {power} W",
+    "essential": "Nødvendig",
     "variant_count": "varianter: {count}",
     "variant_entity": "Variant · entitet {entity}",
     "variant_template": "Variant · mal",
@@ -273,11 +278,17 @@
     "variants": "Varianter",
     "variants_info": "Gi apparatet en annen plass i prioritetslisten til bestemte tider eller forhold, for eksempel høyere plass for varmtvannsberederen om morgenen. Den øverste varianten som gjelder, vinner.",
     "add_variant": "Legg til variant",
+    "display_values": "Visningsverdier",
+    "display_values_info": "Valgfrie, og ikke brukt av reguleringen. Vises på statussiden for oversiktens skyld.",
     "delete": "Slett apparat",
     "fields": {
       "entity_id": {
         "label": "Entitet",
         "helper": "Det Kraftvakt slår på og av, for eksempel bryteren til en varmtvannsbereder. Navnet blir apparatets navn."
+      },
+      "essential": {
+        "label": "Nødvendig apparat",
+        "helper": "For et apparat som alltid må gå, som en fryser. Kraftvakt holder det på, og slår det av bare i en straffeperiode. Nødvendige apparater står øverst i prioritetslisten. Ikke for et apparat med varianter."
       },
       "turn_on": {
         "label": "Handling for å slå på",
@@ -287,9 +298,13 @@
         "label": "Handling for å slå av",
         "helper": "Standard passer for de fleste entiteter."
       },
+      "fixed_load": {
+        "label": "Fast last",
+        "helper": "Nesten aldri nødvendig. Bare for et apparat som alltid bruker samme effekt mens det er på, som en takvifte. Det slås da på bare når effektreserven er ledig. Ikke bruk den for et apparat med termostat eller annen egen styring: da virker reguleringen dårligere, ikke bedre."
+      },
       "power_reserve_w": {
-        "label": "Effektreserve (valgfri)",
-        "helper": "For et apparat som trekker mye med en gang: det slås på bare når så mye effekt er ledig. Sett den til omtrent det apparatet trekker. Gjelder for alle varianter."
+        "label": "Effektreserve",
+        "helper": "Det apparatet bruker mens det er på. Gjelder alle varianter."
       },
       "label": {
         "label": "Merkelapp"
@@ -304,6 +319,12 @@
       "override_turn_off": {
         "label": "Egen handling for å slå av",
         "helper": "For eksempel frostsikring."
+      },
+      "display_power": {
+        "label": "Effekt"
+      },
+      "display_temperature": {
+        "label": "Temperatur"
       }
     }
   },
@@ -381,6 +402,28 @@
     "true": "lader",
     "false": "lader ikke",
     "invalid": "Malen gir {value}, som ikke er et tall, og regnes derfor ikke som lading."
+  },
+  "display_power": {
+    "type_label": "Effekt fra",
+    "power_sensor": "Sensor",
+    "template": "Mal",
+    "power_sensor_label": "Effekt",
+    "template_label": "Mal for effekt",
+    "power_sensor_helper": "W eller kW.",
+    "template_helper": "Effekten i W. Variabler: entity_id, entity.",
+    "no_value": "ingen verdi",
+    "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
+  },
+  "display_temperature": {
+    "type_label": "Temperatur fra",
+    "temperature_sensor": "Sensor",
+    "template": "Mal",
+    "temperature_sensor_label": "Temperatur",
+    "template_label": "Mal for temperatur",
+    "temperature_sensor_helper": "En hvilken som helst temperatur du vil se, som vanntemperaturen.",
+    "template_helper": "En temperatur i enheten til Home Assistant, som innstilt temperatur på en termostat: {{ state_attr(entity_id, 'temperature') }}. Variabler: entity_id, entity.",
+    "no_value": "ingen verdi",
+    "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
   },
   "done": {
     "entity": "Entitet",

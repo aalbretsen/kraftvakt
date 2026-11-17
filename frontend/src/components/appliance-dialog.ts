@@ -1,17 +1,22 @@
 import { mdiDragHorizontalVariant, mdiEye, mdiPencil, mdiPlus } from "@mdi/js";
-import { css, html, nothing } from "lit";
-import { customElement } from "lit/decorators.js";
+import { css, html, nothing, type PropertyValues } from "lit";
+import { customElement, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import type { Appliance, Issue, Variant } from "../api";
+import type { Appliance, Condition, Issue, Variant } from "../api";
 import { moveItem, newId } from "../draft";
 import { APPLIANCE_ACTIONS, applianceErrors, missingInAppliance } from "../validation";
+import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
 export const APPLIANCE_ACTION_VARIABLES = ["entity_id", "entity"];
 
 /**
  * Adds or edits one appliance, and lists its variants by label.
+ *
+ * An essential appliance has no power reserve and no variants, so their
+ * groups are left out, and it can only be made essential without variants.
+ * The power reserve is cleared when its switch is turned off.
  *
  * A variant is configured, and deleted, in its own dialog, which edits the
  * appliance as it is in the draft. «Edit» on a variant fires
@@ -23,6 +28,16 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected readonly section = "appliances";
 
   protected readonly texts = "appliance";
+
+  /** Whether the fixed load switch is on, also while the power reserve is not given yet. */
+  @state() private fixedLoad = false;
+
+  protected willUpdate(changed: PropertyValues<this>): void {
+    super.willUpdate(changed);
+    if (changed.has("item")) {
+      this.fixedLoad = this.item.power_reserve_w !== null;
+    }
+  }
 
   protected actionsForEntity(entityId: string | null): Partial<Appliance> {
     return {
@@ -49,12 +64,81 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   }
 
   protected renderFields(issues: Issue[]) {
+    const essential = this.draft.essential;
     return html`
-      ${this.renderEntity(issues)}
-      ${this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
-        this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
-      )}
-      ${this.renderActions(issues)} ${this.renderVariants()}
+      ${this.renderEntity(issues)} ${this.renderEssential(issues)} ${this.renderActions(issues)}
+      ${essential ? nothing : this.renderFixedLoad(issues)} ${essential ? nothing : this.renderVariants()}
+      ${this.renderDisplayValues(issues)}
+    `;
+  }
+
+  private renderEssential(issues: Issue[]) {
+    const issue = issues.find((item) => item.field === "essential");
+    return this.renderGroup({
+      title: this.label("essential"),
+      description: this.helper("essential"),
+      toggle: {
+        checked: this.draft.essential,
+        disabled: !this.draft.essential && this.draft.variants.length > 0,
+        changed: this.essentialChanged,
+      },
+      error: issue ? this.describe(issue) : undefined,
+    });
+  }
+
+  private essentialChanged = (checked: boolean): void => {
+    if (checked) {
+      this.fixedLoadChanged(false);
+    }
+    this.changeDraft({ essential: checked });
+  };
+
+  /** The power reserve stays in view while it has an error, so the error that keeps the draft from being saved can be seen. */
+  private renderFixedLoad(issues: Issue[]) {
+    const showReserve = this.fixedLoad || issues.some((issue) => issue.field === "power_reserve_w");
+    return this.renderGroup({
+      title: this.label("fixed_load"),
+      description: this.helper("fixed_load"),
+      toggle: { checked: this.fixedLoad, changed: this.fixedLoadChanged },
+      content: showReserve
+        ? this.renderForm([this.numberField("power_reserve_w", "W", false)], issues, (value) =>
+            this.changeDraft({ power_reserve_w: (value.power_reserve_w as number | undefined) ?? null }),
+          )
+        : nothing,
+    });
+  }
+
+  private fixedLoadChanged = (checked: boolean): void => {
+    this.fixedLoad = checked;
+    if (!checked) {
+      this.changeDraft({ power_reserve_w: null });
+    }
+  };
+
+  private renderDisplayValues(issues: Issue[]) {
+    return this.renderGroup({
+      title: this.localize("appliance.display_values"),
+      description: this.localize("appliance.display_values_info"),
+      content: html`
+        ${this.renderDisplayValue("display_power", issues)} ${this.renderDisplayValue("display_temperature", issues)}
+      `,
+    });
+  }
+
+  private renderDisplayValue(field: "display_power" | "display_temperature", issues: Issue[]) {
+    const issue = issues.find((item) => item.field === field);
+    return html`
+      <kraftvakt-condition-field
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .value=${this.draft[field]}
+        .entityId=${this.draft.entity_id}
+        .kind=${field}
+        optional
+        .error=${issue ? this.describe(issue) : undefined}
+        .disabled=${this.locked}
+        @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeDraft({ [field]: event.detail.value })}
+      ></kraftvakt-condition-field>
     `;
   }
 

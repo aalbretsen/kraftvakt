@@ -16,7 +16,8 @@ from typing import Any
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
     CHARGER_CONDITION_TYPES,
-    CHARGING_POWER_TYPES,
+    POWER_TYPES,
+    TEMPERATURE_TYPES,
     VARIANT_CONDITION_TYPES,
     ActionConfig,
     ActionMode,
@@ -117,8 +118,11 @@ class ConfigReader:
             entity_id=self._text(values, "entity_id", location),
             turn_on=self._action(values, "turn_on", location),
             turn_off=self._action(values, "turn_off", location),
+            essential=self._bool(values, "essential", False, location),
             power_reserve_w=self._integer(values, "power_reserve_w", None, location),
             variants=tuple(self._variant(item, appliance_id) for item in self._list(values.get("variants"), location, "variants")),
+            display_power=self._condition(values.get("display_power"), "display_power", location, POWER_TYPES),
+            display_temperature=self._condition(values.get("display_temperature"), "display_temperature", location, TEMPERATURE_TYPES),
         )
 
     def _variant(self, data: Any, appliance_id: str) -> Variant:
@@ -181,7 +185,7 @@ class ConfigReader:
             power_reserve_w=self._integer(values, "power_reserve_w", defaults.power_reserve_w, location),
             car_connected=self._condition(values.get("car_connected"), "car_connected", location, CHARGER_CONDITION_TYPES),
             actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, CHARGER_CONDITION_TYPES),
-            charging_power=self._condition(values.get("charging_power"), "charging_power", location, CHARGING_POWER_TYPES),
+            charging_power=self._condition(values.get("charging_power"), "charging_power", location, POWER_TYPES),
             grace_period_s=self._integer(values, "grace_period_s", defaults.grace_period_s, location),
             done_flag=self._condition(values.get("done_flag"), "done_flag", location, CHARGER_CONDITION_TYPES),
             charging_window=self._charging_window(values, location),

@@ -52,11 +52,13 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - **Waiting time:** none while plenty of power is free, and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
+- **Essential appliance:** an appliance that must always run, such as a freezer. Kraftvakt keeps it on, also in the safe state and when the regulation is stopped,
+  and turns it off only during a penalty. Essential appliances are at the top of the priority list, and have no variants.
 - **Excluded appliance:** the switch **‹appliance› excluded from regulation** takes an appliance out of the regulation.
   It is turned off, and gets no commands until it is included again.
 - **Penalty:** a safety valve that should never be needed. If the tariff average still goes above the power limit plus the penalty threshold,
   everything is kept off until the overconsumption is paid back.
-- **Safe state:** while the power sensor gives no valid value, everything is kept off. A single missing value is tolerated,
+- **Safe state:** while the power sensor gives no valid value, everything but the essential appliances is kept off. A single missing value is tolerated,
   and a sensor that has not reported for the power sensor timeout has no valid value.
 - **Command repeat:** an appliance or EV charger that has had no command for 30 minutes gets the last one again, in case it has changed state by itself.
 - **Failed action:** an action that fails, or does not finish within the action timeout, is logged, and the regulation goes on as if it worked.
@@ -80,10 +82,12 @@ When Home Assistant starts, the regulation waits until Home Assistant has finish
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
 If the stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt does not start, the integration shows an error, and the file is left unchanged.
 
-Every start turns all appliances off at once, and deactivates all EV chargers. The regulation then turns them on one by one in priority order,
-with the first decision one full regulation interval after the start. The regulation also starts again with everything off when a penalty or the safe state ends.
+Every start turns all appliances off at once, except the essential appliances, which it turns on, and deactivates all EV chargers.
+The regulation then turns them on one by one in priority order, with the first decision one full regulation interval after the start.
+The regulation also starts again with everything off when a penalty or the safe state ends.
 
-The **Regulation** switch, and the button on the status page, stop and start the regulation. Stopping turns all appliances off, and nothing is turned on until it starts again.
+The **Regulation** switch, and the button on the status page, stop and start the regulation.
+Stopping turns all appliances off, except the essential appliances, which it turns on, and nothing else is turned on until it starts again.
 If the configuration is not complete, turning the switch on gives an error and it stays off. The switch has no stored state, so the regulation runs again after a restart.
 
 ## Appliances are not handed back
@@ -161,10 +165,15 @@ while it runs, the configuration pages are locked. A saved configuration is used
 
 - **General:** power sensor, power limit, turn-on margin, regulation window, regulation interval, waiting time at the power limit and penalty threshold.
   The helper text under each field tells what the setting does, with its valid range and default.
-- **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity, an optional power reserve,
-  actions to turn it on and off, and its variants. A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
+- **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity,
+  whether it is essential, actions to turn it on and off, an optional power reserve, its variants and its display values.
+  The essential appliances have a light golden background, and are sorted among themselves above the others.
+  A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
   and can have its own action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
-  The power reserve applies to every variant. Each group of EV chargers is in the list under its name, and is moved like an appliance.
+  The power reserve, under **Fixed load**, is only for an appliance that always draws the same power while it is on, such as a ceiling fan,
+  and applies to every variant. Set for an appliance with a thermostat, it makes the regulation work worse.
+  The display values, a power and a temperature from a sensor or a template, are only shown on the status page.
+  Each group of EV chargers is in the list under its name, and is moved like an appliance.
 - **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, dynamic charging order, and the EV chargers in charging priority.
   Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.
   When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
@@ -190,8 +199,10 @@ see [Template and action examples](#template-and-action-examples). An entity use
 
 The status page shows whether the regulation runs, with the button to start and stop it. If the configuration is not complete, it lists what is missing,
 with a link to the page where it is fixed. While the regulation runs, it shows the consumption now and the averages against the power limit, the next decision,
-the safe state and the penalty when they occur, and the priority list as it stands: each appliance at the place of its current variant,
-and each group with its EV chargers in the current charging priority and their charging current. Each row has a label telling how it stands; hover over it for the explanation.
+the safe state and the penalty when they occur, and the appliances and EV chargers as they stand, in priority order:
+each appliance at the place of its current variant, with its display values,
+and each group with its EV chargers in the current charging priority, their charging current and their charging power.
+Each row has a label telling how it stands; hover over it for the explanation.
 A dashed line goes under the last entry that is on, with the free power, and a bar shows the time left until the next appliance, or one more ampere, is turned on.
 Press the consumption now, an average or the power limit to open its entity in Home Assistant, with its history.
 Press an appliance or an EV charger to open its entity: for an EV charger, the entity Kraftvakt activates.

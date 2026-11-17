@@ -34,6 +34,7 @@ def appliance(
     *,
     reserve_w: int | None = None,
     variants: tuple[str, ...] = (),
+    essential: bool = False,
 ) -> Appliance:
     """Return an appliance whose variants have the given ids, in that order."""
     return Appliance(
@@ -41,6 +42,7 @@ def appliance(
         entity_id=f"switch.{appliance_id}",
         turn_on=DEFAULT_ACTION,
         turn_off=DEFAULT_ACTION,
+        essential=essential,
         power_reserve_w=reserve_w,
         variants=tuple(
             Variant(

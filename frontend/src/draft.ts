@@ -39,7 +39,11 @@ export function priorityKey(entry: PriorityEntry): string {
   return entry.type === "charger_group" ? `group/${entry.group_id}` : `${entry.appliance_id}/${entry.variant_id ?? ""}`;
 }
 
-/** Return the configuration with exactly one priority entry per appliance and variant. */
+/**
+ * Return the configuration with exactly one priority entry per appliance and variant,
+ * and the entries of the essential appliances above every other entry, each part in its own order.
+ * A missing entry is added at the bottom of its part, as the backend does.
+ */
 export function withCompletePriority(config: KraftvaktConfig): KraftvaktConfig {
   const expected = expectedPriority(config);
   const expectedKeys = new Set(expected.map(priorityKey));
@@ -53,7 +57,10 @@ export function withCompletePriority(config: KraftvaktConfig): KraftvaktConfig {
     return true;
   });
   const missing = expected.filter((entry) => !seen.has(priorityKey(entry)));
-  return { ...config, priority: [...kept, ...missing] };
+  const essential = new Set(config.appliances.filter((appliance) => appliance.essential).map((appliance) => appliance.id));
+  const isEssential = (entry: PriorityEntry) => entry.type === "appliance" && essential.has(entry.appliance_id);
+  const priority = [...kept, ...missing];
+  return { ...config, priority: [...priority.filter(isEssential), ...priority.filter((entry) => !isEssential(entry))] };
 }
 
 function expectedPriority(config: KraftvaktConfig): PriorityEntry[] {

@@ -29,7 +29,8 @@ def build_steps(
     """Return the steps in priority order, highest priority first.
 
     `ampere_steps_by_group` has the ampere steps of each group of chargers, by
-    the id of the group, to put at the entry of the group.
+    the id of the group, to put at the entry of the group. An essential
+    appliance is no step, since only a penalty turns it off.
     """
     ampere_steps_by_group = ampere_steps_by_group or {}
     appliances = {appliance.id: appliance for appliance in config.appliances}
@@ -39,7 +40,7 @@ def build_steps(
             steps.extend(ampere_steps_by_group.get(entry.group_id or "", ()))
             continue
         appliance_id = entry.appliance_id
-        if appliance_id is None or current_variants.get(appliance_id) != entry.variant_id:
+        if appliance_id is None or appliances[appliance_id].essential or current_variants.get(appliance_id) != entry.variant_id:
             continue
         steps.append(
             Step(

@@ -16,8 +16,11 @@ export interface Issue {
 }
 
 export interface Condition {
-  /** A power sensor is only used for the charging power of an EV charger, and a state only for an EV charger. */
-  type: "entity" | "state" | "template" | "power_sensor";
+  /**
+   * A power sensor gives a power, for the charging power of an EV charger and the display power of an appliance.
+   * A temperature sensor gives the display temperature of an appliance. A state is only for an EV charger.
+   */
+  type: "entity" | "state" | "template" | "power_sensor" | "temperature_sensor";
   /** The entity, or the template. */
   value: string;
   /** The chosen states of the entity, for a state. */
@@ -72,8 +75,13 @@ export interface Variant {
 export interface Appliance extends ApplianceActions {
   id: string;
   entity_id: string | null;
+  /** Kept on, and turned off only in a penalty. Has no variants, and sits above every other entry in the priority list. */
+  essential: boolean;
   power_reserve_w: number | null;
   variants: Variant[];
+  /** Only shown on the status page. */
+  display_power: Condition | null;
+  display_temperature: Condition | null;
 }
 
 export type PriorityEntry =
@@ -219,10 +227,15 @@ export interface ApplianceStatus {
   type: "appliance";
   id: string;
   name: string;
+  essential: boolean;
   on: boolean;
   /** Excluded from the regulation at the last decision. */
   excluded: boolean;
   variant: string | null;
+  /** The display power in W, null without one or without a valid value. */
+  power_w: number | null;
+  /** The display temperature, null without one or without a valid value. */
+  temperature: { value: number; unit: string } | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */
@@ -252,6 +265,8 @@ export interface ChargerStatus {
   state: ChargerState;
   activated: boolean;
   current_a: number | null;
+  /** The charging power in W, null without one or without a valid value. */
+  power_w: number | null;
   bypassed: boolean;
   /** Activated and actively charging, or in grace, at the last decision. */
   charging: boolean;

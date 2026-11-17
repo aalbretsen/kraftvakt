@@ -33,14 +33,16 @@ The ranges and defaults below are part of the specification; the code holds them
 | Power sensor timeout | 10–3600 s, default 300 s. How long the power sensor may go without reporting, also an unchanged value, before it counts as invalid. Why: a HAN reader that loses its connection may keep its last value. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
-| Power reserve | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. |
+| Power reserve | Optional free power an appliance needs before it may be turned on, ≥ 0 W, no upper limit. Only for an appliance with a fixed load, as a ceiling fan: one with a thermostat or other control of its own draws less than its reserve most of the time, so the reserve only holds it back. |
 | Waiting time | Time that must pass before an appliance is turned on. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
-| Priority list | Sorted list of appliances, their variants and an entry per charger group. Top is highest priority, turned off last. |
+| Essential appliance | An appliance that is kept on, and turned off only in a penalty period, for an appliance that must always run, as a freezer. No step, no variants. |
+| Display value | An optional power and temperature of an appliance, from a sensor or a template, only shown on the status page. The regulation never reads them. |
+| Priority list | Sorted list of appliances, their variants and an entry per charger group. Top is highest priority, turned off last. The essential appliances are above every other entry. |
 | Variant | Extra entry for an appliance with a label and a true/false expression, giving it another place in the list, and optionally its own actions. |
 | Current variant | The variant of the topmost true expression, or the appliance itself when none is true. Only this entry takes part. |
-| Step | An entry the regulation switches: the current variant of an appliance, or an ampere step. |
+| Step | An entry the regulation switches: the current variant of an appliance that is not essential, or an ampere step. |
 | Safe state | Everything off and nothing turned on, because there is no valid power measurement. |
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
@@ -141,6 +143,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   6. Forced switch-offs: chargers not allowed to charge, done chargers, chargers whose car is known to have left with dynamic charging order,
      and with one charger at a time a charger that another has taken the turn from (all ampere steps off and deactivate),
      newly bypassed chargers and chargers that start their grace period down to one ampere step, excluded appliances, appliances that switch variant or are included again.
+     Essential appliances that are included again are turned on here (see Essential appliances).
   7. Build the ordered steps (current variants, ampere steps in place of the entry of their group).
   8. Above the limit: switch off the lowest priority step that is on and not a bypassed charger's, without waiting, and cancel any waiting.
      When step 6 switched off something that was on, nothing more is switched off; the waiting is still cancelled and nothing is turned on.
@@ -213,7 +216,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 ## Safe state
 
-- Entered at the first decision where the power sensor was invalid at the last two window closes. Every appliance and charger is turned off at once, and nothing is turned on.
+- Entered at the first decision where the power sensor was invalid at the last two window closes. Every appliance and charger is turned off at once, and nothing is turned on,
+  except the essential appliances that are not excluded, which are turned on (see Essential appliances).
   The safe state binary sensor is on.
 - When a valid value comes back, the averages are known again and the regulation starts again with everything off at the first decision.
 - A sensor that never reports after startup also leads to the safe state.
@@ -221,7 +225,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 ## Start and stop
 
 - Every start turns off every appliance in the configuration, once per appliance even with variants, and deactivates every charger.
-  The same holds wherever everything is turned off.
+  The same holds wherever everything is turned off. The essential appliances that are not excluded are turned on instead, except in a penalty.
   The current variant is found at the first decision, so a start uses the appliance's own turn-off action, and stop, the safe state and a penalty use the current variant's.
 - Starts: when HA has finished starting (so the appliances' integrations are loaded), at once after a reload of the integration, when the user starts it,
   when a penalty ends and when the power sensor is back after the safe state.
@@ -229,6 +233,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   If the user starts or stops before HA has finished starting, that wins.
 - After a reload, the turn-off commands wait until the previous runtime's actions are done.
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
+  Excluded appliances are read from the switches at a start and a stop.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
   activate, deactivate and set-current actions, car connected, a charging on/off or a charging power, with deactivate on fault a fault flag,
   and with several at once and dynamic charging order a charging power.
@@ -266,7 +271,8 @@ All with entity category diagnostic:
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside the overconsumption state.
 - Power free: the power limit minus the last regulation average, negative above the limit. Unavailable without an average.
-- Regulation steps on: the number of steps that are on, appliances and ampere steps alike. Meant for a graph of how much the regulation has switched on.
+- Regulation steps on: the number of steps that are on, appliances and ampere steps alike, without the essential appliances.
+  Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision that turns on the waiting step (an appliance or a charger's next ampere), so it is the real time left,
   a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
@@ -278,7 +284,7 @@ All with entity category diagnostic:
 
 ## Variants
 
-- Each ordinary appliance may have variants, sorted, each with a non-empty label unique for the appliance and an expression. Same reserve as the appliance.
+- Each ordinary appliance that is not essential may have variants, sorted, each with a non-empty label unique for the appliance and an expression. Same reserve as the appliance.
   A variant uses the actions of the appliance, or overrides the turn-on action, the turn-off action or both; an action it does not override is the appliance's.
   Every command for an appliance uses the actions of its current variant. Not for chargers or charger groups.
 - Evaluated at each decision. When an appliance switches variant: it is off afterwards at the new place and comes on again the normal way.
@@ -298,6 +304,18 @@ All with entity category diagnostic:
   and its waiting time and repeated turn-on counter are reset. An excluded appliance that switches variant gives no room.
 - The switch can be used while the regulation runs, is saved at once, and takes effect at the next decision, for the command repeat at the next window close.
   It does not restart the regulation.
+
+## Essential appliances
+
+- An appliance marked essential is kept on: every start turns it on, and so do a stop and the safe state, so a stop during a penalty does not leave it off.
+  A penalty turns it off with everything else, and the start when the penalty ends turns it on again. Nothing else turns it off.
+  Why: it is in the regulation only so that a penalty can turn it off.
+- It is no step. It never waits, is never switched off above the limit or to make room, does not count against one step per decision,
+  and its commands leave the waiting time and the repeated turn-on counters alone.
+- An excluded essential appliance is turned off at the next decision, as any excluded appliance, and counts as a forced switch-off.
+  Included again, it is turned on at once at the next decision, unless a penalty lasts. A start or stop with it excluded turns it off.
+- It gets the command repeat for its state, as any appliance.
+- It has no variants and no power reserve, and its entries sit above every other entry in the priority list; the backend rejects a configuration where they do not.
 
 ## EV charging
 

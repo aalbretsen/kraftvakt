@@ -53,6 +53,7 @@ class RegulationEngine:
         self._groups = config.charger_groups
         self._chargers: dict[str, Charger] = {charger.id: charger for group in self._groups for charger in group.chargers}
         self._group_of: dict[str, ChargerGroup] = {charger.id: group for group in self._groups for charger in group.chargers}
+        self._essential = frozenset(appliance.id for appliance in config.appliances if appliance.essential)
         general = config.general
         self._waiting_curve = WaitingCurve.from_settings(general.wait_curve_steepness, general.wait_curve_pivot)
         self._appliance_growth = RepeatedTurnOnGrowth.from_waiting_at_limit(
@@ -79,8 +80,8 @@ class RegulationEngine:
 
     @property
     def steps_on(self) -> int:
-        """Return how many steps are on: appliances and ampere steps."""
-        return len(self._state.appliances_on) + sum(sum(charging.ampere_steps_on.values()) for charging in self._state.charging_groups.values())
+        """Return how many steps are on: appliances that are not essential, and ampere steps."""
+        return len(self._state.appliances_on - self._essential) + self._ampere_steps_on()
 
     def use_power_limit(self, power_limit_w: int) -> None:
         """Regulate against a new power limit from the next decision."""
@@ -139,14 +140,17 @@ class RegulationEngine:
             "state": self._state,
         }
 
-    def start(self, now: datetime) -> list[Command]:
+    def start(self, now: datetime, excluded_appliances: frozenset[str] = frozenset()) -> list[Command]:
+        """Start with everything off, except the essential appliances that are not excluded."""
         self._running = True
-        self._state = RegulationState(started_at=now, charging_groups=self._new_charging_groups())
-        return self._record_commands(self._turn_off_everything(), now)
+        self._state = RegulationState(started_at=now, charging_groups=self._new_charging_groups(), excluded_appliances=excluded_appliances)
+        return self._record_commands(self._hold_everything_off(essential_on=True), now)
 
-    def stop(self) -> list[Command]:
+    def stop(self, excluded_appliances: frozenset[str] = frozenset()) -> list[Command]:
+        """Stop with everything off, except the essential appliances that are not excluded, so a stop during a penalty does not leave them off."""
         self._running = False
-        commands = self._turn_off_everything()
+        self._state.excluded_appliances = excluded_appliances
+        commands = self._hold_everything_off(essential_on=True)
         self._state = RegulationState(charging_groups=self._new_charging_groups())
         return commands
 
@@ -197,28 +201,29 @@ class RegulationEngine:
             return DecisionResult([])
         if self._state.safe_state:
             if decision.power_sensor_valid:
-                return DecisionResult(self.start(decision.now))
+                return DecisionResult(self.start(decision.now, decision.excluded_appliances))
             return DecisionResult([])
         if decision.power_sensor_lost:
             self._state.safe_state = True
-            return DecisionResult(self._hold_everything_off())
+            return DecisionResult(self._hold_everything_off(essential_on=True))
         average = decision.regulation_average_w
         if average is None:
             return DecisionResult([])
         overrides = self._overrides(decision)
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
-            return DecisionResult(self.start(decision.now), overrides)
+            return DecisionResult(self.start(decision.now, decision.excluded_appliances), overrides)
         commands: list[Command] = []
         if penalty is PenaltyOutcome.STARTED:
-            commands += self._hold_everything_off()
+            commands += self._hold_everything_off(essential_on=False)
         if self._state.penalty.active:
             commands += self._place_appliances(decision)
             return DecisionResult(commands, overrides)
-        steps_on_before = self.steps_on
+        appliances_on_before = set(self._state.appliances_on)
+        ampere_steps_on_before = self._ampere_steps_on()
         commands += self._decide_chargers(decision, overrides.ended)
         commands += self._place_appliances(decision)
-        forced_off = self.steps_on < steps_on_before
+        forced_off = bool(appliances_on_before - self._state.appliances_on) or self._ampere_steps_on() < ampere_steps_on_before
         if average > self._config.general.power_limit_w:
             commands += self._switch_off_above_limit(forced_off)
         else:
@@ -234,16 +239,8 @@ class RegulationEngine:
     def _charging_of(self, charger_id: str) -> ChargingState:
         return self._charging(self._group_of[charger_id].id)
 
-    def _turn_off_everything(self) -> list[Command]:
-        """Turn every appliance off as its current variant does it.
-
-        Before the first decision after a start, that is as the appliance does it.
-        """
-        current_variants = self._state.current_variants
-        commands: list[Command] = [TurnOffAppliance(appliance.id, current_variants.get(appliance.id)) for appliance in self._config.appliances]
-        for charger in self._chargers.values():
-            commands += self._charger_commands(charger, 0)
-        return commands
+    def _ampere_steps_on(self) -> int:
+        return sum(sum(charging.ampere_steps_on.values()) for charging in self._state.charging_groups.values())
 
     def _overrides(self, decision: DecisionInput) -> OverrideChanges:
         """Return the overrides that arm or end at the decision."""
@@ -296,13 +293,26 @@ class RegulationEngine:
         )
         return self._state.penalty.decide(limits, decision.tariff_average_w, decision.regulation_averages_w)
 
-    def _hold_everything_off(self) -> list[Command]:
-        """Turn everything off, an exception to one step per decision."""
-        self._state.appliances_on.clear()
-        self._state.waiting = None
-        for charger_id in self._chargers:
-            self._charging_of(charger_id).set_ampere_steps_on(charger_id, 0)
-        return self._turn_off_everything()
+    def _hold_everything_off(self, essential_on: bool) -> list[Command]:
+        """Send every appliance and charger the command for off, an exception to one step per decision.
+
+        With `essential_on`, the essential appliances that are not excluded
+        are turned on instead. An appliance is turned off as its current
+        variant does it, which before the first decision after a start is as
+        the appliance does it.
+        """
+        state = self._state
+        state.appliances_on = set(self._essential - state.excluded_appliances) if essential_on else set()
+        state.waiting = None
+        commands: list[Command] = []
+        for appliance in self._config.appliances:
+            variant_id = state.current_variants.get(appliance.id)
+            on = appliance.id in state.appliances_on
+            commands.append(TurnOnAppliance(appliance.id, variant_id) if on else TurnOffAppliance(appliance.id, variant_id))
+        for charger in self._chargers.values():
+            self._charging_of(charger.id).set_ampere_steps_on(charger.id, 0)
+            commands += self._charger_commands(charger, 0)
+        return commands
 
     def _place_appliances(self, decision: DecisionInput) -> list[Command]:
         """Handle the appliances that are excluded, included again or switch variant.
@@ -319,14 +329,15 @@ class RegulationEngine:
         self._state.current_variants = {appliance.id: current_variant(appliance, decision.variant_conditions) for appliance in self._config.appliances}
         excluded = decision.excluded_appliances
         self._state.excluded_appliances = excluded
+        included_again = previous_excluded - excluded
         moving = [
             appliance_id
             for appliance_id, variant in self._state.current_variants.items()
-            if previous_variants.get(appliance_id) != variant or (appliance_id in previous_excluded and appliance_id not in excluded)
+            if appliance_id not in self._essential and (previous_variants.get(appliance_id) != variant or appliance_id in included_again)
         ]
         was_on = self._state.appliances_on & set(moving)
-        commands: list[Command] = []
-        for appliance_id in sorted(excluded & self._state.appliances_on):
+        commands = self._place_essential_appliances()
+        for appliance_id in sorted((excluded & self._state.appliances_on) - self._essential):
             commands += self._switch(ApplianceStepKey(appliance_id), turn_on=False)
         places = {step.key: place for place, step in enumerate(self._steps())}
         for key in sorted(map(ApplianceStepKey, moving), key=lambda key: places[key]):
@@ -339,6 +350,28 @@ class RegulationEngine:
                 commands += self._make_room_below(key)
             self._forget_waiting(key)
             self._state.repeats.reset(key)
+        return commands
+
+    def _place_essential_appliances(self) -> list[Command]:
+        """Turn each essential appliance on, or off while it is excluded or a penalty lasts.
+
+        It is no step, so it neither waits nor counts against one step per
+        decision, and leaves the repeated turn-on counters alone.
+        """
+        state = self._state
+        commands: list[Command] = []
+        for appliance in self._config.appliances:
+            if not appliance.essential:
+                continue
+            on = appliance.id not in state.excluded_appliances and not state.penalty.active
+            if on == (appliance.id in state.appliances_on):
+                continue
+            if on:
+                state.appliances_on.add(appliance.id)
+                commands.append(TurnOnAppliance(appliance.id))
+            else:
+                state.appliances_on.discard(appliance.id)
+                commands.append(TurnOffAppliance(appliance.id))
         return commands
 
     def _steps(self) -> list[Step]:

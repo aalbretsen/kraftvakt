@@ -1,8 +1,9 @@
-"""True/false values from a boolean entity, the states of an entity, a template or a power sensor, and the charging power."""
+"""True/false values from a boolean entity, the states of an entity, a template or a power sensor, and powers and temperatures from a sensor or a template."""
 
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Final
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -60,8 +61,8 @@ def condition_evidence(hass: HomeAssistant, condition: Condition | None, entity_
     return {STATE_ON: True, STATE_OFF: False}.get(state.state)
 
 
-def charging_power_w(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> float | None:
-    """Return the charging power in W from a power sensor, or a template that gives a number, or None without a valid value."""
+def power_value_w(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> float | None:
+    """Return the power in W from a power sensor, or a template that gives a number, or None without a valid value."""
     if condition is None:
         return None
     if condition.type is ConditionType.POWER_SENSOR:
@@ -71,6 +72,27 @@ def charging_power_w(hass: HomeAssistant, condition: Condition | None, entity_id
     if isinstance(result, bool):
         return None
     return power_w(str(result), None)
+
+
+def temperature_value(hass: HomeAssistant, condition: Condition | None, entity_id: str | None) -> tuple[float, str] | None:
+    """Return the temperature and its unit from a temperature sensor, or a template that gives a number in Home Assistant's unit, or None without a valid value."""
+    if condition is None:
+        return None
+    unit = hass.config.units.temperature_unit
+    if condition.type is ConditionType.TEMPERATURE_SENSOR:
+        state = hass.states.get(condition.value)
+        if state is None:
+            return None
+        value, unit = state.state, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) or unit
+    else:
+        value = _render(hass, condition, entity_id)
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except TypeError, ValueError:
+        return None
+    return (number, unit) if math.isfinite(number) else None
 
 
 def _render(hass: HomeAssistant, condition: Condition, entity_id: str | None) -> Any:

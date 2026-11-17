@@ -73,7 +73,8 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 The format is defined by the dataclasses and their serialization in `config_model.py`, and by `config_reader.py`. Top-level sections:
 
 - `general`: the power sensor and every general setting, also those shown on the panel's Advanced page.
-- `appliances`: each with an id, its entity, its turn-on and turn-off actions, an optional power reserve and its variants (id, label, condition and the actions it overrides).
+- `appliances`: each with an id, its entity, its turn-on and turn-off actions, essential, an optional power reserve,
+  its variants (id, label, condition and the actions it overrides), and the display power and display temperature.
   In a variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
@@ -90,7 +91,8 @@ Before the first stable release, the stored format and the entities change witho
 IDs are short UUIDs, so entities can change without losing the place in the list.
 An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen).
 A condition is an entity or a template, and for car connected, the charging on/off, the done flag and the fault flag also the states of an entity (`states`, and `states_are_true`,
-which is false when the chosen states count as false). The charging power is a power sensor or a template.
+which is false when the chosen states count as false). The charging power and the display power are a power sensor or a template,
+and the display temperature a temperature sensor or a template.
 HA's action editor adds empty `data`; stored actions must tolerate that.
 
 ## Validation and completeness
@@ -100,6 +102,8 @@ An invalid configuration is not saved:
 - The priority list has exactly one entry per appliance and variant, and one per charger group. Missing entries are added at the bottom.
   Duplicates and unknown entries are rejected.
 - Labels are non-empty and unique per appliance. Group names are non-empty and unique among the groups.
+- An essential appliance has no variants (`essential_with_variants` on `essential`), and its entry is above every other entry (`essential_not_at_top` in `priority`).
+  A missing entry of an essential appliance is added after the last essential entry, the others at the bottom.
 - Charger ids are unique across all groups.
 - The entity that identifies an appliance or charger is unique in the whole configuration. Sensors, conditions and actions may reuse entities.
 - `1 ≤ min ≤ max` current, whole amperes. Charging window start ≠ end, whole minutes.
@@ -215,6 +219,8 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - The waiting fields are set only for the appliance or charger that is next and waiting (for a charger: its next ampere step): when the waiting started, when the waiting time ends,
   and the decision that turns it on, the first at or after the end of the waiting time.
 - An appliance's variant is the label of its current variant, or `null`.
+- The display values of an appliance, and the charging power of a charger, are read when the snapshot is built, `null` without a valid value.
+  A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: first decision (before the first decision after a start), fault, excluded, outside its charging window,
   no car connected (bypassed), done, queued (waiting and not activated), starting, grace (activated and in grace),

@@ -269,7 +269,7 @@ class KraftvaktRuntime:
         if not self._engine.running:
             return
         self._decisions.restart()
-        self._execute(self._engine.stop())
+        self._execute(self._engine.stop(excluded_appliances(self._settings)))
         self._engine = RegulationEngine(self.config)
         self._notify_status()
 
@@ -337,7 +337,7 @@ class KraftvaktRuntime:
         async_clear_not_started(self._hass)
         async_check_entities(self._hass, self.config)
         self._decisions.restart()
-        self._execute(self._engine.start(now))
+        self._execute(self._engine.start(now, excluded_appliances(self._settings)))
         self._notify_status()
 
     @callback

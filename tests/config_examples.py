@@ -39,6 +39,7 @@ def full_config_data() -> dict[str, Any]:
                         }
                     ],
                 },
+                "essential": False,
                 "power_reserve_w": None,
                 "variants": [
                     {
@@ -51,14 +52,19 @@ def full_config_data() -> dict[str, Any]:
                         "actions": {"turn_off": {"mode": "default"}},
                     }
                 ],
+                "display_power": {"type": "power_sensor", "value": "sensor.water_heater_power"},
+                "display_temperature": None,
             },
             {
                 "id": "a2",
                 "entity_id": "climate.bathroom",
                 "turn_on": {"mode": "default"},
                 "turn_off": {"mode": "default"},
+                "essential": False,
                 "power_reserve_w": 800,
                 "variants": [],
+                "display_power": None,
+                "display_temperature": {"type": "template", "value": "{{ state_attr(entity_id, 'temperature') }}"},
             },
         ],
         "priority": [

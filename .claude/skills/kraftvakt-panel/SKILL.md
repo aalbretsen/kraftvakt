@@ -50,7 +50,7 @@ The section header, the description and the footer note are in `section-styles.t
 - A page is a stack of cards made by `renderCard` in `ConfigPage`: a header with the title in HA's card header size and an optional control at the right end,
   such as an add button, then the description, the content, a list from edge to edge and a footer.
 - A part of a card has a section header: a smaller title and an optional control at the right end, then its description and its fields.
-- A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and the power reserve. The rest is in groups.
+- A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and a charger's power reserve. The rest is in groups.
   A group is a frame with a section header, a description and its fields, as a card is on a page.
   A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.
   An add button is a filled button at the right end of a header; where the header holds a switch, it goes at the right end under the list.
@@ -97,6 +97,14 @@ The section header, the description and the footer note are in `section-styles.t
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance or charger has a group of its own, as the variant dialog has one per action it can override,
   except set charging current, which is in the charging current group with the currents it sets.
+- The appliance dialog has, after the entity, the group Essential appliance with a switch, the actions, Fixed load with a switch and the power reserve,
+  the variants, and Display values with the display power and temperature, condition fields of the kinds display power and display temperature that preview the value.
+  Fixed load turned off clears the power reserve; its helper warns against it for an appliance with control of its own, since most users would set it otherwise.
+  An essential appliance has neither Fixed load nor the variants, and its switch is disabled while the appliance has variants.
+  Turned on, it clears the power reserve.
+- The draft keeps the entries of the essential appliances above every other entry, each part in its own order,
+  so dragging across the border puts the entry back at the border, and an appliance made essential goes to the bottom of the essential ones.
+  Their rows have a light golden background, the same as on the status page, defined once on the panel's `:host`.
 - The appliance dialog lists the variants by label, with drag and edit, and Add variant. In view mode the group is left out when there are no variants.
   What else is wrong in a variant is shown under its label. What is missing, such as the expression of a new variant, is not:
   it is set in the variant dialog, and the priority list shows it, so here it would look like a fault to fix in this dialog.
@@ -186,13 +194,15 @@ The section header, the description and the footer note are in `section-styles.t
   so an entity ID the user has changed is still found. A tile without an entity, such as one of Kraftvakt's that is not in the registry, is not a button.
 - The meter is a bar for consumption now. Each other value is a triangle above the bar pointing down at it, in its own colour, and each tile has the same triangle as swatch.
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
-- Appliances and chargers share one full-width priority list card. Each charger group has a row with its name and its own rank at its position,
+- Appliances and chargers share one full-width card, Appliances and EV chargers, in priority order. Each charger group has a row with its name and its own rank at its position,
   and its chargers are indented under it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank,
-  name with the variant after it, current, waiting and state chip. An appliance has no current, so its name also takes the current column.
+  name with the variant after it, current, power, temperature, waiting and state chip. An appliance has no current, so its name also takes the current column.
+  The power is an appliance's display power or a charger's charging power, in kW, and the temperature an appliance's display temperature with one decimal;
+  each column takes room only when a row has a value. An essential appliance's row has a light golden background.
   The rank is right aligned with digits of equal width.
   A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first, down to a few letters.
   - On a phone (a status page at most 600 px wide) a row is only the icon, the name, a charger's current, the waiting icon and the state chip:
-    the rank, the variant, the charger count, the ampere bars, the waiting bar and the text that there are no chargers are left out.
+    the rank, the variant, the power, the temperature, the charger count, the ampere bars, the waiting bar and the text that there are no chargers are left out.
     The rows share no columns there: each row puts its chip at the right end, what it has of the current and the waiting icon just before it,
     and gives the name the rest, since a shared column would be as wide as the widest chip or current in any row.
   - Icons instead of short texts, each with its sentence as a tooltip, and no legend.

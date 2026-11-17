@@ -402,6 +402,7 @@ export class KraftvaktPanel extends LitElement {
       min-height: 100vh;
       background: var(--primary-background-color);
       color: var(--primary-text-color);
+      --kraftvakt-essential-background: color-mix(in srgb, var(--amber-color, #ffc107) 12%, transparent);
     }
     .toolbar {
       display: flex;

@@ -1,4 +1,4 @@
-"""Tests of true/false values from an entity, a template or a power sensor."""
+"""Tests of true/false values from an entity, a template or a power sensor, and of temperatures."""
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from custom_components.kraftvakt.conditions import (
     condition_evidence,
     evaluate_condition,
+    temperature_value,
 )
 from custom_components.kraftvakt.config_model import Condition, ConditionType
 
@@ -125,3 +126,27 @@ async def test_missing_power_sensor_is_false(hass: HomeAssistant) -> None:
     condition = Condition(ConditionType.POWER_SENSOR, "sensor.gone")
 
     assert not evaluate_condition(hass, condition, CHARGER)
+
+
+@pytest.mark.parametrize(
+    ("condition", "expected"),
+    [
+        (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.tank"), (61.5, "°C")),
+        (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.outdoor"), (-4.0, "°C")),
+        (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.offline"), None),
+        (Condition(ConditionType.TEMPERATURE_SENSOR, "sensor.gone"), None),
+        (template("{{ state_attr(entity_id, 'temperature') }}"), (22.0, "°C")),
+        (template("{{ true }}"), None),
+        (template("{{ 'warm' }}"), None),
+        (template("{{ 'nan' }}"), None),
+        (template("{{ none }}"), None),
+        (None, None),
+    ],
+)
+async def test_temperature_is_a_number_with_its_unit(hass: HomeAssistant, condition: Condition | None, expected: tuple[float, str] | None) -> None:
+    hass.states.async_set("sensor.tank", "61.5", {"unit_of_measurement": "°C"})
+    hass.states.async_set("sensor.outdoor", "-4")
+    hass.states.async_set("sensor.offline", "unavailable")
+    hass.states.async_set("climate.bathroom", "heat", {"temperature": 22})
+
+    assert temperature_value(hass, condition, "climate.bathroom") == expected

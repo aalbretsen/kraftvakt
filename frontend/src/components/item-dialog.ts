@@ -30,7 +30,7 @@ export interface Group {
   title: string;
   description?: string;
   control?: unknown;
-  toggle?: { checked: boolean; changed: (checked: boolean) => void };
+  toggle?: { checked: boolean; changed: (checked: boolean) => void; disabled?: boolean };
   content?: unknown;
   error?: string;
 }
@@ -248,7 +248,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       ? html`
           <ha-switch
             .checked=${toggle.checked}
-            .disabled=${this.locked}
+            .disabled=${this.locked || toggle.disabled === true}
             aria-label=${group.title}
             @change=${(event: Event) => toggle.changed((event.target as HTMLInputElement).checked)}
           ></ha-switch>

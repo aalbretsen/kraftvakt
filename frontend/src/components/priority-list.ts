@@ -31,7 +31,7 @@ import {
 import "./countdown";
 import { allChargers } from "../draft";
 import { existingEntity } from "../entities";
-import { formatClockTime, formatPercent, formatPower } from "../format";
+import { formatClockTime, formatNumber, formatPercent, formatPower } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { showMoreInfo } from "../navigation";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
@@ -129,11 +129,11 @@ export class KraftvaktPriorityList extends LitElement {
     return html`
       <ha-card>
         <div class="card-header">
-          <span>${this.localize("status.priority_list")}</span>
+          <span>${this.localize("status.appliances_and_chargers")}</span>
         </div>
         ${entries.length === 0
           ? html`<div class="empty">${this.localize("status.no_appliances")}</div>`
-          : html`<div class="list ${this.phone ? "phone" : ""}">
+          : html`<div class="list ${this.phone ? "phone" : ""}" style=${this.phone ? "" : this.columns()}>
               ${entries.map(
                 (entry, index) => html`
                   ${entry.kind === "appliance"
@@ -145,6 +145,19 @@ export class KraftvaktPriorityList extends LitElement {
             </div>`}
       </ha-card>
     `;
+  }
+
+  /**
+   * The columns of the list: rank, name, current, power, temperature, waiting and state.
+   * The power and the temperature take room only when a row has one.
+   */
+  private columns(): string {
+    const appliances = this.status.priority.filter((row): row is ApplianceStatus => row.type === "appliance");
+    const chargers = this.status.priority.flatMap((row) => (row.type === "charger_group" ? row.chargers : []));
+    const shown = (has: boolean) => (has ? "max-content" : "0");
+    const power = shown([...appliances, ...chargers].some((row) => row.power_w !== null));
+    const temperature = shown(appliances.some((row) => row.temperature !== null));
+    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${power} ${temperature} 120px max-content`;
   }
 
   /** A row of an appliance or EV charger opens Home Assistant's more-info dialog for its entity, while the entity exists. */
@@ -171,7 +184,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   private renderApplianceRow(appliance: ApplianceStatus, rank: number) {
     return this.renderRow(
-      `appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""}`,
+      `appliance ${appliance.on ? "" : "off"} ${appliance.excluded ? "excluded" : ""} ${appliance.essential ? "essential" : ""}`,
       existingEntity(this.hass, this.applianceEntity(appliance)),
       html`
         ${this.renderRank(rank)}
@@ -181,6 +194,7 @@ export class KraftvaktPriorityList extends LitElement {
             ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
             : nothing}
         </div>
+        ${this.renderPower(appliance.power_w)} ${this.renderTemperature(appliance)}
         ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
         ${this.renderApplianceChip(appliance)}
       `,
@@ -266,6 +280,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
+        ${this.renderPower(charger.power_w)} ${this.renderWideOnly(html`<span></span>`)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       `,
@@ -297,6 +312,27 @@ export class KraftvaktPriorityList extends LitElement {
         )}
       </span>
     `;
+  }
+
+  /** The power in kW, left out on a phone. */
+  private renderPower(powerW: number | null) {
+    return this.renderWideOnly(
+      html`<span class="measured" title=${this.localize("status.power")}
+        >${powerW === null ? nothing : `${formatPower(this.hass.language, powerW)} kW`}</span
+      >`,
+    );
+  }
+
+  /** The temperature with one decimal and its unit, left out on a phone. */
+  private renderTemperature(appliance: ApplianceStatus) {
+    const temperature = appliance.temperature;
+    return this.renderWideOnly(
+      html`<span class="measured" title=${this.localize("status.temperature")}
+        >${temperature === null
+          ? nothing
+          : `${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}`}</span
+      >`,
+    );
   }
 
   /** The current, and one bar per ampere from the minimum to the maximum, filled up to the current. */
@@ -408,7 +444,6 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .list {
         display: grid;
-        grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) 120px max-content;
         column-gap: 12px;
       }
       .row {
@@ -427,6 +462,9 @@ export class KraftvaktPriorityList extends LitElement {
       .row.group,
       .row.charger {
         background: color-mix(in srgb, var(--kraftvakt-ev-color) 7%, transparent);
+      }
+      .row.essential {
+        background: var(--kraftvakt-essential-background);
       }
       .row.clickable {
         cursor: pointer;
@@ -464,6 +502,12 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .row > .chip {
         justify-self: start;
+      }
+      .measured {
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
       }
       .cut-off {
         grid-column: 1 / -1;

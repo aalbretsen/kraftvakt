@@ -10,8 +10,18 @@ import type { HomeAssistant } from "../types";
 /** The same limit as the backend uses for a power sensor. */
 const ACTIVELY_CHARGING_ABOVE_W = 100;
 
-/** What the field gives, also the prefix of its texts. Only evidence counts as true. */
-export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "done" | "fault";
+/**
+ * What the field gives, also the prefix of its texts. Only evidence counts as true.
+ * A display value gives a number to show, not true or false.
+ */
+export type ConditionKind =
+  | "condition"
+  | "actively_charging"
+  | "charging_power"
+  | "done"
+  | "fault"
+  | "display_power"
+  | "display_temperature";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
@@ -19,6 +29,8 @@ const TYPES: Record<ConditionKind, Condition["type"][]> = {
   charging_power: ["power_sensor", "template"],
   done: ["entity", "template"],
   fault: ["entity", "template"],
+  display_power: ["power_sensor", "template"],
+  display_temperature: ["temperature_sensor", "template"],
 };
 
 interface TemplateResult {
@@ -29,7 +41,8 @@ interface TemplateResult {
 /**
  * A true/false value from a boolean entity, the states of an entity, a template
  * or a power sensor, with what it gives now, read as the backend reads it. A
- * charging power template gives a number in W.
+ * charging power template gives a number in W. A display value is a power or a
+ * temperature from a sensor or a template, and shows the value it gives now.
  *
  * The template is previewed with Home Assistant's `render_template`
  * subscription while the user writes. It gets `entity_id` and `entity`
@@ -149,6 +162,14 @@ export class KraftvaktConditionField extends LitElement {
             },
           },
         ];
+      case "temperature_sensor":
+        return [
+          {
+            name: "value",
+            required: !this.optional,
+            selector: { entity: { filter: { domain: "sensor", device_class: "temperature" } } },
+          },
+        ];
       case "state":
         return [
           { name: "value", required: !this.optional, selector: { entity: { include_entities: this.includeEntities } } },
@@ -211,6 +232,9 @@ export class KraftvaktConditionField extends LitElement {
     if (this.value.type === "template" && !this.preview) {
       return nothing;
     }
+    if (this.kind === "display_power" || this.kind === "display_temperature") {
+      return this.renderDisplayValue(this.value);
+    }
     const evidence = this.evidence(this.value);
     return html`
       ${this.renderNow(this.value, evidence)}
@@ -261,6 +285,23 @@ export class KraftvaktConditionField extends LitElement {
             : html`<b>${text}</b>`}
       </div>
     `;
+  }
+
+  /** A sensor's state as Home Assistant formats it, or a template's number with its unit, as the status page shows it. */
+  private renderDisplayValue(condition: Condition) {
+    const stateObj = condition.type === "template" ? undefined : this.hass.states[condition.value];
+    const number = condition.type === "template" ? templateNumber(this.preview?.result) : null;
+    if (condition.type === "template" && number === null) {
+      return html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>`;
+    }
+    const unit = this.kind === "display_power" ? "W" : this.hass.config.unit_system.temperature;
+    const shown =
+      number !== null
+        ? `${new Intl.NumberFormat(this.hass.language).format(this.kind === "display_power" ? Math.max(number, 0) : number)} ${unit}`
+        : stateObj
+          ? this.hass.formatEntityState(stateObj)
+          : this.text("no_value");
+    return html`<div class="preview">${this.localize("condition.now", { value: "" })}<b>${shown}</b></div>`;
   }
 
   private text(key: string, params?: Record<string, string | number>): string {
@@ -374,8 +415,14 @@ export class KraftvaktConditionField extends LitElement {
 
 /** A template's result read as power in W, as the backend reads it: a number, or null. */
 function templatePowerW(result: unknown): number | null {
-  const power = typeof result === "string" && result.trim() !== "" ? Number(result) : result;
-  return typeof power === "number" && Number.isFinite(power) ? Math.max(power, 0) : null;
+  const power = templateNumber(result);
+  return power === null ? null : Math.max(power, 0);
+}
+
+/** A template's result read as a number, as the backend reads it, or null. */
+function templateNumber(result: unknown): number | null {
+  const number = typeof result === "string" && result.trim() !== "" ? Number(result) : result;
+  return typeof number === "number" && Number.isFinite(number) ? number : null;
 }
 
 declare global {

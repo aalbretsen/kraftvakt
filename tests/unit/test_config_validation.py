@@ -608,3 +608,65 @@ async def test_override_end_must_be_one_of_the_choices(hass: HomeAssistant, valu
         parse_config(data)
 
     assert error.value.issues == [Issue("invalid_type", "chargers", "c1", "override_ends")]
+
+
+def test_essential_appliance_has_no_variants() -> None:
+    assert _issues_after(_set("appliances.0.essential", True)) == [
+        Issue("essential_with_variants", "appliances", "a1", "essential"),
+        Issue("essential_not_at_top", "priority", "a1"),
+    ]
+
+
+def test_essential_appliance_must_be_above_every_other_entry() -> None:
+    """Each of its entries is reported, and an essential entry at the top is valid."""
+
+    def mutate(data: dict[str, Any]) -> None:
+        data["appliances"][1]["essential"] = True
+
+    assert _issues_after(mutate) == [Issue("essential_not_at_top", "priority", "a2")]
+
+    def move_to_top(data: dict[str, Any]) -> None:
+        mutate(data)
+        data["priority"].insert(0, data["priority"].pop(2))
+
+    assert _issues_after(move_to_top) == []
+
+
+async def test_parse_config_adds_a_missing_essential_entry_after_the_last_essential_one(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    data["appliances"][1]["essential"] = True
+    data["appliances"].append({**data["appliances"][1], "id": "a3", "entity_id": "switch.freezer"})
+    data["priority"].insert(0, data["priority"].pop(2))
+
+    config = parse_config(data)
+
+    assert config.priority[:2] == (PriorityEntry.for_appliance("a2"), PriorityEntry.for_appliance("a3"))
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "issue"),
+    [
+        ("display_power", {"type": "power_sensor", "value": "not an entity"}, "invalid_entity_id"),
+        ("display_temperature", {"type": "temperature_sensor", "value": "not an entity"}, "invalid_entity_id"),
+        ("display_power", {"type": "temperature_sensor", "value": "sensor.temperature"}, "invalid_type"),
+        ("display_temperature", {"type": "entity", "value": "binary_sensor.warm"}, "invalid_type"),
+    ],
+)
+async def test_display_value_is_a_sensor_of_its_kind_or_a_template(hass: HomeAssistant, field: str, value: Any, issue: str) -> None:
+    data = full_config_data()
+    data["appliances"][1][field] = value
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue(issue, "appliances", "a2", field)]
+
+
+async def test_parse_config_rejects_an_invalid_display_template(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    data["appliances"][1]["display_temperature"]["value"] = "{{ 5 <= }}"
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_template", "appliances", "a2", "display_temperature")]

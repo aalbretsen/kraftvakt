@@ -64,8 +64,8 @@ class Scenario:
     """Drives a started engine through decisions.
 
     Every charger reads as idle with a car connected and a valid charging
-    power until the test changes it with `set_charger`, and no appliance is excluded until the test
-    changes it with `exclude`.
+    power until the test changes it with `set_charger`, and only the appliances in
+    `excluded` are excluded until the test changes it with `exclude`.
     """
 
     def __init__(
@@ -73,14 +73,15 @@ class Scenario:
         config: KraftvaktConfig,
         start: datetime = START,
         time_zone: tzinfo = UTC,
+        excluded: tuple[str, ...] = (),
     ) -> None:
         self.engine = RegulationEngine(config)
         self.now = start
         self.time_zone = time_zone
         self.chargers = {charger.id: ChargerReading(car_connected=True) for charger in config.chargers}
-        self.excluded_appliances: frozenset[str] = frozenset()
+        self.excluded_appliances = frozenset(excluded)
         self.overrides = OverrideChanges()
-        self.start_commands = self.engine.start(self.now)
+        self.start_commands = self.engine.start(self.now, self.excluded_appliances)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
         """Change what is read for the charger from now on."""

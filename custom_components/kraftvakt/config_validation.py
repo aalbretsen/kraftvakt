@@ -155,6 +155,12 @@ def _appliance_issues(appliance: Appliance) -> list[Issue]:
         elif labels[label] > 1:
             issues.append(variant_location.issue("duplicate_label", "label"))
         issues += _condition_issues(variant_location, "condition", variant.condition)
+    for field_name in ("display_power", "display_temperature"):
+        condition = getattr(appliance, field_name)
+        if condition is not None:
+            issues += _condition_issues(location, field_name, condition)
+    if appliance.essential and appliance.variants:
+        issues.append(location.issue("essential_with_variants", "essential"))
     return issues
 
 
@@ -258,12 +264,27 @@ def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
         elif count > 1:
             issues.append(location.issue("duplicate_priority_entry", _priority_field(entry)))
     issues += [_priority_location(entry).issue("missing_priority_entry", _priority_field(entry)) for entry in expected if entry not in counts]
+    essential = _essential_appliances(config)
+    issues += [
+        _priority_location(entry).issue("essential_not_at_top")
+        for place, entry in enumerate(config.priority)
+        if entry.appliance_id in essential and any(above.appliance_id not in essential for above in config.priority[:place])
+    ]
     return issues
 
 
 def _complete_priority(config: KraftvaktConfig) -> KraftvaktConfig:
+    """Add the missing entries at the bottom, and those of essential appliances after the last essential entry."""
     missing = [entry for entry in _expected_priority(config) if entry not in config.priority]
-    return replace(config, priority=(*config.priority, *missing))
+    essential = _essential_appliances(config)
+    top = max((place + 1 for place, entry in enumerate(config.priority) if entry.appliance_id in essential), default=0)
+    missing_essential = [entry for entry in missing if entry.appliance_id in essential]
+    others = [entry for entry in missing if entry.appliance_id not in essential]
+    return replace(config, priority=(*config.priority[:top], *missing_essential, *config.priority[top:], *others))
+
+
+def _essential_appliances(config: KraftvaktConfig) -> set[str]:
+    return {appliance.id for appliance in config.appliances if appliance.essential}
 
 
 def _expected_priority(config: KraftvaktConfig) -> list[PriorityEntry]:
@@ -297,13 +318,8 @@ def _custom_actions(
 
 def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condition]]:
     for appliance in config.appliances:
-        for variant in appliance.variants:
-            yield (
-                "appliances",
-                appliance.id,
-                f"variants.{variant.id}.condition",
-                variant.condition,
-            )
+        for field_name, condition in appliance.conditions():
+            yield "appliances", appliance.id, field_name, condition
     for charger in config.chargers:
         for field_name, condition in charger.conditions():
             yield "chargers", charger.id, field_name, condition

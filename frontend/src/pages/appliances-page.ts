@@ -15,7 +15,17 @@ import { navigateToPage, PANEL_PATH } from "../navigation";
 import { APPLIANCE_ACTIONS, isOverridden } from "../validation";
 import { ConfigPage, type ItemList } from "./config-page";
 
-const APPLIANCE_FIELDS = ["entity_id", "turn_on", "turn_off", "power_reserve_w", "label", "condition"] as const;
+const APPLIANCE_FIELDS = [
+  "entity_id",
+  "essential",
+  "turn_on",
+  "turn_off",
+  "power_reserve_w",
+  "label",
+  "condition",
+  "display_power",
+  "display_temperature",
+] as const;
 
 /** The appliances and the priority list. */
 @customElement("kraftvakt-appliances-page")
@@ -142,6 +152,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       details: appliance ? (variant ? this.variantDetails(variant) : this.applianceDetails(appliance)) : [],
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
       openable: true,
+      essential: appliance?.essential,
     };
   }
 
@@ -153,6 +164,9 @@ export class KraftvaktAppliancesPage extends ConfigPage {
 
   private applianceDetails(appliance: Appliance): string[] {
     const details = appliance.entity_id ? [appliance.entity_id] : [];
+    if (appliance.essential) {
+      details.push(this.localize("appliances.essential"));
+    }
     if (appliance.power_reserve_w !== null) {
       details.push(
         this.localize("appliances.power_reserve", {
@@ -196,8 +210,11 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       entity_id: null,
       turn_on: null,
       turn_off: null,
+      essential: false,
       power_reserve_w: this.capabilities.defaults.appliances.power_reserve_w,
       variants: [],
+      display_power: null,
+      display_temperature: null,
     };
     this.editing = { appliance, isNew: true };
   }

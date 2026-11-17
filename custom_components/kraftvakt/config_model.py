@@ -88,23 +88,25 @@ class ActionMode(StrEnum):
 
 
 class ConditionType(StrEnum):
-    """How a true/false value is given.
+    """How a true/false value, or a measured value, is given.
 
     `STATE` is the states of an entity, offered for the conditions of a
-    charger. `POWER_SENSOR` is true above a fixed power, and is offered only
-    for the charging power of a charger, which may also be a template that
-    gives the power.
+    charger. `POWER_SENSOR` gives a power, true above a fixed power for the
+    charging power of a charger. `TEMPERATURE_SENSOR` gives a temperature to
+    show. A template may give a power or a temperature instead of a sensor.
     """
 
     ENTITY = "entity"
     STATE = "state"
     TEMPLATE = "template"
     POWER_SENSOR = "power_sensor"
+    TEMPERATURE_SENSOR = "temperature_sensor"
 
 
 VARIANT_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.TEMPLATE)
 CHARGER_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.STATE, ConditionType.TEMPLATE)
-CHARGING_POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
+POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
+TEMPERATURE_TYPES: Final = (ConditionType.TEMPERATURE_SENSOR, ConditionType.TEMPLATE)
 
 
 class OverrideEnd(StrEnum):
@@ -222,14 +224,21 @@ class Variant:
 
 @dataclass(frozen=True, slots=True)
 class Appliance:
-    """A device that Kraftvakt turns on and off."""
+    """A device that Kraftvakt turns on and off.
+
+    An essential appliance is kept on, and turned off only in a penalty.
+    The display values are only shown on the status page.
+    """
 
     id: str
     entity_id: str | None = None
     turn_on: ActionConfig | None = None
     turn_off: ActionConfig | None = None
+    essential: bool = False
     power_reserve_w: int | None = None
     variants: tuple[Variant, ...] = ()
+    display_power: Condition | None = None
+    display_temperature: Condition | None = None
 
     def overriding_variant(self, variant_id: str | None, name: str) -> Variant | None:
         """Return the variant if it overrides the action `name`."""
@@ -251,6 +260,15 @@ class Appliance:
             for name, kind in APPLIANCE_ACTION_KINDS.items():
                 if name in variant.actions:
                     yield ActionField(f"variants.{variant.id}.{name}", kind, variant.actions[name])
+
+    def conditions(self) -> Iterator[tuple[str, Condition]]:
+        """Return each condition and display value that is given, with the field issues address."""
+        for variant in self.variants:
+            yield f"variants.{variant.id}.condition", variant.condition
+        for field_name in ("display_power", "display_temperature"):
+            condition = getattr(self, field_name)
+            if condition is not None:
+                yield field_name, condition
 
     def to_dict(self) -> dict[str, Any]:
         return _fields_to_dict(self)

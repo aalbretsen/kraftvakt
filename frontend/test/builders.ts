@@ -20,7 +20,18 @@ export function config(parts: Partial<KraftvaktConfig> = {}): KraftvaktConfig {
 }
 
 export function appliance(id: string, parts: Partial<Appliance> = {}): Appliance {
-  return { id, entity_id: `switch.${id}`, turn_on: DEFAULT_ACTION, turn_off: DEFAULT_ACTION, power_reserve_w: null, variants: [], ...parts };
+  return {
+    id,
+    entity_id: `switch.${id}`,
+    turn_on: DEFAULT_ACTION,
+    turn_off: DEFAULT_ACTION,
+    essential: false,
+    power_reserve_w: null,
+    variants: [],
+    display_power: null,
+    display_temperature: null,
+    ...parts,
+  };
 }
 
 export function variant(id: string, parts: Partial<Variant> = {}): Variant {

@@ -39,7 +39,9 @@
     "penalty_chip": "Penalty period",
     "next_decision": "Next decision",
     "next_decision_at": "Next decision at {time}",
-    "priority_list": "Priority list",
+    "appliances_and_chargers": "Appliances and EV chargers",
+    "power": "Power",
+    "temperature": "Temperature",
     "no_chargers": "No EV chargers in the group.",
     "no_appliances": "No appliances are configured.",
     "on": "On",
@@ -153,7 +155,9 @@
     "unknown": "Invalid value ({code}).",
     "charging_power_required": "Needed for the dynamic charging order of a group with several EV chargers at once.",
     "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once.",
-    "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current."
+    "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current.",
+    "essential_with_variants": "An essential appliance cannot have variants. Delete them, or turn the setting off.",
+    "essential_not_at_top": "An essential appliance must be above every other entry in the priority list."
   },
   "dialog": {
     "ok": "OK",
@@ -259,6 +263,7 @@
     "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
     "charger_group_sub": "EV chargers: {count} · configured under",
     "power_reserve": "power reserve {power} W",
+    "essential": "Essential",
     "variant_count": "variants: {count}",
     "variant_entity": "Variant · entity {entity}",
     "variant_template": "Variant · template",
@@ -273,11 +278,17 @@
     "variants": "Variants",
     "variants_info": "Give the appliance another place in the priority list at certain times or conditions, for example a higher place for the water heater in the morning. The top variant that applies wins.",
     "add_variant": "Add variant",
+    "display_values": "Display values",
+    "display_values_info": "Optional, and not used by the regulation. Shown on the status page for convenience.",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
         "label": "Entity",
         "helper": "What Kraftvakt turns on and off, for example the switch of a water heater. Its name becomes the name of the appliance."
+      },
+      "essential": {
+        "label": "Essential appliance",
+        "helper": "For an appliance that must always run, such as a freezer. Kraftvakt keeps it on, and turns it off only during a penalty period. Essential appliances are at the top of the priority list. Not for an appliance with variants."
       },
       "turn_on": {
         "label": "Action to turn on",
@@ -287,9 +298,13 @@
         "label": "Action to turn off",
         "helper": "Standard works for most entities."
       },
+      "fixed_load": {
+        "label": "Fixed load",
+        "helper": "Almost never needed. Only for an appliance that always draws the same power while it is on, such as a ceiling fan. It is then turned on only when its power reserve is free. Do not use it for an appliance with a thermostat or other control of its own: the regulation then works worse, not better."
+      },
       "power_reserve_w": {
-        "label": "Power reserve (optional)",
-        "helper": "For an appliance that draws a lot at once: it is turned on only when this much power is free. Set it to about what it draws. Applies to every variant."
+        "label": "Power reserve",
+        "helper": "What the appliance draws while it is on. Applies to every variant."
       },
       "label": {
         "label": "Label"
@@ -304,6 +319,12 @@
       "override_turn_off": {
         "label": "Own action to turn off",
         "helper": "For example frost protection."
+      },
+      "display_power": {
+        "label": "Power"
+      },
+      "display_temperature": {
+        "label": "Temperature"
       }
     }
   },
@@ -381,6 +402,28 @@
     "true": "charging",
     "false": "not charging",
     "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
+  },
+  "display_power": {
+    "type_label": "Power from",
+    "power_sensor": "Sensor",
+    "template": "Template",
+    "power_sensor_label": "Power",
+    "template_label": "Template for power",
+    "power_sensor_helper": "W or kW.",
+    "template_helper": "The power in W. Variables: entity_id, entity.",
+    "no_value": "no value",
+    "invalid": "The template gives {value}, which is not a number, so nothing is shown."
+  },
+  "display_temperature": {
+    "type_label": "Temperature from",
+    "temperature_sensor": "Sensor",
+    "template": "Template",
+    "temperature_sensor_label": "Temperature",
+    "template_label": "Template for temperature",
+    "temperature_sensor_helper": "Any temperature you want to see, such as the water temperature.",
+    "template_helper": "A temperature in the unit of Home Assistant, such as the set temperature of a thermostat: {{ state_attr(entity_id, 'temperature') }}. Variables: entity_id, entity.",
+    "no_value": "no value",
+    "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },
   "done": {
     "entity": "Entity",

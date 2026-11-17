@@ -277,6 +277,32 @@ async def test_stop_turns_everything_off_and_stops_the_decisions(hass: HomeAssis
     assert actions == ["off light.a", "off light.b"]
 
 
+async def test_start_and_stop_turn_an_essential_appliance_on(hass: HomeAssistant, config: dict[str, Any], actions: list[str], setup_kraftvakt) -> None:
+    config["appliances"][0]["essential"] = True
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    assert actions == ["on light.a", "off light.b"]
+    actions.clear()
+
+    await switch_regulation(hass, "turn_off")
+
+    assert actions == ["on light.a", "off light.b"]
+
+
+async def test_start_and_stop_turn_an_excluded_essential_appliance_off(hass: HomeAssistant, config: dict[str, Any], actions: list[str], setup_kraftvakt) -> None:
+    """The excluded switches are read at the start and the stop."""
+    config["appliances"][0]["essential"] = True
+    config["appliance_switches"] = {"a": {"excluded": True}}
+    set_power(hass, "2000")
+    await setup_kraftvakt()
+    assert actions == ["off light.a", "off light.b"]
+    actions.clear()
+
+    await switch_regulation(hass, "turn_off")
+
+    assert actions == ["off light.a", "off light.b"]
+
+
 async def test_start_waits_for_a_whole_window_after_the_start(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """A window that started before the start does not count."""
     set_power(hass, "2000")

@@ -754,9 +754,12 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "type": "appliance",
                 "id": "a",
                 "name": "Water heater",
+                "essential": False,
                 "on": False,
                 "excluded": False,
                 "variant": None,
+                "power_w": None,
+                "temperature": None,
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
@@ -765,9 +768,12 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "type": "appliance",
                 "id": "b",
                 "name": "light.b",
+                "essential": False,
                 "on": False,
                 "excluded": False,
                 "variant": None,
+                "power_w": None,
+                "temperature": None,
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
@@ -900,6 +906,7 @@ async def test_status_shows_the_chargers(
         }
     ]
     config["priority"].append({"type": "charger_group", "group_id": "g1"})
+    hass.states.async_set("sensor.charger_power", "3.7", {"unit_of_measurement": "kW"})
     await setup_entry(hass)
     client = await hass_ws_client(hass)
 
@@ -918,6 +925,7 @@ async def test_status_shows_the_chargers(
             "state": "first_decision",
             "activated": False,
             "current_a": None,
+            "power_w": 3700.0,
             "bypassed": False,
             "starting_until": None,
             "grace_until": None,
@@ -927,6 +935,27 @@ async def test_status_shows_the_chargers(
             "waiting_ends_at": None,
         }
     ]
+
+
+async def test_status_shows_the_display_values_of_an_appliance(
+    hass: HomeAssistant,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """A sensor gives its own unit, a template the unit of Home Assistant, and no valid value gives nothing."""
+    config["appliances"][0]["display_power"] = {"type": "power_sensor", "value": "sensor.heater_power"}
+    config["appliances"][0]["display_temperature"] = {"type": "temperature_sensor", "value": "sensor.heater_temperature"}
+    config["appliances"][1]["display_power"] = {"type": "template", "value": "{{ 'off' }}"}
+    config["appliances"][1]["display_temperature"] = {"type": "template", "value": "{{ 21.5 }}"}
+    hass.states.async_set("sensor.heater_power", "1950")
+    hass.states.async_set("sensor.heater_temperature", "140", {"unit_of_measurement": "°F"})
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+
+    status = await subscribe_status(client)
+
+    rows = [(row["power_w"], row["temperature"]) for row in status["priority"]]
+    assert rows == [(1950.0, {"value": 140.0, "unit": "°F"}), (None, {"value": 21.5, "unit": "°C"})]
 
 
 def charger(charger_id: str, **settings: Any) -> dict[str, Any]:

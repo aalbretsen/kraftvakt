@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .conditions import ACTIVELY_CHARGING_ABOVE_W, charging_power_w, condition_evidence, evaluate_condition
+from .conditions import ACTIVELY_CHARGING_ABOVE_W, condition_evidence, evaluate_condition, power_value_w
 from .config_model import Charger
 from .measurement import WindowAverages
 from .regulation.charging import ChargerReading
@@ -54,7 +54,7 @@ def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) 
     switches = settings.charger_switches(charger.id)
     car_connected = condition_evidence(hass, charger.car_connected, charger.entity_id)
     car_done = condition_evidence(hass, charger.done_flag, charger.entity_id)
-    power_w = charging_power_w(hass, charger.charging_power, charger.entity_id)
+    power_w = power_value_w(hass, charger.charging_power, charger.entity_id)
     charging = [
         *([] if charger.actively_charging is None else [condition_evidence(hass, charger.actively_charging, charger.entity_id)]),
         *([] if charger.charging_power is None else [None if power_w is None else power_w > ACTIVELY_CHARGING_ABOVE_W]),
