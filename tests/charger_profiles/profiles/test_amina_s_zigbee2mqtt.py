@@ -51,6 +51,7 @@ async def test_amina_s_has_entities_for_every_field(hass: HomeAssistant, command
             "entity_id": "switch.amina",
             "activate": {"mode": "default"},
             "deactivate": {"mode": "default"},
+            "switched_by_current": False,
             "set_current": {"mode": "entity", "entity_id": "number.amina_charge_limit"},
             "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
             "actively_charging": {"type": "entity", "value": "binary_sensor.amina_charging"},

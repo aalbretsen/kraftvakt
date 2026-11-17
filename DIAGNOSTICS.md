@@ -54,5 +54,6 @@ What the tool carries over:
   the variable `entity_id`, so the profile works for every EV charger of its kind. A domain action becomes the script steps it runs.
 - Conditions: an entity or a power sensor of the device, or a template, with each entity of the device in the template as a `$name` placeholder.
 - **Cloud-controlled EV charger.**
+- Charging turned on and off by **the charging current**, without the actions to activate and deactivate.
 
 EV chargers with the same kind of device give one draft, from the first of them.

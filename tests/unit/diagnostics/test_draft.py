@@ -97,6 +97,13 @@ def test_the_done_and_fault_flags_are_drafted_as_the_other_conditions() -> None:
     assert result.profile.fault_flag == template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor"))
 
 
+def test_a_charger_switched_by_its_current_gives_a_profile_without_actions_to_activate_and_deactivate() -> None:
+    result = draft(switched_by_current=True)
+
+    assert result.profile.switched_by_current
+    assert (result.profile.activate, result.profile.deactivate) == (None, None)
+
+
 def test_chargers_without_a_device_of_their_own_kind_are_skipped() -> None:
     result = drafts(
         [charger("c1"), charger("c2", device_id=None), charger("c3"), charger("c4"), charger("c5")],

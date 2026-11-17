@@ -135,6 +135,8 @@ Every issue code needs a text in the panel's translations.
   or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,
   and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
 - A profile has a charging on/off, a charging power or both. A profile may have a done flag and a fault flag.
+  It has actions to activate and deactivate, unless the charger is switched by its current.
+  It always fills switched by current, so choosing a device never keeps the setting of the charger's previous device.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
   so choosing a device never turns the setting on without a flag.
 - The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.

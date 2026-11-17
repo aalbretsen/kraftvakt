@@ -55,6 +55,7 @@ async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor
         "entity_id": "switch.garage_charger_enabled",
         "activate": {"mode": "custom", "action": [service("set_charger_access", access_level="open_for_all")]},
         "deactivate": {"mode": "custom", "action": [service("set_charger_access", access_level="whitelist")]},
+        "switched_by_current": False,
         "set_current": {"mode": "custom", "action": [service("set_charger_dynamic_limit", current="{{ current }}")]},
         "charging_power": {"type": "power_sensor", "value": "sensor.garage_power"},
         "cloud_controlled": True,

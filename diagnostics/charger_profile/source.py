@@ -25,11 +25,15 @@ def profile_source(draft: ProfileDraft) -> str:
         "name": repr(profile.name),
         "device": writer.device_match(profile.device),
         "entity": writer.entity(profile.entity),
-        "activate": writer.action(profile.activate),
-        "deactivate": writer.action(profile.deactivate),
-        "set_current": writer.action(profile.set_current),
-        "car_connected": writer.condition(profile.car_connected),
     }
+    if profile.switched_by_current:
+        fields["switched_by_current"] = "True"
+    if profile.activate is not None:
+        fields["activate"] = writer.action(profile.activate)
+    if profile.deactivate is not None:
+        fields["deactivate"] = writer.action(profile.deactivate)
+    fields["set_current"] = writer.action(profile.set_current)
+    fields["car_connected"] = writer.condition(profile.car_connected)
     if profile.actively_charging is not None:
         fields["actively_charging"] = writer.condition(profile.actively_charging)
     if profile.charging_power is not None:

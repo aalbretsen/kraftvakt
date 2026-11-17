@@ -82,6 +82,25 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
     assert draft.profile == load(written(tmp_path, source, "acme"), PROFILES_PACKAGE).PROFILE
 
 
+def test_a_profile_switched_by_current_is_written_without_actions_to_activate_and_deactivate(tmp_path: Path) -> None:
+    profile = ChargerProfile(
+        name="Acme",
+        device=DeviceMatch("acme"),
+        entity=ProfileEntity("number", translation_key="current"),
+        switched_by_current=True,
+        set_current=DEFAULT_ACTION,
+        car_connected=state_condition(ProfileEntity("sensor", translation_key="status"), ("disconnected",), states_are_true=False),
+        charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
+    )
+    draft = ProfileDraft(module="acme", profile=profile, manufacturer=None, model_id=None, entities=(), charger_id="c1", notes=())
+
+    source = profile_source(draft)
+
+    assert "    switched_by_current=True,\n" in source
+    assert "activate" not in source
+    assert draft.profile == load(written(tmp_path, source, "acme_switched"), PROFILES_PACKAGE).PROFILE
+
+
 def test_the_written_test_registers_the_device_with_every_entity(tmp_path: Path) -> None:
     drafted_test = load(written(tmp_path, profile_test_source(DRAFT), "test_acme_box_mqtt"), PROFILE_TESTS_PACKAGE)
 

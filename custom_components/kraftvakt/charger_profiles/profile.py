@@ -60,6 +60,7 @@ class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
     A profile has a charging on/off (`actively_charging`), a charging power or both.
+    It has actions to activate and deactivate, unless the charger is `switched_by_current`.
     `cloud_controlled` is for chargers controlled through a cloud service.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
@@ -67,10 +68,11 @@ class ChargerProfile:
     name: str
     device: DeviceMatch
     entity: ProfileEntity
-    activate: ProfileAction
-    deactivate: ProfileAction
     set_current: ProfileAction
     car_connected: ProfileCondition
+    activate: ProfileAction | None = None
+    deactivate: ProfileAction | None = None
+    switched_by_current: bool = False
     actively_charging: ProfileCondition | None = None
     charging_power: ProfileCondition | None = None
     done_flag: ProfileCondition | None = None

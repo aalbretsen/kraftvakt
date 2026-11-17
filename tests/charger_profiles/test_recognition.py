@@ -10,7 +10,7 @@ from custom_components.kraftvakt.charger_profiles import recognition
 from custom_components.kraftvakt.charger_profiles.profile import ProfileEntity, entity_condition, state_condition, template_condition
 from custom_components.kraftvakt.charger_profiles.profiles import amina_s_zigbee2mqtt
 
-from .conftest import Command, Device, DeviceEntity, charger_profile, register
+from .conftest import Command, Device, DeviceEntity, charger_profile, register, save_charger
 from .profiles.test_amina_s_zigbee2mqtt import AMINA_S
 from .profiles.test_easee import EASEE
 
@@ -34,6 +34,7 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
     assert fields == {
         "activate": {"mode": "default"},
         "deactivate": {"mode": "default"},
+        "switched_by_current": False,
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "cloud_controlled": False,
         "deactivate_on_fault": True,
@@ -90,3 +91,18 @@ async def test_profile_fills_the_states_of_an_entity(hass: HomeAssistant, comman
     fields = (await charger_profile(command, register(hass, AMINA_S)))["fields"]
 
     assert fields["car_connected"] == {"type": "state", "value": "binary_sensor.amina_ev_connected", "states": ["off"], "states_are_true": False}
+
+
+async def test_profile_switched_by_current_fills_no_actions_to_activate_and_deactivate(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(amina_s_zigbee2mqtt.PROFILE, switched_by_current=True, activate=None, deactivate=None)
+    monkeypatch.setattr(recognition, "PROFILES", (profile,))
+    device_id = register(hass, AMINA_S)
+
+    fields = (await charger_profile(command, device_id))["fields"]
+
+    assert fields["switched_by_current"] is True
+    assert "activate" not in fields
+    assert "deactivate" not in fields
+    saved = await save_charger(command, device_id, fields)
+    assert saved["saved"]
+    assert [issue for issue in saved["missing"] if issue["section"] == "chargers"] == []
