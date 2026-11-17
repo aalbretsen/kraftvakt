@@ -43,22 +43,41 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 ## How it works
 
-- **Power limit:** the highest allowed average consumption over the last hour, for example 10,000 W: the step of the capacity tariff you want to stay below.
-- **Tariff average:** the average consumption over the last hour, sliding. Every clock hour the grid company measures is one of the sliding hours,
-  so keeping the tariff average below the power limit keeps every clock hour below it too, and overconsumption is found early in the hour.
+- You set a **power limit**, the step of the capacity tariff you want to stay below, for example 10,000 W.
+  Kraftvakt keeps the average consumption over the last hour, the **tariff average**, below it.
+- You sort the appliances and EV chargers in a **priority list**. When power is free, the next one in the list is turned on, after a short waiting time.
+  Above the power limit, the lowest one that is on is turned off.
+- An **EV charger** gets one ampere at a time, as power is free, and only while a car is connected.
+- An **essential appliance**, such as a freezer, is always kept on.
+- If the power sensor stops giving values, everything but the essential appliances is turned off until it is back.
+
+The helper texts in the panel tell what each setting does.
+
+## Good to know
+
+- Do not turn regulated appliances on or off outside Kraftvakt: it disturbs the regulation, and Kraftvakt sets them back.
+  Turn on **‹appliance› excluded from regulation** to control one yourself.
+- Kraftvakt never hands an appliance back. When it is removed, excluded, or the regulation is stopped, it stays as Kraftvakt last set it, often off.
+  Turn the water heater on again yourself, or it stays cold.
+- Prefer devices with local control for appliances that draw a lot of power. A device controlled through a cloud service may react late, or not at all while the service is down.
+
+## For advanced users
+
+### The regulation in detail
+
 - **Regulation average:** the average over a short regulation window, 10 seconds by default. It drives the decisions.
-- **Decisions:** at every regulation interval, the regulation turns at most one appliance on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
-  or as many amperes of an EV charger as the power above the limit needs, at once.
-  When power is free, the next appliance in the priority list is turned on, after a waiting time. Appliances lower in the list give way when one higher up needs the room.
+- **Tariff average:** sliding over the last hour. Every clock hour the grid company measures is one of the sliding hours,
+  so keeping it below the power limit keeps every clock hour below it, and overconsumption is found early in the hour.
+- **Decisions:** at every regulation interval, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
+  or as many amperes of an EV charger as the power above the limit needs, at once. Appliances lower in the list give way when one higher up needs the room.
+  The order is fixed: an appliance is never turned on before every appliance above it is on.
 - **Waiting time:** none while plenty of power is free, and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
-- **Essential appliance:** an appliance that must always run, such as a freezer. Kraftvakt keeps it on, also in the safe state and when the regulation is stopped,
-  and turns it off only during a penalty. Essential appliances are at the top of the priority list, and have no variants.
-- **Excluded appliance:** the switch **‹appliance› excluded from regulation** takes an appliance out of the regulation.
-  It is turned off, and gets no commands until it is included again.
-- **Penalty:** a safety valve that should never be needed. If the tariff average still goes above the power limit plus the penalty threshold,
-  everything is kept off until the overconsumption is paid back.
+- **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
+- **Excluded appliance:** turned off, and gets no commands until it is included again.
+- **Penalty:** a safety valve that should never be needed. If the tariff average goes above the power limit plus the penalty threshold,
+  everything is kept off until the overconsumption since the tariff average went above the power limit is paid back.
 - **Safe state:** while the power sensor gives no valid value, everything but the essential appliances is kept off. A single missing value is tolerated,
   and a sensor that has not reported for the power sensor timeout has no valid value.
 - **Command repeat:** an appliance or EV charger that has had no command for 30 minutes gets the last one again, in case it has changed state by itself.
@@ -66,68 +85,50 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
   The command repeat sends it again later.
 
 Kraftvakt does not know what an appliance uses, and does not read whether it is on. It assumes each appliance is as Kraftvakt last set it.
-Do not turn regulated appliances on or off outside Kraftvakt: it can disturb the regulation and trigger a penalty, and the command repeat sets the appliance back.
-Exclude the appliance from the regulation instead. EV chargers are the exception: Kraftvakt reads whether a car is connected and whether it charges.
+EV chargers are the exception: Kraftvakt reads whether a car is connected and whether it charges.
 
-## Starting and stopping
+### Starting and stopping
 
-The regulation starts by itself when Home Assistant or the integration starts, provided the configuration is complete:
-
-- a power sensor is chosen,
-- every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
-- every EV charger has a device, an entity, an action to set the charging current, actions to activate and deactivate unless charging is turned on and off by the current,
-  **Car connected**, a charging power, and with **Deactivate on fault** a fault flag.
-
-When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
-When the configuration is not complete then, it is reported under **Settings → Repairs**.
+The regulation starts by itself when Home Assistant or the integration starts, once Home Assistant has finished starting, provided the configuration is complete.
+What is missing is listed on the status page, and under **Settings → Repairs** when Home Assistant starts.
 If the stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt does not start, the integration shows an error, and the file is left unchanged.
 
 Every start turns all appliances off at once, except the essential appliances, which it turns on, and deactivates all EV chargers.
 The regulation then turns them on one by one in priority order, with the first decision one full regulation interval after the start.
-The regulation also starts again with everything off when a penalty or the safe state ends.
+It also starts again this way when a penalty or the safe state ends.
 
-The **Regulation** switch, and the button on the status page, stop and start the regulation.
-Stopping turns all appliances off, except the essential appliances, which it turns on, and nothing else is turned on until it starts again.
-If the configuration is not complete, turning the switch on gives an error and it stays off. The switch has no stored state, so the regulation runs again after a restart.
+The **Regulation** switch, and the button on the status page, stop and start the regulation. Stopping turns everything off except the essential appliances.
+The switch has no stored state, so the regulation runs again after a restart.
 
-## Appliances are not handed back
+### Cloud-controlled devices
 
-Kraftvakt never hands an appliance back to you. When an appliance or EV charger is removed from the configuration or excluded from the regulation, when the regulation is stopped,
-and when the integration is removed, it stays as Kraftvakt last set it, often off. Set it yourself as you want it: for example, turn the water heater on again, or it stays cold.
-
-## Cloud-controlled devices
-
-Kraftvakt runs locally, but an appliance or EV charger controlled through a cloud service depends on that service and on the internet connection.
-A command may be delayed, or lost while the service is down. Kraftvakt logs the failure, goes on as if the command worked, and sends it again with the command repeat,
-so an appliance may stay on longer than the regulation wants and the power limit may be exceeded. Prefer devices with local control for appliances that draw a lot of power.
-An action that does not finish is stopped by the action timeout, so it does not hold back the commands after it.
-The commands that wait for it are merged, so only the newest command for each appliance and EV charger is sent when it finishes.
-Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**, see [EV charging](#ev-charging).
+A command to a device controlled through a cloud service may be delayed, or lost while the service is down.
+Kraftvakt logs the failure, goes on as if the command worked, and sends it again with the command repeat,
+so an appliance may stay on longer than the regulation wants and the power limit may be exceeded.
+An action that does not finish is stopped by the action timeout, and the commands that waited for it are merged,
+so only the newest command for each appliance and EV charger is sent.
+Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**.
 
 An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**.
 An entity that is only unavailable, for example while its cloud service is down, is not.
 
-## EV charging
+### EV charging
 
-EV chargers are put in groups, for example one for the chargers in the garage and one for the chargers at the cabin.
-A group has its own place in the priority list and its own settings, and Kraftvakt controls only EV chargers that are in a group.
-An EV charger is a device in Home Assistant, and every entity Kraftvakt uses for it belongs to that device.
-A value from another device, for example whether the car is connected from the car's own integration, is given as a template.
+EV chargers are put in groups, for example one for the garage and one for the cabin. A group has its own place in the priority list and its own settings.
+An EV charger is a device in Home Assistant, and its entities belong to that device;
+a value from another device, such as whether the car is connected from the car's own integration, is given as a template. When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.
 
-Kraftvakt sets the charging current one ampere at a time, by how much power is free. An EV charger charges only when Kraftvakt has activated it,
-so a car that is connected does not start charging by itself. Kraftvakt reads whether a car is connected, and how much it draws from the **charging power**:
+An EV charger charges only when Kraftvakt has activated it, so a car that is connected does not start charging by itself.
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
-- An EV charger with a car is activated when there is room for its **power at minimum current**, and keeps the minimum current
-  until the car draws at least half of it. Only then does it get more. Set the power at minimum current to what the car draws at the minimum current:
-  the default fits 6 A on three phases, and a car that charges on one phase draws about 1400 W.
+- An EV charger with a car is activated when its **power at minimum current** is free, and keeps the minimum current until the car draws at least half of it.
+  Set the power at minimum current to what the car draws at the minimum current, since the regulation relies on it.
 - Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
-  for example to heat in the morning, or when you raise its charging limit.
-- A car that suddenly draws more than the regulation counted on, as a full car that starts heating, is cut back at once:
-  above the power limit, as many amperes are taken as the power above the limit needs, estimated from the charging power.
+  for example to heat in the morning.
+- A car that suddenly draws more than the regulation counted on is cut back at once: above the power limit, as many amperes are taken as the power above the limit needs.
 
 **Car connected**, the optional **charging on/off** and the fault flag are each a boolean entity, the states of an entity, or a template.
-An unavailable entity or a template that fails counts as false. The charging on/off may tell sooner than the charging power that the car charges.
+An unavailable entity or a template that fails counts as false.
 
 The settings of the group decide how its cars share the power:
 
@@ -139,79 +140,27 @@ The settings of the group decide how its cars share the power:
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.
 
-- **Charging window:** the EV charger charges only within this time each day, in the time zone of Home Assistant. It may span midnight.
-  With **Finish charging after the charging window**, a car that is charging when the charging window ends may go on until it stops.
-- The switch **‹charger› override charging window** lets the EV charger charge outside the charging window.
-  It turns itself off as chosen in **End the override**: when you turn it off, when the car no longer charges, or when the car is disconnected.
-  The last two wait for the car, so the switch can be turned on before the car arrives.
-  The override only allows charging: it does not move the EV charger ahead of the others in its group.
-- **Cloud-controlled EV charger:** for an EV charger controlled over the internet. It gets no repeated commands while no car is connected,
-  and its power at minimum current is kept free for the **Start delay** after it is activated, while the car starts charging. The status page shows it as **Starting** meanwhile.
-- **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
-  The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
-- An EV charger that cannot turn charging on and off, only take a current, is set to turn charging on and off by **the charging current**:
-  it is started with its minimum current and stopped with 0 A, so its current entity must take 0 A.
-- To keep an EV charger from charging for a while, turn on its switch **‹charger› excluded from regulation**.
+- **Charging window:** the EV charger charges only within this time each day, in the time zone of Home Assistant.
+  With **Finish charging after the charging window**, a car that is charging when the window ends may go on until it stops.
+- **‹charger› override charging window** lets the EV charger charge outside the charging window. It only allows charging: it does not move the EV charger ahead of the others.
+- **Cloud-controlled EV charger:** gets no repeated commands while no car is connected, and its power at minimum current is kept free for the **Start delay** after it is activated.
+  The status page shows it as **Starting** meanwhile.
+- **Deactivate on fault:** while a fault flag shows a fault, the EV charger is deactivated, and the others in its group may charge.
+  An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
+- An EV charger that can only take a current is set to turn charging on and off by **the charging current**: it is stopped with 0 A, so its current entity must take 0 A.
 
-The helper texts in the panel tell what each setting does.
+### The panel
 
-## The panel
+The panel has the status page and four configuration pages: **General**, **Appliances**, **EV charging** and **Advanced**. Only administrators have access.
+Changes are collected in a draft and stored with **Save**. The configuration pages are locked while the regulation runs; a saved configuration is used from the next start.
 
-The panel has a menu at the top with the status page and four configuration pages. Only administrators have access.
+Actions adapt to the domain of the entity, and every action can also be a custom action made with the action editor of Home Assistant.
+A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way.
 
-Changes are collected in a draft. **Save** stores everything at once, and **Discard** goes back to what is stored. Errors are shown at the field,
-and nothing is saved until they are fixed. The panel asks before unsaved changes are discarded. The configuration can only be changed while the regulation is stopped;
-while it runs, the configuration pages are locked. A saved configuration is used the next time the regulation starts.
+The status page shows the consumption and the averages against the power limit, the next decision, the safe state and the penalty,
+and the appliances and EV chargers as they stand, in priority order. Hover over a label for its explanation, and press a row or a tile to open its entity.
 
-### Configuration pages
-
-- **General:** power sensor, power limit, turn-on margin, regulation window, regulation interval, waiting time at the power limit and penalty threshold.
-  The helper text under each field tells what the setting does, with its valid range and default.
-- **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity,
-  whether it is essential, actions to turn it on and off, an optional power reserve, its variants and its display values.
-  The essential appliances have a light golden background, and are sorted among themselves above the others.
-  A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
-  and can have its own action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
-  The power reserve, under **Fixed load**, is only for an appliance that always draws the same power while it is on, such as a ceiling fan,
-  and applies to every variant. Set for an appliance with a thermostat, it makes the regulation work worse.
-  The display values, a power and a temperature from a sensor of the entity's device or from a template, are only shown on the status page.
-  The temperature can also be the current or set temperature of a thermostat on the device, listed with its temperature sensors.
-  Each group of EV chargers is in the list under its name, and is moved like an appliance.
-- **EV charging:** one card per group of EV chargers, with the name, one EV charger at a time, dynamic charging order, and the EV chargers in charging priority.
-  Drag an EV charger to another group to move it there. An EV charger starts with its device in Home Assistant.
-  When Kraftvakt has a charger profile for the device, choosing it fills in the fields from the profile, so check what was filled in.
-  A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
-  Without a profile, the fields are filled in by hand.
-  Then come the entity and the power at minimum current, whether charging is turned on and off by actions or by the charging current,
-  followed by the actions, the charging current, car connected, actively charging with the charging power, cloud control, the charging window and deactivate on fault.
-- **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
-  The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
-
-**Restore defaults**, under the last card on General and Advanced, puts the settings on the page back to their defaults, except the power sensor and the power limit.
-Like any other change, it is not stored until you press **Save**.
-
-### Actions
-
-Actions adapt to the domain of the entity. A standard action is offered when the domain has one, and some device types have actions of their own,
-such as the HVAC mode and temperature of a thermostat. A thermostat starts with the action that sets its HVAC mode,
-heat to turn it on and off to turn it off, since most thermostats are better controlled that way than turned on and off.
-Every action can also be a custom action, made with the action editor of Home Assistant,
-see [Template and action examples](#template-and-action-examples). An entity used by another appliance or EV charger cannot be chosen.
-
-### Status page
-
-The status page shows whether the regulation runs, with the button to start and stop it. If the configuration is not complete, it lists what is missing,
-with a link to the page where it is fixed. While the regulation runs, it shows the consumption now and the averages against the power limit, the next decision,
-the safe state and the penalty when they occur, and the appliances and EV chargers as they stand, in priority order:
-each appliance at the place of its current variant, with its display values,
-and each group with its EV chargers in the current charging priority, their charging current and their charging power.
-Each row has a label telling how it stands; hover over it for the explanation.
-A dashed line goes under the last entry that is on, with the free power, and a bar shows the time left until the next appliance, or one more ampere, is turned on.
-Press the consumption now, an average or the power limit to open its entity in Home Assistant, with its history.
-Press an appliance or an EV charger to open its entity: for an EV charger, the entity Kraftvakt activates.
-Press the name of the device in that dialog to get to the device.
-
-## Entities
+### Entities
 
 All entities belong to the service device **Kraftvakt**.
 
@@ -228,7 +177,7 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
-| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power kept free for an EV charger that starts. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power kept free for an EV charger that starts. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |
@@ -238,39 +187,28 @@ All entities belong to the service device **Kraftvakt**.
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
 | `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
-| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, no fault flag showed a fault at the last decision, and it has no charging window, is inside it, has **‹charger› override charging window** on, or is finishing the charging after the charging window. It follows the clock, also while the regulation is stopped, and stays on without a break when the charging window ends with an EV charger that goes on finishing. |
+| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, has no fault, and is inside its charging window, has the override on, or is finishing the charging after the window. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,
-and after two regulation windows in a row closed without a valid value from the power sensor, also while the regulation is stopped.
-When the power sensor gives a valid value again, the measurements from before are kept, and the time without a valid value is counted with the last valid value before it.
+and after two regulation windows in a row closed without a valid value from the power sensor.
 
-When Kraftvakt starts, the hour before is read from the history of the power sensor in the Home Assistant recorder, so the tariff average is right also just after a restart.
-The time Home Assistant was down is counted with the last value before it stopped. Without history, the first measurement is used back in time.
+When Kraftvakt starts, the hour before is read from the history of the power sensor in the recorder, so the tariff average is right also just after a restart.
+When Home Assistant has been paused, for example on a host that sleeps, the regulation windows it missed are skipped, with a warning in the log.
 
-When Home Assistant has been paused, for example on a host that sleeps or in a virtual machine that is paused, the regulation windows it missed are skipped,
-with a warning in the log. The regulation goes on at the next regulation window, by the clock as it is then, and the pause is counted with the last valid value.
-The status page and the sensors are updated at once.
+The power limit, the switches and **finish charging after charging window** can be changed while the regulation runs, and apply from the next decision without a restart.
+Their state is stored at once and kept over a restart. The entities of an EV charger are kept when it is moved to another group.
 
-A new value in **Power limit** is stored at once and used from the next decision, also while the regulation runs, without starting it again.
-Above a lower limit, appliances are turned off one at each decision as usual.
-
-The appliance and EV charger switches can be used while the regulation runs and apply from the next decision, without restarting it.
-An excluded appliance or EV charger gets no repeated commands from the next regulation window. Their state is stored at once and kept over a restart.
-The entities of an EV charger do not depend on its group, and are kept when it is moved to another group.
-
-The entity IDs are the same in every language and are grouped by what they concern: `regulation`, `power`, `waiting_time`, `penalty`, `appliance` and `charger`.
-The names shown follow the language of Home Assistant. ‹appliance› is the name of the entity of the appliance. ‹charger› is the name of the device of the EV charger.
+The entity IDs are the same in every language. The names follow the language of Home Assistant:
+‹appliance› is the name of the entity of the appliance, and ‹charger› the name of the device of the EV charger.
 The entity ID keeps the name from when the appliance or EV charger was added.
 
-**Waiting time next turn-on (calculated)** is disabled by default; enable it under the entity's settings when you want it.
-
-## Diagnostics
+### Diagnostics
 
 **Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the last decisions and failed actions,
 and the device of each EV charger with its entities and their values, for a bug report.
 What it holds in memory includes the measurements of the power sensor over the last hour.
 
-## Template and action examples
+### Template and action examples
 
 Templates use the template language of Home Assistant (Jinja2), and actions are the same as in automations and scripts.
 In the action editor you can switch to YAML from the ⋮ menu and paste the examples.

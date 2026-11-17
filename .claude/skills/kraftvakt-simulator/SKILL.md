@@ -80,4 +80,5 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   A new heating type only needs the type, an icon and the selector translations.
 - Settings go in the config entry data, runtime state in entities that restore themselves.
 - Tests: unit tests for `model.py` in `tests/unit/simulator/`, black box tests in `tests/simulator/` with the fixture for adding a device from its `conftest.py`.
-  Entity IDs follow the device names (English in the test harness). One test runs Kraftvakt against the simulator end to end. Keep the simulator at 100 % line coverage.
+  Entity IDs follow the device names (English in the test harness). Kraftvakt runs against the simulator end to end in `test_kraftvakt_with_simulator.py`,
+  and in `test_use_cases.py`, where each test is a use case of a household. Keep the simulator at 100 % line coverage.

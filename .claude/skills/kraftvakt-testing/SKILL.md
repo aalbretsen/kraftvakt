@@ -58,6 +58,7 @@ A new Home Assistant version also needs the panel tested by hand, see the `kraft
 - `tests/charger_profiles/`: the charger profiles, with `conftest.py` registering a device as an integration does, and one test file per profile in `profiles/`.
 - `tests/`: black box tests, one file per area. `tests/config_examples.py` has a full configuration that uses every feature.
 - `tests/simulator/` and `tests/unit/simulator/`: the simulator, see the `kraftvakt-simulator` skill.
+  `tests/simulator/test_use_cases.py` has the use cases of Kraftvakt in a simulated house, the closest the tests come to a real house.
   `pyproject.toml` puts `simulator` on pytest's `pythonpath`, so both integrations load in every test.
 - `tests/diagnostics/` and `tests/unit/diagnostics/`: the diagnostics tools, tested on a diagnostics file downloaded in the test harness, see the `kraftvakt-diagnostics` skill.
 

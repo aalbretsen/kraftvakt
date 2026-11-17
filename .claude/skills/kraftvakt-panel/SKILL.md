@@ -61,7 +61,8 @@ The section header, the description and the footer note are in `section-styles.t
   The panel's own text under a field, such as under an action or a condition, is indented as HA indents the helper text of a field.
 - Most users read the helper texts, not the README, so the details of a setting are in its helper text, and the README stays general.
   A helper text tells the effect of the setting for the user, and when to use it, as briefly as it can, followed by the range and the default;
-  not how the regulation works or why. A label is worded so the helper text can be short, or left out.
+  not how the regulation works or why. Users click around to set it up and do not read long texts,
+  so a helper text is one or two short sentences before the range. A label is worded so the helper text can be short, or left out.
   The more advanced the setting, the more technical the language may be.
 
 ### Configuration pages
