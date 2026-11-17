@@ -92,6 +92,7 @@
     "missing_condition": "{item}: the expression is missing.",
     "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing.",
+    "missing_done_flag": "{item}: «done flag» is missing.",
     "missing_fault_flag": "{item}: «fault flag» is missing.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
@@ -129,6 +130,7 @@
   },
   "errors": {
     "required": "Required.",
+    "done_flag_required": "Choose a done flag, or turn the setting off.",
     "fault_flag_required": "Choose a fault flag, or turn the setting off.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
@@ -488,7 +490,8 @@
     "power_from": "charging power from {source}",
     "power_template": "charging power from a template",
     "deactivated_on_fault": "deactivated on fault",
-    "switched_by_current": "turned on and off by the current"
+    "switched_by_current": "turned on and off by the current",
+    "detects_done": "detects done"
   },
   "charger": {
     "add_title": "Add EV charger",
@@ -547,9 +550,12 @@
         "label": "Grace period",
         "helper": "How long the car may pause, for example to balance its battery, without losing its turn. After that it is done until it is disconnected. {min}–{max} s, default {default} s."
       },
+      "detect_done": {
+        "label": "Detect car finished charging",
+        "helper": "For an EV charger that tells when the car is full. It is then stopped at once, instead of after the grace period, and a full car is not tried after a restart. No answer, as while a cloud service is down, never counts as done."
+      },
       "done_flag": {
-        "label": "Done flag",
-        "helper": "Optional. Stops the EV charger as soon as the car is full, instead of after the grace period, and a full car is not tried after a restart. No answer, as while a cloud service is down, never counts as done."
+        "label": "Done flag"
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",

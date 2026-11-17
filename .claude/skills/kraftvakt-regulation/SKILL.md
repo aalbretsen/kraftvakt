@@ -63,7 +63,8 @@ The ranges and defaults below are part of the specification; the code holds them
 | Actively charging | The car draws power: the charging on/off or the charging power shows it. A charger has at least one of them, and either is enough. |
 | Grace period | 10–900 s, default 300 s. How long a car that has charged since its charger was activated may stop charging and still count as charging. |
 | Charger in grace | A charger whose car has charged since activation and has not charged for less than the grace period, or longer while it waits for its done flag. It is held at its first ampere step. |
-| Done flag | An optional condition of the charger that tells whether the car is done charging, as when the charger reports that charging is completed. |
+| Detect done | A charger setting, off by default, with its done flag. Off, the charger behaves as one without a done flag. |
+| Done flag | A condition of the charger that tells whether the car is done charging, as when the charger reports that charging is completed. Used only with detect done. |
 | Done charger | A charger whose done flag shows done, or whose car did not start within its time to start or stopped charging for the grace period. Deactivated until evidence that the car is disconnected. |
 | Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
 | Dynamic charging order | A group setting, off by default. On, a charger that charges keeps its place ahead of a car connected later. Off, the configured charging priority always applies. |
@@ -235,7 +236,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The user stops and starts from the panel or the regulation switch; they are the same function. Stopping turns everything off at once and makes no more decisions.
   Excluded appliances are read from the switches at a start and a stop.
 - The regulation can only start when the configuration is complete: power sensor chosen; every appliance has entity, turn-on and turn-off action; every charger has entity,
-  activate, deactivate and set-current actions, car connected, a charging on/off or a charging power, with deactivate on fault a fault flag,
+  activate, deactivate and set-current actions, car connected, a charging on/off or a charging power, with detect done a done flag, with deactivate on fault a fault flag,
   and with several at once and dynamic charging order a charging power.
 
 ## Command repeat
@@ -353,7 +354,8 @@ All with entity category diagnostic:
   When the car charges actively again within the grace period, the grace ends and the charger gets its amperes back the normal way.
   Why: a car may stop for a while, for example while it balances its battery, and must not lose its place for that.
 - Done: a charger that has been activated for its time to start without charging, or whose grace period ends without charging, is done.
-- Done flag (per charger, optional): read at each decision. A charger whose done flag shows done is done at once,
+- Done flag (per charger, with detect done): read at each decision. It is kept while detect done is off, and is then neither read nor needed.
+  A charger whose done flag shows done is done at once,
   on trial, in grace, and also when it is not activated, as at the first decision after a start, so a full car is not tried.
   Only a charger that is allowed to charge, has a car connected and does not charge actively becomes done; a car that charges is never done, whatever the flag shows.
   With a done flag, the time to start and the grace period make a charger done only when the flag gives evidence that the car is not done.

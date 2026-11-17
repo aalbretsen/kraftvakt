@@ -94,6 +94,14 @@ describe("missing items", () => {
     expect(missing({ deactivate_on_fault: false, fault_flag: empty })).toEqual([]);
   });
 
+  it("include the done flag only while the charger detects that the car is done", () => {
+    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
+    const issue = { code: "missing_done_flag", section: "chargers", target: "garage", field: "done_flag" };
+    expect(missing({ detect_done: true })).toEqual([issue]);
+    expect(missing({ detect_done: true, done_flag: { type: "entity", value: "binary_sensor.garage_done" } })).toEqual([]);
+    expect(missing({ detect_done: false, done_flag: null })).toEqual([]);
+  });
+
   it("leave out the actions to activate and deactivate of a charger switched by its current", () => {
     const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", { activate: null, ...parts })])] }));
     expect(missing({})).toEqual([{ code: "missing_action", section: "chargers", target: "garage", field: "activate" }]);

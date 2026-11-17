@@ -114,6 +114,8 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
             missing.append(Issue("missing_car_connected", "chargers", charger.id, "car_connected"))
         if not _is_set(charger.actively_charging) and not _is_set(charger.charging_power):
             missing.append(Issue("missing_actively_charging", "chargers", charger.id, "actively_charging"))
+        if charger.detect_done and not _is_set(charger.done_flag):
+            missing.append(Issue("missing_done_flag", "chargers", charger.id, "done_flag"))
         if charger.deactivate_on_fault and not _is_set(charger.fault_flag):
             missing.append(Issue("missing_fault_flag", "chargers", charger.id, "fault_flag"))
     missing += [

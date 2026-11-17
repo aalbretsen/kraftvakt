@@ -108,6 +108,7 @@ def full_config_data() -> dict[str, Any]:
                             "value": "sensor.garage_charger_power",
                         },
                         "grace_period_s": 120,
+                        "detect_done": True,
                         "done_flag": {
                             "type": "state",
                             "value": "sensor.garage_charger_status",

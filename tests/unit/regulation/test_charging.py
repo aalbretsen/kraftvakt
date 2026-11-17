@@ -257,7 +257,7 @@ def test_car_that_stops_charging_is_in_grace_and_done_when_the_grace_period_ends
 
 @pytest.mark.parametrize("charged", [False, True])
 def test_done_flag_makes_a_charger_on_trial_or_in_grace_done_at_once(charged: bool) -> None:
-    configured = [charger("a", done_flag=DONE_FLAG)]
+    configured = [charger("a", detect_done=True, done_flag=DONE_FLAG)]
     state = ChargingState.for_chargers(configured)
     state.set_ampere_steps_on("a", 2, NOW)
     if charged:
@@ -269,7 +269,7 @@ def test_done_flag_makes_a_charger_on_trial_or_in_grace_done_at_once(charged: bo
 
 def test_done_flag_makes_a_charger_done_before_it_is_tried() -> None:
     """So a full car is not tried after a start. Not while it charges, nor without a car, or when it may not charge."""
-    configured = [charger(charger_id, done_flag=DONE_FLAG) for charger_id in ("a", "b", "c", "d")]
+    configured = [charger(charger_id, detect_done=True, done_flag=DONE_FLAG) for charger_id in ("a", "b", "c", "d")]
     state = ChargingState.for_chargers(configured)
     full_without_car = ChargerReading(car_done=True)
     full_and_charging = replace(CHARGING, car_done=True)
@@ -283,7 +283,7 @@ def test_done_flag_makes_a_charger_done_before_it_is_tried() -> None:
 
 def test_without_evidence_from_the_done_flag_neither_the_time_to_start_nor_the_grace_period_ends() -> None:
     """The car stays on trial or in grace until the done flag tells whether it is done."""
-    configured = [charger("a", done_flag=DONE_FLAG, grace_period_s=60), charger("b", done_flag=DONE_FLAG)]
+    configured = [charger("a", detect_done=True, done_flag=DONE_FLAG, grace_period_s=60), charger("b", detect_done=True, done_flag=DONE_FLAG)]
     group = group_of(configured, one_at_a_time=False)
     state = ChargingState.for_chargers(configured)
     state.set_ampere_steps_on("a", 2, NOW)
@@ -299,7 +299,7 @@ def test_without_evidence_from_the_done_flag_neither_the_time_to_start_nor_the_g
 
 
 def test_charger_waiting_for_its_done_flag_holds_its_reserve() -> None:
-    configured = [charger("a", done_flag=DONE_FLAG, cloud_controlled=True, start_delay_s=0)]
+    configured = [charger("a", detect_done=True, done_flag=DONE_FLAG, cloud_controlled=True, start_delay_s=0)]
     group = group_of(configured)
     state = ChargingState.for_chargers(configured)
     state.set_ampere_steps_on("a", 1, NOW)

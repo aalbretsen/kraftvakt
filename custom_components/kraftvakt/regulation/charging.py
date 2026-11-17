@@ -289,7 +289,7 @@ class ChargingState:
         return self._time_ran_out(charger, now, window)
 
     def _timers_may_end(self, charger: Charger, reading: ChargerReading) -> bool:
-        return charger.id in self.activated_at and (charger.done_flag is None or reading.car_not_done)
+        return charger.id in self.activated_at and (charger.done_flag_in_use is None or reading.car_not_done)
 
     def _time_ran_out(self, charger: Charger, now: datetime, window: timedelta) -> bool:
         """Return whether the time to start, or the grace period of a car that has charged, has passed."""

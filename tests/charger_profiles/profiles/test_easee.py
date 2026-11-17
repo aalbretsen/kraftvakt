@@ -61,6 +61,7 @@ async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor
         "set_current": {"mode": "custom", "action": [service("set_charger_dynamic_limit", current="{{ current }}")]},
         "charging_power": {"type": "power_sensor", "value": "sensor.garage_power"},
         "cloud_controlled": True,
+        "detect_done": True,
         "deactivate_on_fault": True,
     }
     assert car_connected["type"] == "template"

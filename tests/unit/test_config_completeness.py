@@ -183,3 +183,20 @@ def test_variant_needs_a_condition() -> None:
     data["appliances"][0]["variants"][0]["condition"]["value"] = " "
 
     assert _missing(data) == [Issue("missing_condition", "appliances", "a1", "variants.v1.condition")]
+
+
+@pytest.mark.parametrize("flag", [None, {"type": "entity", "value": ""}])
+def test_detect_done_needs_a_done_flag(flag: dict[str, str] | None) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["chargers"][0]["done_flag"] = flag
+
+    assert _missing(data) == [Issue("missing_done_flag", "chargers", "c1", "done_flag")]
+
+
+def test_done_flag_is_not_needed_while_detect_done_is_off() -> None:
+    data = full_config_data()
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["detect_done"] = False
+    charger["done_flag"] = None
+
+    assert _missing(data) == []

@@ -128,7 +128,8 @@ The section header, the description and the footer note are in `section-styles.t
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
-- The done flag is an optional group of its own under actively charging, a condition field of the kind done.
+- Detect car finished charging is a group with a switch under actively charging. It shows the done flag, a condition field of the kind done,
+  while it is on or the flag has an error, and keeps it when it is turned off.
   It previews no evidence as no answer, since the regulation waits for an answer instead of reading it as not done.
 - Cloud-controlled EV charger is a group with a switch under the done flag, and shows the start delay while it is on or the delay has an error.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,

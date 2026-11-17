@@ -135,6 +135,9 @@ export function missingInCharger(charger: Charger): Issue[] {
   if (!isSet(charger.actively_charging) && !isSet(charger.charging_power)) {
     missing.push({ code: "missing_actively_charging", section: "chargers", target: charger.id, field: "actively_charging" });
   }
+  if (charger.detect_done && !isSet(charger.done_flag)) {
+    missing.push({ code: "missing_done_flag", section: "chargers", target: charger.id, field: "done_flag" });
+  }
   if (charger.deactivate_on_fault && !isSet(charger.fault_flag)) {
     missing.push({ code: "missing_fault_flag", section: "chargers", target: charger.id, field: "fault_flag" });
   }

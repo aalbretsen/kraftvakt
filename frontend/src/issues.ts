@@ -11,6 +11,7 @@ const ISSUE_TEXTS: Record<string, TranslationKey> = {
   missing_condition: "missing.missing_condition",
   missing_actively_charging: "missing.missing_actively_charging",
   missing_car_connected: "missing.missing_car_connected",
+  missing_done_flag: "missing.missing_done_flag",
   missing_fault_flag: "missing.missing_fault_flag",
   missing_charging_power: "missing.missing_charging_power",
 };
@@ -90,6 +91,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   missing_condition: "errors.required",
   missing_actively_charging: "errors.required",
   missing_car_connected: "errors.required",
+  missing_done_flag: "errors.done_flag_required",
   missing_fault_flag: "errors.fault_flag_required",
   missing_charging_power: "errors.charging_power_required",
   power_reserve_required: "errors.power_reserve_required",

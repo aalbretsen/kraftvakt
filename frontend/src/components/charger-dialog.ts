@@ -147,11 +147,17 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
+  /**
+   * The done flag is kept while the switch is off, since it has no effect then.
+   * It stays in view while it has an error, so the error that keeps the draft from being saved can be seen.
+   */
   private renderDone(issues: Issue[]) {
+    const showFlag = this.draft.detect_done || issues.some((issue) => issue.field === "done_flag");
     return this.renderGroup({
-      title: this.label("done_flag"),
-      description: this.helper("done_flag"),
-      content: this.renderCondition("done_flag", "done", issues, true),
+      title: this.label("detect_done"),
+      description: this.helper("detect_done"),
+      toggle: { checked: this.draft.detect_done, changed: (checked) => this.changeDraft({ detect_done: checked }) },
+      content: showFlag ? this.renderCondition("done_flag", "done", issues) : nothing,
     });
   }
 

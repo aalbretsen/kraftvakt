@@ -75,7 +75,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
 - every EV charger has a device, an entity, an action to set the charging current, actions to activate and deactivate unless charging is turned on and off by the current,
-  **Car connected**, a charging on/off or a charging power, with **Deactivate on fault** a fault flag,
+  **Car connected**, a charging on/off or a charging power, with **Detect car finished charging** a done flag, with **Deactivate on fault** a fault flag,
   and in a group with several at once and dynamic charging order a charging power.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
@@ -121,8 +121,8 @@ so a car that is connected does not start charging by itself. Kraftvakt reads wh
 - An EV charger that is activated keeps the minimum current until the car charges. Only a car that charges gets more.
 - A car that does not start charging, or pauses for longer than the grace period, is **done**,
   and is not tried again until it is disconnected or the regulation starts again. The status page shows a car that pauses as **Paused**.
-- A **done flag**, for example a status sensor of the EV charger with a state for completed, makes the car done at once when it is full.
-  While the done flag gives no answer, for example while a cloud service is down, the car is never done.
+- **Detect car finished charging**, off by default, uses a **done flag**, for example a status sensor of the EV charger with a state for completed,
+  to make the car done at once when it is full. While the done flag gives no answer, for example while a cloud service is down, the car is never done.
 
 **Car connected**, the charging on/off, the done flag and the fault flag are each a boolean entity, the states of an entity, or a template.
 An unavailable entity or a template that fails counts as false, and for the done flag as no answer.
@@ -180,7 +180,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
   Then come the entity and the power reserve, whether charging is turned on and off by actions or by the charging current,
-  followed by the actions, the charging current, car connected, actively charging, the done flag, cloud control, the charging window and deactivate on fault.
+  followed by the actions, the charging current, car connected, actively charging, detect car finished charging, cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 

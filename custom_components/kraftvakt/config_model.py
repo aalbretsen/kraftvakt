@@ -333,6 +333,7 @@ class Charger:
     actively_charging: Condition | None = None
     charging_power: Condition | None = None
     grace_period_s: int = 300
+    detect_done: bool = False
     done_flag: Condition | None = None
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
@@ -347,6 +348,11 @@ class Charger:
         for name, kind in CHARGER_ACTION_KINDS.items():
             if not self.switched_by_current or kind is ActionKind.SET_CURRENT:
                 yield ActionField(name, kind, getattr(self, name))
+
+    @property
+    def done_flag_in_use(self) -> Condition | None:
+        """Return the done flag while detect done is on; it is kept, and neither read nor needed, while the setting is off."""
+        return self.done_flag if self.detect_done else None
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""

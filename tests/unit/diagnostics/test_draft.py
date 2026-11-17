@@ -88,6 +88,7 @@ def test_the_states_of_an_entity_are_drafted_with_whether_they_count_as_true() -
 
 def test_the_done_and_fault_flags_are_drafted_as_the_other_conditions() -> None:
     result = draft(
+        detect_done=True,
         done_flag={"type": "template", "value": "{{ is_state('sensor.box', 'completed') }}"},
         deactivate_on_fault=True,
         fault_flag={"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"},
@@ -96,6 +97,12 @@ def test_the_done_and_fault_flags_are_drafted_as_the_other_conditions() -> None:
     assert result.profile.done_flag == template_condition("{{ is_state('$sensor', 'completed') }}", sensor=ProfileEntity("sensor"))
     assert result.profile.deactivate_on_fault
     assert result.profile.fault_flag == template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor"))
+
+
+def test_a_done_flag_kept_while_detect_done_is_off_is_left_out() -> None:
+    result = draft(done_flag={"type": "template", "value": "{{ is_state('sensor.box', 'completed') }}"})
+
+    assert result.profile.done_flag is None
 
 
 def test_a_charger_switched_by_its_current_gives_a_profile_without_actions_to_activate_and_deactivate() -> None:

@@ -92,6 +92,7 @@
     "missing_condition": "{item}: uttrykket mangler.",
     "missing_actively_charging": "{item}: «lader aktivt» mangler.",
     "missing_car_connected": "{item}: «bil tilkoblet» mangler.",
+    "missing_done_flag": "{item}: «ferdigflagg» mangler.",
     "missing_fault_flag": "{item}: «feilflagg» mangler.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
@@ -129,6 +130,7 @@
   },
   "errors": {
     "required": "Påkrevd.",
+    "done_flag_required": "Velg et ferdigflagg, eller slå innstillingen av.",
     "fault_flag_required": "Velg et feilflagg, eller slå innstillingen av.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
@@ -488,7 +490,8 @@
     "power_from": "ladeeffekt fra {source}",
     "power_template": "ladeeffekt fra mal",
     "deactivated_on_fault": "deaktiveres ved feil",
-    "switched_by_current": "slås på og av med strømmen"
+    "switched_by_current": "slås på og av med strømmen",
+    "detects_done": "oppdager ferdig"
   },
   "charger": {
     "add_title": "Legg til elbillader",
@@ -551,9 +554,12 @@
         "label": "Skystyrt elbillader",
         "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og bilen får startforsinkelsen på å begynne å lade."
       },
+      "detect_done": {
+        "label": "Oppdag at bilen er ferdigladet",
+        "helper": "For en elbillader som forteller når bilen er full. Den stoppes da med en gang, i stedet for etter respittiden, og en full bil prøves ikke etter en omstart. Ikke noe svar, som mens en skytjeneste er nede, regnes aldri som ferdig."
+      },
       "done_flag": {
-        "label": "Ferdigflagg",
-        "helper": "Valgfritt. Stopper elbilladeren så snart bilen er full, i stedet for etter respittiden, og en full bil prøves ikke etter en omstart. Ikke noe svar, som mens en skytjeneste er nede, regnes aldri som ferdig."
+        "label": "Ferdigflagg"
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
