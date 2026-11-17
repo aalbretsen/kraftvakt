@@ -148,16 +148,14 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   /**
-   * The columns of the list: rank, name, current, temperature, power, waiting and state.
-   * The power and the temperature take room only when a row has one.
+   * The columns of the list: rank, name, current, power, waiting and state.
+   * An appliance's temperature is in the current column, which an EV charger has the current in.
+   * The power takes room only when a row has one.
    */
   private columns(): string {
-    const appliances = this.status.priority.filter((row): row is ApplianceStatus => row.type === "appliance");
-    const chargers = this.status.priority.flatMap((row) => (row.type === "charger_group" ? row.chargers : []));
-    const shown = (has: boolean) => (has ? "max-content" : "0");
-    const power = shown([...appliances, ...chargers].some((row) => row.power_w !== null));
-    const temperature = shown(appliances.some((row) => row.temperature !== null));
-    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${temperature} ${power} 120px max-content`;
+    const rows = this.status.priority.flatMap((row): (ApplianceStatus | ChargerStatus)[] => (row.type === "appliance" ? [row] : row.chargers));
+    const power = rows.some((row) => row.power_w !== null) ? "max-content" : "0";
+    return `grid-template-columns: minmax(24px, max-content) minmax(0, 2fr) minmax(auto, 1.3fr) ${power} 120px max-content`;
   }
 
   /** A row of an appliance or EV charger opens Home Assistant's more-info dialog for its entity, while the entity exists. */
@@ -193,8 +191,9 @@ export class KraftvaktPriorityList extends LitElement {
           ${appliance.variant && !this.phone
             ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
             : nothing}
+          ${this.renderTemperature(appliance)}
         </div>
-        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)}
+        ${this.renderPower(appliance.power_w)}
         ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
         ${this.renderApplianceChip(appliance)}
       `,
@@ -280,7 +279,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.renderWideOnly(html`<span></span>`)} ${this.renderPower(charger.power_w)}
+        ${this.renderPower(charger.power_w)}
         ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
         ${this.renderChargerChip(charger)}
       `,
@@ -323,16 +322,18 @@ export class KraftvaktPriorityList extends LitElement {
     );
   }
 
-  /** The temperature with one decimal and its unit, left out on a phone. */
+  /**
+   * The temperature with one decimal and its unit, at the right end of the name and current columns
+   * the appliance's title spans, so the name keeps the room. Left out on a phone.
+   */
   private renderTemperature(appliance: ApplianceStatus) {
     const temperature = appliance.temperature;
-    return this.renderWideOnly(
-      html`<span class="measured" title=${this.localize("status.temperature")}
-        >${temperature === null
-          ? nothing
-          : `${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}`}</span
-      >`,
-    );
+    if (temperature === null || this.phone) {
+      return nothing;
+    }
+    return html`<span class="measured temperature" title=${this.localize("status.temperature")}
+      >${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}</span
+    >`;
   }
 
   /** The current, and one bar per ampere from the minimum to the maximum, filled up to the current. */
@@ -508,6 +509,10 @@ export class KraftvaktPriorityList extends LitElement {
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
         overflow: hidden;
+      }
+      .measured.temperature {
+        flex: none;
+        margin-inline-start: auto;
       }
       .cut-off {
         grid-column: 1 / -1;
