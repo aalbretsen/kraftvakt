@@ -443,17 +443,12 @@
         "resolution": 1
       },
       "power_reserve_w": {
-        "min": 0,
+        "min": 1,
         "max": 5000,
         "resolution": 1
       },
       "start_delay_s": {
         "min": 0,
-        "max": 900,
-        "resolution": 1
-      },
-      "grace_period_s": {
-        "min": 10,
         "max": 900,
         "resolution": 1
       }
@@ -490,8 +485,7 @@
       "max_current_a": 16,
       "power_reserve_w": 4157,
       "override_ends": "manual",
-      "start_delay_s": 300,
-      "grace_period_s": 300
+      "start_delay_s": 300
     }
   }
 }

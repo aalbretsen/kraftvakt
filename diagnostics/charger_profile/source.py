@@ -34,14 +34,9 @@ def profile_source(draft: ProfileDraft) -> str:
         fields["deactivate"] = writer.action(profile.deactivate)
     fields["set_current"] = writer.action(profile.set_current)
     fields["car_connected"] = writer.condition(profile.car_connected)
+    fields["charging_power"] = writer.condition(profile.charging_power)
     if profile.actively_charging is not None:
         fields["actively_charging"] = writer.condition(profile.actively_charging)
-    if profile.charging_power is not None:
-        fields["charging_power"] = writer.condition(profile.charging_power)
-    if profile.done_flag is not None:
-        fields["done_flag"] = writer.condition(profile.done_flag)
-    if profile.grace_period_s != DEFAULT_CHARGER.grace_period_s:
-        fields["grace_period_s"] = str(profile.grace_period_s)
     if profile.cloud_controlled:
         fields["cloud_controlled"] = "True"
     if profile.start_delay_s != DEFAULT_CHARGER.start_delay_s:

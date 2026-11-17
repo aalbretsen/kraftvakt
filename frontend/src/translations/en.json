@@ -55,13 +55,12 @@
     "bypassed_no_car": "Bypassed: no car connected",
     "waiting_charger": "Queued: another EV charger in the group has its turn",
     "starting_until": "Waiting until {time} for the car to start charging. Its power reserve is kept free until then.",
-    "starting_awaits_done": "Waiting for the car to start charging, or for the done flag to show whether it is done. Its power reserve is kept free meanwhile.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
     "next_ampere_at": "One more ampere at the decision at {time}",
     "amperes": "{current} A",
     "chargers_charging": "{charging} of {total} EV chargers are charging",
-    "activated_not_charging": "Activated, but not charging yet",
+    "activated_not_charging": "Activated: the car does not draw power, so it waits at the minimum current",
     "window_overridden": "The charging window is overridden",
     "finishing_at": "Finishing the charging that went on when the charging window ended, at {current} A",
     "chip_charging": "Charging",
@@ -77,11 +76,6 @@
     "fault": "A fault flag shows a fault, so the EV charger is deactivated until the fault clears",
     "free_power": "{power} kW ({share}) free",
     "power_runs_out": "The power runs out here. What is below waits for free power.",
-    "chip_done": "Done",
-    "done": "Done: the done flag shows done, or the car stopped charging or did not start. It is tried again when the car is disconnected and connected again.",
-    "chip_grace": "Paused",
-    "grace_until": "The car has stopped charging. It keeps the minimum current until {time}, in case it starts again.",
-    "grace_awaits_done": "The car has stopped charging. It keeps the minimum current until it starts again, or the done flag shows whether it is done.",
     "queued_for_room": "Queued: waiting for room beside the EV chargers that charge"
   },
   "missing": {
@@ -90,9 +84,7 @@
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
     "missing_condition": "{item}: the expression is missing.",
-    "missing_actively_charging": "{item}: «actively charging» is missing.",
     "missing_car_connected": "{item}: «car connected» is missing.",
-    "missing_done_flag": "{item}: «done flag» is missing.",
     "missing_fault_flag": "{item}: «fault flag» is missing.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "An appliance without an entity",
@@ -104,7 +96,7 @@
       "deactivate": "deactivate it",
       "set_current": "set the charging current"
     },
-    "missing_charging_power": "{item}: «charging power» is missing, which the dynamic charging order of its group needs."
+    "missing_charging_power": "{item}: «charging power» is missing."
   },
   "config": {
     "save": "Save",
@@ -130,7 +122,6 @@
   },
   "errors": {
     "required": "Required.",
-    "done_flag_required": "Choose a done flag, or turn the setting off.",
     "fault_flag_required": "Choose a fault flag, or turn the setting off.",
     "out_of_range": "Must be between {min} and {max}.",
     "at_least": "Must be at least {min}.",
@@ -155,8 +146,6 @@
     "unsupported_option": "The entity does not support this value.",
     "outside_entity_range": "Outside the range of the entity.",
     "unknown": "Invalid value ({code}).",
-    "charging_power_required": "Needed for the dynamic charging order of a group with several EV chargers at once.",
-    "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once.",
     "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current.",
     "essential_with_variants": "An essential appliance cannot have variants. Delete them, or turn the setting off.",
     "essential_with_power_reserve": "An essential appliance has no power reserve. Turn the setting off, or turn off Fixed load first.",
@@ -431,23 +420,6 @@
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },
-  "done": {
-    "entity": "Entity",
-    "template": "Template",
-    "entity_label": "Boolean entity",
-    "template_label": "Template",
-    "entity_helper": "On means done, off not done, unavailable no answer.",
-    "state": "State",
-    "state_label": "Entity with a state",
-    "state_helper": "For example a status sensor of the EV charger with a state for completed.",
-    "states_label": "States",
-    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which gives no answer.",
-    "template_helper": "True means done, false not done, anything else no answer. Variables: entity_id, entity.",
-    "true": "done",
-    "false": "not done",
-    "no_answer": "no answer",
-    "invalid": "The template gives {value}, which is not true or false, so it gives no answer."
-  },
   "fault": {
     "entity": "Entity",
     "template": "Template",
@@ -468,9 +440,9 @@
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "Only one EV charger in the group charges at a time.",
+    "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that draws power gets the turn.",
     "dynamic_order": "Dynamic charging order",
-    "dynamic_order_sub": "Off: the charging priority below always applies, so a car connected higher up takes over from one charging below it.\nOn: EV chargers that charge go first, and a car connected later waits its turn. With several at once, every EV charger needs a charging power and a power reserve.",
+    "dynamic_order_sub": "Off: the charging priority below always applies, so a car higher up that draws power takes over from one charging below it.\nOn: EV chargers that charge go first, and the others wait their turn.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
@@ -494,8 +466,7 @@
     "power_from": "charging power from {source}",
     "power_template": "charging power from a template",
     "deactivated_on_fault": "deactivated on fault",
-    "switched_by_current": "turned on and off by the current",
-    "detects_done": "detects done"
+    "switched_by_current": "turned on and off by the current"
   },
   "charger": {
     "add_title": "Add EV charger",
@@ -537,7 +508,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "The EV charger is activated only when this much power is free. Set it to about what it draws at the minimum current. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
+        "helper": "The EV charger is activated only when this much power is free, and the car gets more than the minimum current only while it draws at least 90 % of it. Set it to about what the car draws at the minimum current. {min}–{max} W, default {default} W, what 6 A draws on three phases at 400 V."
       },
       "car_connected": {
         "label": "Car connected",
@@ -545,29 +516,18 @@
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "Give one or both: either one showing charging is enough. Only a car that charges gets more than the minimum current."
+        "helper": "The charging power is required, and tells how much the car draws. The charging on/off is optional, and may tell sooner that the car charges."
       },
       "charging_power": {
         "label": "Charging power"
       },
-      "grace_period_s": {
-        "label": "Grace period",
-        "helper": "How long the car may pause, for example to balance its battery, without losing its turn. After that it is done until it is disconnected. {min}–{max} s, default {default} s."
-      },
-      "detect_done": {
-        "label": "Detect car finished charging",
-        "helper": "For an EV charger that tells when the car is full. It is then stopped at once, instead of after the grace period, and a full car is not tried after a restart. No answer, as while a cloud service is down, never counts as done."
-      },
-      "done_flag": {
-        "label": "Done flag"
-      },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and the car gets the start delay to start charging."
+        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and its power reserve is kept free for the start delay while the car starts charging."
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "How long the car may take to start charging after the EV charger is activated. Its power is kept free meanwhile. {min}–{max} s, default {default} s."
+        "helper": "How long the car may take to start charging after the EV charger is activated. Its power reserve is kept free meanwhile. {min}–{max} s, default {default} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",
@@ -608,10 +568,6 @@
       "actively_charging": {
         "true": "States for charging",
         "false": "States for not charging"
-      },
-      "done_flag": {
-        "true": "States for done",
-        "false": "States for not done"
       },
       "fault_flag": {
         "true": "States for a fault",

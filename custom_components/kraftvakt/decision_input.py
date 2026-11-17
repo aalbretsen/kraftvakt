@@ -53,7 +53,6 @@ def chargers_without_car(hass: HomeAssistant, settings: Settings) -> frozenset[s
 def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) -> ChargerReading:
     switches = settings.charger_switches(charger.id)
     car_connected = condition_evidence(hass, charger.car_connected, charger.entity_id)
-    car_done = condition_evidence(hass, charger.done_flag_in_use, charger.entity_id)
     power_w = power_value_w(hass, charger.charging_power, charger.entity_id)
     charging = [
         *([] if charger.actively_charging is None else [condition_evidence(hass, charger.actively_charging, charger.entity_id)]),
@@ -65,8 +64,6 @@ def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) 
         car_connected=car_connected is True,
         car_disconnected=car_connected is False,
         charging_stopped=bool(charging) and all(evidence is False for evidence in charging),
-        car_done=car_done is True,
-        car_not_done=car_done is False,
         excluded=switches.excluded,
         window_override=switches.window_override,
         override_armed=settings.override_armed(charger.id),

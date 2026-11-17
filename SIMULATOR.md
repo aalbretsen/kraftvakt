@@ -27,7 +27,7 @@ Add the integration under **Settings → Devices & services**, and add one devic
   The charging current goes from 0 A to the maximum, and below the minimum it is 0 A and the charger does not charge,
   so an EV charger whose charging is turned on and off by the charging current can be tested.
   Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
-  Use **Status** with the state completed as the done flag, and turn it unavailable with **Unplugged** to test a done flag that gives no answer.
+  Turn **Car fully charged** on and off to test a full car that stays activated at the minimum current and draws power again, as when it heats in the morning.
   With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
   as with a charger controlled through a cloud service; set the same or a longer start delay on a cloud-controlled EV charger in Kraftvakt.
 
@@ -49,7 +49,7 @@ and for each EV charger, filled in by hand (the entity IDs follow the language o
 | Charger entity | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |
-| Actively charging | Charging on/off: `binary_sensor.<charger>_charging`, or the state `charging` of `sensor.<charger>_status`; charging power: `sensor.<charger>_charging_power` |
+| Actively charging | Charging power: `sensor.<charger>_charging_power`; charging on/off, optional: `binary_sensor.<charger>_charging`, or the state `charging` of `sensor.<charger>_status` |
 | Car connected | `switch.<charger>_car_connected`, or every state but `disconnected` of `sensor.<charger>_status` |
 
 Change the background power and the switches for the car, and watch the regulation on the status page.

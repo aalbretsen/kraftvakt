@@ -209,7 +209,6 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "power_reserve_w": 4157,
             "override_ends": "manual",
             "start_delay_s": 300,
-            "grace_period_s": 300,
         },
     }
 
@@ -952,7 +951,6 @@ async def test_status_shows_the_chargers(
             "power_w": 3700.0,
             "bypassed": False,
             "starting_until": None,
-            "grace_until": None,
             "charging": False,
             "waiting_since": None,
             "waiting_until": None,

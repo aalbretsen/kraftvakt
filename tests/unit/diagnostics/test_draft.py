@@ -64,7 +64,7 @@ def draft(device_fields: dict[str, Any] | None = None, **charger_fields: Any) ->
 
 
 def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -> None:
-    result = draft(cloud_controlled=True, grace_period_s=600, start_delay_s=420)
+    result = draft(cloud_controlled=True, start_delay_s=420)
 
     assert result.module == "acme_b_1"
     assert result.profile.name == "Acme B-1"
@@ -76,7 +76,7 @@ def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -
     assert result.profile.actively_charging is None
     assert result.profile.charging_power == ProfileCondition(ConditionType.POWER_SENSOR, entity=ProfileEntity("sensor"))
     assert result.profile.cloud_controlled
-    assert (result.profile.grace_period_s, result.profile.start_delay_s) == (600, 420)
+    assert result.profile.start_delay_s == 420
     assert result.notes == ()
 
 
@@ -86,23 +86,21 @@ def test_the_states_of_an_entity_are_drafted_with_whether_they_count_as_true() -
     assert result.profile.car_connected == state_condition(ProfileEntity("binary_sensor", translation_key="car"), ("disconnected",), states_are_true=False)
 
 
-def test_the_done_and_fault_flags_are_drafted_as_the_other_conditions() -> None:
+def test_the_fault_flag_is_drafted_as_the_other_conditions() -> None:
     result = draft(
-        detect_done=True,
-        done_flag={"type": "template", "value": "{{ is_state('sensor.box', 'completed') }}"},
         deactivate_on_fault=True,
         fault_flag={"type": "template", "value": "{{ is_state('sensor.box', 'error') }}"},
     )
 
-    assert result.profile.done_flag == template_condition("{{ is_state('$sensor', 'completed') }}", sensor=ProfileEntity("sensor"))
     assert result.profile.deactivate_on_fault
     assert result.profile.fault_flag == template_condition("{{ is_state('$sensor', 'error') }}", sensor=ProfileEntity("sensor"))
 
 
-def test_a_done_flag_kept_while_detect_done_is_off_is_left_out() -> None:
-    result = draft(done_flag={"type": "template", "value": "{{ is_state('sensor.box', 'completed') }}"})
+def test_a_charger_without_a_charging_power_is_noted() -> None:
+    result = draft(charging_power=None)
 
-    assert result.profile.done_flag is None
+    assert result.profile.charging_power == ProfileCondition(ConditionType.ENTITY)
+    assert result.notes == ("charging_power: not set. Fill in the condition, or leave it out if the integration has nothing for it.",)
 
 
 def test_a_charger_switched_by_its_current_gives_a_profile_without_actions_to_activate_and_deactivate() -> None:
@@ -158,7 +156,7 @@ def test_entities_a_profile_cannot_find_are_noted() -> None:
         entity("binary_sensor.box_car_2", "car", "Car"),
     ]
 
-    result = draft({"entities": entities}, actively_charging={"type": "entity", "value": "binary_sensor.elsewhere"}, charging_power=None)
+    result = draft({"entities": entities}, actively_charging={"type": "entity", "value": "binary_sensor.elsewhere"})
 
     assert result.profile.car_connected == entity_condition(ProfileEntity("binary_sensor", translation_key="car"))
     assert result.profile.actively_charging == ProfileCondition(ConditionType.ENTITY)
@@ -167,6 +165,7 @@ def test_entities_a_profile_cannot_find_are_noted() -> None:
         "set_current: number.box_current has no name of its own apart from the device, so its name 'Box Current' may hold the device's name.",
         "car_connected: binary_sensor.box_car is not the only entity of the device that fits "
         "ProfileEntity(domain='binary_sensor', translation_key='car', name=None), so the profile leaves the field out.",
+        "charging_power: sensor.box is not an entity of the charger's device, so a profile cannot find it.",
         "actively_charging: binary_sensor.elsewhere is not an entity of the charger's device, so a profile cannot find it.",
     )
 

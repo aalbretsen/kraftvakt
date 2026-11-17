@@ -2,6 +2,7 @@
 
 Zigbee2MQTT names the entities in English in every language. The on/off switch is the main entity of the device, without a name of its own.
 «Alarm active» is on while any of the charger's alarms is set, which «Alarms» lists, such as a welded relay, a leakage, overcurrent or a car communication error.
+«Total active power» is the charging power of all phases in W, the profile's charging power.
 """
 
 from homeassistant.core import HomeAssistant
@@ -52,10 +53,10 @@ async def test_amina_s_has_entities_for_every_field(hass: HomeAssistant, command
             "activate": {"mode": "default"},
             "deactivate": {"mode": "default"},
             "switched_by_current": False,
-            "grace_period_s": 120,
             "start_delay_s": 300,
             "set_current": {"mode": "entity", "entity_id": "number.amina_charge_limit"},
             "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
+            "charging_power": {"type": "power_sensor", "value": "sensor.amina_total_active_power"},
             "actively_charging": {"type": "entity", "value": "binary_sensor.amina_charging"},
             "cloud_controlled": False,
             "deactivate_on_fault": True,

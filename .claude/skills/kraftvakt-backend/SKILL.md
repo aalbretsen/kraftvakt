@@ -20,7 +20,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - The entities of appliances and chargers are added and removed when the configuration is saved, without reloading the config entry (a reload would start the regulation).
   Registry entries of removed items are removed.
 - A charger is a device in HA, stored as its `device_id`, and every entity it names (its own, the set-current entity,
-  the entities of car connected, the charging on/off, the charging power, the done flag and the fault flag) must belong to that device.
+  the entities of car connected, the charging on/off, the charging power and the fault flag) must belong to that device.
   Templates and custom actions are not checked, and cover a charger whose values are elsewhere.
 - The display sensors of an appliance must belong to the device of its entity, `entity_not_on_device` otherwise; templates are not checked.
   An appliance whose entity has no device, as a helper or a template switch, may show any sensor.
@@ -81,7 +81,7 @@ The format is defined by the dataclasses and their serialization in `config_mode
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
   deactivate and set-current actions, switched by current, min and max current, power reserve, car connected, the charging on/off (`actively_charging`), the charging power,
-  the grace period, detect done and its done flag, an optional charging window, finish after window, the override end, cloud-controlled, the start delay,
+  an optional charging window, finish after window, the override end, cloud-controlled, the start delay,
   deactivate on fault and its fault flag.
   A group has its name, one at a time and dynamic charging order.
   A charger is nested in its group, so it cannot be in two.
@@ -93,7 +93,7 @@ Before the first stable release, the stored format and the entities change witho
 
 IDs are short UUIDs, so entities can change without losing the place in the list.
 An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen).
-A condition is an entity or a template, and for car connected, the charging on/off, the done flag and the fault flag also the states of an entity (`states`, and `states_are_true`,
+A condition is an entity or a template, and for car connected, the charging on/off and the fault flag also the states of an entity (`states`, and `states_are_true`,
 which is false when the chosen states count as false). The charging power and the display power are a power sensor or a template,
 and the display temperature a temperature sensor, the current or target temperature of a climate entity (`current_temperature`, `target_temperature`, else `not_a_thermostat`),
 or a template.
@@ -126,11 +126,9 @@ An incomplete configuration can be saved, but the regulation cannot start. A cha
 An empty condition is missing, not an error; a variant is added in the appliance dialog and gets its expression in its own dialog.
 Missing items and validation errors are both issues with a code, a section, a target (the id of the appliance or charger) and a field;
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
-and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`,
-as is a done flag with detect done, `missing_done_flag` on `done_flag`. A state without a chosen state is missing.
-A charger without both a charging on/off and a charging power is `missing_actively_charging` on `actively_charging`.
-In a group with several at once and dynamic charging order, a charger without a charging power is `missing_charging_power`,
-and a power reserve of 0 W is the error `power_reserve_required`, since the switch-over estimates what a charger draws at its minimum current from it.
+and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
+A charger without a charging power is `missing_charging_power`; the charging on/off is optional.
+A charger's power reserve is at least 1 W, since the regulation estimates from it what the charger draws per ampere.
 Every issue code needs a text in the panel's translations.
 
 ## Charger profiles
@@ -144,13 +142,13 @@ Every issue code needs a text in the panel's translations.
 - An entity is found by what does not change with the language: its translation key, the name the integration gives it (for integrations that do not translate),
   or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,
   and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
-- A profile has a charging on/off, a charging power or both. A profile may have a done flag and a fault flag.
+- A profile has a charging power, and may have a charging on/off and a fault flag.
   It has actions to activate and deactivate, unless the charger is switched by its current.
-  It always fills switched by current, cloud-controlled, the grace period and the start delay, the last two with the charger defaults when the profile leaves them out,
-  so choosing a device never keeps the settings of the charger's previous device. A cloud-controlled charger needs a longer grace period than a local one.
+  It always fills switched by current, cloud-controlled and the start delay, the last with the charger default when the profile leaves it out,
+  so choosing a device never keeps the settings of the charger's previous device.
   The other settings, such as the currents, the power reserve and the charging window, are not part of a profile and follow the standard defaults.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
-  so choosing a device never turns the setting on without a flag. Likewise, it fills the done flag with detect done on only when it finds it.
+  so choosing a device never turns the setting on without a flag.
 - The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.
 - A profile is not validated when it is loaded; its test saves a charger made from it, which the backend must accept.
 - `DeviceEntities` finds entities in anything with an entity ID, a domain, a translation key and an original name, so the charger profile extractor in `diagnostics/`
@@ -229,13 +227,12 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: first decision (before the first decision after a start), fault, excluded, outside its charging window,
-  no car connected (bypassed), done, queued (waiting and not activated), starting, grace (activated and in grace),
+  no car connected (bypassed), queued (waiting and not activated), starting,
   override (allowed only by the override while activated), finishing, charging, activated, deactivated. It is worked out in the engine from the last decision,
   before its commands, so a charger activated at a decision shows its new state at the next one.
   Fault comes first, since the user needs to know that the charger is broken.
   Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user needs to know that the car is missing.
-  Charging is true while the charger is activated and was actively charging, or in grace, at the last decision.
-  A starting charger also has when its time to start ends, and a charger in grace when its grace period ends,
-  `null` for the others and once the time has passed while the charger waits for its done flag.
+  Charging is true while the charger is activated and was actively charging at the last decision.
+  A starting charger also has when its start delay ends, `null` for the others.
 - The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the order of their ampere steps:
-  the current charging priority, or with several at once and dynamic charging order those that charge first, then the queued ones.
+  the current charging priority, or with several at once and dynamic charging order the activated ones first, then the queued ones.

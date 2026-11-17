@@ -4,7 +4,6 @@ import {
   mdiCancel,
   mdiCarElectric,
   mdiCarOff,
-  mdiCheckCircleOutline,
   mdiCloudClockOutline,
   mdiClockEnd,
   mdiClockFast,
@@ -12,7 +11,6 @@ import {
   mdiEvStation,
   mdiFlash,
   mdiLightningBolt,
-  mdiPauseCircleOutline,
   mdiPlus,
   mdiTimerOutline,
   mdiTimerSand,
@@ -55,10 +53,8 @@ const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]
   excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
   outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
   no_car: [{ kind: "warning", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
-  done: [{ kind: "off", icon: mdiCheckCircleOutline }, "status.chip_done", "status.done"],
   queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
   starting: [{ kind: "info", icon: mdiCloudClockOutline }, "status.chip_starting", "status.starting_until"],
-  grace: [{ kind: "info", icon: mdiPauseCircleOutline }, "status.chip_grace", "status.grace_until"],
   override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
   finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
   charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
@@ -259,7 +255,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   private renderChargerGroup(group: ChargerGroupStatus, rank: number) {
     const chargers = group.chargers;
-    const charging = chargers.filter((charger) => charger.charging && charger.state !== "grace").length;
+    const charging = chargers.filter((charger) => charger.charging).length;
     return html`
       <div class="row group">
         ${this.renderRank(rank)}
@@ -388,12 +384,8 @@ export class KraftvaktPriorityList extends LitElement {
       const short = { start: shortTime(window.start), end: shortTime(window.end) };
       return this.renderChip(chip, word, sentence, short, { ...window });
     }
-    const until = charger.state === "grace" ? charger.grace_until : charger.starting_until;
-    if (until) {
-      return this.renderChip(chip, word, sentence, {}, { time: formatClockTime(this.hass.language, until) });
-    }
-    if (charger.state === "starting" || charger.state === "grace") {
-      return this.renderChip(chip, word, `status.${charger.state}_awaits_done`);
+    if (charger.starting_until) {
+      return this.renderChip(chip, word, sentence, {}, { time: formatClockTime(this.hass.language, charger.starting_until) });
     }
     if (charger.state === "queued" && this.sharesByChargingPower(charger)) {
       return this.renderChip(chip, word, "status.queued_for_room");

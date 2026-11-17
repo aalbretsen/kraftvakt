@@ -114,16 +114,10 @@ export interface Charger {
   max_current_a: number;
   power_reserve_w: number;
   car_connected: Condition | null;
-  /** A boolean entity that is on while the car charges. */
+  /** An optional condition that is true while the car charges. */
   actively_charging: Condition | null;
-  /** A power sensor or a template giving the charging power. */
+  /** A power sensor or a template giving the charging power. Every EV charger needs one. */
   charging_power: Condition | null;
-  /** How long the car may stop charging and still count as charging. */
-  grace_period_s: number;
-  /** Whether the done flag tells the regulation that the car is done charging. */
-  detect_done: boolean;
-  /** Tells that the car is done charging, so it is done at once. Kept while detect done is off. */
-  done_flag: Condition | null;
   charging_window: ChargingWindow | null;
   /** Whether ongoing charging may finish after the charging window has ended. */
   finish_after_window: boolean;
@@ -230,7 +224,6 @@ export interface Capabilities {
       power_reserve_w: number;
       override_ends: OverrideEnd;
       start_delay_s: number;
-      grace_period_s: number;
     };
   };
 }
@@ -261,10 +254,8 @@ export type ChargerState =
   | "excluded"
   | "outside_window"
   | "no_car"
-  | "done"
   | "queued"
   | "starting"
-  | "grace"
   | "override"
   | "finishing"
   | "charging"
@@ -280,12 +271,10 @@ export interface ChargerStatus {
   /** The charging power in W, null without one or without a valid value. */
   power_w: number | null;
   bypassed: boolean;
-  /** Activated and actively charging, or in grace, at the last decision. */
+  /** Activated and actively charging at the last decision. */
   charging: boolean;
-  /** When the time to start of a starting EV charger ends, whose power reserve is kept free until then. */
+  /** When the start delay of a starting EV charger ends, whose power reserve is kept free until then. */
   starting_until: string | null;
-  /** When the grace period of an EV charger whose car has stopped charging ends. */
-  grace_until: string | null;
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */

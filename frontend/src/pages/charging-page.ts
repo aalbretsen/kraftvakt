@@ -26,9 +26,6 @@ const CHARGER_FIELDS = [
   "car_connected",
   "actively_charging",
   "charging_power",
-  "grace_period_s",
-  "detect_done",
-  "done_flag",
   "cloud_controlled",
   "start_delay_s",
   "charging_window",
@@ -174,9 +171,6 @@ export class KraftvaktChargingPage extends ConfigPage {
     if (charger.switched_by_current) {
       details.push(this.localize("charging.switched_by_current"));
     }
-    if (charger.detect_done) {
-      details.push(this.localize("charging.detects_done"));
-    }
     if (charger.deactivate_on_fault) {
       details.push(this.localize("charging.deactivated_on_fault"));
     }
@@ -267,9 +261,6 @@ export class KraftvaktChargingPage extends ConfigPage {
       car_connected: null,
       actively_charging: null,
       charging_power: null,
-      grace_period_s: defaults.grace_period_s,
-      detect_done: false,
-      done_flag: null,
       charging_window: null,
       finish_after_window: false,
       override_ends: defaults.override_ends,

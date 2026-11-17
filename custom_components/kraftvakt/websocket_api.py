@@ -233,7 +233,6 @@ def capabilities() -> dict[str, Any]:
                 "power_reserve_w": charger.power_reserve_w,
                 "override_ends": charger.override_ends.value,
                 "start_delay_s": charger.start_delay_s,
-                "grace_period_s": charger.grace_period_s,
             },
         },
     }

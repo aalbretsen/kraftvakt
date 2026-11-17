@@ -41,7 +41,7 @@ def service(name: str, **data: str) -> dict:
     return {"action": f"easee.{name}", "data": {"device_id": "{{ device_id(entity_id) }}", **data}}
 
 
-async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor_and_is_done_or_has_a_fault_by_its_status(hass: HomeAssistant, command: Command) -> None:
+async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor_and_has_a_fault_by_its_status(hass: HomeAssistant, command: Command) -> None:
     device_id = register(hass, EASEE)
 
     result = await charger_profile(command, device_id)
@@ -49,25 +49,21 @@ async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor
     assert result["profile"] == "Easee"
     fields = dict(result["fields"])
     car_connected = fields.pop("car_connected")
-    done_flag = fields.pop("done_flag")
     fault_flag = fields.pop("fault_flag")
     assert fields == {
         "entity_id": "switch.garage_charger_enabled",
         "activate": {"mode": "custom", "action": [service("set_charger_access", access_level="open_for_all")]},
         "deactivate": {"mode": "custom", "action": [service("set_charger_access", access_level="whitelist")]},
         "switched_by_current": False,
-        "grace_period_s": 600,
         "start_delay_s": 300,
         "set_current": {"mode": "custom", "action": [service("set_charger_dynamic_limit", current="{{ current }}")]},
         "charging_power": {"type": "power_sensor", "value": "sensor.garage_power"},
         "cloud_controlled": True,
-        "detect_done": True,
         "deactivate_on_fault": True,
     }
     assert car_connected["type"] == "template"
     assert "sensor.garage_status" in car_connected["value"]
-    assert done_flag["type"] == fault_flag["type"] == "template"
-    assert "sensor.garage_status" in done_flag["value"]
+    assert fault_flag["type"] == "template"
     assert "sensor.garage_status" in fault_flag["value"]
     saved = await save_charger(command, device_id, result["fields"])
     assert saved["saved"]
@@ -82,16 +78,6 @@ async def test_easee_car_is_connected_by_its_status(hass: HomeAssistant, command
     for status, connected in [("charging", True), ("awaiting_authorization", True), ("completed", True), ("disconnected", False), ("offline", None)]:
         hass.states.async_set("sensor.garage_status", status)
         assert template.async_render(parse_result=True) == connected, status
-
-
-async def test_easee_is_done_by_its_status(hass: HomeAssistant, command: Command) -> None:
-    """A status that is not known gives no value, so a cloud service that is down does not make a car that is not full done."""
-    device_id = register(hass, EASEE)
-    template = Template((await charger_profile(command, device_id))["fields"]["done_flag"]["value"], hass)
-
-    for status, done in [("completed", True), ("charging", False), ("awaiting_start", False), ("disconnected", False), ("offline", None), ("unavailable", None)]:
-        hass.states.async_set("sensor.garage_status", status)
-        assert template.async_render(parse_result=True) == done, status
 
 
 async def test_easee_has_a_fault_by_its_status(hass: HomeAssistant, command: Command) -> None:

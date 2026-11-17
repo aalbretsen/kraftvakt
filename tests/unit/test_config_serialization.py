@@ -59,7 +59,6 @@ def test_full_config_is_read_into_model() -> None:
     charger = config.chargers[0]
     assert charger.charging_window == ChargingWindow(time(22, 0), time(6, 0))
     assert charger.car_connected == Condition(ConditionType.STATE, "sensor.garage_charger_status", ("disconnected",), states_are_true=False)
-    assert charger.done_flag == Condition(ConditionType.STATE, "sensor.garage_charger_status", ("completed",))
     assert charger.deactivate_on_fault
     assert charger.fault_flag == Condition(ConditionType.TEMPLATE, "{{ is_state('sensor.garage_charger_status', 'error') }}")
 

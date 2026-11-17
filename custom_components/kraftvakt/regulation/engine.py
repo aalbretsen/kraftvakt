@@ -14,6 +14,7 @@ from .charging import (
     ChargingState,
     charging_current,
     charging_permission,
+    estimated_draw_w,
     override_arms,
     override_ended,
 )
@@ -225,7 +226,7 @@ class RegulationEngine:
         commands += self._place_appliances(decision)
         forced_off = bool(appliances_on_before - self._state.appliances_on) or self._ampere_steps_on() < ampere_steps_on_before
         if average > self._config.general.power_limit_w:
-            commands += self._switch_off_above_limit(forced_off)
+            commands += self._switch_off_above_limit(average, forced_off)
         else:
             commands += self._turn_on_next(decision.now, average, forced_off)
         return DecisionResult(commands, overrides)
@@ -245,12 +246,10 @@ class RegulationEngine:
     def _overrides(self, decision: DecisionInput) -> OverrideChanges:
         """Return the overrides that arm or end at the decision."""
         changes = OverrideChanges()
-        window = timedelta(seconds=self._config.general.regulation_window_s)
         for charger in self._chargers.values():
             reading = decision.chargers.get(charger.id, ChargerReading())
-            charging = self._charging_of(charger.id)
-            activated = charging.ampere_steps_on[charger.id] > 0
-            if override_ended(charger, reading, charging.becomes_done(charger, reading, decision.now, window)):
+            activated = self._charging_of(charger.id).ampere_steps_on[charger.id] > 0
+            if override_ended(charger, reading, activated):
                 changes.ended.append(charger.id)
             elif override_arms(charger, reading, activated):
                 changes.armed.append(charger.id)
@@ -266,19 +265,18 @@ class RegulationEngine:
                 readings[charger.id],
                 readings[charger.id].window_override and charger.id not in ended_overrides,
                 local_time,
-                self._charging_of(charger.id).counts_as_charging(charger.id, readings[charger.id]),
+                self._charging_of(charger.id).charges(charger.id, readings[charger.id]),
             )
             for charger in self._chargers.values()
         }
         commands: list[Command] = []
         for group in self._groups:
             charging = self._charging(group.id)
-            changes = charging.evaluate(group, readings, permissions, decision.now, timedelta(seconds=self._config.general.regulation_window_s))
+            newly_bypassed = charging.evaluate(group, readings, permissions, decision.now)
             for charger_id in charging.activated():
                 if charging.must_deactivate(group, charger_id):
                     commands += self._set_ampere_steps_on(charger_id, 0)
-            for charger_id in changes.bypassed + changes.grace:
-                if charging.ampere_steps_on[charger_id] > 1:
+                elif (charger_id in newly_bypassed or charger_id in charging.held_at_min) and charging.ampere_steps_on[charger_id] > 1:
                     commands += self._set_ampere_steps_on(charger_id, 1)
         return commands
 
@@ -391,8 +389,8 @@ class RegulationEngine:
             [[self._chargers[charger_id] for charger_id in block] for block in charging.blocks(group)],
             charging.ampere_steps_on,
             charging.may_charge,
-            charging.on_trial,
-            charging.bypassed,
+            charging.held_at_min,
+            {charger.id for charger in group.chargers if charging.may_switch_off(charger.id)},
             charging.starting,
             self._ampere_step_growth,
         )
@@ -400,37 +398,56 @@ class RegulationEngine:
     def _steps_on_lowest_first(self) -> Iterator[Step]:
         return (step for step in reversed(self._steps()) if step.is_on and step.can_turn_off)
 
-    def _switch_off_above_limit(self, forced_off: bool) -> list[Command]:
-        """Switch off the lowest priority step that is on.
+    def _switch_off_above_limit(self, average_w: float, forced_off: bool) -> list[Command]:
+        """Switch off the lowest priority steps that are on, as many as the power above the limit needs.
 
         Nothing more is switched off when the decision has already forced
         something off, since the average was measured before that.
         """
         self._state.waiting = None
-        lowest_on = next(self._steps_on_lowest_first(), None)
-        if forced_off or lowest_on is None:
+        if forced_off:
             return []
-        return self._switch(lowest_on.key, turn_on=False)
+        return self._free_power(list(self._steps_on_lowest_first()), average_w - self._config.general.power_limit_w)
 
     def _make_room_below(self, key: StepKey) -> list[Command]:
-        """Switch off the lowest step that is on below the step.
-
-        Room for a charger's first ampere step that would be taken from
-        another charger of its group is taken at once: every charger of the
-        group that is on above its minimum below the step is set to its
-        minimum, an exception to one step per decision.
-        """
+        """Switch off the lowest step that is on below the step."""
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
-        below_on = [step for step in steps[place + 1 :] if step.is_on and step.can_turn_off]
-        if not below_on:
-            return []
-        lowest_on = below_on[-1]
-        group_id = steps[place].group_id
-        if _is_first_ampere_step(key) and lowest_on.group_id == group_id and not _is_first_ampere_step(lowest_on.key):
-            above_minimum = dict.fromkeys(step.key.charger_id for step in below_on if step.group_id == group_id and isinstance(step.key, AmpereStepKey) and step.key.index > 0)
-            return [command for charger_id in above_minimum for command in self._set_ampere_steps_on(charger_id, 1)]
-        return self._switch(lowest_on.key, turn_on=False)
+        lowest_on = next((step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off), None)
+        return [] if lowest_on is None else self._switch(lowest_on.key, turn_on=False)
+
+    def _free_power(self, steps_lowest_first: list[Step], needed_w: float) -> list[Command]:
+        """Switch off steps, lowest first, until the power they are estimated to free covers `needed_w`.
+
+        Only what a charger draws is known, from its charging power, so an
+        appliance ends it: it is switched off only when it is the first.
+        At least one step is switched off when any is on. These switch-offs are
+        an exception to one step per decision.
+        """
+        commands: list[Command] = []
+        draws_before: dict[str, float] = {}
+        for step in steps_lowest_first:
+            if isinstance(step.key, ApplianceStepKey):
+                return commands or self._switch(step.key, turn_on=False)
+            charger_id = step.key.charger_id
+            if charger_id not in draws_before:
+                draws_before[charger_id] = self._draw_now_w(charger_id)
+            commands += self._switch(step.key, turn_on=False)
+            freed_w = sum(draw_w - self._draw_after_w(drawing_id, draw_w) for drawing_id, draw_w in draws_before.items())
+            if freed_w >= needed_w:
+                break
+        return commands
+
+    def _draw_now_w(self, charger_id: str) -> float:
+        """Return what the charger draws by its charging power, or its estimate with the ampere steps it has on without a valid value."""
+        charger = self._chargers[charger_id]
+        charging = self._charging_of(charger_id)
+        power_w = charging.last_readings[charger_id].charging_power_w
+        steps_on = charging.ampere_steps_on[charger_id]
+        return power_w if power_w is not None else estimated_draw_w(charger, float("inf"), steps_on)
+
+    def _draw_after_w(self, charger_id: str, draw_w: float) -> float:
+        return estimated_draw_w(self._chargers[charger_id], draw_w, self._charging_of(charger_id).ampere_steps_on[charger_id])
 
     def _turn_on_next(self, now: datetime, average_w: float, forced_off: bool) -> list[Command]:
         """Make a switch-over, or turn on the next step, or make room for it when there is none.
@@ -452,10 +469,19 @@ class RegulationEngine:
         held_w = _held_reserves_w(steps, place)
         if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
-            return [] if forced_off else self._make_room_below(candidate.key)
+            return [] if forced_off else self._make_room(steps, place, average_w + held_w)
         if not self._has_waited(candidate, now, average_w + held_w):
             return []
         return self._switch(candidate.key, turn_on=True, now=now)
+
+    def _make_room(self, steps: list[Step], place: int, average_w: float) -> list[Command]:
+        """Switch off steps below the step at the place, as many as it is estimated to need to fit."""
+        general = self._config.general
+        limit_w = general.power_limit_w
+        reserve_w = steps[place].power_reserve_w or 0
+        needed_w = max(average_w - (limit_w - general.turn_on_margin_w), average_w + reserve_w - limit_w)
+        below_on = [step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off]
+        return self._free_power(below_on, needed_w)
 
     def _switch_over(self, steps: list[Step], place: int | None, now: datetime, average_w: float) -> list[Command] | None:
         """Return the commands of a switch-over when one is due, an empty list while its waiting time runs, or None.
@@ -534,19 +560,8 @@ class RegulationEngine:
                 return [TurnOnAppliance(appliance_id, variant_id)]
             self._state.appliances_on.discard(appliance_id)
             return [TurnOffAppliance(appliance_id, variant_id)]
-        commands = self._deactivate_others(key.charger_id) if turn_on and key.index == 0 else []
         count = key.index + 1 if turn_on else key.index
-        return commands + self._set_ampere_steps_on(key.charger_id, count, now)
-
-    def _deactivate_others(self, charger_id: str) -> list[Command]:
-        """Deactivate the others in the group, an exception to one step per decision."""
-        if not self._group_of[charger_id].one_at_a_time:
-            return []
-        commands: list[Command] = []
-        for other_id in self._charging_of(charger_id).activated():
-            if other_id != charger_id:
-                commands += self._set_ampere_steps_on(other_id, 0)
-        return commands
+        return self._set_ampere_steps_on(key.charger_id, count, now)
 
     def _set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> list[Command]:
         charging = self._charging_of(charger_id)
@@ -585,10 +600,6 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
-
-
-def _is_first_ampere_step(key: StepKey) -> bool:
-    return isinstance(key, AmpereStepKey) and key.index == 0
 
 
 def _held_reserves_w(steps: list[Step], place: int) -> float:

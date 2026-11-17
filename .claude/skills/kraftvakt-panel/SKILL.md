@@ -122,18 +122,14 @@ The section header, the description and the footer note are in `section-styles.t
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
-- Actively charging is one group with the charging on/off (a condition of the kind actively charging), the charging power (Sensor or Template) and the grace period.
-  The on/off and the charging power are optional each, so either may be left empty, and missing actively charging is shown when both are.
+- Actively charging is one group with the charging power (Sensor or Template), required, and the charging on/off (a condition of the kind actively charging), optional.
   A charging power template is previewed as W.
-- Car connected, the charging on/off, the done flag and the fault flag also offer State: an entity of the device, a choice of whether the chosen states are those for true
+- Car connected, the charging on/off and the fault flag also offer State: an entity of the device, a choice of whether the chosen states are those for true
   (for example States for connected) or those for false (States for disconnected), and the states.
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
-- Detect car finished charging is a group with a switch under actively charging. It shows the done flag, a condition field of the kind done,
-  while it is on or the flag has an error, and keeps it when it is turned off.
-  It previews no evidence as no answer, since the regulation waits for an answer instead of reading it as not done.
-- Cloud-controlled EV charger is a group with a switch under the done flag, and shows the start delay while it is on or the delay has an error.
+- Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
   The start delay is kept when the switch is turned off, since it has no effect then.
@@ -216,7 +212,7 @@ The section header, the description and the footer note are in `section-styles.t
     The rows share no columns there: each row puts its chip at the right end, what it has of the current and the waiting icon just before it,
     and gives the name the rest, since a shared column would be as wide as the widest chip or current in any row.
   - Icons instead of short texts, each with its sentence as a tooltip, and no legend.
-    A group's row shows how many of its chargers are charging of all; a charger in grace is not counted, since its car has stopped.
+    A group's row shows how many of its chargers are charging of all.
   - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
   - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed.
@@ -225,10 +221,9 @@ The section header, the description and the footer note are in `section-styles.t
     since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
     A row or tile clicked with the mouse lets go of the focus before the dialog opens, since Home Assistant gives the focus back when the dialog closes,
     and the focus ring would look like a selection. Opened from the keyboard, it keeps the focus.
-  - A done charger is shown as Done, a charger in grace as Paused with when its grace period ends, or that it waits for its done flag once the time has passed,
-    and a queued charger as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
-  - A starting charger is shown as starting, and its sentence tells when its time to start ends, or that it waits for its done flag once the time has passed,
-    and that its power reserve is kept free until then,
+  - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
+    An activated charger whose car does not charge tells that it waits at the minimum current.
+  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that its power reserve is kept free until then,
     since nothing else on the page tells why nothing below it is turned on while power looks free.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.
     It is hidden when nothing is on, or when only excluded appliances are below the last entry that is on, so something that can be turned on is always below it.

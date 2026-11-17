@@ -47,7 +47,8 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - **Tariff average:** the average consumption over the last hour, sliding. Every clock hour the grid company measures is one of the sliding hours,
   so keeping the tariff average below the power limit keeps every clock hour below it too, and overconsumption is found early in the hour.
 - **Regulation average:** the average over a short regulation window, 10 seconds by default. It drives the decisions.
-- **Decisions:** at every regulation interval, the regulation turns at most one appliance on or off. Above the power limit, the lowest-priority appliance that is on is turned off.
+- **Decisions:** at every regulation interval, the regulation turns at most one appliance on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
+  or as many amperes of an EV charger as the power above the limit needs, at once.
   When power is free, the next appliance in the priority list is turned on, after a waiting time. Appliances lower in the list give way when one higher up needs the room.
 - **Waiting time:** none while plenty of power is free, and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
@@ -75,8 +76,7 @@ The regulation starts by itself when Home Assistant or the integration starts, p
 - a power sensor is chosen,
 - every appliance has an entity and actions to turn it on and off, and every variant an expression and the actions it overrides,
 - every EV charger has a device, an entity, an action to set the charging current, actions to activate and deactivate unless charging is turned on and off by the current,
-  **Car connected**, a charging on/off or a charging power, with **Detect car finished charging** a done flag, with **Deactivate on fault** a fault flag,
-  and in a group with several at once and dynamic charging order a charging power.
+  **Car connected**, a charging power, and with **Deactivate on fault** a fault flag.
 
 When Home Assistant starts, the regulation waits until Home Assistant has finished starting, so the integrations of the appliances are loaded.
 When the configuration is not complete then, it is reported under **Settings → Repairs**.
@@ -115,24 +115,25 @@ An EV charger is a device in Home Assistant, and every entity Kraftvakt uses for
 A value from another device, for example whether the car is connected from the car's own integration, is given as a template.
 
 Kraftvakt sets the charging current one ampere at a time, by how much power is free. An EV charger charges only when Kraftvakt has activated it,
-so a car that is connected does not start charging by itself. Kraftvakt reads whether a car is connected and whether it is actively charging:
+so a car that is connected does not start charging by itself. Kraftvakt reads whether a car is connected, and how much it draws from the **charging power**:
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
-- An EV charger that is activated keeps the minimum current until the car charges. Only a car that charges gets more.
-- A car that does not start charging, or pauses for longer than the grace period, is **done**,
-  and is not tried again until it is disconnected or the regulation starts again. The status page shows a car that pauses as **Paused**.
-- **Detect car finished charging**, off by default, uses a **done flag**, for example a status sensor of the EV charger with a state for completed,
-  to make the car done at once when it is full. While the done flag gives no answer, for example while a cloud service is down, the car is never done.
+- An EV charger with a car is activated when there is room for its power reserve, and keeps the minimum current
+  until the car draws at least 90 % of the power reserve. Only then does it get more.
+- Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
+  for example to heat in the morning, or when you raise its charging limit.
+- A car that suddenly draws more than the regulation counted on, as a full car that starts heating, is cut back at once:
+  above the power limit, as many amperes are taken as the power above the limit needs, estimated from the charging power.
 
-**Car connected**, the charging on/off, the done flag and the fault flag are each a boolean entity, the states of an entity, or a template.
-An unavailable entity or a template that fails counts as false, and for the done flag as no answer.
+**Car connected**, the optional **charging on/off** and the fault flag are each a boolean entity, the states of an entity, or a template.
+An unavailable entity or a template that fails counts as false. The charging on/off may tell sooner than the charging power that the car charges.
 
 The settings of the group decide how its cars share the power:
 
 | | Dynamic charging order off | Dynamic charging order on |
 |---|---|---|
-| **One EV charger at a time** | The first EV charger with a car in the charging priority charges. A car connected higher up takes over. | An EV charger that charges goes on until it is done. The others wait as **Queued**. |
-| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that charge share the power. A car connected later waits as **Queued** until its power reserve is free, if need be after the others are set to their minimum current. |
+| **One EV charger at a time** | While no car charges, every car waits at the minimum current. The first in the charging priority that draws power charges, and the ones below it wait as **Queued**. A car higher up that draws power takes over. | While no car charges, every car waits at the minimum current. The first that draws power charges until it stops, and the others wait as **Queued**. |
+| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power reserve is free, if need be after the others are set to their minimum current. |
 
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.
@@ -144,7 +145,7 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   The last two wait for the car, so the switch can be turned on before the car arrives.
   The override only allows charging: it does not move the EV charger ahead of the others in its group.
 - **Cloud-controlled EV charger:** for an EV charger controlled over the internet. It gets no repeated commands while no car is connected,
-  and the car gets the **Start delay** to start charging, while its power reserve is kept free. The status page shows it as **Starting** meanwhile.
+  and its power reserve is kept free for the **Start delay** after it is activated, while the car starts charging. The status page shows it as **Starting** meanwhile.
 - **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
   The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
 - An EV charger that cannot turn charging on and off, only take a current, is set to turn charging on and off by **the charging current**:
@@ -181,7 +182,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
   A profile uses only enabled entities: enable the ones it needs that the integration disables by default before choosing the device.
   Without a profile, the fields are filled in by hand.
   Then come the entity and the power reserve, whether charging is turned on and off by actions or by the charging current,
-  followed by the actions, the charging current, car connected, actively charging, detect car finished charging, cloud control, the charging window and deactivate on fault.
+  followed by the actions, the charging current, car connected, actively charging with the charging power, cloud control, the charging window and deactivate on fault.
 - **Advanced:** the waiting time curve, the waiting time on repeated turn-on, the command repeat interval, and the timeouts for actions and for the power sensor.
   The tables show the actual waiting time, rounded up to the regulation interval, since an appliance is turned on at the first decision after its waiting time.
 
@@ -312,12 +313,6 @@ A template is true only when it gives the boolean value true. Anything else, inc
 When the sensor is unavailable, `float(0)` gives 0 and the template gives false, so the EV charger counts as not charging,
 and as stopped for **End the override**. Leave out the default, `| float`, to let an unavailable sensor give no value instead:
 the EV charger still counts as not charging, but the override does not end.
-
-**Done flag** from the status sensor of the charger, with no answer while the charger is offline:
-
-```jinja
-{% set status = states('sensor.garage_charger_status') %}{{ none if status in ['offline', 'unknown', 'unavailable'] else status == 'completed' }}
-```
 
 **Fault flag** from the status sensor of the charger:
 

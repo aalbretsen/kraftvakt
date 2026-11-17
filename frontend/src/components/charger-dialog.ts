@@ -52,7 +52,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
         ? nothing
         : html`${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)} ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}`}
       ${this.renderChargingCurrent(issues)}
-      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderDone(issues)}
+      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)}
       ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
@@ -129,39 +129,19 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
-  /**
-   * The charging on/off and the charging power together tell whether the car charges, and the grace period
-   * how long it may pause. Either source is enough, so each may be left empty while the other is set.
-   */
+  /** The charging power, which every EV charger needs, and the optional charging on/off, which may tell sooner that the car charges. */
   private renderActivelyCharging(issues: Issue[]) {
     return this.renderGroup({
       title: this.label("actively_charging"),
       description: this.helper("actively_charging"),
       content: html`
+        ${this.renderCondition("charging_power", "charging_power", issues)}
         ${this.renderCondition("actively_charging", "actively_charging", issues, true)}
-        ${this.renderCondition("charging_power", "charging_power", issues, true)}
-        ${this.renderForm([this.numberField("grace_period_s", "s", true)], issues, (value) =>
-          this.changeDraft({ grace_period_s: value.grace_period_s as number }),
-        )}
       `,
     });
   }
 
-  /**
-   * The done flag is kept while the switch is off, since it has no effect then.
-   * It stays in view while it has an error, so the error that keeps the draft from being saved can be seen.
-   */
-  private renderDone(issues: Issue[]) {
-    const showFlag = this.draft.detect_done || issues.some((issue) => issue.field === "done_flag");
-    return this.renderGroup({
-      title: this.label("detect_done"),
-      description: this.helper("detect_done"),
-      toggle: { checked: this.draft.detect_done, changed: (checked) => this.changeDraft({ detect_done: checked }) },
-      content: showFlag ? this.renderCondition("done_flag", "done", issues) : nothing,
-    });
-  }
-
-  private stateChoices(field: "car_connected" | "actively_charging" | "done_flag" | "fault_flag") {
+  private stateChoices(field: "car_connected" | "actively_charging" | "fault_flag") {
     return {
       true: this.localize(`charger.state_choices.${field}.true`),
       false: this.localize(`charger.state_choices.${field}.false`),
@@ -169,7 +149,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   }
 
   private renderCondition(
-    field: "car_connected" | "actively_charging" | "charging_power" | "done_flag" | "fault_flag",
+    field: "car_connected" | "actively_charging" | "charging_power" | "fault_flag",
     kind: ConditionKind,
     issues: Issue[],
     optional = false,

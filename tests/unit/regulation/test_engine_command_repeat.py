@@ -62,7 +62,7 @@ def test_charger_gets_its_current_while_activated_and_off_while_deactivated() ->
             wait_at_limit_s=0,
         )
     )
-    scenario.set_charger("c1", actively_charging=True)
+    scenario.draw("c1")
     assert scenario.decide(2000) == activate("c1")
     scenario.charge("c1", 8, average_w=2000)
 
@@ -72,7 +72,7 @@ def test_charger_gets_its_current_while_activated_and_off_while_deactivated() ->
 
 def test_charger_with_a_fault_is_kept_deactivated() -> None:
     scenario = Scenario(make_config(chargers=(charger("c1"),), wait_at_limit_s=0))
-    scenario.set_charger("c1", actively_charging=True)
+    scenario.draw("c1")
     assert scenario.decide(2000) == activate("c1")
     scenario.set_charger("c1", fault=True)
     assert scenario.decide(2000) == deactivate("c1")
@@ -117,9 +117,10 @@ def test_cloud_controlled_charger_gets_no_repeated_commands_while_no_car_is_conn
 
 def test_activated_cloud_controlled_charger_gets_no_current_after_the_car_has_left() -> None:
     scenario = Scenario(make_config(chargers=(charger("c", cloud_controlled=True),), wait_at_limit_s=0))
-    scenario.set_charger("c", car_connected=True, actively_charging=True)
+    scenario.draw("c")
     scenario.charge("c", 8)
-    scenario.set_charger("c", car_connected=False, car_disconnected=True, actively_charging=False)
+    scenario.draw("c", drawing=False)
+    scenario.set_charger("c", car_connected=False, car_disconnected=True)
     assert scenario.decide(0) == current("c", 6)
 
     assert scenario.repeat(REPEAT_INTERVAL) == []

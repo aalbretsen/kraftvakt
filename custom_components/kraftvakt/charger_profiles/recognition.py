@@ -73,15 +73,10 @@ class DeviceEntities:
             "set_current": self.action(profile.set_current),
             "car_connected": self.condition(profile.car_connected),
             "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),
-            "charging_power": None if profile.charging_power is None else self.condition(profile.charging_power),
-            "grace_period_s": profile.grace_period_s,
+            "charging_power": self.condition(profile.charging_power),
             "cloud_controlled": profile.cloud_controlled,
             "start_delay_s": profile.start_delay_s,
         }
-        done_flag = None if profile.done_flag is None else self.condition(profile.done_flag)
-        if done_flag is not None:
-            fields["detect_done"] = True
-            fields["done_flag"] = done_flag
         fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)
         if fault_flag is not None:
             fields["deactivate_on_fault"] = profile.deactivate_on_fault

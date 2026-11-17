@@ -14,13 +14,13 @@ from ..config_model import Charger, ChargerGroup, ChargingWindow, OverrideEnd
 class ChargerReading:
     """What a decision reads for a charger.
 
-    `car_connected`, `actively_charging` and `car_done` hold only with evidence
-    that they are true, and `car_disconnected`, `charging_stopped` and
-    `car_not_done` only with evidence that they are false. `charging_power_w`
-    is the power the charger reports, None without a valid value. `override_armed` is whether what ends the override
-    has been seen at a decision since it was switched on: the car connected,
-    or the charger activated and actively charging. `fault` is whether a fault
-    flag shows a fault while the charger is deactivated on fault.
+    `car_connected` and `actively_charging` hold only with evidence that they
+    are true, and `car_disconnected` and `charging_stopped` only with evidence
+    that they are false. `charging_power_w` is the power the charger reports,
+    None without a valid value. `override_armed` is whether what ends the
+    override has been seen at a decision since it was switched on: the car
+    connected, or the charger activated and actively charging. `fault` is
+    whether a fault flag shows a fault while the charger is deactivated on fault.
     """
 
     actively_charging: bool = False
@@ -28,8 +28,6 @@ class ChargerReading:
     car_connected: bool = False
     car_disconnected: bool = False
     charging_stopped: bool = False
-    car_done: bool = False
-    car_not_done: bool = False
     excluded: bool = False
     window_override: bool = False
     override_armed: bool = False
@@ -64,10 +62,8 @@ class ChargerState(StrEnum):
     EXCLUDED = "excluded"
     OUTSIDE_WINDOW = "outside_window"
     NO_CAR = "no_car"
-    DONE = "done"
     QUEUED = "queued"
     STARTING = "starting"
-    GRACE = "grace"
     OVERRIDE = "override"
     FINISHING = "finishing"
     CHARGING = "charging"
@@ -79,9 +75,8 @@ class ChargerState(StrEnum):
 class ChargerStatus:
     """How a charger stands after the last decision.
 
-    `starting_until` is when the time to start of a starting charger ends,
-    and `grace_until` when the grace period of a charger in grace ends.
-    `charging` holds for an activated charger that charges or is in grace.
+    `starting_until` is when the start delay of a starting charger ends.
+    `charging` holds for an activated charger that charges actively.
     """
 
     state: ChargerState
@@ -91,7 +86,6 @@ class ChargerStatus:
     charging: bool
     car_connected: bool
     starting_until: datetime | None = None
-    grace_until: datetime | None = None
 
 
 def ampere_step_count(charger: Charger) -> int:
@@ -102,15 +96,27 @@ def charging_current(charger: Charger, ampere_steps_on: int) -> int:
     return charger.min_current_a + max(ampere_steps_on, 1) - 1
 
 
-def time_to_start(charger: Charger, window: timedelta) -> timedelta:
-    """Return how long a car gets to start charging after the charger is activated.
+def may_step_up(charger: Charger, reading: ChargerReading) -> bool:
+    """Return whether the car draws enough power to get more than the minimum current.
 
-    A charger controlled through a cloud service may take much longer than
-    two windows before the car draws power or it reports actively charging.
+    It must charge actively and draw at least 90 % of the power reserve, what
+    the charger draws at its minimum current, so a car that does not use the
+    current it has, as one that is full, cannot suddenly draw much more.
     """
-    if charger.cloud_controlled:
-        return max(2 * window, timedelta(seconds=charger.start_delay_s))
-    return 2 * window
+    power_w = reading.charging_power_w
+    return reading.actively_charging and power_w is not None and power_w >= 0.9 * charger.power_reserve_w
+
+
+def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int) -> float:
+    """Return what a charger that draws `power_w` now is estimated to draw with `ampere_steps_on` ampere steps on.
+
+    Its power per ampere is its power reserve divided by its minimum current,
+    and a car that draws less than its current allows goes on drawing that.
+    """
+    if not ampere_steps_on:
+        return 0.0
+    allowed_w = charging_current(charger, ampere_steps_on) * charger.power_reserve_w / charger.min_current_a
+    return min(power_w, allowed_w)
 
 
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
@@ -129,22 +135,20 @@ def override_arms(charger: Charger, reading: ChargerReading, activated: bool) ->
     return activated and reading.actively_charging
 
 
-def override_ended(charger: Charger, reading: ChargerReading, becomes_done: bool) -> bool:
+def override_ended(charger: Charger, reading: ChargerReading, activated: bool) -> bool:
     """Return whether the override ends, because the car has stopped charging or left.
 
     Only evidence that the car has stopped charging or left ends it, unlike
     almost everywhere else where anything but evidence of true counts as
     false. An override that has ended does not come back, so a sensor that is
     unavailable for a moment, as while a cloud service is down, must not end
-    it. A car that has stopped charging ends it when its charger becomes done,
-    so a charger that the regulation has deactivated, or a car that pauses
-    within its grace period, does not end it.
+    it. A charger that the regulation has deactivated does not end it either.
     """
     if not (_override_may_end(charger, reading) and reading.override_armed):
         return False
     if charger.override_ends is OverrideEnd.CAR_DISCONNECTED:
         return reading.car_disconnected
-    return becomes_done and reading.charging_stopped
+    return activated and reading.charging_stopped
 
 
 def _override_may_end(charger: Charger, reading: ChargerReading) -> bool:
@@ -161,9 +165,9 @@ def charging_permission(
 ) -> ChargingPermission:
     """Return whether the charger may charge, and why.
 
-    `charging` is whether the charger is activated and charges or is in
-    grace. Finishing needs that at every decision since its window ended, so
-    a stop for any reason ends it until the window allows charging again.
+    `charging` is whether the charger is activated and charges actively.
+    Finishing needs that at every decision since its window ended, so a stop
+    for any reason ends it until the window allows charging again.
     """
     window = charger.charging_window
     if reading.fault:
@@ -191,7 +195,6 @@ def charging_allowed_now(
     The charging window follows the clock, while finishing and a fault are
     judged from what the last decision read, so a charger that was charging
     when its window ended stays allowed until a decision ends the finishing.
-    A charger in grace counts as charging.
     """
     reading = ChargerReading(
         fault=status is not None and status.state is ChargerState.FAULT,
@@ -207,26 +210,20 @@ def charging_allowed_now(
 class ChargingState:
     """What the regulation keeps track of for the chargers of a group while it runs.
 
-    A charger on trial may charge but does not charge actively, so it may only
-    get its first ampere step. A starting charger is a charger on trial within
-    its time to start, whose power reserve is held for the car that is about to
-    draw power; `starting` has when its time to start ends. `charged` has the
-    chargers whose car has charged since activation, `grace` when the grace
-    period of each charger in grace started, and `resumed` the chargers that
-    charge again after a grace period and are first in each round until full.
+    `charging` has the activated chargers that charge actively and may go on,
+    `held_at_min` the chargers whose car does not draw enough to get more than
+    the minimum current, and `starting` when the start delay of each starting
+    charger ends. `may_charge` has the chargers that may have ampere steps on,
+    and `waiting` the queued ones.
     """
 
     priority: list[str] = field(default_factory=list)
     ampere_steps_on: dict[str, int] = field(default_factory=dict)
     activated_at: dict[str, datetime] = field(default_factory=dict)
-    charged: set[str] = field(default_factory=set)
-    grace: dict[str, datetime] = field(default_factory=dict)
-    done: set[str] = field(default_factory=set)
     bypassed: set[str] = field(default_factory=set)
     charging: set[str] = field(default_factory=set)
-    resumed: set[str] = field(default_factory=set)
+    held_at_min: set[str] = field(default_factory=set)
     may_charge: set[str] = field(default_factory=set)
-    on_trial: set[str] = field(default_factory=set)
     starting: dict[str, datetime] = field(default_factory=dict)
     waiting: set[str] = field(default_factory=set)
     last_readings: dict[str, ChargerReading] = field(default_factory=dict)
@@ -248,66 +245,29 @@ class ChargingState:
     def set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> None:
         """Record how many ampere steps of the charger are on.
 
-        `now` is needed only when the charger is activated. A deactivated
-        charger starts over: its car has not charged since activation.
+        `now` is needed only when the charger is activated.
         """
         if count == 0:
             self.activated_at.pop(charger_id, None)
-            self.charged.discard(charger_id)
-            self.grace.pop(charger_id, None)
         elif not self.ampere_steps_on.get(charger_id):
             if now is None:
                 raise ValueError("The time is needed to activate a charger")
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
 
-    def activated_long_enough(self, charger: Charger, now: datetime, window: timedelta) -> bool:
-        """Return whether a car has had time to start charging since activation."""
-        activated_at = self.activated_at.get(charger.id)
-        return activated_at is not None and now - activated_at >= time_to_start(charger, window)
-
-    def counts_as_charging(self, charger_id: str, reading: ChargerReading) -> bool:
-        """Return whether an activated charger charges, or has charged since activation and so is in grace or starts it."""
-        return charger_id in self.activated_at and (reading.actively_charging or charger_id in self.charged)
-
-    def becomes_done(self, charger: Charger, reading: ChargerReading, now: datetime, window: timedelta) -> bool:
-        """Return whether a charger whose car does not charge becomes done.
-
-        It does when its done flag shows done, also when it is not activated,
-        so a full car is not tried after a start. An activated charger is also
-        done when its time to start, or its grace period, has passed without
-        charging, but not while a done flag gives no evidence, as while a cloud
-        service is down, since a car that is not full would stay done until it
-        is disconnected.
-        """
-        if charger.id in self.done or reading.actively_charging:
-            return False
-        if reading.car_done:
-            return True
-        if not self._timers_may_end(charger, reading):
-            return False
-        return self._time_ran_out(charger, now, window)
-
-    def _timers_may_end(self, charger: Charger, reading: ChargerReading) -> bool:
-        return charger.id in self.activated_at and (charger.done_flag_in_use is None or reading.car_not_done)
-
-    def _time_ran_out(self, charger: Charger, now: datetime, window: timedelta) -> bool:
-        """Return whether the time to start, or the grace period of a car that has charged, has passed."""
-        if charger.id in self.charged:
-            grace_started = self.grace.get(charger.id)
-            return grace_started is not None and now - grace_started >= timedelta(seconds=charger.grace_period_s)
-        return self.activated_long_enough(charger, now, window)
+    def charges(self, charger_id: str, reading: ChargerReading) -> bool:
+        """Return whether the charger is activated and charges actively."""
+        return charger_id in self.activated_at and reading.actively_charging
 
     def must_deactivate(self, group: ChargerGroup, charger_id: str) -> bool:
         """Return whether an activated charger is deactivated at once.
 
-        It is when it is not allowed to charge or done. With dynamic charging
-        order, it is also when its car is known to be disconnected, so a car
-        connected again is queued instead of drawing power at once. With one
-        charger at a time, one that another has taken the turn from is too,
-        since it may not charge on anyway.
+        It is when it is not allowed to charge. With dynamic charging order, it
+        is also when its car is known to be disconnected, so a car connected
+        again is queued instead of drawing power at once. With one charger at a
+        time, one after the charger that charges is too, so only one car draws.
         """
-        if not self.is_allowed(charger_id) or charger_id in self.done:
+        if not self.is_allowed(charger_id):
             return True
         if group.dynamic_order and self.last_readings[charger_id].car_disconnected:
             return True
@@ -318,6 +278,10 @@ class ChargingState:
         permission = self.last_permissions.get(charger_id)
         return permission is not None and permission.allowed
 
+    def may_switch_off(self, charger_id: str) -> bool:
+        """Return whether the ampere steps of the charger may be switched off for room: not those of a car that does not charge, which frees nothing."""
+        return charger_id not in self.bypassed and self.last_readings.get(charger_id, ChargerReading()).actively_charging
+
     def shares_by_charging_power(self, group: ChargerGroup) -> bool:
         return group.dynamic_order and not group.one_at_a_time
 
@@ -327,90 +291,46 @@ class ChargingState:
         readings: Mapping[str, ChargerReading],
         permissions: Mapping[str, ChargingPermission],
         now: datetime,
-        window: timedelta,
-    ) -> ChargerChanges:
-        """Evaluate the chargers of the group at a decision and return those that must be switched off."""
+    ) -> list[str]:
+        """Evaluate the chargers of the group at a decision and return those that are newly bypassed."""
         chargers = group.chargers
-        previous_readings = self.last_readings
         previously_charging = self.charging
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
         self.last_decision = now
-        changes = ChargerChanges()
-        for charger in chargers:
-            self._evaluate_charger(charger, previous_readings.get(charger.id), now, window, changes)
-        self.charging = {charger.id for charger in chargers if self._charges(charger.id)}
-        self.resumed = {charger_id for charger_id in self.resumed | changes.resumed if charger_id in self.charging}
-        self.resumed -= {charger.id for charger in chargers if self.ampere_steps_on.get(charger.id) == ampere_step_count(charger)}
-        self._update_priority(group, previously_charging, changes)
+        newly_bypassed = [charger.id for charger in chargers if not self.last_readings[charger.id].car_connected and charger.id not in self.bypassed]
+        self.bypassed = {charger.id for charger in chargers if not self.last_readings[charger.id].car_connected}
+        self.charging = {charger.id for charger in chargers if self._charges_and_may_go_on(charger.id)}
+        self.held_at_min = {charger.id for charger in chargers if not may_step_up(charger, self.last_readings[charger.id])}
+        self._update_priority(group, previously_charging, newly_bypassed)
         self._select(group)
-        self._update_on_trial()
-        self._update_starting(group, now, window)
-        return changes
+        self._update_starting(group, now)
+        return newly_bypassed
 
-    def _evaluate_charger(
-        self,
-        charger: Charger,
-        previous: ChargerReading | None,
-        now: datetime,
-        window: timedelta,
-        changes: ChargerChanges,
-    ) -> None:
-        """Update whether the charger is bypassed, in grace or done.
+    def _charges_and_may_go_on(self, charger_id: str) -> bool:
+        stopped = charger_id in self.bypassed or not self.is_allowed(charger_id)
+        return not stopped and self.charges(charger_id, self.last_readings[charger_id])
 
-        A charger with a fault, or one that is not allowed to charge, stops
-        because of that and not the car, so it neither starts a grace period
-        nor becomes done, and neither does one without a car, which is bypassed.
-        """
-        charger_id = charger.id
-        reading = self.last_readings[charger_id]
-        if previous is not None and not previous.car_connected and reading.car_connected:
-            self._restart_trial(charger_id, now)
-        if reading.car_disconnected:
-            self.done.discard(charger_id)
-        if not reading.car_connected:
-            if charger_id not in self.bypassed:
-                changes.bypassed.append(charger_id)
-            self.bypassed.add(charger_id)
-        else:
-            self.bypassed.discard(charger_id)
-        if not reading.car_connected or not self.is_allowed(charger_id):
-            return
-        if self.becomes_done(charger, reading, now, window):
-            self.done.add(charger_id)
-            changes.done.append(charger_id)
-        elif charger_id not in self.activated_at:
-            return
-        elif reading.actively_charging:
-            self.charged.add(charger_id)
-            if self.grace.pop(charger_id, None) is not None:
-                changes.resumed.add(charger_id)
-        elif charger_id in self.charged and charger_id not in self.grace:
-            self.grace[charger_id] = now
-            changes.grace.append(charger_id)
+    def _update_priority(self, group: ChargerGroup, previously_charging: set[str], newly_bypassed: list[str]) -> None:
+        """Keep the chargers that charge ahead, in the order they started, with dynamic charging order.
 
-    def _restart_trial(self, charger_id: str, now: datetime) -> None:
-        """Give a car that is connected again its time to start, also on a charger that stayed activated."""
-        if charger_id in self.activated_at:
-            self.activated_at[charger_id] = now
-        self.charged.discard(charger_id)
-        self.grace.pop(charger_id, None)
-
-    def _charges(self, charger_id: str) -> bool:
-        """Return whether the charger is activated, charges or is in grace, and may go on."""
-        stopped = charger_id in self.bypassed or charger_id in self.done or not self.is_allowed(charger_id)
-        return not stopped and self.counts_as_charging(charger_id, self.last_readings[charger_id])
-
-    def _update_priority(self, group: ChargerGroup, previously_charging: set[str], changes: ChargerChanges) -> None:
-        """Move the chargers that stop charging for any reason, become done or become bypassed to the back, with dynamic charging order.
-
-        Without dynamic charging order, the configured priority always applies.
+        A charger that starts charging moves behind those that already charge,
+        and one that stops charging for any reason, or becomes bypassed, moves
+        to the back. Without dynamic charging order, the configured priority
+        always applies.
         """
         if not group.dynamic_order:
             self.priority = [charger.id for charger in group.chargers]
             return
-        stopped = (previously_charging - self.charging) | set(changes.done) | set(changes.bypassed)
-        self.priority = [charger_id for charger_id in self.priority if charger_id not in stopped] + [charger_id for charger_id in self.priority if charger_id in stopped]
+        stopped = (previously_charging - self.charging) | set(newly_bypassed)
+        went_on = previously_charging & self.charging
+        started = self.charging - previously_charging
+        self.priority = [
+            *(charger_id for charger_id in self.priority if charger_id in went_on),
+            *(charger_id for charger_id in self.priority if charger_id in started),
+            *(charger_id for charger_id in self.priority if charger_id not in self.charging and charger_id not in stopped),
+            *(charger_id for charger_id in self.priority if charger_id in stopped),
+        ]
 
     def order(self, group: ChargerGroup) -> list[str]:
         """Return the chargers in the order of their ampere steps, highest first."""
@@ -419,26 +339,21 @@ class ChargingState:
     def blocks(self, group: ChargerGroup) -> list[list[str]]:
         """Return the chargers in blocks whose ampere steps are interleaved, one block after the other.
 
-        With several at once and dynamic charging order, the chargers that
-        charge, and those activated to start, are the first block, in the
-        configured priority with those that charge again after a grace period
-        first, and the queued ones the second, in the current charging
-        priority. A charger activated to start sits among those that charge,
-        so room is never made for them from its first ampere step.
+        With several at once and dynamic charging order, the activated chargers
+        are the first block, in the configured priority, and the queued ones the
+        second, in the current charging priority. A charger activated to start
+        sits among those that charge, so room is never made for them from its
+        first ampere step.
         """
         if not self.shares_by_charging_power(group):
             return [list(self.priority)]
         configured = [charger.id for charger in group.chargers]
-        charging = [charger_id for charger_id in configured if charger_id in self.charging or (self.ampere_steps_on.get(charger_id) and charger_id in self.may_charge)]
-        first = [charger_id for charger_id in charging if charger_id in self.resumed]
-        return [
-            first + [charger_id for charger_id in charging if charger_id not in self.resumed],
-            [charger_id for charger_id in self.priority if charger_id not in charging],
-        ]
+        activated = [charger_id for charger_id in configured if charger_id in self.charging or (self.ampere_steps_on.get(charger_id) and charger_id in self.may_charge)]
+        return [activated, [charger_id for charger_id in self.priority if charger_id not in activated]]
 
     def queued(self, group: ChargerGroup) -> list[str]:
-        """Return the chargers that may charge but are not activated and do not charge, in the order they get their turn."""
-        return [charger_id for charger_id in self.order(group) if charger_id in self.may_charge and charger_id not in self.charging and not self.ampere_steps_on.get(charger_id)]
+        """Return the chargers that may charge but are not activated, in the order they get their turn."""
+        return [charger_id for charger_id in self.order(group) if charger_id in self.may_charge and not self.ampere_steps_on.get(charger_id)]
 
     def status(self, group: ChargerGroup) -> dict[str, ChargerStatus]:
         """Return how each charger stands after the last decision."""
@@ -447,8 +362,7 @@ class ChargingState:
     def _status(self, charger: Charger) -> ChargerStatus:
         steps_on = self.ampere_steps_on.get(charger.id, 0)
         reading = self.last_readings.get(charger.id, ChargerReading())
-        charging = steps_on > 0 and (reading.actively_charging or charger.id in self.grace)
-        grace_started = self.grace.get(charger.id)
+        charging = steps_on > 0 and reading.actively_charging
         return ChargerStatus(
             state=self._state_of(charger.id, steps_on > 0, charging),
             ampere_steps_on=steps_on,
@@ -456,13 +370,8 @@ class ChargingState:
             bypassed=charger.id in self.bypassed,
             charging=charging,
             car_connected=reading.car_connected,
-            starting_until=self._while_timing(charger, self.starting.get(charger.id)),
-            grace_until=None if grace_started is None else self._while_timing(charger, grace_started + timedelta(seconds=charger.grace_period_s)),
+            starting_until=self.starting.get(charger.id),
         )
-
-    def _while_timing(self, charger: Charger, until: datetime | None) -> datetime | None:
-        """Return when the time to start or the grace period ends, or None once it has passed and the charger waits for its done flag."""
-        return until if until is None or self.last_decision is None or until > self.last_decision else None
 
     def _state_of(self, charger_id: str, activated: bool, charging: bool) -> ChargerState:
         permission = self.last_permissions.get(charger_id)
@@ -476,14 +385,10 @@ class ChargingState:
             return ChargerState.OUTSIDE_WINDOW
         if charger_id in self.bypassed:
             return ChargerState.NO_CAR
-        if charger_id in self.done:
-            return ChargerState.DONE
         if charger_id in self.waiting and not activated:
             return ChargerState.QUEUED
         if charger_id in self.starting:
             return ChargerState.STARTING
-        if activated and charger_id in self.grace:
-            return ChargerState.GRACE
         if permission is ChargingPermission.OVERRIDE and activated:
             return ChargerState.OVERRIDE
         if permission is ChargingPermission.FINISHING:
@@ -492,64 +397,36 @@ class ChargingState:
             return ChargerState.CHARGING
         return ChargerState.ACTIVATED if activated else ChargerState.DEACTIVATED
 
-    def _update_on_trial(self) -> None:
-        """Find the chargers that may charge but do not charge actively.
-
-        A charger tried without a car that charges, or one in grace, must not
-        get more current and hold back the steps below the entry of its group.
-        """
-        self.on_trial = {charger_id for charger_id in self.may_charge if not self.last_readings[charger_id].actively_charging}
-
-    def _update_starting(self, group: ChargerGroup, now: datetime, window: timedelta) -> None:
-        holds_reserve = self.shares_by_charging_power(group)
+    def _update_starting(self, group: ChargerGroup, now: datetime) -> None:
+        """Find the cloud-controlled chargers within their start delay whose car does not charge yet."""
         self.starting = {
-            charger.id: self.activated_at[charger.id] + time_to_start(charger, window)
+            charger.id: self.activated_at[charger.id] + timedelta(seconds=charger.start_delay_s)
             for charger in group.chargers
-            if (charger.cloud_controlled or holds_reserve)
-            and charger.id in self.on_trial
+            if charger.cloud_controlled
+            and charger.id in self.may_charge
             and charger.id in self.activated_at
-            and charger.id not in self.charged
-            and not (self.activated_long_enough(charger, now, window) and self._timers_may_end(charger, self.last_readings[charger.id]))
+            and not self.last_readings[charger.id].actively_charging
+            and now < self.activated_at[charger.id] + timedelta(seconds=charger.start_delay_s)
         }
 
     def _select(self, group: ChargerGroup) -> None:
-        """Decide which chargers may get ampere steps turned on, and which are queued.
+        """Decide which chargers may have ampere steps on, and which are queued.
 
-        With one charger at a time and dynamic charging order, a charger that
-        charges goes first and the others wait; without dynamic charging order
-        the first in the configured priority gets its steps. With several at
-        once and dynamic charging order, the chargers that do not charge and
-        are not activated are queued behind those that charge.
+        With one charger at a time, the first charger in the current charging
+        priority that charges may go on, the chargers before it may be
+        activated and wait at their minimum current for their car to draw
+        power, and those after it are queued. With several at once and dynamic
+        charging order, the chargers that are not activated are queued behind
+        the activated ones.
         """
-        eligible = [charger_id for charger_id in self.priority if charger_id not in self.bypassed and charger_id not in self.done and self.is_allowed(charger_id)]
+        eligible = [charger_id for charger_id in self.priority if charger_id not in self.bypassed and self.is_allowed(charger_id)]
+        self.may_charge = set(eligible)
         self.waiting = set()
         if not group.one_at_a_time:
-            self.may_charge = set(eligible)
             if group.dynamic_order:
                 self.waiting = set(self.queued(group))
             return
-        charging = [charger_id for charger_id in eligible if group.dynamic_order and (self.last_readings[charger_id].actively_charging or charger_id in self.grace)]
-        if not charging:
-            self.may_charge = set(eligible[:1])
-            self.waiting = set(eligible[1:])
-            return
-        selected = next(
-            (charger_id for charger_id in charging if self.ampere_steps_on.get(charger_id)),
-            charging[0],
-        )
-        self.may_charge = {selected}
-        self.waiting = set(eligible) - {selected}
-
-
-@dataclass(slots=True)
-class ChargerChanges:
-    """What a decision found for the chargers of a group.
-
-    The newly bypassed chargers and those that start their grace period keep
-    only their first ampere step, and the done chargers are deactivated.
-    """
-
-    bypassed: list[str] = field(default_factory=list)
-    grace: list[str] = field(default_factory=list)
-    done: list[str] = field(default_factory=list)
-    resumed: set[str] = field(default_factory=set)
+        charging = next((index for index, charger_id in enumerate(eligible) if charger_id in self.charging), None)
+        if charging is not None:
+            self.may_charge = set(eligible[: charging + 1])
+            self.waiting = set(eligible[charging + 1 :])

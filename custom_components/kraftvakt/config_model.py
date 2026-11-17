@@ -60,9 +60,8 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "chargers": {
         "min_current_a": CHARGING_CURRENT_A,
         "max_current_a": CHARGING_CURRENT_A,
-        "power_reserve_w": Range(0, 5000, 1),
+        "power_reserve_w": Range(1, 5000, 1),
         "start_delay_s": Range(0, 900, 1),
-        "grace_period_s": Range(10, 900, 1),
     },
 }
 
@@ -337,9 +336,6 @@ class Charger:
     car_connected: Condition | None = None
     actively_charging: Condition | None = None
     charging_power: Condition | None = None
-    grace_period_s: int = 300
-    detect_done: bool = False
-    done_flag: Condition | None = None
     charging_window: ChargingWindow | None = None
     finish_after_window: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
@@ -354,14 +350,9 @@ class Charger:
             if not self.switched_by_current or kind is ActionKind.SET_CURRENT:
                 yield ActionField(name, kind, getattr(self, name))
 
-    @property
-    def done_flag_in_use(self) -> Condition | None:
-        """Return the done flag while detect done is on; it is kept, and neither read nor needed, while the setting is off."""
-        return self.done_flag if self.detect_done else None
-
     def conditions(self) -> Iterator[tuple[str, Condition]]:
         """Return each condition that is given, with the field issues address."""
-        for field_name in ("car_connected", "actively_charging", "charging_power", "done_flag", "fault_flag"):
+        for field_name in ("car_connected", "actively_charging", "charging_power", "fault_flag"):
             condition = getattr(self, field_name)
             if condition is not None:
                 yield field_name, condition

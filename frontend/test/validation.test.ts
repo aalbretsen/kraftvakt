@@ -54,7 +54,6 @@ describe("missing items", () => {
       { code: "missing_device", section: "chargers", target: "garage", field: "device_id" },
       { code: "missing_action", section: "chargers", target: "garage", field: "set_current" },
       { code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" },
-      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
     ]);
   });
 
@@ -63,25 +62,13 @@ describe("missing items", () => {
     expect(missingItems(draft)).toEqual([{ code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" }]);
   });
 
-  it("include actively charging only when neither the charging on/off nor the charging power is set", () => {
-    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
-    const power = { type: "power_sensor" as const, value: "sensor.garage_power" };
-    expect(missing({ actively_charging: null, charging_power: power })).toEqual([]);
-    expect(missing({ actively_charging: { type: "state", value: "sensor.garage_status", states: ["charging"] }, charging_power: null })).toEqual([]);
-    expect(missing({ actively_charging: { type: "state", value: "sensor.garage_status", states: [] }, charging_power: null })).toEqual([
-      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
-    ]);
-    expect(missing({ actively_charging: { type: "entity", value: "" }, charging_power: null })).toEqual([
-      { code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" },
-    ]);
-  });
-
-  it("include the charging power of every charger in a group with several at once and dynamic charging order", () => {
-    const draft = (parts: Partial<ChargerGroup>) =>
-      config({ charger_groups: [group("garage", [charger("garage", { charging_power: null })], { one_at_a_time: false, dynamic_order: true, ...parts })] });
-    expect(missingItems(draft({}))).toEqual([{ code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" }]);
-    expect(missingItems(draft({ dynamic_order: false }))).toEqual([]);
-    expect(missingItems(draft({ one_at_a_time: true }))).toEqual([]);
+  it("include the charging power of every charger, but not the charging on/off", () => {
+    const missing = (parts: Partial<Charger>, groupParts: Partial<ChargerGroup> = {}) =>
+      missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)], groupParts)] }));
+    const issue = { code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" };
+    expect(missing({ actively_charging: null })).toEqual([]);
+    expect(missing({ charging_power: null })).toEqual([issue]);
+    expect(missing({ charging_power: { type: "power_sensor", value: "" } }, { one_at_a_time: false, dynamic_order: true })).toEqual([issue]);
   });
 
   it("include the fault flag only while the charger is deactivated on fault", () => {
@@ -92,14 +79,6 @@ describe("missing items", () => {
     expect(missing({ deactivate_on_fault: true, fault_flag: empty })).toEqual([issue]);
     expect(missing({ deactivate_on_fault: true, fault_flag: { type: "entity", value: "binary_sensor.garage_error" } })).toEqual([]);
     expect(missing({ deactivate_on_fault: false, fault_flag: empty })).toEqual([]);
-  });
-
-  it("include the done flag only while the charger detects that the car is done", () => {
-    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)])] }));
-    const issue = { code: "missing_done_flag", section: "chargers", target: "garage", field: "done_flag" };
-    expect(missing({ detect_done: true })).toEqual([issue]);
-    expect(missing({ detect_done: true, done_flag: { type: "entity", value: "binary_sensor.garage_done" } })).toEqual([]);
-    expect(missing({ detect_done: false, done_flag: null })).toEqual([]);
   });
 
   it("leave out the actions to activate and deactivate of a charger switched by its current", () => {
@@ -183,18 +162,10 @@ describe("the device of a charger", () => {
     ]);
   });
 
-  it("needs a power reserve above 0 W in a group with several at once and dynamic charging order", () => {
-    const draft = (dynamic_order: boolean) =>
-      config({ charger_groups: [group("garage", [charger("garage", { power_reserve_w: 0 })], { one_at_a_time: false, dynamic_order })] });
-    const reserveIssues = (dynamic_order: boolean) => draftErrors(draft(dynamic_order), CAPABILITIES, hass()).filter((issue) => issue.field === "power_reserve_w");
-    expect(reserveIssues(true)).toEqual([{ code: "power_reserve_required", section: "chargers", target: "garage", field: "power_reserve_w" }]);
-    expect(reserveIssues(false)).toEqual([]);
-  });
-
   it("holds every entity the charger names, but templates are not checked", () => {
     const item = charger("garage", {
       car_connected: { type: "template", value: "{{ true }}" },
-      done_flag: { type: "entity", value: "binary_sensor.garage_done" },
+      charging_power: { type: "power_sensor", value: "sensor.garage_power" },
       fault_flag: { type: "entity", value: "binary_sensor.garage_error" },
     });
     const onDevice = hass({}, [item]);
@@ -203,13 +174,13 @@ describe("the device of a charger", () => {
       entities: {
         ...onDevice.entities,
         "number.garage_current": { entity_id: "number.garage_current", device_id: "other" },
-        "binary_sensor.garage_done": { entity_id: "binary_sensor.garage_done", device_id: "other" },
+        "sensor.garage_power": { entity_id: "sensor.garage_power", device_id: "other" },
         "binary_sensor.garage_error": { entity_id: "binary_sensor.garage_error", device_id: "other" },
       },
     };
     expect(draftErrors(config({ charger_groups: [group("garage", [item])] }), CAPABILITIES, elsewhere)).toEqual([
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "set_current" },
-      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "done_flag" },
+      { code: "entity_not_on_device", section: "chargers", target: "garage", field: "charging_power" },
       { code: "entity_not_on_device", section: "chargers", target: "garage", field: "fault_flag" },
     ]);
   });

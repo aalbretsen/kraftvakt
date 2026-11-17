@@ -55,13 +55,12 @@
     "bypassed_no_car": "Forbigått: ingen bil tilkoblet",
     "waiting_charger": "I kø: en annen elbillader i gruppen har tur",
     "starting_until": "Venter til {time} på at bilen begynner å lade. Effektreserven holdes ledig så lenge.",
-    "starting_awaits_done": "Venter på at bilen begynner å lade, eller på at ferdigflagget viser om den er ferdig. Effektreserven holdes ledig så lenge.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
     "next_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
     "amperes": "{current} A",
     "chargers_charging": "{charging} av {total} elbilladere lader",
-    "activated_not_charging": "Aktivert, men lader ikke ennå",
+    "activated_not_charging": "Aktivert: bilen trekker ikke effekt, så den venter på minste ladestrøm",
     "window_overridden": "Ladetidsrommet er overstyrt",
     "finishing_at": "Fullfører ladingen som pågikk da ladetidsrommet sluttet, med {current} A",
     "chip_charging": "Lader",
@@ -77,11 +76,6 @@
     "fault": "Et feilflagg viser feil, så elbilladeren er deaktivert til feilen er borte",
     "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt.",
-    "chip_done": "Ferdig",
-    "done": "Ferdig: ferdigflagget viser ferdig, eller bilen sluttet å lade eller begynte ikke. Den prøves igjen når bilen kobles fra og til igjen.",
-    "chip_grace": "Pause",
-    "grace_until": "Bilen har sluttet å lade. Den beholder minste ladestrøm til {time} i tilfelle den begynner igjen.",
-    "grace_awaits_done": "Bilen har sluttet å lade. Den beholder minste ladestrøm til den begynner igjen, eller ferdigflagget viser om den er ferdig.",
     "queued_for_room": "I kø: venter på plass ved siden av elbilladerne som lader"
   },
   "missing": {
@@ -90,9 +84,7 @@
     "missing_entity": "{item}: entitet er ikke valgt.",
     "missing_action": "{item}: handling for å {action} mangler.",
     "missing_condition": "{item}: uttrykket mangler.",
-    "missing_actively_charging": "{item}: «lader aktivt» mangler.",
     "missing_car_connected": "{item}: «bil tilkoblet» mangler.",
-    "missing_done_flag": "{item}: «ferdigflagg» mangler.",
     "missing_fault_flag": "{item}: «feilflagg» mangler.",
     "unknown": "{item}: {code}",
     "appliance_without_entity": "Et apparat uten entitet",
@@ -104,7 +96,7 @@
       "deactivate": "deaktivere",
       "set_current": "sette ladestrøm"
     },
-    "missing_charging_power": "{item}: «ladeeffekt» mangler, og trengs for den dynamiske ladeprioriteten i gruppen."
+    "missing_charging_power": "{item}: «ladeeffekt» mangler."
   },
   "config": {
     "save": "Lagre",
@@ -130,7 +122,6 @@
   },
   "errors": {
     "required": "Påkrevd.",
-    "done_flag_required": "Velg et ferdigflagg, eller slå innstillingen av.",
     "fault_flag_required": "Velg et feilflagg, eller slå innstillingen av.",
     "out_of_range": "Må være mellom {min} og {max}.",
     "at_least": "Må være minst {min}.",
@@ -155,8 +146,6 @@
     "unsupported_option": "Entiteten støtter ikke denne verdien.",
     "outside_entity_range": "Utenfor området til entiteten.",
     "unknown": "Ugyldig verdi ({code}).",
-    "charging_power_required": "Trengs for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
-    "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
     "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen.",
     "essential_with_variants": "Et nødvendig apparat kan ikke ha varianter. Slett dem, eller slå av innstillingen.",
     "essential_with_power_reserve": "Et nødvendig apparat har ingen effektreserve. Slå av innstillingen, eller slå av Fast last først.",
@@ -431,23 +420,6 @@
     "no_value": "ingen verdi",
     "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
   },
-  "done": {
-    "entity": "Entitet",
-    "template": "Mal",
-    "entity_label": "Boolsk entitet",
-    "template_label": "Mal",
-    "entity_helper": "På betyr ferdig, av ikke ferdig, utilgjengelig ikke noe svar.",
-    "state": "Tilstand",
-    "state_label": "Entitet med tilstand",
-    "state_helper": "For eksempel en statussensor på elbilladeren med en tilstand for fullført.",
-    "states_label": "Tilstander",
-    "states_helper": "Velg eller skriv inn tilstandene. Alle andre tilstander regnes som det motsatte, unntatt utilgjengelig, som ikke gir noe svar.",
-    "template_helper": "Sann betyr ferdig, usann ikke ferdig, alt annet ikke noe svar. Variabler: entity_id, entity.",
-    "true": "ferdig",
-    "false": "ikke ferdig",
-    "no_answer": "ikke noe svar",
-    "invalid": "Malen gir {value}, som ikke er sann eller usann, og gir derfor ikke noe svar."
-  },
   "fault": {
     "entity": "Entitet",
     "template": "Mal",
@@ -468,9 +440,9 @@
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "Bare én elbillader i gruppen lader om gangen.",
+    "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen. Mens ingen lader, kan hver bil vente på minste ladestrøm, og den første som trekker effekt, får tur.",
     "dynamic_order": "Dynamisk ladeprioritet",
-    "dynamic_order_sub": "Av: ladeprioriteten under gjelder alltid, så en bil som kobles til høyere opp, tar over fra en som lader under.\nPå: elbilladere som lader, går først, og en bil som kobles til senere, venter på tur. Med flere om gangen trenger hver elbillader ladeeffekt og effektreserve.",
+    "dynamic_order_sub": "Av: ladeprioriteten under gjelder alltid, så en bil høyere opp som trekker effekt, tar over fra en som lader under.\nPå: elbilladere som lader, går først, og de andre venter på tur.",
     "chargers": "Ladeprioritet",
     "chargers_sub": "Høyest øverst. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
@@ -494,8 +466,7 @@
     "power_from": "ladeeffekt fra {source}",
     "power_template": "ladeeffekt fra mal",
     "deactivated_on_fault": "deaktiveres ved feil",
-    "switched_by_current": "slås på og av med strømmen",
-    "detects_done": "oppdager ferdig"
+    "switched_by_current": "slås på og av med strømmen"
   },
   "charger": {
     "add_title": "Legg til elbillader",
@@ -537,7 +508,7 @@
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Elbilladeren aktiveres bare når så mye effekt er ledig. Sett den til omtrent det den trekker på minste ladestrøm. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
+        "helper": "Elbilladeren aktiveres bare når så mye effekt er ledig, og bilen får mer enn minste ladestrøm bare mens den trekker minst 90 % av den. Sett den til omtrent det bilen trekker på minste ladestrøm. {min}–{max} W, standard {default} W, det 6 A trekker på tre faser ved 400 V."
       },
       "car_connected": {
         "label": "Bil tilkoblet",
@@ -545,29 +516,18 @@
       },
       "actively_charging": {
         "label": "Lader aktivt",
-        "helper": "Angi én eller begge: det holder at én av dem viser lading. Bare en bil som lader, får mer enn minste ladestrøm."
+        "helper": "Ladeeffekten er påkrevd, og forteller hvor mye bilen trekker. Lading av/på er valgfri, og kan fortelle tidligere at bilen lader."
       },
       "charging_power": {
         "label": "Ladeeffekt"
       },
-      "grace_period_s": {
-        "label": "Respittid",
-        "helper": "Hvor lenge bilen kan ta en pause, for eksempel for å balansere batteriet, uten å miste turen. Etter det er den ferdig til den kobles fra. {min}–{max} s, standard {default} s."
-      },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og bilen får startforsinkelsen på å begynne å lade."
-      },
-      "detect_done": {
-        "label": "Oppdag at bilen er ferdigladet",
-        "helper": "For en elbillader som forteller når bilen er full. Den stoppes da med en gang, i stedet for etter respittiden, og en full bil prøves ikke etter en omstart. Ikke noe svar, som mens en skytjeneste er nede, regnes aldri som ferdig."
-      },
-      "done_flag": {
-        "label": "Ferdigflagg"
+        "helper": "Slå det på når elbilladeren styres over internett. Den får færre gjentatte kommandoer, og effektreserven holdes ledig i startforsinkelsen mens bilen begynner å lade."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
-        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Effekten holdes ledig så lenge. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Effektreserven holdes ledig så lenge. {min}–{max} s, standard {default} s."
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",
@@ -608,10 +568,6 @@
       "actively_charging": {
         "true": "Tilstander for lading",
         "false": "Tilstander for ikke lading"
-      },
-      "done_flag": {
-        "true": "Tilstander for ferdig",
-        "false": "Tilstander for ikke ferdig"
       },
       "fault_flag": {
         "true": "Tilstander for feil",

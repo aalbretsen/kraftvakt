@@ -34,7 +34,7 @@ describe("a missing item", () => {
     const variantAction = missingText({ code: "missing_action", section: "appliances", target: "heater", field: "variants.morning.turn_on" });
     expect(variantAction).toContain("Water heater «Morning»");
     expect(variantAction).toContain(localize("missing.actions.turn_on"));
-    expect(missingText({ code: "missing_actively_charging", section: "chargers", target: "garage", field: "actively_charging" })).toContain("Garage");
+    expect(missingText({ code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" })).toContain("Garage");
   });
 
   it("names an appliance without an entity by what it is", () => {

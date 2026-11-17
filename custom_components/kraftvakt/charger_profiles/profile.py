@@ -61,10 +61,9 @@ class ProfileCondition:
 class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
-    A profile has a charging on/off (`actively_charging`), a charging power or both.
+    A profile has a charging power, and may have a charging on/off (`actively_charging`).
     It has actions to activate and deactivate, unless the charger is `switched_by_current`.
-    `cloud_controlled` is for chargers controlled through a cloud service. Its grace period and start delay are the
-    defaults for such a charger: a cloud-controlled charger needs a longer grace period than a local one.
+    `cloud_controlled` is for chargers controlled through a cloud service, with its start delay.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
 
@@ -73,13 +72,11 @@ class ChargerProfile:
     entity: ProfileEntity
     set_current: ProfileAction
     car_connected: ProfileCondition
+    charging_power: ProfileCondition
     activate: ProfileAction | None = None
     deactivate: ProfileAction | None = None
     switched_by_current: bool = False
     actively_charging: ProfileCondition | None = None
-    charging_power: ProfileCondition | None = None
-    done_flag: ProfileCondition | None = None
-    grace_period_s: int = DEFAULT_CHARGER.grace_period_s
     cloud_controlled: bool = False
     start_delay_s: int = DEFAULT_CHARGER.start_delay_s
     deactivate_on_fault: bool = False

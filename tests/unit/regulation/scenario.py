@@ -63,9 +63,9 @@ def current(charger_id: str, current_a: int) -> list[Command]:
 class Scenario:
     """Drives a started engine through decisions.
 
-    Every charger reads as idle with a car connected and a valid charging
-    power until the test changes it with `set_charger`, and only the appliances in
-    `excluded` are excluded until the test changes it with `exclude`.
+    Every charger reads as idle with a car connected until the test changes it
+    with `set_charger` or `draw`, and only the appliances in `excluded` are
+    excluded until the test changes it with `exclude`.
     """
 
     def __init__(
@@ -76,6 +76,8 @@ class Scenario:
         excluded: tuple[str, ...] = (),
     ) -> None:
         self.engine = RegulationEngine(config)
+        self.configured_chargers = {charger.id: charger for charger in config.chargers}
+        self.drawing: set[str] = set()
         self.now = start
         self.time_zone = time_zone
         self.chargers = {charger.id: ChargerReading(car_connected=True) for charger in config.chargers}
@@ -86,6 +88,28 @@ class Scenario:
     def set_charger(self, charger_id: str, **reading: Any) -> None:
         """Change what is read for the charger from now on."""
         self.chargers[charger_id] = replace(self.chargers[charger_id], **reading)
+
+    def draw(self, charger_id: str, drawing: bool = True) -> None:
+        """Let the car draw what the current of its charger allows from now on, or stop drawing.
+
+        While it draws, the charger reads as actively charging with a charging
+        power of its current times its power reserve divided by its minimum
+        current, and as not charging with 0 W while it is deactivated.
+        """
+        if drawing:
+            self.drawing.add(charger_id)
+        else:
+            self.drawing.discard(charger_id)
+            self.set_charger(charger_id, actively_charging=False, charging_power_w=0.0)
+
+    def _readings(self) -> dict[str, ChargerReading]:
+        readings = dict(self.chargers)
+        for charger_id in self.drawing:
+            charger = self.configured_chargers[charger_id]
+            current_a = self.engine.chargers[charger_id].current_a
+            power_w = 0.0 if current_a is None else current_a * charger.power_reserve_w / charger.min_current_a
+            readings[charger_id] = replace(readings[charger_id], actively_charging=current_a is not None, charging_power_w=power_w)
+        return readings
 
     def exclude(self, *appliance_ids: str) -> None:
         """Exclude exactly these appliances from now on."""
@@ -123,7 +147,7 @@ class Scenario:
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
-                chargers=dict(self.chargers),
+                chargers=self._readings(),
                 excluded_appliances=self.excluded_appliances,
                 time_zone=self.time_zone,
             )

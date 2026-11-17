@@ -24,7 +24,6 @@ describe("moving a charger to a device", () => {
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
       charging_power: { type: "template", value: "{{ 2300 }}" },
-      done_flag: { type: "state", value: "sensor.garage_status", states: ["completed"], states_are_true: true },
       fault_flag: { type: "entity", value: "binary_sensor.garage_error" },
     });
     expect(changesForDevice(garage, "device_cabin", cabin)).toEqual({
@@ -34,7 +33,6 @@ describe("moving a charger to a device", () => {
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
       charging_power: { type: "template", value: "{{ 2300 }}" },
-      done_flag: null,
       fault_flag: null,
     });
   });
@@ -52,7 +50,6 @@ describe("moving a charger to a device", () => {
       car_connected: null,
       actively_charging: null,
       charging_power: null,
-      done_flag: null,
       fault_flag: null,
     });
     expect(deviceEntities(cabin, null)).toEqual([]);

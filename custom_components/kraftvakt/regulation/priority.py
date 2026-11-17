@@ -59,13 +59,17 @@ def ampere_steps(
     blocks: Sequence[Sequence[Charger]],
     ampere_steps_on: Mapping[str, int],
     may_charge: Collection[str],
-    on_trial: Collection[str],
-    bypassed: Collection[str],
+    held_at_min: Collection[str],
+    may_switch_off: Collection[str],
     starting: Collection[str],
     growth: RepeatedTurnOnGrowth,
 ) -> list[Step]:
-    """Return the ampere steps of the group: those of each block interleaved, the first of each charger, then the second, one block after the other."""
-    return [step for chargers in blocks for step in _interleaved(group_id, chargers, ampere_steps_on, may_charge, on_trial, bypassed, starting, growth)]
+    """Return the ampere steps of the group: those of each block interleaved, the first of each charger, then the second, one block after the other.
+
+    A charger in `held_at_min` may only have its first ampere step turned on,
+    and only the ampere steps of a charger in `may_switch_off` are switched off for room.
+    """
+    return [step for chargers in blocks for step in _interleaved(group_id, chargers, ampere_steps_on, may_charge, held_at_min, may_switch_off, starting, growth)]
 
 
 def _interleaved(
@@ -73,8 +77,8 @@ def _interleaved(
     chargers: Sequence[Charger],
     ampere_steps_on: Mapping[str, int],
     may_charge: Collection[str],
-    on_trial: Collection[str],
-    bypassed: Collection[str],
+    held_at_min: Collection[str],
+    may_switch_off: Collection[str],
     starting: Collection[str],
     growth: RepeatedTurnOnGrowth,
 ) -> list[Step]:
@@ -85,8 +89,8 @@ def _interleaved(
             is_on=index < ampere_steps_on.get(charger.id, 0),
             power_reserve_w=charger.power_reserve_w if index == 0 else None,
             growth=growth,
-            can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in on_trial),
-            can_turn_off=charger.id not in bypassed,
+            can_turn_on=charger.id in may_charge and (index == 0 or charger.id not in held_at_min),
+            can_turn_off=charger.id in may_switch_off,
             holds_reserve=index == 0 and charger.id in starting and ampere_steps_on.get(charger.id, 0) > 0,
             group_id=group_id,
         )

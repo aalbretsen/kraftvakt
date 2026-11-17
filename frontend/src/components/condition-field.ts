@@ -18,7 +18,6 @@ export type ConditionKind =
   | "condition"
   | "actively_charging"
   | "charging_power"
-  | "done"
   | "fault"
   | "display_power"
   | "display_temperature";
@@ -27,7 +26,6 @@ const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
   actively_charging: ["entity", "template"],
   charging_power: ["power_sensor", "template"],
-  done: ["entity", "template"],
   fault: ["entity", "template"],
   display_power: ["power_sensor", "template"],
   display_temperature: ["temperature_sensor", "template"],

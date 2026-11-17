@@ -130,7 +130,7 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
 @pytest.mark.parametrize(
     ("field", "value", "code"),
     [
-        ("power_reserve_w", 0, "power_reserve_required"),
+        ("power_reserve_w", 0, "out_of_range"),
         ("power_reserve_w", 1, None),
         ("power_reserve_w", 5000, None),
         ("power_reserve_w", 5001, "out_of_range"),
@@ -271,14 +271,6 @@ def test_entity_is_unique_across_appliances_and_chargers() -> None:
     ]
 
 
-def test_power_reserve_may_be_0_without_sharing_by_charging_power() -> None:
-    def mutate(data: dict[str, Any]) -> None:
-        data["charger_groups"][0]["dynamic_order"] = False
-        data["charger_groups"][0]["chargers"][0]["power_reserve_w"] = 0
-
-    assert _issues_after(mutate) == []
-
-
 @pytest.mark.parametrize(
     ("field", "condition"),
     [
@@ -286,7 +278,6 @@ def test_power_reserve_may_be_0_without_sharing_by_charging_power() -> None:
         ("charging_power", {"type": "entity", "value": "binary_sensor.x"}),
         ("car_connected", {"type": "state", "value": "sensor.x", "states": "connected"}),
         ("fault_flag", {"type": "state", "value": "sensor.x", "states": ["error"], "states_are_true": "no"}),
-        ("done_flag", {"type": "power_sensor", "value": "sensor.x"}),
     ],
 )
 async def test_each_charger_condition_takes_its_own_kinds(hass: HomeAssistant, field: str, condition: dict[str, Any]) -> None:

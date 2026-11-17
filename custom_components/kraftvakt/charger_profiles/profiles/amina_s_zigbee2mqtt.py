@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from ..profile import DEFAULT_ACTION, ChargerProfile, DeviceMatch, ProfileEntity, entity_action, entity_condition
+from ..profile import DEFAULT_ACTION, ChargerProfile, DeviceMatch, ProfileEntity, entity_action, entity_condition, power_sensor_condition
 
 PROFILE: Final = ChargerProfile(
     name="Amina S (Zigbee2MQTT)",
@@ -14,8 +14,8 @@ PROFILE: Final = ChargerProfile(
     deactivate=DEFAULT_ACTION,
     set_current=entity_action(ProfileEntity("number", name="Charge limit")),
     car_connected=entity_condition(ProfileEntity("binary_sensor", name="Ev connected")),
+    charging_power=power_sensor_condition(ProfileEntity("sensor", name="Total active power")),
     actively_charging=entity_condition(ProfileEntity("binary_sensor", name="Charging")),
-    grace_period_s=120,
     deactivate_on_fault=True,
     fault_flag=entity_condition(ProfileEntity("binary_sensor", name="Alarm active")),
 )

@@ -57,7 +57,6 @@ export function chargerDeviceEntities(charger: Charger): [string, string][] {
     ["car_connected", entityOfCondition(charger.car_connected)],
     ["actively_charging", entityOfCondition(charger.actively_charging)],
     ["charging_power", entityOfCondition(charger.charging_power)],
-    ["done_flag", entityOfCondition(charger.done_flag)],
     ["fault_flag", entityOfCondition(charger.fault_flag)],
   ];
   return entities.filter((entry): entry is [string, string] => !!entry[1]);
@@ -87,7 +86,6 @@ export function changesForDevice(charger: Charger, deviceId: string | null, hass
     car_connected: keptCondition(charger.car_connected, onDevice),
     actively_charging: keptCondition(charger.actively_charging, onDevice),
     charging_power: keptCondition(charger.charging_power, onDevice),
-    done_flag: keptCondition(charger.done_flag, onDevice),
     fault_flag: keptCondition(charger.fault_flag, onDevice),
   };
 }
