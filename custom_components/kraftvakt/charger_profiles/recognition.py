@@ -75,7 +75,9 @@ class DeviceEntities:
             "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),
             "charging_power": None if profile.charging_power is None else self.condition(profile.charging_power),
             "done_flag": None if profile.done_flag is None else self.condition(profile.done_flag),
+            "grace_period_s": profile.grace_period_s,
             "cloud_controlled": profile.cloud_controlled,
+            "start_delay_s": profile.start_delay_s,
         }
         fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)
         if fault_flag is not None:

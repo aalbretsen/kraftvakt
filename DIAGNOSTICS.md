@@ -53,7 +53,7 @@ What the tool carries over:
 - Actions: the default action, the default action of another entity of the device, and script steps. In script steps, the charger's own device and entity are given by
   the variable `entity_id`, so the profile works for every EV charger of its kind. A domain action becomes the script steps it runs.
 - Conditions: an entity or a power sensor of the device, or a template, with each entity of the device in the template as a `$name` placeholder.
-- **Cloud-controlled EV charger.**
+- **Cloud-controlled EV charger**, the **Grace period** and the **Start delay**.
 - Charging turned on and off by **the charging current**, without the actions to activate and deactivate.
 
 EV chargers with the same kind of device give one draft, from the first of them.

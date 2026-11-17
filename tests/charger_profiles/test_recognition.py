@@ -35,6 +35,8 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
         "activate": {"mode": "default"},
         "deactivate": {"mode": "default"},
         "switched_by_current": False,
+        "grace_period_s": 120,
+        "start_delay_s": 300,
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "cloud_controlled": False,
         "deactivate_on_fault": True,

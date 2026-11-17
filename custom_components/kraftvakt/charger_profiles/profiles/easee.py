@@ -42,6 +42,7 @@ PROFILE: Final = ChargerProfile(
         "{% set status = states('$status') %}{{ none if status in ['offline', 'unknown', 'unavailable'] else status == 'completed' }}",
         status=_STATUS,
     ),
+    grace_period_s=600,
     cloud_controlled=True,
     deactivate_on_fault=True,
     # An erratic car is a fault too, so the user sees why it does not charge. It ends when the car is disconnected.

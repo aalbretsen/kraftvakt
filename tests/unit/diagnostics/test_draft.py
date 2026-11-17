@@ -64,7 +64,7 @@ def draft(device_fields: dict[str, Any] | None = None, **charger_fields: Any) ->
 
 
 def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -> None:
-    result = draft(cloud_controlled=True)
+    result = draft(cloud_controlled=True, grace_period_s=600, start_delay_s=420)
 
     assert result.module == "acme_b_1"
     assert result.profile.name == "Acme B-1"
@@ -76,6 +76,7 @@ def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -
     assert result.profile.actively_charging is None
     assert result.profile.charging_power == ProfileCondition(ConditionType.POWER_SENSOR, entity=ProfileEntity("sensor"))
     assert result.profile.cloud_controlled
+    assert (result.profile.grace_period_s, result.profile.start_delay_s) == (600, 420)
     assert result.notes == ()
 
 

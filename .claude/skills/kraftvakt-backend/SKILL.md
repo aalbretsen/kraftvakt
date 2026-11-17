@@ -136,7 +136,9 @@ Every issue code needs a text in the panel's translations.
   and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
 - A profile has a charging on/off, a charging power or both. A profile may have a done flag and a fault flag.
   It has actions to activate and deactivate, unless the charger is switched by its current.
-  It always fills switched by current, so choosing a device never keeps the setting of the charger's previous device.
+  It always fills switched by current, cloud-controlled, the grace period and the start delay, the last two with the charger defaults when the profile leaves them out,
+  so choosing a device never keeps the settings of the charger's previous device. A cloud-controlled charger needs a longer grace period than a local one.
+  The other settings, such as the currents, the power reserve and the charging window, are not part of a profile and follow the standard defaults.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
   so choosing a device never turns the setting on without a flag.
 - The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.

@@ -38,7 +38,9 @@ PROFILE = ChargerProfile(
     car_connected=template_condition("{{ states('$power') != '$$' }}", power=ProfileEntity("sensor", translation_key="power")),
     actively_charging=ProfileCondition(ConditionType.ENTITY),
     done_flag=template_condition("{{ is_state('$power', 'completed') }}", power=ProfileEntity("sensor", translation_key="power")),
+    grace_period_s=600,
     cloud_controlled=True,
+    start_delay_s=420,
     deactivate_on_fault=True,
     fault_flag=template_condition("{{ is_state('$power', 'error') }}", power=ProfileEntity("sensor", translation_key="power")),
 )
@@ -78,6 +80,8 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
     assert "cloud_controlled" not in source
     assert "fault" not in source
     assert "done_flag" not in source
+    assert "grace_period_s" not in source
+    assert "start_delay_s" not in source
     assert "ConditionType" not in source
     assert draft.profile == load(written(tmp_path, source, "acme"), PROFILES_PACKAGE).PROFILE
 

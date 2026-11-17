@@ -15,6 +15,7 @@ PROFILE: Final = ChargerProfile(
     set_current=entity_action(ProfileEntity("number", name="Charge limit")),
     car_connected=entity_condition(ProfileEntity("binary_sensor", name="Ev connected")),
     actively_charging=entity_condition(ProfileEntity("binary_sensor", name="Charging")),
+    grace_period_s=120,
     deactivate_on_fault=True,
     fault_flag=entity_condition(ProfileEntity("binary_sensor", name="Alarm active")),
 )

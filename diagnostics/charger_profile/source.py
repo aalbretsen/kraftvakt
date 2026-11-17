@@ -6,7 +6,7 @@ from typing import Any, Final
 
 from homeassistant.util import slugify
 
-from custom_components.kraftvakt.charger_profiles.profile import DEFAULT_ACTION, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
+from custom_components.kraftvakt.charger_profiles.profile import DEFAULT_ACTION, DEFAULT_CHARGER, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
 from custom_components.kraftvakt.charger_profiles.recognition import DeviceEntities
 from custom_components.kraftvakt.config_model import ActionMode, ConditionType
 
@@ -40,8 +40,12 @@ def profile_source(draft: ProfileDraft) -> str:
         fields["charging_power"] = writer.condition(profile.charging_power)
     if profile.done_flag is not None:
         fields["done_flag"] = writer.condition(profile.done_flag)
+    if profile.grace_period_s != DEFAULT_CHARGER.grace_period_s:
+        fields["grace_period_s"] = str(profile.grace_period_s)
     if profile.cloud_controlled:
         fields["cloud_controlled"] = "True"
+    if profile.start_delay_s != DEFAULT_CHARGER.start_delay_s:
+        fields["start_delay_s"] = str(profile.start_delay_s)
     if profile.deactivate_on_fault:
         fields["deactivate_on_fault"] = "True"
     if profile.fault_flag is not None:

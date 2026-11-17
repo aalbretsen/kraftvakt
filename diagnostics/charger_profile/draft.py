@@ -142,7 +142,9 @@ class ProfileDrafting:
             actively_charging=None if charger.actively_charging is None and charger.charging_power is not None else self._condition("actively_charging", charger.actively_charging),
             charging_power=None if charger.charging_power is None else self._condition("charging_power", charger.charging_power),
             done_flag=None if charger.done_flag is None else self._condition("done_flag", charger.done_flag),
+            grace_period_s=charger.grace_period_s,
             cloud_controlled=charger.cloud_controlled,
+            start_delay_s=charger.start_delay_s,
             deactivate_on_fault=charger.deactivate_on_fault,
             fault_flag=None if charger.fault_flag is None else self._condition("fault_flag", charger.fault_flag),
         )

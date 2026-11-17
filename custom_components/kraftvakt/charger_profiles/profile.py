@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Final
 
-from ..config_model import ActionMode, ConditionType
+from ..config_model import ActionMode, Charger, ConditionType
+
+DEFAULT_CHARGER: Final = Charger(id="")
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,7 +63,8 @@ class ChargerProfile:
 
     A profile has a charging on/off (`actively_charging`), a charging power or both.
     It has actions to activate and deactivate, unless the charger is `switched_by_current`.
-    `cloud_controlled` is for chargers controlled through a cloud service.
+    `cloud_controlled` is for chargers controlled through a cloud service. Its grace period and start delay are the
+    defaults for such a charger: a cloud-controlled charger needs a longer grace period than a local one.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
 
@@ -76,7 +79,9 @@ class ChargerProfile:
     actively_charging: ProfileCondition | None = None
     charging_power: ProfileCondition | None = None
     done_flag: ProfileCondition | None = None
+    grace_period_s: int = DEFAULT_CHARGER.grace_period_s
     cloud_controlled: bool = False
+    start_delay_s: int = DEFAULT_CHARGER.start_delay_s
     deactivate_on_fault: bool = False
     fault_flag: ProfileCondition | None = None
 
