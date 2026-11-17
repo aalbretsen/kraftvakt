@@ -137,7 +137,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   3. Overconsumption.
   4. Penalty.
   5. EV chargers: allowed, bypassed, grace, done, current priority, queued.
-  6. Forced switch-offs: chargers not allowed to charge and done chargers (all ampere steps off and deactivate),
+  6. Forced switch-offs: chargers not allowed to charge, done chargers, chargers whose car is known to have left with dynamic charging order,
+     and with one charger at a time a charger that another has taken the turn from (all ampere steps off and deactivate),
      newly bypassed chargers and chargers that start their grace period down to one ampere step, excluded appliances, appliances that switch variant or are included again.
   7. Build the ordered steps (current variants, ampere steps in place of the entry of their group).
   8. Above the limit: switch off the lowest priority step that is on and not a bypassed charger's, without waiting, and cancel any waiting.
@@ -151,7 +152,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - Only one step is turned on or off per decision based on free power.
   Several may be switched off at once only when consumption must drop at once or switching does not change consumption: start and stop, safe state, penalty,
   chargers not allowed to charge, bypassed, done chargers and chargers that start their grace period, excluded appliances, variant switches, appliances included again,
-  the other charger deactivated when one is activated with one charger at a time, and a switch-over.
+  the other charger deactivated when one is activated with one charger at a time, a switch-over,
+  and the chargers set to their minimum to make room for the first ampere step of a charger in their group.
 - Turn on only when the regulation average is under the limit minus the turn-on margin, and average plus power reserve is at most the limit.
   The power reserves held for starting chargers above the step, and for those in the step's own group, count as used:
   they are added to the average in both and in its waiting time (see EV charging).
@@ -165,6 +167,9 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - Making room: when the first step that is off and not skipped may not be turned on for lack of room (the average is at or above the limit minus the margin,
   or its reserve does not fit) while steps below it are on, the lowest of them that is not a bypassed charger's is switched off, without waiting,
   one per decision until it fits or none is left. Not at a decision where step 6 switched off something that was on, for the same reason as in step 8.
+  When the step is the first ampere step of a charger and the lowest step that is on below it is an ampere step of its group above a charger's minimum,
+  every charger of the group that is above its minimum below the step is set to its minimum at once; at a later decision, the lowest is deactivated if there is still no room.
+  Why: a charger higher up that is activated takes the room of those below it anyway, and an ampere at a time would only delay it and send many commands.
   Why: by the fixed order the steps below cannot be turned on before it anyway, and they would otherwise keep the power it waits for.
   Steps end up on below one that is off after a variant switch or an appliance included again,
   and when steps below a charger on trial were turned on before it charges or is tried again.
@@ -341,11 +346,15 @@ All with entity category diagnostic:
 - Bypassed: car connected is false. Evaluated at each decision, ends as soon as it does not hold, and a car that is connected again gets its time to start,
   also on a charger that stayed activated. A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
   is not switched off above the limit and does not stand in the way of others. When it becomes bypassed, all ampere steps but the first are switched off at once.
+  Why it stays activated: without evidence that the car left, as while a cloud service is down, the car may still be charging.
+  With dynamic charging order, a charger whose car connected gives evidence that the car is disconnected is deactivated at once instead,
+  so a car connected again is queued and gets in by its power reserve, instead of drawing power at once.
 - Dynamic charging order (per group setting, default off): whether a charger that charges keeps its place ahead of a car connected later.
   Off, the configured charging priority always applies, so a car connected to a charger higher up goes first and takes the room of a charger below it.
   On, the current charging priority below decides, and with several at once every charger of the group needs a charging power and a power reserve above 0.
 - Current charging priority: equal to the configured one at each start, and always the configured one without dynamic charging order.
-  With dynamic charging order, a charger that stops charging, becomes done or becomes bypassed moves to the back, keeping the order of those that move at once,
+  With dynamic charging order, a charger that stops charging for any reason, a fault included, becomes done or becomes bypassed moves to the back,
+  keeping the order of those that move at once,
   so the chargers that wait are queued in the order they fell back.
 - Several at once without dynamic charging order: the ampere steps of all allowed chargers that are not bypassed or done are interleaved:
   the first of each charger in the configured priority, then the second, and so on.
@@ -358,15 +367,18 @@ All with entity category diagnostic:
   and a switch-over can make room for it before that.
 - Switch-over: with several at once and dynamic charging order, the first queued charger that is not activated gets its first ampere step,
   and every charger that charges above its minimum current is set to it, at the same decision.
-  It is made when the free power plus what those chargers draw above their power reserves, by their charging power, covers the reserve of the queued charger,
-  with the turn-on margin as for any step, and after the waiting time of the queued charger's first ampere step. Not above the limit, not at a decision where step 6
-  switched off something that was on, and not while a charger of the group is starting, so the charging power read is not from before the last switch-over.
+  It is made when the free power, plus what those chargers draw above their power reserves by their charging power, covers the reserve of the queued charger,
+  also when none of them is above its minimum. The turn-on margin applies as for any step, and the waiting time of the queued charger's first ampere step.
+  Not above the limit, not at a decision where step 6 switched off something that was on, and not while a charger of the group is starting,
+  so the charging power read is not from before the last switch-over.
   Why: a charger at the minimum current draws about its power reserve, so the cars can share the power instead of the queued one waiting until the others are full.
 - One at a time without dynamic charging order: the first allowed charger that is not bypassed or done in the configured priority gets ampere steps, whatever the others do.
 - One at a time with dynamic charging order: an actively charging charger that is allowed to charge, those in grace included, may go on charging, whatever the priority;
   the others that want to charge are queued. If several are actively charging, the activated one wins, otherwise the first in current priority.
   When none charges, the first allowed charger that is not bypassed or done in current priority gets ampere steps.
 - One at a time: before a charger is activated, any other activated charger is deactivated at the same decision (never more than one activated).
+  An activated charger that is not bypassed and another charger has taken the turn from is deactivated at once, before there is room for the other,
+  since it may not charge on anyway.
 - A charger charges only when the regulation has activated it, so a car that is connected to a deactivated charger never starts by itself.
 - Allowed to charge: no fault, not excluded, and no charging window, inside it, with an active override, or finishing.
   A charger that is not allowed has all ampere steps switched off at once and is deactivated at the first decision.
@@ -380,11 +392,11 @@ All with entity category diagnostic:
   Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,
   and must not stop charging for that. The fault flag is kept while the setting is off, and is then neither read nor needed.
   A charger with a fault is not allowed to charge, so it is switched off and deactivated at once, does not stand in the way of the others in its group,
-  and gets the command repeat of a deactivated charger. It does not become done, and does not move back in the current charging priority,
-  since it stops charging because of the fault, not the car. A fault neither arms nor ends a window override. Nothing is kept about a fault:
-  when no flag shows one, the charger is regulated as before from the next decision.
+  and gets the command repeat of a deactivated charger. It does not become done, since it stops charging because of the fault, not the car.
+  A fault neither arms nor ends a window override. Nothing is kept about a fault: when no flag shows one, the charger is regulated as before from the next decision.
 - Override switch (per charger, default off): allows charging outside the charging window until it is switched off. A window that starts does not end it.
   No effect for a charger without charging window. Switching it off stops charging outside the window like the window ending.
+  It only allows charging: it does not move the charger ahead of the others in its group.
 - Override end (per charger setting, only with a charging window): what switches the override off besides the user.
   The override is armed at the first decision where what ends it has started, and only an armed override ends, so it can be turned on before the car arrives.
   When it ends, the switch is set back to off.

@@ -298,6 +298,21 @@ class ChargingState:
             return grace_started is not None and now - grace_started >= timedelta(seconds=charger.grace_period_s)
         return self.activated_long_enough(charger, now, window)
 
+    def must_deactivate(self, group: ChargerGroup, charger_id: str) -> bool:
+        """Return whether an activated charger is deactivated at once.
+
+        It is when it is not allowed to charge or done. With dynamic charging
+        order, it is also when its car is known to be disconnected, so a car
+        connected again is queued instead of drawing power at once. With one
+        charger at a time, one that another has taken the turn from is too,
+        since it may not charge on anyway.
+        """
+        if not self.is_allowed(charger_id) or charger_id in self.done:
+            return True
+        if group.dynamic_order and self.last_readings[charger_id].car_disconnected:
+            return True
+        return group.one_at_a_time and charger_id not in self.may_charge and charger_id not in self.bypassed
+
     def is_allowed(self, charger_id: str) -> bool:
         """Return whether the charger was allowed to charge at the last decision."""
         permission = self.last_permissions.get(charger_id)
@@ -387,17 +402,14 @@ class ChargingState:
         return not stopped and self.counts_as_charging(charger_id, self.last_readings[charger_id])
 
     def _update_priority(self, group: ChargerGroup, previously_charging: set[str], changes: ChargerChanges) -> None:
-        """Move the chargers that stop charging, become done or become bypassed to the back, with dynamic charging order.
+        """Move the chargers that stop charging for any reason, become done or become bypassed to the back, with dynamic charging order.
 
-        A charger with a fault stops because of the fault, not the car, so it
-        keeps its place. Without dynamic charging order, the configured
-        priority always applies.
+        Without dynamic charging order, the configured priority always applies.
         """
         if not group.dynamic_order:
             self.priority = [charger.id for charger in group.chargers]
             return
-        faulty = {charger_id for charger_id, permission in self.last_permissions.items() if permission is ChargingPermission.FAULT}
-        stopped = (previously_charging - self.charging - faulty) | set(changes.done) | set(changes.bypassed)
+        stopped = (previously_charging - self.charging) | set(changes.done) | set(changes.bypassed)
         self.priority = [charger_id for charger_id in self.priority if charger_id not in stopped] + [charger_id for charger_id in self.priority if charger_id in stopped]
 
     def order(self, group: ChargerGroup) -> list[str]:

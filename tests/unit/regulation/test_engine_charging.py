@@ -277,6 +277,41 @@ def test_car_disconnected_limits_the_charger_at_once() -> None:
     assert scenario.decide_many(0, 3) == [[], [], []]
 
 
+@pytest.mark.parametrize(
+    ("dynamic_order", "car_disconnected", "commands"),
+    [
+        (False, True, current("c", 6)),
+        (True, False, current("c", 6)),
+        (True, True, deactivate("c")),
+    ],
+)
+def test_charger_without_a_car_keeps_its_minimum_unless_dynamic_order_knows_the_car_left(dynamic_order: bool, car_disconnected: bool, commands: list) -> None:
+    """Without evidence that the car left, as while a cloud service is down, the car may still be charging."""
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=8),), dynamic_order=dynamic_order, wait_at_limit_s=0))
+    scenario.set_charger("c", **CHARGING)
+    scenario.charge("c", 8)
+
+    scenario.set_charger("c", car_connected=False, car_disconnected=car_disconnected, actively_charging=False)
+
+    assert scenario.decide(0) == commands
+
+
+def test_car_connected_again_waits_in_the_queue_with_dynamic_order() -> None:
+    """b was deactivated when its car left, so the car does not draw power before there is room for its reserve."""
+    scenario = two_chargers(one_at_a_time=False, max_a=16, dynamic_order=True)
+    scenario.set_charger("a", **NO_CAR)
+    scenario.set_charger("b", **CHARGING)
+    scenario.charge("b", 8)
+    scenario.set_charger("b", car_connected=False, car_disconnected=True, actively_charging=False)
+    assert scenario.decide(0) == deactivate("b")
+
+    scenario.set_charger("b", car_connected=True, car_disconnected=False)
+
+    assert scenario.decide(9950) == []
+    assert scenario.engine.chargers["b"].state is ChargerState.QUEUED
+    assert scenario.decide(5000) == activate("b")
+
+
 def test_bypassed_charger_is_not_switched_off_above_the_limit() -> None:
     """Switching it off would not lower the consumption."""
     scenario = Scenario(make_config("x", chargers=(charger("c"),), wait_at_limit_s=0))
@@ -434,7 +469,7 @@ def test_excluded_charger_that_counts_as_charging_lets_the_other_charge() -> Non
 
 
 def test_new_car_takes_the_room_of_a_charger_below_without_dynamic_order() -> None:
-    """The configured priority applies, so b is lowered and deactivated until the reserve of a fits."""
+    """The configured priority applies, so b goes to its minimum at once, and is deactivated when the reserve of a still does not fit."""
     scenario = two_chargers(one_at_a_time=False, max_a=16)
     scenario.set_charger("a", **NO_CAR)
     scenario.set_charger("b", **CHARGING)
@@ -442,7 +477,7 @@ def test_new_car_takes_the_room_of_a_charger_below_without_dynamic_order() -> No
 
     scenario.set_charger("a", car_connected=True)
 
-    assert scenario.decide_many(7000, 3) == [current("b", 7), current("b", 6), deactivate("b")]
+    assert scenario.decide_many(7000, 2) == [current("b", 6), deactivate("b")]
     assert scenario.decide(5500) == activate("a")
 
 
@@ -455,6 +490,31 @@ def test_one_at_a_time_without_dynamic_order_stops_the_charger_below() -> None:
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide(0) == deactivate("b") + activate("a")
+
+
+def test_one_at_a_time_without_dynamic_order_stops_the_charger_below_before_there_is_room() -> None:
+    """b may not charge on, so it is deactivated at once, and a is activated when the average shows room for its reserve."""
+    scenario = two_chargers(one_at_a_time=True)
+    scenario.set_charger("a", **NO_CAR)
+    scenario.set_charger("b", **CHARGING)
+    scenario.charge("b", 7)
+
+    scenario.set_charger("a", car_connected=True)
+
+    assert scenario.decide(9000) == deactivate("b")
+    assert scenario.decide(5000) == activate("a")
+
+
+def test_appliance_below_the_group_gives_room_before_a_charger_goes_to_its_minimum() -> None:
+    scenario = Scenario(make_config("x", chargers=(charger("a"), charger("b", max_a=8)), priority=("ev", "x"), one_at_a_time=False, wait_at_limit_s=0))
+    scenario.set_charger("a", **NO_CAR)
+    scenario.set_charger("b", **CHARGING)
+    scenario.charge("b", 8)
+    assert scenario.decide(0) == on("x")
+
+    scenario.set_charger("a", car_connected=True)
+
+    assert scenario.decide_many(7000, 3) == [off("x"), current("b", 6), deactivate("b")]
 
 
 def sharing_chargers(*, b_amperes: int) -> Scenario:
@@ -487,6 +547,14 @@ def test_switch_over_shares_the_power_when_it_covers_the_reserve() -> None:
     assert scenario.decide(9950) == current("b", 6) + activate("a")
     scenario.decide(9950)
     assert scenario.engine.chargers["a"].state is ChargerState.STARTING
+
+
+def test_switch_over_when_the_free_power_alone_covers_the_reserve() -> None:
+    """b at its minimum gives nothing up, and a starts beside it before b gets more current."""
+    scenario = sharing_chargers(b_amperes=6)
+    scenario.set_charger("b", charging_power_w=4100)
+
+    assert scenario.decide(5000) == activate("a")
 
 
 def test_no_switch_over_while_an_entry_above_the_group_waits_for_room() -> None:

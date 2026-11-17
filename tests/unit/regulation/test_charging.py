@@ -345,7 +345,7 @@ def test_car_connected_again_gets_two_windows_on_a_charger_that_stayed_activated
 
 
 def test_chargers_that_stop_charging_move_back_with_dynamic_order_keeping_their_order() -> None:
-    """A charger with a fault keeps its place."""
+    """A charger with a fault moves back too."""
     configured = chargers("a", "b", "c", "d", "e")
     state = ChargingState.for_chargers(configured)
     for charger_id in ("a", "c", "e"):
@@ -363,7 +363,7 @@ def test_chargers_that_stop_charging_move_back_with_dynamic_order_keeping_their_
         dynamic_order=True,
     )
 
-    assert state.priority == ["d", "e", "a", "b", "c"]
+    assert state.priority == ["d", "a", "b", "c", "e"]
 
 
 def test_several_at_once_may_all_charge_when_allowed_and_not_bypassed_or_done() -> None:

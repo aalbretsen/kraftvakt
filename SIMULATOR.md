@@ -39,7 +39,7 @@ and for each EV charger, filled in by hand (the entity IDs follow the language o
 | Field in Kraftvakt | Value |
 |---|---|
 | Device | The EV charger device |
-| Entity for allowed charging | `switch.<charger>_charging_allowed` |
+| Entity that allows charging | `switch.<charger>_charging_allowed` |
 | Activate and Deactivate | Standard |
 | Set charging current | Entity: `number.<charger>_charging_current` |
 | Actively charging | Charging on/off: `binary_sensor.<charger>_charging`, or the state `charging` of `sensor.<charger>_status`; charging power: `sensor.<charger>_charging_power` |

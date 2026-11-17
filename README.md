@@ -43,51 +43,28 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 ## How it works
 
-- **Power limit:** the highest allowed tariff average, for example 10,000 W. It matches the step of the capacity tariff you want to stay below.
-- **Tariff average:** the average of the power sensor over the tariff window, the last hour, sliding. The grid company measures the energy of each clock hour,
-  and every clock hour is also one of the sliding hours, so keeping the tariff average below the power limit keeps every clock hour below it too.
-  The sliding hour also finds overconsumption early: a budget for each clock hour could be used up in the middle of the hour,
-  and leave the household without power for the rest of it.
-- **Regulation average:** the average of the power sensor over a short regulation window, 10 seconds by default. It drives the decisions.
-- **Decisions:** at every regulation interval, the regulation decides whether to turn an appliance on or off. When the regulation average is above the power limit,
-  the lowest-priority appliance that is on is turned off. When power is free, the next appliance in the priority list is turned on, one at a time and after a waiting time.
-  When the next appliance cannot be turned on for lack of free power while appliances below it are on, for example after a variant has moved it up,
-  the lowest of them is turned off, one at each decision, until it fits.
-- **Turn-on margin:** how far below the power limit the regulation average must be before an appliance is turned on, 100 W by default.
-  The window right after a decision still holds some of the consumption from before it,
-  and the margin keeps an appliance from being turned on only to be turned off again at the next decision.
-- **Power reserve:** optional free power that must be available before an appliance is turned on, for example 4000 W for a pool heater that draws a lot as soon as it is turned on.
-- **Waiting time:** follows the waiting time curve. With the regulation average below half the power limit there is no waiting,
-  and close to the power limit the appliance waits nearly the whole waiting time at the power limit, 300 seconds by default.
-- **Repeated turn-on:** when the regulation turns the same appliance on over and over again with nothing else switched in between, the first two turn-ons follow the curve.
-  From the third, the waiting time is the waiting time at the power limit, and it grows by one increment each time until the chosen number of increments is reached.
-  The increment is a share of the waiting time at the power limit. The defaults are × 0.5 and 4 increments for appliances (150 s increments, at most 900 s),
-  and × 1 and 5 increments for EV chargers (300 s increments, at most 1800 s), where each ampere counts on its own.
-  With no waiting time at the power limit, the waiting time does not grow.
-- **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning.
-  A variant uses the actions of the appliance, or has its own action to turn on, to turn off or both, for example with another HVAC mode for a thermostat in summer.
-  When the variant changes, the appliance is turned off with the turn-off action of the new variant, and comes on again the normal way.
-  If it comes on again at the same decision, it only gets the turn-on action, so it is not switched off and on at once.
+- **Power limit:** the highest allowed average consumption over the last hour, for example 10,000 W: the step of the capacity tariff you want to stay below.
+- **Tariff average:** the average consumption over the last hour, sliding. Every clock hour the grid company measures is one of the sliding hours,
+  so keeping the tariff average below the power limit keeps every clock hour below it too, and overconsumption is found early in the hour.
+- **Regulation average:** the average over a short regulation window, 10 seconds by default. It drives the decisions.
+- **Decisions:** at every regulation interval, the regulation turns at most one appliance on or off. Above the power limit, the lowest-priority appliance that is on is turned off.
+  When power is free, the next appliance in the priority list is turned on, after a waiting time. Appliances lower in the list give way when one higher up needs the room.
+- **Waiting time:** none while plenty of power is free, and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
+  An appliance that is turned on again and again waits longer each time.
+- **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Excluded appliance:** the switch **‹appliance› excluded from regulation** takes an appliance out of the regulation.
-  It keeps its place in the priority list, but is passed as if it was not there, and is turned off at the next decision if it is on.
-  When it is included again while appliances below it are on, the lowest of them is turned off to make room for it.
-- **Penalty:** when the tariff average goes above the power limit plus the penalty threshold, every appliance is kept off until the overconsumption is recovered,
-  and the regulation then starts again. The penalty is a safety valve and should normally never happen.
-- **Safe state:** when the power sensor has had no valid value as two regulation windows in a row closed, every appliance is kept off. A single missing value is tolerated.
-  A power sensor that has not reported for the power sensor timeout, 300 seconds by default, has no valid value, also when its value has not changed.
-  When the sensor gives a valid value again, the regulation starts again.
-- **Command repeat:** an appliance or EV charger that has had no command for the command repeat interval, 30 minutes by default,
-  gets the command for the state Kraftvakt has set again: on or off for an appliance, the charging current for an activated EV charger, and deactivate for one that is deactivated.
-  It is checked every time a regulation window closes while the regulation runs, also in the safe state and during a penalty.
-  Excluded appliances and EV chargers get no repeated commands, nor a cloud-controlled EV charger while no car is connected.
-  An activated EV charger is not activated again, since that may start a new charging session in the charger.
-- **Failed action:** an action that fails, or has not finished within the action timeout, 60 seconds by default, is logged, and the regulation goes on as if it worked.
-  The command repeat sends the command for the state again later, except the activation of an EV charger.
+  It is turned off, and gets no commands until it is included again.
+- **Penalty:** a safety valve that should never be needed. If the tariff average still goes above the power limit plus the penalty threshold,
+  everything is kept off until the overconsumption is paid back.
+- **Safe state:** while the power sensor gives no valid value, everything is kept off. A single missing value is tolerated,
+  and a sensor that has not reported for the power sensor timeout has no valid value.
+- **Command repeat:** an appliance or EV charger that has had no command for 30 minutes gets the last one again, in case it has changed state by itself.
+- **Failed action:** an action that fails, or does not finish within the action timeout, is logged, and the regulation goes on as if it worked.
+  The command repeat sends it again later.
 
-Kraftvakt does not know what an appliance uses, and does not read whether it is on.
-It assumes each appliance is as Kraftvakt last set it, and repeats that command now and then, see **Command repeat**. Do not turn regulated appliances on or off outside Kraftvakt.
-It can disturb the regulation, affect appliances with higher priority and trigger a penalty, and the command repeat sets the appliance back.
-Exclude the appliance from the regulation instead. EV chargers are the exception: Kraftvakt reads whether they are actively charging and whether a car is connected.
+Kraftvakt does not know what an appliance uses, and does not read whether it is on. It assumes each appliance is as Kraftvakt last set it.
+Do not turn regulated appliances on or off outside Kraftvakt: it can disturb the regulation and trigger a penalty, and the command repeat sets the appliance back.
+Exclude the appliance from the regulation instead. EV chargers are the exception: Kraftvakt reads whether a car is connected and whether it charges.
 
 ## Starting and stopping
 
@@ -128,99 +105,46 @@ An entity that is only unavailable, for example while its cloud service is down,
 ## EV charging
 
 EV chargers are put in groups, for example one for the chargers in the garage and one for the chargers at the cabin.
-A group has a name, a place of its own in the priority list, and its own setting for one EV charger at a time. An EV charger is in one group.
-Without groups, Kraftvakt does not control EV chargers. To keep an EV charger from charging for a while, turn on its switch **‹charger› excluded from regulation**.
-The rules below apply within each group, so two groups with one EV charger at a time can each have an EV charger charging.
-
-An EV charger is a device in Home Assistant, and gets its name from it. Every entity Kraftvakt uses for it belongs to that device: the entity that is activated,
-the entity for the charging current, and the entities for car connected and actively charging.
+A group has its own place in the priority list and its own settings, and Kraftvakt controls only EV chargers that are in a group.
+An EV charger is a device in Home Assistant, and every entity Kraftvakt uses for it belongs to that device.
 A value from another device, for example whether the car is connected from the car's own integration, is given as a template.
 
-Kraftvakt sets the charging current of each EV charger one ampere at a time, by how much power is free.
-The place of the group in the priority list decides where its EV chargers are in the order. An EV charger charges only when Kraftvakt has activated it,
-so a car that is connected does not start charging by itself. The charging current is set to the minimum before the EV charger is activated or deactivated.
+Kraftvakt sets the charging current one ampere at a time, by how much power is free. An EV charger charges only when Kraftvakt has activated it,
+so a car that is connected does not start charging by itself. Kraftvakt reads whether a car is connected and whether it is actively charging:
 
-- **Car connected**, the **charging on/off**, the **done flag** and the **fault flag** are conditions. A condition is one of:
-  - a boolean entity: on counts as true,
-  - the states of an entity, for example a status sensor of the EV charger: choose the states that count as true, or the states that count as false,
-    so that every other state counts as true. Unknown and unavailable never count as true,
-  - a template: the boolean value true counts as true.
+- An EV charger without a car is not activated, and does not stand in the way of the others.
+- An EV charger that is activated keeps the minimum current until the car charges. Only a car that charges gets more.
+- A car that does not start charging, or pauses for longer than the grace period, is **done**,
+  and is not tried again until it is disconnected or the regulation starts again. The status page shows a car that pauses as **Paused**.
+- A **done flag**, for example a status sensor of the EV charger with a state for completed, makes the car done at once when it is full.
+  While the done flag gives no answer, for example while a cloud service is down, the car is never done.
 
-  Anything else counts as false, also an unavailable entity and a template that fails. The done flag is the exception, see below.
-- **Car connected** is read at every decision. An EV charger without a car connected is bypassed, see below.
-- **Actively charging** is read at every decision from the **charging on/off**, a condition, and the **charging power**,
-  a sensor in W or kW or a template that gives the power in W, where above 100 W counts as charging. Give one of them or both: the car charges when either shows it.
-  The charging on/off often tells that the car has started before the power does. An EV charger that has lost power or its connection reports unavailable, and does not charge.
-- An EV charger gets more than the minimum current only when it is actively charging. While it is being tried, the appliances below its group can be turned on.
-  When it charges, they are turned off one at a time while it needs room, see **Decisions**.
-- A car that is not actively charging when its time to start has passed since the EV charger was activated is **done**.
-  The time to start is two regulation windows, or the start delay of a cloud-controlled EV charger when that is longer.
-- A car that has charged and stops gets the **grace period**, 300 seconds by default, from 10 to 900: the EV charger keeps the minimum current,
-  so the appliances below can use the power, and the car goes on charging if it starts again within the grace period, for example after balancing its battery.
-  When the grace period ends without charging, the car is done. The status page shows the EV charger as **Paused** meanwhile.
-- The **done flag**, optional, tells that the car is done charging, for example from a status sensor of the EV charger with a state for completed.
-  When it shows done, the car is done at once, without waiting for the time to start or the grace period,
-  and also right after a start, so a full car is not tried. A car that is actively charging is never done.
-  While the done flag gives no answer, an unavailable entity or a template that does not give true or false, for example while a cloud service is down,
-  the time to start and the grace period do not make the car done: it keeps the minimum current until the done flag answers or the car charges.
-  So a car that is not full does not stay done until it is unplugged because the cloud service was down for a while.
-- A done EV charger is deactivated and stays off until the car is disconnected, by a known value: a car sensor that is unavailable, or a template that fails, does not count.
-  It is tried again at once when a car is connected again.
-  Every start of the regulation begins without done EV chargers, so a full car is tried once after each start, unless its done flag shows done.
-  A car that charges on its own schedule, or whose charge limit is raised in its app after it is full, does not charge again until it is unplugged:
-  let the charging window decide when the car charges, or turn on the override.
-- An EV charger without a car connected is bypassed: it gets no more than the minimum current, stays activated if it is, and does not stand in the way of other EV chargers.
-- **Dynamic charging order**, a setting of each group, off by default, decides whether an EV charger that charges keeps its place ahead of a car connected later:
-  - Off, the charging priority of the group always applies. A car connected to an EV charger higher up goes first, and takes the room of the one below it:
-    with one EV charger at a time the one below is deactivated, and with several at once it is turned down, and turned off when there is still not room.
-  - On, with one EV charger at a time, an EV charger that is charging goes on until it is done, and the others in the group wait as **Queued**.
-  - On, with several at once, the EV chargers that charge share the power in the charging priority, and a car connected later waits as **Queued**
-    until the others are at their maximum current, or until a **switch-over** makes room: when what the charging EV chargers draw above their power reserves,
-    by their charging power, plus the free power covers the power reserve of the queued one, they are set to their minimum current at once, and it is activated.
-    Every EV charger of such a group needs a charging power and a power reserve above 0 W, which should be about what it draws at its minimum current.
-  - With dynamic charging order, an EV charger that stops charging, becomes done or has no car moves to the back of the queue.
-    A car that starts again within its grace period is first in each round until it is at its maximum current.
-- Turn on **Cloud-controlled EV charger**, off by default, for an EV charger controlled through a cloud service,
-  where every command goes over the internet and may count against the limits of the service, and charging may take minutes to start:
-  - It gets no repeated commands, see **Command repeat**, while **Car connected** tells that no car is connected.
-    A car sensor that is unavailable, or a template that fails, does not count as no car, so the commands are repeated then.
-  - **Start delay**, 300 seconds by default and at most 900,
-    is the longest time from when the EV charger is activated until the car draws power and the EV charger reports that it is actively charging.
-    The car gets this time to start, when it is longer than two regulation windows.
-  - While the car starts, the power reserve of the EV charger is kept free, as it also is after a switch-over:
-    what is below it in the priority list, and the other EV chargers of its group, are turned on only when there is room with the power reserve counted as used,
-    and their waiting time counts the power reserve as used too.
-    Otherwise an appliance would be turned on in the power the car is about to draw, and turned off again when the car starts.
-    The status page shows the EV charger as **Starting** meanwhile.
-- Turn on **Deactivate on fault**, off by default, and give a **fault flag** for an EV charger that reports its faults,
-  for example a binary sensor for a problem, or a template that is true when its status is an error.
-  While the fault flag shows a fault, the EV charger is deactivated, gets no current, and does not stand in the way of the others in its group.
-  It gets the command to deactivate again with the command repeat. The status page shows it as **Fault**.
-  When the flag no longer shows a fault, the EV charger is regulated as before from the next decision, and tried again at once.
-  The fault flag is a condition of the EV charger's device, see above,
-  so an unavailable entity or a template that fails is no fault, and a cloud service that is down does not stop the charging.
-  A fault does not end or arm the override of the charging window, and it ends finishing after the charging window, as any deactivation does.
-- Outside its charging window, an EV charger does not charge. The charging window can span midnight and follows the time zone of Home Assistant.
-- With **Finish ongoing charging after the charging window**, off by default, an EV charger that is charging when its charging window ends may go on charging, regulated as before,
-  until it stops. Charging has stopped when the car is done, or when it is deactivated for any reason, for example above the power limit,
-  a disconnected car, an excluded EV charger or a stopped regulation. It is then not turned on again before the charging window starts.
-  An EV charger that is activated but not yet actively charging when the window ends is deactivated.
-  The setting is also the switch **‹charger› finish charging after charging window**.
-- The switch **‹charger› override charging window** lets the EV charger charge outside the charging window. A charging window that starts does not end it.
-  **End the override** chooses when it turns itself off:
-  - **When I turn it off**, the default: it stays on until you turn it off.
-  - **When the car no longer charges**: when the car is done, once it has been actively charging since the switch was turned on,
-    and the charging on/off and the charging power tell that it does not charge. A full car ends it, so the car heating in the morning does not charge.
-    An EV charger that Kraftvakt has deactivated, for example above the power limit, does not end it unless its done flag shows done,
-    and the car gets time to start again when it is activated again.
-    A car that never starts charging, for example one that is already full, does not end it.
-  - **When the car is disconnected**: at the first decision where the car is not connected, once a car has been connected since the switch was turned on.
-    It lasts through a full car and the car heating in the morning.
+**Car connected**, the charging on/off, the done flag and the fault flag are each a boolean entity, the states of an entity, or a template.
+An unavailable entity or a template that fails counts as false, and for the done flag as no answer.
 
-  The last two can be turned on before the car arrives, since they wait for the car. Only a known value ends the override: a car sensor that is unavailable,
-  or a template that fails, does not, so a cloud service that is down for a moment does not stop the charging you asked for.
-  A car that stops charging or leaves while the regulation is stopped is noticed at the first decision after it starts;
-  one that stops charging or leaves while Home Assistant restarts is not, and the override stays on until you turn it off.
+The settings of the group decide how its cars share the power:
+
+| | Dynamic charging order off | Dynamic charging order on |
+|---|---|---|
+| **One EV charger at a time** | The first EV charger with a car in the charging priority charges. A car connected higher up takes over. | An EV charger that charges goes on until it is done. The others wait as **Queued**. |
+| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that charge share the power. A car connected later waits as **Queued** until its power reserve is free, if need be after the others are set to their minimum current. |
+
+With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
+One whose car is disconnected is deactivated, so a car connected again waits for its turn.
+
+- **Charging window:** the EV charger charges only within this time each day, in the time zone of Home Assistant. It may span midnight.
+  With **Finish charging after the charging window**, a car that is charging when the charging window ends may go on until it stops.
+- The switch **‹charger› override charging window** lets the EV charger charge outside the charging window.
+  It turns itself off as chosen in **End the override**: when you turn it off, when the car no longer charges, or when the car is disconnected.
+  The last two wait for the car, so the switch can be turned on before the car arrives.
+  The override only allows charging: it does not move the EV charger ahead of the others in its group.
+- **Cloud-controlled EV charger:** for an EV charger controlled over the internet. It gets no repeated commands while no car is connected,
+  and the car gets the **Start delay** to start charging, while its power reserve is kept free. The status page shows it as **Starting** meanwhile.
+- **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
+  The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
+- To keep an EV charger from charging for a while, turn on its switch **‹charger› excluded from regulation**.
+
+The helper texts in the panel tell what each setting does.
 
 ## The panel
 
@@ -233,7 +157,7 @@ while it runs, the configuration pages are locked. A saved configuration is used
 ### Configuration pages
 
 - **General:** power sensor, power limit, turn-on margin, regulation window, regulation interval, waiting time at the power limit and penalty threshold.
-  The helper text under each field shows the valid range and the default.
+  The helper text under each field tells what the setting does, with its valid range and default.
 - **Appliances:** the priority list, with the most important appliance at the top; drag to change the order. An appliance has an entity, an optional power reserve,
   actions to turn it on and off, and its variants. A variant is a separate entry in the priority list with an expression, a boolean entity or a template,
   and can have its own action to turn on, to turn off or both. The variants are evaluated in the order of the appliance's list, and the top true expression applies.
@@ -296,7 +220,7 @@ All entities belong to the service device **Kraftvakt**.
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
-| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish ongoing charging after the charging window** in the panel. Can be changed while the regulation runs. |
+| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
 | `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, no fault flag showed a fault at the last decision, and it has no charging window, is inside it, has **‹charger› override charging window** on, or is finishing the charging after the charging window. It follows the clock, also while the regulation is stopped, and stays on without a break when the charging window ends with an EV charger that goes on finishing. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,

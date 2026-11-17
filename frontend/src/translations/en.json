@@ -167,31 +167,31 @@
     "fields": {
       "power_sensor": {
         "label": "Power sensor",
-        "helper": "The sensor that measures the total power of the house right now, typically from the HAN port of the electricity meter. W or kW."
+        "helper": "The total power of the house now, usually from the HAN port of the electricity meter. W or kW."
       },
       "regulation_window_s": {
         "label": "Regulation window",
-        "helper": "Kraftvakt decides from the average consumption over this period, the regulation average. A longer period evens out short peaks, a shorter one reacts faster. {min}–{max} s, default {default} s."
+        "helper": "Decisions use the average over this period. Longer evens out short peaks, shorter reacts faster. {min}–{max} s, default {default} s."
       },
       "power_limit_w": {
         "label": "Power limit",
-        "helper": "The step in the capacity part of the grid tariff you want to stay below. Kraftvakt keeps the average consumption over the last hour, the tariff average, below it. {min}–{max} W, default {default} W."
+        "helper": "The step in the capacity tariff you want to stay below. The average over the last hour is kept below it. {min}–{max} W, default {default} W."
       },
       "turn_on_margin_w": {
         "label": "Turn-on margin",
-        "helper": "How far below the power limit the regulation average must be before an appliance is turned on, so it is not turned off again at the next decision. {min}–{max} W, default {default} W."
+        "helper": "Appliances are turned on only this far below the power limit, so they are not turned off again at once. {min}–{max} W, default {default} W."
       },
       "regulation_interval": {
-        "label": "Regulation interval",
-        "helper": "How often Kraftvakt decides whether to turn something on or off: now every {seconds} seconds. Default {default} ×."
+        "label": "Decide every",
+        "helper": "Now every {seconds} seconds. Default {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance waits before it is turned on when the regulation average is close to the power limit, so the consumption can settle first. The waiting time is shorter the more power is free, as the waiting time curve under Advanced shows. {min}–{max} s, default {default} s."
+        "helper": "How long an appliance waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
-        "helper": "How much the tariff average may exceed the power limit before a penalty starts. {min}–{max} W, default {default} W."
+        "helper": "How far the average over the last hour may go above the power limit before everything is turned off. {min}–{max} W, default {default} W."
       },
       "wait_curve_steepness": {
         "label": "Steepness"
@@ -200,51 +200,51 @@
         "label": "Pivot point"
       },
       "appliance_repeat_increment_factor": {
-        "label": "Increment",
-        "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
+        "label": "Increase each time",
+        "helper": "Share of the waiting time at the power limit. Default × {default}."
       },
       "appliance_repeat_increments": {
-        "label": "Number of increments",
-        "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
+        "label": "Most increases",
+        "helper": "{min}–{max}, default {default}."
       },
       "charger_repeat_increment_factor": {
-        "label": "Increment",
-        "helper": "How much the waiting time grows each time, as a share of the waiting time at the power limit. Default × {default}."
+        "label": "Increase each time",
+        "helper": "Share of the waiting time at the power limit. Default × {default}."
       },
       "charger_repeat_increments": {
-        "label": "Number of increments",
-        "helper": "How many times the waiting time grows. {min}–{max}, default {default}."
+        "label": "Most increases",
+        "helper": "{min}–{max}, default {default}."
       },
       "command_repeat_interval_min": {
-        "label": "Command repeat interval",
-        "helper": "How long an appliance or EV charger may go without a command before its last command is sent again. {min}–{max} min, default {default} min."
+        "label": "Repeat the command after",
+        "helper": "{min}–{max} min, default {default} min."
       },
       "action_timeout_s": {
         "label": "Action timeout",
-        "helper": "How long an action may take before it is stopped and counts as failed. {min}–{max} s, default {default} s."
+        "helper": "An action that takes longer is stopped and counts as failed. {min}–{max} s, default {default} s."
       },
       "power_sensor_timeout_s": {
         "label": "Power sensor timeout",
-        "helper": "How long the power sensor may go without reporting before it counts as invalid. A HAN reader usually reports every 10 seconds. {min}–{max} s, default {default} s."
+        "helper": "A power sensor that reports nothing for this long counts as lost, and everything is turned off. A HAN reader usually reports every 10 seconds. {min}–{max} s, default {default} s."
       }
     },
-    "penalty_info": "A safety valve that should never be needed. If the tariff average, the average consumption over the last hour, still goes above the power limit, every appliance and EV charger is kept off until the overconsumption is paid back."
+    "penalty_info": "A safety valve that should never be needed: if the average over the last hour still goes above the power limit, everything is kept off until the overconsumption is paid back."
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
-    "wait_curve_info": "How much of the waiting time at the power limit an appliance waits, by how much power is free: the power limit minus the regulation average. The appliance is turned on at the first decision after the waiting time, so the actual waiting time is rounded up to the regulation interval.",
+    "wait_curve_info": "How long an appliance waits, by how much power is free. The actual waiting time is rounded up to the next decision.",
     "free_power_kw": "Free power kW",
     "waiting_minutes": "Waiting time min:s",
     "actual_waiting_minutes": "Actual waiting time min:s",
     "repeated_turn_on": "Waiting time on repeated turn-on",
-    "repeated_turn_on_info": "When the regulation turns the same appliance, or one more ampere for an EV charger, on over and over again, because it has to be switched off again each time and nothing else is switched in between, the waiting time grows. The first two times, the waiting time follows the curve. After that, it is the waiting time at the power limit, and it grows by one increment each time until the number of increments is reached. For the first two, the table shows the waiting time at the pivot point.",
+    "repeated_turn_on_info": "When the same appliance, or the same ampere of an EV charger, is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
     "appliances": "Appliances",
     "chargers": "EV chargers",
     "command_repeat": "Command repeat",
-    "command_repeat_info": "An appliance can change state without Kraftvakt, for example when its circuit breaker trips and comes back, or because of a fault in the device. The regulation therefore sends the command for the state it has set again when an appliance or EV charger has not had a command for this long. Appliances and EV chargers excluded from the regulation are left alone.",
+    "command_repeat_info": "An appliance or EV charger can change state by itself, for example after a power cut. When it has had no command for this long, it gets the last one again. Excluded ones are left alone.",
     "timeouts": "Timeouts",
-    "timeouts_info": "An action that does not finish holds back the commands after it, also those that turn appliances off. A power sensor that has stopped reporting can show an old value as if it were valid."
+    "timeouts_info": "Guards against an action that never finishes and a power sensor that stops reporting."
   },
   "list": {
     "drag": "Drag to change the order",
@@ -253,7 +253,7 @@
   },
   "appliances": {
     "priority_title": "Priority list",
-    "priority_sub": "Kraftvakt turns on from the top and off from the bottom. Drag to change the order.",
+    "priority_sub": "Turned on from the top, off from the bottom. Drag to change the order.",
     "add": "Add appliance",
     "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
     "charger_group_sub": "EV chargers: {count} · configured under",
@@ -270,25 +270,25 @@
     "edit_title": "Edit appliance",
     "view_title": "Appliance",
     "variants": "Variants",
-    "variants_info": "Give the appliance another place in the priority list at certain times or in certain conditions, for example a higher priority for the water heater in the morning. When several variants apply, the top one in this list wins.",
+    "variants_info": "Give the appliance another place in the priority list at certain times or conditions, for example a higher place for the water heater in the morning. The top variant that applies wins.",
     "add_variant": "Add variant",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
         "label": "Entity",
-        "helper": "The entity Kraftvakt turns on and off, for example the switch of a water heater or a thermostat. Its name in Home Assistant becomes the name of the appliance."
+        "helper": "What Kraftvakt turns on and off, for example the switch of a water heater. Its name becomes the name of the appliance."
       },
       "turn_on": {
         "label": "Action to turn on",
-        "helper": "How Kraftvakt turns the appliance on. Standard works for most entities."
+        "helper": "Standard works for most entities."
       },
       "turn_off": {
         "label": "Action to turn off",
-        "helper": "How Kraftvakt turns the appliance off. Standard works for most entities."
+        "helper": "Standard works for most entities."
       },
       "power_reserve_w": {
         "label": "Power reserve (optional)",
-        "helper": "Free power that must be available before the appliance is turned on, for an appliance that draws a lot as soon as it is turned on. Set it to about what the appliance draws, so it is not turned off again at once. Applies to every variant."
+        "helper": "For an appliance that draws a lot at once: it is turned on only when this much power is free. Set it to about what it draws. Applies to every variant."
       },
       "label": {
         "label": "Label"
@@ -298,11 +298,11 @@
       },
       "override_turn_on": {
         "label": "Own action to turn on",
-        "helper": "The variant turns the appliance on with its own action instead of the appliance's usual one, for example another HVAC mode."
+        "helper": "For example another HVAC mode."
       },
       "override_turn_off": {
         "label": "Own action to turn off",
-        "helper": "The variant turns the appliance off with its own action instead of the appliance's usual one, for example frost protection."
+        "helper": "For example frost protection."
       }
     }
   },
@@ -311,7 +311,7 @@
     "view_title": "Variant {name}",
     "condition": "Expression",
     "delete": "Delete variant",
-    "condition_info": "The variant applies while the expression is true, for example between 05 and 08, or while the room is colder than 18 degrees. Otherwise the appliance has its usual place in the priority list."
+    "condition_info": "The variant applies while the expression is true, for example between 05 and 08. Otherwise the appliance keeps its usual place."
   },
   "action": {
     "default": "Standard",
@@ -339,13 +339,13 @@
     "template": "Template",
     "entity_label": "Boolean entity",
     "template_label": "Template",
-    "entity_helper": "True only when the entity is on. Unavailable counts as false.",
+    "entity_helper": "True only when it is on. Unavailable counts as false.",
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as false.",
-    "template_helper": "True only when the template gives the boolean value true. Variables: entity_id, entity.",
+    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as false.",
+    "template_helper": "True only when it gives true. Variables: entity_id, entity.",
     "now": "Now: {value}",
     "true": "true",
     "false": "false",
@@ -358,13 +358,13 @@
     "template": "Template",
     "entity_label": "Boolean entity",
     "template_label": "Template",
-    "entity_helper": "A boolean entity of the EV charger that is on while the car charges. Off and unavailable count as not charging.",
+    "entity_helper": "On while the car charges. Unavailable counts as not charging.",
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as not charging.",
-    "template_helper": "Only the boolean value true counts as charging, for example from a status sensor of the EV charger. Anything else, also an error, counts as not charging. Variables: entity_id, entity.",
+    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as not charging.",
+    "template_helper": "True means charging, anything else not charging. Variables: entity_id, entity.",
     "true": "charging",
     "false": "not charging",
     "invalid": "The template gives {value}, which is not true or false, so it counts as not charging."
@@ -375,8 +375,8 @@
     "template": "Template",
     "power_sensor_label": "Sensor for charging power",
     "template_label": "Template for charging power",
-    "power_sensor_helper": "Above 100 W counts as charging. W or kW. Unavailable counts as not charging.",
-    "template_helper": "Gives the charging power as a number in W; multiply a value in kW by 1000. Above 100 W counts as charging, and anything that is not a number counts as not charging. Variables: entity_id, entity.",
+    "power_sensor_helper": "Above 100 W counts as charging. W or kW.",
+    "template_helper": "The power in W; above 100 W counts as charging. Variables: entity_id, entity.",
     "true": "charging",
     "false": "not charging",
     "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
@@ -386,13 +386,13 @@
     "template": "Template",
     "entity_label": "Boolean entity",
     "template_label": "Template",
-    "entity_helper": "On means done, off not done. Unavailable gives no answer.",
+    "entity_helper": "On means done, off not done, unavailable no answer.",
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger with a state for completed.",
     "states_label": "States",
-    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable gives no answer.",
-    "template_helper": "The boolean value true means done, and false not done. Anything else, also an error, gives no answer. Variables: entity_id, entity.",
+    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which gives no answer.",
+    "template_helper": "True means done, false not done, anything else no answer. Variables: entity_id, entity.",
     "true": "done",
     "false": "not done",
     "no_answer": "no answer",
@@ -403,13 +403,13 @@
     "template": "Template",
     "entity_label": "Boolean entity",
     "template_label": "Template",
-    "entity_helper": "On means a fault. Off and unavailable count as no fault.",
+    "entity_helper": "On means a fault. Unavailable is no fault.",
     "state": "State",
     "state_label": "Entity with a state",
     "state_helper": "For example a status sensor of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose among the states the entity has reported, or type one. Every other state counts as the opposite, and unavailable counts as no fault.",
-    "template_helper": "Only the boolean value true means a fault. Anything else, also an error, counts as no fault. Variables: entity_id, entity.",
+    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which is no fault.",
+    "template_helper": "True means a fault, anything else no fault. Variables: entity_id, entity.",
     "true": "fault",
     "false": "no fault",
     "invalid": "The template gives {value}, which is not true or false, so it counts as no fault."
@@ -418,9 +418,9 @@
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "Only one EV charger in the group charges at a time, while the others wait.",
+    "one_at_a_time_sub": "Only one EV charger in the group charges at a time.",
     "dynamic_order": "Dynamic charging order",
-    "dynamic_order_sub": "Off: the charging priority is fixed, so a car connected to an EV charger higher up stops the one charging below it.\nOn: an EV charger that charges keeps its place, and a car connected later waits for its turn. With more than one EV charger at a time, every EV charger needs a charging power and a power reserve, and a waiting car starts when the others can be lowered to their lowest charging power to make room for it.",
+    "dynamic_order_sub": "Off: the charging priority below always applies, so a car connected higher up takes over from one charging below it.\nOn: EV chargers that charge go first, and a car connected later waits its turn. With several at once, every EV charger needs a charging power and a power reserve.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
@@ -431,7 +431,7 @@
     "unnamed_group": "Group without a name",
     "delete_group": "Delete group",
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
-    "switches_info": "For each EV charger Kraftvakt makes three switches that can also be used while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› finish charging after charging window».",
+    "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› finish charging after charging window».",
     "currents": "{min}–{max} A",
     "reserve": "reserve {power} W",
     "window": "charging window {start}–{end}",
@@ -460,19 +460,19 @@
     "fields": {
       "device_id": {
         "label": "Device",
-        "helper": "The EV charger as a device in Home Assistant. Its name becomes the name of the EV charger, and the entities below are chosen among its entities. Kraftvakt fills in the fields when it has a charger profile for the device."
+        "helper": "The EV charger in Home Assistant. Its entities are chosen below, and filled in when Kraftvakt knows the charger."
       },
       "entity_id": {
-        "label": "Entity for allowed charging",
-        "helper": "The entity Kraftvakt activates to let the car charge, and deactivates to stop it, normally the charger's switch for allowing charging."
+        "label": "Entity that allows charging",
+        "helper": "Activated to let the car charge, deactivated to stop it."
       },
       "activate": {
         "label": "Action to activate",
-        "helper": "How Kraftvakt lets the car start charging. The charging current is set to the minimum first."
+        "helper": "Standard works for most entities."
       },
       "deactivate": {
         "label": "Action to deactivate",
-        "helper": "How Kraftvakt stops the charging. The charging current is set to the minimum first."
+        "helper": "Standard works for most entities."
       },
       "min_current_a": {
         "label": "Minimum charging current"
@@ -485,45 +485,45 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "The power the EV charger draws when charging starts at the minimum current. Kraftvakt activates the EV charger only when this much power is free. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
+        "helper": "The EV charger is activated only when this much power is free. Set it to about what it draws at the minimum current. {min}–{max} W, default {default} W (about 6 A on three phases, 400 V)."
       },
       "car_connected": {
         "label": "Car connected",
-        "helper": "Tells Kraftvakt whether a car is connected, so an EV charger without a car is not activated. Only true counts as connected, and unavailable counts as not connected."
+        "helper": "An EV charger without a car is not activated. Unavailable counts as not connected."
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "Tells Kraftvakt that the car draws power. Give a charging on/off, a charging power or both: the car charges when either of them shows it. Only an EV charger that is actively charging gets more than the minimum current."
+        "helper": "Give one or both: either one showing charging is enough. Only a car that charges gets more than the minimum current."
       },
       "charging_power": {
         "label": "Charging power"
       },
       "grace_period_s": {
         "label": "Grace period",
-        "helper": "How long the car may stop charging and still count as charging, so a short pause does not end it. Meanwhile the EV charger is held at its lowest charging power. A car that has not charged again when it ends is done until it is disconnected. {min}–{max} s, default {default} s."
+        "helper": "How long the car may pause, for example to balance its battery, without losing its turn. After that it is done until it is disconnected. {min}–{max} s, default {default} s."
       },
       "done_flag": {
         "label": "Done flag",
-        "helper": "Optional. Tells Kraftvakt that the car is done charging, for example full, as many EV chargers report. The EV charger is then done at once, without waiting for the car to start or for the grace period, also right after a start, and is not activated again until the car is disconnected. A car that charges is never done. While the done flag gives no answer, for example while a cloud service is down, the car waits for it instead of being done when the time runs out."
+        "helper": "Optional. Stops the EV charger as soon as the car is full, instead of after the grace period, and a full car is not tried after a restart. No answer, as while a cloud service is down, never counts as done."
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "Turn it on when the EV charger is controlled through a cloud service, where commands go over the internet, take time and may count against the limits of the service. It then gets no repeated commands while no car is connected, and the car gets the start delay to start charging."
+        "helper": "Turn it on when the EV charger is controlled over the internet. It gets fewer repeated commands, and the car gets the start delay to start charging."
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "The longest time from when the EV charger is activated until the car draws power. Kraftvakt gives the car this long to start charging, and keeps the power free for it meanwhile. {min}–{max} s, default {default} s."
+        "helper": "How long the car may take to start charging after the EV charger is activated. Its power is kept free meanwhile. {min}–{max} s, default {default} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",
-        "helper": "While the fault flag below shows a fault, Kraftvakt deactivates the EV charger and leaves it out of the regulation. When the fault clears, it is regulated as before. An unavailable entity or a template that fails is not a fault."
+        "helper": "While a fault flag shows a fault, the EV charger is stopped and the others in the group may charge. Unavailable is no fault."
       },
       "fault_flag": {
         "label": "Fault flag"
       },
       "charging_window": {
         "label": "Charging window",
-        "helper": "The EV charger charges only within this time each day, for example at night when electricity is cheaper. It can span midnight, and start and end cannot be the same. Turned off, the EV charger may always charge."
+        "helper": "The EV charger charges only within this time each day, for example at night. Off: it may always charge."
       },
       "start": {
         "label": "Start"
@@ -532,15 +532,15 @@
         "label": "End"
       },
       "finish_after_window": {
-        "label": "Finish ongoing charging after the charging window",
-        "helper": "An EV charger that is charging when the charging window ends may go on until it stops charging. Once it has stopped, it is not turned on again before the charging window starts."
+        "label": "Finish charging after the charging window",
+        "helper": "A car that is charging when the charging window ends may go on until it stops. It then waits for the next charging window."
       },
       "override_ends": {
         "label": "End the override",
-        "helper": "When the switch «‹charger› override charging window», which lets the car charge outside the charging window, turns itself off. It can be turned on before the car arrives, since it waits until the car has charged or been connected. A sensor without a value does not end it."
+        "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives. The override lets the car charge outside the charging window, but does not move it ahead of the others in the group."
       }
     },
-    "charging_current_info": "Kraftvakt raises and lowers the current one ampere at a time, by how much power is free. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow. Whole amperes.",
+    "charging_current_info": "The current is raised and lowered one ampere at a time by the free power. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow.",
     "state_choices": {
       "car_connected": {
         "true": "States for connected",

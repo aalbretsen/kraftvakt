@@ -59,7 +59,10 @@ The section header, the description and the footer note are in `section-styles.t
 - An alert is only for a state or a warning, such as the lock, the warning against manual control or an applied charger profile, never for an explanation.
 - Fields are HA's own components with their own labels, helper texts and spacing, also where HA puts the label above one field and inside another.
   The panel's own text under a field, such as under an action or a condition, is indented as HA indents the helper text of a field.
-- Texts tell the user what is configured and why. The more advanced the setting, the more technical the language may be.
+- Most users read the helper texts, not the README, so the details of a setting are in its helper text, and the README stays general.
+  A helper text tells the effect of the setting for the user, and when to use it, as briefly as it can, followed by the range and the default;
+  not how the regulation works or why. A label is worded so the helper text can be short, or left out.
+  The more advanced the setting, the more technical the language may be.
 
 ### Configuration pages
 
@@ -119,7 +122,7 @@ The section header, the description and the footer note are in `section-styles.t
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
   The start delay is kept when the switch is turned off, since it has no effect then.
-- Finish ongoing charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
+- Finish charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
 - Set charging current also offers Entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.
   Required until an entity is chosen.

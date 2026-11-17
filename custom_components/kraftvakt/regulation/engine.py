@@ -278,7 +278,7 @@ class RegulationEngine:
             charging = self._charging(group.id)
             changes = charging.evaluate(group, readings, permissions, decision.now, timedelta(seconds=self._config.general.regulation_window_s))
             for charger_id in charging.activated():
-                if not charging.is_allowed(charger_id) or charger_id in charging.done:
+                if charging.must_deactivate(group, charger_id):
                     commands += self._set_ampere_steps_on(charger_id, 0)
             for charger_id in changes.bypassed + changes.grace:
                 if charging.ampere_steps_on[charger_id] > 1:
@@ -380,14 +380,23 @@ class RegulationEngine:
         return self._switch(lowest_on.key, turn_on=False)
 
     def _make_room_below(self, key: StepKey) -> list[Command]:
+        """Switch off the lowest step that is on below the step.
+
+        Room for a charger's first ampere step that would be taken from
+        another charger of its group is taken at once: every charger of the
+        group that is on above its minimum below the step is set to its
+        minimum, an exception to one step per decision.
+        """
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
-        lowest_on = next(
-            (step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off),
-            None,
-        )
-        if lowest_on is None:
+        below_on = [step for step in steps[place + 1 :] if step.is_on and step.can_turn_off]
+        if not below_on:
             return []
+        lowest_on = below_on[-1]
+        group_id = steps[place].group_id
+        if _is_first_ampere_step(key) and lowest_on.group_id == group_id and not _is_first_ampere_step(lowest_on.key):
+            above_minimum = dict.fromkeys(step.key.charger_id for step in below_on if step.group_id == group_id and isinstance(step.key, AmpereStepKey) and step.key.index > 0)
+            return [command for charger_id in above_minimum for command in self._set_ampere_steps_on(charger_id, 1)]
         return self._switch(lowest_on.key, turn_on=False)
 
     def _turn_on_next(self, now: datetime, average_w: float, forced_off: bool) -> list[Command]:
@@ -418,11 +427,12 @@ class RegulationEngine:
     def _switch_over(self, steps: list[Step], place: int | None, now: datetime, average_w: float) -> list[Command] | None:
         """Return the commands of a switch-over when one is due, an empty list while its waiting time runs, or None.
 
-        The queued charger may start when the free power plus what the chargers
-        that charge above their minimum current draw above their power reserves
-        covers its reserve. Nothing above the group may be waiting for room, and
-        no charger of the group may be starting, since its charging power would
-        then be from before the last switch-over.
+        The queued charger may start when the free power, plus what the chargers
+        that charge above their minimum current draw above their power reserves,
+        covers its reserve, also when none of them is above its minimum.
+        Nothing above the group may be waiting for room, and no charger of the
+        group may be starting, since its charging power would then be from
+        before the last switch-over.
         """
         for group in self._groups:
             charging = self._charging(group.id)
@@ -437,7 +447,7 @@ class RegulationEngine:
             key = AmpereStepKey(queued[0], 0)
             step = next(step for step in steps if step.key == key)
             held_w = _held_reserves_w(steps, group_places[0])
-            if freed_w <= 0 or not self._may_turn_on(step, average_w + held_w - freed_w):
+            if not self._may_turn_on(step, average_w + held_w - freed_w):
                 continue
             if not self._has_waited(step, now, average_w + held_w):
                 return []
@@ -537,6 +547,10 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
+
+
+def _is_first_ampere_step(key: StepKey) -> bool:
+    return isinstance(key, AmpereStepKey) and key.index == 0
 
 
 def _held_reserves_w(steps: list[Step], place: int) -> float:
