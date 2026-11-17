@@ -129,10 +129,10 @@
         "name": "Romtemperatur"
       },
       "temperature": {
-        "name": "Simulert temperatur"
+        "name": "Temperatur"
       },
       "floor_temperature": {
-        "name": "Simulert gulvtemperatur"
+        "name": "Gulvtemperatur"
       }
     },
     "sensor": {

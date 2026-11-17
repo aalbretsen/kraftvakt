@@ -129,10 +129,10 @@
         "name": "Room temperature"
       },
       "temperature": {
-        "name": "Simulated temperature"
+        "name": "Temperature"
       },
       "floor_temperature": {
-        "name": "Simulated floor temperature"
+        "name": "Floor temperature"
       }
     },
     "sensor": {

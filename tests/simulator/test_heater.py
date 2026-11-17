@@ -174,7 +174,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(hass: Ho
                 "number.heating_cable_heating_power",
                 "number.heating_cable_duty_cycle",
                 "number.heating_cable_period",
-                "number.heating_cable_simulated_temperature",
+                "number.heating_cable_temperature",
                 UNPLUGGED,
             ],
         ),
@@ -186,7 +186,7 @@ async def test_changing_the_cycle_of_a_switched_off_heater_keeps_it_off(hass: Ho
                 "number.thermostat_duty_cycle",
                 "number.thermostat_period",
                 "number.thermostat_room_temperature",
-                "number.thermostat_simulated_floor_temperature",
+                "number.thermostat_floor_temperature",
                 "switch.thermostat_unplugged",
             ],
         ),
@@ -221,8 +221,8 @@ async def test_simulation_controls_are_in_the_configuration_category(
 @pytest.mark.parametrize(
     ("kind", "title", "sensor", "number"),
     [
-        (DeviceKind.HEATER, "Heating cable", "sensor.heating_cable_temperature", "number.heating_cable_simulated_temperature"),
-        (DeviceKind.THERMOSTAT, "Thermostat", "sensor.thermostat_floor_temperature", "number.thermostat_simulated_floor_temperature"),
+        (DeviceKind.HEATER, "Heating cable", "sensor.heating_cable_temperature", "number.heating_cable_temperature"),
+        (DeviceKind.THERMOSTAT, "Thermostat", "sensor.thermostat_floor_temperature", "number.thermostat_floor_temperature"),
     ],
 )
 async def test_temperature_sensor_shows_the_set_temperature(hass: HomeAssistant, add_device: AddDevice, kind: DeviceKind, title: str, sensor: str, number: str) -> None:
