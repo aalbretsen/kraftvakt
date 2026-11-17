@@ -237,6 +237,17 @@ describe("actions", () => {
     ]);
   });
 
+  it("to set the current of a charger switched by its current must take 0 A, when the entity tells its lowest value", () => {
+    const draft = (parts: Partial<Charger>) => config({ charger_groups: [group("garage", [charger("garage", { switched_by_current: true, ...parts })])] });
+    const issue = { code: "current_off_unsupported", section: "chargers", target: "garage", field: "set_current" };
+    expect(errors(draft({}), { "number.garage_current": state("6", { min: 6 }) })).toEqual([issue]);
+    expect(errors(draft({}), { "number.garage_current": state("6", { min: 0 }) })).toEqual([]);
+    expect(errors(draft({}))).toEqual([]);
+    expect(errors(draft({ switched_by_current: false }), { "number.garage_current": state("6", { min: 6 }) })).toEqual([]);
+    expect(errors(draft({ set_current: { mode: "custom", action: [{ action: "number.set_value" }] } }), { "number.garage_current": state("6", { min: 6 }) })).toEqual([]);
+    expect(errors(draft({ set_current: null }))).toEqual([]);
+  });
+
   it("are not checked before the entity is chosen, and a custom action is always available", () => {
     expect(errors(config({ appliances: [appliance("heater", { entity_id: null })] }))).toEqual([]);
     expect(isActionAvailable(CAPABILITIES, "appliances", "turn_on", "sensor.heater", { mode: "custom", action: [] })).toBe(true);

@@ -152,7 +152,8 @@
     "outside_entity_range": "Outside the range of the entity.",
     "unknown": "Invalid value ({code}).",
     "charging_power_required": "Needed for the dynamic charging order of a group with several EV chargers at once.",
-    "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once."
+    "power_reserve_required": "Must be above 0 W for the dynamic charging order of a group with several EV chargers at once.",
+    "current_off_unsupported": "The entity cannot be set to 0 A, which stops an EV charger turned on and off by the current."
   },
   "dialog": {
     "ok": "OK",

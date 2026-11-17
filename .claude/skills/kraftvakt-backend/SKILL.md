@@ -107,6 +107,8 @@ An invalid configuration is not saved:
 - Custom actions are checked with HA's script schema, templates for syntax.
   Whether a default action exists for the entity's domain is checked separately in `actions.py`, outside parsing; type errors must be fixed before that check can run.
   That a charger's device exists and its entities belong to it is checked the same way, against the registries, in `devices.py`.
+  For a charger switched by its current, the entity its default or entity set-current action sets must take 0 A, as its `min` attribute tells,
+  or the error is `current_off_unsupported` on `set_current`. An entity without a known `min`, and a custom action, are trusted.
 - The `entity` action mode is only allowed for setting the charging current: it runs the default action of the chosen entity instead of the charger's own entity,
   so it must be a `number` or `input_number`. Why: most chargers have a number entity for the current.
 - A value of the wrong type is reported and read as its default, so every other rule is still checked and all issues come back together; the default is not checked again.

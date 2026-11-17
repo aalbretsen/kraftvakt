@@ -55,6 +55,20 @@ function chargerActions(charger: Charger): ActionEntry[] {
   return names.map((name) => ({ name, field: name, action: charger[name] }));
 }
 
+/**
+ * Return whether a charger switched by its current may be stopped with 0 A, as far as the lowest value of its current entity tells.
+ * A custom action, or an entity without a known lowest value, is trusted.
+ */
+function maySet0A(charger: Charger, states: States): boolean {
+  const action = charger.set_current;
+  if (!charger.switched_by_current || !action) {
+    return true;
+  }
+  const entityId = action.mode === "entity" ? action.entity_id : action.mode === "default" ? charger.entity_id : null;
+  const lowest = entityId ? states[entityId]?.attributes.min : undefined;
+  return typeof lowest !== "number" || lowest <= 0;
+}
+
 /** Return the mistakes in the draft that stop it from being saved. */
 export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   return [
@@ -199,6 +213,9 @@ export function chargerErrors(charger: Charger, capabilities: Capabilities, hass
     ...actionIssues("chargers", charger, chargerActions(charger), capabilities, hass.states),
     ...deviceIssues(charger, hass).map(([code, field]) => issue(code, field)),
   ];
+  if (!maySet0A(charger, hass.states)) {
+    issues.push(issue("current_off_unsupported", "set_current"));
+  }
   if (charger.min_current_a > charger.max_current_a) {
     issues.push(issue("min_current_above_max", "min_current_a"));
   }

@@ -152,7 +152,8 @@
     "outside_entity_range": "Utenfor området til entiteten.",
     "unknown": "Ugyldig verdi ({code}).",
     "charging_power_required": "Trengs for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
-    "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen."
+    "power_reserve_required": "Må være over 0 W for dynamisk ladeprioritet i en gruppe med flere elbilladere om gangen.",
+    "current_off_unsupported": "Entiteten kan ikke settes til 0 A, som stopper en elbillader som slås på og av med strømmen."
   },
   "dialog": {
     "ok": "OK",

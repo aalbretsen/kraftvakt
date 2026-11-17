@@ -119,7 +119,22 @@ def action_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
                         hass.states.get(item.entity_id),
                     )
                 ]
-    return issues
+    return issues + [Issue("current_off_unsupported", "chargers", charger.id, "set_current") for charger in config.chargers if not _may_set_0_a(hass, charger)]
+
+
+def _may_set_0_a(hass: HomeAssistant, charger: Charger) -> bool:
+    """Return whether a charger switched by its current may be stopped with 0 A, as far as the lowest value of its current entity tells.
+
+    A custom action, or an entity without a known lowest value, is trusted.
+    """
+    if not charger.switched_by_current or charger.set_current is None:
+        return True
+    entity_id = charger.set_current.entity_id if charger.set_current.mode is ActionMode.ENTITY else charger.entity_id
+    if charger.set_current.mode not in (ActionMode.DEFAULT, ActionMode.ENTITY) or entity_id is None:
+        return True
+    state = hass.states.get(entity_id)
+    lowest = None if state is None else state.attributes.get("min")
+    return not isinstance(lowest, int | float) or lowest <= 0
 
 
 def default_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:

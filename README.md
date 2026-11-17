@@ -144,7 +144,7 @@ One whose car is disconnected is deactivated, so a car connected again waits for
 - **Deactivate on fault:** while a **fault flag** shows a fault, the EV charger is deactivated, and the others in its group may charge.
   The status page shows it as **Fault**. An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
 - An EV charger that cannot turn charging on and off, only take a current, is set to turn charging on and off by **the charging current**:
-  it is started with its minimum current and stopped with 0 A.
+  it is started with its minimum current and stopped with 0 A, so its current entity must take 0 A.
 - To keep an EV charger from charging for a while, turn on its switch **‹charger› excluded from regulation**.
 
 The helper texts in the panel tell what each setting does.

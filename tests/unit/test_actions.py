@@ -62,7 +62,7 @@ def appliance(
     )
 
 
-def charger(entity_id: str, set_current: ActionConfig = DEFAULT) -> Charger:
+def charger(entity_id: str, set_current: ActionConfig | None = DEFAULT) -> Charger:
     return Charger(
         "c1",
         entity_id=entity_id,
@@ -507,3 +507,24 @@ async def test_chosen_entity_must_have_a_default_action(hass: HomeAssistant) -> 
     )
 
     assert action_issues(hass, config) == [Issue("unsupported_entity_domain", "chargers", "c2", "set_current")]
+
+
+async def test_charger_switched_by_its_current_needs_a_current_entity_that_takes_0_a(hass: HomeAssistant) -> None:
+    """A custom or missing action, a charger switched by its actions, or an entity without a known lowest value, is not checked."""
+    hass.states.async_set("number.from_6", "6", {"min": 6})
+    hass.states.async_set("number.from_0", "6", {"min": 0})
+    switched = (
+        ("c1", "number.from_6", DEFAULT, True),
+        ("c2", "switch.c2", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), True),
+        ("c3", "switch.c3", ActionConfig(ActionMode.ENTITY, entity_id="number.from_0"), True),
+        ("c4", "number.unknown", DEFAULT, True),
+        ("c5", "switch.c5", ActionConfig(ActionMode.CUSTOM, steps=({"action": "number.set_value"},)), True),
+        ("c6", "switch.c6", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), False),
+        ("c7", "switch.c7", None, True),
+        ("c8", "switch.c8", ActionConfig(ActionMode.ENTITY), True),
+    )
+    chargers = tuple(replace(charger(entity_id, set_current), id=charger_id, switched_by_current=by_current) for charger_id, entity_id, set_current, by_current in switched)
+
+    issues = action_issues(hass, KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=chargers),)))
+
+    assert issues == [Issue("current_off_unsupported", "chargers", charger_id, "set_current") for charger_id in ("c1", "c2")]
