@@ -50,9 +50,7 @@ export class KraftvaktChargingPage extends ConfigPage {
   protected render() {
     const groups = this.config.charger_groups;
     return html`
-      ${groups.length === 0
-        ? html`<div class="empty">${this.localize("charging.no_groups")}</div>`
-        : groups.map((group) => this.renderGroup(group))}
+      ${groups.length === 0 ? html`<div class="empty">${this.localize("charging.no_groups")}</div>` : groups.map((group) => this.renderGroup(group))}
       ${this.renderPageFooter(
         groups.length > 0 ? this.localize("charging.switches_info") : "",
         html`
@@ -62,15 +60,11 @@ export class KraftvaktChargingPage extends ConfigPage {
           </ha-button>
         `,
       )}
-      ${allChargers(this.config).length === 0
-        ? html`
-            <kraftvakt-manual-control-warning
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              kind="chargers"
-            ></kraftvakt-manual-control-warning>
-          `
-        : nothing}
+      ${
+        allChargers(this.config).length === 0
+          ? html` <kraftvakt-manual-control-warning .localize=${this.localize} .narrow=${this.narrow} kind="chargers"></kraftvakt-manual-control-warning> `
+          : nothing
+      }
       ${this.editing ? this.renderDialog(this.editing.charger, this.editing.groupId, this.editing.isNew) : nothing}
     `;
   }
@@ -102,8 +96,7 @@ export class KraftvaktChargingPage extends ConfigPage {
           .computeError=${(error: string) => error}
           @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
         ></ha-form>
-        ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))}
-        ${renderDescription(this.localize("charging.chargers_sub"))}
+        ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))} ${renderDescription(this.localize("charging.chargers_sub"))}
       `,
       list: this.renderItemList(list),
       footer: this.renderCardFooter(
@@ -141,19 +134,13 @@ export class KraftvaktChargingPage extends ConfigPage {
     const details = [
       this.localize("charging.currents", { min: charger.min_current_a, max: charger.max_current_a }),
       this.localize("charging.min_current_power", { power: formatNumber(language, charger.min_current_power_w, 0) }),
-      charger.charging_window
-        ? this.localize("charging.window", { ...charger.charging_window })
-        : this.localize("charging.always_allowed"),
+      charger.charging_window ? this.localize("charging.window", { ...charger.charging_window }) : this.localize("charging.always_allowed"),
     ];
     if (charger.charging_window && charger.finish_after_window) {
       details.push(this.localize("charging.finishes_after_window"));
     }
     if (charger.car_connected) {
-      details.push(
-        charger.car_connected.type === "entity"
-          ? this.localize("charging.car_from", { source: charger.car_connected.value })
-          : this.localize("charging.car_template"),
-      );
+      details.push(charger.car_connected.type === "entity" ? this.localize("charging.car_from", { source: charger.car_connected.value }) : this.localize("charging.car_template"));
     }
     if (charger.actively_charging?.value) {
       details.push(
@@ -164,9 +151,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     }
     if (charger.charging_power?.value) {
       details.push(
-        charger.charging_power.type === "template"
-          ? this.localize("charging.power_template")
-          : this.localize("charging.power_from", { source: charger.charging_power.value }),
+        charger.charging_power.type === "template" ? this.localize("charging.power_template") : this.localize("charging.power_from", { source: charger.charging_power.value }),
       );
     }
     if (charger.switched_by_current) {
@@ -188,9 +173,7 @@ export class KraftvaktChargingPage extends ConfigPage {
 
   private fieldLabel(issue: Issue): string {
     const field = issue.field ?? "";
-    return (CHARGER_FIELDS as readonly string[]).includes(field)
-      ? this.localize(`charger.fields.${field}.label` as TranslationKey)
-      : field;
+    return (CHARGER_FIELDS as readonly string[]).includes(field) ? this.localize(`charger.fields.${field}.label` as TranslationKey) : field;
   }
 
   private groupChanged(group: ChargerGroup, event: CustomEvent<{ value: Partial<ChargerGroup> }>): void {
@@ -288,9 +271,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const exists = group.chargers.some((item) => item.id === charger.id);
     this.changeGroup({
       ...group,
-      chargers: exists
-        ? group.chargers.map((item) => (item.id === charger.id ? charger : item))
-        : [...group.chargers, charger],
+      chargers: exists ? group.chargers.map((item) => (item.id === charger.id ? charger : item)) : [...group.chargers, charger],
     });
   }
 

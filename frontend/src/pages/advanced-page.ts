@@ -60,8 +60,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
 
   protected render() {
     return html`
-      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
-      ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
+      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 
@@ -105,12 +104,9 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
 
   private renderRepeatedTurnOnSection(title: RepeatTitle, factorField: RepeatFactorField, stepsField: RepeatIncrementsField) {
     const language = this.hass.language;
+    const fields = [this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`), this.selectField(stepsField, (steps) => String(steps))];
     return html`
-      ${renderSectionHeader(this.localize(title))}
-      ${this.renderForm([
-        this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`),
-        this.selectField(stepsField, (steps) => String(steps)),
-      ])}
+      ${renderSectionHeader(this.localize(title))} ${this.renderForm(fields)}
       ${this.narrowPage ? nothing : this.renderRepeatedTurnOnTable(this.config.general[factorField], this.config.general[stepsField])}
     `;
   }
@@ -130,8 +126,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
       if (waitAtLimit === null || (actual && decisionInterval === null)) {
         return "–";
       }
-      const value =
-        turnOn <= CURVE_TURN_ONS ? waitAtLimit * shareAtPivot : repeatedTurnOnWaiting(turnOn, waitAtLimit, factor, steps);
+      const value = turnOn <= CURVE_TURN_ONS ? waitAtLimit * shareAtPivot : repeatedTurnOnWaiting(turnOn, waitAtLimit, factor, steps);
       return formatMinutes(actual ? untilDecision(value, decisionInterval as number) : value);
     };
     return html`
@@ -206,13 +201,14 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
       </tr>
     `;
     return html`
-      ${this.narrowPage
-        ? nothing
-        : html`<table class="curve-table">
-            ${row("advanced.free_power_kw", (free) => formatPower(language, limit === null ? null : (limit * free) / 100))}
-            ${row("advanced.waiting_minutes", (free) => formatMinutes(waiting(free)))}
-            ${row("advanced.actual_waiting_minutes", (free) => formatMinutes(actualWaiting(free)))}
-          </table>`}
+      ${
+        this.narrowPage
+          ? nothing
+          : html`<table class="curve-table">
+              ${row("advanced.free_power_kw", (free) => formatPower(language, limit === null ? null : (limit * free) / 100))}
+              ${row("advanced.waiting_minutes", (free) => formatMinutes(waiting(free)))} ${row("advanced.actual_waiting_minutes", (free) => formatMinutes(actualWaiting(free)))}
+            </table>`
+      }
       ${this.renderCurveGraph(share, limit)}
     `;
   }
@@ -225,8 +221,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const language = this.hass.language;
     const [width, height] = this.narrowPage ? [320, 200] : [900, 260];
     const [left, right, top, bottom] = [44, 24, 8, 38];
-    const x = (freePercent: number) =>
-      left + ((width - left - right) * (GRAPH_FREE_PERCENT - freePercent)) / GRAPH_FREE_PERCENT;
+    const x = (freePercent: number) => left + ((width - left - right) * (GRAPH_FREE_PERCENT - freePercent)) / GRAPH_FREE_PERCENT;
     const y = (percent: number) => top + ((height - top - bottom) * (100 - percent)) / 100;
     const points = Array.from({ length: 201 }, (_, index) => {
       const free = GRAPH_FREE_PERCENT - (index * GRAPH_FREE_PERCENT) / 200;
@@ -247,10 +242,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
             <text x=${left - 6} y=${y(tick) + 4} text-anchor="end">${formatNumber(language, tick, 0)} %</text>
           `,
         )}
-        ${kwTicks.map(
-          (kw) =>
-            svg`<text x=${x((100 * kw) / limitKw)} y=${height - bottom + 18} text-anchor="middle">${formatNumber(language, kw, decimals)}</text>`,
-        )}
+        ${kwTicks.map((kw) => svg`<text x=${x((100 * kw) / limitKw)} y=${height - bottom + 18} text-anchor="middle">${formatNumber(language, kw, decimals)}</text>`)}
         <text x=${x(GRAPH_FREE_PERCENT / 2)} y=${height - 4} text-anchor="middle">${this.localize("advanced.free_power_kw")}</text>
         <path class="area" d="${line}L${x(0)},${y(0)}L${x(GRAPH_FREE_PERCENT)},${y(0)}Z"></path>
         <path class="line" d=${line}></path>

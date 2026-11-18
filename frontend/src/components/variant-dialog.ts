@@ -92,11 +92,8 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
       description: this.helper(`override_${name}`),
       toggle: { checked: overridden, changed: (checked) => this.override(name, checked) },
       content: overridden
-        ? this.renderActionField(
-            { name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null, label: "" },
-            issues,
-            APPLIANCE_ACTION_VARIABLES,
-            (value) => this.changeVariant({ actions: { ...own, [name]: value } }),
+        ? this.renderActionField({ name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null, label: "" }, issues, APPLIANCE_ACTION_VARIABLES, (value) =>
+            this.changeVariant({ actions: { ...own, [name]: value } }),
           )
         : nothing,
     });
@@ -122,9 +119,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
   private override(name: ApplianceAction, overridden: boolean): void {
     const { [name]: action, ...others } = this.variant?.actions ?? {};
     if (overridden) {
-      const start = this.setAsideActions.has(name)
-        ? this.setAsideActions.get(name)
-        : structuredClone(this.draft[name]);
+      const start = this.setAsideActions.has(name) ? this.setAsideActions.get(name) : structuredClone(this.draft[name]);
       this.changeVariant({ actions: { ...others, [name]: start ?? null } });
     } else {
       this.setAsideActions.set(name, action ?? null);
@@ -134,9 +129,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
 
   private changeVariant(changes: Partial<Variant>): void {
     this.changeDraft({
-      variants: this.draft.variants.map((variant) =>
-        variant.id === this.variantId ? { ...variant, ...changes } : variant,
-      ),
+      variants: this.draft.variants.map((variant) => (variant.id === this.variantId ? { ...variant, ...changes } : variant)),
     });
   }
 }

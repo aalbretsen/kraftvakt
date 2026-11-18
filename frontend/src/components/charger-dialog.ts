@@ -44,16 +44,15 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   protected renderFields(issues: Issue[]) {
     return html`
       ${this.renderDevice(issues)} ${this.renderEntity(issues)}
-      ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) =>
-        this.changeDraft({ min_current_power_w: value.min_current_power_w as number }),
-      )}
+      ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) => this.changeDraft({ min_current_power_w: value.min_current_power_w as number }))}
       ${this.renderSwitchedBy(issues)}
-      ${this.draft.switched_by_current
-        ? nothing
-        : html`${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)} ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}`}
-      ${this.renderChargingCurrent(issues)}
-      ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)}
-      ${this.renderCloudControl(issues)} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
+      ${
+        this.draft.switched_by_current
+          ? nothing
+          : html`${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)} ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}`
+      }
+      ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl(issues)}
+      ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
 
@@ -93,12 +92,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   private renderDevice(issues: Issue[]) {
     return html`
-      ${this.renderForm([{ name: "device_id", required: true, selector: { device: {} } }], issues, (value) =>
-        this.deviceChanged((value.device_id as string) || null),
-      )}
-      ${this.profile
-        ? html`<ha-alert alert-type="info">${this.localize("charger.profile_applied", { profile: this.profile })}</ha-alert>`
-        : nothing}
+      ${this.renderForm([{ name: "device_id", required: true, selector: { device: {} } }], issues, (value) => this.deviceChanged((value.device_id as string) || null))}
+      ${this.profile ? html`<ha-alert alert-type="info">${this.localize("charger.profile_applied", { profile: this.profile })}</ha-alert>` : nothing}
     `;
   }
 
@@ -134,10 +129,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return this.renderGroup({
       title: this.label("actively_charging"),
       description: this.helper("actively_charging"),
-      content: html`
-        ${this.renderCondition("charging_power", "charging_power", issues)}
-        ${this.renderCondition("actively_charging", "actively_charging", issues, true)}
-      `,
+      content: html` ${this.renderCondition("charging_power", "charging_power", issues)} ${this.renderCondition("actively_charging", "actively_charging", issues, true)} `,
     });
   }
 
@@ -148,12 +140,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     };
   }
 
-  private renderCondition(
-    field: "car_connected" | "actively_charging" | "charging_power" | "fault_flag",
-    kind: ConditionKind,
-    issues: Issue[],
-    optional = false,
-  ) {
+  private renderCondition(field: "car_connected" | "actively_charging" | "charging_power" | "fault_flag", kind: ConditionKind, issues: Issue[], optional = false) {
     const issue = issues.find((item) => item.field === field);
     return html`
       <kraftvakt-condition-field
@@ -183,9 +170,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       description: this.helper("cloud_controlled"),
       toggle: { checked: this.draft.cloud_controlled, changed: (checked) => this.changeDraft({ cloud_controlled: checked }) },
       content: showDelay
-        ? this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) =>
-            this.changeDraft({ start_delay_s: value.start_delay_s as number }),
-          )
+        ? this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) => this.changeDraft({ start_delay_s: value.start_delay_s as number }))
         : nothing,
     });
   }

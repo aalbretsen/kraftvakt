@@ -102,16 +102,12 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
 export function missingInAppliance(appliance: Appliance): Issue[] {
   return [
     ...missingEntityAndActions("appliances", appliance, applianceActions(appliance)),
-    ...appliance.variants
-      .filter((variant) => !isSet(variant.condition))
-      .map((variant) => applianceIssue(appliance, "missing_condition", `variants.${variant.id}.condition`)),
+    ...appliance.variants.filter((variant) => !isSet(variant.condition)).map((variant) => applianceIssue(appliance, "missing_condition", `variants.${variant.id}.condition`)),
   ];
 }
 
 export function missingInCharger(charger: Charger): Issue[] {
-  const missing: Issue[] = charger.device_id
-    ? []
-    : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
+  const missing: Issue[] = charger.device_id ? [] : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
   missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
   if (!isSet(charger.car_connected)) {
     missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
@@ -125,19 +121,12 @@ export function missingInCharger(charger: Charger): Issue[] {
   return missing;
 }
 
-
 export function defaultActionOf(capabilities: Capabilities, section: ActionSection, field: string): DefaultAction {
   return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];
 }
 
 /** Return whether the action, given as the default or a domain action, can run for the entity. */
-export function isActionAvailable(
-  capabilities: Capabilities,
-  section: ActionSection,
-  field: string,
-  entityId: string | null,
-  action: ActionConfig | null,
-): boolean {
+export function isActionAvailable(capabilities: Capabilities, section: ActionSection, field: string, entityId: string | null, action: ActionConfig | null): boolean {
   switch (action?.mode) {
     case "default":
       return hasDefaultAction(capabilities, section, field, entityId);
@@ -149,12 +138,7 @@ export function isActionAvailable(
 }
 
 /** Return whether the domain of the entity has a default action for the field. */
-export function hasDefaultAction(
-  capabilities: Capabilities,
-  section: ActionSection,
-  field: string,
-  entityId: string | null,
-): boolean {
+export function hasDefaultAction(capabilities: Capabilities, section: ActionSection, field: string, entityId: string | null): boolean {
   return entityId !== null && defaultActionOf(capabilities, section, field).domains.includes(entityId.split(".")[0]);
 }
 
@@ -228,18 +212,11 @@ function isSet(condition: Condition | null): boolean {
 }
 
 /** Optional settings that are not given are only checked when `required` is set. */
-function rangeIssues(
-  section: LimitSection,
-  target: string | undefined,
-  item: object,
-  limits: Record<string, Range>,
-  required: boolean,
-): Issue[] {
+function rangeIssues(section: LimitSection, target: string | undefined, item: object, limits: Record<string, Range>, required: boolean): Issue[] {
   const values = item as Record<string, unknown>;
   return Object.entries(limits).flatMap(([field, range]) => {
     const value = values[field];
-    const code =
-      typeof value !== "number" || Number.isNaN(value) ? (required ? "required" : undefined) : rangeCode(value, range);
+    const code = typeof value !== "number" || Number.isNaN(value) ? (required ? "required" : undefined) : rangeCode(value, range);
     return code ? [{ code, section, target, field }] : [];
   });
 }
@@ -253,13 +230,7 @@ function rangeCode(value: number, range: Range): string | undefined {
 }
 
 /** The actions that cannot run for the entity of the item, as the backend checks them. */
-function actionIssues(
-  section: ActionSection,
-  item: Appliance | Charger,
-  entries: ActionEntry[],
-  capabilities: Capabilities,
-  states: States,
-): Issue[] {
+function actionIssues(section: ActionSection, item: Appliance | Charger, entries: ActionEntry[], capabilities: Capabilities, states: States): Issue[] {
   const entityId = item.entity_id;
   if (entityId === null) {
     return [];
@@ -278,22 +249,14 @@ function actionIssues(
     if (!domainAction) {
       return [];
     }
-    return Object.entries(parameterIssues(domainAction, action?.data ?? {}, states[entityId])).map(
-      ([parameter, code]) => issue(code, parameter),
-    );
+    return Object.entries(parameterIssues(domainAction, action?.data ?? {}, states[entityId])).map(([parameter, code]) => issue(code, parameter));
   });
 }
 
-function missingEntityAndActions(
-  section: "appliances" | "chargers",
-  item: Appliance | Charger,
-  entries: ActionEntry[],
-): Issue[] {
+function missingEntityAndActions(section: "appliances" | "chargers", item: Appliance | Charger, entries: ActionEntry[]): Issue[] {
   return [
     ...(item.entity_id ? [] : [{ code: "missing_entity", section, target: item.id, field: "entity_id" }]),
-    ...entries
-      .filter(({ action }) => isMissingAction(action))
-      .map(({ field }) => ({ code: "missing_action", section, target: item.id, field })),
+    ...entries.filter(({ action }) => isMissingAction(action)).map(({ field }) => ({ code: "missing_action", section, target: item.id, field })),
   ];
 }
 

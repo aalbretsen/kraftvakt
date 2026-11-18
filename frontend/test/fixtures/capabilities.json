@@ -2,60 +2,29 @@
   "default_actions": {
     "appliances": {
       "turn_on": {
-        "domains": [
-          "switch",
-          "input_boolean",
-          "light",
-          "fan",
-          "climate",
-          "water_heater"
-        ],
+        "domains": ["switch", "input_boolean", "light", "fan", "climate", "water_heater"],
         "service": "turn_on",
         "data": {}
       },
       "turn_off": {
-        "domains": [
-          "switch",
-          "input_boolean",
-          "light",
-          "fan",
-          "climate",
-          "water_heater"
-        ],
+        "domains": ["switch", "input_boolean", "light", "fan", "climate", "water_heater"],
         "service": "turn_off",
         "data": {}
       }
     },
     "chargers": {
       "activate": {
-        "domains": [
-          "switch",
-          "input_boolean",
-          "light",
-          "fan",
-          "climate",
-          "water_heater"
-        ],
+        "domains": ["switch", "input_boolean", "light", "fan", "climate", "water_heater"],
         "service": "turn_on",
         "data": {}
       },
       "deactivate": {
-        "domains": [
-          "switch",
-          "input_boolean",
-          "light",
-          "fan",
-          "climate",
-          "water_heater"
-        ],
+        "domains": ["switch", "input_boolean", "light", "fan", "climate", "water_heater"],
         "service": "turn_off",
         "data": {}
       },
       "set_current": {
-        "domains": [
-          "number",
-          "input_number"
-        ],
+        "domains": ["number", "input_number"],
         "service": "set_value",
         "data": {
           "value": "{{ current }}"
@@ -74,10 +43,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "heat",
-                "auto"
-              ],
+              "preferred_options": ["heat", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -111,10 +77,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "heat",
-                "auto"
-              ],
+              "preferred_options": ["heat", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -143,10 +106,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "off",
-                "auto"
-              ],
+              "preferred_options": ["off", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -180,10 +140,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "off",
-                "auto"
-              ],
+              "preferred_options": ["off", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -214,10 +171,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "heat",
-                "auto"
-              ],
+              "preferred_options": ["heat", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -251,10 +205,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "heat",
-                "auto"
-              ],
+              "preferred_options": ["heat", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -283,10 +234,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "off",
-                "auto"
-              ],
+              "preferred_options": ["off", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,
@@ -320,10 +268,7 @@
               "name": "hvac_mode",
               "type": "option",
               "options_attribute": "hvac_modes",
-              "preferred_options": [
-                "off",
-                "auto"
-              ],
+              "preferred_options": ["off", "auto"],
               "min_attribute": null,
               "max_attribute": null,
               "step_attribute": null,

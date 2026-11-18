@@ -7,12 +7,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         </div>
       </ha-dialog>
     `}confirm(){this.confirmed=!0,this.open=!1}cancel(){this.open=!1}closed(e){e.stopPropagation();const t=this.confirmed?"confirm":"cancel";this.confirmed=!1,this.open=!1,this.dispatchEvent(new CustomEvent(t))}};e([$e({type:Boolean})],Ge.prototype,"open",void 0),e([$e()],Ge.prototype,"heading",void 0),e([$e()],Ge.prototype,"text",void 0),e([$e()],Ge.prototype,"confirmText",void 0),e([$e()],Ge.prototype,"cancelText",void 0),Ge=e([ye("kraftvakt-confirm-dialog")],Ge);let Ze=class extends ve{constructor(){super(...arguments),this.running=!1,this.appearance="plain",this.disabled=!1,this.changing=!1}render(){return this.running?X`
-          <ha-button
-            variant="danger"
-            appearance=${this.appearance}
-            .disabled=${this.disabled||this.changing}
-            @click=${this.toggle}
-          >
+          <ha-button variant="danger" appearance=${this.appearance} .disabled=${this.disabled||this.changing} @click=${this.toggle}>
             <ha-svg-icon slot="start" .path=${"M18,18H6V6H18V18Z"}></ha-svg-icon>
             ${this.localize("status.stop")}
           </ha-button>
@@ -28,8 +23,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
   `}};e([$e({attribute:!1})],Ze.prototype,"hass",void 0),e([$e({attribute:!1})],Ze.prototype,"localize",void 0),e([$e({type:Boolean})],Ze.prototype,"running",void 0),e([$e()],Ze.prototype,"appearance",void 0),e([$e({type:Boolean})],Ze.prototype,"disabled",void 0),e([ke()],Ze.prototype,"changing",void 0),Ze=e([ye("kraftvakt-running-button")],Ze);let Ke=class extends ve{constructor(){super(...arguments),this.narrow=!1}render(){return X`
       <ha-alert alert-type="warning" .title=${this.localize("locked.title")} .narrow=${this.narrow}>
         <ha-svg-icon slot="icon" .path=${"M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"}></ha-svg-icon>
-        ${this.localize("locked.text")}
-        ${this.error?X`<div class="error">${this.error}</div>`:te}
+        ${this.localize("locked.text")} ${this.error?X`<div class="error">${this.error}</div>`:te}
         <kraftvakt-running-button
           slot="action"
           .hass=${this.hass}
@@ -54,9 +48,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           <div class="title">${this.localize("config.unsaved")}</div>
           ${e?X`<div class="error">${e}</div>`:te}
         </div>
-        <ha-button appearance="plain" .disabled=${this.saving} @click=${()=>this.fire("discard")}>
-          ${this.localize("config.discard")}
-        </ha-button>
+        <ha-button appearance="plain" .disabled=${this.saving} @click=${()=>this.fire("discard")}> ${this.localize("config.discard")} </ha-button>
         <ha-button .disabled=${this.saving||this.errorCount>0} @click=${()=>this.fire("save")}>
           <ha-svg-icon slot="start" .path=${"M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"}></ha-svg-icon>
           ${this.localize("config.save")}
@@ -130,7 +122,9 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         @item-added=${this.itemAdded}
         @item-removed=${this.itemRemoved}
       >
-        <div class="list" data-empty=${this.emptyText}>${kt(this.rows,e=>e.key,(e,t)=>this.renderRow(e,t))}</div>
+        <div class="list" data-empty=${this.emptyText}>
+          ${kt(this.rows,e=>e.key,(e,t)=>this.renderRow(e,t))}
+        </div>
       </ha-sortable>
     `}renderRow(e,t){return X`
       <div class="row ${e.highlighted?"highlighted":""}" data-key=${e.key}>
@@ -139,16 +133,15 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         ${e.iconPath?X`<ha-svg-icon class="icon" .path=${e.iconPath}></ha-svg-icon>`:te}
         <div class="main">
           <div class="title">${e.title}${e.tag?X`<span class="tag">${e.tag}</span>`:te}</div>
-          ${e.details.length>0?X`<div class="details">${r=e.details,r.map((e,t)=>X`${t>0?" · ":""}${e}`)}</div>`:te}
-          ${e.errors.map(e=>X`<div class="error">${e}</div>`)}
+          ${e.details.length>0?X`<div class="details">${r=e.details,r.map((e,t)=>X`${t>0?" · ":""}${e}`)}</div>`:te} ${e.errors.map(e=>X`<div class="error">${e}</div>`)}
         </div>
         ${e.openable?X`
-              <ha-icon-button
-                .path=${this.locked?a:s}
-                .label=${this.localize(this.locked?"list.view":"list.edit")}
-                @click=${()=>this.dispatchEvent(new CustomEvent("open-row",{detail:e.key}))}
-              ></ha-icon-button>
-            `:te}
+                <ha-icon-button
+                  .path=${this.locked?a:s}
+                  .label=${this.localize(this.locked?"list.view":"list.edit")}
+                  @click=${()=>this.dispatchEvent(new CustomEvent("open-row",{detail:e.key}))}
+                ></ha-icon-button>
+              `:te}
       </div>
     `;var r}itemMoved(e){e.stopPropagation(),this.dispatchEvent(new CustomEvent("item-moved",{detail:e.detail}))}itemAdded(e){e.stopPropagation();const t=e.detail.item.dataset.key;void 0!==t&&this.dispatchEvent(new CustomEvent("item-added",{detail:{key:t,index:e.detail.index}}))}itemRemoved(e){e.stopPropagation()}static{this.styles=g`
     :host {
@@ -174,8 +167,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       background: var(--card-background-color);
     }
     .row.highlighted {
-      background: linear-gradient(var(--kraftvakt-essential-background), var(--kraftvakt-essential-background)),
-        var(--card-background-color);
+      background: linear-gradient(var(--kraftvakt-essential-background), var(--kraftvakt-essential-background)), var(--card-background-color);
     }
     .handle {
       flex: none;
@@ -228,8 +220,8 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           <h2 class="card-title">${e.title}</h2>
           ${e.control??te}
         </div>
-        ${t?X`<div class="card-content">${pt(e.description)} ${e.content??te}</div>`:te}
-        ${e.list??te} ${e.footer??te}
+        ${t?X`<div class="card-content">${pt(e.description)} ${e.content??te}</div>`:te} ${e.list??te}
+        ${e.footer??te}
       </ha-card>
     `}renderCardFooter(e,t){return X`<div class="card-footer"><span class="note">${e}</span>${t}</div>`}renderPageFooter(e,t){return X`<div class="page-footer"><span class="note">${e}</span>${t}</div>`}renderAddButton(e){return X`
       <ha-button .disabled=${e.locked} @click=${e.onAdd}>
@@ -322,17 +314,15 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${this.localize("config.restore_defaults")}
         </ha-button>
       `)}numberField(e){const t=this.range(e);return{name:e,required:!0,selector:{number:{min:t.min??void 0,max:t.max??void 0,step:t.resolution,mode:"box",unit_of_measurement:mi[e]}}}}selectField(e,t){const i=this.range(e),r=[];for(let e=i.min??i.resolution;e<=(i.max??e);e+=i.resolution)r.push({value:String(e),label:t(e)});return{name:e,required:!0,selector:{select:{mode:"dropdown",options:r}}}}range(e){return this.capabilities.limits.general[e]}get formData(){const e=this.config.general;return Object.fromEntries(Object.entries(e).map(([e,t])=>[e,vi.has(e)&&null!==t?String(t):t]))}valueChanged(e){const t=e.detail.value,i={...this.config.general};for(const e of Object.keys(i)){const r=t[e];i[e]=vi.has(e)&&void 0!==r?Number(r):r??null}this.changeConfig({...this.config,general:i})}static{this.styles=fi.styles}}const yi=["wait_curve_steepness","wait_curve_pivot","appliance_repeat_increment_factor","appliance_repeat_increments","charger_repeat_increment_factor","charger_repeat_increments","command_repeat_interval_min","action_timeout_s","power_sensor_timeout_s"],wi=60,bi=[.1,.2,.5,1,2,5,10];const $i={wait_curve_steepness:!1,wait_curve_pivot:!0};let ki=class extends _i{constructor(){super(...arguments),this.narrowQuery=new bt(this,760)}get narrowPage(){return this.narrowQuery.matches}render(){return X`
-      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()}
-      ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(yi)}
+      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(yi)}
     `}renderWaitCurveCard(){return this.renderCard({title:this.localize("advanced.wait_curve"),description:this.localize("advanced.wait_curve_info"),content:X`
         <div class="sliders">${["wait_curve_steepness","wait_curve_pivot"].map(e=>this.renderSlider(e))}</div>
         ${this.renderWaitCurve()}
       `})}renderRepeatedTurnOnCard(){return this.renderCard({title:this.localize("advanced.repeated_turn_on"),description:this.localize("advanced.repeated_turn_on_info"),content:X`
         ${this.renderRepeatedTurnOnSection("advanced.appliances","appliance_repeat_increment_factor","appliance_repeat_increments")}
         ${this.renderRepeatedTurnOnSection("advanced.chargers","charger_repeat_increment_factor","charger_repeat_increments")}
-      `})}renderCommandRepeatCard(){return this.renderCard({title:this.localize("advanced.command_repeat"),description:this.localize("advanced.command_repeat_info"),content:this.renderForm([this.numberField("command_repeat_interval_min")])})}renderTimeoutsCard(){return this.renderCard({title:this.localize("advanced.timeouts"),description:this.localize("advanced.timeouts_info"),content:this.renderForm([this.numberField("action_timeout_s"),this.numberField("power_sensor_timeout_s")])})}renderRepeatedTurnOnSection(e,t,i){const r=this.hass.language;return X`
-      ${ht(this.localize(e))}
-      ${this.renderForm([this.selectField(t,e=>`× ${new Intl.NumberFormat(r).format(e)}`),this.selectField(i,e=>String(e))])}
+      `})}renderCommandRepeatCard(){return this.renderCard({title:this.localize("advanced.command_repeat"),description:this.localize("advanced.command_repeat_info"),content:this.renderForm([this.numberField("command_repeat_interval_min")])})}renderTimeoutsCard(){return this.renderCard({title:this.localize("advanced.timeouts"),description:this.localize("advanced.timeouts_info"),content:this.renderForm([this.numberField("action_timeout_s"),this.numberField("power_sensor_timeout_s")])})}renderRepeatedTurnOnSection(e,t,i){const r=this.hass.language,a=[this.selectField(t,e=>`× ${new Intl.NumberFormat(r).format(e)}`),this.selectField(i,e=>String(e))];return X`
+      ${ht(this.localize(e))} ${this.renderForm(a)}
       ${this.narrowPage?te:this.renderRepeatedTurnOnTable(this.config.general[t],this.config.general[i])}
     `}renderRepeatedTurnOnTable(e,t){const i=this.config.general,r=i.wait_at_limit_s,a=this.decisionInterval,n=yt(i.wait_curve_steepness,i.wait_curve_pivot)(i.wait_curve_pivot/100),s=Array.from({length:t+2+1},(e,t)=>t+1),o=(i,s)=>{if(null===r||s&&null===a)return"–";const o=i<=2?r*n:function(e,t,i,r){return t+t*i*Math.min(r,e-2-1)}(i,r,e,t);return ft(s?wt(o,a):o)};return X`
       <table class="curve-table">
@@ -369,10 +359,9 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       </tr>
     `;return X`
       ${this.narrowPage?te:X`<table class="curve-table">
-            ${l("advanced.free_power_kw",e=>gt(r,null===a?null:a*e/100))}
-            ${l("advanced.waiting_minutes",e=>ft(o(e)))}
-            ${l("advanced.actual_waiting_minutes",e=>ft((e=>{const t=o(e);return null===t||null===s?null:wt(t,s)})(e)))}
-          </table>`}
+              ${l("advanced.free_power_kw",e=>gt(r,null===a?null:a*e/100))}
+              ${l("advanced.waiting_minutes",e=>ft(o(e)))} ${l("advanced.actual_waiting_minutes",e=>ft((e=>{const t=o(e);return null===t||null===s?null:wt(t,s)})(e)))}
+            </table>`}
       ${this.renderCurveGraph(i,a)}
     `}renderCurveGraph(e,t){const i=this.hass.language,[r,a]=this.narrowPage?[320,200]:[900,260],[n,s,o,l]=[44,24,8,38],d=e=>n+(r-n-s)*(wi-e)/wi,c=e=>o+(a-o-l)*(100-e)/100,h=`M${Array.from({length:201},(t,i)=>{const r=wi-i*wi/200;return`${d(r)},${c(100*e(r))}`}).join("L")}`,p=null===t?0:t/1e3,u=p*wi/100,g=(f=u,m=this.narrowPage?4:10,bi.find(e=>f/e<=m)??bi[bi.length-1]);var f,m;const v=u>0?Array.from({length:Math.floor(u/g+1e-9)+1},(e,t)=>t*g):[],_=g<1?1:0;return X`
       <svg class="curve" viewBox="0 0 ${r} ${a}" role="img" aria-label=${this.localize("advanced.wait_curve")}>
@@ -613,12 +602,9 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         align-items: center;
       }
     `]}}e([$e({attribute:!1})],Oi.prototype,"hass",void 0),e([$e({attribute:!1})],Oi.prototype,"localize",void 0),e([$e({attribute:!1})],Oi.prototype,"capabilities",void 0),e([$e({attribute:!1})],Oi.prototype,"item",void 0),e([$e({type:Boolean})],Oi.prototype,"isNew",void 0),e([$e({attribute:!1})],Oi.prototype,"usedEntities",void 0),e([$e({attribute:!1})],Oi.prototype,"saveErrors",void 0),e([$e({type:Boolean})],Oi.prototype,"locked",void 0),e([ke()],Oi.prototype,"open",void 0),e([ke()],Oi.prototype,"draft",void 0);const Wi=["entity_id","entity"];let ji=class extends Oi{constructor(){super(...arguments),this.section="appliances",this.texts="appliance",this.fixedLoad=!1,this.essentialChanged=e=>{e&&this.fixedLoadChanged(!1),this.changeDraft({essential:e})},this.fixedLoadChanged=e=>{this.fixedLoad=e,e||this.changeDraft({power_reserve_w:null})}}willUpdate(e){super.willUpdate(e),e.has("item")&&(this.fixedLoad=null!==this.item.power_reserve_w)}actionsForEntity(e){return{...Ft(this.draft,e,this.hass),turn_on:this.actionForEntity("turn_on",this.draft.turn_on,e),turn_off:this.actionForEntity("turn_off",this.draft.turn_off,e),variants:this.draft.variants.map(t=>({...t,actions:Object.fromEntries(Object.entries(t.actions).map(([t,i])=>[t,this.actionForEntity(t,i??null,e)]))}))}}errors(){return oi(this.draft,this.capabilities,this.hass)}missing(){return ti(this.draft)}renderFields(e){const t=this.draft.essential;return X`
-      ${this.renderEntity(e)} ${this.renderActions(e)} ${this.renderEssential(e)}
-      ${t?te:this.renderFixedLoad(e)} ${t?te:this.renderVariants()}
-      ${this.renderDisplayValues(e)}
-    `}renderEssential(e){const t=e.find(e=>"essential"===e.field);return this.renderGroup({title:this.label("essential"),description:this.helper("essential"),toggle:{checked:this.draft.essential,disabled:!this.draft.essential&&this.draft.variants.length>0,changed:this.essentialChanged},error:t?this.describe(t):void 0})}renderFixedLoad(e){const t=this.fixedLoad||e.some(e=>"power_reserve_w"===e.field);return this.renderGroup({title:this.label("fixed_load"),description:this.helper("fixed_load"),toggle:{checked:this.fixedLoad,changed:this.fixedLoadChanged},content:t?this.renderForm([this.numberField("power_reserve_w","W",!1)],e,e=>this.changeDraft({power_reserve_w:e.power_reserve_w??null})):te})}renderDisplayValues(e){return this.renderGroup({title:this.localize("appliance.display_values"),description:this.localize("appliance.display_values_info"),content:X`
-        ${this.renderDisplayValue("display_power",e)} ${this.renderDisplayValue("display_temperature",e)}
-      `})}renderDisplayValue(e,t){const i=t.find(t=>t.field===e);return X`
+      ${this.renderEntity(e)} ${this.renderActions(e)} ${this.renderEssential(e)} ${t?te:this.renderFixedLoad(e)}
+      ${t?te:this.renderVariants()} ${this.renderDisplayValues(e)}
+    `}renderEssential(e){const t=e.find(e=>"essential"===e.field);return this.renderGroup({title:this.label("essential"),description:this.helper("essential"),toggle:{checked:this.draft.essential,disabled:!this.draft.essential&&this.draft.variants.length>0,changed:this.essentialChanged},error:t?this.describe(t):void 0})}renderFixedLoad(e){const t=this.fixedLoad||e.some(e=>"power_reserve_w"===e.field);return this.renderGroup({title:this.label("fixed_load"),description:this.helper("fixed_load"),toggle:{checked:this.fixedLoad,changed:this.fixedLoadChanged},content:t?this.renderForm([this.numberField("power_reserve_w","W",!1)],e,e=>this.changeDraft({power_reserve_w:e.power_reserve_w??null})):te})}renderDisplayValues(e){return this.renderGroup({title:this.localize("appliance.display_values"),description:this.localize("appliance.display_values_info"),content:X` ${this.renderDisplayValue("display_power",e)} ${this.renderDisplayValue("display_temperature",e)} `})}renderDisplayValue(e,t){const i=t.find(t=>t.field===e);return X`
       <kraftvakt-condition-field
         .hass=${this.hass}
         .localize=${this.localize}
@@ -679,11 +665,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       .variant .error {
         margin-top: 4px;
       }
-    `]}};e([ke()],ji.prototype,"fixedLoad",void 0),ji=e([ye("kraftvakt-appliance-dialog")],ji);const Ri=[{name:"label",required:!0,selector:{text:{}}}];let Ui=class extends ve{constructor(){super(...arguments),this.kind="appliances",this.narrow=!1}render(){return X`
-      <ha-alert alert-type="warning" .title=${this.localize(`warning.${this.kind}_title`)} .narrow=${this.narrow}>
-        ${this.localize("warning.text")}
-      </ha-alert>
-    `}static{this.styles=g`
+    `]}};e([ke()],ji.prototype,"fixedLoad",void 0),ji=e([ye("kraftvakt-appliance-dialog")],ji);const Ri=[{name:"label",required:!0,selector:{text:{}}}];let Ui=class extends ve{constructor(){super(...arguments),this.kind="appliances",this.narrow=!1}render(){return X` <ha-alert alert-type="warning" .title=${this.localize(`warning.${this.kind}_title`)} .narrow=${this.narrow}> ${this.localize("warning.text")} </ha-alert> `}static{this.styles=g`
     :host {
       display: block;
     }
@@ -702,13 +684,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       ${Kt.map(t=>this.renderOverride(t,e))}
     `}renderOverride(e,t){const i=this.variant?.actions??{},r=Qt(i,e);return this.renderGroup({title:this.label(`override_${e}`),description:this.helper(`override_${e}`),toggle:{checked:r,changed:t=>this.override(e,t)},content:r?this.renderActionField({name:e,field:`${this.fieldPrefix}${e}`,value:i?.[e]??null,label:""},t,Wi,t=>this.changeVariant({actions:{...i,[e]:t}})):te})}get variant(){return this.draft.variants.find(e=>e.id===this.variantId)}get fieldPrefix(){return`variants.${this.variantId}.`}ofVariant(e){return e.filter(e=>e.field?.startsWith(this.fieldPrefix))}changeCondition(e){this.changeVariant({condition:e})}override(e,t){const{[e]:i,...r}=this.variant?.actions??{};if(t){const t=this.setAsideActions.has(e)?this.setAsideActions.get(e):structuredClone(this.draft[e]);this.changeVariant({actions:{...r,[e]:t??null}})}else this.setAsideActions.set(e,i??null),this.changeVariant({actions:r})}changeVariant(e){this.changeDraft({variants:this.draft.variants.map(t=>t.id===this.variantId?{...t,...e}:t)})}};e([$e()],Bi.prototype,"variantId",void 0),e([$e()],Bi.prototype,"applianceName",void 0),Bi=e([ye("kraftvakt-variant-dialog")],Bi);const qi=["entity_id","essential","turn_on","turn_off","power_reserve_w","label","condition","display_power","display_temperature"];let Gi=class extends fi{render(){return X`
       ${this.renderPriorityCard()}
-      ${0===this.config.appliances.length?X`
-            <kraftvakt-manual-control-warning
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              kind="appliances"
-            ></kraftvakt-manual-control-warning>
-          `:te}
+      ${0===this.config.appliances.length?X` <kraftvakt-manual-control-warning .localize=${this.localize} .narrow=${this.narrow} kind="appliances"></kraftvakt-manual-control-warning> `:te}
       ${this.editing?this.renderDialog(this.editing.appliance,this.editing.isNew):""}
       ${this.editingVariant?this.renderVariantDialog(this.editingVariant.appliance,this.editingVariant.variantId):""}
     `}renderPriorityCard(){const e={add:this.localize("appliances.add"),empty:this.localize("appliances.empty"),rows:this.config.priority.map(e=>this.row(e)),locked:this.locked,onAdd:this.addAppliance,onMoved:this.entryMoved,onOpen:this.openRow};return this.renderCard({title:this.localize("appliances.priority_title"),control:this.renderAddButton(e),description:this.localize("appliances.priority_sub"),list:this.renderItemList(e)})}renderVariantDialog(e,t){return X`
@@ -745,19 +721,15 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       ${this.renderForm([this.numberField("min_current_power_w","W",!0)],e,e=>this.changeDraft({min_current_power_w:e.min_current_power_w}))}
       ${this.renderSwitchedBy(e)}
       ${this.draft.switched_by_current?te:X`${this.renderActionGroup("activate",e,Zi)} ${this.renderActionGroup("deactivate",e,Zi)}`}
-      ${this.renderChargingCurrent(e)}
-      ${this.renderCarConnected(e)} ${this.renderActivelyCharging(e)}
-      ${this.renderCloudControl(e)} ${this.renderChargingWindow(e)} ${this.renderDeactivateOnFault(e)}
+      ${this.renderChargingCurrent(e)} ${this.renderCarConnected(e)} ${this.renderActivelyCharging(e)} ${this.renderCloudControl(e)}
+      ${this.renderChargingWindow(e)} ${this.renderDeactivateOnFault(e)}
     `}renderSwitchedBy(e){const t=["actions","current"].map(e=>({value:e,label:this.localize(`charger.switched_by.${e}`)}));return this.renderForm([{name:"switched_by_current",required:!0,selector:{select:{mode:"list",options:t}}}],e,e=>this.changeDraft({switched_by_current:"current"===e.switched_by_current}),{switched_by_current:this.draft.switched_by_current?"current":"actions"})}renderChargingCurrent(e){const t=[{type:"grid",name:"",schema:[this.numberField("min_current_a","A",!0),this.numberField("max_current_a","A",!0)]}];return this.renderGroup({title:this.localize("charger.charging_current"),description:this.localize("charger.charging_current_info"),content:X`
         ${this.renderForm(t,e,e=>this.changeDraft({min_current_a:e.min_current_a,max_current_a:e.max_current_a}))}
         ${this.renderAction("set_current",e,["current","min_current","max_current",...Zi],!0)}
       `})}renderDevice(e){return X`
       ${this.renderForm([{name:"device_id",required:!0,selector:{device:{}}}],e,e=>this.deviceChanged(e.device_id||null))}
       ${this.profile?X`<ha-alert alert-type="info">${this.localize("charger.profile_applied",{profile:this.profile})}</ha-alert>`:te}
-    `}async deviceChanged(e){if(e===this.draft.device_id)return;const t=function(e,t,i){const r=new Set(Pt(i,t)),a=e=>e&&r.has(e)?e:null,n=e.set_current;return{device_id:t,entity_id:a(e.entity_id),set_current:"entity"!==n?.mode||a(n.entity_id)?n:{mode:"entity",entity_id:null},car_connected:Ot(e.car_connected,r),actively_charging:Ot(e.actively_charging,r),charging_power:Ot(e.charging_power,r),fault_flag:Ot(e.fault_flag,r)}}(this.draft,e,this.hass);if(this.changeDraft(t),this.entityChanged(t.entity_id??null),this.profile=null,!e)return;const{profile:i,fields:r}=await((e,t)=>e.callWS({type:"kraftvakt/charger_profile/get",device_id:t}))(this.hass,e).catch(()=>({profile:null,fields:{}}));i&&this.draft.device_id===e&&(this.changeDraft(r),this.profile=i)}renderCarConnected(e){return this.renderGroup({title:this.label("car_connected"),description:this.helper("car_connected"),content:this.renderCondition("car_connected","condition",e)})}renderActivelyCharging(e){return this.renderGroup({title:this.label("actively_charging"),description:this.helper("actively_charging"),content:X`
-        ${this.renderCondition("charging_power","charging_power",e)}
-        ${this.renderCondition("actively_charging","actively_charging",e,!0)}
-      `})}stateChoices(e){return{true:this.localize(`charger.state_choices.${e}.true`),false:this.localize(`charger.state_choices.${e}.false`)}}renderCondition(e,t,i,r=!1){const a=i.find(t=>t.field===e);return X`
+    `}async deviceChanged(e){if(e===this.draft.device_id)return;const t=function(e,t,i){const r=new Set(Pt(i,t)),a=e=>e&&r.has(e)?e:null,n=e.set_current;return{device_id:t,entity_id:a(e.entity_id),set_current:"entity"!==n?.mode||a(n.entity_id)?n:{mode:"entity",entity_id:null},car_connected:Ot(e.car_connected,r),actively_charging:Ot(e.actively_charging,r),charging_power:Ot(e.charging_power,r),fault_flag:Ot(e.fault_flag,r)}}(this.draft,e,this.hass);if(this.changeDraft(t),this.entityChanged(t.entity_id??null),this.profile=null,!e)return;const{profile:i,fields:r}=await((e,t)=>e.callWS({type:"kraftvakt/charger_profile/get",device_id:t}))(this.hass,e).catch(()=>({profile:null,fields:{}}));i&&this.draft.device_id===e&&(this.changeDraft(r),this.profile=i)}renderCarConnected(e){return this.renderGroup({title:this.label("car_connected"),description:this.helper("car_connected"),content:this.renderCondition("car_connected","condition",e)})}renderActivelyCharging(e){return this.renderGroup({title:this.label("actively_charging"),description:this.helper("actively_charging"),content:X` ${this.renderCondition("charging_power","charging_power",e)} ${this.renderCondition("actively_charging","actively_charging",e,!0)} `})}stateChoices(e){return{true:this.localize(`charger.state_choices.${e}.true`),false:this.localize(`charger.state_choices.${e}.false`)}}renderCondition(e,t,i,r=!1){const a=i.find(t=>t.field===e);return X`
       <kraftvakt-condition-field
         .hass=${this.hass}
         .localize=${this.localize}
@@ -779,13 +751,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
             ${this.localize("charging.add_group")}
           </ha-button>
         `)}
-      ${0===it(this.config).length?X`
-            <kraftvakt-manual-control-warning
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              kind="chargers"
-            ></kraftvakt-manual-control-warning>
-          `:te}
+      ${0===it(this.config).length?X` <kraftvakt-manual-control-warning .localize=${this.localize} .narrow=${this.narrow} kind="chargers"></kraftvakt-manual-control-warning> `:te}
       ${this.editing?this.renderDialog(this.editing.charger,this.editing.groupId,this.editing.isNew):te}
     `}renderGroup(e){const t=0===e.chargers.length,i={add:this.localize("charging.add"),empty:this.localize("charging.empty"),rows:e.chargers.map(e=>this.row(e)),locked:this.locked,group:"kraftvakt-chargers",onAdd:()=>this.addCharger(e),onMoved:t=>this.chargerMoved(e,t),onAdded:t=>this.chargerAdded(e,t),onOpen:t=>this.openRow(e,t)};return this.renderCard({title:e.name.trim()||this.localize("charging.unnamed_group"),content:X`
         <ha-form
@@ -799,8 +765,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           .computeError=${e=>e}
           @value-changed=${t=>this.groupChanged(e,t)}
         ></ha-form>
-        ${ht(this.localize("charging.chargers"),this.renderAddButton(i))}
-        ${pt(this.localize("charging.chargers_sub"))}
+        ${ht(this.localize("charging.chargers"),this.renderAddButton(i))} ${pt(this.localize("charging.chargers_sub"))}
       `,list:this.renderItemList(i),footer:this.renderCardFooter(t?"":this.localize("charging.delete_group_not_empty"),X`
           <ha-button variant="danger" appearance="plain" .disabled=${this.locked||!t} @click=${()=>this.deleteGroup(e)}>
             <ha-svg-icon slot="start" .path=${"M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"}></ha-svg-icon>
@@ -823,8 +788,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
     `}row(e){const t=this.hass.language,i=[this.localize("charging.currents",{min:e.min_current_a,max:e.max_current_a}),this.localize("charging.min_current_power",{power:ut(t,e.min_current_power_w,0)}),e.charging_window?this.localize("charging.window",{...e.charging_window}):this.localize("charging.always_allowed")];e.charging_window&&e.finish_after_window&&i.push(this.localize("charging.finishes_after_window")),e.car_connected&&i.push("entity"===e.car_connected.type?this.localize("charging.car_from",{source:e.car_connected.value}):this.localize("charging.car_template")),e.actively_charging?.value&&i.push("template"===e.actively_charging.type?this.localize("charging.charging_template"):this.localize("charging.charging_from",{source:e.actively_charging.value})),e.charging_power?.value&&i.push("template"===e.charging_power.type?this.localize("charging.power_template"):this.localize("charging.power_from",{source:e.charging_power.value})),e.switched_by_current&&i.push(this.localize("charging.switched_by_current")),e.deactivate_on_fault&&i.push(this.localize("charging.deactivated_on_fault"));const a=si(this.issues,"chargers",e.id);return{key:e.id,title:Ci(this.hass,this.entityNames,e)??this.localize("missing.charger_without_entity"),iconPath:r,details:i,errors:a.map(e=>`${this.fieldLabel(e)}: ${this.describeIssue(e)}`),openable:!0}}fieldLabel(e){const t=e.field??"";return Qi.includes(t)?this.localize(`charger.fields.${t}.label`):t}groupChanged(e,t){const{name:i,one_at_a_time:r,dynamic_order:a}=t.detail.value;this.changeGroup({...e,name:i??"",one_at_a_time:r??e.one_at_a_time,dynamic_order:a??e.dynamic_order})}addGroup(){const e=this.config.charger_groups,t=this.localize("charging.new_group_name"),i=new Set(e.map(e=>e.name.trim()));let r=t;for(let e=2;i.has(r);e++)r=`${t} ${e}`;const a=this.capabilities.defaults.charger_groups,n={id:Xe(),name:r,...a,chargers:[]};this.changeConfig({...this.config,charger_groups:[...e,n]})}deleteGroup(e){this.changeConfig({...this.config,charger_groups:this.config.charger_groups.filter(t=>t.id!==e.id)})}chargerMoved(e,t){const{oldIndex:i,newIndex:r}=t.detail;this.changeGroup({...e,chargers:Ye(e.chargers,i,r)})}chargerAdded(e,t){const{key:i,index:r}=t.detail,a=it(this.config).find(e=>e.id===i);if(!a)return;const n=this.config.charger_groups.map(t=>{const n=t.chargers.filter(e=>e.id!==i);return t.id===e.id&&n.splice(r,0,a),{...t,chargers:n}});this.changeConfig({...this.config,charger_groups:n})}addCharger(e){const t=this.capabilities.defaults.chargers,i={id:Xe(),device_id:null,entity_id:null,activate:null,deactivate:null,switched_by_current:!1,set_current:null,min_current_a:t.min_current_a,max_current_a:t.max_current_a,min_current_power_w:t.min_current_power_w,car_connected:null,actively_charging:null,charging_power:null,charging_window:null,finish_after_window:!1,override_ends:t.override_ends,cloud_controlled:!1,start_delay_s:t.start_delay_s,deactivate_on_fault:!1,fault_flag:null};this.editing={charger:i,groupId:e.id,isNew:!0}}openRow(e,t){const i=e.chargers.find(e=>e.id===t.detail);i&&(this.editing={charger:i,groupId:e.id,isNew:!1})}chargerChanged(e,t){const i=this.config.charger_groups.find(t=>t.id===e);if(!i)return;const r=i.chargers.some(e=>e.id===t.id);this.changeGroup({...i,chargers:r?i.chargers.map(e=>e.id===t.id?t:e):[...i.chargers,t]})}chargerDeleted(e){const t=this.config.charger_groups.map(t=>({...t,chargers:t.chargers.filter(t=>t.id!==e.detail)}));this.changeConfig({...this.config,charger_groups:t})}changeGroup(e){const t=this.config.charger_groups.map(t=>t.id===e.id?e:t);this.changeConfig({...this.config,charger_groups:t})}static{this.styles=fi.styles}};e([ke()],Yi.prototype,"editing",void 0),Yi=e([ye("kraftvakt-charging-page")],Yi);const er=["regulation_window_s","turn_on_margin_w","regulation_interval","wait_at_limit_s","penalty_threshold_w"];let tr=class extends _i{render(){return X`
       ${this.renderSettingsCard("general.measurement",[this.entityField("power_sensor"),this.numberField("regulation_window_s")])}
       ${this.renderSettingsCard("general.regulation",[this.numberField("power_limit_w"),this.numberField("turn_on_margin_w"),this.intervalField(),this.numberField("wait_at_limit_s")])}
-      ${this.renderSettingsCard("general.penalty",[this.numberField("penalty_threshold_w")],"general.penalty_info")}
-      ${this.renderRestoreDefaults(er)}
+      ${this.renderSettingsCard("general.penalty",[this.numberField("penalty_threshold_w")],"general.penalty_info")} ${this.renderRestoreDefaults(er)}
     `}renderSettingsCard(e,t,i){return this.renderCard({title:this.localize(e),description:i&&this.localize(i),content:this.renderForm(t)})}entityField(e){return{name:e,required:!0,selector:{entity:{filter:{domain:"sensor",device_class:"power"},exclude_entities:zi(this.hass)}}}}intervalField(){return this.selectField("regulation_interval",e=>this.localize("general.interval_option",{count:e}))}};tr=e([ye("kraftvakt-general-page")],tr);const ir=2*Math.PI*7;class rr extends ve{constructor(){super(...arguments),this.start=0,this.end=0}connectedCallback(){super.connectedCallback(),this.hasUpdated&&this.startCountdown()}disconnectedCallback(){this.countdown?.cancel(),super.disconnectedCallback()}updated(e){(e.has("start")||e.has("end"))&&this.startCountdown()}startCountdown(){this.countdown?.cancel();const e=this.renderRoot.querySelector(".fill");if(!e)return;const t=Math.max(0,this.end-Date.now()),i=Math.min(1,t/Math.max(1,this.end-this.start));this.countdown=e.animate(this.keyframes(i),{duration:t,easing:"linear",fill:"forwards"})}}e([$e({type:Number})],rr.prototype,"start",void 0),e([$e({type:Number})],rr.prototype,"end",void 0);let ar=class extends rr{render(){return X`
       <svg viewBox="0 0 18 18" aria-hidden="true">
         ${Y`
@@ -878,20 +842,13 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       <div class="stat-label"><span class="swatch ${e.swatch}"></span>${this.localize(e.label)}</div>
       <div class="stat-value ${e.alarm?"alarm":""}">${e.value} <small>kW</small></div>
       ${e.period?X`<div class="stat-period">${e.period}</div>`:te}
-    `,i=e.entityId;return i?X`<button class="stat" @click=${e=>dt(e,i)}>${t}</button>`:X`<div class="stat">${t}</div>`}renderMeter(){const e=this.status,t=e=>null===e?null:e/1e3,i=e.power_limit_w/1e3,r=t(this.powerNowW),a=t(e.tariff_average_w),n=t(e.regulation_average_w),s=[r,a,n],{step:o,end:l}=function(e){const t=sr.find(t=>e/t<=15)??sr[sr.length-1];return{step:t,end:Math.ceil(e/t)*t}}(Math.max(1.2*i,...s.map(e=>e??0))),d=e=>100*Math.min(e,l)/l+"%",c=this.hass.language,h=Array.from({length:l/o+1},(e,t)=>t*o),p=this.narrow?3:2,u=h.filter((e,t)=>t%p===0),g=(e,t,i)=>null===i?te:X`<span
-            class="marker ${e}"
-            style="left: ${d(i)}"
-            title="${this.localize(t)} ${ut(c,i,2)} kW"
-          ></span>`;return X`
+    `,i=e.entityId;return i?X`<button class="stat" @click=${e=>dt(e,i)}>${t}</button>`:X`<div class="stat">${t}</div>`}renderMeter(){const e=this.status,t=e=>null===e?null:e/1e3,i=e.power_limit_w/1e3,r=t(this.powerNowW),a=t(e.tariff_average_w),n=t(e.regulation_average_w),s=[r,a,n],{step:o,end:l}=function(e){const t=sr.find(t=>e/t<=15)??sr[sr.length-1];return{step:t,end:Math.ceil(e/t)*t}}(Math.max(1.2*i,...s.map(e=>e??0))),d=e=>100*Math.min(e,l)/l+"%",c=this.hass.language,h=Array.from({length:l/o+1},(e,t)=>t*o),p=this.narrow?3:2,u=h.filter((e,t)=>t%p===0),g=(e,t,i)=>null===i?te:X`<span class="marker ${e}" style="left: ${d(i)}" title="${this.localize(t)} ${ut(c,i,2)} kW"></span>`;return X`
       <div class="meter">
         <div class="markers">
-          ${g("power-limit","status.power_limit",i)}
-          ${g("tariff-average","status.tariff_average",a)}
+          ${g("power-limit","status.power_limit",i)} ${g("tariff-average","status.tariff_average",a)}
           ${g("regulation-average","status.regulation_average",n)}
         </div>
-        <div class="bar">
-          ${null===r?te:X`<div class="fill power-now" style="width: ${d(r)}"></div>`}
-        </div>
+        <div class="bar">${null===r?te:X`<div class="fill power-now" style="width: ${d(r)}"></div>`}</div>
         <div class="ticks">${h.map(e=>X`<span style="left: ${d(e)}"></span>`)}</div>
         <div class="scale">
           ${u.map((e,t)=>X`<span class=${0===e?"start":e===l?"end":""} style="left: ${d(e)}"
@@ -1104,11 +1061,11 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           <span>${this.localize("status.appliances_and_chargers")}</span>
         </div>
         ${0===e.length?X`<div class="empty">${this.localize("status.no_appliances")}</div>`:X`<div class="list ${this.phone?"phone":""}" style=${this.phone?"":this.columns()}>
-              ${e.map((e,i)=>X`
-                  ${"appliance"===e.kind?this.renderApplianceRow(e.appliance,i+1):this.renderChargerGroup(e.group,i+1)}
-                  ${i===t?this.renderCutOff():te}
-                `)}
-            </div>`}
+                ${e.map((e,i)=>X`
+                    ${"appliance"===e.kind?this.renderApplianceRow(e.appliance,i+1):this.renderChargerGroup(e.group,i+1)}
+                    ${i===t?this.renderCutOff():te}
+                  `)}
+              </div>`}
       </ha-card>
     `}columns(){return`grid-template-columns: ${["minmax(24px, max-content)","minmax(0, 1fr)","max-content",...this.hasPower?["max-content"]:[],"var(--waiting-width)","max-content"].join(" ")}`}renderRow(e,t,i){if(!t)return X`<div class="row ${e}">${i}</div>`;const r=e=>{e.preventDefault(),dt(e,t)};return X`
       <div
@@ -1127,8 +1084,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${e.variant&&!this.phone?X`<span class="variant" title=${e.variant}>${e.variant}</span>`:te}
         </div>
         ${this.renderTemperature(e)} ${this.renderPower(e.power_w)}
-        ${this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at")}
-        ${this.renderApplianceChip(e)}
+        ${this.renderWaiting(e,"M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39M11,14H13V8H11M15,1H9V3H15V1Z","status.delayed_turn_on","status.waiting_ends_at")} ${this.renderApplianceChip(e)}
       `)}renderRank(e){return this.renderWideOnly(X`<span class="rank">${e??te}</span>`)}renderWideOnly(e){return this.phone?te:e}renderName(e){return X`<span class="name" title=${e}>${e}</span>`}renderApplianceChip(e){return e.excluded?this.renderChip(pr,"status.chip_excluded","status.excluded"):e.on?this.renderChip(cr,"status.on","status.on"):this.renderChip(hr,"status.off","status.off")}renderApplianceIcon(e){const t=this.applianceEntity(e),i=t?this.hass.states[t]:void 0;return X`
       <span class="device-icon ${e.on?"on":""}">
         ${i?X`<ha-state-icon .hass=${this.hass} .stateObj=${i}></ha-state-icon>`:te}
@@ -1139,13 +1095,9 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         ${this.renderRank(i)}
         <div class="row-title">
           <ha-svg-icon class="ev-icon" .path=${t}></ha-svg-icon>
-          ${this.renderName(e.name)}
-          ${0!==r.length||this.phone?te:X`<span class="row-sub">${this.localize("status.no_chargers")}</span>`}
+          ${this.renderName(e.name)} ${0!==r.length||this.phone?te:X`<span class="row-sub">${this.localize("status.no_chargers")}</span>`}
         </div>
-        ${this.renderWideOnly(0===r.length?X`<span></span>`:X`<span
-                class="charging-count"
-                title=${this.localize("status.chargers_charging",{charging:a,total:r.length})}
-              >
+        ${this.renderWideOnly(0===r.length?X`<span></span>`:X`<span class="charging-count" title=${this.localize("status.chargers_charging",{charging:a,total:r.length})}>
                 <ha-svg-icon .path=${n}></ha-svg-icon>${a} / ${r.length}
               </span>`)}
       </div>
@@ -1156,23 +1108,14 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           <ha-svg-icon class="device-icon ev ${e.activated?"on":""}" .path=${r}></ha-svg-icon>
           ${this.renderName(e.name)}
         </div>
-        ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)}
-        ${this.renderPower(e.power_w)}
-        ${this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at")}
-        ${this.renderChargerChip(e)}
+        ${this.phone?this.renderPhoneCurrent(e):this.renderAmperes(e)} ${this.renderPower(e.power_w)}
+        ${this.renderWaiting(e,o,"status.delayed_turn_on","status.next_ampere_at")} ${this.renderChargerChip(e)}
       `)}renderWaiting(e,t,i,r){if(!e.waiting_since||!e.waiting_ends_at)return this.phone?te:X`<span></span>`;const a=vt(this.hass.language,e.waiting_ends_at);return X`
       <span class="waiting" title="${this.localize(i)}: ${this.localize(r,{time:a})}">
         <ha-svg-icon .path=${t}></ha-svg-icon>
-        ${this.renderWideOnly(X`<kraftvakt-countdown-bar
-            .start=${Date.parse(e.waiting_since)}
-            .end=${Date.parse(e.waiting_ends_at)}
-          ></kraftvakt-countdown-bar>`)}
+        ${this.renderWideOnly(X`<kraftvakt-countdown-bar .start=${Date.parse(e.waiting_since)} .end=${Date.parse(e.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
       </span>
-    `}renderPower(e){return this.hasPower?this.renderWideOnly(X`<span class="measured" title=${this.localize("status.power")}
-        >${null===e?te:`${gt(this.hass.language,e)} kW`}</span
-      >`):te}renderTemperature(e){const t=e.temperature;return null===t||this.phone?te:X`<span class="measured" title=${this.localize("status.temperature")}
-      >${ut(this.hass.language,t.value,1)} ${t.unit}</span
-    >`}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,r=null===e.current_a?0:e.current_a-t.min_current_a+1,a=e.bypassed?"on bypassed":"on";return X`
+    `}renderPower(e){return this.hasPower?this.renderWideOnly(X`<span class="measured" title=${this.localize("status.power")}>${null===e?te:`${gt(this.hass.language,e)} kW`}</span>`):te}renderTemperature(e){const t=e.temperature;return null===t||this.phone?te:X`<span class="measured" title=${this.localize("status.temperature")}>${ut(this.hass.language,t.value,1)} ${t.unit}</span>`}renderAmperes(e){const t=this.chargerConfig(e);if(!t)return X`<span></span>`;const i=t.max_current_a-t.min_current_a+1,r=null===e.current_a?0:e.current_a-t.min_current_a+1,a=e.bypassed?"on bypassed":"on";return X`
       <span class="amperes">
         <span class="current ${null===e.current_a?"none":""}"
           >${null===e.current_a?"–":this.localize("status.amperes",{current:e.current_a})}</span
@@ -1183,8 +1126,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       </span>
     `}renderPhoneCurrent(e){return null===e.current_a?te:X`<span class="current">${this.localize("status.amperes",{current:e.current_a})}</span>`}renderChargerChip(e){const[t,i,r]=ur[e.state],a=this.chargerConfig(e)?.charging_window;if("outside_window"===e.state&&a){const e={start:gr(a.start),end:gr(a.end)};return this.renderChip(t,i,r,e,{...a})}return e.starting_until?this.renderChip(t,i,r,{},{time:vt(this.hass.language,e.starting_until)}):"queued"===e.state&&this.sharesByChargingPower(e)?this.renderChip(t,i,"status.queued_for_room"):this.renderChip(t,i,r,{},{current:e.current_a??0})}renderChip(e,t,i,r={},a=r){return X`
       <span class="state chip ${e.kind}" title=${this.localize(i,a)}>
-        ${e.icon?X`<ha-svg-icon .path=${e.icon}></ha-svg-icon>`:X`<span class="dot"></span>`}
-        ${this.localize(t,r)}
+        ${e.icon?X`<ha-svg-icon .path=${e.icon}></ha-svg-icon>`:X`<span class="dot"></span>`} ${this.localize(t,r)}
       </span>
     `}renderCutOff(){const e=this.status,t=this.hass.language,i=e.regulation_average_w,r=null===i?0:e.power_limit_w-i;return X`
       <div class="cut-off" title=${this.localize("status.power_runs_out")}>
@@ -1357,11 +1299,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         background: var(--kraftvakt-ev-color);
       }
       .ampere.on.bypassed {
-        background: repeating-linear-gradient(
-          45deg,
-          var(--secondary-text-color) 0 2px,
-          rgba(127, 127, 127, 0.16) 2px 4px
-        );
+        background: repeating-linear-gradient(45deg, var(--secondary-text-color) 0 2px, rgba(127, 127, 127, 0.16) 2px 4px);
       }
       .row-title {
         display: flex;
@@ -1434,12 +1372,12 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       <div class="cards">
         ${this.renderRegulationCard(e)}
         ${e.running?X`<kraftvakt-priority-list
-              .hass=${this.hass}
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              .status=${e}
-              .config=${this.config}
-            ></kraftvakt-priority-list>`:te}
+                .hass=${this.hass}
+                .localize=${this.localize}
+                .narrow=${this.narrow}
+                .status=${e}
+                .config=${this.config}
+              ></kraftvakt-priority-list>`:te}
       </div>
     `}renderRegulationCard(e){return X`
       <ha-card class="regulation">
@@ -1498,9 +1436,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
           ${e.missing.map(e=>{const t=function(e){return"general"===e.section&&e.field&&zt.has(e.field)?"advanced":Et[e.section]}(e);return X`
               <li>
                 ${function(e,t,i){const r={item:Vt(e,t,i),action:St(e.field,i),code:e.code};return i(At[e.code]??"missing.unknown",r)}(e,this.config,this.localize)}
-                <a href="${ot}/${t}" @click=${e=>this.openPage(e,t)}>
-                  ${this.localize(`tabs.${t}`)}
-                </a>
+                <a href="${ot}/${t}" @click=${e=>this.openPage(e,t)}> ${this.localize(`tabs.${t}`)} </a>
               </li>
             `})}
         </ul>
@@ -1561,12 +1497,7 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         <div class="title">${this.localize("panel.title")}</div>
         <ha-tab-group @wa-tab-show=${this.tabShown}>
           ${Object.entries(vr).map(([t,i])=>X`
-              <ha-tab-group-tab
-                slot="nav"
-                panel=${t}
-                .active=${Fe(t===e)}
-                title=${this.tabLabel(t)}
-              >
+              <ha-tab-group-tab slot="nav" panel=${t} .active=${Fe(t===e)} title=${this.tabLabel(t)}>
                 <ha-svg-icon .path=${i}></ha-svg-icon>
                 <span class="tab-label">${this.tabLabel(t)}</span>
               </ha-tab-group-tab>
@@ -1584,30 +1515,20 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
         @cancel=${this.leaveCancelled}
       ></kraftvakt-confirm-dialog>
     `}renderLoadError(){if(void 0===this.loadError)return"";const e=Be(this.loadError)&&"not_loaded"===this.loadError.code?this.localize("panel.not_loaded"):this.localize("panel.error",{message:qe(this.loadError)});return X`<ha-alert alert-type="error">${e}</ha-alert>`}renderPage(e){switch(e){case"status":return X`
-          <kraftvakt-status-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .status=${this.status}
-            .config=${this.config}
-          ></kraftvakt-status-page>
+          <kraftvakt-status-page .hass=${this.hass} .localize=${this.localize} .narrow=${this.narrow} .status=${this.status} .config=${this.config}></kraftvakt-status-page>
         `;case"general":case"appliances":case"charging":case"advanced":return this.renderConfigPage(e)}}renderConfigPage(e){if(!(this.hass&&this.status&&this.config&&this.draft&&this.capabilities))return"";const t=this.status.running,i=t?[]:function(e,t,i){return[...hi("general",void 0,e.general,t.limits.general,!0),...e.appliances.flatMap(e=>oi(e,t,i)),...Yt(e.charger_groups),...it(e).flatMap(e=>li(e,t,i))]}(this.draft,this.capabilities,this.hass),r=!t&&(this.dirty||this.saveErrors.length>0),a=t?[]:this.pageIssues(i);return X`
-      ${t?X`<kraftvakt-locked-banner
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-          ></kraftvakt-locked-banner>`:""}
+      ${t?X`<kraftvakt-locked-banner .hass=${this.hass} .localize=${this.localize} .narrow=${this.narrow}></kraftvakt-locked-banner>`:""}
       ${this.renderConfigPageContent(e,t?this.config.config:this.draft,a,t)}
       ${r?X`
-            <kraftvakt-save-bar
-              .localize=${this.localize}
-              .errorCount=${i.length}
-              .saving=${this.saving}
-              .message=${this.saveMessage}
-              @save=${this.save}
-              @discard=${this.discard}
-            ></kraftvakt-save-bar>
-          `:""}
+              <kraftvakt-save-bar
+                .localize=${this.localize}
+                .errorCount=${i.length}
+                .saving=${this.saving}
+                .message=${this.saveMessage}
+                @save=${this.save}
+                @discard=${this.discard}
+              ></kraftvakt-save-bar>
+            `:""}
     `}renderConfigPageContent(e,t,i,r){const a=_r[e];return Re`
       <${a}
         .hass=${this.hass}

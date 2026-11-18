@@ -22,22 +22,11 @@ describe("the priority list", () => {
 
   it("keeps the essential appliances above every other entry, each part in its own order, as the backend does", () => {
     const draft = config({
-      appliances: [
-        appliance("heater"),
-        appliance("freezer", { essential: true }),
-        appliance("pump", { essential: true }),
-        appliance("fridge", { essential: true }),
-      ],
+      appliances: [appliance("heater"), appliance("freezer", { essential: true }), appliance("pump", { essential: true }), appliance("fridge", { essential: true })],
       charger_groups: [group("garage", [])],
       priority: [entry("heater"), groupEntry("garage"), entry("pump"), entry("freezer")],
     });
-    expect(withCompletePriority(draft).priority.map(priorityKey)).toEqual([
-      "pump/",
-      "freezer/",
-      "fridge/",
-      "heater/",
-      "group/garage",
-    ]);
+    expect(withCompletePriority(draft).priority.map(priorityKey)).toEqual(["pump/", "freezer/", "fridge/", "heater/", "group/garage"]);
   });
 
   it("moves an item as ha-sortable reports it", () => {

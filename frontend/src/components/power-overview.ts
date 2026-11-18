@@ -73,23 +73,14 @@ export class KraftvaktPowerOverview extends LitElement {
   }
 
   /** A tile with an entity opens Home Assistant's more-info dialog for it, with its history. */
-  private renderStat(stat: {
-    swatch: string;
-    label: Parameters<Localize>[0];
-    value: string;
-    period?: string;
-    entityId: string | null;
-    alarm?: boolean;
-  }) {
+  private renderStat(stat: { swatch: string; label: Parameters<Localize>[0]; value: string; period?: string; entityId: string | null; alarm?: boolean }) {
     const content = html`
       <div class="stat-label"><span class="swatch ${stat.swatch}"></span>${this.localize(stat.label)}</div>
       <div class="stat-value ${stat.alarm ? "alarm" : ""}">${stat.value} <small>kW</small></div>
       ${stat.period ? html`<div class="stat-period">${stat.period}</div>` : nothing}
     `;
     const entityId = stat.entityId;
-    return entityId
-      ? html`<button class="stat" @click=${(event: Event) => showMoreInfo(event, entityId)}>${content}</button>`
-      : html`<div class="stat">${content}</div>`;
+    return entityId ? html`<button class="stat" @click=${(event: Event) => showMoreInfo(event, entityId)}>${content}</button>` : html`<div class="stat">${content}</div>`;
   }
 
   /**
@@ -112,23 +103,14 @@ export class KraftvaktPowerOverview extends LitElement {
     const labelEvery = this.narrow ? 3 : 2;
     const labelled = ticks.filter((_, index) => index % labelEvery === 0);
     const marker = (kind: string, label: Parameters<Localize>[0], value: number | null) =>
-      value === null
-        ? nothing
-        : html`<span
-            class="marker ${kind}"
-            style="left: ${percent(value)}"
-            title="${this.localize(label)} ${formatNumber(language, value, 2)} kW"
-          ></span>`;
+      value === null ? nothing : html`<span class="marker ${kind}" style="left: ${percent(value)}" title="${this.localize(label)} ${formatNumber(language, value, 2)} kW"></span>`;
     return html`
       <div class="meter">
         <div class="markers">
-          ${marker("power-limit", "status.power_limit", limit)}
-          ${marker("tariff-average", "status.tariff_average", tariffAverage)}
+          ${marker("power-limit", "status.power_limit", limit)} ${marker("tariff-average", "status.tariff_average", tariffAverage)}
           ${marker("regulation-average", "status.regulation_average", regulationAverage)}
         </div>
-        <div class="bar">
-          ${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}
-        </div>
+        <div class="bar">${powerNow === null ? nothing : html`<div class="fill power-now" style="width: ${percent(powerNow)}"></div>`}</div>
         <div class="ticks">${ticks.map((tick) => html`<span style="left: ${percent(tick)}"></span>`)}</div>
         <div class="scale">
           ${labelled.map(

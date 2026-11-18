@@ -13,11 +13,7 @@ export class KraftvaktManualControlWarning extends LitElement {
   @property({ type: Boolean }) narrow = false;
 
   protected render() {
-    return html`
-      <ha-alert alert-type="warning" .title=${this.localize(`warning.${this.kind}_title`)} .narrow=${this.narrow}>
-        ${this.localize("warning.text")}
-      </ha-alert>
-    `;
+    return html` <ha-alert alert-type="warning" .title=${this.localize(`warning.${this.kind}_title`)} .narrow=${this.narrow}> ${this.localize("warning.text")} </ha-alert> `;
   }
 
   static styles = css`

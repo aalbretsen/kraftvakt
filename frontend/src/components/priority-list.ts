@@ -18,14 +18,7 @@ import {
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import {
-  type ApplianceStatus,
-  type ChargerGroupStatus,
-  type ChargerState,
-  type ChargerStatus,
-  type ConfigResponse,
-  type StatusSnapshot,
-} from "../api";
+import { type ApplianceStatus, type ChargerGroupStatus, type ChargerState, type ChargerStatus, type ConfigResponse, type StatusSnapshot } from "../api";
 import "./countdown";
 import { allChargers } from "../draft";
 import { existingEntity } from "../entities";
@@ -63,9 +56,7 @@ const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]
 };
 
 /** An entry in the priority list: an appliance, or a group with its EV chargers. */
-type PriorityEntry =
-  | { kind: "appliance"; appliance: ApplianceStatus; on: boolean }
-  | { kind: "charger_group"; group: ChargerGroupStatus; on: boolean };
+type PriorityEntry = { kind: "appliance"; appliance: ApplianceStatus; on: boolean } | { kind: "charger_group"; group: ChargerGroupStatus; on: boolean };
 
 /** Return the entries of the priority list, each with whether it is on. */
 function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
@@ -88,9 +79,7 @@ function priorityEntries(status: StatusSnapshot): PriorityEntry[] {
  */
 function cutOffIndex(entries: PriorityEntry[]): number {
   const last = entries.map((entry) => entry.on).lastIndexOf(true);
-  const regulatedBelow = entries
-    .slice(last + 1)
-    .some((entry) => entry.kind === "charger_group" || !entry.appliance.excluded);
+  const regulatedBelow = entries.slice(last + 1).some((entry) => entry.kind === "charger_group" || !entry.appliance.excluded);
   return last >= 0 && regulatedBelow ? last : -1;
 }
 
@@ -137,18 +126,18 @@ export class KraftvaktPriorityList extends LitElement {
         <div class="card-header">
           <span>${this.localize("status.appliances_and_chargers")}</span>
         </div>
-        ${entries.length === 0
-          ? html`<div class="empty">${this.localize("status.no_appliances")}</div>`
-          : html`<div class="list ${this.phone ? "phone" : ""}" style=${this.phone ? "" : this.columns()}>
-              ${entries.map(
-                (entry, index) => html`
-                  ${entry.kind === "appliance"
-                    ? this.renderApplianceRow(entry.appliance, index + 1)
-                    : this.renderChargerGroup(entry.group, index + 1)}
-                  ${index === cutAfter ? this.renderCutOff() : nothing}
-                `,
-              )}
-            </div>`}
+        ${
+          entries.length === 0
+            ? html`<div class="empty">${this.localize("status.no_appliances")}</div>`
+            : html`<div class="list ${this.phone ? "phone" : ""}" style=${this.phone ? "" : this.columns()}>
+                ${entries.map(
+                  (entry, index) => html`
+                    ${entry.kind === "appliance" ? this.renderApplianceRow(entry.appliance, index + 1) : this.renderChargerGroup(entry.group, index + 1)}
+                    ${index === cutAfter ? this.renderCutOff() : nothing}
+                  `,
+                )}
+              </div>`
+        }
       </ha-card>
     `;
   }
@@ -159,14 +148,7 @@ export class KraftvaktPriorityList extends LitElement {
    * An appliance's temperature is in the current column, since an EV charger never has one.
    */
   private columns(): string {
-    const columns = [
-      "minmax(24px, max-content)",
-      "minmax(0, 1fr)",
-      "max-content",
-      ...(this.hasPower ? ["max-content"] : []),
-      "var(--waiting-width)",
-      "max-content",
-    ];
+    const columns = ["minmax(24px, max-content)", "minmax(0, 1fr)", "max-content", ...(this.hasPower ? ["max-content"] : []), "var(--waiting-width)", "max-content"];
     return `grid-template-columns: ${columns.join(" ")}`;
   }
 
@@ -202,13 +184,10 @@ export class KraftvaktPriorityList extends LitElement {
         ${this.renderRank(rank)}
         <div class="row-title">
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
-          ${appliance.variant && !this.phone
-            ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>`
-            : nothing}
+          ${appliance.variant && !this.phone ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>` : nothing}
         </div>
         ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)}
-        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")}
-        ${this.renderApplianceChip(appliance)}
+        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")} ${this.renderApplianceChip(appliance)}
       `,
     );
   }
@@ -231,9 +210,7 @@ export class KraftvaktPriorityList extends LitElement {
     if (appliance.excluded) {
       return this.renderChip(CHIP_EXCLUDED, "status.chip_excluded", "status.excluded");
     }
-    return appliance.on
-      ? this.renderChip(CHIP_ON, "status.on", "status.on")
-      : this.renderChip(CHIP_OFF, "status.off", "status.off");
+    return appliance.on ? this.renderChip(CHIP_ON, "status.on", "status.on") : this.renderChip(CHIP_OFF, "status.off", "status.off");
   }
 
   /**
@@ -261,18 +238,12 @@ export class KraftvaktPriorityList extends LitElement {
         ${this.renderRank(rank)}
         <div class="row-title">
           <ha-svg-icon class="ev-icon" .path=${mdiCarElectric}></ha-svg-icon>
-          ${this.renderName(group.name)}
-          ${chargers.length === 0 && !this.phone
-            ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>`
-            : nothing}
+          ${this.renderName(group.name)} ${chargers.length === 0 && !this.phone ? html`<span class="row-sub">${this.localize("status.no_chargers")}</span>` : nothing}
         </div>
         ${this.renderWideOnly(
           chargers.length === 0
             ? html`<span></span>`
-            : html`<span
-                class="charging-count"
-                title=${this.localize("status.chargers_charging", { charging, total: chargers.length })}
-              >
+            : html`<span class="charging-count" title=${this.localize("status.chargers_charging", { charging, total: chargers.length })}>
                 <ha-svg-icon .path=${mdiLightningBolt}></ha-svg-icon>${charging} / ${chargers.length}
               </span>`,
         )}
@@ -291,10 +262,8 @@ export class KraftvaktPriorityList extends LitElement {
           <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
           ${this.renderName(charger.name)}
         </div>
-        ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)}
-        ${this.renderPower(charger.power_w)}
-        ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")}
-        ${this.renderChargerChip(charger)}
+        ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)} ${this.renderPower(charger.power_w)}
+        ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")} ${this.renderChargerChip(charger)}
       `,
     );
   }
@@ -303,12 +272,7 @@ export class KraftvaktPriorityList extends LitElement {
    * An icon and a bar that empties from when the waiting started until the decision that ends it.
    * On a phone, the icon alone.
    */
-  private renderWaiting(
-    item: ApplianceStatus | ChargerStatus,
-    icon: string,
-    label: TranslationKey,
-    endsAt: TranslationKey,
-  ) {
+  private renderWaiting(item: ApplianceStatus | ChargerStatus, icon: string, label: TranslationKey, endsAt: TranslationKey) {
     if (!item.waiting_since || !item.waiting_ends_at) {
       return this.phone ? nothing : html`<span></span>`;
     }
@@ -316,12 +280,7 @@ export class KraftvaktPriorityList extends LitElement {
     return html`
       <span class="waiting" title="${this.localize(label)}: ${this.localize(endsAt, { time })}">
         <ha-svg-icon .path=${icon}></ha-svg-icon>
-        ${this.renderWideOnly(
-          html`<kraftvakt-countdown-bar
-            .start=${Date.parse(item.waiting_since)}
-            .end=${Date.parse(item.waiting_ends_at)}
-          ></kraftvakt-countdown-bar>`,
-        )}
+        ${this.renderWideOnly(html`<kraftvakt-countdown-bar .start=${Date.parse(item.waiting_since)} .end=${Date.parse(item.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
       </span>
     `;
   }
@@ -332,9 +291,7 @@ export class KraftvaktPriorityList extends LitElement {
       return nothing;
     }
     return this.renderWideOnly(
-      html`<span class="measured" title=${this.localize("status.power")}
-        >${powerW === null ? nothing : `${formatPower(this.hass.language, powerW)} kW`}</span
-      >`,
+      html`<span class="measured" title=${this.localize("status.power")}>${powerW === null ? nothing : `${formatPower(this.hass.language, powerW)} kW`}</span>`,
     );
   }
 
@@ -344,9 +301,7 @@ export class KraftvaktPriorityList extends LitElement {
     if (temperature === null || this.phone) {
       return nothing;
     }
-    return html`<span class="measured" title=${this.localize("status.temperature")}
-      >${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}</span
-    >`;
+    return html`<span class="measured" title=${this.localize("status.temperature")}>${formatNumber(this.hass.language, temperature.value, 1)} ${temperature.unit}</span>`;
   }
 
   /** The current, and one bar per ampere from the minimum to the maximum, filled up to the current. */
@@ -372,9 +327,7 @@ export class KraftvaktPriorityList extends LitElement {
 
   /** On a phone, the current alone, and nothing for a charger without one. */
   private renderPhoneCurrent(charger: ChargerStatus) {
-    return charger.current_a === null
-      ? nothing
-      : html`<span class="current">${this.localize("status.amperes", { current: charger.current_a })}</span>`;
+    return charger.current_a === null ? nothing : html`<span class="current">${this.localize("status.amperes", { current: charger.current_a })}</span>`;
   }
 
   private renderChargerChip(charger: ChargerStatus) {
@@ -403,8 +356,7 @@ export class KraftvaktPriorityList extends LitElement {
   ) {
     return html`
       <span class="state chip ${chip.kind}" title=${this.localize(sentence, sentenceParams)}>
-        ${chip.icon ? html`<ha-svg-icon .path=${chip.icon}></ha-svg-icon>` : html`<span class="dot"></span>`}
-        ${this.localize(word, wordParams)}
+        ${chip.icon ? html`<ha-svg-icon .path=${chip.icon}></ha-svg-icon>` : html`<span class="dot"></span>`} ${this.localize(word, wordParams)}
       </span>
     `;
   }
@@ -418,12 +370,14 @@ export class KraftvaktPriorityList extends LitElement {
     return html`
       <div class="cut-off" title=${this.localize("status.power_runs_out")}>
         <ha-svg-icon .path=${mdiArrowDown}></ha-svg-icon>
-        ${free > 0
-          ? this.localize("status.free_power", {
-              power: formatPower(language, free),
-              share: formatPercent(language, free / status.power_limit_w),
-            })
-          : nothing}
+        ${
+          free > 0
+            ? this.localize("status.free_power", {
+                power: formatPower(language, free),
+                share: formatPercent(language, free / status.power_limit_w),
+              })
+            : nothing
+        }
       </div>
     `;
   }
@@ -610,11 +564,7 @@ export class KraftvaktPriorityList extends LitElement {
         background: var(--kraftvakt-ev-color);
       }
       .ampere.on.bypassed {
-        background: repeating-linear-gradient(
-          45deg,
-          var(--secondary-text-color) 0 2px,
-          rgba(127, 127, 127, 0.16) 2px 4px
-        );
+        background: repeating-linear-gradient(45deg, var(--secondary-text-color) 0 2px, rgba(127, 127, 127, 0.16) 2px 4px);
       }
       .row-title {
         display: flex;

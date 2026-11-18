@@ -14,12 +14,7 @@ export interface ParameterRange {
 }
 
 /** Return the domain actions of the field that belong to the domain of the entity, by key. */
-export function domainActionsFor(
-  capabilities: Capabilities,
-  section: ActionSection,
-  field: string,
-  entityId: string | null,
-): Record<string, DomainAction> {
+export function domainActionsFor(capabilities: Capabilities, section: ActionSection, field: string, entityId: string | null): Record<string, DomainAction> {
   const actions = (capabilities.domain_actions[section] as Record<string, Record<string, DomainAction>>)[field];
   const domain = entityId?.split(".")[0];
   return Object.fromEntries(Object.entries(actions).filter(([, action]) => action.domain === domain));
@@ -40,17 +35,8 @@ export function availableDomainAction(
  * Return a value for each parameter: the one in `previous` when it has one,
  * otherwise the default for the entity.
  */
-export function initialData(
-  action: DomainAction,
-  stateObj: HassEntity | undefined,
-  previous: Record<string, ParameterValue> = {},
-): Record<string, ParameterValue> {
-  return Object.fromEntries(
-    action.parameters.map((parameter) => [
-      parameter.name,
-      previous[parameter.name] ?? defaultValue(parameter, stateObj),
-    ]),
-  );
+export function initialData(action: DomainAction, stateObj: HassEntity | undefined, previous: Record<string, ParameterValue> = {}): Record<string, ParameterValue> {
+  return Object.fromEntries(action.parameters.map((parameter) => [parameter.name, previous[parameter.name] ?? defaultValue(parameter, stateObj)]));
 }
 
 /** Return the options the entity supports, or the preferred ones when it does not tell. */
@@ -69,11 +55,7 @@ export function parameterRange(parameter: ActionParameter, stateObj: HassEntity 
 }
 
 /** Return the code of what is wrong with each parameter of the action, by name. */
-export function parameterIssues(
-  action: DomainAction,
-  data: Record<string, ParameterValue>,
-  stateObj: HassEntity | undefined,
-): Record<string, string> {
+export function parameterIssues(action: DomainAction, data: Record<string, ParameterValue>, stateObj: HassEntity | undefined): Record<string, string> {
   const issues: Record<string, string> = {};
   for (const parameter of action.parameters) {
     const code = !(parameter.name in data) ? "required" : valueIssue(parameter, data[parameter.name], stateObj);
@@ -84,11 +66,7 @@ export function parameterIssues(
   return issues;
 }
 
-function valueIssue(
-  parameter: ActionParameter,
-  value: ParameterValue,
-  stateObj: HassEntity | undefined,
-): string | undefined {
+function valueIssue(parameter: ActionParameter, value: ParameterValue, stateObj: HassEntity | undefined): string | undefined {
   if (value === null) {
     return undefined;
   }
@@ -97,9 +75,7 @@ function valueIssue(
     return Array.isArray(options) && !options.includes(value) ? "unsupported_option" : undefined;
   }
   const { min, max } = parameterRange(parameter, stateObj);
-  return typeof value === "number" && ((min !== undefined && value < min) || (max !== undefined && value > max))
-    ? "outside_entity_range"
-    : undefined;
+  return typeof value === "number" && ((min !== undefined && value < min) || (max !== undefined && value > max)) ? "outside_entity_range" : undefined;
 }
 
 function defaultValue(parameter: ActionParameter, stateObj: HassEntity | undefined): ParameterValue {

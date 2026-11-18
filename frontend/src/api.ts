@@ -94,9 +94,7 @@ export interface Appliance extends ApplianceActions {
   display_temperature: Condition | null;
 }
 
-export type PriorityEntry =
-  | { type: "appliance"; appliance_id: string; variant_id: string | null }
-  | { type: "charger_group"; group_id: string };
+export type PriorityEntry = { type: "appliance"; appliance_id: string; variant_id: string | null } | { type: "charger_group"; group_id: string };
 
 export interface ChargingWindow {
   start: string;
@@ -163,9 +161,7 @@ export interface ConfigResponse {
   missing: Issue[];
 }
 
-export type SaveResponse =
-  | { saved: true; config: KraftvaktConfig; missing: Issue[] }
-  | { saved: false; errors: Issue[] };
+export type SaveResponse = { saved: true; config: KraftvaktConfig; missing: Issue[] } | { saved: false; errors: Issue[] };
 
 export interface Range {
   min: number | null;
@@ -250,18 +246,7 @@ export interface ApplianceStatus {
 
 /** How an EV charger stands after the last decision, the most important first. */
 export type ChargerState =
-  | "first_decision"
-  | "fault"
-  | "excluded"
-  | "outside_window"
-  | "no_car"
-  | "queued"
-  | "starting"
-  | "override"
-  | "finishing"
-  | "charging"
-  | "activated"
-  | "deactivated";
+  "first_decision" | "fault" | "excluded" | "outside_window" | "no_car" | "queued" | "starting" | "override" | "finishing" | "charging" | "activated" | "deactivated";
 
 export interface ChargerStatus {
   id: string;
@@ -332,8 +317,7 @@ export function errorMessage(error: unknown): string {
   return isCommandError(error) ? error.message : String(error);
 }
 
-export const fetchCapabilities = (hass: HomeAssistant) =>
-  hass.callWS<Capabilities>({ type: "kraftvakt/capabilities" });
+export const fetchCapabilities = (hass: HomeAssistant) => hass.callWS<Capabilities>({ type: "kraftvakt/capabilities" });
 
 /** The charger profile of a device, null without one, and the fields of a charger it fills. */
 export interface ChargerProfileFields {
@@ -341,16 +325,13 @@ export interface ChargerProfileFields {
   fields: Partial<Charger>;
 }
 
-export const fetchChargerProfile = (hass: HomeAssistant, deviceId: string) =>
-  hass.callWS<ChargerProfileFields>({ type: "kraftvakt/charger_profile/get", device_id: deviceId });
+export const fetchChargerProfile = (hass: HomeAssistant, deviceId: string) => hass.callWS<ChargerProfileFields>({ type: "kraftvakt/charger_profile/get", device_id: deviceId });
 
 export const fetchConfig = (hass: HomeAssistant) => hass.callWS<ConfigResponse>({ type: "kraftvakt/config/get" });
 
-export const saveConfig = (hass: HomeAssistant, config: KraftvaktConfig) =>
-  hass.callWS<SaveResponse>({ type: "kraftvakt/config/save", config });
+export const saveConfig = (hass: HomeAssistant, config: KraftvaktConfig) => hass.callWS<SaveResponse>({ type: "kraftvakt/config/save", config });
 
-export const setRunning = (hass: HomeAssistant, running: boolean) =>
-  hass.callWS<{ running: boolean }>({ type: "kraftvakt/regulation/set_running", running });
+export const setRunning = (hass: HomeAssistant, running: boolean) => hass.callWS<{ running: boolean }>({ type: "kraftvakt/regulation/set_running", running });
 
 /** Get the status now and at each change, until the returned function is called. */
 export const subscribeStatus = (hass: HomeAssistant, onStatus: (status: StatusSnapshot) => void) =>

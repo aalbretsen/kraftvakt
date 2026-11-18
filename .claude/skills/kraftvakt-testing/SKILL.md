@@ -30,7 +30,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
 
 `uv run scripts/build.py`, with Node active (`fish -c 'nvm use; uv run scripts/build.py'`), runs them all and is the one list of them:
 it installs the dependencies with `uv pip install` and `npm ci`, runs pytest with 100 % coverage of Kraftvakt, the simulator and the diagnostics tools,
-ruff check and format, mypy, and the panel's typecheck, tests and build, and stops at the first failure.
+ruff check and format, mypy, and the panel's format check, typecheck, tests and build, and stops at the first failure.
 It refuses to run when the active Node is not the one in `.nvmrc`, since a script cannot activate nvm.
 The bundle must be unchanged after the build, or be committed with the source; the script tells when it changed.
 `scripts/release.py` runs the same build, and `scripts/update_dependencies.py` offers to run it when it is done.

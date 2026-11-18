@@ -15,7 +15,8 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
   Versions are pinned in `package.json` (Lit and TypeScript as the HA frontend for the supported HA version).
 - Node from `.nvmrc` (the same as the HA frontend uses), via nvm or nvm.fish.
   Node is not on `PATH` in a plain non-interactive shell; activate it with nvm first, for example `fish -c 'nvm use; npm run build'`.
-- `npm ci`, `npm run typecheck`, `npm test`, `npm run build` (`npm run watch`).
+- `npm ci`, `npm run format:check`, `npm run typecheck`, `npm test`, `npm run build` (`npm run watch`).
+- Prettier formats everything in `frontend/` with its defaults and the line length from `.editorconfig`; `npm run format` applies it.
 - The minified bundle `custom_components/kraftvakt/frontend/kraftvakt-panel.js` is committed, because HACS installs from the repository.
   Rebuild after every change in `frontend/` and commit source and bundle together. CI fails when the committed bundle differs from a clean build.
 - The bundle URL carries the manifest version. During development the browser may use an old bundle; reload without cache.

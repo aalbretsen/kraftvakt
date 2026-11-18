@@ -180,12 +180,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return actionForEntity(this.capabilities, this.section, name, action, entityId, entityId ? this.hass.states[entityId] : undefined);
   }
 
-  protected renderForm(
-    schema: FormField[],
-    issues: Issue[],
-    changed: (value: Record<string, unknown>) => void,
-    data: object = this.draft,
-  ) {
+  protected renderForm(schema: FormField[], issues: Issue[], changed: (value: Record<string, unknown>) => void, data: object = this.draft) {
     const fields = schema.flatMap((field) => field.schema?.map((inner) => inner.name) ?? [field.name]);
     return html`
       <ha-form
@@ -237,8 +232,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     }
     const range = this.capabilities.limits[this.section][field];
     const defaults = this.capabilities.defaults[this.section] as Record<string, unknown>;
-    const number = (value: unknown) =>
-      typeof value === "number" ? new Intl.NumberFormat(this.hass.language).format(value) : "";
+    const number = (value: unknown) => (typeof value === "number" ? new Intl.NumberFormat(this.hass.language).format(value) : "");
     return this.localize(key, { min: number(range?.min), max: number(range?.max), default: number(defaults[field]) });
   }
 
@@ -266,8 +260,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     this.draft = { ...this.draft, ...changes };
   }
 
-  protected describe = (issue: Issue): string =>
-    fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
+  protected describe = (issue: Issue): string => fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
   protected entityChanged(entityId: string | null): void {
     this.changeDraft({ entity_id: entityId, ...this.actionsForEntity(entityId) } as Partial<T>);
@@ -278,9 +271,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       return html`<ha-button @click=${this.close}>${this.localize("dialog.close")}</ha-button>`;
     }
     return html`
-      ${this.isNew
-        ? nothing
-        : html`<ha-button variant="danger" appearance="plain" @click=${this.delete}>${this.deleteText}</ha-button>`}
+      ${this.isNew ? nothing : html`<ha-button variant="danger" appearance="plain" @click=${this.delete}>${this.deleteText}</ha-button>`}
       <span class="spacer"></span>
       <ha-button appearance="plain" @click=${this.close}>${this.localize("dialog.cancel")}</ha-button>
       <ha-button .disabled=${hasErrors} @click=${this.confirm}>${this.localize("dialog.ok")}</ha-button>

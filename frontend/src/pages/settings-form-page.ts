@@ -108,12 +108,7 @@ export class SettingsFormPage extends ConfigPage {
 
   private get formData(): Record<string, unknown> {
     const general = this.config.general as unknown as Record<GeneralField, unknown>;
-    return Object.fromEntries(
-      Object.entries(general).map(([name, value]) => [
-        name,
-        SELECT_FIELDS.has(name as GeneralField) && value !== null ? String(value) : value,
-      ]),
-    );
+    return Object.fromEntries(Object.entries(general).map(([name, value]) => [name, SELECT_FIELDS.has(name as GeneralField) && value !== null ? String(value) : value]));
   }
 
   private valueChanged(event: CustomEvent<{ value: Record<string, unknown> }>): void {
@@ -121,8 +116,7 @@ export class SettingsFormPage extends ConfigPage {
     const general = { ...this.config.general };
     for (const name of Object.keys(general) as GeneralField[]) {
       const changed = value[name];
-      (general as Record<string, unknown>)[name] =
-        SELECT_FIELDS.has(name) && changed !== undefined ? Number(changed) : (changed ?? null);
+      (general as Record<string, unknown>)[name] = SELECT_FIELDS.has(name) && changed !== undefined ? Number(changed) : (changed ?? null);
     }
     this.changeConfig({ ...this.config, general });
   }
@@ -132,8 +126,7 @@ export class SettingsFormPage extends ConfigPage {
   private computeHelper = (field: FormField): string => {
     const range = this.range(field.name) as Range | undefined;
     const defaults = this.capabilities.defaults.general;
-    const number = (value: number | null | undefined) =>
-      value === null || value === undefined ? "" : new Intl.NumberFormat(this.hass.language).format(value);
+    const number = (value: number | null | undefined) => (value === null || value === undefined ? "" : new Intl.NumberFormat(this.hass.language).format(value));
     const window = this.config.general.regulation_window_s;
     return this.localize(`general.fields.${field.name}.helper` as TranslationKey, {
       min: number(range?.min),

@@ -129,12 +129,7 @@ export class KraftvaktPanel extends LitElement {
         <ha-tab-group @wa-tab-show=${this.tabShown}>
           ${Object.entries(TAB_ICONS).map(
             ([tab, icon]) => html`
-              <ha-tab-group-tab
-                slot="nav"
-                panel=${tab}
-                .active=${live(tab === page)}
-                title=${this.tabLabel(tab as Page)}
-              >
+              <ha-tab-group-tab slot="nav" panel=${tab} .active=${live(tab === page)} title=${this.tabLabel(tab as Page)}>
                 <ha-svg-icon .path=${icon}></ha-svg-icon>
                 <span class="tab-label">${this.tabLabel(tab as Page)}</span>
               </ha-tab-group-tab>
@@ -170,13 +165,7 @@ export class KraftvaktPanel extends LitElement {
     switch (page) {
       case "status":
         return html`
-          <kraftvakt-status-page
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-            .status=${this.status}
-            .config=${this.config}
-          ></kraftvakt-status-page>
+          <kraftvakt-status-page .hass=${this.hass} .localize=${this.localize} .narrow=${this.narrow} .status=${this.status} .config=${this.config}></kraftvakt-status-page>
         `;
       case "general":
       case "appliances":
@@ -195,35 +184,26 @@ export class KraftvaktPanel extends LitElement {
     const showSaveBar = !locked && (this.dirty || this.saveErrors.length > 0);
     const issues = locked ? [] : this.pageIssues(errors);
     return html`
-      ${locked
-        ? html`<kraftvakt-locked-banner
-            .hass=${this.hass}
-            .localize=${this.localize}
-            .narrow=${this.narrow}
-          ></kraftvakt-locked-banner>`
-        : ""}
+      ${locked ? html`<kraftvakt-locked-banner .hass=${this.hass} .localize=${this.localize} .narrow=${this.narrow}></kraftvakt-locked-banner>` : ""}
       ${this.renderConfigPageContent(page, locked ? this.config.config : this.draft, issues, locked)}
-      ${showSaveBar
-        ? html`
-            <kraftvakt-save-bar
-              .localize=${this.localize}
-              .errorCount=${errors.length}
-              .saving=${this.saving}
-              .message=${this.saveMessage}
-              @save=${this.save}
-              @discard=${this.discard}
-            ></kraftvakt-save-bar>
-          `
-        : ""}
+      ${
+        showSaveBar
+          ? html`
+              <kraftvakt-save-bar
+                .localize=${this.localize}
+                .errorCount=${errors.length}
+                .saving=${this.saving}
+                .message=${this.saveMessage}
+                @save=${this.save}
+                @discard=${this.discard}
+              ></kraftvakt-save-bar>
+            `
+          : ""
+      }
     `;
   }
 
-  private renderConfigPageContent(
-    page: Exclude<Page, "status">,
-    config: KraftvaktConfig,
-    issues: Issue[],
-    locked: boolean,
-  ) {
+  private renderConfigPageContent(page: Exclude<Page, "status">, config: KraftvaktConfig, issues: Issue[], locked: boolean) {
     const tag = CONFIG_PAGE_ELEMENTS[page];
     return staticHtml`
       <${tag}

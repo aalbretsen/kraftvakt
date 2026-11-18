@@ -14,13 +14,7 @@ const ACTIVELY_CHARGING_ABOVE_W = 100;
  * What the field gives, also the prefix of its texts. Only evidence counts as true.
  * A display value gives a number to show, not true or false.
  */
-export type ConditionKind =
-  | "condition"
-  | "actively_charging"
-  | "charging_power"
-  | "fault"
-  | "display_power"
-  | "display_temperature";
+export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "fault" | "display_power" | "display_temperature";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
@@ -265,9 +259,7 @@ export class KraftvaktConditionField extends LitElement {
     const evidence = this.evidence(this.value);
     return html`
       ${this.renderNow(this.value, evidence)}
-      ${this.value.type === "template" && evidence === null
-        ? html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>`
-        : nothing}
+      ${this.value.type === "template" && evidence === null ? html`<div class="warning">${this.text("invalid", { value: JSON.stringify(this.preview?.result) })}</div>` : nothing}
     `;
   }
 
@@ -305,11 +297,13 @@ export class KraftvaktConditionField extends LitElement {
     const templatePower = condition.type === "template" && this.kind === "charging_power" ? templatePowerW(this.preview?.result) : null;
     return html`
       <div class="preview">
-        ${this.localize("condition.now", { value: "" })}${stateObj
-          ? html`<b>${this.hass.formatEntityState(stateObj)}</b>${onOrOff ? nothing : html` · ${text}`}`
-          : templatePower !== null
-            ? html`<b>${new Intl.NumberFormat(this.hass.language).format(templatePower)} W</b> · ${text}`
-            : html`<b>${text}</b>`}
+        ${this.localize("condition.now", { value: "" })}${
+          stateObj
+            ? html`<b>${this.hass.formatEntityState(stateObj)}</b>${onOrOff ? nothing : html` · ${text}`}`
+            : templatePower !== null
+              ? html`<b>${new Intl.NumberFormat(this.hass.language).format(templatePower)} W</b> · ${text}`
+              : html`<b>${text}</b>`
+        }
       </div>
     `;
   }
@@ -373,16 +367,12 @@ export class KraftvaktConditionField extends LitElement {
    * Another type starts empty, and another entity starts without chosen states, which count as true.
    * A temperature from the list gives its own type, a thermostat's or a sensor's.
    */
-  private valueChanged(
-    event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[]; states_are_true?: string } }>,
-  ): void {
+  private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[]; states_are_true?: string } }>): void {
     event.stopPropagation();
     const { type, value, states, states_are_true } = event.detail.value;
     const sameType = type === this.shownType();
     const source = sameType && this.listsTemperatures(type) && value ? parseSourceKey(value) : undefined;
-    const condition: Condition = source
-      ? { type: source.type, value: source.entityId }
-      : { type, value: sameType ? (value ?? "") : "" };
+    const condition: Condition = source ? { type: source.type, value: source.entityId } : { type, value: sameType ? (value ?? "") : "" };
     if (type === "state") {
       const sameEntity = sameType && condition.value === this.value?.value;
       condition.states = sameEntity ? (states ?? []) : [];
@@ -404,15 +394,12 @@ export class KraftvaktConditionField extends LitElement {
 
   private startPreview(template: string): void {
     const entity = this.entityId ? (this.hass.states[this.entityId] ?? null) : null;
-    this.unsubscribePreview = this.hass.connection.subscribeMessage<TemplateResult>(
-      (result) => (this.preview = result),
-      {
-        type: "render_template",
-        template,
-        variables: { entity_id: this.entityId, entity },
-        report_errors: true,
-      },
-    );
+    this.unsubscribePreview = this.hass.connection.subscribeMessage<TemplateResult>((result) => (this.preview = result), {
+      type: "render_template",
+      template,
+      variables: { entity_id: this.entityId, entity },
+      report_errors: true,
+    });
     this.unsubscribePreview.catch((error: unknown) => {
       this.preview = { error: error instanceof Object && "message" in error ? String(error.message) : String(error) };
     });

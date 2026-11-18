@@ -29,9 +29,7 @@ export class KraftvaktSaveBar extends LitElement {
           <div class="title">${this.localize("config.unsaved")}</div>
           ${text ? html`<div class="error">${text}</div>` : nothing}
         </div>
-        <ha-button appearance="plain" .disabled=${this.saving} @click=${() => this.fire("discard")}>
-          ${this.localize("config.discard")}
-        </ha-button>
+        <ha-button appearance="plain" .disabled=${this.saving} @click=${() => this.fire("discard")}> ${this.localize("config.discard")} </ha-button>
         <ha-button .disabled=${this.saving || this.errorCount > 0} @click=${() => this.fire("save")}>
           <ha-svg-icon slot="start" .path=${mdiContentSave}></ha-svg-icon>
           ${this.localize("config.save")}

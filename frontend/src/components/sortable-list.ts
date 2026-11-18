@@ -59,11 +59,13 @@ export class KraftvaktSortableList extends LitElement {
         @item-added=${this.itemAdded}
         @item-removed=${this.itemRemoved}
       >
-        <div class="list" data-empty=${this.emptyText}>${repeat(
-          this.rows,
-          (row) => row.key,
-          (row, index) => this.renderRow(row, index),
-        )}</div>
+        <div class="list" data-empty=${this.emptyText}>
+          ${repeat(
+            this.rows,
+            (row) => row.key,
+            (row, index) => this.renderRow(row, index),
+          )}
+        </div>
       </ha-sortable>
     `;
   }
@@ -71,25 +73,24 @@ export class KraftvaktSortableList extends LitElement {
   private renderRow(row: ListRow, index: number) {
     return html`
       <div class="row ${row.highlighted ? "highlighted" : ""}" data-key=${row.key}>
-        ${this.locked
-          ? nothing
-          : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant} title=${this.localize("list.drag")}></ha-svg-icon>`}
+        ${this.locked ? nothing : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant} title=${this.localize("list.drag")}></ha-svg-icon>`}
         <span class="rank">${index + 1}</span>
         ${row.iconPath ? html`<ha-svg-icon class="icon" .path=${row.iconPath}></ha-svg-icon>` : nothing}
         <div class="main">
           <div class="title">${row.title}${row.tag ? html`<span class="tag">${row.tag}</span>` : nothing}</div>
-          ${row.details.length > 0 ? html`<div class="details">${joined(row.details)}</div>` : nothing}
-          ${row.errors.map((error) => html`<div class="error">${error}</div>`)}
+          ${row.details.length > 0 ? html`<div class="details">${joined(row.details)}</div>` : nothing} ${row.errors.map((error) => html`<div class="error">${error}</div>`)}
         </div>
-        ${row.openable
-          ? html`
-              <ha-icon-button
-                .path=${this.locked ? mdiEye : mdiPencil}
-                .label=${this.localize(this.locked ? "list.view" : "list.edit")}
-                @click=${() => this.dispatchEvent(new CustomEvent("open-row", { detail: row.key }))}
-              ></ha-icon-button>
-            `
-          : nothing}
+        ${
+          row.openable
+            ? html`
+                <ha-icon-button
+                  .path=${this.locked ? mdiEye : mdiPencil}
+                  .label=${this.localize(this.locked ? "list.view" : "list.edit")}
+                  @click=${() => this.dispatchEvent(new CustomEvent("open-row", { detail: row.key }))}
+                ></ha-icon-button>
+              `
+            : nothing
+        }
       </div>
     `;
   }
@@ -136,8 +137,7 @@ export class KraftvaktSortableList extends LitElement {
       background: var(--card-background-color);
     }
     .row.highlighted {
-      background: linear-gradient(var(--kraftvakt-essential-background), var(--kraftvakt-essential-background)),
-        var(--card-background-color);
+      background: linear-gradient(var(--kraftvakt-essential-background), var(--kraftvakt-essential-background)), var(--card-background-color);
     }
     .handle {
       flex: none;

@@ -36,11 +36,7 @@ export function displaySensors(appliance: Appliance): [string, string][] {
  * Return the display values that may stay when the appliance gets the entity:
  * the sensors outside the device of the entity are cleared, and templates are kept.
  */
-export function displayValuesForEntity(
-  appliance: Appliance,
-  entityId: string | null,
-  hass: HomeAssistant,
-): Pick<Appliance, "display_power" | "display_temperature"> {
+export function displayValuesForEntity(appliance: Appliance, entityId: string | null, hass: HomeAssistant): Pick<Appliance, "display_power" | "display_temperature"> {
   const deviceId = deviceOfEntity(hass, entityId);
   const allowed = deviceId ? new Set(deviceEntities(hass, deviceId)) : undefined;
   return {

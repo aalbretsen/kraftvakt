@@ -5,13 +5,7 @@ import { ownEntities } from "../entities";
 import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
 
 /** The power sensor has no default, and the power limit is the tariff step the user has chosen. */
-const RESTORED_FIELDS: readonly GeneralField[] = [
-  "regulation_window_s",
-  "turn_on_margin_w",
-  "regulation_interval",
-  "wait_at_limit_s",
-  "penalty_threshold_w",
-];
+const RESTORED_FIELDS: readonly GeneralField[] = ["regulation_window_s", "turn_on_margin_w", "regulation_interval", "wait_at_limit_s", "penalty_threshold_w"];
 
 type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
 
@@ -20,18 +14,14 @@ type CardTitle = "general.measurement" | "general.regulation" | "general.penalty
 export class KraftvaktGeneralPage extends SettingsFormPage {
   protected render() {
     return html`
-      ${this.renderSettingsCard("general.measurement", [
-        this.entityField("power_sensor"),
-        this.numberField("regulation_window_s"),
-      ])}
+      ${this.renderSettingsCard("general.measurement", [this.entityField("power_sensor"), this.numberField("regulation_window_s")])}
       ${this.renderSettingsCard("general.regulation", [
         this.numberField("power_limit_w"),
         this.numberField("turn_on_margin_w"),
         this.intervalField(),
         this.numberField("wait_at_limit_s"),
       ])}
-      ${this.renderSettingsCard("general.penalty", [this.numberField("penalty_threshold_w")], "general.penalty_info")}
-      ${this.renderRestoreDefaults(RESTORED_FIELDS)}
+      ${this.renderSettingsCard("general.penalty", [this.numberField("penalty_threshold_w")], "general.penalty_info")} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 

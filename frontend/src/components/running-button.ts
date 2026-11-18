@@ -32,12 +32,7 @@ export class KraftvaktRunningButton extends LitElement {
   protected render() {
     return this.running
       ? html`
-          <ha-button
-            variant="danger"
-            appearance=${this.appearance}
-            .disabled=${this.disabled || this.changing}
-            @click=${this.toggle}
-          >
+          <ha-button variant="danger" appearance=${this.appearance} .disabled=${this.disabled || this.changing} @click=${this.toggle}>
             <ha-svg-icon slot="start" .path=${mdiStop}></ha-svg-icon>
             ${this.localize("status.stop")}
           </ha-button>
@@ -57,9 +52,7 @@ export class KraftvaktRunningButton extends LitElement {
       await setRunning(this.hass, !this.running);
     } catch (error) {
       this.fireError(
-        isCommandError(error) && error.code === ERROR_CONFIG_INCOMPLETE
-          ? this.localize("status.start_refused")
-          : this.localize("panel.error", { message: errorMessage(error) }),
+        isCommandError(error) && error.code === ERROR_CONFIG_INCOMPLETE ? this.localize("status.start_refused") : this.localize("panel.error", { message: errorMessage(error) }),
       );
     } finally {
       this.changing = false;

@@ -5,9 +5,9 @@ Run from the repository root, with the Node from .nvmrc active:
     uv run scripts/build.py
 
 The script installs the development dependencies of the integration and the
-panel, runs the tests with coverage, ruff and mypy, type checks, tests and
-builds the panel, and tells when the panel bundle differs from the committed
-one. It stops at the first step that fails.
+panel, runs the tests with coverage, ruff and mypy, checks the format of,
+type checks, tests and builds the panel, and tells when the panel bundle
+differs from the committed one. It stops at the first step that fails.
 """
 
 from __future__ import annotations
@@ -37,6 +37,7 @@ STEPS = (
     (".venv/bin/ruff", "check", "."),
     (".venv/bin/ruff", "format", "--check", "."),
     (".venv/bin/mypy",),
+    ("npm", "--prefix", "frontend", "run", "format:check"),
     ("npm", "--prefix", "frontend", "run", "typecheck"),
     ("npm", "--prefix", "frontend", "test"),
     ("npm", "--prefix", "frontend", "run", "build"),

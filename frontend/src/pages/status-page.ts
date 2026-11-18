@@ -37,15 +37,17 @@ export class KraftvaktStatusPage extends LitElement {
     return html`
       <div class="cards">
         ${this.renderRegulationCard(status)}
-        ${status.running
-          ? html`<kraftvakt-priority-list
-              .hass=${this.hass}
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              .status=${status}
-              .config=${this.config}
-            ></kraftvakt-priority-list>`
-          : nothing}
+        ${
+          status.running
+            ? html`<kraftvakt-priority-list
+                .hass=${this.hass}
+                .localize=${this.localize}
+                .narrow=${this.narrow}
+                .status=${status}
+                .config=${this.config}
+              ></kraftvakt-priority-list>`
+            : nothing
+        }
       </div>
     `;
   }
@@ -59,12 +61,8 @@ export class KraftvaktStatusPage extends LitElement {
             <span class="dot"></span>
             ${this.localize(status.running ? "status.running" : "status.stopped")}
           </span>
-          ${status.running && status.safe_state
-            ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>`
-            : nothing}
-          ${status.running && status.penalty.active
-            ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>`
-            : nothing}
+          ${status.running && status.safe_state ? html`<span class="chip alarm">${this.localize("status.safe_state_chip")}</span>` : nothing}
+          ${status.running && status.penalty.active ? html`<span class="chip alarm">${this.localize("status.penalty_chip")}</span>` : nothing}
           <span class="spacer"></span>
           ${status.running && status.next_decision_at ? this.renderNextDecision(status, status.next_decision_at) : nothing}
         </div>
@@ -154,9 +152,7 @@ export class KraftvaktStatusPage extends LitElement {
             return html`
               <li>
                 ${describeIssue(issue, this.config, this.localize)}
-                <a href="${PANEL_PATH}/${page}" @click=${(event: Event) => this.openPage(event, page)}>
-                  ${this.localize(`tabs.${page}`)}
-                </a>
+                <a href="${PANEL_PATH}/${page}" @click=${(event: Event) => this.openPage(event, page)}> ${this.localize(`tabs.${page}`)} </a>
               </li>
             `;
           })}

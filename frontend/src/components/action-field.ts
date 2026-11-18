@@ -83,8 +83,7 @@ export class KraftvaktActionField extends LitElement {
         .schema=${domainAction.parameters.map((parameter) => this.parameterField(parameter))}
         .error=${this.parameterErrors}
         .disabled=${this.disabled}
-        .computeLabel=${(field: { name: string }) =>
-          this.localize(`action.parameters.${field.name}` as TranslationKey)}
+        .computeLabel=${(field: { name: string }) => this.localize(`action.parameters.${field.name}` as TranslationKey)}
         .computeHelper=${(field: { name: string }) => this.parameterHelper(domainAction, field.name)}
         @value-changed=${this.parametersChanged}
       ></ha-form>
@@ -154,15 +153,11 @@ export class KraftvaktActionField extends LitElement {
     }
     if (mode === "domain") {
       const domainAction = this.domainAction;
-      return domainAction
-        ? this.localize("action.default_runs", { service: `${domainAction.domain}.${domainAction.service}` })
-        : "";
+      return domainAction ? this.localize("action.default_runs", { service: `${domainAction.domain}.${domainAction.service}` }) : "";
     }
     if (mode === "entity") {
       const entityId = this.value?.entity_id;
-      return entityId
-        ? this.localize("action.entity_runs", { service: this.defaultService(entityId) })
-        : this.localize("action.choose_action_entity");
+      return entityId ? this.localize("action.entity_runs", { service: this.defaultService(entityId) }) : this.localize("action.choose_action_entity");
     }
     if (this.defaultAvailable && this.entityId) {
       return this.localize("action.default_runs", { service: this.defaultService(this.entityId) });
@@ -193,9 +188,7 @@ export class KraftvaktActionField extends LitElement {
   /** A value that is cleared becomes null, which counts as not chosen. */
   private parametersChanged(event: CustomEvent<{ value: Record<string, ParameterValue | undefined> }>): void {
     event.stopPropagation();
-    const data = Object.fromEntries(
-      (this.domainAction?.parameters ?? []).map(({ name }) => [name, event.detail.value[name] ?? null]),
-    );
+    const data = Object.fromEntries((this.domainAction?.parameters ?? []).map(({ name }) => [name, event.detail.value[name] ?? null]));
     this.fireChanged({ ...this.value!, data });
   }
 
@@ -205,9 +198,7 @@ export class KraftvaktActionField extends LitElement {
 
   /** The domain action the value is, when it is available for the entity. */
   private get domainAction(): DomainAction | undefined {
-    return this.value?.mode === "domain" && this.value.domain_action
-      ? this.domainActions[this.value.domain_action]
-      : undefined;
+    return this.value?.mode === "domain" && this.value.domain_action ? this.domainActions[this.value.domain_action] : undefined;
   }
 
   private get stateObj() {

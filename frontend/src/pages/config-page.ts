@@ -72,8 +72,7 @@ export class ConfigPage extends LitElement {
     fireDraftChanged(this, config);
   }
 
-  protected describeIssue = (issue: Issue): string =>
-    fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
+  protected describeIssue = (issue: Issue): string => fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
 
   protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
     return errorsByField(issuesFor(this.issues, section, target), prefix, this.describeIssue);
@@ -81,9 +80,7 @@ export class ConfigPage extends LitElement {
 
   /** Return the entities other appliances and EV chargers than the item use, which it cannot use as well. */
   protected entitiesUsedBesides(itemId: string): string[] {
-    return [...this.config.appliances, ...allChargers(this.config)]
-      .filter((item) => item.id !== itemId && item.entity_id)
-      .map((item) => item.entity_id as string);
+    return [...this.config.appliances, ...allChargers(this.config)].filter((item) => item.id !== itemId && item.entity_id).map((item) => item.entity_id as string);
   }
 
   protected renderCard(card: Card) {
@@ -94,10 +91,8 @@ export class ConfigPage extends LitElement {
           <h2 class="card-title">${card.title}</h2>
           ${card.control ?? nothing}
         </div>
-        ${hasContent
-          ? html`<div class="card-content">${renderDescription(card.description)} ${card.content ?? nothing}</div>`
-          : nothing}
-        ${card.list ?? nothing} ${card.footer ?? nothing}
+        ${hasContent ? html`<div class="card-content">${renderDescription(card.description)} ${card.content ?? nothing}</div>` : nothing} ${card.list ?? nothing}
+        ${card.footer ?? nothing}
       </ha-card>
     `;
   }

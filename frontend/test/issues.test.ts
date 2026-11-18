@@ -51,19 +51,13 @@ describe("the error at a field", () => {
   const text = (issue: Issue) => fieldErrorText(issue, localize, CAPABILITIES, "en");
 
   it("gives the range from the capabilities", () => {
-    expect(text({ code: "out_of_range", section: "general", field: "power_limit_w" })).toBe(
-      localize("errors.out_of_range", { min: "1,000", max: "50,000" }),
-    );
+    expect(text({ code: "out_of_range", section: "general", field: "power_limit_w" })).toBe(localize("errors.out_of_range", { min: "1,000", max: "50,000" }));
     expect(text({ code: "out_of_range", section: "chargers", target: "c", field: "max_current_a" })).toBe(localize("errors.at_least", { min: "1" }));
-    expect(text({ code: "invalid_resolution", section: "general", field: "wait_curve_steepness" })).toBe(
-      localize("errors.invalid_resolution", { resolution: "0.5" }),
-    );
+    expect(text({ code: "invalid_resolution", section: "general", field: "wait_curve_steepness" })).toBe(localize("errors.invalid_resolution", { resolution: "0.5" }));
   });
 
   it("has a text for each code, and shows a code it does not know", () => {
-    expect(text({ code: "missing_car_connected", section: "chargers", target: "c", field: "car_connected" })).toBe(
-      localize("errors.required"),
-    );
+    expect(text({ code: "missing_car_connected", section: "chargers", target: "c", field: "car_connected" })).toBe(localize("errors.required"));
     expect(text({ code: "missing_fault_flag", section: "chargers", target: "c", field: "fault_flag" })).toBe(localize("errors.fault_flag_required"));
     expect(text({ code: "something_new", section: "general", field: "power_limit_w" })).toBe(localize("errors.unknown", { code: "something_new" }));
   });

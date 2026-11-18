@@ -24,8 +24,7 @@ export class KraftvaktLockedBanner extends LitElement {
     return html`
       <ha-alert alert-type="warning" .title=${this.localize("locked.title")} .narrow=${this.narrow}>
         <ha-svg-icon slot="icon" .path=${mdiLock}></ha-svg-icon>
-        ${this.localize("locked.text")}
-        ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
+        ${this.localize("locked.text")} ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
         <kraftvakt-running-button
           slot="action"
           .hass=${this.hass}

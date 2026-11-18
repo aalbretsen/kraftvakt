@@ -116,7 +116,8 @@ An entity that is only unavailable, for example while its cloud service is down,
 
 EV chargers are put in groups, for example one for the garage and one for the cabin. A group has its own place in the priority list and its own settings.
 An EV charger is a device in Home Assistant, and its entities belong to that device;
-a value from another device, such as whether the car is connected from the car's own integration, is given as a template. When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.
+a value from another device, such as whether the car is connected from the car's own integration, is given as a template.
+When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.
 
 An EV charger charges only when Kraftvakt has activated it, so a car that is connected does not start charging by itself.
 
@@ -308,7 +309,7 @@ uv run scripts/build.py
 ```
 
 The script installs the development dependencies of the integration and the panel, runs the tests with the coverage required, ruff and mypy,
-and type checks, tests and builds the panel. It stops at the first step that fails, and tells when the panel bundle has changed and must be committed.
+and checks the format of, type checks, tests and builds the panel. It stops at the first step that fails, and tells when the panel bundle has changed and must be committed.
 Every commit passes it.
 
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
@@ -336,12 +337,14 @@ Build it again after every change in `frontend/`, and commit the source and the 
 ```bash
 cd frontend
 npm ci
+npm run format:check
 npm run typecheck
 npm test
 npm run build
 ```
 
-`npm run watch` builds again on every change. The bundle is loaded with the version from `manifest.json` in the URL, so the browser may use an old bundle after a new build.
+`npm run format` formats the panel with Prettier, and `npm run watch` builds again on every change.
+The bundle is loaded with the version from `manifest.json` in the URL, so the browser may use an old bundle after a new build.
 Reload the page without cache then. The texts of the panel are in `frontend/src/translations/` (English and Norwegian) and follow the language of the user in Home Assistant.
 
 ### Dependencies

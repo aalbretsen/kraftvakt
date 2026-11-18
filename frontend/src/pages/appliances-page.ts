@@ -15,17 +15,7 @@ import { navigateToPage, PANEL_PATH } from "../navigation";
 import { APPLIANCE_ACTIONS, isOverridden, issuesFor } from "../validation";
 import { ConfigPage, type ItemList } from "./config-page";
 
-const APPLIANCE_FIELDS = [
-  "entity_id",
-  "essential",
-  "turn_on",
-  "turn_off",
-  "power_reserve_w",
-  "label",
-  "condition",
-  "display_power",
-  "display_temperature",
-] as const;
+const APPLIANCE_FIELDS = ["entity_id", "essential", "turn_on", "turn_off", "power_reserve_w", "label", "condition", "display_power", "display_temperature"] as const;
 
 /** The appliances and the priority list. */
 @customElement("kraftvakt-appliances-page")
@@ -40,15 +30,11 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   protected render() {
     return html`
       ${this.renderPriorityCard()}
-      ${this.config.appliances.length === 0
-        ? html`
-            <kraftvakt-manual-control-warning
-              .localize=${this.localize}
-              .narrow=${this.narrow}
-              kind="appliances"
-            ></kraftvakt-manual-control-warning>
-          `
-        : nothing}
+      ${
+        this.config.appliances.length === 0
+          ? html` <kraftvakt-manual-control-warning .localize=${this.localize} .narrow=${this.narrow} kind="appliances"></kraftvakt-manual-control-warning> `
+          : nothing
+      }
       ${this.editing ? this.renderDialog(this.editing.appliance, this.editing.isNew) : ""}
       ${this.editingVariant ? this.renderVariantDialog(this.editingVariant.appliance, this.editingVariant.variantId) : ""}
     `;
@@ -154,9 +140,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   }
 
   private applianceName(appliance: Appliance): string {
-    return appliance.entity_id
-      ? entityName(this.hass, this.entityNames, appliance.entity_id)
-      : this.localize("missing.appliance_without_entity");
+    return appliance.entity_id ? entityName(this.hass, this.entityNames, appliance.entity_id) : this.localize("missing.appliance_without_entity");
   }
 
   private applianceDetails(appliance: Appliance): string[] {
@@ -179,9 +163,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
 
   private variantDetails(variant: Variant): string[] {
     const source =
-      variant.condition.type === "entity"
-        ? this.localize("appliances.variant_entity", { entity: variant.condition.value })
-        : this.localize("appliances.variant_template");
+      variant.condition.type === "entity" ? this.localize("appliances.variant_entity", { entity: variant.condition.value }) : this.localize("appliances.variant_template");
     const overridden = APPLIANCE_ACTIONS.filter((name) => isOverridden(variant.actions, name));
     if (overridden.length === APPLIANCE_ACTIONS.length) {
       return [source, this.localize("appliances.variant_own_actions")];
@@ -191,9 +173,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
 
   private fieldLabel(issue: Issue): string {
     const field = issue.field?.split(".").at(-1) ?? "";
-    return (APPLIANCE_FIELDS as readonly string[]).includes(field)
-      ? this.localize(`appliance.fields.${field}.label` as TranslationKey)
-      : field;
+    return (APPLIANCE_FIELDS as readonly string[]).includes(field) ? this.localize(`appliance.fields.${field}.label` as TranslationKey) : field;
   }
 
   private entryMoved(event: CustomEvent<{ oldIndex: number; newIndex: number }>): void {
@@ -233,9 +213,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
   private applianceChanged(event: CustomEvent<Appliance>): void {
     const appliance = event.detail;
     const exists = this.config.appliances.some((item) => item.id === appliance.id);
-    const appliances = exists
-      ? this.config.appliances.map((item) => (item.id === appliance.id ? appliance : item))
-      : [...this.config.appliances, appliance];
+    const appliances = exists ? this.config.appliances.map((item) => (item.id === appliance.id ? appliance : item)) : [...this.config.appliances, appliance];
     this.changeConfig({ ...this.config, appliances });
   }
 

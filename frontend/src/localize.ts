@@ -23,13 +23,10 @@ export type Localize = (key: TranslationKey, params?: Record<string, string | nu
  * then to English. `{name}` in a text is replaced by the parameter `name`.
  */
 export function localizer(language: string): Localize {
-  const translations =
-    TRANSLATIONS[language] ?? TRANSLATIONS[language.split("-")[0]] ?? TRANSLATIONS[DEFAULT_LANGUAGE];
+  const translations = TRANSLATIONS[language] ?? TRANSLATIONS[language.split("-")[0]] ?? TRANSLATIONS[DEFAULT_LANGUAGE];
   return (key, params = {}) => {
     const text = lookup(translations, key) ?? lookup(TRANSLATIONS[DEFAULT_LANGUAGE], key) ?? key;
-    return text.replace(/\{(\w+)\}/g, (placeholder, name: string) =>
-      name in params ? String(params[name]) : placeholder,
-    );
+    return text.replace(/\{(\w+)\}/g, (placeholder, name: string) => (name in params ? String(params[name]) : placeholder));
   };
 }
 

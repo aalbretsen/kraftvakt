@@ -66,9 +66,7 @@ export function withCompletePriority(config: KraftvaktConfig): KraftvaktConfig {
 function expectedPriority(config: KraftvaktConfig): PriorityEntry[] {
   const entries: PriorityEntry[] = config.appliances.flatMap((appliance) => [
     { type: "appliance", appliance_id: appliance.id, variant_id: null },
-    ...appliance.variants.map(
-      (variant): PriorityEntry => ({ type: "appliance", appliance_id: appliance.id, variant_id: variant.id }),
-    ),
+    ...appliance.variants.map((variant): PriorityEntry => ({ type: "appliance", appliance_id: appliance.id, variant_id: variant.id })),
   ]);
   entries.push(...config.charger_groups.map((group): PriorityEntry => ({ type: "charger_group", group_id: group.id })));
   return entries;

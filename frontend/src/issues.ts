@@ -123,19 +123,12 @@ const LIMIT_SECTIONS: Partial<Record<Issue["section"], keyof Capabilities["limit
 };
 
 /** Describe what is wrong with a field, next to the field. */
-export function fieldErrorText(
-  issue: Issue,
-  localize: Localize,
-  capabilities: Capabilities | undefined,
-  language: string,
-): string {
+export function fieldErrorText(issue: Issue, localize: Localize, capabilities: Capabilities | undefined, language: string): string {
   const limitSection = LIMIT_SECTIONS[issue.section];
   const range = limitSection && issue.field ? capabilities?.limits[limitSection][issue.field] : undefined;
   const number = (value: number | null) => (value === null ? "" : new Intl.NumberFormat(language).format(value));
   if (issue.code === "out_of_range" && range) {
-    return range.max === null
-      ? localize("errors.at_least", { min: number(range.min) })
-      : localize("errors.out_of_range", { min: number(range.min), max: number(range.max) });
+    return range.max === null ? localize("errors.at_least", { min: number(range.min) }) : localize("errors.out_of_range", { min: number(range.min), max: number(range.max) });
   }
   if (issue.code === "invalid_resolution" && range) {
     return localize("errors.invalid_resolution", { resolution: number(range.resolution) });
@@ -147,11 +140,7 @@ export function fieldErrorText(
  * Return the error text per field, for `ha-form`, of the issues whose field
  * starts with `prefix`. The prefix is left out of the field names.
  */
-export function errorsByField(
-  issues: Issue[],
-  prefix: string,
-  describe: (issue: Issue) => string,
-): Record<string, string> {
+export function errorsByField(issues: Issue[], prefix: string, describe: (issue: Issue) => string): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of issues) {
     if (issue.field?.startsWith(prefix)) {

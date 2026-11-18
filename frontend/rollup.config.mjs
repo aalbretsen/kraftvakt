@@ -9,10 +9,5 @@ export default {
     file: "../custom_components/kraftvakt/frontend/kraftvakt-panel.js",
     format: "es",
   },
-  plugins: [
-    resolve(),
-    json({ preferConst: true }),
-    typescript({ noEmitOnError: true }),
-    terser({ format: { comments: false } }),
-  ],
+  plugins: [resolve(), json({ preferConst: true }), typescript({ noEmitOnError: true }), terser({ format: { comments: false } })],
 };

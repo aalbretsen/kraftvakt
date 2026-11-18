@@ -7,7 +7,14 @@ import { appliance, CAPABILITIES, charger, config, group, hass, state, variant }
 const CLIMATE = state("heat", { hvac_modes: ["off", "heat"], min_temp: 7, max_temp: 35 });
 
 function errors(draft: KraftvaktConfig, states = {}) {
-  return draftErrors(draft, CAPABILITIES, hass(states, draft.charger_groups.flatMap((item) => item.chargers)));
+  return draftErrors(
+    draft,
+    CAPABILITIES,
+    hass(
+      states,
+      draft.charger_groups.flatMap((item) => item.chargers),
+    ),
+  );
 }
 
 function chargerErrors(item: Charger) {
@@ -38,11 +45,7 @@ describe("missing items", () => {
           variants: [variant("morning", { condition: { type: "template", value: " " }, actions: { turn_on: null } })],
         }),
       ],
-      charger_groups: [
-        group("garage", [
-          charger("garage", { device_id: null, set_current: { mode: "entity", entity_id: null }, actively_charging: null, car_connected: null }),
-        ]),
-      ],
+      charger_groups: [group("garage", [charger("garage", { device_id: null, set_current: { mode: "entity", entity_id: null }, actively_charging: null, car_connected: null })])],
     });
     expect(missingItems(draft)).toEqual([
       { code: "missing_power_sensor", section: "general", field: "power_sensor" },
@@ -112,9 +115,7 @@ describe("settings", () => {
 
   it("of a charger have no upper limit for the current, but min must not be above max", () => {
     expect(chargerErrors(charger("garage", { max_current_a: 80, min_current_a: 6 }))).toEqual([]);
-    expect(chargerErrors(charger("garage", { min_current_a: 20 }))).toEqual([
-      { code: "min_current_above_max", section: "chargers", target: "garage", field: "min_current_a" },
-    ]);
+    expect(chargerErrors(charger("garage", { min_current_a: 20 }))).toEqual([{ code: "min_current_above_max", section: "chargers", target: "garage", field: "min_current_a" }]);
   });
 });
 
@@ -143,9 +144,7 @@ describe("charging window", () => {
     [{ start: "", end: "06:00" }, "invalid_time"],
     [{ start: "06:00", end: "06:00" }, "window_start_equals_end"],
   ])("%o is an error: %s", (window, code) => {
-    expect(chargerErrors(charger("garage", { charging_window: window }))).toEqual([
-      { code, section: "chargers", target: "garage", field: "charging_window" },
-    ]);
+    expect(chargerErrors(charger("garage", { charging_window: window }))).toEqual([{ code, section: "chargers", target: "garage", field: "charging_window" }]);
   });
 });
 
@@ -157,9 +156,7 @@ describe("the device of a charger", () => {
   it("must exist", () => {
     const item = charger("garage");
     const draft = config({ charger_groups: [group("garage", [item])] });
-    expect(draftErrors(draft, CAPABILITIES, hass())).toEqual([
-      { code: "unknown_device", section: "chargers", target: "garage", field: "device_id" },
-    ]);
+    expect(draftErrors(draft, CAPABILITIES, hass())).toEqual([{ code: "unknown_device", section: "chargers", target: "garage", field: "device_id" }]);
   });
 
   it("holds every entity the charger names, but templates are not checked", () => {

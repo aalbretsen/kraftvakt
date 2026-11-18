@@ -48,12 +48,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
       turn_off: this.actionForEntity("turn_off", this.draft.turn_off, entityId),
       variants: this.draft.variants.map((variant) => ({
         ...variant,
-        actions: Object.fromEntries(
-          Object.entries(variant.actions).map(([name, action]) => [
-            name,
-            this.actionForEntity(name, action ?? null, entityId),
-          ]),
-        ),
+        actions: Object.fromEntries(Object.entries(variant.actions).map(([name, action]) => [name, this.actionForEntity(name, action ?? null, entityId)])),
       })),
     };
   }
@@ -69,9 +64,8 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected renderFields(issues: Issue[]) {
     const essential = this.draft.essential;
     return html`
-      ${this.renderEntity(issues)} ${this.renderActions(issues)} ${this.renderEssential(issues)}
-      ${essential ? nothing : this.renderFixedLoad(issues)} ${essential ? nothing : this.renderVariants()}
-      ${this.renderDisplayValues(issues)}
+      ${this.renderEntity(issues)} ${this.renderActions(issues)} ${this.renderEssential(issues)} ${essential ? nothing : this.renderFixedLoad(issues)}
+      ${essential ? nothing : this.renderVariants()} ${this.renderDisplayValues(issues)}
     `;
   }
 
@@ -122,9 +116,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     return this.renderGroup({
       title: this.localize("appliance.display_values"),
       description: this.localize("appliance.display_values_info"),
-      content: html`
-        ${this.renderDisplayValue("display_power", issues)} ${this.renderDisplayValue("display_temperature", issues)}
-      `,
+      content: html` ${this.renderDisplayValue("display_power", issues)} ${this.renderDisplayValue("display_temperature", issues)} `,
     });
   }
 
@@ -191,21 +183,14 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
    */
   private renderVariant(variant: Variant, issues: Issue[], editable: boolean) {
     const prefix = `variants.${variant.id}.`;
-    const variantIssues = issues
-      .filter((issue) => issue.field?.startsWith(prefix))
-      .map((issue) => ({ ...issue, field: issue.field?.slice(prefix.length) }));
+    const variantIssues = issues.filter((issue) => issue.field?.startsWith(prefix)).map((issue) => ({ ...issue, field: issue.field?.slice(prefix.length) }));
     const otherIssues = variantIssues.filter((issue) => issue.field !== "label");
     return html`
       <div class="variant">
         <div class="variant-row">
           ${this.locked ? nothing : html`<ha-svg-icon class="handle" .path=${mdiDragHorizontalVariant}></ha-svg-icon>`}
           <div class="label">
-            ${this.renderForm(
-              LABEL_SCHEMA,
-              variantIssues,
-              (value) => this.changeVariant(variant.id, { label: (value.label as string | undefined) ?? "" }),
-              variant,
-            )}
+            ${this.renderForm(LABEL_SCHEMA, variantIssues, (value) => this.changeVariant(variant.id, { label: (value.label as string | undefined) ?? "" }), variant)}
           </div>
           <ha-icon-button
             .path=${this.locked ? mdiEye : mdiPencil}
@@ -214,9 +199,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
             @click=${() => this.openVariant(variant.id)}
           ></ha-icon-button>
         </div>
-        ${otherIssues.map(
-          (issue) => html`<div class="error">${this.label(issue.field ?? "")}: ${this.describe(issue)}</div>`,
-        )}
+        ${otherIssues.map((issue) => html`<div class="error">${this.label(issue.field ?? "")}: ${this.describe(issue)}</div>`)}
       </div>
     `;
   }

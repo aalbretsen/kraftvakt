@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  chargerName,
-  entityName,
-  existingEntity,
-  measuredPowerW,
-  ownEntities,
-  ownEntity,
-  temperatureSources,
-  thermostatTemperature,
-} from "../src/entities";
+import { chargerName, entityName, existingEntity, measuredPowerW, ownEntities, ownEntity, temperatureSources, thermostatTemperature } from "../src/entities";
 import type { HomeAssistant } from "../src/types";
 import { charger, hass, state } from "./builders";
 
