@@ -185,10 +185,12 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit), recalculated at each decision while it runs.
   The average includes the power held for starting chargers above the step and in its own group.
-  Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit. With u = average / limit and x = clamp((u − 0.5) / 0.5,
-  0, 1), the share is the normalized Hill function x^n · (1 + K) / (x^n + K): 0 at or below half the limit, slow at first, and 1 at the limit and above.
+  Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit.
+  With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is the normalized Hill function x^n · (1 + K) / (x^n + K):
+  0 at or below half the limit, slow at first, and 1 at the limit and above.
   n is the steepness, 1.5–9 in steps of 0.5, default 6.
-  The pivot point, 50–99, default 80, is the utilization in percent where the share is 80 %: with t = (pivot − 50) / 50, K = t^n · 0.2 / (0.8 − t^n), computed once per start.
+  The pivot point, 50–99, default 80, is the utilization in percent where the share is 80 %:
+  with t = (pivot − 50) / 50, K = t^n · 0.2 / (0.8 − t^n), computed once per start.
   A pivot the curve cannot reach at the steepness is capped silently just below t = 0.8^(1/n); the setting keeps what the user chose.
   Pivot 50 gives K = 0: no waiting up to half the limit and the whole waiting time above it. The test values for the curve are in the unit tests for waiting.
 - Repeated turn-on: when the same step is turned on again without any other step being switched in between, a counter grows.
@@ -374,7 +376,8 @@ All with entity category diagnostic:
 - Switch-over: with several at once and dynamic charging order, the first queued charger that is not activated gets its first ampere step,
   and every charger that charges above its minimum current is set to it, at the same decision.
   It is made when the free power, plus what those chargers draw above their power at minimum current by their charging power,
-  covers the power at minimum current of the queued charger, also when none of them is above its minimum. The turn-on margin applies as for any step, and the waiting time of the queued charger's first ampere step.
+  covers the power at minimum current of the queued charger, also when none of them is above its minimum.
+  The turn-on margin applies as for any step, and the waiting time of the queued charger's first ampere step.
   Not above the limit, not at a decision where step 6 switched off something that was on, and not while a charger of the group is starting,
   so the charging power read is not from before the last switch-over.
   Why: a charger at the minimum current draws about its power at minimum current, so the cars can share the power instead of the queued one waiting until the others are full.
