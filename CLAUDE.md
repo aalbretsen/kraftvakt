@@ -47,6 +47,8 @@ Read the skill for the kind of task before starting:
   Do not write who decided it, how it was before, or the alternatives that were rejected. The same applies to code comments.
 - Use one term per concept. 
   The glossary is the Concepts table in the `kraftvakt-regulation` skill; code, tests, the README and the panel use its terms, and user-facing words map to it.
+- README.md starts with a brief overview for most users, then information for advanced users, then sections for developers.
+  Details of a setting belong in its helper text in the panel.
 - Every file, Markdown included, respects `max_line_length` from `.editorconfig`. Tables in Markdown are exempt.
 - When a line must wrap in the documentation (.md) files, break it after punctuation: after a sentence end if possible, else after a colon, semicolon or comma.
   Break after punctuation even when it takes an extra line, and between words only where no punctuation fits within the line length. Do not add blank lines.
