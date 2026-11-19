@@ -49,6 +49,9 @@
     "activated": "Aktivert",
     "deactivated": "Deaktivert",
     "waiting_ends_at": "Slås på ved avgjørelsen kl. {time}",
+    "power_to_free_turn_on": "{power} kW må frigjøres før det slås på",
+    "power_to_free_activate": "{power} kW må frigjøres før elbilladeren aktiveres",
+    "power_to_free_ampere": "{power} kW må frigjøres før elbilladeren får én ampere til",
     "delayed_turn_on": "Forsinket innkobling",
     "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
@@ -57,7 +60,6 @@
     "starting_until": "Venter til {time} på at bilen begynner å lade. Effekten ved minste ladestrøm holdes ledig så lenge.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrom ({start}–{end})",
-    "next_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
     "amperes": "{current} A",
     "chargers_charging": "{charging} av {total} elbilladere lader",
     "activated_not_charging": "Aktivert: bilen trekker ikke effekt, så den venter på minste ladestrøm",
@@ -185,7 +187,7 @@
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",
-        "helper": "Hvor lenge et apparat venter før det slås på når lite effekt er ledig. Jo mer effekt som er ledig, jo kortere venter det. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge et apparat uten fast last venter før det slås på når lite effekt er ledig. Jo mer effekt som er ledig, jo kortere venter det. {min}–{max} s, standard {default} s."
       },
       "penalty_threshold_w": {
         "label": "Straffeterskel",
@@ -202,14 +204,6 @@
         "helper": "Andel av ventetiden ved effektgrensen. Standard × {default}."
       },
       "appliance_repeat_increments": {
-        "label": "Flest økninger",
-        "helper": "{min}–{max}, standard {default}."
-      },
-      "charger_repeat_increment_factor": {
-        "label": "Økning hver gang",
-        "helper": "Andel av ventetiden ved effektgrensen. Standard × {default}."
-      },
-      "charger_repeat_increments": {
         "label": "Flest økninger",
         "helper": "{min}–{max}, standard {default}."
       },
@@ -230,15 +224,13 @@
   },
   "advanced": {
     "wait_curve": "Ventetidskurve",
-    "wait_curve_info": "Hvor lenge et apparat venter, etter hvor mye effekt som er ledig. Reell ventetid er rundet opp til neste avgjørelse.",
+    "wait_curve_info": "Hvor lenge et apparat uten fast last venter, etter hvor mye effekt som er ledig. Reell ventetid er rundet opp til neste avgjørelse.",
     "free_power_kw": "Ledig effekt kW",
     "waiting_minutes": "Ventetid min:s",
     "actual_waiting_minutes": "Reell ventetid min:s",
     "repeated_turn_on": "Ventetid ved gjentatt innkobling",
-    "repeated_turn_on_info": "Når det samme apparatet, eller den samme amperen på en elbillader, slås på gang på gang uten at noe annet slås av eller på imellom, øker ventetiden fra tredje gang. De to første følger kurven; tabellen viser dem ved vendepunktet.",
+    "repeated_turn_on_info": "Når det samme apparatet slås på gang på gang uten at noe annet slås av eller på imellom, øker ventetiden fra tredje gang. De to første følger kurven; tabellen viser dem ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
-    "appliances": "Apparater",
-    "chargers": "Elbilladere",
     "command_repeat": "Gjentatt kommando",
     "command_repeat_info": "Et apparat eller en elbillader kan endre tilstand av seg selv, for eksempel etter et strømbrudd. Når det ikke har fått kommando på så lenge, får det den siste på nytt. De som er utenfor regulering, får være i fred.",
     "timeouts": "Tidsavbrudd",
@@ -297,7 +289,7 @@
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Det apparatet bruker mens det er på. Gjelder alle varianter."
+        "helper": "Det apparatet bruker mens det er på. Det slås på uten å vente så snart så mye effekt er ledig. Gjelder alle varianter."
       },
       "label": {
         "label": "Merkelapp"

@@ -49,6 +49,9 @@
     "activated": "Activated",
     "deactivated": "Deactivated",
     "waiting_ends_at": "Turns on at the decision at {time}",
+    "power_to_free_turn_on": "{power} kW must be freed before it is turned on",
+    "power_to_free_activate": "{power} kW must be freed before the EV charger is activated",
+    "power_to_free_ampere": "{power} kW must be freed before the EV charger gets one more ampere",
     "delayed_turn_on": "Delayed turn-on",
     "charging_at": "Charging at {current} A",
     "first_decision": "Waiting for the first decision",
@@ -57,7 +60,6 @@
     "starting_until": "Waiting until {time} for the car to start charging. Its power at minimum current is kept free until then.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
-    "next_ampere_at": "One more ampere at the decision at {time}",
     "amperes": "{current} A",
     "chargers_charging": "{charging} of {total} EV chargers are charging",
     "activated_not_charging": "Activated: the car does not draw power, so it waits at the minimum current",
@@ -185,7 +187,7 @@
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
+        "helper": "How long an appliance without a fixed load waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
@@ -202,14 +204,6 @@
         "helper": "Share of the waiting time at the power limit. Default × {default}."
       },
       "appliance_repeat_increments": {
-        "label": "Most increases",
-        "helper": "{min}–{max}, default {default}."
-      },
-      "charger_repeat_increment_factor": {
-        "label": "Increase each time",
-        "helper": "Share of the waiting time at the power limit. Default × {default}."
-      },
-      "charger_repeat_increments": {
         "label": "Most increases",
         "helper": "{min}–{max}, default {default}."
       },
@@ -230,15 +224,13 @@
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
-    "wait_curve_info": "How long an appliance waits, by how much power is free. The actual waiting time is rounded up to the next decision.",
+    "wait_curve_info": "How long an appliance without a fixed load waits, by how much power is free. The actual waiting time is rounded up to the next decision.",
     "free_power_kw": "Free power kW",
     "waiting_minutes": "Waiting time min:s",
     "actual_waiting_minutes": "Actual waiting time min:s",
     "repeated_turn_on": "Waiting time on repeated turn-on",
-    "repeated_turn_on_info": "When the same appliance, or the same ampere of an EV charger, is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
+    "repeated_turn_on_info": "When the same appliance is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
-    "appliances": "Appliances",
-    "chargers": "EV chargers",
     "command_repeat": "Command repeat",
     "command_repeat_info": "An appliance or EV charger can change state by itself, for example after a power cut. When it has had no command for this long, it gets the last one again. Excluded ones are left alone.",
     "timeouts": "Timeouts",
@@ -297,7 +289,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "What the appliance draws while it is on. Applies to every variant."
+        "helper": "What the appliance draws while it is on. It is turned on without waiting as soon as this much power is free. Applies to every variant."
       },
       "label": {
         "label": "Label"

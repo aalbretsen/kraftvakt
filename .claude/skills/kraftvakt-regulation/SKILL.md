@@ -33,9 +33,13 @@ The ranges and defaults below are part of the specification; the code holds them
 | Power sensor timeout | 10–3600 s, default 300 s. How long the power sensor may go without reporting, also an unchanged value, before it counts as invalid. Why: a HAN reader that loses its connection may keep its last value. |
 | Free power | Power limit minus regulation average. |
 | Turn-on margin | How far below the limit the regulation average must be before anything is turned on, 1–1000 W, default 100 W. 0 is not allowed. |
-| Power reserve | Free power a step needs before it may be turned on. For an appliance an optional setting, ≥ 0 W, no upper limit, only for an appliance with a fixed load, as a ceiling fan: one with a thermostat or other control of its own draws less than its reserve most of the time, so the reserve only holds it back. For the first ampere step of a charger, its power at minimum current. |
-| Power at minimum current | A charger setting, 1000–5000 W, default 4157 W, what 6 A draws on three phases at 400 V: what the car and charger draw at the minimum current, as about 1400 W for a car that charges on one phase. The power reserve of the charger's first ampere step, and the base of held at minimum and the estimated draw. |
-| Waiting time | Time that must pass before an appliance is turned on. |
+| Power reserve | Free power a step needs before it may be turned on. For an appliance an optional setting, ≥ 0 W, no upper limit, only for an appliance with a fixed load, as a ceiling fan: one with a thermostat or other control of its own draws less than its reserve most of the time, so the reserve only holds it back. For the first ampere step of a charger, its power at minimum current, and for the others its power per ampere. A step with a power reserve does not wait. |
+| Power at minimum current | A charger setting, 1000–5000 W, default 4157 W, what 6 A draws on three phases at 400 V: what the car and charger draw at the minimum current, as about 1400 W for a car that charges on one phase. The power reserve of the charger's first ampere step, the base of held at minimum, and its power per ampere until that is measured. |
+| Power per ampere | What a charger draws per ampere: its charging power divided by its current, measured at each decision where it is activated and actively charging with a valid charging power above 0 W, and kept until it is measured again. Before that, its power at minimum current divided by its minimum current. Why: it fits any charger and car, on one phase or three. |
+| Settling step | A step with a power reserve turned on since the start of the regulation window of the decision. It holds its power reserve, since that window's average shows it only in part. |
+| Held power reserve | The power reserve of a settling step or a starting charger, counted as used by the steps below it and the other steps of its group. |
+| Power to free | How far the regulation average must drop before the next step may be turned on: below the limit by the turn-on margin, and with room for its power reserve, with the held power reserves counted as used. Found at each decision and shown on the status page. |
+| Waiting time | Time that must pass before an appliance without a power reserve is turned on. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
 | Essential appliance | An appliance that is kept on, and turned off only in a penalty period, for an appliance that must always run, as a freezer. No step, no variants. |
@@ -62,7 +66,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. Every charger has one. |
 | Actively charging | The car draws power: the charging power or the charging on/off shows it, and either is enough. |
 | Held at minimum | A charger whose car does not charge actively with at least 50 % of the charger's power at minimum current. It gets no more than its first ampere step. |
-| Estimated draw | What a charger draws with fewer ampere steps on: its charging power, at most its current times its power at minimum current divided by its minimum current, and 0 deactivated. |
+| Estimated draw | What a charger draws with fewer ampere steps on: its charging power, at most its current times its power per ampere, and 0 deactivated. |
 | Freeing power | Switching off steps from the lowest until their estimated draw covers the power needed, at once. |
 | Bypassed charger | A charger without a car connected, which must not stand in the way of others. |
 | Dynamic charging order | A group setting, off by default. On, a charger that charges keeps its place ahead of the chargers that do not charge. Off, the configured charging priority always applies. |
@@ -92,8 +96,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - The configuration can only be changed while the regulation is stopped, except the user's switches (one per appliance, two per charger),
   finish after window (see EV charging) and the power limit (see Power limit entity).
   Everything is off while stopped, so removed appliances are already off and new ones are controlled from the next start.
-- The state of the regulation (on/off, waiting times, repeated turn-on counters, overconsumption, penalty, current charging priority,
-  bypassed chargers, current variants, excluded appliances, when each appliance and charger last got a command)
+- The state of the regulation (on/off, waiting times, repeated turn-on counters, settling steps, overconsumption, penalty, current charging priority,
+  bypassed chargers, measured power per ampere, current variants, excluded appliances, when each appliance and charger last got a command)
   starts again with defaults at every start: HA or integration start, user start, after the safe state and after a penalty.
   The configuration and the switch positions are kept over any restart.
 - True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, the charging on/off and the fault flag)
@@ -157,8 +161,10 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   chargers not allowed to charge, bypassed chargers and chargers held at minimum, excluded appliances, variant switches, appliances included again,
   the chargers after the one that charges with one charger at a time, a switch-over, and freeing power above the limit or to make room.
 - Turn on only when the regulation average is under the limit minus the turn-on margin, and average plus power reserve is at most the limit.
-  The power held for starting chargers above the step, and for those in the step's own group, counts as used:
+  The held power reserves above the step, and in the step's own group, count as used:
   they are added to the average in both and in its waiting time (see EV charging).
+  Why a settling step holds its reserve: the window after a decision still holds the consumption from before its commands,
+  so without it the next step would be turned on as if the step before drew nothing.
   Switch off only when the average is above the limit, or to make room. Between limit minus margin and the limit, both included, nothing is turned on,
   and nothing is switched off except to make room. Why: commands run just after a window closes, and a real meter reports the change only at its next update,
   so the window after a decision still holds the consumption from before its commands. The margin keeps an appliance from being turned on on a stale average just under the limit,
@@ -168,7 +174,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   are bypassed or are queued with one charger at a time, and all but the first of a charger held at minimum.
 - Making room: when the first step that is off and not skipped may not be turned on for lack of room (the average is at or above the limit minus the margin,
   or its reserve does not fit) while steps below it are on, the steps below it free the power it needs to fit: the average down to the limit minus the margin,
-  and its reserve below the limit (see Freeing power). Not at a decision where step 6 switched off something that was on, for the same reason as in step 8.
+  and its reserve below the limit (see Freeing power), with the held power reserves counted as used.
+  Not at a decision where step 6 switched off something that was on, for the same reason as in step 8.
   Why: by the fixed order the steps below cannot be turned on before it anyway, and they would otherwise keep the power it waits for.
   Steps end up on below one that is off after a variant switch or an appliance included again,
   and when a charger higher up gets a car, or its car draws power again and so may get more than its minimum current.
@@ -180,11 +187,14 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 ## Waiting time
 
-- When the next step may be turned on, its waiting time starts. It is turned on at the first decision after the waiting time has passed, if the conditions still hold.
+- A step with a power reserve does not wait: it is turned on at the first decision where it fits.
+  Why: the reserve tells whether it fits, and the waiting time is for an appliance whose draw is unknown.
+- When the next step without a power reserve may be turned on, its waiting time starts.
+  It is turned on at the first decision after the waiting time has passed, if the conditions still hold.
   Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Curve: waiting time = waiting time at the limit × share(average / limit), recalculated at each decision while it runs.
-  The average includes the power held for starting chargers above the step and in its own group.
+  The average includes the held power reserves above the step and in its own group.
   Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit.
   With u = average / limit and x = clamp((u − 0.5) / 0.5, 0, 1), the share is the normalized Hill function x^n · (1 + K) / (x^n + K):
   0 at or below half the limit, slow at first, and 1 at the limit and above.
@@ -196,7 +206,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - Repeated turn-on: when the same step is turned on again without any other step being switched in between, a counter grows.
   The first turn-on and the first turn-on again use the curve. From the second turn-on again, the waiting time is fixed, independent of the average: min(cap, waiting at limit
   + step × (n − 2)), where n is the count of turn-ons again. The step is a share of the waiting time at the limit, 0.25, 0.5, 0.75 or 1,
-    and the cap is the waiting time at the limit plus a number of steps, 1–9. Both are set separately for appliances (default 0.5 and 4) and for ampere steps (default 1 and 5).
+    and the cap is the waiting time at the limit plus a number of steps, 1–9, default 0.5 and 4.
     With waiting time 0 at the limit, the step and the cap are 0, so the waiting time does not grow. Any command for another step, also forced ones, resets the counter.
 - Known limitation, to revisit if it shows up in real use: two steps that alternate (A on, B on, B off, A off, A on …) reset each other's counter,
   so their waiting time never grows.
@@ -274,14 +284,14 @@ All with entity category diagnostic:
 - Power free: the power limit minus the last regulation average, negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike, without the essential appliances.
   Meant for a graph of how much the regulation has switched on.
-- Waiting time remaining (s): the time from now to the decision that turns on the waiting step (an appliance or a charger's next ampere), so it is the real time left,
+- Waiting time remaining (s): the time from now to the decision that turns on the waiting appliance, so it is the real time left,
   a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),
   so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
-  without the longer waiting time on repeated turn-on or the power held for a starting charger. Unavailable without an average.
+  without the longer waiting time on repeated turn-on or the held power reserves. Unavailable without an average.
 
 ## Variants
 
@@ -324,13 +334,13 @@ All with entity category diagnostic:
 
 - Chargers are in charger groups. Each group has a name, non-empty and unique among the groups, its own entry in the priority list, and its own settings below.
   Every rule in this section applies within a group: a group knows nothing of the chargers of other groups.
-  So two groups with one charger at a time may each have a charger charging at once. The waiting time on repeated turn-on for ampere steps is one setting for all groups.
+  So two groups with one charger at a time may each have a charger charging at once.
 - Every group is regulated. Without groups there is no EV charging; to keep a charger from charging for a while, the user excludes it.
 - One charger at a time: default yes. The chargers of a group are sorted in its configured charging priority.
 - Each charger is split into ampere steps, one per ampere from min to max current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min + number on − 1.
   None on means deactivated. The ampere steps sit at the place of the entry of their group.
-- First ampere step on: set current to min, then activate, and only the first has a power reserve, the charger's power at minimum current.
-  Later ones: set the new current.
+- First ampere step on: set current to min, then activate. Its power reserve is the charger's power at minimum current.
+  Later ones: set the new current. Their power reserve is the charger's power per ampere.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
   The set-current action always gets a current between min and max, except 0 A for a charger switched by its current.
 - Switched by current (per charger setting, default off): for a charger that can only be told a current. It gets only the current:
@@ -346,12 +356,12 @@ All with entity category diagnostic:
   and one that has more is set back to its minimum current at once. Meanwhile the steps after it may be turned on.
   Why: a car may start drawing power at any time, and at its minimum current it can only take about its power at minimum current, which a fast reaction can free.
   So a car that draws little or nothing, as one that is full, is not given more.
-  The regulation relies on the user setting the power at minimum current to match the car and charger, since the estimated draw is based on it too.
+  The regulation relies on the user setting the power at minimum current to match the car and charger.
 - Starting: an activated cloud-controlled charger within its start delay since activation, whose car does not charge actively yet, holds its power at minimum current.
   The steps after it, and the other steps of its group, are turned on only when there is room for them with that power counted as used,
-  and room is made below them as usual when there is not. Their waiting time counts it as used too, as it would once the car draws power.
+  and room is made below them as usual when there is not. The waiting time of an appliance below counts it as used too, as it would once the car draws power.
   Why: the car may take minutes to draw power through the cloud service, so the average shows its power as free.
-  A step turned on in that power would be switched off again when the car starts, and its waiting time would grow.
+  A step turned on in that power would be switched off again when the car starts.
   A car that never starts holds the power for at most the start delay.
 - Bypassed: car connected is false. Evaluated at each decision, ends as soon as it does not hold.
   A bypassed charger keeps its first ampere step if it has one and stays activated, gets no more,
@@ -375,12 +385,12 @@ All with entity category diagnostic:
   and a switch-over can make room for it before that.
 - Switch-over: with several at once and dynamic charging order, the first queued charger that is not activated gets its first ampere step,
   and every charger that charges above its minimum current is set to it, at the same decision.
-  It is made when the free power, plus what those chargers draw above their power at minimum current by their charging power,
+  It is made when the free power, plus what those chargers draw above their estimated draw at their minimum current,
   covers the power at minimum current of the queued charger, also when none of them is above its minimum.
-  The turn-on margin applies as for any step, and the waiting time of the queued charger's first ampere step.
+  The turn-on margin applies as for any step.
   Not above the limit, not at a decision where step 6 switched off something that was on, and not while a charger of the group is starting,
   so the charging power read is not from before the last switch-over.
-  Why: a charger at the minimum current draws about its power at minimum current, so the cars can share the power instead of the queued one waiting until the others are full.
+  Why: a charger at the minimum current draws little, so the cars can share the power instead of the queued one waiting until the others are full.
 - One at a time: the first charger in the current charging priority that charges may go on and get ampere steps, whatever the others do.
   The allowed chargers with a car before it may be activated, and wait at their minimum current, since they do not charge.
   Those after it are queued, and deactivated at once, so a car after it cannot draw power. When none charges, every allowed charger with a car may be activated,

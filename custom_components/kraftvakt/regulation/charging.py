@@ -108,16 +108,14 @@ def may_step_up(charger: Charger, reading: ChargerReading) -> bool:
     return reading.actively_charging and power_w is not None and power_w >= 0.5 * charger.min_current_power_w
 
 
-def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int) -> float:
+def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int, power_per_ampere_w: float) -> float:
     """Return what a charger that draws `power_w` now is estimated to draw with `ampere_steps_on` ampere steps on.
 
-    Its power per ampere is its power at minimum current divided by its minimum current,
-    and a car that draws less than its current allows goes on drawing that.
+    A car that draws less than its current allows goes on drawing that.
     """
     if not ampere_steps_on:
         return 0.0
-    allowed_w = charging_current(charger, ampere_steps_on) * charger.min_current_power_w / charger.min_current_a
-    return min(power_w, allowed_w)
+    return min(power_w, charging_current(charger, ampere_steps_on) * power_per_ampere_w)
 
 
 def in_charging_window(window: ChargingWindow, local_time: time) -> bool:
@@ -215,7 +213,8 @@ class ChargingState:
     `held_at_min` the chargers whose car does not draw enough to get more than
     the minimum current, and `starting` when the start delay of each starting
     charger ends. `may_charge` has the chargers that may have ampere steps on,
-    and `waiting` the queued ones.
+    and `waiting` the queued ones. `measured_power_per_ampere_w` has what each
+    charger drew per ampere at the last decision where it was activated and drew power.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -229,6 +228,7 @@ class ChargingState:
     waiting: set[str] = field(default_factory=set)
     last_readings: dict[str, ChargerReading] = field(default_factory=dict)
     last_permissions: dict[str, ChargingPermission] = field(default_factory=dict)
+    measured_power_per_ampere_w: dict[str, float] = field(default_factory=dict)
     last_decision: datetime | None = None
 
     @classmethod
@@ -255,6 +255,10 @@ class ChargingState:
                 raise ValueError("The time is needed to activate a charger")
             self.activated_at[charger_id] = now
         self.ampere_steps_on[charger_id] = count
+
+    def power_per_ampere_w(self, charger: Charger) -> float:
+        """Return the measured power per ampere, or the power at minimum current divided by the minimum current before it is measured."""
+        return self.measured_power_per_ampere_w.get(charger.id, charger.min_current_power_w / charger.min_current_a)
 
     def charges(self, charger_id: str, reading: ChargerReading) -> bool:
         return charger_id in self.activated_at and reading.actively_charging
@@ -298,6 +302,7 @@ class ChargingState:
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
         self.last_decision = now
+        self._measure_power_per_ampere(group)
         newly_bypassed = [charger.id for charger in chargers if not self.last_readings[charger.id].car_connected and charger.id not in self.bypassed]
         self.bypassed = {charger.id for charger in chargers if not self.last_readings[charger.id].car_connected}
         self.charging = {charger.id for charger in chargers if self._charges_and_may_go_on(charger.id)}
@@ -306,6 +311,15 @@ class ChargingState:
         self._select(group)
         self._update_starting(group, now)
         return newly_bypassed
+
+    def _measure_power_per_ampere(self, group: ChargerGroup) -> None:
+        """Divide the charging power by the current the charger has had since the last decision, while it draws power."""
+        for charger in group.chargers:
+            reading = self.last_readings[charger.id]
+            steps_on = self.ampere_steps_on.get(charger.id, 0)
+            power_w = reading.charging_power_w
+            if steps_on and reading.actively_charging and power_w is not None and power_w > 0:
+                self.measured_power_per_ampere_w[charger.id] = power_w / charging_current(charger, steps_on)
 
     def _charges_and_may_go_on(self, charger_id: str) -> bool:
         stopped = charger_id in self.bypassed or not self.is_allowed(charger_id)

@@ -1,5 +1,6 @@
 import {
   mdiAlertCircleOutline,
+  mdiArrowCollapseDown,
   mdiArrowDown,
   mdiCancel,
   mdiCarElectric,
@@ -11,7 +12,6 @@ import {
   mdiEvStation,
   mdiFlash,
   mdiLightningBolt,
-  mdiPlus,
   mdiTimerOutline,
   mdiTimerSand,
 } from "@mdi/js";
@@ -186,8 +186,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
           ${appliance.variant && !this.phone ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>` : nothing}
         </div>
-        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)}
-        ${this.renderWaiting(appliance, mdiTimerOutline, "status.delayed_turn_on", "status.waiting_ends_at")} ${this.renderApplianceChip(appliance)}
+        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)} ${this.renderWaiting(appliance)} ${this.renderApplianceChip(appliance)}
       `,
     );
   }
@@ -263,24 +262,40 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderName(charger.name)}
         </div>
         ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)} ${this.renderPower(charger.power_w)}
-        ${this.renderWaiting(charger, mdiPlus, "status.delayed_turn_on", "status.next_ampere_at")} ${this.renderChargerChip(charger)}
+        ${this.renderPowerToFree(charger.power_to_free_w, charger.activated ? "status.power_to_free_ampere" : "status.power_to_free_activate")} ${this.renderChargerChip(charger)}
       `,
     );
   }
 
   /**
-   * An icon and a bar that empties from when the waiting started until the decision that ends it.
-   * On a phone, the icon alone.
+   * An icon and a bar that empties from when the waiting started until the decision that ends it,
+   * or else the power to free before the appliance is turned on. On a phone, the icon alone.
    */
-  private renderWaiting(item: ApplianceStatus | ChargerStatus, icon: string, label: TranslationKey, endsAt: TranslationKey) {
-    if (!item.waiting_since || !item.waiting_ends_at) {
+  private renderWaiting(appliance: ApplianceStatus) {
+    if (!appliance.waiting_since || !appliance.waiting_ends_at) {
+      return this.renderPowerToFree(appliance.power_to_free_w, "status.power_to_free_turn_on");
+    }
+    const time = formatClockTime(this.hass.language, appliance.waiting_ends_at);
+    return html`
+      <span class="waiting" title="${this.localize("status.delayed_turn_on")}: ${this.localize("status.waiting_ends_at", { time })}">
+        <ha-svg-icon .path=${mdiTimerOutline}></ha-svg-icon>
+        ${this.renderWideOnly(
+          html`<kraftvakt-countdown-bar .start=${Date.parse(appliance.waiting_since)} .end=${Date.parse(appliance.waiting_ends_at)}></kraftvakt-countdown-bar>`,
+        )}
+      </span>
+    `;
+  }
+
+  /** An icon and the power in kW that must be freed before the next step is turned on, in the waiting column. On a phone, the icon alone. */
+  private renderPowerToFree(powerW: number | null, sentence: TranslationKey) {
+    if (powerW === null) {
       return this.phone ? nothing : html`<span></span>`;
     }
-    const time = formatClockTime(this.hass.language, item.waiting_ends_at);
+    const power = formatPower(this.hass.language, powerW);
     return html`
-      <span class="waiting" title="${this.localize(label)}: ${this.localize(endsAt, { time })}">
-        <ha-svg-icon .path=${icon}></ha-svg-icon>
-        ${this.renderWideOnly(html`<kraftvakt-countdown-bar .start=${Date.parse(item.waiting_since)} .end=${Date.parse(item.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
+      <span class="waiting" title=${this.localize(sentence, { power })}>
+        <ha-svg-icon .path=${mdiArrowCollapseDown}></ha-svg-icon>
+        ${this.renderWideOnly(html`<span class="power-to-free">${power} kW</span>`)}
       </span>
     `;
   }
@@ -512,6 +527,12 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .waiting kraftvakt-countdown-bar {
         flex: 1;
+      }
+      .power-to-free {
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 12px);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
       .waiting ha-svg-icon,
       .charging-count ha-svg-icon {

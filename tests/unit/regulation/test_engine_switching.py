@@ -1,7 +1,7 @@
 """Scenario tests for turning appliances on and off."""
 
 from custom_components.kraftvakt.regulation.engine import RegulationEngine
-from custom_components.kraftvakt.regulation.model import DecisionInput
+from custom_components.kraftvakt.regulation.model import ApplianceStepKey, DecisionInput, PowerToFree
 
 from .configs import appliance, make_config
 from .scenario import START, Scenario, off, on
@@ -77,7 +77,7 @@ def test_lower_priority_waits_for_higher_priority() -> None:
 
     assert scenario.decide_many(7000, 2) == [[], []]
     assert scenario.decide(6000) == on("a")
-    assert scenario.decide(7000) == on("b")
+    assert scenario.decide(5000) == on("b")
 
 
 def test_lowest_priority_is_switched_off_above_the_limit() -> None:
@@ -132,3 +132,37 @@ def test_start_begins_with_a_new_state() -> None:
     assert scenario.engine.appliances_on == set()
     assert scenario.engine.started_at == later
     assert scenario.decide(1000) == on("a")
+
+
+def test_reserve_of_a_step_just_turned_on_counts_as_used_at_the_next_decision() -> None:
+    """The average of the next decision shows the step only in part, since its window started when the step was turned on."""
+    scenario = Scenario(no_waiting(appliance("a", reserve_w=2000), "b"))
+
+    assert scenario.decide(5000) == on("a")
+    assert scenario.decide(8000) == []
+    assert scenario.decide(8000) == on("b")
+
+
+def test_step_switched_off_no_longer_holds_its_reserve() -> None:
+    scenario = Scenario(no_waiting(appliance("a", reserve_w=2000), "b", appliance("c", reserve_w=500)))
+
+    assert scenario.decide_many(5000, 2) == [on("a"), on("b")]
+    assert scenario.decide(5000) == on("c")
+    assert scenario.decide(10_500) == off("c")
+    assert scenario.decide(9400) == on("c")
+
+
+def test_power_to_free_tells_how_far_the_average_must_drop_for_the_next_step() -> None:
+    """Below the limit by the turn-on margin, with room for the power reserve, and with the held reserves counted as used."""
+    scenario = Scenario(no_waiting(appliance("a", reserve_w=2000), "b"))
+
+    assert scenario.decide(8500) == []
+    assert scenario.engine.power_to_free == PowerToFree(ApplianceStepKey("a"), 500)
+    assert scenario.decide(8000) == on("a")
+    assert scenario.engine.power_to_free == PowerToFree(ApplianceStepKey("b"), 100)
+    assert scenario.decide(9950) == []
+    assert scenario.engine.power_to_free == PowerToFree(ApplianceStepKey("b"), 2050)
+    assert scenario.decide(9950) == []
+    assert scenario.engine.power_to_free == PowerToFree(ApplianceStepKey("b"), 50)
+    assert scenario.decide(5000) == on("b")
+    assert scenario.engine.power_to_free is None

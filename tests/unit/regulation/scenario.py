@@ -194,6 +194,10 @@ class Scenario:
                 assert commands == on(expected.pop(0))
         raise AssertionError(f"{expected} were never turned on")
 
+    def settle(self) -> None:
+        """Decide once at the limit, where nothing is switched, so the steps turned on before no longer settle."""
+        assert self.decide(self.engine.diagnostics()["power_limit_w"]) == []
+
     def charge(self, charger_id: str, amperes: int, *, average_w: float = 0.0) -> None:
         """Decide until the charger has its current set to `amperes`.
 

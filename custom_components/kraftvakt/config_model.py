@@ -34,8 +34,6 @@ class Range:
 POWER_LIMIT_MAX_W: Final = 50_000
 POWER_LIMIT_W = Range(1000, POWER_LIMIT_MAX_W, 1)
 REGULATION_WINDOW_S = Range(10, 600, 1)
-REPEAT_INCREMENT_FACTOR = Range(0.25, 1, 0.25)
-REPEAT_INCREMENTS = Range(1, 9, 1)
 CHARGING_CURRENT_A = Range(1, None, 1)
 
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
@@ -47,10 +45,8 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "wait_at_limit_s": Range(0, 600, 1),
         "wait_curve_steepness": Range(1.5, 9, 0.5),
         "wait_curve_pivot": Range(50, 99, 1),
-        "appliance_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
-        "appliance_repeat_increments": REPEAT_INCREMENTS,
-        "charger_repeat_increment_factor": REPEAT_INCREMENT_FACTOR,
-        "charger_repeat_increments": REPEAT_INCREMENTS,
+        "appliance_repeat_increment_factor": Range(0.25, 1, 0.25),
+        "appliance_repeat_increments": Range(1, 9, 1),
         "penalty_threshold_w": Range(0, 10_000, 1),
         "command_repeat_interval_min": Range(10, 60, 1),
         "action_timeout_s": Range(10, 300, 1),
@@ -399,8 +395,6 @@ class GeneralConfig:
     wait_curve_pivot: int = 80
     appliance_repeat_increment_factor: float = 0.5
     appliance_repeat_increments: int = 4
-    charger_repeat_increment_factor: float = 1.0
-    charger_repeat_increments: int = 5
     penalty_threshold_w: int = 100
     command_repeat_interval_min: int = 30
     action_timeout_s: int = 60

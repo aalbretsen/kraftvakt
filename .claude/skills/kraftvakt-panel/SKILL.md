@@ -169,8 +169,8 @@ The section header, the description and the footer note are in `section-styles.t
   Times are minutes and whole seconds. Values come from the draft, with a dash when a setting is not set.
 - The graph has the waiting time in percent on the y-axis, so its shape does not change with the waiting time at the limit, and free power in kW on the x-axis,
   decreasing to 0 at the right so the waiting time grows to the right. It starts a bit above half the limit, so the curve always starts flat at 0.
-- Second card, the waiting time on repeated turn-on: a short text saying it is about the regulation turning the same appliance or ampere on over and over again,
-  then one part for appliances and one for EV chargers. Each has dropdowns for the step and the number of steps,
+- Second card, the waiting time on repeated turn-on: a short text saying it is about the regulation turning the same appliance on over and over again,
+  then dropdowns for the step and the number of steps,
   and a table with one column per turn-on in a row up to the one that reaches the cap, marked as holding for every time after it, with the waiting time and the actual waiting time.
   The first two follow the curve and show the waiting time at the pivot point, which the text says. Dropdowns keep their values as numbers in the draft.
 - Third card, command repeat: a short text on why commands are repeated and that excluded appliances and chargers are left alone, and the interval in minutes.
@@ -188,9 +188,10 @@ The section header, the description and the footer note are in `section-styles.t
   not the error that the sensor gives no valid measurement.
 - Countdowns are never ticking text. The next decision is a small ring that empties over one decision interval, animated by the browser (Web Animations API) so it needs no clock;
   the time is a tooltip. On a narrow screen only the ring is shown.
-- A waiting step shows an icon (a timer for an appliance,
-  a plus for one more ampere) before a thin bar that empties smoothly from when the waiting started to the decision that turns the step on, animated like the ring.
+- A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
+- Otherwise the row of the next step shows, in the same column, an icon and the power to free in kW, with a sentence as tooltip that tells what it is freed for:
+  turning on an appliance, activating an EV charger or giving it one more ampere. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.
   Consumption now is the power sensor's state read in the panel, so it updates live. Under each average is the time it covers.
   A tile is a button that fires `hass-more-info` for its entity: the power sensor, or Kraftvakt's own entity found by platform and translation key,

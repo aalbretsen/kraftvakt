@@ -45,9 +45,10 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 - You set a **power limit**, the step of the capacity tariff you want to stay below, for example 10,000 W.
   Kraftvakt keeps the average consumption over the last hour, the **tariff average**, below it.
-- You sort the appliances and EV chargers in a **priority list**. When power is free, the next one in the list is turned on, after a short waiting time.
+- You sort the appliances and EV chargers in a **priority list**. When power is free, the next one in the list is turned on:
+  at once when Kraftvakt knows what it draws and there is room for it, and otherwise after a short waiting time.
   Above the power limit, the lowest one that is on is turned off.
-- An **EV charger** gets one ampere at a time, as power is free, and only while a car is connected.
+- An **EV charger** gets one ampere at a time, when the power one more ampere draws is free, and only while a car is connected.
 - An **essential appliance**, such as a freezer, is always kept on.
 - If the power sensor stops giving values, everything but the essential appliances is turned off until it is back.
 
@@ -71,7 +72,11 @@ The helper texts in the panel tell what each setting does.
 - **Decisions:** at every regulation interval, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
   or as many amperes of an EV charger as the power above the limit needs, at once. Appliances lower in the list give way when one higher up needs the room.
   The order is fixed: an appliance is never turned on before every appliance above it is on.
-- **Waiting time:** none while plenty of power is free, and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
+- **Power reserve:** the free power a step needs before it is turned on. An appliance with a **fixed load** has its power as reserve.
+  The first ampere of an EV charger needs its power at minimum current, and each ampere after it what the car drew per ampere at the last decision,
+  its charging power divided by its current. A step that was just turned on keeps its power reserve until the regulation average shows it.
+- **Waiting time:** only for an appliance without a fixed load, since Kraftvakt does not know what it draws. None while plenty of power is free,
+  and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
@@ -126,7 +131,9 @@ An EV charger charges only when Kraftvakt has activated it, so a car that is con
   Set the power at minimum current to what the car draws at the minimum current, since the regulation relies on it.
 - Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
   for example to heat in the morning.
-- A car that suddenly draws more than the regulation counted on is cut back at once: above the power limit, as many amperes are taken as the power above the limit needs.
+- A car that charges gets one more ampere when the power it draws per ampere is free.
+- A car that suddenly draws more than the regulation counted on is cut back at once: above the power limit,
+  as many amperes are taken as the power above the limit needs, by what the car draws per ampere.
 
 **Car connected**, the optional **charging on/off** and the fault flag are each a boolean entity, the states of an entity, or a template.
 An unavailable entity or a template that fails counts as false.
@@ -159,7 +166,8 @@ Actions adapt to the domain of the entity, and every action can also be a custom
 A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way.
 
 The status page shows the consumption and the averages against the power limit, the next decision, the safe state and the penalty,
-and the appliances and EV chargers as they stand, in priority order. Hover over a label for its explanation, and press a row or a tile to open its entity.
+and the appliances and EV chargers as they stand, in priority order,
+with the waiting time or the power that must be freed before the next one is turned on. Hover over a label for its explanation, and press a row or a tile to open its entity.
 
 ### Entities
 
@@ -177,8 +185,8 @@ All entities belong to the service device **Kraftvakt**.
 | `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
 | `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
-| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance or ampere is turned on, 0 when nothing waits. |
-| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power kept free for an EV charger that starts. |
+| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, 0 when nothing waits. |
+| `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power reserves kept free. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
 | `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |

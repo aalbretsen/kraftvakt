@@ -9,7 +9,7 @@ from typing import Any
 
 from .charging import ChargerReading, ChargingState
 from .penalty import PenaltyState
-from .waiting import RepeatedTurnOnCounter, RepeatedTurnOnGrowth
+from .waiting import RepeatedTurnOnCounter
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +131,6 @@ class Step:
     key: StepKey
     is_on: bool
     power_reserve_w: float | None
-    growth: RepeatedTurnOnGrowth
     can_turn_on: bool = True
     can_turn_off: bool = True
     holds_reserve: bool = False
@@ -150,12 +149,21 @@ class Waiting:
     until: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class PowerToFree:
+    """How far the regulation average must drop before the next step may be turned on."""
+
+    key: StepKey
+    power_w: float
+
+
 @dataclass(slots=True)
 class RegulationState:
     """What the regulation keeps track of while it runs.
 
     `appliances_commanded_at` and `chargers_commanded_at` hold when each
-    appliance and charger was last sent a command.
+    appliance and charger was last sent a command. `settling_since` holds when
+    each settling step was turned on.
     """
 
     started_at: datetime | None = None
@@ -163,6 +171,8 @@ class RegulationState:
     current_variants: dict[str, str | None] = field(default_factory=dict)
     excluded_appliances: frozenset[str] = frozenset()
     waiting: Waiting | None = None
+    power_to_free: PowerToFree | None = None
+    settling_since: dict[StepKey, datetime] = field(default_factory=dict)
     repeats: RepeatedTurnOnCounter = field(default_factory=RepeatedTurnOnCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False

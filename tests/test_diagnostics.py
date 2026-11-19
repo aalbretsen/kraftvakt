@@ -124,6 +124,8 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     assert state["appliances_on"] == ["a"]
     assert state["current_variants"] == {"a": "v"}
     assert state["waiting"] is None
+    assert state["power_to_free"] is None
+    assert state["settling_since"] == {"ApplianceStepKey(appliance_id='a')": local(now - WINDOW), "AmpereStepKey(charger_id='c', index=0)": local(now)}
     assert state["repeats"] == {"last_key": {"charger_id": "c", "index": 0}, "repeats": 0}
     assert state["penalty"] == {"overconsuming": False, "overconsumption_wh": 0, "active": False, "recovery_started": False}
     assert not state["safe_state"]
@@ -139,6 +141,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "waiting": [],
         "last_readings": None,
         "last_permissions": {"c": "window"},
+        "measured_power_per_ampere_w": {},
         "last_decision": local(now),
     }
     assert state["charging_groups"]["g"]["last_readings"]["c"]["car_connected"] is True

@@ -74,13 +74,20 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
     )
 
 
-def test_only_the_first_ampere_step_needs_the_power_at_minimum_current_free() -> None:
+def test_first_ampere_step_needs_the_power_at_minimum_current_and_the_next_the_measured_power_per_ampere() -> None:
+    """At 6 A the car draws 4000 W, about 667 W per ampere.
+
+    At the decision after the activation, the average shows the charger only in
+    part, so its power at minimum current counts as used.
+    """
     scenario = one_charger(min_current_power_w=4000)
     scenario.draw("c")
 
     assert scenario.decide(6010) == []
     assert scenario.decide(6000) == activate("c")
-    assert scenario.decide(9890) == current("c", 7)
+    assert scenario.decide(5400) == []
+    assert scenario.decide(9340) == []
+    assert scenario.decide(9330) == current("c", 7)
 
 
 def test_current_decreases_one_ampere_at_a_time_when_an_ampere_covers_the_power_above_the_limit() -> None:
@@ -107,15 +114,15 @@ def test_car_that_suddenly_draws_much_more_is_cut_by_the_power_above_the_limit_a
     assert scenario.decide(13_900) == current("c", 10)
 
 
-def test_car_that_draws_less_than_its_current_allows_is_cut_below_what_it_draws() -> None:
-    """At 16 A it draws 5000 W, so only 6 A, which allows 4000 W, frees the 500 W above the limit."""
+def test_car_is_cut_by_its_measured_power_per_ampere() -> None:
+    """At 16 A it draws 5000 W, 312.5 W per ampere, so two amperes free the 500 W above the limit."""
     scenario = one_charger(max_a=16)
     scenario.draw("c")
     scenario.charge("c", 16)
     scenario.draw("c", drawing=False)
     scenario.set_charger("c", actively_charging=True, charging_power_w=5000)
 
-    assert scenario.decide(ABOVE_LIMIT) == current("c", 6)
+    assert scenario.decide(ABOVE_LIMIT) == current("c", 14)
 
 
 def test_freeing_power_ends_at_an_appliance() -> None:
@@ -129,40 +136,14 @@ def test_freeing_power_ends_at_an_appliance() -> None:
     assert scenario.decide(20_000) == off("x")
 
 
-def test_ampere_steps_have_their_own_growth() -> None:
-    """5, 10, 15, 20, 25 and then 30 minutes."""
+def test_ampere_steps_do_not_wait_even_when_turned_on_again() -> None:
+    """Their power reserve tells whether they fit."""
     scenario = Scenario(make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300))
     scenario.draw("c")
-    scenario.charge("c", 6)
-    waits = []
-    for _ in range(8):
+    for _ in range(4):
+        assert scenario.decide(9000) == []
+        assert scenario.decide(5000) == activate("c")
         assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-        waiting_started = scenario.now + timedelta(minutes=1)
-        scenario.charge("c", 6)
-        waits.append((scenario.now - waiting_started) / timedelta(minutes=1))
-
-    assert waits == [0, 5, 10, 15, 20, 25, 30, 30]
-
-
-def test_ampere_steps_grow_with_the_configured_increment_and_cap() -> None:
-    """Steps of half of 4 minutes, 2 steps: 4, 6 and then 8 minutes."""
-    scenario = Scenario(
-        make_config(
-            chargers=(charger("c", max_a=6),),
-            wait_at_limit_s=240,
-            charger_repeat=(0.5, 2),
-        )
-    )
-    scenario.draw("c")
-    scenario.charge("c", 6)
-    waits = []
-    for _ in range(6):
-        assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-        waiting_started = scenario.now + timedelta(minutes=1)
-        scenario.charge("c", 6)
-        waits.append((scenario.now - waiting_started) / timedelta(minutes=1))
-
-    assert waits == [0, 4, 6, 8, 8, 8]
 
 
 def test_several_chargers_take_turns() -> None:
@@ -230,12 +211,15 @@ def test_car_that_pauses_is_held_at_its_minimum_and_gets_its_amperes_back() -> N
 @pytest.mark.parametrize(
     ("cloud_controlled", "expected"),
     [
-        (False, [activate("c"), on("x"), [], [], [], []]),
+        (False, [activate("c"), [], on("x"), [], [], []]),
         (True, [activate("c"), [], [], [], [], on("x")]),
     ],
 )
 def test_starting_cloud_controlled_charger_holds_its_power_at_minimum_current(cloud_controlled: bool, expected: list) -> None:
-    """The appliance below has room only when the car that is about to draw power is left out, for at most the start delay."""
+    """The appliance below has room only when the car that is about to draw power is left out, for at most the start delay.
+
+    Any charger holds it at the decision after the activation, since the average shows the charger only in part.
+    """
     scenario = Scenario(
         make_config(
             "x",
@@ -263,7 +247,7 @@ def test_starting_charger_shows_when_its_start_delay_ends() -> None:
 @pytest.mark.parametrize(
     ("cloud_controlled", "expected"),
     [
-        (False, [activate("c"), on("x"), [], [], [], []]),
+        (False, [activate("c"), [], on("x"), [], [], []]),
         (True, [activate("c"), [], [], [], [], on("x")]),
     ],
 )
@@ -472,6 +456,7 @@ def test_one_at_a_time_charger_higher_up_that_gets_a_car_gets_room_from_the_one_
     scenario.draw("b")
     scenario.charge("b", 16)
 
+    scenario.settle()
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide(9000) == current("b", 11)
@@ -495,6 +480,7 @@ def test_new_car_takes_the_room_of_a_charger_below_without_dynamic_order() -> No
     scenario.draw("b")
     scenario.charge("b", 8)
 
+    scenario.settle()
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide(7000) == current("b", 6)
@@ -542,12 +528,15 @@ def test_charger_that_charges_keeps_its_room_from_a_car_connected_later() -> Non
 
 
 def test_switch_over_shares_the_power_when_it_covers_the_power_at_minimum_current() -> None:
-    """b at 11 A draws 3000 W above its power at minimum current, which is not enough for the 4000 W a draws at its minimum, but 4300 W is."""
+    """b at 11 A frees 5/11 of what it draws by going to 6 A.
+
+    From 8600 W it frees 3909 W, which with 50 W free is not enough for the 4000 W a draws at its minimum, but from 8800 W it frees 4000 W, which is.
+    """
     scenario = sharing_chargers(b_amperes=11)
-    scenario.set_charger("b", charging_power_w=7000)
+    scenario.set_charger("b", charging_power_w=8600)
     assert scenario.decide(9950) == []
 
-    scenario.set_charger("b", charging_power_w=8300)
+    scenario.set_charger("b", charging_power_w=8800)
 
     assert scenario.decide(9950) == current("b", 6) + activate("a")
     scenario.decide(9950)
@@ -581,7 +570,7 @@ def test_no_switch_over_while_an_entry_above_the_group_waits_for_room() -> None:
     assert scenario.decide(9950) == deactivate("b")
 
 
-def test_switch_over_waits_for_the_waiting_time() -> None:
+def test_switch_over_does_not_wait() -> None:
     scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True, wait_at_limit_s=120))
     scenario.set_charger("a", **NO_CAR)
     scenario.draw("b")
@@ -590,7 +579,6 @@ def test_switch_over_waits_for_the_waiting_time() -> None:
     scenario.set_charger("b", actively_charging=True, charging_power_w=8300)
     scenario.set_charger("a", car_connected=True)
 
-    assert scenario.decide_many(9100, 2) == [[], []]
     assert scenario.decide(9100) == current("b", 6) + activate("a")
 
 

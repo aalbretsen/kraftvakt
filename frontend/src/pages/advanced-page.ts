@@ -1,16 +1,12 @@
 import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { renderSectionHeader } from "../section-styles";
 import { formatMinutes, formatNumber, formatPower } from "../format";
 import { CURVE_TURN_ONS, repeatedTurnOnWaiting, untilDecision, waitingCurve } from "../waiting";
 import { WidthQuery } from "../width-query";
 import { SettingsFormPage, type GeneralField } from "./settings-form-page";
 
 type CurveField = "wait_curve_steepness" | "wait_curve_pivot";
-type RepeatTitle = "advanced.appliances" | "advanced.chargers";
-type RepeatFactorField = "appliance_repeat_increment_factor" | "charger_repeat_increment_factor";
-type RepeatIncrementsField = "appliance_repeat_increments" | "charger_repeat_increments";
 type TableRow = "advanced.free_power_kw" | "advanced.waiting_minutes" | "advanced.actual_waiting_minutes";
 
 const RESTORED_FIELDS: readonly GeneralField[] = [
@@ -18,8 +14,6 @@ const RESTORED_FIELDS: readonly GeneralField[] = [
   "wait_curve_pivot",
   "appliance_repeat_increment_factor",
   "appliance_repeat_increments",
-  "charger_repeat_increment_factor",
-  "charger_repeat_increments",
   "command_repeat_interval_min",
   "action_timeout_s",
   "power_sensor_timeout_s",
@@ -79,10 +73,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     return this.renderCard({
       title: this.localize("advanced.repeated_turn_on"),
       description: this.localize("advanced.repeated_turn_on_info"),
-      content: html`
-        ${this.renderRepeatedTurnOnSection("advanced.appliances", "appliance_repeat_increment_factor", "appliance_repeat_increments")}
-        ${this.renderRepeatedTurnOnSection("advanced.chargers", "charger_repeat_increment_factor", "charger_repeat_increments")}
-      `,
+      content: this.renderRepeatedTurnOn(),
     });
   }
 
@@ -102,12 +93,15 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     });
   }
 
-  private renderRepeatedTurnOnSection(title: RepeatTitle, factorField: RepeatFactorField, stepsField: RepeatIncrementsField) {
+  private renderRepeatedTurnOn() {
     const language = this.hass.language;
-    const fields = [this.selectField(factorField, (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`), this.selectField(stepsField, (steps) => String(steps))];
+    const general = this.config.general;
+    const fields = [
+      this.selectField("appliance_repeat_increment_factor", (factor) => `× ${new Intl.NumberFormat(language).format(factor)}`),
+      this.selectField("appliance_repeat_increments", (steps) => String(steps)),
+    ];
     return html`
-      ${renderSectionHeader(this.localize(title))} ${this.renderForm(fields)}
-      ${this.narrowPage ? nothing : this.renderRepeatedTurnOnTable(this.config.general[factorField], this.config.general[stepsField])}
+      ${this.renderForm(fields)} ${this.narrowPage ? nothing : this.renderRepeatedTurnOnTable(general.appliance_repeat_increment_factor, general.appliance_repeat_increments)}
     `;
   }
 

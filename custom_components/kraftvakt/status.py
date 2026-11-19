@@ -95,6 +95,7 @@ def _appliance_status(hass: HomeAssistant, runtime: KraftvaktRuntime, appliance:
         "power_w": power_value_w(hass, appliance.display_power, appliance.entity_id),
         "temperature": _temperature(hass, appliance),
         **_waiting_fields(runtime, ApplianceStepKey(appliance.id)),
+        "power_to_free_w": _power_to_free_w(runtime, ApplianceStepKey(appliance.id)),
     }
 
 
@@ -114,7 +115,7 @@ def _charger_status(
         "bypassed": status.bypassed,
         "charging": status.charging,
         "starting_until": _local_time(status.starting_until),
-        **_waiting_fields(runtime, charger.id),
+        "power_to_free_w": _power_to_free_w(runtime, charger.id),
     }
 
 
@@ -123,25 +124,27 @@ def _temperature(hass: HomeAssistant, appliance: Appliance) -> dict[str, Any] | 
     return None if temperature is None else {"value": temperature[0], "unit": temperature[1]}
 
 
-def _waiting_fields(runtime: KraftvaktRuntime, waiting_for: ApplianceStepKey | str) -> Mapping[str, str | None]:
-    """Return when the waiting started and ends, for the step that waits.
-
-    `waiting_for` is the step of an appliance, or the id of a charger whose
-    next ampere step waits.
-    """
+def _waiting_fields(runtime: KraftvaktRuntime, key: ApplianceStepKey) -> Mapping[str, str | None]:
+    """Return when the waiting started and ends, for the appliance that waits."""
     waiting = runtime.waiting
     ends_at = runtime.waiting_ends_at
-    if waiting is None or ends_at is None:
-        return NO_WAITING
-    key = waiting.key
-    waiting_charger = key.charger_id if isinstance(key, AmpereStepKey) else None
-    if key != waiting_for and waiting_charger != waiting_for:
+    if waiting is None or ends_at is None or waiting.key != key:
         return NO_WAITING
     return {
         "waiting_since": _local_time(waiting.started_at),
         "waiting_until": _local_time(waiting.until),
         "waiting_ends_at": _local_time(ends_at),
     }
+
+
+def _power_to_free_w(runtime: KraftvaktRuntime, item: ApplianceStepKey | str) -> float | None:
+    """Return the power to free for the next step, on the row of its appliance, or of its charger given by its id."""
+    power_to_free = runtime.power_to_free
+    if power_to_free is None:
+        return None
+    key = power_to_free.key
+    is_item = key == item or (isinstance(key, AmpereStepKey) and key.charger_id == item)
+    return power_to_free.power_w if is_item else None
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:

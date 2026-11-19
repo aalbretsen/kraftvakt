@@ -26,7 +26,7 @@ from .measurement import WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput, Waiting, command_dict
+from .regulation.model import Command, DecisionInput, PowerToFree, Waiting, command_dict
 from .regulation.penalty import PenaltyState
 from .repairs import (
     async_check_entities,
@@ -135,6 +135,10 @@ class KraftvaktRuntime:
     @property
     def waiting(self) -> Waiting | None:
         return self._engine.waiting
+
+    @property
+    def power_to_free(self) -> PowerToFree | None:
+        return self._engine.power_to_free
 
     @property
     def next_decision_at(self) -> datetime | None:

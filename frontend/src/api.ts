@@ -61,8 +61,6 @@ export interface GeneralConfig {
   wait_curve_pivot: number;
   appliance_repeat_increment_factor: number;
   appliance_repeat_increments: number;
-  charger_repeat_increment_factor: number;
-  charger_repeat_increments: number;
   penalty_threshold_w: number;
   command_repeat_interval_min: number;
   action_timeout_s: number;
@@ -242,6 +240,8 @@ export interface ApplianceStatus {
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */
   waiting_ends_at: string | null;
+  /** How far the regulation average must drop before the appliance, as the next step, may be turned on. */
+  power_to_free_w: number | null;
 }
 
 /** How an EV charger stands after the last decision, the most important first. */
@@ -261,10 +261,8 @@ export interface ChargerStatus {
   charging: boolean;
   /** When the start delay of a starting EV charger ends, whose power at minimum current is kept free until then. */
   starting_until: string | null;
-  waiting_since: string | null;
-  waiting_until: string | null;
-  /** The decision that ends the waiting: the first at or after `waiting_until`. */
-  waiting_ends_at: string | null;
+  /** How far the regulation average must drop before the next ampere step of the EV charger, as the next step, may be turned on. */
+  power_to_free_w: number | null;
 }
 
 /** How the regulation stands now. Times are ISO 8601. */

@@ -17,8 +17,6 @@ def full_config_data() -> dict[str, Any]:
             "wait_curve_pivot": 85,
             "appliance_repeat_increment_factor": 0.75,
             "appliance_repeat_increments": 3,
-            "charger_repeat_increment_factor": 0.25,
-            "charger_repeat_increments": 9,
             "penalty_threshold_w": 500,
             "command_repeat_interval_min": 45,
             "action_timeout_s": 90,

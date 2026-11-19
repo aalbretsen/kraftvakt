@@ -175,7 +175,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "max": 9,
         "resolution": 0.5,
     }
-    assert result["limits"]["general"]["charger_repeat_increment_factor"] == {
+    assert result["limits"]["general"]["appliance_repeat_increment_factor"] == {
         "min": 0.25,
         "max": 1,
         "resolution": 0.25,
@@ -194,8 +194,6 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "wait_curve_pivot": 80,
             "appliance_repeat_increment_factor": 0.5,
             "appliance_repeat_increments": 4,
-            "charger_repeat_increment_factor": 1.0,
-            "charger_repeat_increments": 5,
             "penalty_threshold_w": 100,
             "command_repeat_interval_min": 30,
             "action_timeout_s": 60,
@@ -786,6 +784,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
+                "power_to_free_w": None,
             },
             {
                 "type": "appliance",
@@ -800,6 +799,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
+                "power_to_free_w": None,
             },
         ],
     }
@@ -952,9 +952,7 @@ async def test_status_shows_the_chargers(
             "bypassed": False,
             "starting_until": None,
             "charging": False,
-            "waiting_since": None,
-            "waiting_until": None,
-            "waiting_ends_at": None,
+            "power_to_free_w": None,
         }
     ]
 
@@ -995,6 +993,46 @@ def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
         },
         **settings,
     }
+
+
+async def test_status_shows_the_power_to_free_on_the_row_of_the_next_step(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """The first ampere step of c1 needs its power at minimum current, 4157 W, free; the appliances below wait for it."""
+    config["charger_groups"] = [{"id": "g1", "name": "EV chargers", "chargers": [charger("c1")]}]
+    config["priority"].insert(0, {"type": "charger_group", "group_id": "g1"})
+    hass.states.async_set("binary_sensor.c1_car", "on")
+    hass.states.async_set("sensor.c1_power", "0")
+    set_power(hass, "9000")
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+    await subscribe_status(client)
+
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert status["priority"][0]["chargers"][0]["power_to_free_w"] == pytest.approx(3157)
+    assert [row["power_to_free_w"] for row in appliance_rows(status)] == [None, None]
+
+
+async def test_status_shows_the_power_to_free_of_an_appliance_within_the_turn_on_margin(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    set_power(hass, "9950")
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+    await subscribe_status(client)
+
+    await advance(hass, freezer)
+    status = await next_status(client)
+
+    assert [row["power_to_free_w"] for row in appliance_rows(status)] == [pytest.approx(50), None]
 
 
 async def test_status_shows_the_chargers_in_the_current_priority(

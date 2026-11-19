@@ -68,10 +68,10 @@ def test_waiting_time_close_to_the_limit() -> None:
 
 def test_waiting_time_is_cancelled_when_conditions_fail() -> None:
     """A new waiting time starts when the appliance can be turned on again."""
-    scenario = Scenario(make_config(appliance("a", reserve_w=2000)))
+    scenario = Scenario(make_config("a"))
 
     assert scenario.decide_many(7000, 2) == [[], []]
-    assert scenario.decide(8500) == []
+    assert scenario.decide(9950) == []
     assert scenario.engine.waiting is None
     assert scenario.decide_many(7000, 2) == [[], []]
     assert scenario.decide(7000) == on("a")
@@ -94,3 +94,14 @@ def test_switching_off_cancels_the_waiting_time() -> None:
     assert scenario.engine.waiting is not None
     assert scenario.decide(10500) == off("a")
     assert scenario.engine.waiting is None
+
+
+def test_appliance_with_a_power_reserve_does_not_wait() -> None:
+    """Its power reserve tells whether it fits, also when it is turned on again and again."""
+    scenario = Scenario(make_config(appliance("a", reserve_w=2000)))
+
+    assert scenario.decide(7900) == on("a")
+    assert scenario.engine.waiting is None
+    for _ in range(3):
+        assert scenario.decide(10_500) == off("a")
+        assert scenario.decide(7000) == on("a")

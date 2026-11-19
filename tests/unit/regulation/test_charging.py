@@ -171,12 +171,12 @@ def test_car_may_step_up_when_it_charges_with_half_of_the_power_at_minimum_curre
 
 
 def test_estimated_draw_follows_the_current_and_never_exceeds_what_the_car_draws() -> None:
-    """With 4000 W at 6 A, an ampere is about 667 W."""
-    at_4000_w = charger(min_current_power_w=4000)
+    """With 4 ampere steps from 6 A, the current is 9 A."""
+    six_to_sixteen = charger()
 
-    assert estimated_draw_w(at_4000_w, 10_000, 4) == pytest.approx(6000)
-    assert estimated_draw_w(at_4000_w, 5000, 4) == 5000
-    assert estimated_draw_w(at_4000_w, 5000, 0) == 0
+    assert estimated_draw_w(six_to_sixteen, 10_000, 4, 690) == pytest.approx(6210)
+    assert estimated_draw_w(six_to_sixteen, 5000, 4, 690) == 5000
+    assert estimated_draw_w(six_to_sixteen, 5000, 0, 690) == 0
 
 
 def chargers(*ids: str) -> list[Charger]:
@@ -410,3 +410,20 @@ def test_activating_needs_the_time() -> None:
 
     with pytest.raises(ValueError, match="time"):
         state.set_ampere_steps_on("a", 1)
+
+
+def test_power_per_ampere_is_measured_while_the_activated_charger_draws_power_and_kept_after() -> None:
+    """Before it is measured, it is the power at minimum current divided by the minimum current."""
+    configured = [charger("a", min_current_power_w=4140), charger("b", min_current_power_w=4140)]
+    state = activated(configured, a=5)
+    assert state.power_per_ampere_w(configured[0]) == pytest.approx(690)
+
+    evaluate(state, configured, {"a": ChargerReading(actively_charging=True, charging_power_w=2300), "b": ChargerReading(actively_charging=True, charging_power_w=2000)})
+    assert state.power_per_ampere_w(configured[0]) == pytest.approx(230)
+    assert state.power_per_ampere_w(configured[1]) == pytest.approx(690)
+
+    evaluate(state, configured, {"a": ChargerReading(actively_charging=True)})
+    assert state.power_per_ampere_w(configured[0]) == pytest.approx(230)
+
+    evaluate(state, configured, {"a": ChargerReading(charging_power_w=50)})
+    assert state.power_per_ampere_w(configured[0]) == pytest.approx(230)

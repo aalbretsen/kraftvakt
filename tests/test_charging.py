@@ -207,7 +207,7 @@ def stored_switches(hass_storage: dict[str, Any]) -> dict[str, Any]:
 async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """The current is set before (de)activating.
 
-    Above the limit, a car that draws 4100 W at 8 A, less than its current allows, frees the 1000 W only when it is deactivated, at once.
+    Above the limit, a car that draws 4100 W at 8 A, 512.5 W per ampere, frees the 1000 W with two amperes, at once.
     """
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
@@ -226,9 +226,8 @@ async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freez
 
     set_power(hass, POWER_SENSOR, "11000")
     await advance(hass, freezer)
-    await advance(hass, freezer)
-    assert actions == ["current 6", f"off {CHARGER}"]
-    assert steps_switched_on(hass) == "0"
+    assert actions == ["current 6"]
+    assert steps_switched_on(hass) == "1"
 
 
 async def test_charger_switched_by_its_current_is_set_to_0_a_instead_of_deactivated(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:

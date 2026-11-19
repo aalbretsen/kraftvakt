@@ -36,8 +36,6 @@ const ADVANCED_FIELDS = new Set([
   "wait_curve_pivot",
   "appliance_repeat_increment_factor",
   "appliance_repeat_increments",
-  "charger_repeat_increment_factor",
-  "charger_repeat_increments",
   "command_repeat_interval_min",
   "action_timeout_s",
   "power_sensor_timeout_s",

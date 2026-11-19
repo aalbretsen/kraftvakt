@@ -221,8 +221,10 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - Averages are `null` until the first window.
 - The next decision time is `null` while stopped.
 - The penalty part holds whether a penalty is active, the overconsumption and whether recovery has started.
-- The waiting fields are set only for the appliance or charger that is next and waiting (for a charger: its next ampere step): when the waiting started, when the waiting time ends,
+- The waiting fields are set only for the appliance that is next and waiting: when the waiting started, when the waiting time ends,
   and the decision that turns it on, the first at or after the end of the waiting time.
+- The power to free from the last decision is set only on the row of the next step: its appliance, or the charger of its ampere step.
+  It is `null` on the other rows, and when the next step fits.
 - An appliance's variant is the label of its current variant, or `null`.
 - The display values of an appliance, and the charging power of a charger, are read when the snapshot is built, `null` without a valid value.
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
