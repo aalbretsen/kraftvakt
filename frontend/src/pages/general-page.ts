@@ -1,7 +1,7 @@
 import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { measurePowerSensorInterval, type KraftvaktConfig } from "../api";
+import { measurePowerSensorInterval, type Issue, type KraftvaktConfig } from "../api";
 import { ownEntities } from "../entities";
 import { closestWindowUpdates, regulationWindowOptions, windowSeconds } from "../regulation-window";
 import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
@@ -103,14 +103,25 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
   /** A number of updates of the power sensor, each shown with how long the window lasts at its interval. */
   private windowField(): FormField {
     const interval = this.config.general.power_sensor_interval_s;
-    const options =
-      interval === null
-        ? []
-        : regulationWindowOptions(interval, this.capabilities.regulation_window).map((count) => ({
-            value: String(count),
-            label: this.localize(count === 1 ? "general.window_option_one" : "general.window_option", { count, seconds: this.formatNumber(count * interval) }),
-          }));
+    const options = this.windowOptions().map((count) => ({
+      value: String(count),
+      label: this.localize(count === 1 ? "general.window_option_one" : "general.window_option", { count, seconds: this.formatNumber(count * (interval ?? 0)) }),
+    }));
     return { name: "regulation_window_updates", required: true, disabled: options.length === 0, selector: { select: { mode: "dropdown", options } } };
+  }
+
+  private windowOptions(): number[] {
+    const interval = this.config.general.power_sensor_interval_s;
+    return interval === null ? [] : regulationWindowOptions(interval, this.capabilities.regulation_window);
+  }
+
+  /** A regulation window that cannot be chosen yet is not marked as missing, since its helper tells why. */
+  protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
+    const errors = super.formErrors(section, target, prefix);
+    if (section === "general" && this.windowOptions().length === 0) {
+      delete errors.regulation_window_updates;
+    }
+    return errors;
   }
 
   /** The interval is a whole number of regulation windows. */
@@ -135,7 +146,7 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
     if (interval === null) {
       return this.localize("general.window_not_measured");
     }
-    if (regulationWindowOptions(interval, this.capabilities.regulation_window).length === 0) {
+    if (this.windowOptions().length === 0) {
       return this.localize("general.window_too_seldom", params);
     }
     return this.localize("general.fields.regulation_window_updates.helper", params);

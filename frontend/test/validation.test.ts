@@ -33,6 +33,14 @@ describe("a complete configuration", () => {
   });
 });
 
+describe("a regulation window that is not set", () => {
+  it("is missing, not an error, so the draft can be saved", () => {
+    const draft = config({ general: { ...config().general, regulation_window_updates: null, power_sensor_interval_s: null } });
+    expect(errors(draft)).toEqual([]);
+    expect(missingItems(draft)).toEqual([{ code: "missing_regulation_window", section: "general", field: "regulation_window_updates" }]);
+  });
+});
+
 describe("missing items", () => {
   it("are the power sensor, the entities, the actions and the conditions", () => {
     const draft = config({

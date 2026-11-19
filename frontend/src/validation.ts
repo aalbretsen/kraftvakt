@@ -8,6 +8,7 @@ import {
   type ChargerGroup,
   type Condition,
   type DefaultAction,
+  type GeneralConfig,
   type Issue,
   type KraftvaktConfig,
   type Range,
@@ -71,8 +72,9 @@ function maySet0A(charger: Charger, states: States): boolean {
 
 /** Return the mistakes in the draft that stop it from being saved. */
 export function draftErrors(config: KraftvaktConfig, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
+  const withoutDefault = (issue: Issue) => issue.code === "required" && capabilities.defaults.general[issue.field as keyof GeneralConfig] === null;
   return [
-    ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true),
+    ...rangeIssues("general", undefined, config.general, capabilities.limits.general, true).filter((issue) => !withoutDefault(issue)),
     ...config.appliances.flatMap((appliance) => applianceErrors(appliance, capabilities, hass)),
     ...chargerGroupErrors(config.charger_groups),
     ...allChargers(config).flatMap((charger) => chargerErrors(charger, capabilities, hass)),

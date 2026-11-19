@@ -151,7 +151,8 @@ The section header, the description and the footer note are in `section-styles.t
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
 - The regulation window is a dropdown of its choices for the update interval, each as «N updates (X s)», disabled until the interval is known.
   When the power sensor is chosen, or set without an interval, the panel asks the backend for the interval and chooses the window closest to the length it had,
-  10 s at first. Its helper tells the interval, or that the power sensor must be chosen, is being measured, could not be measured or reports too seldom.
+  10 s at first. Its helper tells the interval, or that the power sensor must be chosen, is being measured, could not be measured or reports too seldom,
+  and it is not marked as missing while it cannot be chosen. Like a setting without a default, it may be saved while it is not set.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers in charging priority, and Add group under the cards.
   Without groups, a line of text says so, as an empty list does.
   A new group gets the first free name of «EV chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.
