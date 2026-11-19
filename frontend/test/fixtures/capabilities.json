@@ -313,11 +313,6 @@
         "max": 120,
         "resolution": 0.1
       },
-      "regulation_interval": {
-        "min": 1,
-        "max": 4,
-        "resolution": 1
-      },
       "wait_at_limit_s": {
         "min": 0,
         "max": 600,
@@ -409,7 +404,6 @@
       "turn_on_margin_w": 100,
       "regulation_window_updates": null,
       "power_sensor_interval_s": null,
-      "regulation_interval": 1,
       "wait_at_limit_s": 300,
       "wait_curve_steepness": 6.0,
       "wait_curve_pivot": 80,

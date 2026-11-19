@@ -12,10 +12,9 @@ from .measurement import WindowAverages
 class DecisionClock:
     """Counts the windows closed since the start of the regulation or the last decision.
 
-    A decision is due when the N-th window that started at or after the start
-    has closed, where N is the regulation interval. Windows that started before
-    the start do not count, also when the engine starts again itself at a
-    decision after the safe state or a penalty.
+    A decision is due when a window that started at or after the start has
+    closed. Windows that started before the start do not count, also when the
+    engine starts again itself at a decision after the safe state or a penalty.
     """
 
     def __init__(self) -> None:
@@ -35,23 +34,13 @@ class DecisionClock:
         windows, self._windows = self._windows, []
         return windows
 
-    def is_due(self, started_at: datetime | None, interval: int) -> bool:
-        return self._counted(started_at) >= interval
+    def is_due(self, started_at: datetime | None) -> bool:
+        return started_at is not None and any(window.start >= started_at for window in self._windows)
 
-    def next_decision_at(
-        self,
-        started_at: datetime,
-        interval: int,
-        window_start: datetime,
-        window_end: datetime,
-        window_length: timedelta,
-    ) -> datetime:
+    @staticmethod
+    def next_decision_at(started_at: datetime, window_start: datetime, window_end: datetime, window_length: timedelta) -> datetime:
         """Return when the next decision is made, with the window from `window_start` to `window_end` running."""
-        windows_left = interval - self._counted(started_at) - (window_start >= started_at)
-        return window_end + windows_left * window_length
-
-    def _counted(self, started_at: datetime | None) -> int:
-        return sum(1 for window in self._windows if started_at is not None and window.start >= started_at)
+        return window_end if window_start >= started_at else window_end + window_length
 
 
 def first_decision_from(moment: datetime, next_decision_at: datetime, interval: timedelta) -> datetime:

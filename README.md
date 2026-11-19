@@ -72,7 +72,7 @@ The helper texts in the panel tell what each setting does.
   so with a HAN reader that reports every 10 seconds, a window of one update is the newest measurement.
 - **Tariff average:** sliding over the last hour. Every clock hour the grid company measures is one of the sliding hours,
   so keeping it below the power limit keeps every clock hour below it, and overconsumption is found early in the hour.
-- **Decisions:** at every regulation interval, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
+- **Decisions:** each time a regulation window closes, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
   or as many amperes of an EV charger as the power above the limit needs, at once. Appliances lower in the list give way when one higher up needs the room.
   The order is fixed: an appliance is never turned on before every appliance above it is on.
 - **Power reserve:** the free power a step needs before it is turned on. An appliance with a **fixed load** has its power as reserve.
@@ -102,7 +102,7 @@ What is missing is listed on the status page, and under **Settings → Repairs**
 If the stored configuration (`.storage/kraftvakt.config`) cannot be read, Kraftvakt does not start, the integration shows an error, and the file is left unchanged.
 
 Every start turns all appliances off at once, except the essential appliances, which it turns on, and deactivates all EV chargers.
-The regulation then turns them on one by one in priority order, with the first decision one full regulation interval after the start.
+The regulation then turns them on one by one in priority order, with the first decision when the first whole regulation window after the start has closed.
 It also starts again this way when a penalty or the safe state ends.
 
 The **Regulation** switch, and the button on the status page, stop and start the regulation. Stopping turns everything off except the essential appliances.

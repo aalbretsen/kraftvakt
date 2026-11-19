@@ -35,20 +35,20 @@ def test_windows_that_started_before_the_start_do_not_count() -> None:
     clock = DecisionClock()
 
     clock.add(window(NEXT))
-    assert not clock.is_due(started_at, 1)
-    assert clock.next_decision_at(started_at, 1, NEXT + WINDOW, NEXT + 2 * WINDOW, WINDOW) == NEXT + 2 * WINDOW
+    assert not clock.is_due(started_at)
+    assert clock.next_decision_at(started_at, NEXT + WINDOW, NEXT + 2 * WINDOW, WINDOW) == NEXT + 2 * WINDOW
 
     clock.add(window(NEXT + WINDOW))
-    assert clock.is_due(started_at, 1)
+    assert clock.is_due(started_at)
     assert len(clock.take_windows()) == 2
-    assert not clock.is_due(started_at, 1)
+    assert not clock.is_due(started_at)
 
 
-def test_next_decision_counts_the_running_window_and_those_left() -> None:
+def test_next_decision_is_at_the_end_of_a_window_that_started_after_the_start() -> None:
     clock = DecisionClock()
-    clock.add(window(NEXT))
 
-    assert clock.next_decision_at(NEXT, 3, NEXT + WINDOW, NEXT + 2 * WINDOW, WINDOW) == NEXT + 3 * WINDOW
+    assert clock.next_decision_at(NEXT, NEXT, NEXT + WINDOW, WINDOW) == NEXT + WINDOW
+    assert clock.next_decision_at(NEXT, NEXT - WINDOW, NEXT, WINDOW) == NEXT + WINDOW
+    clock.add(window(NEXT))
     clock.restart()
-    assert clock.next_decision_at(NEXT, 3, NEXT + WINDOW, NEXT + 2 * WINDOW, WINDOW) == NEXT + 4 * WINDOW
-    assert not clock.is_due(None, 1)
+    assert not clock.is_due(None)

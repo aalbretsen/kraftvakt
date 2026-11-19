@@ -44,7 +44,6 @@ def config_data() -> dict[str, Any]:
             "power_limit_w": 10000,
             "regulation_window_updates": 1,
             "power_sensor_interval_s": 60,
-            "regulation_interval": 1,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
         },
@@ -202,7 +201,6 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "turn_on_margin_w": 100,
             "regulation_window_updates": None,
             "power_sensor_interval_s": None,
-            "regulation_interval": 1,
             "wait_at_limit_s": 300,
             "wait_curve_steepness": 6.0,
             "wait_curve_pivot": 80,
@@ -826,7 +824,6 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "tariff_average_w": None,
         "power_limit_w": 10000,
         "regulation_window_s": 60,
-        "regulation_interval": 1,
         "next_decision_at": local(started + WINDOW),
         "priority": [
             {

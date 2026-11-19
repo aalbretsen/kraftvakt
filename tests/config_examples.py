@@ -12,7 +12,6 @@ def full_config_data() -> dict[str, Any]:
             "turn_on_margin_w": 200,
             "regulation_window_updates": 15,
             "power_sensor_interval_s": 2.0,
-            "regulation_interval": 2,
             "wait_at_limit_s": 240,
             "wait_curve_steepness": 4.5,
             "wait_curve_pivot": 85,

@@ -67,7 +67,6 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
             "power_limit_w": 10000,
             "regulation_window_updates": 1,
             "power_sensor_interval_s": 60,
-            "regulation_interval": 1,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
         },
@@ -225,28 +224,6 @@ async def test_appliances_are_turned_on_one_per_decision(hass: HomeAssistant, fr
     assert actions == []
     await advance(hass, freezer, timedelta(seconds=1))
     assert actions == ["on light.a"]
-    await advance(hass, freezer)
-    assert actions == ["on light.a", "on light.b"]
-
-
-async def test_decisions_follow_the_regulation_interval(
-    hass: HomeAssistant,
-    freezer: FrozenDateTimeFactory,
-    actions,
-    config,
-    setup_kraftvakt,
-) -> None:
-    """With 2x, a decision is made for every second window."""
-    config["general"]["regulation_interval"] = 2
-    set_power(hass, "2000")
-    await setup_kraftvakt()
-    actions.clear()
-
-    await advance(hass, freezer)
-    assert actions == []
-    await advance(hass, freezer)
-    assert actions == ["on light.a"]
-    await advance(hass, freezer)
     await advance(hass, freezer)
     assert actions == ["on light.a", "on light.b"]
 
@@ -1014,16 +991,14 @@ async def test_excluded_appliance_is_switched_off_at_the_next_decision(hass: Hom
     assert [(item["id"], item["on"], item["excluded"]) for item in status_snapshot(hass, entry.runtime_data)["priority"]] == [("a", False, True), ("b", True, False)]
 
 
-async def test_commands_are_repeated_at_any_window(
+async def test_commands_are_repeated_when_the_interval_has_passed(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     actions,
     config,
     setup_kraftvakt,
 ) -> None:
-    """Decisions come every third window, and the commands of A and B are
-    repeated at windows between them. Excluded C is left alone."""
-    config["general"]["regulation_interval"] = 3
+    """Each appliance gets its command again when it has had none for the interval. Excluded C is left alone."""
     config["general"]["command_repeat_interval_min"] = 10
     config["appliances"].append(appliance("c"))
     config["priority"].append({"type": "appliance", "appliance_id": "c", "variant_id": None})
@@ -1032,14 +1007,14 @@ async def test_commands_are_repeated_at_any_window(
     await exclude(hass, "c", "turn_on")
     actions.clear()
 
-    await advance_windows(hass, freezer, 3)
+    await advance(hass, freezer)
     assert actions == ["on light.a"]
     set_power(hass, "9950")
-    await advance_windows(hass, freezer, 6)
+    await advance_windows(hass, freezer, 8)
     assert actions == ["on light.a"]
     await advance(hass, freezer)
     assert actions == ["on light.a", "off light.b"]
-    await advance_windows(hass, freezer, 3)
+    await advance(hass, freezer)
     assert actions == ["on light.a", "off light.b", "on light.a"]
 
 

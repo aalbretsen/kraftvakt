@@ -82,7 +82,6 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
             "power_limit_w": 10000,
             "regulation_window_updates": 1,
             "power_sensor_interval_s": 60,
-            "regulation_interval": 1,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
         },

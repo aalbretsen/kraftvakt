@@ -164,7 +164,6 @@
     "measurement": "Measurement",
     "regulation": "Regulation",
     "penalty": "Penalty",
-    "interval_option": "{count} × the regulation window",
     "window_option_one": "1 update ({seconds} s)",
     "window_option": "{count} updates ({seconds} s)",
     "window_no_power_sensor": "Choose the power sensor first.",
@@ -178,7 +177,7 @@
       },
       "regulation_window_updates": {
         "label": "Regulation window",
-        "helper": "The power sensor reports every {interval} s. Decisions use the average over this many of its updates: more evens out short peaks, fewer reacts faster. {min}–{max} s."
+        "helper": "The power sensor reports every {interval} s. A decision is made each time a window closes, from its average: more updates even out short peaks, fewer react faster. {min}–{max} s."
       },
       "power_sensor_interval_s": {
         "label": "Update interval of the power sensor"
@@ -190,10 +189,6 @@
       "turn_on_margin_w": {
         "label": "Turn-on margin",
         "helper": "Appliances are turned on only this far below the power limit, so they are not turned off again at once. {min}–{max} W, default {default} W."
-      },
-      "regulation_interval": {
-        "label": "Decide every",
-        "helper": "Now every {seconds} seconds. Default {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",

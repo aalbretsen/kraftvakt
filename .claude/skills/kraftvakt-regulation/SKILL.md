@@ -26,7 +26,6 @@ The ranges and defaults below are part of the specification; the code holds them
 | Update interval | How often the power sensor reports, measured when it is chosen: from the recorder's history of its changes when they are regular, else by listening to its updates for up to 30 s. Stored with the configuration, and used only to show and choose times. |
 | Regulation window | A number of updates of the power sensor, closed at the update that completes it. Chosen as the multiples of the fewest updates that last at least 10 s, at most 12 choices, for at most 120 s at the update interval. No default, since it depends on the power sensor. Why: a window that follows the meter holds whole measurements, so with a meter that reports every 10 s the regulation average of a 10 s window is the newest measurement, not a mix of the last two. |
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
-| Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
 | Tariff window | One hour back from now, sliding, not configurable. |
 | Tariff average | Time-weighted average of the power sensor over the tariff window. The regulation uses it only for the penalty. Why sliding: the grid company measures each clock hour, and every clock hour is one of the sliding hours; a sliding hour also finds overconsumption early, where a budget per clock hour could be used up in the middle of the hour and leave no power for the rest of it. |
 | Decision | What the regulation decides at each interval. All evaluation and all switching happens at decisions. The command repeat sends commands also between decisions, but only for the state the regulation has already set. |
@@ -137,7 +136,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   as when HA's event loop was paused (a host that sleeps, a paused virtual machine, a blocked loop).
   Windows closed by the clock that have ended are skipped, and the window running when it is noticed closes next, in the same cadence;
   after a late timeout, the next window starts when it is noticed and the timeout starts again, since the updates could not be received.
-  Skipped windows make no decision and no command repeat, and do not count towards the regulation interval.
+  Skipped windows make no decision and no command repeat.
   The time missed counts with the last valid value, like the time HA was down, but not in the overconsumption, which counts closed windows only.
   Waiting times, the start delay and the command repeat count it as time that has passed.
   A warning is logged. Why: closing the missed windows one by one would replay their decisions at once, by the old clock.
@@ -145,8 +144,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 ## Decisions
 
-- With interval N, a decision is made when the N-th window that started after the start of the regulation (or the previous decision) has closed.
-  Windows that started before the start do not count, so the first decision comes after N to N+1 windows. The decision time is the end of that window.
+- A decision is made each time a window that started at or after the start of the regulation closes.
+  A window that started before the start does not count, so the first decision comes after one or two windows. The decision time is the end of the window.
 - Order inside a decision, each step may end it:
   1. Safe state.
   2. Window overrides that end are switched off (see Override end).
@@ -267,7 +266,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   each appliance and charger that has had no command for the command repeat interval gets the command for the state the regulation has set:
   an appliance the turn-on or turn-off action of its current variant, an activated charger only the set-current action with its current,
   and a deactivated charger min current and deactivate. At a decision it comes after the decision's commands, so what got a command at the decision is not repeated.
-  It is checked at every window, not only at decisions, so a long regulation interval does not delay it.
+  It is checked at every window close, also one that makes no decision.
   An activated charger is not activated again. Why: activating again may start a new charging session in the charger and reset its measurements.
   A charger that has lost its activation does not charge actively, and is handled as any charger that does not charge.
 - A repeat is not a switch: it leaves waiting times and repeated turn-on counters alone and does not count against one step per decision.
@@ -295,7 +294,7 @@ All with entity category diagnostic:
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike, without the essential appliances.
   Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision expected to turn on the waiting appliance, with the windows lasting their length at the update interval,
-  a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
+  a whole number of window lengths after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),

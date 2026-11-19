@@ -44,7 +44,6 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "turn_on_margin_w": Range(1, 1000, 1),
         "regulation_window_updates": Range(1, None, 1),
         "power_sensor_interval_s": Range(0.1, REGULATION_WINDOW_S.maximum, 0.1),
-        "regulation_interval": Range(1, 4, 1),
         "wait_at_limit_s": Range(0, 600, 1),
         "wait_curve_steepness": Range(1.5, 9, 0.5),
         "wait_curve_pivot": Range(50, 99, 1),
@@ -393,7 +392,6 @@ class GeneralConfig:
     turn_on_margin_w: int = 100
     regulation_window_updates: int | None = None
     power_sensor_interval_s: float | None = None
-    regulation_interval: int = 1
     wait_at_limit_s: int = 300
     wait_curve_steepness: float = 6.0
     wait_curve_pivot: int = 80

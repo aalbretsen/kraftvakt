@@ -147,21 +147,11 @@ class KraftvaktRuntime:
         started_at = self._engine.started_at
         if started_at is None:
             return None
-        return self._decisions.next_decision_at(
-            started_at,
-            self.config.general.regulation_interval,
-            self._measurement.window_start,
-            self._measurement.window_end,
-            self._measurement.window_length,
-        )
+        return self._decisions.next_decision_at(started_at, self._measurement.window_start, self._measurement.window_end, self._measurement.window_length)
 
     @property
     def window_length(self) -> timedelta:
         return self._measurement.window_length
-
-    @property
-    def decision_interval(self) -> timedelta:
-        return self._measurement.window_length * self.config.general.regulation_interval
 
     @property
     def waiting_ends_at(self) -> datetime | None:
@@ -170,7 +160,7 @@ class KraftvaktRuntime:
         next_decision_at = self.next_decision_at
         if waiting is None or next_decision_at is None:
             return None
-        return first_decision_from(waiting.until, next_decision_at, self.decision_interval)
+        return first_decision_from(waiting.until, next_decision_at, self.window_length)
 
     @property
     def curve_waiting_time(self) -> timedelta | None:
@@ -344,7 +334,7 @@ class KraftvaktRuntime:
     def _async_window_closed(self, averages: WindowAverages) -> None:
         if self._engine.running:
             self._decisions.add(averages)
-            if self._decisions.is_due(self._engine.started_at, self.config.general.regulation_interval):
+            if self._decisions.is_due(self._engine.started_at):
                 self._decide(averages)
             self._repeat_commands(averages.end)
         self._notify_status()

@@ -142,10 +142,9 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     `;
   }
 
-  /** Seconds between decisions, or null while the regulation window is not set. */
+  /** Seconds between decisions, one regulation window, or null while it is not set. */
   private get decisionInterval(): number | null {
-    const window = windowSeconds(this.config.general);
-    return window === null ? null : window * this.config.general.regulation_interval;
+    return windowSeconds(this.config.general);
   }
 
   private renderSlider(name: CurveField) {

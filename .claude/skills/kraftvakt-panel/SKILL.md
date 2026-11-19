@@ -170,7 +170,7 @@ The section header, the description and the footer note are in `section-styles.t
 - The card speaks of free power as a share of the power limit, not of utilization, since free power is the term the status page uses. The pivot slider shows free power,
   from 50 % at the left end to 1 % at the right; it moves over the stored pivot and shows 100 minus it; the stored value and the regulation use utilization.
 - The table shows, for a range of free power from half the limit down to almost nothing, the free power in kW, the waiting time and the actual waiting time,
-  rounded up to whole decision intervals since the step is turned on at the first decision after the waiting time. The line of text says why it is rounded.
+  rounded up to whole regulation windows since the step is turned on at the first decision after the waiting time. The line of text says why it is rounded.
   Times are minutes and whole seconds. Values come from the draft, with a dash when a setting is not set.
 - The graph has the waiting time in percent on the y-axis, so its shape does not change with the waiting time at the limit, and free power in kW on the x-axis,
   decreasing to 0 at the right so the waiting time grows to the right. It starts a bit above half the limit, so the curve always starts flat at 0.
@@ -191,7 +191,7 @@ The section header, the description and the footer note are in `section-styles.t
   Start and stop are in a footer under a divider, on every screen width; stop is a plain danger button, start a filled one.
 - While the power sensor is valid again but the safe state lasts until the next decision, the safe state banner is an info that the regulation starts again at the next decision,
   not the error that the sensor gives no valid measurement.
-- Countdowns are never ticking text. The next decision is a small ring that empties over one decision interval, animated by the browser (Web Animations API) so it needs no clock;
+- Countdowns are never ticking text. The next decision is a small ring that empties over one regulation window, animated by the browser (Web Animations API) so it needs no clock;
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.

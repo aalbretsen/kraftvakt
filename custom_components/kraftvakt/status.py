@@ -42,7 +42,6 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         "tariff_average_w": None if averages is None else averages.tariff_average_w,
         "power_limit_w": config.general.power_limit_w,
         "regulation_window_s": runtime.window_length.total_seconds(),
-        "regulation_interval": config.general.regulation_interval,
         "next_decision_at": _local_time(runtime.next_decision_at),
         "priority": _priority_rows(hass, runtime),
     }

@@ -164,7 +164,6 @@
     "measurement": "Måling",
     "regulation": "Regulering",
     "penalty": "Straff",
-    "interval_option": "{count} × reguleringsvinduet",
     "window_option_one": "1 oppdatering ({seconds} s)",
     "window_option": "{count} oppdateringer ({seconds} s)",
     "window_no_power_sensor": "Velg effektsensoren først.",
@@ -178,7 +177,7 @@
       },
       "regulation_window_updates": {
         "label": "Reguleringsvindu",
-        "helper": "Effektsensoren rapporterer hvert {interval} s. Avgjørelsene bruker snittet over så mange av oppdateringene: flere jevner ut korte topper, færre reagerer raskere. {min}–{max} s."
+        "helper": "Effektsensoren rapporterer hvert {interval} s. En avgjørelse tas hver gang et vindu lukkes, ut fra snittet: flere oppdateringer jevner ut korte topper, færre reagerer raskere. {min}–{max} s."
       },
       "power_sensor_interval_s": {
         "label": "Oppdateringsintervall for effektsensoren"
@@ -190,10 +189,6 @@
       "turn_on_margin_w": {
         "label": "Innkoblingsmargin",
         "helper": "Apparater slås på bare så langt under effektgrensen, så de ikke slås av igjen med en gang. {min}–{max} W, standard {default} W."
-      },
-      "regulation_interval": {
-        "label": "Avgjør hver",
-        "helper": "Nå hvert {seconds} s. Standard {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",

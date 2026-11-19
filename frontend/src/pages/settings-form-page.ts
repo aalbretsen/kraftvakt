@@ -3,7 +3,6 @@ import { html, type CSSResultGroup } from "lit";
 
 import type { GeneralConfig, Range } from "../api";
 import type { TranslationKey } from "../localize";
-import { windowSeconds } from "../regulation-window";
 import { ConfigPage } from "./config-page";
 
 export type GeneralField = keyof GeneralConfig;
@@ -26,7 +25,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
 };
 
 /** Fields chosen from a list, which works with text values. */
-const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set(["regulation_window_updates", "regulation_interval", "appliance_repeat_increment_factor", "appliance_repeat_increments"]);
+const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set(["regulation_window_updates", "appliance_repeat_increment_factor", "appliance_repeat_increments"]);
 
 /**
  * A configuration page with fields from the general settings. The settings
@@ -120,16 +119,14 @@ export class SettingsFormPage extends ConfigPage {
 
   private computeHelper = (field: FormField): string => this.helperText(field);
 
-  /** The helper text of the field, with its range, its default and the seconds between decisions. */
+  /** The helper text of the field, with its range and its default. */
   protected helperText(field: FormField): string {
     const range = this.range(field.name) as Range | undefined;
     const defaults = this.capabilities.defaults.general;
-    const seconds = windowSeconds(this.config.general);
     return this.localize(`general.fields.${field.name}.helper` as TranslationKey, {
       min: this.formatNumber(range?.min),
       max: this.formatNumber(range?.max),
       default: this.formatNumber(defaults[field.name] as number | null),
-      seconds: seconds === null ? "–" : this.formatNumber(seconds * this.config.general.regulation_interval),
     });
   }
 

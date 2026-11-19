@@ -58,7 +58,6 @@ export interface GeneralConfig {
   regulation_window_updates: number | null;
   /** How often the power sensor reports, in seconds, as the backend measured it when the sensor was chosen. */
   power_sensor_interval_s: number | null;
-  regulation_interval: number;
   wait_at_limit_s: number;
   wait_curve_steepness: number;
   wait_curve_pivot: number;
@@ -286,7 +285,6 @@ export interface StatusSnapshot {
   tariff_average_w: number | null;
   power_limit_w: number;
   regulation_window_s: number;
-  regulation_interval: number;
   next_decision_at: string | null;
   /** The priority list, with each appliance at the entry of its current variant. */
   priority: (ApplianceStatus | ChargerGroupStatus)[];

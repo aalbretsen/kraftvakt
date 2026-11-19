@@ -10,7 +10,7 @@ import { SettingsFormPage, type FormField, type GeneralField } from "./settings-
  * The power sensor has no default, the power limit is the tariff step the user has chosen,
  * and the regulation window depends on the power sensor.
  */
-const RESTORED_FIELDS: readonly GeneralField[] = ["turn_on_margin_w", "regulation_interval", "wait_at_limit_s", "penalty_threshold_w"];
+const RESTORED_FIELDS: readonly GeneralField[] = ["turn_on_margin_w", "wait_at_limit_s", "penalty_threshold_w"];
 
 type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
 
@@ -29,12 +29,7 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
   protected render() {
     return html`
       ${this.renderSettingsCard("general.measurement", [this.entityField("power_sensor"), this.windowField()])}
-      ${this.renderSettingsCard("general.regulation", [
-        this.numberField("power_limit_w"),
-        this.numberField("turn_on_margin_w"),
-        this.intervalField(),
-        this.numberField("wait_at_limit_s"),
-      ])}
+      ${this.renderSettingsCard("general.regulation", [this.numberField("power_limit_w"), this.numberField("turn_on_margin_w"), this.numberField("wait_at_limit_s")])}
       ${this.renderSettingsCard("general.penalty", [this.numberField("penalty_threshold_w")], "general.penalty_info")} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
@@ -122,11 +117,6 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
       delete errors.regulation_window_updates;
     }
     return errors;
-  }
-
-  /** The interval is a whole number of regulation windows. */
-  private intervalField(): FormField {
-    return this.selectField("regulation_interval", (count) => this.localize("general.interval_option", { count }));
   }
 
   /** The regulation window tells how often the power sensor reports, or why it cannot be chosen yet. */

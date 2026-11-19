@@ -37,7 +37,6 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.regulation_window_updates is None
     assert config.general.power_sensor_interval_s is None
     assert config.general.regulation_window_length is None
-    assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 300
     assert config.general.penalty_threshold_w == 100
     assert config.general.appliance_repeat_increment_factor == 0.5

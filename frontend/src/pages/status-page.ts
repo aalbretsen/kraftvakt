@@ -105,7 +105,7 @@ export class KraftvaktStatusPage extends LitElement {
 
   private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
     const end = Date.parse(nextDecisionAt);
-    const interval = status.regulation_window_s * status.regulation_interval * 1000;
+    const interval = status.regulation_window_s * 1000;
     const time = formatClockTime(this.hass.language, nextDecisionAt);
     return html`
       <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
