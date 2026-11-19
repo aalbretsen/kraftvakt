@@ -27,7 +27,7 @@ DEFAULT = {"mode": "default"}
 @pytest.fixture
 def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
     data: dict[str, Any] = {
-        "general": {"power_sensor": POWER_SENSOR, "regulation_window_s": 60, "wait_at_limit_s": 0, "penalty_threshold_w": 0},
+        "general": {"power_sensor": POWER_SENSOR, "regulation_window_updates": 1, "power_sensor_interval_s": 60, "wait_at_limit_s": 0, "penalty_threshold_w": 0},
         "appliances": [
             {
                 "id": "a",
@@ -151,7 +151,8 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     assert measurement["started_at"] == local(started_at)
     assert measurement["power_sensor"] == POWER_SENSOR
     assert measurement["following_power_sensor"]
-    assert measurement["window_close_scheduled"]
+    assert measurement["silence_timer_set"]
+    assert not measurement["clock_close_scheduled"]
     assert not measurement["reading_history"]
     assert measurement["latest_averages"] == {
         "start": local(now - WINDOW),
@@ -163,8 +164,9 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     assert len(measurement["recent_windows"]) == 2
     assert measurement["averager"] == {
         "window_start": local(now),
-        "window_length": 60,
-        "next_window_length": 60,
+        "updates_per_window": 1,
+        "next_updates_per_window": 1,
+        "updates": 0,
         "latest_measurement_at": local(now),
         "sensor_valid": True,
         "consecutive_invalid_closes": 0,
@@ -244,6 +246,7 @@ async def test_the_diagnostics_show_the_commands_that_wait_for_an_action_that_ru
     client = await hass_client()
     for _ in range(2):
         freezer.tick(WINDOW)
+        set_power(hass, POWER_SENSOR, "2000")
         async_fire_time_changed(hass)
         for _ in range(20):
             await asyncio.sleep(0)

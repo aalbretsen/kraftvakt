@@ -139,7 +139,8 @@ def make_config(
         general=GeneralConfig(
             power_sensor="sensor.power",
             power_limit_w=limit_w,
-            regulation_window_s=int(DECISION_INTERVAL.total_seconds()),
+            regulation_window_updates=6,
+            power_sensor_interval_s=DECISION_INTERVAL.total_seconds() / 6,
             wait_at_limit_s=wait_at_limit_s,
             appliance_repeat_increment_factor=appliance_repeat[0],
             appliance_repeat_increments=appliance_repeat[1],

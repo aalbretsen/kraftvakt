@@ -95,6 +95,9 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   if (!config.general.power_sensor) {
     missing.push({ code: "missing_power_sensor", section: "general", field: "power_sensor" });
   }
+  if (config.general.regulation_window_updates === null || config.general.power_sensor_interval_s === null) {
+    missing.push({ code: "missing_regulation_window", section: "general", field: "regulation_window_updates" });
+  }
   missing.push(...config.appliances.flatMap(missingInAppliance), ...allChargers(config).flatMap(missingInCharger));
   return missing;
 }

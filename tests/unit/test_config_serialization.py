@@ -160,10 +160,11 @@ def test_time_with_seconds_is_read() -> None:
 
 
 def test_whole_number_floats_are_read_as_integers() -> None:
-    config = read_config({"general": {"regulation_window_s": 60.0}})
+    config = read_config({"general": {"regulation_window_updates": 6.0, "power_sensor_interval_s": 2}})
 
-    assert config.general.regulation_window_s == 60
-    assert isinstance(config.general.regulation_window_s, int)
+    assert config.general.regulation_window_updates == 6
+    assert isinstance(config.general.regulation_window_updates, int)
+    assert isinstance(config.general.power_sensor_interval_s, float)
 
 
 def _issues(data: dict[str, Any]) -> list[Issue]:
@@ -185,8 +186,8 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
             Issue("invalid_type", "general", None, "power_limit_w"),
         ),
         (
-            {"general": {"regulation_window_s": 60.5}},
-            Issue("not_integer", "general", None, "regulation_window_s"),
+            {"general": {"regulation_window_updates": 6.5}},
+            Issue("not_integer", "general", None, "regulation_window_updates"),
         ),
         (
             {"general": {"power_sensor": 5}},

@@ -82,6 +82,7 @@
   },
   "missing": {
     "missing_power_sensor": "Effektsensor er ikke valgt.",
+    "missing_regulation_window": "Reguleringsvinduet er ikke satt.",
     "missing_device": "{item}: enheten er ikke valgt.",
     "missing_entity": "{item}: entitet er ikke valgt.",
     "missing_action": "{item}: handling for å {action} mangler.",
@@ -164,14 +165,23 @@
     "regulation": "Regulering",
     "penalty": "Straff",
     "interval_option": "{count} × reguleringsvinduet",
+    "window_option_one": "1 oppdatering ({seconds} s)",
+    "window_option": "{count} oppdateringer ({seconds} s)",
+    "window_no_power_sensor": "Velg effektsensoren først.",
+    "window_measuring": "Måler hvor ofte effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
+    "window_not_measured": "Fant ikke hvor ofte effektsensoren rapporterer. Velg den på nytt når den rapporterer jevnt.",
+    "window_too_seldom": "Effektsensoren rapporterer hvert {interval} s, for sjelden for et reguleringsvindu på høyst {max} s.",
     "fields": {
       "power_sensor": {
         "label": "Effektsensor",
         "helper": "Husets totale effekt nå, vanligvis fra HAN-porten på strømmåleren. W eller kW."
       },
-      "regulation_window_s": {
+      "regulation_window_updates": {
         "label": "Reguleringsvindu",
-        "helper": "Avgjørelsene bruker snittet over dette tidsrommet. Lengre jevner ut korte topper, kortere reagerer raskere. {min}–{max} s, standard {default} s."
+        "helper": "Effektsensoren rapporterer hvert {interval} s. Avgjørelsene bruker snittet over så mange av oppdateringene: flere jevner ut korte topper, færre reagerer raskere. {min}–{max} s."
+      },
+      "power_sensor_interval_s": {
+        "label": "Oppdateringsintervall for effektsensoren"
       },
       "power_limit_w": {
         "label": "Effektgrense",
@@ -183,7 +193,7 @@
       },
       "regulation_interval": {
         "label": "Avgjør hver",
-        "helper": "Nå hvert {seconds}. sekund. Standard {default} ×."
+        "helper": "Nå hvert {seconds} s. Standard {default} ×."
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",

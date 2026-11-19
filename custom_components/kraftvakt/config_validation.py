@@ -30,6 +30,7 @@ from .config_model import (
     PriorityEntryType,
     Range,
     Variant,
+    regulation_window_options,
 )
 from .config_reader import ConfigReader
 
@@ -95,6 +96,8 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
     missing = []
     if config.general.power_sensor is None:
         missing.append(Issue("missing_power_sensor", "general", None, "power_sensor"))
+    if config.general.regulation_window_length is None:
+        missing.append(Issue("missing_regulation_window", "general", None, "regulation_window_updates"))
     for appliance in config.appliances:
         missing += _missing_entity_and_actions("appliances", appliance)
         missing += [
@@ -122,10 +125,14 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
 
 def _general_issues(general: GeneralConfig) -> list[Issue]:
     location = IssueLocation("general")
-    return [
+    issues = [
         *_entity_format_issues(location, "power_sensor", general.power_sensor),
         *_ranges_issues(location, general),
     ]
+    updates, interval_s = general.regulation_window_updates, general.power_sensor_interval_s
+    if not issues and updates is not None and interval_s is not None and updates not in regulation_window_options(interval_s):
+        issues.append(location.issue("out_of_range", "regulation_window_updates"))
+    return issues
 
 
 def _appliance_issues(appliance: Appliance) -> list[Issue]:

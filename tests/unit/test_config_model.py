@@ -1,5 +1,7 @@
 """Tests for the configuration model: defaults, limits and serialization."""
 
+from datetime import timedelta
+
 import pytest
 
 from custom_components.kraftvakt.config_model import (
@@ -8,9 +10,11 @@ from custom_components.kraftvakt.config_model import (
     Charger,
     ChargerGroup,
     ChargerSwitches,
+    GeneralConfig,
     Issue,
     KraftvaktConfig,
     Range,
+    regulation_window_options,
 )
 from custom_components.kraftvakt.config_reader import (
     read_config,
@@ -30,7 +34,9 @@ def test_defaults_follow_requirements() -> None:
     assert config.general.power_sensor is None
     assert config.general.power_limit_w == 10_000
     assert config.general.turn_on_margin_w == 100
-    assert config.general.regulation_window_s == 10
+    assert config.general.regulation_window_updates is None
+    assert config.general.power_sensor_interval_s is None
+    assert config.general.regulation_window_length is None
     assert config.general.regulation_interval == 1
     assert config.general.wait_at_limit_s == 300
     assert config.general.penalty_threshold_w == 100
@@ -72,7 +78,8 @@ def test_charger_switches_default_off() -> None:
         (POWER_LIMIT_W, 999, False),
         (POWER_LIMIT_W, 50_001, False),
         (REGULATION_WINDOW_S, 9, False),
-        (REGULATION_WINDOW_S, 600, True),
+        (REGULATION_WINDOW_S, 120, True),
+        (REGULATION_WINDOW_S, 121, False),
         (Range(0, None, 0.01), 1000, True),
         (Range(0, None, 0.01), -0.01, False),
     ],
@@ -92,3 +99,23 @@ def test_issue_to_dict_leaves_out_empty_keys() -> None:
         "target": "a1",
         "field": "turn_on",
     }
+
+
+@pytest.mark.parametrize(
+    ("interval_s", "expected"),
+    [
+        (10, list(range(1, 13))),
+        (2, list(range(5, 61, 5))),
+        (2.5, list(range(4, 49, 4))),
+        (3, list(range(4, 41, 4))),
+        (15, list(range(1, 9))),
+        (130, []),
+    ],
+)
+def test_regulation_window_options_are_multiples_of_the_fewest_updates_that_last_10_seconds(interval_s: float, expected: list[int]) -> None:
+    """At most twelve choices, and no window longer than 120 seconds."""
+    assert regulation_window_options(interval_s) == expected
+
+
+def test_regulation_window_length_is_the_updates_at_the_interval() -> None:
+    assert GeneralConfig(regulation_window_updates=5, power_sensor_interval_s=2.5).regulation_window_length == timedelta(seconds=12.5)

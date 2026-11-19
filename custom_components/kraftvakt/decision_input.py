@@ -12,6 +12,7 @@ from .config_model import Charger
 from .measurement import WindowAverages
 from .regulation.charging import ChargerReading
 from .regulation.model import DecisionInput
+from .regulation.penalty import RegulationAverage
 from .settings import Settings
 
 
@@ -25,9 +26,12 @@ def read_decision_input(
     config = settings.config
     return DecisionInput(
         now=averages.end,
+        window_start=averages.start,
         regulation_average_w=averages.regulation_average_w,
         tariff_average_w=averages.tariff_average_w,
-        regulation_averages_w=[window.regulation_average_w for window in windows_since_decision if window.regulation_average_w is not None],
+        regulation_averages=[
+            RegulationAverage(window.regulation_average_w, window.end - window.start) for window in windows_since_decision if window.regulation_average_w is not None
+        ],
         power_sensor_valid=averages.sensor_valid,
         power_sensor_lost=power_sensor_lost,
         variant_conditions={variant.id: evaluate_condition(hass, variant.condition, appliance.entity_id) for appliance in config.appliances for variant in appliance.variants},

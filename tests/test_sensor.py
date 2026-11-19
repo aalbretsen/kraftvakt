@@ -23,13 +23,14 @@ from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
 POWER_SENSOR = "sensor.han_power"
-WINDOW = timedelta(seconds=60)
+INTERVAL = timedelta(seconds=10)
+WINDOW = 6 * INTERVAL
 
 
 @pytest.fixture
 def stored_general(hass_storage: dict[str, Any]) -> dict[str, Any]:
-    """Store a configuration with a power sensor; tests may change it first."""
-    general = {"power_sensor": POWER_SENSOR, "regulation_window_s": 60}
+    """Store a configuration with a power sensor that reports every 10 seconds and windows of six updates; tests may change it first."""
+    general = {"power_sensor": POWER_SENSOR, "regulation_window_updates": 6, "power_sensor_interval_s": INTERVAL.total_seconds()}
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
         "minor_version": 1,
@@ -57,6 +58,25 @@ def set_power(hass: HomeAssistant, value: str, unit: str | None = "W") -> None:
 
 
 async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
+    """Move time on, with the power sensor reporting as a HAN reader does."""
+    freezer.tick(delta)
+    if state := hass.states.get(POWER_SENSOR):
+        hass.states.async_set(POWER_SENSOR, state.state, state.attributes)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+async def report(hass: HomeAssistant, freezer: FrozenDateTimeFactory, value: str, unit: str | None = "W", count: int = 1) -> None:
+    """Let the power sensor report the value `count` times, one interval apart."""
+    for _ in range(count):
+        freezer.tick(INTERVAL)
+        set_power(hass, value, unit)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+
+
+async def tick(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
+    """Move time on without reports from the power sensor."""
     freezer.tick(delta)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -85,12 +105,11 @@ async def test_sensors_are_unavailable_before_the_first_average(hass: HomeAssist
 
 async def test_sensors_show_the_averages_in_w(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     """Both averages are power sensors in W."""
-    set_power(hass, "2000")
+    set_power(hass, "1000")
     await setup_kraftvakt()
 
-    await advance(hass, freezer, timedelta(seconds=15))
-    set_power(hass, "6", unit="kW")
-    await advance(hass, freezer, timedelta(seconds=45))
+    await report(hass, freezer, "2000")
+    await report(hass, freezer, "6", unit="kW", count=5)
 
     for key in ("power_regulation_average", "power_tariff_average"):
         state = hass.states.get(entity_id(hass, key))
@@ -98,8 +117,8 @@ async def test_sensors_show_the_averages_in_w(hass: HomeAssistant, freezer: Froz
         assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "W"
         assert state.attributes[ATTR_DEVICE_CLASS] == "power"
         assert state.attributes["state_class"] == "measurement"
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
-    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((2000 * 3555 + 6000 * 45) / 3600)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx((2000 * 10 + 6000 * 50) / 60)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((2000 * 3550 + 6000 * 50) / 3600)
 
 
 async def test_sensors_belong_to_the_service_device(hass: HomeAssistant, setup_kraftvakt) -> None:
@@ -120,14 +139,12 @@ async def test_sensors_are_updated_once_per_window(hass: HomeAssistant, freezer:
     """The sensors change only when a window closes."""
     set_power(hass, "2000")
     await setup_kraftvakt()
-    await advance(hass, freezer, WINDOW)
-    await advance(hass, freezer, timedelta(seconds=30))
+    await report(hass, freezer, "2000", count=9)
 
-    set_power(hass, "8000")
-    await advance(hass, freezer, timedelta(seconds=15))
+    await report(hass, freezer, "8000", count=2)
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2000)
 
-    await advance(hass, freezer, timedelta(seconds=15))
+    await report(hass, freezer, "8000")
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(5000)
 
 
@@ -137,10 +154,8 @@ async def test_tariff_average_over_a_whole_hour_of_updates(hass: HomeAssistant, 
     set_power(hass, "2000")
     await setup_kraftvakt()
 
-    for step in range(1, 360):
-        await advance(hass, freezer, timedelta(seconds=10))
-        set_power(hass, "4000" if step % 2 else "2000")
-    await advance(hass, freezer, timedelta(seconds=10))
+    for step in range(360):
+        await report(hass, freezer, "4000" if step % 2 else "2000")
 
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
     assert float(state_of(hass, "power_tariff_average")) == pytest.approx(3000)
@@ -151,28 +166,27 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(hass: HomeAssistant,
     and when a valid value comes the last valid value fills the gap."""
     set_power(hass, "3000")
     await setup_kraftvakt()
-    await advance(hass, freezer, WINDOW)
+    await report(hass, freezer, "3000", count=6)
 
-    set_power(hass, "unavailable")
-    await advance(hass, freezer, WINDOW)
+    await report(hass, freezer, "unavailable", unit=None)
+    await tick(hass, freezer, WINDOW - INTERVAL)
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
 
-    await advance(hass, freezer, WINDOW)
+    await tick(hass, freezer, WINDOW)
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
     assert state_of(hass, "power_tariff_average") == STATE_UNAVAILABLE
 
-    await advance(hass, freezer, timedelta(seconds=40))
-    set_power(hass, "1500")
-    await advance(hass, freezer, timedelta(seconds=20))
-    assert float(state_of(hass, "power_regulation_average")) == pytest.approx((3000 * 40 + 1500 * 20) / 60)
-    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((3000 * 3580 + 1500 * 20) / 3600)
+    await tick(hass, freezer, timedelta(seconds=30))
+    await report(hass, freezer, "1500", count=6)
+    assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1500)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((3000 * 3510 + 1500 * 90) / 3600)
 
 
 async def test_power_sensor_without_unit_is_read_as_watt(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
     set_power(hass, "2500", unit=None)
     await setup_kraftvakt()
 
-    await advance(hass, freezer, WINDOW)
+    await report(hass, freezer, "2500", unit=None, count=6)
 
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(2500)
 
@@ -192,17 +206,19 @@ async def test_sensors_are_unavailable_without_power_sensor(
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
 
 
-async def test_window_length_comes_from_the_configuration(
+async def test_number_of_updates_comes_from_the_configuration(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     stored_general: dict[str, Any],
     setup_kraftvakt,
 ) -> None:
-    stored_general["regulation_window_s"] = 20
+    stored_general["regulation_window_updates"] = 2
     set_power(hass, "1000")
     await setup_kraftvakt()
 
-    await advance(hass, freezer, timedelta(seconds=20))
+    await report(hass, freezer, "1000")
+    assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
+    await report(hass, freezer, "1000")
 
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1000)
 
@@ -241,12 +257,10 @@ async def test_power_sensor_that_stops_reporting_makes_the_averages_unknown(
     set_power(hass, "2000")
     await setup_kraftvakt()
 
-    await advance(hass, freezer, WINDOW)
-    await advance(hass, freezer, WINDOW)
+    await tick(hass, freezer, timedelta(seconds=90))
     assert state_of(hass, "power_regulation_average") == "2000.0"
-    await advance(hass, freezer, WINDOW)
+    await tick(hass, freezer, WINDOW)
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
 
-    set_power(hass, "2000")
-    await advance(hass, freezer, WINDOW)
+    await report(hass, freezer, "2000", count=6)
     assert state_of(hass, "power_regulation_average") == "2000.0"

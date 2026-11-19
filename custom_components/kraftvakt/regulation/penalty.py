@@ -24,7 +24,14 @@ class PenaltyOutcome(Enum):
 class PenaltyLimits:
     power_limit_w: float
     threshold_w: float
-    window: timedelta
+
+
+@dataclass(frozen=True, slots=True)
+class RegulationAverage:
+    """The regulation average of a closed window, and how long the window lasted."""
+
+    average_w: float
+    duration: timedelta
 
 
 @dataclass(slots=True)
@@ -38,11 +45,11 @@ class PenaltyState:
         self,
         limits: PenaltyLimits,
         tariff_average_w: float,
-        regulation_averages_w: Sequence[float],
+        regulation_averages: Sequence[RegulationAverage],
     ) -> PenaltyOutcome:
         """Count the overconsumption and decide on the penalty at a decision."""
         if self.overconsuming:
-            self._count(limits, regulation_averages_w)
+            self._count(limits, regulation_averages)
             if self.overconsumption_wh <= PAID_BACK_TOLERANCE_WH:
                 penalty_ends = self.active
                 self._reset()
@@ -63,15 +70,14 @@ class PenaltyState:
         self.active = False
         self.recovery_started = False
 
-    def _count(self, limits: PenaltyLimits, regulation_averages_w: Sequence[float]) -> None:
+    def _count(self, limits: PenaltyLimits, regulation_averages: Sequence[RegulationAverage]) -> None:
         """Add the energy above the limit of each regulation average, net.
 
         During a penalty, recovery has started at the first regulation average
         under the limit.
         """
-        hours = limits.window.total_seconds() / 3600
-        for average_w in regulation_averages_w:
-            excess_w = average_w - limits.power_limit_w
+        for average in regulation_averages:
+            excess_w = average.average_w - limits.power_limit_w
             if self.active and excess_w < 0:
                 self.recovery_started = True
-            self.overconsumption_wh += excess_w * hours
+            self.overconsumption_wh += excess_w * average.duration.total_seconds() / 3600

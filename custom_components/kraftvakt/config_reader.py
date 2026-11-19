@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from dataclasses import fields
+from dataclasses import Field, fields
 from datetime import time
 from typing import Any
 
@@ -93,21 +93,16 @@ class ConfigReader:
     def _general(self, data: Any) -> GeneralConfig:
         location = IssueLocation("general")
         values = self._mapping(data, location, None)
-        return GeneralConfig(**{setting.name: self._setting(values, setting.name, setting.default, location) for setting in fields(GeneralConfig)})
+        return GeneralConfig(**{setting.name: self._setting(values, setting, location) for setting in fields(GeneralConfig)})
 
-    def _setting(
-        self,
-        values: Mapping[str, Any],
-        key: str,
-        default: Any,
-        location: IssueLocation,
-    ) -> Any:
-        """Read a setting as text, a whole number or a number, like its default."""
-        if default is None:
-            return self._text(values, key, location)
-        if isinstance(default, int):
-            return self._integer(values, key, default, location)
-        return self._number(values, key, default, location)
+    def _setting(self, values: Mapping[str, Any], setting: Field[Any], location: IssueLocation) -> Any:
+        """Read a setting as text, a whole number or a number, as its type says."""
+        kind = str(setting.type).split(" ")[0]
+        if kind == "str":
+            return self._text(values, setting.name, location)
+        if kind == "int":
+            return self._integer(values, setting.name, setting.default, location)
+        return self._number(values, setting.name, setting.default, location)
 
     def _appliance(self, data: Any) -> Appliance:
         values = self._mapping(data, IssueLocation("appliances"), None)

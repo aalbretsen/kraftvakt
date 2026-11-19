@@ -65,7 +65,8 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
         "general": {
             "power_sensor": POWER_SENSOR,
             "power_limit_w": 10000,
-            "regulation_window_s": 60,
+            "regulation_window_updates": 1,
+            "power_sensor_interval_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
@@ -213,12 +214,14 @@ async def test_user_start_before_home_assistant_has_started(hass: HomeAssistant,
 
 
 async def test_appliances_are_turned_on_one_per_decision(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
-    """The first decision comes after one interval."""
+    """The first decision comes when the update of the power sensor closes the first window, not when time has passed."""
     set_power(hass, "2000")
     await setup_kraftvakt()
     actions.clear()
 
-    await advance(hass, freezer, WINDOW - timedelta(seconds=1))
+    freezer.tick(WINDOW)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert actions == []
     await advance(hass, freezer, timedelta(seconds=1))
     assert actions == ["on light.a"]
@@ -308,7 +311,8 @@ async def test_start_waits_for_a_whole_window_after_the_start(hass: HomeAssistan
     set_power(hass, "2000")
     await setup_kraftvakt()
     await switch_regulation(hass, "turn_off")
-    await advance(hass, freezer, timedelta(seconds=30))
+    await advance(hass, freezer)
+    freezer.tick(timedelta(seconds=30))
     actions.clear()
 
     await switch_regulation(hass, "turn_on")
@@ -749,6 +753,7 @@ async def test_reload_waits_for_the_actions_of_the_old_regulation(hass: HomeAssi
     set_power(hass, "2000")
     entry = await setup_kraftvakt()
     freezer.tick(WINDOW)
+    set_power(hass, "2000")
     async_fire_time_changed(hass)
     await run_pending_tasks()
     recorded.clear()

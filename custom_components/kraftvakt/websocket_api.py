@@ -16,6 +16,8 @@ from homeassistant.helpers.dispatcher import (
 from .actions import action_issues, default_actions_by_field, domain_actions_by_field
 from .charger_profiles.recognition import charger_profile_fields
 from .config_model import (
+    REGULATION_WINDOW_CHOICES,
+    REGULATION_WINDOW_S,
     SETTING_RANGES,
     Appliance,
     Charger,
@@ -30,6 +32,7 @@ from .config_validation import (
 from .const import DOMAIN
 from .devices import device_issues
 from .entity import item_name
+from .power_measurement import async_measure_update_interval
 from .runtime import ConfigIncompleteError, KraftvaktRuntime, RegulationRunningError
 from .status import status_snapshot
 
@@ -41,6 +44,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_capabilities)
     websocket_api.async_register_command(hass, websocket_get_charger_profile)
     websocket_api.async_register_command(hass, websocket_get_config)
+    websocket_api.async_register_command(hass, websocket_power_sensor_interval)
     websocket_api.async_register_command(hass, websocket_save_config)
     websocket_api.async_register_command(hass, websocket_set_running)
     websocket_api.async_register_command(hass, websocket_subscribe_status)
@@ -80,6 +84,18 @@ def websocket_get_charger_profile(
     """Send the name of the device's charger profile and the fields of a charger it fills, none without a profile."""
     profile, fields = charger_profile_fields(hass, msg["device_id"])
     connection.send_result(msg["id"], {"profile": None if profile is None else profile.name, "fields": fields})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/power_sensor/interval", vol.Required("entity_id"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def websocket_power_sensor_interval(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Send how often the power sensor reports, in seconds, null when it cannot be found."""
+    connection.send_result(msg["id"], {"interval_s": await async_measure_update_interval(hass, msg["entity_id"])})
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config/get"})
@@ -220,6 +236,7 @@ def capabilities() -> dict[str, Any]:
         "default_actions": default_actions_by_field(),
         "domain_actions": domain_actions_by_field(),
         "limits": {section: {name: value.to_dict() for name, value in ranges.items()} for section, ranges in SETTING_RANGES.items()},
+        "regulation_window": {"seconds": REGULATION_WINDOW_S.to_dict(), "choices": REGULATION_WINDOW_CHOICES},
         "defaults": {
             "general": general.to_dict(),
             "appliances": {"power_reserve_w": Appliance(id="").power_reserve_w},

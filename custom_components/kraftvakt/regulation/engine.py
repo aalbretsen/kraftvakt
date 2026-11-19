@@ -209,7 +209,7 @@ class RegulationEngine:
         average = decision.regulation_average_w
         if average is None:
             return DecisionResult([])
-        self._forget_settled(decision.now)
+        self._forget_settled(decision.window_start)
         overrides = self._overrides(decision)
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
@@ -232,9 +232,8 @@ class RegulationEngine:
         self._state.power_to_free = self._power_to_free(average)
         return DecisionResult(commands, overrides)
 
-    def _forget_settled(self, now: datetime) -> None:
+    def _forget_settled(self, window_start: datetime) -> None:
         """Keep the steps turned on since the start of the regulation window of the decision, since its average shows them only in part."""
-        window_start = now - timedelta(seconds=self._config.general.regulation_window_s)
         self._state.settling_since = {key: since for key, since in self._state.settling_since.items() if since >= window_start}
 
     def _new_charging_groups(self) -> dict[str, ChargingState]:
@@ -290,12 +289,8 @@ class RegulationEngine:
         if decision.tariff_average_w is None:
             return PenaltyOutcome.NONE
         general = self._config.general
-        limits = PenaltyLimits(
-            power_limit_w=general.power_limit_w,
-            threshold_w=general.penalty_threshold_w,
-            window=timedelta(seconds=general.regulation_window_s),
-        )
-        return self._state.penalty.decide(limits, decision.tariff_average_w, decision.regulation_averages_w)
+        limits = PenaltyLimits(power_limit_w=general.power_limit_w, threshold_w=general.penalty_threshold_w)
+        return self._state.penalty.decide(limits, decision.tariff_average_w, decision.regulation_averages)
 
     def _hold_everything_off(self, essential_on: bool) -> list[Command]:
         """Send every appliance and charger the command for off, an exception to one step per decision.

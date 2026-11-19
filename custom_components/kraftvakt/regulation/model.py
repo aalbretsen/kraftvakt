@@ -8,7 +8,7 @@ from datetime import UTC, datetime, tzinfo
 from typing import Any
 
 from .charging import ChargerReading, ChargingState
-from .penalty import PenaltyState
+from .penalty import PenaltyState, RegulationAverage
 from .waiting import RepeatedTurnOnCounter
 
 
@@ -16,15 +16,18 @@ from .waiting import RepeatedTurnOnCounter
 class DecisionInput:
     """Snapshot of what a decision is based on.
 
-    `power_sensor_lost` tells whether the power sensor was invalid when each of
-    the last two windows closed. A variant missing from `variant_conditions`
-    counts as false.
+    `now` is when the regulation window of the decision closed, and
+    `window_start` when it started. `regulation_averages` are those of the
+    windows closed since the previous decision. `power_sensor_lost` tells
+    whether the power sensor was invalid when each of the last two windows
+    closed. A variant missing from `variant_conditions` counts as false.
     """
 
     now: datetime
+    window_start: datetime
     regulation_average_w: float | None
     tariff_average_w: float | None
-    regulation_averages_w: Sequence[float]
+    regulation_averages: Sequence[RegulationAverage]
     power_sensor_valid: bool
     power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)

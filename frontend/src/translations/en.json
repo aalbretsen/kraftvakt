@@ -82,6 +82,7 @@
   },
   "missing": {
     "missing_power_sensor": "The power sensor is not chosen.",
+    "missing_regulation_window": "The regulation window is not set.",
     "missing_device": "{item}: the device is not chosen.",
     "missing_entity": "{item}: the entity is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
@@ -164,14 +165,23 @@
     "regulation": "Regulation",
     "penalty": "Penalty",
     "interval_option": "{count} × the regulation window",
+    "window_option_one": "1 update ({seconds} s)",
+    "window_option": "{count} updates ({seconds} s)",
+    "window_no_power_sensor": "Choose the power sensor first.",
+    "window_measuring": "Measuring how often the power sensor reports. It can take up to 30 seconds.",
+    "window_not_measured": "Could not find how often the power sensor reports. Choose it again when it reports regularly.",
+    "window_too_seldom": "The power sensor reports every {interval} s, too seldom for a regulation window of at most {max} s.",
     "fields": {
       "power_sensor": {
         "label": "Power sensor",
         "helper": "The total power of the house now, usually from the HAN port of the electricity meter. W or kW."
       },
-      "regulation_window_s": {
+      "regulation_window_updates": {
         "label": "Regulation window",
-        "helper": "Decisions use the average over this period. Longer evens out short peaks, shorter reacts faster. {min}–{max} s, default {default} s."
+        "helper": "The power sensor reports every {interval} s. Decisions use the average over this many of its updates: more evens out short peaks, fewer reacts faster. {min}–{max} s."
+      },
+      "power_sensor_interval_s": {
+        "label": "Update interval of the power sensor"
       },
       "power_limit_w": {
         "label": "Power limit",

@@ -171,7 +171,7 @@ def test_no_penalty_without_a_tariff_average() -> None:
     engine = RegulationEngine(no_waiting("a"))
     engine.start(START)
 
-    commands = engine.decide(DecisionInput(START + timedelta(minutes=1), 5.0, None, (5.0,), True, False)).commands
+    commands = engine.decide(DecisionInput(START + timedelta(minutes=1), START, 5.0, None, (), True, False)).commands
 
     assert commands == on("a")
     assert engine.penalty == PenaltyState()

@@ -1,13 +1,14 @@
 """Averages of the power sensor, pure Python without Home Assistant.
 
-The caller passes in the time of every measurement, so the averages do not
-depend on a clock.
+The caller passes in the time of every measurement and of every window close,
+so the averages do not depend on a clock.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+import statistics
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import pairwise
@@ -56,19 +57,43 @@ class _Step:
     power_w: float
 
 
+def update_interval_s(times: Sequence[datetime], fewest_intervals: int) -> float | None:
+    """Return how often a sensor reports, from the times of its reports, oldest first, to a tenth of a second.
+
+    It is the median of the intervals, when there are at least `fewest_intervals`
+    and at least half of them are within a quarter of it, so a sensor that reports
+    irregularly, or history with repeated values left out, gives None.
+    """
+    intervals = [(later - earlier).total_seconds() for earlier, later in pairwise(times)]
+    if len(intervals) < fewest_intervals:
+        return None
+    median = statistics.median(intervals)
+    regular = [interval for interval in intervals if abs(interval - median) <= median / 4]
+    if median <= 0 or len(regular) * 2 < len(intervals):
+        return None
+    return round(median, 1)
+
+
 class PowerAverager:
     """Time-weighted averages over the regulation window and the tariff window.
 
-    An invalid measurement keeps the last valid one in place, and the first
-    measurement also applies backwards in time unless history has been added.
+    A regulation window has a number of updates of the power sensor, valid or
+    not; the caller closes it at the update that completes it, or by the clock.
+    Each measurement covers the time since the measurement before it or the last
+    close, whichever is later, so a closed window never changes, and the latest
+    one also covers the time after it until the next. An invalid measurement
+    keeps the last valid one in place, and the first measurement also applies
+    backwards in time unless history has been added.
     """
 
-    def __init__(self, window_length: timedelta, start: datetime) -> None:
+    def __init__(self, updates_per_window: int, start: datetime) -> None:
         """Start the first regulation window at `start`."""
-        self._window_length = window_length
-        self._next_window_length = window_length
+        self._updates_per_window = updates_per_window
+        self._next_updates_per_window = updates_per_window
         self._window_start = start
+        self._updates = 0
         self._latest = start
+        self._covers_from = start
         self._steps: list[_Step] = []
         self._sensor_valid = False
         self._consecutive_invalid_closes = 0
@@ -79,14 +104,20 @@ class PowerAverager:
         return self._window_start
 
     @property
-    def window_end(self) -> datetime:
-        return self._window_start + self._window_length
+    def window_complete(self) -> bool:
+        """Return whether the window has all its updates, after some time has passed."""
+        return self._updates >= self._updates_per_window and self._latest > self._window_start
+
+    @property
+    def sensor_valid(self) -> bool:
+        return self._sensor_valid
 
     def diagnostics(self) -> dict[str, Any]:
         return {
             "window_start": self._window_start,
-            "window_length": self._window_length,
-            "next_window_length": self._next_window_length,
+            "updates_per_window": self._updates_per_window,
+            "next_updates_per_window": self._next_updates_per_window,
+            "updates": self._updates,
             "latest_measurement_at": self._latest,
             "sensor_valid": self._sensor_valid,
             "consecutive_invalid_closes": self._consecutive_invalid_closes,
@@ -94,28 +125,33 @@ class PowerAverager:
             "power_steps": self._steps,
         }
 
-    def change_window_length(self, window_length: timedelta) -> None:
-        self._next_window_length = window_length
+    def change_updates_per_window(self, updates_per_window: int) -> None:
+        self._next_updates_per_window = updates_per_window
 
-    def add_measurement(self, when: datetime, power: float | None) -> None:
+    def add_measurement(self, when: datetime, power: float | None, *, update: bool = True) -> None:
         """Record the power in W measured at `when`, or None if it is invalid.
 
-        A measurement older than the latest one counts as made at the time of the
-        latest one, so closed windows never change.
+        `update` tells whether it counts as an update of the window, which the
+        state of the sensor when it is first followed does not. A measurement
+        older than the latest one counts as made at the time of the latest one,
+        and the latest at the same time wins.
         """
-        when = max(when, self._latest)
-        self._latest = when
+        if when > self._latest:
+            self._covers_from = self._latest
+            self._latest = when
+        self._updates += update
         self._sensor_valid = power is not None
         if power is None:
             return
-        if self._steps and self._steps[-1].start == when:
+        if self._steps and self._steps[-1].start == self._covers_from:
             self._steps.pop()
         if not self._steps or self._steps[-1].power_w != power:
-            self._steps.append(_Step(when, power))
+            self._steps.append(_Step(self._covers_from, power))
 
     def add_history(self, measurements: Iterable[tuple[datetime, float | None]]) -> None:
-        """Add measurements from before the first measurement, oldest first.
+        """Add measurements from before the first measurement, oldest first, each holding until the next.
 
+        The recorder keeps only changes, so a value holds until the next change.
         Only the past the averager has not measured is filled.
         """
         first_measured = self._steps[0].start if self._steps else self._latest
@@ -129,35 +165,26 @@ class PowerAverager:
             self._steps[0] = history.pop()
         self._steps[:0] = history
 
-    def skip_missed_windows(self, now: datetime) -> MissedWindows | None:
-        """Skip the current window and those after it that ended at or before `now`.
+    def skip_windows(self, until: datetime) -> MissedWindows:
+        """Skip the current window and start the next at `until`.
 
-        A window is missed when it is closed a whole window or more after its
-        end, as after a paused event loop. The cadence is kept, so the window
-        running at `now` is next. The time missed counts with the last valid
-        measurement, since nothing was measured meanwhile.
+        The time skipped counts with the last valid measurement, since nothing
+        was measured meanwhile.
         """
-        missed = (now - self.window_end) // self._next_window_length
-        if missed < 1:
-            return None
-        self._last_missed = MissedWindows(self._window_start, self.window_end + missed * self._next_window_length)
-        self._window_start = self._last_missed.end
-        self._window_length = self._next_window_length
-        self._latest = max(self._latest, self._window_start)
+        self._last_missed = MissedWindows(self._window_start, until)
+        self._start_window(until)
         return self._last_missed
 
-    def close_window(self) -> WindowAverages:
-        """Close the current regulation window and start the next one.
+    def close_window(self, end: datetime) -> WindowAverages:
+        """Close the current regulation window at `end` and start the next one.
 
         When the averages are unknown after two invalid closes, the history is
         kept and the last valid measurement fills the gap. The first
         measurement after the gap is only the background or a short peak, so it
         cannot stand for the time before.
         """
-        start, end = self._window_start, self.window_end
-        self._window_start = end
-        self._window_length = self._next_window_length
-        self._latest = max(self._latest, end)
+        start = self._window_start
+        self._start_window(end)
         self._consecutive_invalid_closes = 0 if self._sensor_valid else self._consecutive_invalid_closes + 1
         if not self._steps or self._consecutive_invalid_closes >= CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN:
             return WindowAverages(start, end, None, None, self._sensor_valid)
@@ -170,6 +197,13 @@ class PowerAverager:
             tariff_average_w=self._average(end - TARIFF_WINDOW, end),
             sensor_valid=self._sensor_valid,
         )
+
+    def _start_window(self, start: datetime) -> None:
+        self._window_start = start
+        self._latest = max(self._latest, start)
+        self._covers_from = self._latest
+        self._updates = 0
+        self._updates_per_window = self._next_updates_per_window
 
     def _average(self, start: datetime, end: datetime) -> float:
         bounds = [start, *(step.start for step in self._steps[1:]), end]

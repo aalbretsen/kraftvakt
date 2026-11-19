@@ -38,7 +38,8 @@ class House:
             "general": {
                 "power_sensor": "sensor.han_power",
                 "power_limit_w": LIMIT_W,
-                "regulation_window_s": int(WINDOW.total_seconds()),
+                "regulation_window_updates": 1,
+                "power_sensor_interval_s": WINDOW.total_seconds(),
                 "penalty_threshold_w": 500,
             },
             "appliances": [],

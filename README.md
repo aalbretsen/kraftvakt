@@ -21,7 +21,7 @@ so you avoid a more expensive step in the capacity part of the grid tariff. Ever
 
 - Home Assistant 2026.10 or newer
 - A sensor from another integration that measures the total power of the house, typically from the HAN port of the electricity meter, with the device class power.
-  It may report W or kW. A sensor without a unit is read as W.
+  It may report W or kW. A sensor without a unit is read as W. It should report at a fixed interval, as a HAN reader does every 2 to 10 seconds.
 
 ## Installation
 
@@ -39,6 +39,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 1. Go to **Settings → Devices & services → Add integration**, search for **Kraftvakt** and finish the setup. It has no settings.
 2. Open **Kraftvakt** in the sidebar, or press the cogwheel of the integration, and set the power sensor, the power limit, the appliances and any EV chargers.
+   Kraftvakt measures how often the power sensor reports, and suggests a regulation window of about 10 seconds.
 3. Press **Save**, go to **Status** and press **Start regulation**.
 
 ## How it works
@@ -66,7 +67,9 @@ The helper texts in the panel tell what each setting does.
 
 ### The regulation in detail
 
-- **Regulation average:** the average over a short regulation window, 10 seconds by default. It drives the decisions.
+- **Regulation average:** the average over the regulation window, a number of updates of the power sensor, about 10 seconds.
+  It drives the decisions. The window closes at the update that completes it, and each update covers the time since the one before,
+  so with a HAN reader that reports every 10 seconds, a window of one update is the newest measurement.
 - **Tariff average:** sliding over the last hour. Every clock hour the grid company measures is one of the sliding hours,
   so keeping it below the power limit keeps every clock hour below it, and overconsumption is found early in the hour.
 - **Decisions:** at every regulation interval, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
@@ -417,6 +420,7 @@ The panel talks to the integration over its own WebSocket commands. All of them 
 | `kraftvakt/capabilities` | Gives the standard actions per field, the limits and the defaults. |
 | `kraftvakt/charger_profile/get` | Gives the charger profile of a device, if Kraftvakt has one, and the fields of an EV charger it fills. |
 | `kraftvakt/config/get` | Gives the configuration, the names of the entities and what is missing. |
+| `kraftvakt/power_sensor/interval` | Gives how often a sensor reports, from its history or by listening to it for up to 30 seconds. |
 | `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
 | `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |
 | `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save, and when missed regulation windows are skipped. |

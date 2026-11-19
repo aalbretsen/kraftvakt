@@ -2,6 +2,7 @@ import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { formatMinutes, formatNumber, formatPower } from "../format";
+import { windowSeconds } from "../regulation-window";
 import { CURVE_TURN_ONS, repeatedTurnOnWaiting, untilDecision, waitingCurve } from "../waiting";
 import { WidthQuery } from "../width-query";
 import { SettingsFormPage, type GeneralField } from "./settings-form-page";
@@ -143,7 +144,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
 
   /** Seconds between decisions, or null while the regulation window is not set. */
   private get decisionInterval(): number | null {
-    const window = this.config.general.regulation_window_s as number | null;
+    const window = windowSeconds(this.config.general);
     return window === null ? null : window * this.config.general.regulation_interval;
   }
 

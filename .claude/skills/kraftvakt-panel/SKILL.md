@@ -35,6 +35,7 @@ HA's sidebar is docked on a phone in landscape in the app and leaves the page li
 Logic is kept in modules outside the elements, so it is unit tested, see the `kraftvakt-testing` skill. Code that mirrors the backend and must be kept in step with it:
 
 - the waiting times, the curve and the growth on repeated turn-on, the same as in `regulation/waiting.py`,
+- the choices of the regulation window, the same as in `config_model.py`,
 - a subset of the validation in `config_validation.py`: the limits, what is missing and completing the priority list, for quick feedback; the backend checks everything at save,
 - the checks of default and domain actions against their entities, the same as in `actions.py` and `domain_actions.py`,
 - the name of a charger that is not saved yet, the same rule as the backend,
@@ -82,7 +83,7 @@ The section header, the description and the footer note are in `section-styles.t
   The status page and the lock banner share the start and stop button.
 - General and Advanced end with Restore defaults (HA's own words) in the page footer, shared in `SettingsFormPage`:
   each page passes the settings it restores, and the defaults come from the capabilities.
-  General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor, which has no default.
+  General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor and the regulation window, which have no default.
   It only changes the draft, so it asks for no confirmation, and it is disabled while every setting it restores has its default.
 - The warning against controlling regulated appliances outside Kraftvakt is shown only while a list is empty (appliances on the Appliances page, chargers on the EV charging page).
 - Default is offered only for domains with a default action. When an entity is picked and the action is not set, the suggested domain action of its domain is chosen,
@@ -148,6 +149,9 @@ The section header, the description and the footer note are in `section-styles.t
   a boolean entity that is on or off shows only its state, which says the same.
   A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
+- The regulation window is a dropdown of its choices for the update interval, each as «N updates (X s)», disabled until the interval is known.
+  When the power sensor is chosen, or set without an interval, the panel asks the backend for the interval and chooses the window closest to the length it had,
+  10 s at first. Its helper tells the interval, or that the power sensor must be chosen, is being measured, could not be measured or reports too seldom.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers in charging priority, and Add group under the cards.
   Without groups, a line of text says so, as an empty list does.
   A new group gets the first free name of «EV chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.

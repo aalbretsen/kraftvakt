@@ -1,5 +1,6 @@
 """Tests for the measurement part of the runtime."""
 
+import logging
 from datetime import timedelta
 
 import pytest
@@ -15,15 +16,24 @@ from custom_components.kraftvakt.settings import Settings
 from custom_components.kraftvakt.storage import KraftvaktStorage, StoredData
 
 POWER_SENSOR = "sensor.han_power"
-WINDOW = timedelta(seconds=30)
+INTERVAL = timedelta(seconds=10)
+WINDOW = 3 * INTERVAL
 
 
-def config_with(power_sensor: str | None = POWER_SENSOR) -> KraftvaktConfig:
-    return KraftvaktConfig(general=GeneralConfig(power_sensor=power_sensor, regulation_window_s=30))
+def config_with(power_sensor: str | None = POWER_SENSOR, updates: int = 3) -> KraftvaktConfig:
+    return KraftvaktConfig(general=GeneralConfig(power_sensor=power_sensor, regulation_window_updates=updates, power_sensor_interval_s=INTERVAL.total_seconds()))
 
 
 async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
     freezer.tick(delta)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+async def report(hass: HomeAssistant, freezer: FrozenDateTimeFactory, state: str, unit: str = "W", after: timedelta = INTERVAL) -> None:
+    """Move time on and let the power sensor report, also an unchanged value, as a HAN reader does."""
+    freezer.tick(after)
+    hass.states.async_set(POWER_SENSOR, state, {"unit_of_measurement": unit})
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
 
@@ -51,52 +61,93 @@ def start_runtime(hass: HomeAssistant, closed_windows: list[WindowAverages]):
         runtime.async_shutdown()
 
 
-async def test_windows_close_at_absolute_times_from_start(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    """Windows follow each other from the start without drifting."""
+async def test_window_closes_at_the_update_that_completes_it(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """A missing update makes the window longer, and the next starts where it closed."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     started = dt_util.utcnow()
     runtime = start_runtime(config_with())
 
-    await advance(hass, freezer, timedelta(seconds=31))
-    await advance(hass, freezer, timedelta(seconds=31))
+    for after in (INTERVAL, INTERVAL, INTERVAL, INTERVAL, 2 * INTERVAL, INTERVAL):
+        await report(hass, freezer, "2000", after=after)
 
-    assert [(w.start, w.end) for w in closed_windows] == [
+    assert [(window.start, window.end) for window in closed_windows] == [
         (started, started + WINDOW),
-        (started + WINDOW, started + 2 * WINDOW),
+        (started + WINDOW, started + 2 * WINDOW + INTERVAL),
     ]
     assert runtime.latest_averages == closed_windows[-1]
+    assert runtime.window_length == WINDOW
 
 
-async def test_power_sensor_state_feeds_the_averages(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    """The power sensor is read in W or kW."""
-    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+async def test_each_update_covers_the_time_before_it(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """The power sensor is read in W or kW, and the update that closes the window counts in it."""
+    hass.states.async_set(POWER_SENSOR, "1000", {"unit_of_measurement": "W"})
     start_runtime(config_with())
 
-    await advance(hass, freezer, timedelta(seconds=10))
-    hass.states.async_set(POWER_SENSOR, "5", {"unit_of_measurement": "kW"})
-    await advance(hass, freezer, timedelta(seconds=20))
+    await report(hass, freezer, "2000")
+    await report(hass, freezer, "5", "kW")
+    await report(hass, freezer, "8000")
 
     averages = closed_windows[-1]
-    assert averages.regulation_average_w == pytest.approx((2000 * 10 + 5000 * 20) / 30)
+    assert averages.regulation_average_w == pytest.approx((2000 + 5000 + 8000) / 3)
     assert averages.sensor_valid
 
 
-async def test_unavailable_power_sensor_makes_the_window_invalid(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    """An unavailable or removed sensor counts as no valid measurement."""
+async def test_window_of_one_update_is_the_value_of_that_update(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """A HAN reader that reports every 10 seconds gives a window of 10 seconds with only the newest measurement."""
+    hass.states.async_set(POWER_SENSOR, "1000", {"unit_of_measurement": "W"})
+    start_runtime(config_with(updates=1))
+
+    await report(hass, freezer, "2000")
+    await report(hass, freezer, "5000")
+
+    assert [window.regulation_average_w for window in closed_windows] == [2000, 5000]
+
+
+async def test_invalid_power_sensor_closes_windows_by_the_clock(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """An unavailable or removed sensor counts as no valid measurement, and the windows close when they have lasted their length."""
     hass.states.async_set(POWER_SENSOR, "3000", {"unit_of_measurement": "W"})
+    started = dt_util.utcnow()
     start_runtime(config_with())
 
-    hass.states.async_set(POWER_SENSOR, "unavailable")
-    await advance(hass, freezer, WINDOW)
+    await report(hass, freezer, "unavailable")
+    await advance(hass, freezer, 2 * INTERVAL)
     hass.states.async_remove(POWER_SENSOR)
     await advance(hass, freezer, WINDOW)
 
     first, second = closed_windows
-    assert (first.regulation_average_w, first.sensor_valid) == (3000, False)
-    assert (second.regulation_average_w, second.sensor_valid) == (None, False)
+    assert (first.end, first.regulation_average_w, first.sensor_valid) == (started + WINDOW, 3000, False)
+    assert (second.end, second.regulation_average_w, second.sensor_valid) == (started + 2 * WINDOW, None, False)
 
 
-async def test_windows_close_without_power_sensor(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+async def test_valid_power_sensor_closes_windows_by_its_updates_again(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    hass.states.async_set(POWER_SENSOR, "unavailable")
+    started = dt_util.utcnow()
+    start_runtime(config_with())
+
+    await advance(hass, freezer, WINDOW)
+    for _ in range(3):
+        await report(hass, freezer, "2000", after=INTERVAL + timedelta(seconds=5))
+    await advance(hass, freezer, WINDOW)
+
+    assert [(window.end, window.sensor_valid) for window in closed_windows] == [(started + WINDOW, False), (started + WINDOW + 3 * (INTERVAL + timedelta(seconds=5)), True)]
+
+
+async def test_silent_power_sensor_is_invalid_after_the_timeout(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """A report of an unchanged value counts, but a sensor that does not report at all is lost."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    started = dt_util.utcnow()
+    start_runtime(config_with())
+
+    await advance(hass, freezer, timedelta(seconds=300))
+    await advance(hass, freezer, WINDOW)
+
+    assert [(window.end, window.regulation_average_w, window.sensor_valid) for window in closed_windows] == [
+        (started + timedelta(seconds=300), 2000, False),
+        (started + timedelta(seconds=300) + WINDOW, None, False),
+    ]
+
+
+async def test_windows_close_by_the_clock_without_power_sensor(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """Without a configured power sensor there are no averages."""
     start_runtime(config_with(power_sensor=None))
 
@@ -106,19 +157,35 @@ async def test_windows_close_without_power_sensor(hass: HomeAssistant, freezer: 
     assert not closed_windows[0].sensor_valid
 
 
+async def test_missed_clock_windows_are_skipped(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows, caplog: pytest.LogCaptureFixture) -> None:
+    """A clock close a whole window or more late, as after a paused event loop, closes nothing, and the cadence is kept."""
+    hass.states.async_set(POWER_SENSOR, "unavailable")
+    started = dt_util.utcnow()
+    start_runtime(config_with())
+
+    with caplog.at_level(logging.WARNING):
+        await advance(hass, freezer, 3 * WINDOW + INTERVAL)
+
+    assert closed_windows == []
+    assert "Skipped the windows" in caplog.text
+    await advance(hass, freezer, 2 * INTERVAL)
+    assert [window.start for window in closed_windows] == [started + 3 * WINDOW]
+
+
 async def test_shutdown_stops_measuring_and_closing_windows(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     runtime = start_runtime(config_with())
 
     runtime.async_shutdown()
-    hass.states.async_set(POWER_SENSOR, "4000", {"unit_of_measurement": "W"})
-    await advance(hass, freezer, 3 * WINDOW)
+    for _ in range(3):
+        await report(hass, freezer, "4000")
+    await advance(hass, freezer, timedelta(seconds=600))
 
     assert closed_windows == []
 
 
 async def test_removed_listener_is_not_called(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    runtime = start_runtime(config_with())
+    runtime = start_runtime(config_with(power_sensor=None))
     calls: list[WindowAverages] = []
     remove = runtime.async_add_window_listener(calls.append)
 

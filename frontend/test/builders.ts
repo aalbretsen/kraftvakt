@@ -11,7 +11,7 @@ export const DEFAULT_ACTION: ActionConfig = { mode: "default" };
 
 export function config(parts: Partial<KraftvaktConfig> = {}): KraftvaktConfig {
   return {
-    general: { ...CAPABILITIES.defaults.general, power_sensor: "sensor.house_power" },
+    general: { ...CAPABILITIES.defaults.general, power_sensor: "sensor.house_power", regulation_window_updates: 1, power_sensor_interval_s: 10 },
     appliances: [],
     priority: [],
     charger_groups: [],

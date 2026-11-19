@@ -57,8 +57,9 @@ class RegulationRunningError(HomeAssistantError):
 class KraftvaktRuntime:
     """Runs the regulation on the windows of the power measurement.
 
-    The windows keep their own cadence, also while the regulation is stopped.
-    The decision clock tells at which window close a decision is made.
+    The windows follow the updates of the power sensor, also while the
+    regulation is stopped. The decision clock tells at which window close a
+    decision is made.
     """
 
     def __init__(
@@ -142,23 +143,25 @@ class KraftvaktRuntime:
 
     @property
     def next_decision_at(self) -> datetime | None:
-        """Return when the next decision is made, or None while stopped."""
+        """Return when the next decision is expected, when the power sensor reports at its interval, or None while stopped."""
         started_at = self._engine.started_at
         if started_at is None:
             return None
-        general = self.config.general
         return self._decisions.next_decision_at(
             started_at,
-            general.regulation_interval,
+            self.config.general.regulation_interval,
             self._measurement.window_start,
             self._measurement.window_end,
-            timedelta(seconds=general.regulation_window_s),
+            self._measurement.window_length,
         )
 
     @property
+    def window_length(self) -> timedelta:
+        return self._measurement.window_length
+
+    @property
     def decision_interval(self) -> timedelta:
-        general = self.config.general
-        return timedelta(seconds=general.regulation_window_s * general.regulation_interval)
+        return self._measurement.window_length * self.config.general.regulation_interval
 
     @property
     def waiting_ends_at(self) -> datetime | None:

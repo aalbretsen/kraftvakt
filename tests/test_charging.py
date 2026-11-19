@@ -80,7 +80,8 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
         "general": {
             "power_sensor": POWER_SENSOR,
             "power_limit_w": 10000,
-            "regulation_window_s": 60,
+            "regulation_window_updates": 1,
+            "power_sensor_interval_s": 60,
             "regulation_interval": 1,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
@@ -575,7 +576,6 @@ async def test_override_lasts_until_the_car_has_been_disconnected(
     """Switched on before the car arrives, it outlasts the window and a full car, which stays activated and may heat in the morning."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T18:55:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
@@ -627,7 +627,6 @@ async def test_override_ends_on_a_disconnect_while_stopped(
     """The car seen connected is kept over a stop of the regulation."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
@@ -656,7 +655,6 @@ async def test_override_outlasts_a_car_sensor_without_a_value(
     """Only a car known to be disconnected, or known to have stopped, ends it."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
@@ -689,7 +687,6 @@ async def test_override_ends_when_the_car_no_longer_charges(
     """A full car ends it at once, so the car heating in the morning does not charge."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T18:55:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "charging_stopped"
@@ -725,7 +722,6 @@ async def test_override_end_changed_waits_for_its_own_start(
     """Armed by a connected car, it is not armed for a car that stops charging."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "22:00", "end": "06:00"}
     charger["override_ends"] = "car_disconnected"
@@ -758,7 +754,6 @@ async def test_manual_override_stays_until_switched_off(
     """Neither a window that starts nor a car that leaves ends it."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:00:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "13:00", "end": "14:00"}
     charger["override_ends"] = "manual"
@@ -809,7 +804,6 @@ async def test_charger_finishes_charging_after_the_window_when_switched_on(
     """The switch is saved while the regulation runs and applies at once."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:50:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     config["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "13:20",
@@ -869,7 +863,6 @@ async def test_allowed_sensor_follows_the_clock_and_the_override(
     """It changes at the whole minute, also while the regulation is stopped."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:59:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     config["charger_groups"][0]["chargers"][0]["charging_window"] = {
         "start": "13:00",
         "end": "14:00",
@@ -903,7 +896,6 @@ async def test_allowed_sensor_follows_finishing_and_the_excluded_switch(
     """It stays on from the end of the window until a decision ends finishing."""
     await hass.config.async_set_time_zone("Europe/Oslo")
     freezer.move_to("2026-11-07T11:50:00+00:00")
-    config["general"]["regulation_window_s"] = 600
     charger = config["charger_groups"][0]["chargers"][0]
     charger["charging_window"] = {"start": "13:00", "end": "13:15"}
     charger["finish_after_window"] = True

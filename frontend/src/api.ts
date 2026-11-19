@@ -54,7 +54,10 @@ export interface GeneralConfig {
   power_sensor: string | null;
   power_limit_w: number;
   turn_on_margin_w: number;
-  regulation_window_s: number;
+  /** The number of updates of the power sensor in a regulation window, null until the power sensor is chosen and measured. */
+  regulation_window_updates: number | null;
+  /** How often the power sensor reports, in seconds, as the backend measured it when the sensor was chosen. */
+  power_sensor_interval_s: number | null;
   regulation_interval: number;
   wait_at_limit_s: number;
   wait_curve_steepness: number;
@@ -209,6 +212,8 @@ export interface Capabilities {
   /** The domain actions of each field, by key. */
   domain_actions: ActionFields<Record<string, DomainAction>>;
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
+  /** The shortest and longest regulation window in seconds, and at most how many lengths to choose from. */
+  regulation_window: { seconds: Range; choices: number };
   defaults: {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
@@ -326,6 +331,10 @@ export interface ChargerProfileFields {
 export const fetchChargerProfile = (hass: HomeAssistant, deviceId: string) => hass.callWS<ChargerProfileFields>({ type: "kraftvakt/charger_profile/get", device_id: deviceId });
 
 export const fetchConfig = (hass: HomeAssistant) => hass.callWS<ConfigResponse>({ type: "kraftvakt/config/get" });
+
+/** Measure how often the power sensor reports, which may take up to 30 seconds. */
+export const measurePowerSensorInterval = (hass: HomeAssistant, entityId: string) =>
+  hass.callWS<{ interval_s: number | null }>({ type: "kraftvakt/power_sensor/interval", entity_id: entityId });
 
 export const saveConfig = (hass: HomeAssistant, config: KraftvaktConfig) => hass.callWS<SaveResponse>({ type: "kraftvakt/config/save", config });
 

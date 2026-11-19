@@ -5,6 +5,7 @@ import type { Page } from "./navigation";
 
 const ISSUE_TEXTS: Record<string, TranslationKey> = {
   missing_power_sensor: "missing.missing_power_sensor",
+  missing_regulation_window: "missing.missing_regulation_window",
   missing_device: "missing.missing_device",
   missing_entity: "missing.missing_entity",
   missing_action: "missing.missing_action",
@@ -81,6 +82,7 @@ function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Lo
 const ERROR_TEXTS: Record<string, TranslationKey> = {
   required: "errors.required",
   missing_power_sensor: "errors.required",
+  missing_regulation_window: "errors.required",
   missing_device: "errors.required",
   missing_entity: "errors.required",
   missing_action: "errors.required",

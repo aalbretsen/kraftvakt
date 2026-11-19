@@ -3,6 +3,7 @@ import { html, type CSSResultGroup } from "lit";
 
 import type { GeneralConfig, Range } from "../api";
 import type { TranslationKey } from "../localize";
+import { windowSeconds } from "../regulation-window";
 import { ConfigPage } from "./config-page";
 
 export type GeneralField = keyof GeneralConfig;
@@ -10,13 +11,13 @@ export type GeneralField = keyof GeneralConfig;
 export interface FormField {
   name: GeneralField;
   required?: boolean;
+  disabled?: boolean;
   selector: Record<string, unknown>;
 }
 
 const UNITS: Partial<Record<GeneralField, string>> = {
   power_limit_w: "W",
   turn_on_margin_w: "W",
-  regulation_window_s: "s",
   wait_at_limit_s: "s",
   penalty_threshold_w: "W",
   command_repeat_interval_min: "min",
@@ -25,7 +26,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
 };
 
 /** Fields chosen from a list, which works with text values. */
-const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set(["regulation_interval", "appliance_repeat_increment_factor", "appliance_repeat_increments"]);
+const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set(["regulation_window_updates", "regulation_interval", "appliance_repeat_increment_factor", "appliance_repeat_increments"]);
 
 /**
  * A configuration page with fields from the general settings. The settings
@@ -117,18 +118,24 @@ export class SettingsFormPage extends ConfigPage {
 
   private computeLabel = (field: FormField): string => this.localize(`general.fields.${field.name}.label`);
 
-  private computeHelper = (field: FormField): string => {
+  private computeHelper = (field: FormField): string => this.helperText(field);
+
+  /** The helper text of the field, with its range, its default and the seconds between decisions. */
+  protected helperText(field: FormField): string {
     const range = this.range(field.name) as Range | undefined;
     const defaults = this.capabilities.defaults.general;
-    const number = (value: number | null | undefined) => (value === null || value === undefined ? "" : new Intl.NumberFormat(this.hass.language).format(value));
-    const window = this.config.general.regulation_window_s;
+    const seconds = windowSeconds(this.config.general);
     return this.localize(`general.fields.${field.name}.helper` as TranslationKey, {
-      min: number(range?.min),
-      max: number(range?.max),
-      default: number(defaults[field.name] as number | null),
-      seconds: number(window * this.config.general.regulation_interval),
+      min: this.formatNumber(range?.min),
+      max: this.formatNumber(range?.max),
+      default: this.formatNumber(defaults[field.name] as number | null),
+      seconds: seconds === null ? "–" : this.formatNumber(seconds * this.config.general.regulation_interval),
     });
-  };
+  }
+
+  protected formatNumber(value: number | null | undefined): string {
+    return value === null || value === undefined ? "" : new Intl.NumberFormat(this.hass.language).format(value);
+  }
 
   static styles: CSSResultGroup = ConfigPage.styles;
 }

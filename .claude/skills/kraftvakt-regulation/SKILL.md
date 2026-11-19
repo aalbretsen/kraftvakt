@@ -22,7 +22,9 @@ The ranges and defaults below are part of the specification; the code holds them
 |---|---|
 | Power limit | The highest allowed average power, 1000–50 000 W, default 10 000 W. The target the regulation keeps just below. |
 | Power sensor | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
-| Regulation window | 10–600 s, default 10 s. |
+| Update | A report of the power sensor, of a changed or an unchanged value, valid or not. A HAN reader reports at a fixed interval, 2–10 s depending on the meter. |
+| Update interval | How often the power sensor reports, measured when it is chosen: from the recorder's history of its changes when they are regular, else by listening to its updates for up to 30 s. Stored with the configuration, and used only to show and choose times. |
+| Regulation window | A number of updates of the power sensor, closed at the update that completes it. Chosen as the multiples of the fewest updates that last at least 10 s, at most 12 choices, for at most 120 s at the update interval. No default, since it depends on the power sensor. Why: a window that follows the meter holds whole measurements, so with a meter that reports every 10 s the regulation average of a 10 s window is the newest measurement, not a mix of the last two. |
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Regulation interval | 1–4 regulation windows, default 1. A decision is made every N windows. |
 | Tariff window | One hour back from now, sliding, not configurable. |
@@ -79,7 +81,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Armed override | A window override where what ends it has started since it was switched on: the car charging or connected. Only an armed override ends. |
 | Finishing | A charger that was charging when its window ended going on until it stops, with finish after window. |
 
-Resolution of settings: power in whole watts, the regulation window and the waiting time at the limit in whole seconds, currents in whole amperes.
+Resolution of settings: power in whole watts, the waiting time at the limit in whole seconds, the update interval in tenths of a second, currents in whole amperes.
 Power is in W everywhere inside the regulation, the configuration and the entities, energy in Wh; the status page shows kW.
 
 ## Ground rules
@@ -110,28 +112,36 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 ## Measurement
 
-- Windows keep their own cadence from when the integration starts, scheduled at absolute times, also while the regulation is stopped.
-  Each regulation average covers its own window, without overlap.
-- Averages are energy divided by time, correct for any update rate of the sensor (each value holds until the next).
+- The first window starts when the integration starts, and each next window where the one before closed, also while the regulation is stopped.
+  A window closes at the update that completes its number of updates, so a missing update makes it longer.
+  Each regulation average covers its own window, without overlap. The regulation knows only the averages and the length of each window.
+- While the power sensor is invalid, because its last update was invalid or it has not reported for the power sensor timeout,
+  a window also closes when it has lasted its length at the update interval, so the safe state comes without updates.
+- Averages are energy divided by time, correct for any update rate of the sensor. Each update covers the time since the update before it,
+  or since the last window close if that is later, and the latest also the time after it until the next. So a closed window never changes.
 - At startup (HA or integration start) the hour before is taken from HA's recorder history of the power sensor,
-  read like live values (an invalid value keeps the last valid one in place, and the oldest valid value fills the time before it).
+  read like live values (an invalid value keeps the last valid one in place, and the oldest valid value fills the time before it),
+  except that each value holds until the next, since the recorder keeps only changes.
   The time HA was down counts with the last value recorded before it stopped. Without a recorder or any valid history, the missing past is filled with the first measured value.
   The regulation window is not affected: the first one starts at startup.
   Why: everything is turned off at start, so the first value after a restart is only the background and cannot stand for the hour before.
 - Validity is the state when a window closes. A power sensor that has not reported for the power sensor timeout is invalid.
-  A gap inside a window is filled with the last valid value.
+  A gap inside a window is filled with the last valid value, and the update after it covers the time since the gap started or the last close.
 - One window closing without a valid value is tolerated (the last valid value is used).
   Two in a row make the averages unknown: the average sensors become unavailable until a valid value comes, also while the regulation is stopped.
   The history is kept, and the gap counts with the last valid value before it, like the time HA was down.
   Why: the first value after the gap is only the background (everything is off in the safe state) or a short peak while the appliances are turned off,
   so it cannot stand for the time before.
 - Before the first valid value there is no average. Windows without any measurement count as invalid.
-- A window that would close a whole window or more after its end is missed, as when HA's event loop was paused (a host that sleeps, a paused virtual machine, a blocked loop).
-  It and the windows after it that have ended are skipped: they make no decision and no command repeat, and do not count towards the regulation interval.
-  The window running when it is noticed closes next, in the same cadence. The time missed counts with the last valid value, like the time HA was down,
-  but not in the overconsumption, which counts closed windows only. Waiting times, the start delay and the command repeat count it as time that has passed.
+- A window that would close by the clock a whole window length or more after its time, or a power sensor timeout noticed that late, is missed,
+  as when HA's event loop was paused (a host that sleeps, a paused virtual machine, a blocked loop).
+  Windows closed by the clock that have ended are skipped, and the window running when it is noticed closes next, in the same cadence;
+  after a late timeout, the next window starts when it is noticed and the timeout starts again, since the updates could not be received.
+  Skipped windows make no decision and no command repeat, and do not count towards the regulation interval.
+  The time missed counts with the last valid value, like the time HA was down, but not in the overconsumption, which counts closed windows only.
+  Waiting times, the start delay and the command repeat count it as time that has passed.
   A warning is logged. Why: closing the missed windows one by one would replay their decisions at once, by the old clock.
-- Saving a configuration does not restart the averages. A new power sensor is followed from the save, a new window length applies from the next window.
+- Saving a configuration does not restart the averages. A new power sensor is followed from the save, a new number of updates applies from the next window.
 
 ## Decisions
 
@@ -214,7 +224,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 ## Penalty
 
 - Overconsumption state: starts when the tariff average is above the limit at a decision, with overconsumption 0 at that decision.
-  Every regulation average closed after it adds (average − limit) × window. It ends when the overconsumption is ≤ 0 (rounding noise counts as 0),
+  Every regulation average closed after it adds (average − limit) × the length of its window. It ends when the overconsumption is ≤ 0 (rounding noise counts as 0),
   at the earliest at the next decision. If the tariff average is still above the limit, a new state starts at 0 at once,
   except when a penalty ends: the regulation then starts again with defaults, and the state starts at the next decision where the tariff average is above the limit.
 - A penalty starts when the tariff average is above limit + threshold and the overconsumption is > 0. With threshold 0 it starts one decision after the state started.
@@ -284,7 +294,7 @@ All with entity category diagnostic:
 - Power free: the power limit minus the last regulation average, negative above the limit. Unavailable without an average.
 - Regulation steps on: the number of steps that are on, appliances and ampere steps alike, without the essential appliances.
   Meant for a graph of how much the regulation has switched on.
-- Waiting time remaining (s): the time from now to the decision that turns on the waiting appliance, so it is the real time left,
+- Waiting time remaining (s): the time from now to the decision expected to turn on the waiting appliance, with the windows lasting their length at the update interval,
   a whole number of decision intervals after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.

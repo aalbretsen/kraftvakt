@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
@@ -32,7 +33,8 @@ async def setup_kraftvakt(hass: HomeAssistant, hass_storage: dict[str, Any]) -> 
         "data": {
             "general": {
                 "power_sensor": POWER_SENSOR,
-                "regulation_window_s": int(WINDOW.total_seconds()),
+                "regulation_window_updates": 1,
+                "power_sensor_interval_s": WINDOW.total_seconds(),
             }
         },
     }
@@ -84,3 +86,21 @@ async def test_tariff_average_without_history_uses_the_first_measurement(
     await advance(hass, freezer, WINDOW)
 
     assert float(state_of(hass, "power_tariff_average")) == pytest.approx(3000)
+
+
+async def test_update_interval_comes_from_the_recorded_changes(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """A HAN reader changes value at almost every update, so its history tells how often it reports, without listening."""
+    started = dt_util.utcnow()
+    for update in range(12):
+        await record_power(hass, freezer, started + update * timedelta(seconds=2.5), str(2000 + update))
+    await setup_kraftvakt(hass, hass_storage)
+    client = await hass_ws_client(hass)
+
+    await client.send_json_auto_id({"type": "kraftvakt/power_sensor/interval", "entity_id": POWER_SENSOR})
+
+    assert (await client.receive_json())["result"] == {"interval_s": 2.5}

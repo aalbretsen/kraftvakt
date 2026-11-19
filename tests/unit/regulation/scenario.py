@@ -24,6 +24,7 @@ from custom_components.kraftvakt.regulation.model import (
     TurnOffAppliance,
     TurnOnAppliance,
 )
+from custom_components.kraftvakt.regulation.penalty import RegulationAverage
 
 START = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 DECISION_INTERVAL = timedelta(minutes=1)
@@ -141,9 +142,10 @@ class Scenario:
         result = self.engine.decide(
             DecisionInput(
                 now=self.now,
+                window_start=self.now - DECISION_INTERVAL,
                 regulation_average_w=average_w,
                 tariff_average_w=None if average_w is None else tariff,
-                regulation_averages_w=averages,
+                regulation_averages=[RegulationAverage(average, DECISION_INTERVAL) for average in averages],
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
