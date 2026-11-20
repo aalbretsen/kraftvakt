@@ -8,8 +8,10 @@ import pytest
 
 from custom_components.kraftvakt.measurement import (
     TARIFF_WINDOW,
+    IntervalChange,
     MissedWindows,
     PowerAverager,
+    ReportIntervalCheck,
     WindowAverages,
     power_w,
     update_interval_s,
@@ -94,14 +96,38 @@ def test_window_with_its_updates_at_its_start_is_not_complete() -> None:
     assert not averager.window_complete
 
 
-def test_new_number_of_updates_applies_from_the_next_window() -> None:
+def test_new_window_applies_from_the_next_window() -> None:
     averager = PowerAverager(3, START)
-    averager.change_updates_per_window(1)
+    averager.change_window(1, timedelta(seconds=20))
     averager.add_measurement(at(10), 2.0)
     assert not averager.window_complete
 
     averager.close_window(at(10))
+    assert averager.update_interval == timedelta(seconds=20)
     averager.add_measurement(at(20), 2.0)
+    assert not averager.window_complete
+    averager.add_measurement(at(25), 2.0)
+    assert averager.window_complete
+
+
+def test_extra_report_does_not_close_a_window_that_has_just_started() -> None:
+    """A window lasts three quarters of its length at the update interval, as a Kamstrup meter sends its hourly list a few seconds after a report."""
+    averager = PowerAverager(1, START, timedelta(seconds=10))
+    averager.add_measurement(at(5.3), 2.0)
+    assert not averager.window_complete
+    assert averager.updates == 1
+
+    averager.add_measurement(at(10), 2.0)
+    assert averager.window_complete
+
+
+def test_window_needs_all_its_updates_also_after_three_quarters_of_its_length() -> None:
+    averager = PowerAverager(4, START, timedelta(seconds=2.5))
+    for seconds in (2.5, 5, 7.5):
+        averager.add_measurement(at(seconds), 2.0)
+    assert not averager.window_complete
+
+    averager.add_measurement(at(10), 2.0)
     assert averager.window_complete
 
 
@@ -438,3 +464,70 @@ def reports(*intervals_s: float) -> list[datetime]:
 def test_update_interval_is_the_median_of_regular_intervals(times: list[datetime], fewest: int, expected: float | None) -> None:
     """Repeated values left out of the history make some intervals longer, which the median is not moved by."""
     assert update_interval_s(times, fewest_intervals=fewest) == expected
+
+
+INTERVAL = timedelta(seconds=10)
+
+
+def check_windows(check: ReportIntervalCheck, *intervals_s: float) -> list[bool]:
+    """Count windows of one update each, lasting the given seconds, and return whether each found or ended a change."""
+    return [check.window_closed(timedelta(seconds=seconds), 1, INTERVAL) for seconds in intervals_s]
+
+
+def test_five_windows_off_in_a_row_are_a_changed_update_interval() -> None:
+    check = ReportIntervalCheck()
+
+    assert check_windows(check, 20, 20, 20, 20, 20) == [False, False, False, False, True]
+    assert check.change == IntervalChange(timedelta(seconds=20), INTERVAL)
+
+
+def test_more_updates_than_expected_are_a_changed_update_interval() -> None:
+    """The average interval of the windows in the row is reported."""
+    check = ReportIntervalCheck()
+
+    assert [check.window_closed(timedelta(seconds=seconds), 2, INTERVAL) for seconds in (10, 10, 10, 10, 12)][-1]
+    assert check.change == IntervalChange(timedelta(seconds=5.2), INTERVAL)
+
+
+def test_windows_off_in_either_direction_count_in_the_same_row() -> None:
+    """A power sensor that reports only partly regularly is a change."""
+    check = ReportIntervalCheck()
+
+    assert check_windows(check, 20, 5, 20, 5, 20)[-1]
+    assert check.change is not None
+
+
+def test_a_window_within_a_quarter_of_the_interval_breaks_the_row() -> None:
+    """A single extra report once an hour is no change."""
+    check = ReportIntervalCheck()
+
+    assert not any(check_windows(check, 5, 10, 12.5, 7.5, 20, 20, 20, 20))
+    assert check.change is None
+
+
+def test_five_windows_not_off_in_a_row_end_the_change() -> None:
+    check = ReportIntervalCheck()
+    check_windows(check, 20, 20, 20, 20, 20)
+
+    assert check_windows(check, 10, 10, 10, 10, 20, 10, 10, 10, 10, 10) == [False] * 9 + [True]
+    assert check.change is None
+
+
+def test_a_window_not_closed_by_an_update_breaks_the_row() -> None:
+    check = ReportIntervalCheck()
+    check_windows(check, 20, 20, 20, 20)
+
+    check.break_row()
+
+    assert not any(check_windows(check, 20, 20, 20, 20))
+    assert len(check.diagnostics()["row"]) == 4
+
+
+def test_reset_forgets_the_change() -> None:
+    check = ReportIntervalCheck()
+    check_windows(check, 20, 20, 20, 20, 20)
+
+    check.reset()
+
+    assert check.change is None
+    assert check.diagnostics() == {"change": None, "row": []}

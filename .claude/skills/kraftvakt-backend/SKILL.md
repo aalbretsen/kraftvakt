@@ -53,14 +53,14 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `config_reader.py` | Reads stored and received data into the model and collects type errors. |
 | `config_validation.py` | Validation and completeness. Parsing a configuration from the panel must run in the event loop, since templates are checked there. |
 | `storage.py` | Configuration and charger switch positions in one versioned file. |
-| `measurement.py` | Time-weighted windows of a number of updates, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes, skipping missed windows, and the update interval from the times of reports. Pure Python. |
+| `measurement.py` | Time-weighted windows of a number of updates, the sliding hour, W/kW, fill at startup, averages unknown after two invalid closes, skipping missed windows, the update interval from the times of reports, and the check that the power sensor still reports at it. Pure Python. |
 | `conditions.py` | True/false from an entity, the states of an entity or a template, both as a value and as evidence of true or false, and the charging power from a power sensor or a template. |
 | `devices.py` | The device of a charger: its name, the device of an entity, and the check that a charger's entities belong to its device. |
 | `charger_profiles/` | The charger profiles: `profile.py` describes a profile, `recognition.py` finds the profile of a device and fills a charger from it, `device_description.py` describes a charger's device for the diagnostics, and `profiles/` has one module per profile, listed in `PROFILES`. |
 | `actions.py` | The table of default actions, custom actions, the checks of actions against their entities, and the action runner (one command at a time under a lock, commands that wait merged, errors logged and not retried). |
 | `domain_actions.py` | The table of domain actions, their parameters, script steps and checks. |
 | `regulation/` | The engine (`start`, `stop`, `decide`), the model, steps and ampere steps, waiting, penalty and charging. |
-| `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at its updates, or by the clock while it is invalid, skips the missed ones, and tells its listeners. Also measures the update interval of a sensor, from its history or by listening. |
+| `power_measurement.py` | Follows the power sensor in HA (with the hour before from the recorder and the power sensor timeout), closes the windows at its updates, or by the clock while it is invalid, skips the missed ones, tells its listeners, and reports a power sensor that no longer reports at its update interval. Also measures the update interval of a sensor, from its history or by listening. |
 | `decision_clock.py` | Counts the closed windows to decisions, and when the next decision and the one that ends a waiting time are expected. Pure Python. |
 | `decision_input.py` | Reads the conditions, the chargers and the user's switches into the input of a decision. |
 | `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, keeps the last decisions and failed actions for the diagnostics, and gives the state of each of its parts for them. |
@@ -69,7 +69,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
-| `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, and an entity of an appliance or charger no longer exists. |
+| `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, an entity of an appliance or charger no longer exists, and the power sensor no longer reports at the update interval stored with it. |
 | `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. The diagnostics tools in `diagnostics/` read `config` and `charger_devices`, see the `kraftvakt-diagnostics` skill. |
 | `json_values.py` | `plain`, which turns the state held in memory into JSON for the diagnostics. |
 
@@ -211,6 +211,7 @@ Every issue code needs a text in the panel's translations.
 - Repair issues are only for problems in the configuration, never for an entity that is merely unavailable, since that is often a cloud service that is down.
   The regulation that could not start is reported when HA or the integration starts, also right after a fresh install with nothing configured, and cleared at any start.
   Removed entities are looked for at every start of the regulation and after every failed action.
+  A changed update interval of the power sensor is not persistent: it is found again after a restart.
 - The waiting time next turn-on sensor is disabled by default.
 - Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a finish after window switch (configuration,
   see above), a binary sensor for allowed to charge and a state sensor, keyed by the item's id, with an entity id from the slug of the item's name.

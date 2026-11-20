@@ -78,7 +78,8 @@ class PowerAverager:
     """Time-weighted averages over the regulation window and the tariff window.
 
     A regulation window has a number of updates of the power sensor, valid or
-    not; the caller closes it at the update that completes it, or by the clock.
+    not, and lasts at least three quarters of its length at the update interval;
+    the caller closes it at the update that completes it, or by the clock.
     Each measurement covers the time since the measurement before it or the last
     close, whichever is later, so a closed window never changes, and the latest
     one also covers the time after it until the next. An invalid measurement
@@ -86,10 +87,12 @@ class PowerAverager:
     backwards in time unless history has been added.
     """
 
-    def __init__(self, updates_per_window: int, start: datetime) -> None:
-        """Start the first regulation window at `start`."""
+    def __init__(self, updates_per_window: int, start: datetime, update_interval: timedelta | None = None) -> None:
+        """Start the first regulation window at `start`, without a shortest length while the update interval is not known."""
         self._updates_per_window = updates_per_window
         self._next_updates_per_window = updates_per_window
+        self._update_interval = update_interval
+        self._next_update_interval = update_interval
         self._window_start = start
         self._updates = 0
         self._latest = start
@@ -104,9 +107,26 @@ class PowerAverager:
         return self._window_start
 
     @property
+    def update_interval(self) -> timedelta | None:
+        """Return the update interval of the current window."""
+        return self._update_interval
+
+    @property
+    def updates(self) -> int:
+        """Return the number of updates in the current window."""
+        return self._updates
+
+    @property
     def window_complete(self) -> bool:
-        """Return whether the window has all its updates, after some time has passed."""
-        return self._updates >= self._updates_per_window and self._latest > self._window_start
+        """Return whether the window has all its updates and has lasted three quarters of its length.
+
+        Why the shortest length: a meter may send an extra report, as a
+        Kamstrup does with its hourly list, which must not close a window that
+        has only just started.
+        """
+        lasted = self._latest - self._window_start
+        shortest = self._update_interval * self._updates_per_window * 0.75 if self._update_interval is not None else timedelta(0)
+        return self._updates >= self._updates_per_window and lasted > timedelta(0) and lasted >= shortest
 
     @property
     def sensor_valid(self) -> bool:
@@ -117,6 +137,8 @@ class PowerAverager:
             "window_start": self._window_start,
             "updates_per_window": self._updates_per_window,
             "next_updates_per_window": self._next_updates_per_window,
+            "update_interval": self._update_interval,
+            "next_update_interval": self._next_update_interval,
             "updates": self._updates,
             "latest_measurement_at": self._latest,
             "sensor_valid": self._sensor_valid,
@@ -125,8 +147,10 @@ class PowerAverager:
             "power_steps": self._steps,
         }
 
-    def change_updates_per_window(self, updates_per_window: int) -> None:
+    def change_window(self, updates_per_window: int, update_interval: timedelta | None) -> None:
+        """Use the number of updates and the update interval from the next window."""
         self._next_updates_per_window = updates_per_window
+        self._next_update_interval = update_interval
 
     def add_measurement(self, when: datetime, power: float | None, *, update: bool = True) -> None:
         """Record the power in W measured at `when`, or None if it is invalid.
@@ -204,6 +228,7 @@ class PowerAverager:
         self._covers_from = self._latest
         self._updates = 0
         self._updates_per_window = self._next_updates_per_window
+        self._update_interval = self._next_update_interval
 
     def _average(self, start: datetime, end: datetime) -> float:
         bounds = [start, *(step.start for step in self._steps[1:]), end]
@@ -218,3 +243,60 @@ class PowerAverager:
         while first_needed + 1 < len(self._steps) and self._steps[first_needed + 1].start <= horizon:
             first_needed += 1
         del self._steps[:first_needed]
+
+
+@dataclass(frozen=True, slots=True)
+class IntervalChange:
+    """A power sensor that reports about every `reported_interval` instead of every `update_interval`."""
+
+    reported_interval: timedelta
+    update_interval: timedelta
+
+
+@dataclass(frozen=True, slots=True)
+class _ReportedWindow:
+    length: timedelta
+    updates: int
+
+
+class ReportIntervalCheck:
+    """Finds a power sensor that no longer reports at its update interval, as when its HAN reader is set up anew.
+
+    A window closed by an update is off when its length divided by its updates
+    is more than a quarter off the update interval, in either direction. Five
+    windows off in a row are a change, and five in a row that are not off end it.
+    A window that is not closed by an update breaks the row, so a lost
+    measurement or a single extra report is no change.
+    """
+
+    def __init__(self) -> None:
+        self._change: IntervalChange | None = None
+        self._row: list[_ReportedWindow] = []
+
+    @property
+    def change(self) -> IntervalChange | None:
+        return self._change
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {"change": self._change, "row": self._row}
+
+    def window_closed(self, length: timedelta, updates: int, update_interval: timedelta) -> bool:
+        """Count a window closed by an update, and return whether a change was found or ended with it."""
+        off = abs(length / updates - update_interval) > update_interval / 4
+        if off == (self._change is not None):
+            self._row.clear()
+            return False
+        self._row.append(_ReportedWindow(length, updates))
+        if len(self._row) < 5:
+            return False
+        reported_interval = sum((window.length for window in self._row), timedelta()) / sum(window.updates for window in self._row)
+        self._change = IntervalChange(reported_interval, update_interval) if off else None
+        self._row.clear()
+        return True
+
+    def break_row(self) -> None:
+        self._row.clear()
+
+    def reset(self) -> None:
+        self._change = None
+        self._row.clear()

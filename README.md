@@ -70,6 +70,7 @@ The helper texts in the panel tell what each setting does.
 - **Regulation average:** the average over the regulation window, a number of updates of the power sensor, about 10 seconds.
   It drives the decisions. The window closes at the update that completes it, and each update covers the time since the one before,
   so with a HAN reader that reports every 10 seconds, a window of one update is the newest measurement.
+  A window lasts at least three quarters of its length, so an extra report, such as the hourly report of a Kamstrup meter, does not close it early.
 - **Tariff average:** sliding over the last hour. Every clock hour the grid company measures is one of the sliding hours,
   so keeping it below the power limit keeps every clock hour below it, and overconsumption is found early in the hour.
 - **Decisions:** each time a regulation window closes, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
@@ -90,6 +91,9 @@ The helper texts in the panel tell what each setting does.
   everything is kept off until the overconsumption since the tariff average went above the power limit is paid back.
 - **Safe state:** while the power sensor gives no valid value, everything but the essential appliances is kept off. A single missing value is tolerated,
   and a sensor that has not reported for the power sensor timeout has no valid value.
+- **Changed report interval:** a power sensor that reports more than a quarter more or less often than when it was chosen, for five regulation windows in a row,
+  is reported under **Settings → Repairs**, for example after the HAN reader has been set up anew. The regulation goes on.
+  Stop it, choose the power sensor again so its update interval is measured again, and save.
 - **Command repeat:** an appliance or EV charger that has had no command for 30 minutes gets the last one again, in case it has changed state by itself.
 - **Failed action:** an action that fails, or does not finish within the action timeout, is logged, and the regulation goes on as if it worked.
   The command repeat sends it again later.

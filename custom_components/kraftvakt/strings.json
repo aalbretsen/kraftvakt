@@ -94,6 +94,10 @@
     "missing_entity": {
       "title": "An entity used by Kraftvakt no longer exists",
       "description": "{entity_id}, used by an appliance or an EV charger in Kraftvakt, no longer exists in Home Assistant. Choose another entity in the Kraftvakt panel, or remove the appliance or EV charger."
+    },
+    "power_sensor_interval_changed": {
+      "title": "The power sensor no longer reports as when it was chosen",
+      "description": "The power sensor reports about every {reported_interval} s, not every {update_interval} s as when it was chosen, for example because the HAN reader has been set up anew. The regulation goes on, but its regulation window no longer lasts as chosen. Stop the regulation, choose the power sensor again on the General page of the Kraftvakt panel, so its update interval is measured again, choose the regulation window and save."
     }
   },
   "exceptions": {

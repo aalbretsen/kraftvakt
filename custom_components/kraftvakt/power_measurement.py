@@ -33,10 +33,12 @@ from .measurement import (
     CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN,
     TARIFF_WINDOW,
     PowerAverager,
+    ReportIntervalCheck,
     WindowAverages,
     power_w,
     update_interval_s,
 )
+from .repairs import async_clear_interval_changed, async_report_interval_changed
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +49,9 @@ class PowerMeasurement:
     """Follows the power sensor, with the hour before from the recorder.
 
     A window closes at the update of the power sensor that completes its number
-    of updates, and every listener gets the averages. While the power sensor is
+    of updates, once it has lasted three quarters of its length, and every
+    listener gets the averages. A power sensor that no longer reports at its
+    update interval is reported as a repair issue. While the power sensor is
     invalid, because it reported an invalid value or has not reported for the
     power sensor timeout, a window also closes by the clock when it has lasted
     its length, so the safe state comes without updates. `general` gives the
@@ -61,7 +65,9 @@ class PowerMeasurement:
         self._general = general
         self._windows_skipped = windows_skipped
         self._started_at = dt_util.utcnow()
-        self._averager = PowerAverager(self._updates_per_window(), self._started_at)
+        self._averager = PowerAverager(self._updates_per_window(), self._started_at, self._update_interval())
+        self._interval_check = ReportIntervalCheck()
+        self._checked_window = self._window_settings()
         self._latest_averages: WindowAverages | None = None
         self._recent_windows: deque[WindowAverages] = deque(maxlen=CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN)
         self._listeners: list[WindowListener] = []
@@ -110,6 +116,7 @@ class PowerMeasurement:
             "latest_averages": self._latest_averages,
             "recent_windows": self._recent_windows,
             "averager": self._averager.diagnostics(),
+            "report_interval_check": self._interval_check.diagnostics(),
         }
 
     @callback
@@ -128,18 +135,24 @@ class PowerMeasurement:
         if self._history_task:
             self._history_task.cancel()
             self._history_task = None
+        async_clear_interval_changed(self._hass)
         self._stop_silence_timer()
         self._stop_clock()
         self._stop_following_power_sensor()
 
     @callback
     def async_settings_changed(self) -> None:
-        """Use a new number of updates from the next window, follow a new power sensor from now, and a new timeout.
+        """Use a new number of updates and update interval from the next window, follow a new power sensor from now, and a new timeout.
 
-        The averages go on.
+        The averages go on. The check of the update interval starts again when
+        the power sensor, its update interval or the number of updates changes.
         """
         general = self._general()
-        self._averager.change_updates_per_window(self._updates_per_window())
+        self._averager.change_window(self._updates_per_window(), self._update_interval())
+        if self._window_settings() != self._checked_window:
+            self._checked_window = self._window_settings()
+            self._interval_check.reset()
+            async_clear_interval_changed(self._hass)
         now = dt_util.utcnow()
         if general.power_sensor != self._followed_sensor:
             self._follow_power_sensor(now)
@@ -149,6 +162,14 @@ class PowerMeasurement:
 
     def _updates_per_window(self) -> int:
         return self._general().regulation_window_updates or 1
+
+    def _update_interval(self) -> timedelta | None:
+        interval_s = self._general().power_sensor_interval_s
+        return None if interval_s is None else timedelta(seconds=interval_s)
+
+    def _window_settings(self) -> tuple[str | None, float | None, int | None]:
+        general = self._general()
+        return general.power_sensor, general.power_sensor_interval_s, general.regulation_window_updates
 
     def _follow_power_sensor(self, now: datetime) -> None:
         self._stop_following_power_sensor()
@@ -191,9 +212,27 @@ class PowerMeasurement:
         self._averager.add_measurement(now, None if state is None else _power_of(state))
         self._restart_silence_timer(now)
         if self._averager.window_complete:
+            self._check_update_interval(now)
             self._close_window(now)
         else:
             self._follow_validity(now)
+
+    def _check_update_interval(self, window_end: datetime) -> None:
+        interval = self._averager.update_interval
+        if interval is None or not self._interval_check.window_closed(window_end - self._averager.window_start, self._averager.updates, interval):
+            return
+        power_sensor = self._general().power_sensor
+        if (change := self._interval_check.change) is None:
+            _LOGGER.info("The power sensor %s reports at its update interval again", power_sensor)
+            async_clear_interval_changed(self._hass)
+            return
+        _LOGGER.warning(
+            "The power sensor %s reports about every %.1f s, not every %.1f s as when it was chosen. Choose it again in Kraftvakt to measure its update interval",
+            power_sensor,
+            change.reported_interval.total_seconds(),
+            change.update_interval.total_seconds(),
+        )
+        async_report_interval_changed(self._hass, change)
 
     def _restart_silence_timer(self, reported_at: datetime) -> None:
         self._stop_silence_timer()
@@ -223,6 +262,7 @@ class PowerMeasurement:
         if self._averager.sensor_valid:
             self._stop_clock()
         elif self.window_end <= now:
+            self._interval_check.break_row()
             self._close_window(now)
         elif self._cancel_clock_timer is None:
             self._cancel_clock_timer = async_track_point_in_utc_time(self._hass, self._async_clock_close, self.window_end)
@@ -242,9 +282,11 @@ class PowerMeasurement:
             self._skip_windows(scheduled + missed * length)
             self._follow_validity(now)
             return
+        self._interval_check.break_row()
         self._close_window(scheduled)
 
     def _skip_windows(self, until: datetime) -> None:
+        self._interval_check.break_row()
         skipped = self._averager.skip_windows(until)
         _LOGGER.warning(
             "Skipped the windows from %s to %s, missed while the event loop of Home Assistant was paused",

@@ -14,9 +14,11 @@ from homeassistant.helpers import issue_registry as ir
 
 from .config_model import KraftvaktConfig
 from .const import DOMAIN
+from .measurement import IntervalChange
 
 REGULATION_NOT_STARTED: Final = "regulation_not_started"
 MISSING_ENTITY: Final = "missing_entity"
+INTERVAL_CHANGED: Final = "power_sensor_interval_changed"
 
 
 @callback
@@ -62,3 +64,25 @@ def async_check_entities(hass: HomeAssistant, config: KraftvaktConfig) -> None:
             translation_key=MISSING_ENTITY,
             translation_placeholders={"entity_id": entity_id},
         )
+
+
+@callback
+def async_report_interval_changed(hass: HomeAssistant, change: IntervalChange) -> None:
+    """Report that the power sensor no longer reports at the update interval measured when it was chosen."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        INTERVAL_CHANGED,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=INTERVAL_CHANGED,
+        translation_placeholders={
+            "reported_interval": f"{change.reported_interval.total_seconds():.1f}",
+            "update_interval": f"{change.update_interval.total_seconds():.1f}",
+        },
+    )
+
+
+@callback
+def async_clear_interval_changed(hass: HomeAssistant) -> None:
+    ir.async_delete_issue(hass, DOMAIN, INTERVAL_CHANGED)

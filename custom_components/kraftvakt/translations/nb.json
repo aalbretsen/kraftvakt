@@ -94,6 +94,10 @@
     "missing_entity": {
       "title": "En entitet Kraftvakt bruker, finnes ikke lenger",
       "description": "{entity_id}, som et apparat eller en elbillader i Kraftvakt bruker, finnes ikke lenger i Home Assistant. Velg en annen entitet i Kraftvakt-panelet, eller fjern apparatet eller elbilladeren."
+    },
+    "power_sensor_interval_changed": {
+      "title": "Effektsensoren rapporterer ikke lenger som da den ble valgt",
+      "description": "Effektsensoren rapporterer omtrent hvert {reported_interval} s, ikke hvert {update_interval} s som da den ble valgt, for eksempel fordi HAN-leseren er satt opp på nytt. Reguleringen fortsetter, men reguleringsvinduet varer ikke lenger som valgt. Stopp reguleringen, velg effektsensoren på nytt på siden Generelt i Kraftvakt-panelet, så oppdateringsintervallet måles på nytt, velg reguleringsvinduet og lagre."
     }
   },
   "exceptions": {

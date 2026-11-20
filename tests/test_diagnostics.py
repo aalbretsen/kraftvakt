@@ -164,6 +164,8 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "window_start": local(now),
         "updates_per_window": 1,
         "next_updates_per_window": 1,
+        "update_interval": 60.0,
+        "next_update_interval": 60.0,
         "updates": 0,
         "latest_measurement_at": local(now),
         "sensor_valid": True,
@@ -171,6 +173,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "last_missed_windows": None,
         "power_steps": [{"start": local(started_at), "power_w": 2000}],
     }
+    assert measurement["report_interval_check"] == {"change": None, "row": []}
     assert diagnostics["decision_clock"] == {"windows_since_decision": []}
     assert diagnostics["action_runner"]["queued_commands"] == []
     assert {"owner": "a", "kind": "turn_on"} in diagnostics["action_runner"]["scripts"]

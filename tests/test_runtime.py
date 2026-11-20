@@ -6,10 +6,12 @@ from datetime import timedelta
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.kraftvakt.config_model import GeneralConfig, KraftvaktConfig
+from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.measurement import WindowAverages
 from custom_components.kraftvakt.runtime import KraftvaktRuntime
 from custom_components.kraftvakt.settings import Settings
@@ -194,3 +196,71 @@ async def test_removed_listener_is_not_called(hass: HomeAssistant, freezer: Froz
 
     assert calls == []
     assert len(closed_windows) == 1
+
+
+async def test_extra_report_does_not_close_a_window_that_has_just_started(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """A Kamstrup meter sends its hourly list a few seconds after a report, and it counts in the window it comes in."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    started = dt_util.utcnow()
+    start_runtime(config_with(updates=1))
+
+    await report(hass, freezer, "2000")
+    await report(hass, freezer, "4000", after=timedelta(seconds=5))
+    await report(hass, freezer, "2000", after=timedelta(seconds=5))
+
+    assert [(window.end, window.regulation_average_w) for window in closed_windows] == [
+        (started + INTERVAL, 2000),
+        (started + 2 * INTERVAL, 3000),
+    ]
+
+
+def interval_issue(hass: HomeAssistant) -> ir.IssueEntry | None:
+    return ir.async_get(hass).async_get_issue(DOMAIN, "power_sensor_interval_changed")
+
+
+async def test_power_sensor_that_reports_at_another_interval_is_a_repair_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Five windows in a row closed after another interval raise the issue, and five at the update interval clear it."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    start_runtime(config_with(updates=1))
+    await report(hass, freezer, "2000")
+
+    for _ in range(4):
+        await report(hass, freezer, "2000", after=2 * INTERVAL)
+    assert interval_issue(hass) is None
+    await report(hass, freezer, "2000", after=2 * INTERVAL)
+
+    issue = interval_issue(hass)
+    assert issue is not None
+    assert issue.translation_placeholders == {"reported_interval": "20.0", "update_interval": "10.0"}
+    assert "reports about every 20.0 s, not every 10.0 s" in caplog.text
+
+    for _ in range(5):
+        await report(hass, freezer, "2000")
+    assert interval_issue(hass) is None
+
+
+async def test_a_new_update_interval_starts_the_check_again(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime) -> None:
+    """The issue is removed when the power sensor is chosen again with its update interval measured again, and when Kraftvakt stops.
+
+    The window running at the save keeps the old settings, and the windows after it have two of the reports every 10 seconds each.
+    """
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    runtime = start_runtime(config_with(updates=1))
+    await report(hass, freezer, "2000")
+    for _ in range(5):
+        await report(hass, freezer, "2000", after=2 * INTERVAL)
+    assert interval_issue(hass) is not None
+
+    runtime.async_stop_regulation()
+    await runtime.async_save_config(KraftvaktConfig(general=GeneralConfig(power_sensor=POWER_SENSOR, regulation_window_updates=1, power_sensor_interval_s=20.0)))
+    assert interval_issue(hass) is None
+
+    for _ in range(10):
+        await report(hass, freezer, "2000", after=INTERVAL)
+    assert interval_issue(hass) is None
+    await report(hass, freezer, "2000", after=INTERVAL)
+    assert interval_issue(hass) is not None
+    runtime.async_shutdown()
+    assert interval_issue(hass) is None
