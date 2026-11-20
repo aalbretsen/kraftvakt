@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Final
 
 from homeassistant.components.sensor import (
@@ -18,7 +18,7 @@ from homeassistant.helpers.event import async_track_time_interval
 
 from . import SimulatorConfigEntry, kind_of
 from .const import DeviceKind
-from .devices import Observable, SimulatedCharger, SimulatedDevice, SimulatedHeater, async_get_power_board
+from .devices import SimulatedCharger, SimulatedDevice, SimulatedHan, SimulatedHeater, async_get_power_board
 from .entity import SimulatorEntity
 from .model import ChargerStatus
 
@@ -58,8 +58,9 @@ async def async_setup_entry(
 ) -> None:
     """Add the power sensor of the device, or the house total for the HAN."""
     kind = kind_of(entry)
-    sensor_class = HousePowerSensor if kind is DeviceKind.HAN else PowerSensor
-    sensors: list[SensorEntity] = [sensor_class(entry, entry.runtime_data, DESCRIPTIONS[kind])]
+    device = entry.runtime_data
+    description = DESCRIPTIONS[kind]
+    sensors: list[SensorEntity] = [HousePowerSensor(entry, device, description) if isinstance(device, SimulatedHan) else PowerSensor(entry, device, description)]
     if isinstance(entry.runtime_data, SimulatedCharger):
         sensors.append(ChargerStatusSensor(entry, entry.runtime_data, CHARGER_STATUS))
     if isinstance(entry.runtime_data, SimulatedHeater):
@@ -105,27 +106,28 @@ class ChargerStatusSensor(SimulatorEntity[SimulatedCharger], SensorEntity):
         return self.device.state.status.value
 
 
-class HousePowerSensor(SimulatorEntity[SimulatedDevice], SensorEntity):
+class HousePowerSensor(SimulatorEntity[SimulatedHan], SensorEntity):
     """The power of the whole house: background plus every simulated device.
 
-    It reports every 10 seconds also when the power has not changed, as a HAN
-    reader does, so Kraftvakt's power sensor timeout does not run out.
+    It reports only at its interval, also when the power has not changed, with
+    the power at that moment, as a HAN reader does. So a change shows at the
+    next report, and Kraftvakt's power sensor timeout does not run out.
     """
 
     async def async_added_to_hass(self) -> None:
-        """Report at a fixed interval as well as on every change."""
+        self._reported_w = async_get_power_board(self.hass).total_w
         await super().async_added_to_hass()
-        self.async_on_remove(async_track_time_interval(self.hass, self._async_report, timedelta(seconds=10)))
+        self.async_on_remove(async_track_time_interval(self.hass, self._async_report, self.device.report_interval))
 
     @callback
     def _async_report(self, _now: datetime) -> None:
+        self._reported_w = async_get_power_board(self.hass).total_w
         self.async_write_ha_state()
 
     @property
-    def observed(self) -> Observable:
-        """Follow the power board, which changes with every device."""
-        return async_get_power_board(self.hass)
+    def observed(self) -> None:
+        return None
 
     @property
     def native_value(self) -> float:
-        return async_get_power_board(self.hass).total_w
+        return self._reported_w

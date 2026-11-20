@@ -11,12 +11,11 @@ from pytest_homeassistant_custom_component.common import mock_restore_cache
 
 from custom_components.kraftvakt_simulator.const import DeviceKind
 
-from .conftest import SETTINGS, AddDevice, advance, call, power, state
+from .conftest import SETTINGS, AddDevice, advance, call, power, reported_house_power, state
 
 SWITCH = "switch.heating_cable"
 UNPLUGGED = "switch.heating_cable_unplugged"
 POWER = "sensor.heating_cable_power"
-HOUSE_POWER = "sensor.han_power"
 
 
 async def test_heater_starts_switched_off_and_consumes_nothing(hass: HomeAssistant, add_device: AddDevice) -> None:
@@ -108,18 +107,18 @@ async def test_unplugged_heater_consumes_nothing_while_its_cycle_runs_on(hass: H
     await add_device(DeviceKind.HEATER, "Heating cable")
     await call(hass, "switch", "turn_on", SWITCH)
     await advance(hass, freezer, timedelta(minutes=10))
-    assert power(hass, HOUSE_POWER) == 1750
+    assert await reported_house_power(hass, freezer) == 1750
 
     await call(hass, "switch", "turn_on", UNPLUGGED)
     assert power(hass, POWER) == 0
-    assert power(hass, HOUSE_POWER) == 1000
+    assert await reported_house_power(hass, freezer) == 1000
     await advance(hass, freezer, timedelta(minutes=60))
     assert power(hass, POWER) == 0
 
     await call(hass, "switch", "turn_off", UNPLUGGED)
     assert state(hass, SWITCH) == STATE_ON
     assert power(hass, POWER) == 750
-    assert power(hass, HOUSE_POWER) == 1750
+    assert await reported_house_power(hass, freezer) == 1750
 
 
 async def test_cycle_can_be_changed_and_restarts_in_its_on_part(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:

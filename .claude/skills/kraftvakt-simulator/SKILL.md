@@ -25,8 +25,10 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
 ## How the devices behave
 
 - One integration. Adding a device shows a menu: HAN, heating device, thermostat or EV charger. Each device is its own config entry and device.
-- Only one HAN. It reports the background power plus the power of every simulated device, also devices set up after it, on every change and every 10 seconds.
-  Why: Kraftvakt's power sensor timeout counts a sensor that does not report as invalid, and a real HAN reader reports that often.
+- Only one HAN. It reports the background power plus the power of every simulated device, also devices set up after it,
+  only at its report interval, 2 or 10 s, a setting in the config entry data: also an unchanged value, and the power at that moment.
+  Why: a real HAN reader reports what the meter measured at the meter's fixed interval, and Kraftvakt closes its regulation windows at the reports,
+  so a report on every change would close windows right after each command. Reporting an unchanged value keeps Kraftvakt's power sensor timeout from running out.
 - Heating device types (heating cable, water heater, panel heater) behave the same; the type only gives the switch its icon.
 - A heating device has power (W), duty cycle (0–100 %) and period (whole minutes). It heats in a fixed cycle, the on part first. Its switch cuts the power: off consumes nothing.
   **The cycle restarts in its on part every time the switch is turned on**, and so also after a restart with a restored switch.
@@ -80,5 +82,7 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   A new heating type only needs the type, an icon and the selector translations.
 - Settings go in the config entry data, runtime state in entities that restore themselves.
 - Tests: unit tests for `model.py` in `tests/unit/simulator/`, black box tests in `tests/simulator/` with the fixture for adding a device from its `conftest.py`.
-  Entity IDs follow the device names (English in the test harness). Kraftvakt runs against the simulator end to end in `test_kraftvakt_with_simulator.py`,
+  Entity IDs follow the device names (English in the test harness).
+  A change shows on the HAN only at its next report, so a test reads what the house draws from the power board, or lets the report interval pass first.
+  Kraftvakt runs against the simulator end to end in `test_kraftvakt_with_simulator.py`,
   and in `test_use_cases.py`, where each test is a use case of a household. Keep the simulator at 100 % line coverage.

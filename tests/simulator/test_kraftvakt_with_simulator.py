@@ -17,7 +17,7 @@ from custom_components.kraftvakt.const import DOMAIN as KRAFTVAKT
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 from custom_components.kraftvakt_simulator.const import DeviceKind
 
-from .conftest import AddDevice, call, power, state
+from .conftest import AddDevice, call, drawn_power, power, state
 
 DEFAULT = {"mode": "default"}
 HOUSE_POWER = "sensor.han_power"
@@ -144,7 +144,7 @@ async def test_kraftvakt_regulates_the_simulated_devices(
         freezer,
         lambda: state(hass, WATER_HEATER) == STATE_ON and power(hass, CHARGING_POWER) > 0,
     )
-    assert power(hass, HOUSE_POWER) <= 10_000
+    assert drawn_power(hass) <= 10_000
 
     await call(hass, "number", "set_value", "number.han_background_power", value=9000)
     await regulate_until(
@@ -152,7 +152,7 @@ async def test_kraftvakt_regulates_the_simulated_devices(
         freezer,
         lambda: state(hass, WATER_HEATER) == STATE_OFF and state(hass, CHARGING_ALLOWED) == STATE_OFF,
     )
-    assert power(hass, HOUSE_POWER) == 9000
+    assert drawn_power(hass) == 9000
 
 
 async def test_kraftvakt_controls_a_thermostat_with_its_domain_actions(

@@ -40,11 +40,12 @@ class SimulatorEntity[DeviceT: SimulatedDevice](Entity):
         )
 
     @property
-    def observed(self) -> Observable:
-        """Return what the entity follows: its device, unless overridden."""
+    def observed(self) -> Observable | None:
+        """Return what the entity follows: its device, unless overridden, or nothing for an entity that writes its state itself."""
         return self.device
 
     async def async_added_to_hass(self) -> None:
         """Write the state each time the observed object changes."""
         await super().async_added_to_hass()
-        self.async_on_remove(self.observed.async_add_listener(self.async_write_ha_state))
+        if (observed := self.observed) is not None:
+            self.async_on_remove(observed.async_add_listener(self.async_write_ha_state))

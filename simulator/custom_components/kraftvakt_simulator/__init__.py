@@ -25,6 +25,7 @@ from .const import (
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_REPORT_INTERVAL_S,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
     CONF_TEMPERATURE,
@@ -92,7 +93,7 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
     store_setting = partial(_store_setting, hass, entry)
     match kind_of(entry):
         case DeviceKind.HAN:
-            return SimulatedHan(hass, entry.entry_id, data[CONF_BACKGROUND_W], store_setting)
+            return SimulatedHan(hass, entry.entry_id, data[CONF_BACKGROUND_W], timedelta(seconds=int(data[CONF_REPORT_INTERVAL_S])), store_setting)
         case DeviceKind.HEATER:
             return SimulatedHeater(hass, entry.entry_id, _duty_cycle(data), store_setting, data[CONF_TEMPERATURE])
         case DeviceKind.THERMOSTAT:

@@ -19,7 +19,7 @@ from custom_components.kraftvakt.const import DOMAIN as KRAFTVAKT
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 from custom_components.kraftvakt_simulator.const import DeviceKind
 
-from .conftest import AddDevice, call, power, state
+from .conftest import AddDevice, call, drawn_power, power, state
 
 DEFAULT = {"mode": "default"}
 WINDOW = timedelta(seconds=60)
@@ -118,7 +118,7 @@ class House:
         return max_windows
 
     def house_power(self) -> float:
-        return power(self.hass, "sensor.han_power")
+        return drawn_power(self.hass)
 
     def on(self, entity_id: str) -> bool:
         return state(self.hass, entity_id) == STATE_ON

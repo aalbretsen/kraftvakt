@@ -39,6 +39,7 @@ from .const import (
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_REPORT_INTERVAL_S,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
     CONF_TEMPERATURE,
@@ -91,6 +92,9 @@ SCHEMAS = {
         {
             vol.Required(CONF_NAME, default="HAN"): TextSelector(),
             vol.Required(CONF_BACKGROUND_W, default=3500): whole_number(0, MAX_BACKGROUND_W, UnitOfPower.WATT, step=100),
+            vol.Required(CONF_REPORT_INTERVAL_S, default="10"): SelectSelector(
+                SelectSelectorConfig(options=["2", "10"], translation_key=CONF_REPORT_INTERVAL_S, mode=SelectSelectorMode.DROPDOWN)
+            ),
         }
     ),
     DeviceKind.HEATER: vol.Schema(

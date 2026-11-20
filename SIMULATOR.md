@@ -7,7 +7,8 @@ so HACS does not install it, and it is only used with a local Home Assistant, se
 Add the integration under **Settings → Devices & services**, and add one device at a time with **Add device**:
 
 - **HAN:** the power of the house, the background power plus the power of all the simulated devices (`sensor.han_power` when the device is named «HAN»).
-  It reports every 10 seconds, also when the power has not changed, as a HAN reader does. There can be only one HAN.
+  It reports every 2 or 10 seconds, chosen as its **Report interval** (10 seconds by default), and only then, also when the power has not changed:
+  as a HAN reader does, it reports the power at that moment, so a change shows at the next report. There can be only one HAN.
 - **Heating device:** heating cable, water heater or panel heater, with power (W), duty cycle (0–100 %) and period (minutes). It has a switch and a power sensor.
   While the switch is on, it heats in a fixed cycle that starts with the on part: 750 W, 25 % and 60 minutes give 15 minutes on and 45 minutes off, over and over.
   The cycle starts again every time the switch is turned on or the cycle is changed. With the switch off, it uses nothing.

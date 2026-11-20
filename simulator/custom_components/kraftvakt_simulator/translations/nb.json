@@ -15,10 +15,12 @@
         "description": "HAN-en viser effekten til hele huset: bakgrunnsforbruket pluss effekten til alle de simulerte enhetene.",
         "data": {
           "name": "Navn",
-          "background_w": "Bakgrunnsforbruk"
+          "background_w": "Bakgrunnsforbruk",
+          "report_interval_s": "Rapporteringsintervall"
         },
         "data_description": {
-          "background_w": "Forbruk som ikke kommer fra de simulerte enhetene. Kan endres mens Home Assistant kjører."
+          "background_w": "Forbruk som ikke kommer fra de simulerte enhetene. Kan endres mens Home Assistant kjører.",
+          "report_interval_s": "Hvor ofte HAN rapporterer, slik en HAN-leser gjør hvert 2. eller 10. sekund avhengig av måleren. En endring i effekt vises ved neste rapport."
         }
       },
       "heater": {
@@ -100,6 +102,12 @@
         "auto": "Auto",
         "dry": "Tørking",
         "fan_only": "Bare vifte"
+      }
+    },
+    "report_interval_s": {
+      "options": {
+        "2": "Hvert 2. sekund",
+        "10": "Hvert 10. sekund"
       }
     }
   },

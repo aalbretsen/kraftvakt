@@ -13,10 +13,11 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.kraftvakt_simulator.const import DOMAIN, DeviceKind
+from custom_components.kraftvakt_simulator.devices import async_get_power_board
 
 type AddDevice = Callable[..., Awaitable[MockConfigEntry]]
 
-HAN = {"background_w": 3500}
+HAN = {"background_w": 3500, "report_interval_s": "10"}
 HEATER = {
     "heater_type": "heating_cable",
     "power_w": 750,
@@ -76,6 +77,17 @@ def state(hass: HomeAssistant, entity_id: str) -> str:
 def power(hass: HomeAssistant, entity_id: str) -> float:
     """Return the state of a power sensor as a number."""
     return float(state(hass, entity_id))
+
+
+def drawn_power(hass: HomeAssistant) -> float:
+    """Return what the simulated house draws now, which the HAN reports at its next report."""
+    return async_get_power_board(hass).total_w
+
+
+async def reported_house_power(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> float:
+    """Return the power the HAN reports next, ten seconds on, its default interval."""
+    await advance(hass, freezer, timedelta(seconds=10))
+    return power(hass, "sensor.han_power")
 
 
 async def call(hass: HomeAssistant, domain: str, service: str, entity_id: str, **data: Any) -> None:

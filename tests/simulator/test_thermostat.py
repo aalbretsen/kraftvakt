@@ -14,11 +14,10 @@ from pytest_homeassistant_custom_component.common import mock_restore_cache
 
 from custom_components.kraftvakt_simulator.const import DeviceKind
 
-from .conftest import AddDevice, advance, call, power, state
+from .conftest import AddDevice, advance, call, power, reported_house_power, state
 
 CLIMATE = "climate.living_room"
 POWER = "sensor.living_room_power"
-HOUSE_POWER = "sensor.han_power"
 ROOM_TEMPERATURE = "number.living_room_room_temperature"
 
 
@@ -54,7 +53,7 @@ async def test_thermostat_follows_its_duty_cycle_in_a_heating_mode(
     assert state(hass, CLIMATE) == mode
     assert attribute(hass, "hvac_action") == HVACAction.HEATING
     assert power(hass, POWER) == 750
-    assert power(hass, HOUSE_POWER) == 1750
+    assert await reported_house_power(hass, freezer) == 1750
     await advance(hass, freezer, timedelta(minutes=15))
     assert attribute(hass, "hvac_action") == HVACAction.IDLE
     assert power(hass, POWER) == 0

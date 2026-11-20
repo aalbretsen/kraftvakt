@@ -117,11 +117,13 @@ class SimulatedHan(SimulatedDevice):
         hass: HomeAssistant,
         consumer_id: str,
         background_w: float,
+        report_interval: timedelta,
         store_setting: StoreSetting,
     ) -> None:
-        """Start with `background_w`, and store every change with the callback."""
+        """Start with `background_w`, report every `report_interval`, and store every change of the background with the callback."""
         super().__init__(hass, consumer_id)
         self.background_w = background_w
+        self.report_interval = report_interval
         self._store_setting = store_setting
 
     @property
