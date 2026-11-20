@@ -33,7 +33,7 @@
   },
   "finishing": {
     "icon": "mdi:clock-end",
-    "color": "light-blue"
+    "color": "green"
   },
   "charging": {
     "icon": "mdi:lightning-bolt",

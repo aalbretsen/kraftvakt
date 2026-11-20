@@ -136,7 +136,7 @@ CHARGER_STATE_ICONS: dict[ChargerState, StateIcon] = {
     ChargerState.OUTSIDE_WINDOW: StateIcon("mdi:clock-outline", "amber"),
     ChargerState.QUEUED: StateIcon("mdi:timer-sand", "amber"),
     ChargerState.STARTING: StateIcon("mdi:cloud-clock-outline", "light-blue"),
-    ChargerState.FINISHING: StateIcon("mdi:clock-end", "light-blue"),
+    ChargerState.FINISHING: StateIcon("mdi:clock-end", "green"),
     ChargerState.CHARGING: StateIcon("mdi:lightning-bolt", "green"),
     ChargerState.ACTIVATED: StateIcon("mdi:power-plug", "green"),
     ChargerState.OVERRIDE: StateIcon("mdi:clock-fast", "light-blue"),

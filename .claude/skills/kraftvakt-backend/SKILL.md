@@ -218,6 +218,7 @@ Every issue code needs a text in the panel's translations.
   and grey and amber as an icon read better on a dark theme.
   Red is for what keeps a charger from charging until someone acts: stopped and fault.
   Amber is for a car that is connected and waits to be allowed: outside its charging window, queued and deactivated.
+  Green is for an activated charger: activated, charging and finishing.
   The panel's chips for a charger use the same icons and colours, and its tests check them against a fixture made from the sensor's table.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
