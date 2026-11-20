@@ -942,7 +942,7 @@ async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, action
         ("nb", "Garage tilstand", ["Første avgjørelse", "Aktivert", "Lader", "Deaktivert"]),
     ],
 )
-async def test_state_sensor_gives_templates_the_label_icon_and_colour_of_the_state(
+async def test_state_sensor_gives_templates_the_label_icon_and_colours_of_the_state(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     actions,
@@ -956,7 +956,7 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colour_of_the_sta
     set_power(hass, CHARGER_POWER, "0")
     entry = await setup_kraftvakt()
     entity_id = "sensor.kraftvakt_charger_garage_state"
-    template = Template("{{ states(e) }}|{{ state_translated(e) }}|{{ state_attr(e, 'icon') }}|{{ state_attr(e, 'color') }}", hass)
+    template = Template("{{ states(e) }}|{{ state_translated(e) }}|{{ state_attr(e, 'icon') }}|{{ state_attr(e, 'color') }}|{{ state_attr(e, 'badge_color') }}", hass)
 
     def shown() -> list[str]:
         return template.async_render({"e": entity_id}, parse_result=False).split("|")
@@ -965,18 +965,18 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colour_of_the_sta
     assert state is not None
     assert state.name == f"Kraftvakt {name}"
     assert "deactivated" in state.attributes["options"]
-    assert shown() == ["first_decision", labels[0], "mdi:timer-sand", "grey"]
+    assert shown() == ["first_decision", labels[0], "mdi:timer-sand", "grey", "dark-grey"]
 
     await advance(hass, freezer)
-    assert shown() == ["activated", labels[1], "mdi:power-plug", "green"]
+    assert shown() == ["activated", labels[1], "mdi:power-plug", "green", "green"]
 
     set_power(hass, CHARGER_POWER, "4100")
     await advance(hass, freezer)
-    assert shown() == ["charging", labels[2], "mdi:lightning-bolt", "green"]
+    assert shown() == ["charging", labels[2], "mdi:lightning-bolt", "green", "green"]
 
     entry.runtime_data.async_stop_regulation()
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert shown() == ["deactivated", labels[3], "mdi:pause-circle-outline", "grey"]
+    assert shown() == ["deactivated", labels[3], "mdi:pause-circle-outline", "grey", "dark-grey"]
 
 
 async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, actions, config, setup_kraftvakt) -> None:

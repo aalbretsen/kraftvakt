@@ -211,9 +211,11 @@ Every issue code needs a text in the panel's translations.
   The charger entities do not depend on the group, so moving a charger to another group keeps them.
   The switches of appliances and chargers have entity category config, since they configure the item, the override included.
 - Each charger has a state sensor, an enum sensor with the charger's state from the status snapshot and its labels as state translations,
-  so `state_translated` gives the label in a template. Its icon and colour, a colour name of the Home Assistant theme, are the `icon` property and a `color` attribute,
-  not icon translations, since a template cannot read those. Both are left out of the recorder. The panel's chips for a charger use the same icons and colours,
-  and its tests check them against a fixture made from the sensor's table.
+  so `state_translated` gives the label in a template. Its icon and colours, colour names of the Home Assistant theme, are the `icon` property
+  and the `color` and `badge_color` attributes, not icon translations, since a template cannot read those. They are left out of the recorder.
+  `badge_color` is for a circle behind the icon in white: the same as `color`, but dark grey for grey, since white on grey is hard to read,
+  and grey as an icon reads better than dark grey on a dark theme.
+  The panel's chips for a charger use the same icons and colours, and its tests check them against a fixture made from the sensor's table.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
 

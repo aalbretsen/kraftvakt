@@ -121,6 +121,11 @@ class StateIcon(NamedTuple):
     icon: str
     color: str
 
+    @property
+    def badge_color(self) -> str:
+        """The colour of a circle behind the icon in white, darker for grey, since white on grey is hard to read."""
+        return "dark-grey" if self.color == "grey" else self.color
+
 
 CHARGER_STATE_ICONS: dict[ChargerState, StateIcon] = {
     ChargerState.FIRST_DECISION: StateIcon("mdi:timer-sand", "grey"),
@@ -176,12 +181,12 @@ class RegulationSensor(KraftvaktEntity, SensorEntity):
 class ChargerStateSensor(ChargerEntity, SensorEntity):
     """The state of the charger after the last decision, as on the status page.
 
-    The icon and the colour are attributes, not icon translations, so templates can read them.
+    The icon and the colours are attributes, not icon translations, so templates can read them.
     """
 
     settings = ("state",)
     _attr_device_class = SensorDeviceClass.ENUM
-    _unrecorded_attributes = frozenset({"icon", "color"})
+    _unrecorded_attributes = frozenset({"icon", "color", "badge_color"})
 
     async def async_added_to_hass(self) -> None:
         """Follow the settings and the decisions."""
@@ -208,4 +213,7 @@ class ChargerStateSensor(ChargerEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         state = self._charger_state()
-        return None if state is None else {"color": CHARGER_STATE_ICONS[state].color}
+        if state is None:
+            return None
+        state_icon = CHARGER_STATE_ICONS[state]
+        return {"color": state_icon.color, "badge_color": state_icon.badge_color}

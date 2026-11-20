@@ -203,7 +203,7 @@ All entities belong to the service device **Kraftvakt**, whose page shows them u
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | Configuration. One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
 | `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | Configuration. One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
 | `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, has no fault, and is inside its charging window, has the override on, or is finishing the charging after the window. |
-| `sensor.kraftvakt_charger_<charger>_state` (‹charger› state) | One per EV charger. The state of the EV charger as on the status page, such as charging, queued or car disconnected, and deactivated while the regulation is stopped. The attributes `icon` and `color`, a colour name of Home Assistant, follow the state, for templates in a dashboard. |
+| `sensor.kraftvakt_charger_<charger>_state` (‹charger› state) | One per EV charger. The state of the EV charger as on the status page, such as charging, queued or car disconnected, and deactivated while the regulation is stopped. The attributes `icon`, `color` and `badge_color` follow the state, for templates in a dashboard: `color` for the icon, and `badge_color` for a circle behind the icon in white, darker for the grey states. The colours are colour names of Home Assistant. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,
 and after two regulation windows in a row closed without a valid value from the power sensor.
@@ -276,12 +276,13 @@ the EV charger still counts as not charging, but the override does not end.
 {{ is_state('sensor.garage_charger_status', 'error') }}
 ```
 
-**State of an EV charger** in a dashboard, as the label in the language of Home Assistant, the icon and the colour:
+**State of an EV charger** in a dashboard, as the label in the language of Home Assistant, the icon, its colour and the colour of a badge behind it:
 
 ```jinja
 {{ state_translated('sensor.kraftvakt_charger_garage_state') }}
 {{ state_attr('sensor.kraftvakt_charger_garage_state', 'icon') }}
 {{ state_attr('sensor.kraftvakt_charger_garage_state', 'color') }}
+{{ state_attr('sensor.kraftvakt_charger_garage_state', 'badge_color') }}
 ```
 
 **Turn on** an appliance by setting a temperature instead of turning it on:
