@@ -1003,7 +1003,7 @@ async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, acti
         "charger_c1_window_override": EntityCategory.CONFIG,
         "charger_c1_finish_after_window": EntityCategory.CONFIG,
         "charger_c1_allowed_to_charge": EntityCategory.DIAGNOSTIC,
-        "charger_c1_state": None,
+        "charger_c1_state": EntityCategory.DIAGNOSTIC,
     }
 
 

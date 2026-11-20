@@ -210,6 +210,7 @@ Every issue code needs a text in the panel's translations.
   The positions of the switches are stored.
   The charger entities do not depend on the group, so moving a charger to another group keeps them.
   The switches of appliances and chargers have entity category config, since they configure the item, the override included.
+  The allowed to charge binary sensor and the state sensor of a charger have entity category diagnostic.
 - Each charger has a state sensor, an enum sensor with the charger's state from the status snapshot and its labels as state translations,
   so `state_translated` gives the label in a template. Its icon and colours, colour names of the Home Assistant theme, are the `icon` property
   and the `color` and `badge_color` attributes, not icon translations, since a template cannot read those. They are left out of the recorder.

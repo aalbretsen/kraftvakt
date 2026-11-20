@@ -186,6 +186,7 @@ class ChargerStateSensor(ChargerEntity, SensorEntity):
 
     settings = ("state",)
     _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
     _unrecorded_attributes = frozenset({"icon", "color", "badge_color"})
 
     async def async_added_to_hass(self) -> None:
