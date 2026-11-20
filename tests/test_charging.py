@@ -976,7 +976,7 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colour_of_the_sta
 
     entry.runtime_data.async_stop_regulation()
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert shown() == ["deactivated", labels[3], "mdi:power-plug-off-outline", "grey"]
+    assert shown() == ["deactivated", labels[3], "mdi:pause-circle-outline", "grey"]
 
 
 async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, actions, config, setup_kraftvakt) -> None:

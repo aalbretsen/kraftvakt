@@ -7,7 +7,7 @@ import chargerStates from "./fixtures/charger_states.json";
 /** The colour of the state sensor that each kind of chip stands for. */
 const SENSOR_COLORS: Record<ChipKind, string> = { on: "green", off: "grey", outline: "grey", alarm: "red", info: "light-blue" };
 
-/** The path in `@mdi/js` of an icon named as in Home Assistant, such as `mdi:power-plug-off-outline`. */
+/** The path in `@mdi/js` of an icon named as in Home Assistant, such as `mdi:alert-circle-outline`. */
 function iconPath(name: string): string | undefined {
   const words = name.replace("mdi:", "").split("-");
   return (icons as Record<string, string>)[`mdi${words.map((word) => word[0].toUpperCase() + word.slice(1)).join("")}`];

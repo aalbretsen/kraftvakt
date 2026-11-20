@@ -7,8 +7,8 @@ import {
   mdiClockOutline,
   mdiCloudClockOutline,
   mdiLightningBolt,
+  mdiPauseCircleOutline,
   mdiPowerPlug,
-  mdiPowerPlugOffOutline,
   mdiTimerSand,
 } from "@mdi/js";
 
@@ -41,5 +41,5 @@ export const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, Translat
   charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
   activated: [{ kind: "on", icon: mdiPowerPlug }, "status.activated", "status.activated_not_charging"],
   override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
-  deactivated: [{ kind: "off", icon: mdiPowerPlugOffOutline }, "status.deactivated", "status.deactivated"],
+  deactivated: [{ kind: "off", icon: mdiPauseCircleOutline }, "status.deactivated", "status.deactivated"],
 };
