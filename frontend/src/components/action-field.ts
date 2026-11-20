@@ -1,8 +1,8 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import type { ActionConfig, ActionParameter, DefaultAction, DomainAction, ParameterValue } from "../api";
-import { initialData, parameterOptions, parameterRange } from "../domain-actions";
+import type { ActionConfig, ActionParameter, DefaultAction, DomainAction, ParameterSource, ParameterValue } from "../api";
+import { TEMPERATURE_SOURCE_DOMAINS, initialData, parameterOptions, parameterRange, sourceTemperature } from "../domain-actions";
 import type { Localize, TranslationKey } from "../localize";
 import type { HomeAssistant } from "../types";
 
@@ -10,7 +10,8 @@ import type { HomeAssistant } from "../types";
  * An action as the default action for the entity, a domain action with values
  * from the user, the default action of another entity, or a custom one made
  * with Home Assistant's action editor. With only one way to give it, there is
- * no choice. A temperature of a domain action is a number or a template.
+ * no choice. A temperature of a domain action is a number, a temperature
+ * source or a template.
  *
  * Kept in one place, since the action editor may change between versions.
  * Fires `value-changed` with the new action.
@@ -71,22 +72,51 @@ export class KraftvaktActionField extends LitElement {
     `;
   }
 
-  /** A temperature has a choice of whether it is a number or a template before its value, named `<parameter>_from`. */
+  /**
+   * A temperature has a choice of where its value comes from before the value, named `<parameter>_from`.
+   * A temperature source is given by its entity, `<parameter>_entity`, and for a thermostat which of its temperatures, `<parameter>_reading`.
+   */
   private renderParameters(domainAction: DomainAction) {
     const data = this.value?.data ?? {};
-    const choices = Object.fromEntries(domainAction.parameters.filter(isTemperature).map(({ name }) => [`${name}_from`, typeof data[name] === "string" ? "template" : "number"]));
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{ ...Object.fromEntries(Object.entries(data).map(([name, value]) => [name, value ?? undefined])), ...choices }}
+        .data=${this.parameterFormData(domainAction, data)}
         .schema=${domainAction.parameters.flatMap((parameter) => this.parameterFields(parameter, data[parameter.name] ?? null))}
-        .error=${this.parameterErrors}
+        .error=${this.parameterFormErrors(data)}
         .disabled=${this.disabled}
         .computeLabel=${(field: { name: string }) => this.localize(`action.parameters.${field.name}` as TranslationKey)}
         .computeHelper=${(field: { name: string }) => this.parameterHelper(domainAction, field.name, data[field.name] ?? null)}
         @value-changed=${this.parametersChanged}
       ></ha-form>
     `;
+  }
+
+  private parameterFormData(domainAction: DomainAction, data: Record<string, ParameterValue>): Record<string, unknown> {
+    return Object.fromEntries(
+      domainAction.parameters.flatMap(({ name, type }) => {
+        const value = data[name] ?? null;
+        if (type !== "temperature") {
+          return [[name, value ?? undefined]];
+        }
+        if (isSource(value)) {
+          return [
+            [`${name}_from`, "source"],
+            [`${name}_entity`, value.value ?? undefined],
+            [`${name}_reading`, value.type],
+          ];
+        }
+        return [
+          [`${name}_from`, valueFrom(value)],
+          [name, value ?? undefined],
+        ];
+      }),
+    );
+  }
+
+  /** The error of a temperature source is shown at its entity. */
+  private parameterFormErrors(data: Record<string, ParameterValue>): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.parameterErrors).map(([name, error]) => [isSource(data[name] ?? null) ? `${name}_entity` : name, error]));
   }
 
   private parameterFields(parameter: ActionParameter, value: ParameterValue): Record<string, unknown>[] {
@@ -101,9 +131,34 @@ export class KraftvaktActionField extends LitElement {
     const choice = {
       name: `${parameter.name}_from`,
       selector: {
-        select: { mode: "list", options: (["number", "template"] as const).map((from) => ({ value: from, label: this.localize(`action.value_from.${from}`) })) },
+        select: { mode: "list", options: VALUE_FROM.map((from) => ({ value: from, label: this.localize(`action.value_from.${from}`) })) },
       },
     };
+    if (isSource(value)) {
+      const thermostat = value.value?.startsWith("climate.") ?? false;
+      return [
+        choice,
+        {
+          name: `${parameter.name}_entity`,
+          required: true,
+          selector: { entity: { filter: { domain: SOURCE_DOMAINS }, exclude_entities: this.entityId ? [this.entityId] : [] } },
+        },
+        ...(thermostat
+          ? [
+              {
+                name: `${parameter.name}_reading`,
+                required: true,
+                selector: {
+                  select: {
+                    mode: "dropdown",
+                    options: THERMOSTAT_READINGS.map((reading) => ({ value: reading, label: this.localize(`action.readings.${reading}`) })),
+                  },
+                },
+              },
+            ]
+          : []),
+      ];
+    }
     if (typeof value === "string") {
       return [choice, { name: parameter.name, required: true, selector: { template: {} } }];
     }
@@ -119,18 +174,49 @@ export class KraftvaktActionField extends LitElement {
     ];
   }
 
-  /** The variables of a template, or the range of a number, when the entity tells it. */
+  /**
+   * The variables of a template, or the range of a number, when the entity tells it.
+   * A temperature source shows its temperature now, and the range it is kept within.
+   */
   private parameterHelper(domainAction: DomainAction, name: string, value: ParameterValue): string {
-    if (typeof value === "string" && domainAction.parameters.some((parameter) => parameter.name === name && isTemperature(parameter))) {
+    const parameter = domainAction.parameters.find((item) => item.name === name || `${item.name}_entity` === name);
+    if (!parameter) {
+      return "";
+    }
+    if (name === `${parameter.name}_entity`) {
+      const source = this.value?.data?.[parameter.name] ?? null;
+      return isSource(source) ? this.sourceHelper(parameter, source) : "";
+    }
+    if (typeof value === "string" && isTemperature(parameter)) {
       return this.localize("action.variables", { variables: this.variables.join(", ") });
     }
-    const parameter = domainAction.parameters.find((item) => item.name === name);
-    const { min, max } = parameter ? parameterRange(parameter, this.stateObj) : {};
+    return this.rangeText(parameter, "action.parameter_range");
+  }
+
+  private sourceHelper(parameter: ActionParameter, source: ParameterSource): string {
+    const range = this.rangeText(parameter, "action.source_range") || this.localize("action.source_read");
+    if (!source.value) {
+      return range;
+    }
+    const stateObj = this.hass.states[source.value];
+    const temperature = sourceTemperature(source, stateObj);
+    if (temperature === null) {
+      return [this.localize("action.source_no_value"), range].join(" ");
+    }
+    const shown =
+      source.type === "temperature_sensor" && stateObj
+        ? this.hass.formatEntityState(stateObj)
+        : `${new Intl.NumberFormat(this.hass.language).format(temperature)} ${this.hass.config.unit_system.temperature}`;
+    return [this.localize("action.source_now", { value: shown }), range].join(" ");
+  }
+
+  private rangeText(parameter: ActionParameter, key: "action.parameter_range" | "action.source_range"): string {
+    const { min, max } = parameterRange(parameter, this.stateObj);
     if (min === undefined || max === undefined) {
       return "";
     }
     const number = (value: number) => new Intl.NumberFormat(this.hass.language).format(value);
-    return this.localize("action.parameter_range", {
+    return this.localize(key, {
       min: number(min),
       max: number(max),
       unit: this.hass.config.unit_system.temperature,
@@ -226,20 +312,30 @@ export class KraftvaktActionField extends LitElement {
 
   /**
    * A value that is cleared becomes null, which counts as not chosen. A temperature that changes
-   * between a number and a template starts empty: an empty template, or null.
+   * where its value comes from starts empty: null, a temperature source without an entity, or an empty template.
+   * A thermostat chosen as a temperature source gives its set temperature until another is chosen.
    */
-  private parametersChanged(event: CustomEvent<{ value: Record<string, ParameterValue | undefined> }>): void {
+  private parametersChanged(event: CustomEvent<{ value: Record<string, string | number | undefined> }>): void {
     event.stopPropagation();
     const values = event.detail.value;
     const previous = this.value?.data ?? {};
     const data = Object.fromEntries(
-      (this.domainAction?.parameters ?? []).map((parameter) => {
-        const { name } = parameter;
-        const template = values[`${name}_from`] === "template";
-        if (isTemperature(parameter) && template !== (typeof previous[name] === "string")) {
-          return [name, template ? "" : null];
+      (this.domainAction?.parameters ?? []).map(({ name, type }): [string, ParameterValue] => {
+        if (type !== "temperature") {
+          return [name, values[name] ?? null];
         }
-        return [name, values[name] ?? (template ? "" : null)];
+        const from = values[`${name}_from`] as ValueFrom;
+        if (from !== valueFrom(previous[name] ?? null)) {
+          return [name, from === "number" ? null : from === "template" ? "" : { type: "temperature_sensor", value: null }];
+        }
+        if (from === "source") {
+          const entityId = (values[`${name}_entity`] as string | undefined) || null;
+          const reading = values[`${name}_reading`] as ParameterSource["type"];
+          const thermostat = entityId?.startsWith("climate.") ?? false;
+          const sourceType = !thermostat ? "temperature_sensor" : (THERMOSTAT_READINGS as readonly string[]).includes(reading) ? reading : "target_temperature";
+          return [name, { type: sourceType, value: entityId }];
+        }
+        return [name, values[name] ?? (from === "template" ? "" : null)];
       }),
     );
     this.fireChanged({ ...this.value!, data });
@@ -313,6 +409,22 @@ export class KraftvaktActionField extends LitElement {
 
 function isTemperature(parameter: ActionParameter): boolean {
   return parameter.type === "temperature";
+}
+
+/** Where a temperature comes from: a fixed value, a temperature source or a template. */
+const VALUE_FROM = ["number", "source", "template"] as const;
+type ValueFrom = (typeof VALUE_FROM)[number];
+
+const THERMOSTAT_READINGS = ["target_temperature", "current_temperature"] as const;
+
+const SOURCE_DOMAINS = [...new Set(Object.values(TEMPERATURE_SOURCE_DOMAINS).flat())];
+
+function isSource(value: ParameterValue): value is ParameterSource {
+  return typeof value === "object" && value !== null;
+}
+
+function valueFrom(value: ParameterValue): ValueFrom {
+  return isSource(value) ? "source" : typeof value === "string" ? "template" : "number";
 }
 
 /** The action editor gives a list of actions, or one action. */

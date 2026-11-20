@@ -30,6 +30,8 @@ from .domain_actions import (
     domain_action_issues,
     domain_action_steps,
     domain_actions_for,
+    has_temperature_sources,
+    resolved_domain_action,
 )
 from .entity import item_name
 from .regulation.model import (
@@ -301,18 +303,25 @@ class ActionRunner:
         if action is None:
             raise ValueError("the action is not configured")
         key = (owner, kind)
-        if key not in self._scripts:
-            steps = _action_steps(item.entity_id if isinstance(item, Appliance) else None, action, kind)
-            sequence = await async_validate_actions_config(self._hass, cv.SCRIPT_SCHEMA(steps))
-            self._scripts[key] = Script(
-                self._hass,
-                sequence,
-                f"{kind} {_target(self._hass, item)}",
-                DOMAIN,
-                logger=_LOGGER,
-                log_exceptions=False,
-            )
-        return self._scripts[key]
+        if key in self._scripts:
+            return self._scripts[key]
+        entity_id = item.entity_id if isinstance(item, Appliance) else None
+        if entity_id is not None and action.mode is ActionMode.DOMAIN and has_temperature_sources(action):
+            # A temperature source is read each time the action runs, so its script is not kept.
+            return await self._async_new_script(item, _action_steps(entity_id, resolved_domain_action(self._hass, entity_id, action), kind), kind)
+        script = self._scripts[key] = await self._async_new_script(item, _action_steps(entity_id, action, kind), kind)
+        return script
+
+    async def _async_new_script(self, item: Appliance | Charger, steps: list[dict[str, Any]], kind: ActionKind) -> Script:
+        sequence = await async_validate_actions_config(self._hass, cv.SCRIPT_SCHEMA(steps))
+        return Script(
+            self._hass,
+            sequence,
+            f"{kind} {_target(self._hass, item)}",
+            DOMAIN,
+            logger=_LOGGER,
+            log_exceptions=False,
+        )
 
 
 def _join(field_name: str, parameter: str | None) -> str:

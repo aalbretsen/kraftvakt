@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.kraftvakt.actions import (
@@ -136,6 +137,10 @@ async def test_temperature_action_leaves_the_hvac_mode(hass: HomeAssistant) -> N
             thermostat(domain("climate_hvac_mode", hvac_mode="heat"), domain("x"), "switch.a"),
             "climate_hvac_mode is not available for switch.a",
         ),
+        (
+            thermostat(domain("unknown", temperature={"type": "temperature_sensor", "value": "sensor.wanted"}), domain("x")),
+            "unknown is not available for climate.hall",
+        ),
     ],
 )
 async def test_domain_action_that_cannot_run_is_logged(
@@ -250,3 +255,102 @@ async def test_hvac_mode_cannot_be_a_template(hass: HomeAssistant) -> None:
     hass.states.async_set("climate.hall", "heat", THERMOSTAT_ATTRIBUTES)
 
     assert action_issues(hass, config) == [Issue("unsupported_option", "appliances", "a1", "turn_on.hvac_mode")]
+
+
+def source(source_type: str, entity_id: str | None) -> dict[str, Any]:
+    return {"type": source_type, "value": entity_id}
+
+
+@pytest.mark.parametrize(
+    ("temperature", "expected"),
+    [
+        (source("temperature_sensor", "input_number.wanted"), 21.5),
+        (source("temperature_sensor", "sensor.cold"), 5),
+        (source("temperature_sensor", "number.hot"), 30),
+        (source("target_temperature", "climate.living_room"), 23),
+        (source("current_temperature", "climate.living_room"), 19.5),
+    ],
+)
+async def test_temperature_source_is_read_and_kept_within_the_range_of_the_thermostat(hass: HomeAssistant, temperature: dict[str, Any], expected: float) -> None:
+    temperatures = async_mock_service(hass, "climate", "set_temperature")
+    hass.states.async_set("climate.hall", "heat", THERMOSTAT_ATTRIBUTES)
+    hass.states.async_set("input_number.wanted", "21.5")
+    hass.states.async_set("sensor.cold", "-3", {"unit_of_measurement": "°C"})
+    hass.states.async_set("number.hot", "45")
+    hass.states.async_set("climate.living_room", "heat", {"temperature": 23, "current_temperature": 19.5})
+    config = thermostat(domain("climate_hvac_mode_and_temperature", hvac_mode="heat", temperature=temperature), domain("climate_hvac_mode", hvac_mode="off"))
+
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1")])
+
+    assert action_issues(hass, config) == []
+    assert [call.data for call in temperatures] == [{"entity_id": ["climate.hall"], "hvac_mode": "heat", "temperature": expected}]
+
+
+async def test_temperature_source_is_read_again_each_time_the_action_runs(hass: HomeAssistant) -> None:
+    temperatures = async_mock_service(hass, "climate", "set_temperature")
+    config = thermostat(domain("climate_temperature", temperature=source("temperature_sensor", "input_number.wanted")), domain("climate_temperature", temperature=8))
+    runner = ActionRunner(hass, config)
+
+    for wanted in ("20", "22"):
+        hass.states.async_set("input_number.wanted", wanted)
+        await runner.async_execute([TurnOnAppliance("a1")])
+
+    assert [call.data["temperature"] for call in temperatures] == [20, 22]
+
+
+async def test_temperature_source_is_given_in_the_unit_of_home_assistant(hass: HomeAssistant) -> None:
+    temperatures = async_mock_service(hass, "climate", "set_temperature")
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    hass.states.async_set("sensor.wanted", "20", {"unit_of_measurement": "°C"})
+    config = thermostat(domain("climate_temperature", temperature=source("temperature_sensor", "sensor.wanted")), domain("climate_temperature", temperature=46))
+
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1")])
+
+    assert [call.data["temperature"] for call in temperatures] == [pytest.approx(68)]
+
+
+@pytest.mark.parametrize("state", ["unavailable", "warm", None])
+async def test_temperature_source_without_a_value_fails_the_action(hass: HomeAssistant, state: str | None) -> None:
+    temperatures = async_mock_service(hass, "climate", "set_temperature")
+    if state is not None:
+        hass.states.async_set("sensor.wanted", state)
+    failures: list[tuple[str, str]] = []
+    config = thermostat(domain("climate_temperature", temperature=source("temperature_sensor", "sensor.wanted")), domain("climate_temperature", temperature=8))
+
+    await ActionRunner(hass, config, on_failure=lambda action, error: failures.append((action, error))).async_execute([TurnOnAppliance("a1"), TurnOffAppliance("a1")])
+
+    assert failures == [("turn_on climate.hall", "sensor.wanted gives no temperature")]
+    assert [call.data["temperature"] for call in temperatures] == [8]
+
+
+async def test_temperature_source_without_an_entity_is_missing(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    config = thermostat(domain("climate_temperature", temperature=source("temperature_sensor", None)), domain("climate_temperature", temperature=8))
+
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1")])
+
+    assert action_issues(hass, config) == []
+    assert Issue("missing_action", "appliances", "a1", "turn_on") in missing_items(config)
+    assert "a value of climate_temperature is not chosen" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("temperature", "code"),
+    [
+        (source("temperature_sensor", "switch.heater"), "unsupported_entity_domain"),
+        (source("target_temperature", "sensor.wanted"), "not_a_thermostat"),
+        (source("current_temperature", "not an entity"), "invalid_type"),
+        (source("template", "{{ 20 }}"), "invalid_type"),
+        ({"type": "temperature_sensor", "value": 20}, "invalid_type"),
+        ({"type": ["temperature_sensor"], "value": "sensor.wanted"}, "invalid_type"),
+    ],
+)
+async def test_temperature_source_must_name_an_entity_that_gives_a_temperature(hass: HomeAssistant, temperature: dict[str, Any], code: str) -> None:
+    config = thermostat(domain("climate_temperature", temperature=temperature), domain("climate_temperature", temperature=8))
+
+    assert action_issues(hass, config) == [Issue(code, "appliances", "a1", "turn_on.temperature")]
+
+
+async def test_hvac_mode_cannot_be_a_temperature_source(hass: HomeAssistant) -> None:
+    config = thermostat(domain("climate_hvac_mode", hvac_mode=source("temperature_sensor", "sensor.wanted")), domain("climate_hvac_mode", hvac_mode="off"))
+
+    assert action_issues(hass, config) == [Issue("invalid_type", "appliances", "a1", "turn_on.hvac_mode")]

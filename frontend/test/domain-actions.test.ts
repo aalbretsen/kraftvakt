@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DomainAction } from "../src/api";
-import { domainActionsFor, initialData, parameterOptions, parameterRange } from "../src/domain-actions";
+import { domainActionsFor, initialData, parameterIssues, parameterOptions, parameterRange, sourceTemperature } from "../src/domain-actions";
 import { CAPABILITIES, state } from "./builders";
 
 const actions = (field: "turn_on" | "turn_off") => domainActionsFor(CAPABILITIES, field, "climate.heater");
@@ -31,5 +31,28 @@ describe("domain actions", () => {
       max: 35,
       step: undefined,
     });
+  });
+
+  it("check that a temperature source names an entity that gives a temperature, and leave one without an entity as missing", () => {
+    const issues = (temperature: unknown) => parameterIssues(HVAC_MODE_AND_TEMPERATURE, { hvac_mode: "off", temperature } as never, undefined);
+    expect(issues({ type: "temperature_sensor", value: "input_number.wanted" })).toEqual({});
+    expect(issues({ type: "target_temperature", value: "climate.living_room" })).toEqual({});
+    expect(issues({ type: "temperature_sensor", value: null })).toEqual({});
+    expect(issues({ type: "temperature_sensor", value: "switch.heater" })).toEqual({ temperature: "unsupported_entity_domain" });
+    expect(issues({ type: "current_temperature", value: "sensor.wanted" })).toEqual({ temperature: "not_a_thermostat" });
+    expect(issues({ type: "template", value: "{{ 20 }}" })).toEqual({ temperature: "invalid_type" });
+    expect(parameterIssues(HVAC_MODE_AND_TEMPERATURE, { hvac_mode: { type: "temperature_sensor", value: null }, temperature: 20 }, undefined)).toEqual({
+      hvac_mode: "invalid_type",
+    });
+  });
+
+  it("read the temperature of a source from the state of a sensor, or the attributes of a thermostat", () => {
+    const thermostat = state("heat", { temperature: 22, current_temperature: 19.5 });
+    expect(sourceTemperature({ type: "temperature_sensor", value: "input_number.wanted" }, state("21.5"))).toBe(21.5);
+    expect(sourceTemperature({ type: "temperature_sensor", value: "sensor.wanted" }, state("unavailable"))).toBeNull();
+    expect(sourceTemperature({ type: "temperature_sensor", value: "sensor.wanted" }, state(""))).toBeNull();
+    expect(sourceTemperature({ type: "target_temperature", value: "climate.living_room" }, thermostat)).toBe(22);
+    expect(sourceTemperature({ type: "current_temperature", value: "climate.living_room" }, thermostat)).toBe(19.5);
+    expect(sourceTemperature({ type: "current_temperature", value: "climate.gone" }, undefined)).toBeNull();
   });
 });

@@ -444,6 +444,33 @@ async def test_domain_action_values_are_checked_against_the_entity(
     assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {"hvac_mode": "heat"}
 
 
+async def test_temperature_source_is_checked_and_stored(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    hass_ws_client: WebSocketGenerator,
+    hass_storage: dict[str, Any],
+) -> None:
+    """A temperature read from a thermostat must name a climate entity."""
+    await switch_regulation(hass, "turn_off")
+    client = await hass_ws_client(hass)
+    changed = config_data()
+    changed["appliances"][1]["entity_id"] = "climate.hall"
+    changed["appliances"][1]["turn_on"] = {
+        "mode": "domain",
+        "domain_action": "climate_temperature",
+        "data": {"temperature": {"type": "target_temperature", "value": "input_number.wanted"}},
+    }
+
+    response = await send(client, "kraftvakt/config/save", config=changed)
+
+    assert response["result"]["errors"] == [{"code": "not_a_thermostat", "section": "appliances", "target": "b", "field": "turn_on.temperature"}]
+    source = {"type": "temperature_sensor", "value": "input_number.wanted"}
+    changed["appliances"][1]["turn_on"]["data"]["temperature"] = source
+    response = await send(client, "kraftvakt/config/save", config=changed)
+    assert response["result"]["saved"]
+    assert stored_config(hass_storage)["appliances"][1]["turn_on"]["data"] == {"temperature": source}
+
+
 async def test_incomplete_configuration_is_saved(
     hass: HomeAssistant,
     entry: MockConfigEntry,

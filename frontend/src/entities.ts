@@ -1,4 +1,5 @@
 import type { Appliance, Charger, TemperatureSource } from "./api";
+import { sourceTemperature } from "./domain-actions";
 import type { HomeAssistant } from "./types";
 
 /** The domains whose entities are on or off, and so can be boolean entities. */
@@ -58,9 +59,7 @@ export function temperatureSources(hass: HomeAssistant, entityIds: string[]): Te
 
 /** Return the temperature a thermostat gives now, its current or set temperature, or null without one. */
 export function thermostatTemperature(hass: HomeAssistant, source: TemperatureSource): number | null {
-  const attribute = source.type === "current_temperature" ? "current_temperature" : "temperature";
-  const value = hass.states[source.entityId]?.attributes[attribute];
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+  return sourceTemperature({ type: source.type, value: source.entityId }, hass.states[source.entityId]);
 }
 
 /** Return the entity ID while Home Assistant has the entity, and null for one that is not set or no longer exists. */

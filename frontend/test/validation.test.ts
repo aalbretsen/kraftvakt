@@ -109,6 +109,10 @@ describe("missing items", () => {
 
   it("an empty temperature template is missing", () => {
     expect(isMissingAction({ mode: "domain", domain_action: "climate_temperature", data: { temperature: "" } })).toBe(true);
+    expect(isMissingAction({ mode: "domain", domain_action: "climate_temperature", data: { temperature: { type: "temperature_sensor", value: null } } })).toBe(true);
+    expect(isMissingAction({ mode: "domain", domain_action: "climate_temperature", data: { temperature: { type: "temperature_sensor", value: "input_number.wanted" } } })).toBe(
+      false,
+    );
   });
 });
 

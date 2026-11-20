@@ -346,13 +346,24 @@
     "parameters": {
       "hvac_mode": "HVAC mode",
       "temperature": "Target temperature",
-      "temperature_from": "Target temperature from"
+      "temperature_from": "Target temperature from",
+      "temperature_entity": "Sensor, number or thermostat",
+      "temperature_reading": "Temperature of the thermostat"
+    },
+    "readings": {
+      "target_temperature": "Set temperature",
+      "current_temperature": "Current temperature"
     },
     "value_from": {
       "number": "Fixed value",
+      "source": "Sensor, number or thermostat",
       "template": "Custom template"
     },
-    "parameter_range": "{min}–{max} {unit} for the entity."
+    "parameter_range": "{min}–{max} {unit} for the entity.",
+    "source_now": "Now: {value}.",
+    "source_no_value": "No temperature now: the action fails while it has none.",
+    "source_read": "Read when the action runs.",
+    "source_range": "Read when the action runs, and kept within {min}–{max} {unit}."
   },
   "condition": {
     "entity": "Binary sensor or switch",

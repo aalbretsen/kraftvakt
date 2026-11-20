@@ -3,6 +3,10 @@
 A domain action calls one service of the entity's domain. Its parameters are
 checked against the attributes of the entity, for example the HVAC modes a
 thermostat supports, when the entity has them.
+
+A temperature is a number, a template, or a temperature source: a source of
+the same form as a display temperature, but without a template, that names
+an entity whose value is read when the action runs.
 """
 
 from __future__ import annotations
@@ -12,15 +16,18 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Final
 
-from homeassistant.core import State, split_entity_id
+from homeassistant.core import HomeAssistant, State, split_entity_id, valid_entity_id
+from homeassistant.util.unit_conversion import TemperatureConverter
 
-from .config_model import ActionConfig, ActionKind
+from .conditions import temperature_value
+from .config_model import ActionConfig, ActionKind, Condition, ConditionType
 
 
 class ParameterType(StrEnum):
     """What kind of value a parameter takes, and how the panel shows it.
 
-    A temperature may also be a template, rendered when the action runs.
+    A temperature may also be a template, rendered when the action runs, or
+    a temperature source, read when the action runs.
     """
 
     OPTION = "option"
@@ -58,6 +65,22 @@ class ActionParameter:
             "default": self.default,
         }
 
+    def within_range(self, value: float, state: State | None) -> float:
+        """Return the value moved inside the range of the entity, when it tells it."""
+        low, high = self._range(state)
+        if _is_number(low):
+            value = max(value, low)
+        if _is_number(high):
+            value = min(value, high)
+        return value
+
+    def _range(self, state: State | None) -> tuple[Any, Any]:
+        attributes = state.attributes if state is not None else {}
+        return (
+            None if self.min_attribute is None else attributes.get(self.min_attribute),
+            None if self.max_attribute is None else attributes.get(self.max_attribute),
+        )
+
     def issue(self, value: Any, state: State | None) -> str | None:
         """Return the code of what is wrong with the value, or None.
 
@@ -79,10 +102,11 @@ class ActionParameter:
             return None
         if isinstance(value, str):
             return None
+        if isinstance(value, Mapping):
+            return _source_issue(value)
         if not _is_number(value):
             return "invalid_type"
-        low = attribute(self.min_attribute)
-        high = attribute(self.max_attribute)
+        low, high = self._range(state)
         if (_is_number(low) and value < low) or (_is_number(high) and value > high):
             return "outside_entity_range"
         return None
@@ -129,6 +153,12 @@ HVAC_MODE: Final = ActionParameter(
         ActionKind.TURN_OFF: ("off", "auto"),
     },
 )
+
+TEMPERATURE_SOURCE_DOMAINS: Final[Mapping[str, tuple[str, ...]]] = {
+    ConditionType.TEMPERATURE_SENSOR: ("sensor", "input_number", "number"),
+    ConditionType.CURRENT_TEMPERATURE: ("climate",),
+    ConditionType.TARGET_TEMPERATURE: ("climate",),
+}
 
 # The default is outside every thermostat's range, so the user must choose it.
 TARGET_TEMPERATURE: Final = ActionParameter(
@@ -193,6 +223,56 @@ def domain_action_templates(action: ActionConfig) -> dict[str, str]:
     return {
         parameter.name: value for parameter in domain_action.parameters if parameter.type is ParameterType.TEMPERATURE and isinstance(value := action.data.get(parameter.name), str)
     }
+
+
+def has_temperature_sources(action: ActionConfig) -> bool:
+    return any(isinstance(value, Mapping) for value in action.data.values())
+
+
+def resolved_domain_action(hass: HomeAssistant, entity_id: str, action: ActionConfig) -> ActionConfig:
+    """Return the action with the value of each temperature source now.
+
+    The value is in Home Assistant's unit and within the range of the entity,
+    so the thermostat accepts it. A source that is not chosen is left for the
+    action to report as missing.
+    Raises ValueError when a source gives no value.
+    """
+    domain_action = DOMAIN_ACTIONS.get(action.domain_action or "")
+    if domain_action is None:
+        return action
+    state = hass.states.get(entity_id)
+    data = dict(action.data)
+    for parameter in domain_action.parameters:
+        source = data.get(parameter.name)
+        if isinstance(source, Mapping) and source.get("value"):
+            data[parameter.name] = parameter.within_range(_source_value(hass, source), state)
+    return ActionConfig(action.mode, domain_action=action.domain_action, data=data)
+
+
+def _source_value(hass: HomeAssistant, source: Mapping[str, Any]) -> float:
+    condition = Condition(ConditionType(source["type"]), source["value"])
+    reading = temperature_value(hass, condition, {})
+    if reading is None:
+        raise ValueError(f"{condition.value} gives no temperature")
+    value, unit = reading
+    target_unit = hass.config.units.temperature_unit
+    if unit != target_unit and unit in TemperatureConverter.VALID_UNITS:
+        return TemperatureConverter.convert(value, unit, target_unit)
+    return value
+
+
+def _source_issue(source: Mapping[str, Any]) -> str | None:
+    """Return the code of what is wrong with a temperature source; one without an entity is missing."""
+    source_type, entity_id = source.get("type"), source.get("value")
+    if not isinstance(source_type, str) or source_type not in TEMPERATURE_SOURCE_DOMAINS or not isinstance(entity_id, str | None):
+        return "invalid_type"
+    if not entity_id:
+        return None
+    if not valid_entity_id(entity_id):
+        return "invalid_type"
+    if split_entity_id(entity_id)[0] in TEMPERATURE_SOURCE_DOMAINS[source_type]:
+        return None
+    return "unsupported_entity_domain" if source_type == ConditionType.TEMPERATURE_SENSOR else "not_a_thermostat"
 
 
 def _available(kind: ActionKind, entity_id: str, key: str | None) -> DomainAction | None:

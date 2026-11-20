@@ -48,8 +48,17 @@ export interface ActionConfig {
   data?: Record<string, ParameterValue>;
 }
 
-/** A temperature given as a string is a template, rendered when the action runs. */
-export type ParameterValue = string | number | null;
+/**
+ * A temperature given as a string is a template, rendered when the action runs,
+ * and a temperature source is read when the action runs.
+ */
+export type ParameterValue = string | number | ParameterSource | null;
+
+/** An entity whose temperature a domain action sets, of the same types as a display temperature; the entity is null until it is chosen. */
+export interface ParameterSource {
+  type: TemperatureSource["type"];
+  value: string | null;
+}
 
 export interface GeneralConfig {
   power_sensor: string | null;

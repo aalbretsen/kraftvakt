@@ -169,7 +169,9 @@ Changes are collected in a draft and stored with **Save**. The configuration pag
 
 Actions adapt to the domain of the entity, and every action can also be **Custom actions**, made with the action editor of Home Assistant,
 and every value from a template is a **Custom template**.
-A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way. Its target temperature may be a template.
+A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way.
+Its target temperature may be a fixed value, a template, or read from a sensor, a number helper or another thermostat,
+for example a helper with the temperature you want. It is read when the action runs, so a new value reaches the thermostat at the next command or command repeat.
 
 The status page shows the consumption and the averages against the power limit, the next decision, the safe state and the penalty,
 and the appliances and EV chargers as they stand, in priority order,

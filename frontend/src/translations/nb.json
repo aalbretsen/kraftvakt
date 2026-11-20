@@ -346,13 +346,24 @@
     "parameters": {
       "hvac_mode": "HVAC-modus",
       "temperature": "Måltemperatur",
-      "temperature_from": "Måltemperatur fra"
+      "temperature_from": "Måltemperatur fra",
+      "temperature_entity": "Sensor, tall eller termostat",
+      "temperature_reading": "Termostatens temperatur"
+    },
+    "readings": {
+      "target_temperature": "Innstilt temperatur",
+      "current_temperature": "Nåværende temperatur"
     },
     "value_from": {
       "number": "Fast verdi",
+      "source": "Sensor, tall eller termostat",
       "template": "Egendefinert mal"
     },
-    "parameter_range": "{min}–{max} {unit} for entiteten."
+    "parameter_range": "{min}–{max} {unit} for entiteten.",
+    "source_now": "Nå: {value}.",
+    "source_no_value": "Ingen temperatur nå: handlingen feiler så lenge den mangler.",
+    "source_read": "Leses når handlingen kjøres.",
+    "source_range": "Leses når handlingen kjøres, og holdes innenfor {min}–{max} {unit}."
   },
   "condition": {
     "entity": "Binærsensor eller bryter",

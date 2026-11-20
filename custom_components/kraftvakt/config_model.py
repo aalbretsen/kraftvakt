@@ -175,8 +175,15 @@ class ActionConfig:
             case ActionMode.ENTITY:
                 return self.entity_id is None
             case ActionMode.DOMAIN:
-                return any(value is None or value == "" for value in self.data.values())
+                return any(_is_unset(value) for value in self.data.values())
         return False
+
+
+def _is_unset(value: Any) -> bool:
+    """A value of a domain action is unset while it is not chosen, an empty template or a temperature source without an entity."""
+    if isinstance(value, Mapping):
+        return not value.get("value")
+    return value is None or value == ""
 
 
 @dataclass(frozen=True, slots=True)

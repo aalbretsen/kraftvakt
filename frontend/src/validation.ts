@@ -11,6 +11,7 @@ import {
   type GeneralConfig,
   type Issue,
   type KraftvaktConfig,
+  type ParameterValue,
   type Range,
 } from "./api";
 import { chargerDeviceEntities, deviceOfEntity, displaySensors } from "./devices";
@@ -162,8 +163,13 @@ export function isMissingAction(action: ActionConfig | null): boolean {
     action === null ||
     (action.mode === "custom" && (action.action ?? []).length === 0) ||
     (action.mode === "entity" && !action.entity_id) ||
-    (action.mode === "domain" && Object.values(action.data ?? {}).some((value) => value === null || value === ""))
+    (action.mode === "domain" && Object.values(action.data ?? {}).some(isUnset))
   );
+}
+
+/** A value of a domain action is unset while it is not chosen, an empty template or a temperature source without an entity. */
+function isUnset(value: ParameterValue): boolean {
+  return typeof value === "object" && value !== null ? !value.value : value === null || value === "";
 }
 
 export function applianceErrors(appliance: Appliance, capabilities: Capabilities, hass: HomeAssistant): Issue[] {

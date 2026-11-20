@@ -133,8 +133,10 @@ The section header, the description and the footer note are in `section-styles.t
 - A new entity adapts the actions of the appliance and every action a variant overrides the same way.
 - The domain actions of the entity's domain are offered after Default, in the order of the table. Choosing one fills each value with the one already chosen for the parameter,
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
-  an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a choice of a fixed value or a template,
-  then a number box in HA's temperature unit with the entity's range as helper, or a template editor. Switching between them starts the value empty.
+  an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a choice of a fixed value, Sensor, number or thermostat,
+  or a template, then a number box in HA's temperature unit with the entity's range as helper, an entity picker, or a template editor.
+  The entity picker offers sensors, numbers and thermostats but the appliance's own entity, and its helper shows the temperature now and the range it is kept within.
+  A thermostat adds a dropdown of its set or current temperature, the set temperature at first. Switching between them starts the value empty.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
 - Actively charging is one group with the charging power (Power sensor or Custom template), required, and car charging (a condition of the kind actively charging), optional.
   A charging power template is previewed as W.

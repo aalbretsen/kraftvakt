@@ -97,7 +97,8 @@ The store and the config entry are at version 1, without migrations.
 Before the first stable release, the stored format and the entities change without migrations, and installations are set up again from scratch.
 
 IDs are short UUIDs, so entities can change without losing the place in the list.
-An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen).
+An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen;
+a temperature may be a template or a temperature source, see Actions and templates).
 A condition is an entity or a template, and for car connected, car charging and the fault flag also the states of an entity (`states`, and `states_are_true`,
 which is false when the chosen states count as false). The charging power and the display power are a power sensor or a template,
 and the display temperature a temperature sensor, the current or target temperature of a climate entity (`current_temperature`, `target_temperature`, else `not_a_thermostat`),
@@ -179,6 +180,12 @@ Every issue code needs a text in the panel's translations.
     The temperature defaults to 0, outside every thermostat's range, so the user must set it.
     A temperature may also be a template, rendered with the item's variables when the action runs; it is checked for syntax, not against the range,
     and an empty one is missing. An option is never a template.
+  - A temperature may also be a temperature source, `{"type", "value"}` with the types of a display temperature but no template:
+    the state of a sensor, `input_number` or `number` (`temperature_sensor`, else `unsupported_entity_domain`),
+    or the current or target temperature of a climate entity (else `not_a_thermostat`). One without an entity is missing.
+    It is read only when the action runs, at a command or a command repeat, so its script is not kept.
+    The value is converted to HA's unit when the entity has another temperature unit, and moved inside the range of the thermostat.
+    Without a value the action fails as any failed action.
   - At save, the domain action must belong to the domain of the entity and the action kind, every parameter must be present,
     and the values must be of the right type and among the options or within the range the entity reports. Without the entity's state, only the types are checked.
     A value that is not chosen (`null`) is missing, not an error. Issues for a parameter are addressed as `<field>.<parameter>`.

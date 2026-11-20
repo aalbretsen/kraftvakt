@@ -2,7 +2,7 @@
  * Domain actions: services of the entity's domain with values the user
  * chooses. The checks are the same as in the backend's `domain_actions.py`.
  */
-import type { ActionConfig, ActionParameter, Capabilities, DomainAction, ParameterValue } from "./api";
+import type { ActionConfig, ActionParameter, Capabilities, DomainAction, ParameterSource, ParameterValue } from "./api";
 import type { HassEntity } from "./types";
 
 export interface ParameterRange {
@@ -63,11 +63,43 @@ function valueIssue(parameter: ActionParameter, value: ParameterValue, stateObj:
     return undefined;
   }
   if (parameter.type === "option") {
+    if (typeof value !== "string") {
+      return "invalid_type";
+    }
     const options = attribute(stateObj, parameter.options_attribute);
     return Array.isArray(options) && !options.includes(value) ? "unsupported_option" : undefined;
   }
+  if (typeof value === "object") {
+    return sourceIssue(value);
+  }
   const { min, max } = parameterRange(parameter, stateObj);
   return typeof value === "number" && ((min !== undefined && value < min) || (max !== undefined && value > max)) ? "outside_entity_range" : undefined;
+}
+
+/** The domains of the entities each type of temperature source reads. */
+export const TEMPERATURE_SOURCE_DOMAINS: Record<ParameterSource["type"], string[]> = {
+  temperature_sensor: ["sensor", "input_number", "number"],
+  current_temperature: ["climate"],
+  target_temperature: ["climate"],
+};
+
+/** A temperature source without an entity is missing, not wrong. */
+function sourceIssue(source: ParameterSource): string | undefined {
+  const domains = TEMPERATURE_SOURCE_DOMAINS[source.type];
+  if (!domains) {
+    return "invalid_type";
+  }
+  if (!source.value || domains.includes(source.value.split(".")[0])) {
+    return undefined;
+  }
+  return source.type === "temperature_sensor" ? "unsupported_entity_domain" : "not_a_thermostat";
+}
+
+/** Return the temperature a source gives now, in its own unit, or null without one; the backend converts it to Home Assistant's unit and keeps it within the range of the thermostat. */
+export function sourceTemperature(source: ParameterSource, stateObj: HassEntity | undefined): number | null {
+  const value = source.type === "temperature_sensor" ? stateObj?.state : stateObj?.attributes[source.type === "current_temperature" ? "current_temperature" : "temperature"];
+  const number = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+  return Number.isFinite(number) ? number : null;
 }
 
 function defaultValue(parameter: ActionParameter, stateObj: HassEntity | undefined): ParameterValue {
