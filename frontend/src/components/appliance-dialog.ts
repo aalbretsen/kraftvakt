@@ -117,7 +117,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     return this.renderGroup({
       title: this.localize("appliance.display_values"),
       description: this.localize("appliance.display_values_info"),
-      content: html` ${this.renderDisplayValue("display_power", issues)} ${this.renderDisplayValue("display_temperature", issues)} `,
+      content: [this.renderDisplayValue("display_power", issues), this.renderDisplayValue("display_temperature", issues)],
     });
   }
 

@@ -268,6 +268,7 @@ export class KraftvaktActionField extends LitElement {
 
   static styles = css`
     .label {
+      margin-bottom: 8px;
       font-weight: var(--ha-font-weight-medium, 500);
     }
     .invalid .label {

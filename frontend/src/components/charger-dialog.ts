@@ -49,23 +49,26 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return this.renderGroup({
       title: this.localize("charger.on_off"),
       description: this.localize("charger.on_off_info"),
-      content: html`${switchedBy} ${this.renderOnOffChoice(issues)}`,
+      content: [switchedBy, ...this.renderOnOffChoice(issues)],
     });
   }
 
+  /** The parts the choice shows, each in the group's list of parts. */
   private renderOnOffChoice(issues: Issue[]) {
     switch (this.draft.switched_by) {
       case "on_off_entity":
-        return this.renderEntityField(
-          "on_off_entity",
-          issues,
-          (entityId) => this.changeDraft({ on_off_entity: entityId }),
-          defaultActionOf(this.capabilities, "chargers", "activate").domains,
-        );
+        return [
+          this.renderEntityField(
+            "on_off_entity",
+            issues,
+            (entityId) => this.changeDraft({ on_off_entity: entityId }),
+            defaultActionOf(this.capabilities, "chargers", "activate").domains,
+          ),
+        ];
       case "actions":
-        return html`${this.renderAction("activate", issues)} ${this.renderAction("deactivate", issues)}`;
+        return [this.renderAction("activate", issues), this.renderAction("deactivate", issues)];
       case "current":
-        return html`<div class="helper">${this.localize("charger.switched_by_current_info")}</div>`;
+        return [html`<div class="helper">${this.localize("charger.switched_by_current_info")}</div>`];
     }
   }
 
@@ -90,15 +93,15 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return this.renderGroup({
       title: this.localize("charger.charging_current"),
       description: this.localize("charger.charging_current_info"),
-      content: html`
-        ${this.renderForm(currents, issues, (value) =>
+      content: [
+        this.renderForm(currents, issues, (value) =>
           this.changeDraft({
             min_current_a: value.min_current_a as number,
             max_current_a: value.max_current_a as number,
           }),
-        )}
-        ${this.renderAction("set_current", issues, { entityAllowed: true, extraVariables: ["current", "min_current", "max_current"] })}
-      `,
+        ),
+        this.renderAction("set_current", issues, { entityAllowed: true, extraVariables: ["current", "min_current", "max_current"] }),
+      ],
     });
   }
 
@@ -139,7 +142,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return this.renderGroup({
       title: this.label("actively_charging"),
       description: this.helper("actively_charging"),
-      content: html` ${this.renderCondition("charging_power", "charging_power", issues)} ${this.renderCondition("actively_charging", "actively_charging", issues, true)} `,
+      content: [this.renderCondition("charging_power", "charging_power", issues), this.renderCondition("actively_charging", "actively_charging", issues, true)],
     });
   }
 

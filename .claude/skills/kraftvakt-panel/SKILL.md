@@ -57,6 +57,8 @@ The section header, the description and the footer note are in `section-styles.t
   A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.
   An add button is a filled button at the right end of a header; where the header holds a switch, it goes at the right end under the list.
   Groups are not nested, so a field in a group, such as an action, has no frame of its own.
+  A group with several parts, such as two actions, two conditions or a choice and what it shows, has a line from edge to edge between them,
+  as Home Assistant divides a card.
 - A description under a title is secondary text. A footer has a note to the left of its control: the card footer under a divider, and the page footer under the last card.
 - An alert is only for a state or a warning, such as the lock, the warning against manual control or an applied charger profile, never for an explanation.
 - Fields are HA's own components with their own labels, helper texts and spacing, also where HA puts the label above one field and inside another.

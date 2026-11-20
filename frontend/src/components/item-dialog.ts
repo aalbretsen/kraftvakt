@@ -23,8 +23,9 @@ interface FormField {
 /**
  * A group of fields in a dialog: a box with a header, which has the title
  * and an optional control at the right end, the description and the content.
- * A group with a switch in its header is about something that can be turned
- * on, and shows its content only while it is on.
+ * Content given as a list is parts, such as two actions, with a line between them,
+ * as Home Assistant divides a card. A group with a switch in its header is about
+ * something that can be turned on, and shows its content only while it is on.
  */
 export interface Group {
   title: string;
@@ -33,6 +34,13 @@ export interface Group {
   toggle?: { checked: boolean; changed: (checked: boolean) => void; disabled?: boolean };
   content?: unknown;
   error?: string;
+}
+
+function renderContent(content: unknown) {
+  if (!Array.isArray(content)) {
+    return content ?? nothing;
+  }
+  return html`<div class="parts">${content.filter((part) => part !== nothing).map((part) => html`<div class="part">${part}</div>`)}</div>`;
 }
 
 /**
@@ -252,7 +260,7 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       : (group.control ?? nothing);
     return html`
       <section class="group ${group.error ? "invalid" : ""}">
-        ${renderSectionHeader(group.title, control)} ${renderDescription(group.description)} ${group.content ?? nothing}
+        ${renderSectionHeader(group.title, control)} ${renderDescription(group.description)} ${renderContent(group.content)}
         ${group.error ? html`<div class="error">${group.error}</div>` : nothing}
       </section>
     `;
@@ -322,6 +330,16 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
       }
       .group.invalid {
         border-color: var(--error-color);
+      }
+      .parts {
+        display: grid;
+        gap: 16px;
+      }
+      /* The line goes from edge to edge of the group, across its padding. */
+      .part + .part {
+        margin-inline: -16px;
+        padding: 16px 16px 0;
+        border-top: 1px solid var(--divider-color);
       }
       .error {
         font-size: var(--ha-font-size-s, 12px);
