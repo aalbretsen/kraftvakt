@@ -100,25 +100,38 @@ export class KraftvaktConditionField extends LitElement {
     }
   }
 
+  /** Where the value comes from is divided by a line from the value, what it gives now and its error. */
   protected render() {
     const type = this.shownType();
+    const options = this.types().map((value) => ({ value, label: this.text(value) }));
+    return html`
+      ${this.renderForm([{ name: "type", selector: { select: { mode: "list", options } } }])}
+      <div class="shown">${this.renderForm(this.valueField(type))} ${this.renderPreview()} ${this.error ? html`<div class="error">${this.error}</div>` : nothing}</div>
+    `;
+  }
+
+  private renderForm(schema: Record<string, unknown>[]) {
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{
-          type,
-          value: this.listsTemperatures(type) && this.value?.value ? sourceKey(this.value) : (this.value?.value ?? ""),
-          states_are_true: String(this.value?.states_are_true ?? true),
-          states: this.value?.states ?? [],
-        }}
-        .schema=${this.schema(type)}
+        .data=${this.formData()}
+        .schema=${schema}
         .disabled=${this.disabled}
         .computeLabel=${this.computeLabel}
         .computeHelper=${this.computeHelper}
         @value-changed=${this.valueChanged}
       ></ha-form>
-      ${this.renderPreview()} ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
     `;
+  }
+
+  private formData() {
+    const type = this.shownType();
+    return {
+      type,
+      value: this.listsTemperatures(type) && this.value?.value ? sourceKey(this.value) : (this.value?.value ?? ""),
+      states_are_true: String(this.value?.states_are_true ?? true),
+      states: this.value?.states ?? [],
+    };
   }
 
   /** The type shown: a condition that is not set yet shows its first type, and a thermostat's temperature the temperature sensors. */
@@ -138,12 +151,7 @@ export class KraftvaktConditionField extends LitElement {
     return this.stateChoices ? types.flatMap((type) => (type === "entity" ? [type, "state" as const] : [type])) : types;
   }
 
-  private schema(type: Condition["type"]) {
-    const options = this.types().map((value) => ({ value, label: this.text(value) }));
-    return [{ name: "type", selector: { select: { mode: "list", options } } }, ...this.valueField(type)];
-  }
-
-  private valueField(type: Condition["type"]) {
+  private valueField(type: Condition["type"]): Record<string, unknown>[] {
     switch (type) {
       case "entity":
         return [
@@ -373,7 +381,7 @@ export class KraftvaktConditionField extends LitElement {
    */
   private valueChanged(event: CustomEvent<{ value: { type: Condition["type"]; value?: string; states?: string[]; states_are_true?: string } }>): void {
     event.stopPropagation();
-    const { type, value, states, states_are_true } = event.detail.value;
+    const { type, value, states, states_are_true } = { ...this.formData(), ...event.detail.value };
     const sameType = type === this.shownType();
     const source = sameType && this.listsTemperatures(type) && value ? parseSourceKey(value) : undefined;
     const condition: Condition = source ? { type: source.type, value: source.entityId } : { type, value: sameType ? (value ?? "") : "" };
@@ -417,6 +425,12 @@ export class KraftvaktConditionField extends LitElement {
   static styles = css`
     :host {
       display: block;
+    }
+    /* From edge to edge of the group, across its padding. */
+    .shown {
+      margin: 16px -16px 0;
+      padding: 16px 16px 0;
+      border-top: 1px solid var(--divider-color);
     }
     /* Indented as Home Assistant indents the helper text of a field. */
     .preview,
