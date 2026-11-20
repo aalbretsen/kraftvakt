@@ -5,7 +5,7 @@ import { CHARGER_CHIPS, type ChipKind } from "../src/charger-chips";
 import chargerStates from "./fixtures/charger_states.json";
 
 /** The colour of the state sensor that each kind of chip stands for. */
-const SENSOR_COLORS: Record<ChipKind, string> = { on: "green", off: "grey", outline: "grey", alarm: "red", info: "light-blue" };
+const SENSOR_COLORS: Record<ChipKind, string> = { on: "green", off: "grey", outline: "grey", alarm: "red", info: "light-blue", waiting: "amber" };
 
 /** The path in `@mdi/js` of an icon named as in Home Assistant, such as `mdi:alert-circle-outline`. */
 function iconPath(name: string): string | undefined {

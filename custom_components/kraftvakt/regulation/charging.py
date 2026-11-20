@@ -57,11 +57,12 @@ class ChargingPermission(StrEnum):
 class ChargerState(StrEnum):
     """How a charger stands after the last decision, the most important first."""
 
-    FIRST_DECISION = "first_decision"
+    STOPPED = "stopped"
     FAULT = "fault"
+    FIRST_DECISION = "first_decision"
+    NO_CAR = "no_car"
     EXCLUDED = "excluded"
     OUTSIDE_WINDOW = "outside_window"
-    NO_CAR = "no_car"
     QUEUED = "queued"
     STARTING = "starting"
     FINISHING = "finishing"
@@ -388,16 +389,16 @@ class ChargingState:
 
     def _state_of(self, charger_id: str, activated: bool, charging: bool) -> ChargerState:
         permission = self.last_permissions.get(charger_id)
-        if permission is None:
-            return ChargerState.FIRST_DECISION
         if permission is ChargingPermission.FAULT:
             return ChargerState.FAULT
+        if permission is None:
+            return ChargerState.FIRST_DECISION
+        if charger_id in self.bypassed:
+            return ChargerState.NO_CAR
         if permission is ChargingPermission.EXCLUDED:
             return ChargerState.EXCLUDED
         if permission is ChargingPermission.OUTSIDE_WINDOW:
             return ChargerState.OUTSIDE_WINDOW
-        if charger_id in self.bypassed:
-            return ChargerState.NO_CAR
         if charger_id in self.waiting and not activated:
             return ChargerState.QUEUED
         if charger_id in self.starting:

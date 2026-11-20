@@ -52,11 +52,12 @@
       "charger_state": {
         "name": "{charger} tilstand",
         "state": {
-          "first_decision": "Første avgjørelse",
+          "stopped": "Regulering stoppet",
           "fault": "Feil",
+          "first_decision": "Første avgjørelse",
+          "no_car": "Bil frakoblet",
           "excluded": "Utenfor regulering",
           "outside_window": "Utenfor ladetidsrom",
-          "no_car": "Bil frakoblet",
           "queued": "I kø",
           "starting": "Starter",
           "finishing": "Fullfører",

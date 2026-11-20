@@ -214,8 +214,10 @@ Every issue code needs a text in the panel's translations.
 - Each charger has a state sensor, an enum sensor with the charger's state from the status snapshot and its labels as state translations,
   so `state_translated` gives the label in a template. Its icon and colours, colour names of the Home Assistant theme, are the `icon` property
   and the `color` and `badge_color` attributes, not icon translations, since a template cannot read those. They are left out of the recorder.
-  `badge_color` is for a circle behind the icon in white: the same as `color`, but dark grey for grey, since white on grey is hard to read,
-  and grey as an icon reads better than dark grey on a dark theme.
+  `badge_color` is for a circle behind the icon in white: the same as `color`, but dark grey for grey and orange for amber, since white on them is hard to read,
+  and grey and amber as an icon read better on a dark theme.
+  Red is for what keeps a charger from charging until someone acts: stopped and fault.
+  Amber is for a car that is connected and waits to be allowed: outside its charging window, queued and deactivated.
   The panel's chips for a charger use the same icons and colours, and its tests check them against a fixture made from the sensor's table.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
@@ -253,13 +255,13 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - The display values of an appliance, and the charging power of a charger, are read when the snapshot is built, `null` without a valid value.
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
-- A charger's state is the first that holds of: first decision (before the first decision after a start), fault, excluded, outside its charging window,
-  no car connected (bypassed), queued (waiting and not activated), starting, finishing, charging, activated,
+- A charger's state is the first that holds of: stopped (while the regulation is stopped), fault, first decision (before the first decision after a start),
+  no car connected (bypassed), excluded, outside its charging window, queued (waiting and not activated), starting, finishing, charging, activated,
   override (allowed only by the override and deactivated), deactivated. It is worked out in the engine from the last decision,
-  before its commands, so a charger activated at a decision shows its new state at the next one. While the regulation is stopped, every charger is deactivated,
-  since a stop deactivates them.
-  Fault comes first, since the user needs to know that the charger is broken.
-  Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user needs to know that the car is missing.
+  before its commands, so a charger activated at a decision shows its new state at the next one.
+  Stopped comes before fault, since the fault flag is not read while the regulation is stopped.
+  Fault comes next, since the user needs to know that the charger is broken.
+  No car connected comes before the other reasons not to charge, since without a car nothing else matters.
   Charging is true while the charger is activated and was actively charging at the last decision.
   A starting charger also has when its start delay ends, `null` for the others.
 - The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the order of their ampere steps:

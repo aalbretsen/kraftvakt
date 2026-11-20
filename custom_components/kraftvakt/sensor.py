@@ -123,23 +123,24 @@ class StateIcon(NamedTuple):
 
     @property
     def badge_color(self) -> str:
-        """The colour of a circle behind the icon in white, darker for grey, since white on grey is hard to read."""
-        return "dark-grey" if self.color == "grey" else self.color
+        """The colour of a circle behind the icon in white, darker for grey and amber, since white on them is hard to read."""
+        return {"grey": "dark-grey", "amber": "orange"}.get(self.color, self.color)
 
 
 CHARGER_STATE_ICONS: dict[ChargerState, StateIcon] = {
-    ChargerState.FIRST_DECISION: StateIcon("mdi:timer-sand", "grey"),
+    ChargerState.STOPPED: StateIcon("mdi:stop-circle-outline", "red"),
     ChargerState.FAULT: StateIcon("mdi:alert-circle-outline", "red"),
-    ChargerState.EXCLUDED: StateIcon("mdi:cancel", "grey"),
-    ChargerState.OUTSIDE_WINDOW: StateIcon("mdi:clock-outline", "grey"),
+    ChargerState.FIRST_DECISION: StateIcon("mdi:timer-sand", "grey"),
     ChargerState.NO_CAR: StateIcon("mdi:car-off", "grey"),
-    ChargerState.QUEUED: StateIcon("mdi:timer-sand", "grey"),
+    ChargerState.EXCLUDED: StateIcon("mdi:cancel", "grey"),
+    ChargerState.OUTSIDE_WINDOW: StateIcon("mdi:clock-outline", "amber"),
+    ChargerState.QUEUED: StateIcon("mdi:timer-sand", "amber"),
     ChargerState.STARTING: StateIcon("mdi:cloud-clock-outline", "light-blue"),
     ChargerState.FINISHING: StateIcon("mdi:clock-end", "light-blue"),
     ChargerState.CHARGING: StateIcon("mdi:lightning-bolt", "green"),
     ChargerState.ACTIVATED: StateIcon("mdi:power-plug", "green"),
     ChargerState.OVERRIDE: StateIcon("mdi:clock-fast", "light-blue"),
-    ChargerState.DEACTIVATED: StateIcon("mdi:pause-circle-outline", "grey"),
+    ChargerState.DEACTIVATED: StateIcon("mdi:pause-circle-outline", "amber"),
 }
 
 

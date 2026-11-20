@@ -9,13 +9,14 @@ import {
   mdiLightningBolt,
   mdiPauseCircleOutline,
   mdiPowerPlug,
+  mdiStopCircleOutline,
   mdiTimerSand,
 } from "@mdi/js";
 
 import type { ChargerState } from "./api";
 import type { TranslationKey } from "./localize";
 
-export type ChipKind = "on" | "off" | "alarm" | "outline" | "info";
+export type ChipKind = "on" | "off" | "alarm" | "outline" | "info" | "waiting";
 
 /** How a chip looks: its colour and its icon, or a dot without one. */
 export interface Chip {
@@ -30,16 +31,17 @@ export const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
  * The icons and colours are those of the charger's state sensor.
  */
 export const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
-  first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
+  stopped: [{ kind: "alarm", icon: mdiStopCircleOutline }, "status.chip_stopped", "status.regulation_stopped"],
   fault: [{ kind: "alarm", icon: mdiAlertCircleOutline }, "status.chip_fault", "status.fault"],
-  excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
-  outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
+  first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
   no_car: [{ kind: "off", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
-  queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
+  excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
+  outside_window: [{ kind: "waiting", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
+  queued: [{ kind: "waiting", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
   starting: [{ kind: "info", icon: mdiCloudClockOutline }, "status.chip_starting", "status.starting_until"],
   finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
   charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
   activated: [{ kind: "on", icon: mdiPowerPlug }, "status.activated", "status.activated_not_charging"],
   override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
-  deactivated: [{ kind: "off", icon: mdiPauseCircleOutline }, "status.deactivated", "status.deactivated"],
+  deactivated: [{ kind: "waiting", icon: mdiPauseCircleOutline }, "status.deactivated", "status.deactivated"],
 };

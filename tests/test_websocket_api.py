@@ -998,7 +998,7 @@ async def test_status_shows_the_chargers(
         {
             "id": "c1",
             "name": "input_boolean.charger",
-            "state": "deactivated",
+            "state": "stopped",
             "activated": False,
             "current_a": None,
             "power_w": 3700.0,

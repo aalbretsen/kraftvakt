@@ -255,7 +255,7 @@ export interface ApplianceStatus {
 
 /** How an EV charger stands after the last decision, the most important first. */
 export type ChargerState =
-  "first_decision" | "fault" | "excluded" | "outside_window" | "no_car" | "queued" | "starting" | "finishing" | "charging" | "activated" | "override" | "deactivated";
+  "stopped" | "fault" | "first_decision" | "no_car" | "excluded" | "outside_window" | "queued" | "starting" | "finishing" | "charging" | "activated" | "override" | "deactivated";
 
 export interface ChargerStatus {
   id: string;

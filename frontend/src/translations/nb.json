@@ -73,6 +73,8 @@
     "chip_window": "{start}–{end}",
     "chip_override": "Overstyrt",
     "chip_finishing": "Fullfører",
+    "chip_stopped": "Stoppet",
+    "regulation_stopped": "Reguleringen er stoppet, så elbilladeren er deaktivert",
     "chip_first_decision": "Første avgjørelse",
     "chip_fault": "Feil",
     "fault": "Feilflagget viser feil, så elbilladeren er deaktivert til feilen er borte",

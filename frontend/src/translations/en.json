@@ -73,6 +73,8 @@
     "chip_window": "{start}–{end}",
     "chip_override": "Override",
     "chip_finishing": "Finishing",
+    "chip_stopped": "Stopped",
+    "regulation_stopped": "The regulation is stopped, so the EV charger is deactivated",
     "chip_first_decision": "First decision",
     "chip_fault": "Fault",
     "fault": "A fault flag shows a fault, so the EV charger is deactivated until the fault clears",

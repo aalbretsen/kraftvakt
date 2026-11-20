@@ -611,7 +611,7 @@ async def test_override_lasts_until_the_car_has_been_disconnected(
     await advance_until(hass, freezer, "2026-11-08T07:40")
     assert switch_state(hass, "c1", "window_override") == STATE_OFF
     assert stored_switches(hass_storage)["c1"]["window_override"] is False
-    assert entry_charger_state(hass) is ChargerState.OUTSIDE_WINDOW
+    assert entry_charger_state(hass) is ChargerState.NO_CAR
 
 
 async def test_override_ends_on_a_disconnect_while_stopped(
@@ -938,8 +938,8 @@ async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, action
 @pytest.mark.parametrize(
     ("language", "name", "labels"),
     [
-        ("en", "Garage state", ["First decision", "Activated", "Charging", "Deactivated"]),
-        ("nb", "Garage tilstand", ["Første avgjørelse", "Aktivert", "Lader", "Deaktivert"]),
+        ("en", "Garage state", ["First decision", "Activated", "Charging", "Regulation stopped"]),
+        ("nb", "Garage tilstand", ["Første avgjørelse", "Aktivert", "Lader", "Regulering stoppet"]),
     ],
 )
 async def test_state_sensor_gives_templates_the_label_icon_and_colours_of_the_state(
@@ -951,7 +951,7 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colours_of_the_st
     name: str,
     labels: list[str],
 ) -> None:
-    """Named after the charger, in the language of Home Assistant, and deactivated while the regulation is stopped."""
+    """Named after the charger, in the language of Home Assistant, and stopped while the regulation is stopped."""
     await hass.config.async_update(language=language)
     set_power(hass, CHARGER_POWER, "0")
     entry = await setup_kraftvakt()
@@ -964,7 +964,7 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colours_of_the_st
     state = hass.states.get(entity_id)
     assert state is not None
     assert state.name == f"Kraftvakt {name}"
-    assert "deactivated" in state.attributes["options"]
+    assert "stopped" in state.attributes["options"]
     assert shown() == ["first_decision", labels[0], "mdi:timer-sand", "grey", "dark-grey"]
 
     await advance(hass, freezer)
@@ -976,7 +976,7 @@ async def test_state_sensor_gives_templates_the_label_icon_and_colours_of_the_st
 
     entry.runtime_data.async_stop_regulation()
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert shown() == ["deactivated", labels[3], "mdi:pause-circle-outline", "grey", "dark-grey"]
+    assert shown() == ["stopped", labels[3], "mdi:stop-circle-outline", "red", "red"]
 
 
 async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, actions, config, setup_kraftvakt) -> None:

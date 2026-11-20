@@ -300,7 +300,7 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),
   so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
-- State (per charger): the charger's state as on the status page, deactivated while the regulation is stopped,
+- State (per charger): the charger's state as on the status page, stopped while the regulation is stopped,
   with an icon and a colour that templates can read, for a dashboard.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
   without the longer waiting time on repeated turn-on or the held power reserves. Unavailable without an average.

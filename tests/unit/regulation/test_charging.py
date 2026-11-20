@@ -195,6 +195,7 @@ def evaluate(
     allowed: tuple[str, ...] | None = None,
     overridden: tuple[str, ...] = (),
     faulty: tuple[str, ...] = (),
+    excluded: tuple[str, ...] = (),
     now: datetime = NOW,
     one_at_a_time: bool = True,
     dynamic_order: bool = False,
@@ -204,6 +205,8 @@ def evaluate(
     def permission(charger_id: str) -> ChargingPermission:
         if charger_id in faulty:
             return ChargingPermission.FAULT
+        if charger_id in excluded:
+            return ChargingPermission.EXCLUDED
         if charger_id in overridden:
             return ChargingPermission.OVERRIDE
         return ChargingPermission.WINDOW if allowed is None or charger_id in allowed else ChargingPermission.OUTSIDE_WINDOW
@@ -354,8 +357,9 @@ def test_with_dynamic_order_a_charger_whose_car_is_disconnected_is_deactivated()
 
 
 def test_status_of_each_charger() -> None:
-    """The override shows only for a charger that is deactivated."""
-    configured = chargers("a", "b", "c", "d", "e", "f")
+    """The override shows only for a charger that is deactivated, and a missing car also for an excluded charger and outside the charging window."""
+    configured = chargers("a", "b", "c", "d", "e", "f", "g", "h", "i")
+    no_car = ChargerReading(car_connected=False)
     group = group_of(configured, one_at_a_time=False)
     state = activated(configured, e=1)
     assert state.status(group)["a"].state is ChargerState.FIRST_DECISION
@@ -363,9 +367,11 @@ def test_status_of_each_charger() -> None:
     evaluate(
         state,
         configured,
-        {"a": CHARGING, "b": IDLE, "c": ChargerReading(car_connected=False), "d": IDLE, "e": IDLE, "f": IDLE},
+        {"a": CHARGING, "b": IDLE, "c": no_car, "d": IDLE, "e": IDLE, "f": IDLE, "g": no_car, "h": no_car, "i": no_car},
         allowed=("c", "d"),
         overridden=("a", "e", "f"),
+        faulty=("h",),
+        excluded=("i",),
         one_at_a_time=False,
     )
 
@@ -376,6 +382,9 @@ def test_status_of_each_charger() -> None:
         "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True),
         "e": ChargerStatus(ChargerState.ACTIVATED, 1, 6, False, False, True),
         "f": ChargerStatus(ChargerState.OVERRIDE, 0, None, False, False, True),
+        "g": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
+        "h": ChargerStatus(ChargerState.FAULT, 0, None, True, False, False),
+        "i": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
     }
 
 

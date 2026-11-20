@@ -54,4 +54,8 @@ export const chipStyles = css`
     background: rgba(var(--rgb-info-color, 3, 155, 229), 0.16);
     color: var(--info-color, #039be5);
   }
+  .chip.waiting {
+    background: rgba(var(--rgb-amber-color, 255, 193, 7), 0.16);
+    color: var(--amber-color, #ffc107);
+  }
 `;

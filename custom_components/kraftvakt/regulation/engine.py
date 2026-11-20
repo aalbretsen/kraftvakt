@@ -124,11 +124,11 @@ class RegulationEngine:
 
     @property
     def chargers(self) -> Mapping[str, ChargerStatus]:
-        """Return how each charger stands after the last decision, deactivated while stopped, since a stop deactivates every charger."""
+        """Return how each charger stands after the last decision, and stopped while the regulation is stopped."""
         statuses = {charger_id: status for group in self._groups for charger_id, status in self._charging(group.id).status(group).items()}
         if self._running:
             return statuses
-        return {charger_id: replace(status, state=ChargerState.DEACTIVATED) for charger_id, status in statuses.items()}
+        return {charger_id: replace(status, state=ChargerState.STOPPED) for charger_id, status in statuses.items()}
 
     @property
     def charging_priorities(self) -> Mapping[str, list[str]]:
