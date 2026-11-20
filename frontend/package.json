@@ -1,6 +1,6 @@
 {
   "name": "kraftvakt-panel",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "description": "The Kraftvakt panel for the Home Assistant sidebar",
   "license": "MIT",
