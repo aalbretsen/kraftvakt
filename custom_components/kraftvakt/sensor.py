@@ -1,9 +1,10 @@
-"""Sensors for the averages and the diagnostics of the regulation."""
+"""Sensors for the averages, the diagnostics of the regulation and the state of each charger."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, NamedTuple
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -17,6 +18,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .entity import KraftvaktEntity
+from .item_entity import ChargerEntity, async_setup_item_entities
+from .regulation.charging import ChargerState
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 
 PARALLEL_UPDATES = 0
@@ -112,12 +115,36 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
 )
 
 
+class StateIcon(NamedTuple):
+    """An icon from Material Design Icons and a colour name of the Home Assistant theme."""
+
+    icon: str
+    color: str
+
+
+CHARGER_STATE_ICONS: dict[ChargerState, StateIcon] = {
+    ChargerState.FIRST_DECISION: StateIcon("mdi:timer-sand", "grey"),
+    ChargerState.FAULT: StateIcon("mdi:alert-circle-outline", "red"),
+    ChargerState.EXCLUDED: StateIcon("mdi:cancel", "grey"),
+    ChargerState.OUTSIDE_WINDOW: StateIcon("mdi:clock-outline", "grey"),
+    ChargerState.NO_CAR: StateIcon("mdi:car-off", "grey"),
+    ChargerState.QUEUED: StateIcon("mdi:timer-sand", "grey"),
+    ChargerState.STARTING: StateIcon("mdi:cloud-clock-outline", "light-blue"),
+    ChargerState.FINISHING: StateIcon("mdi:clock-end", "light-blue"),
+    ChargerState.CHARGING: StateIcon("mdi:lightning-bolt", "green"),
+    ChargerState.ACTIVATED: StateIcon("mdi:power-plug", "green"),
+    ChargerState.OVERRIDE: StateIcon("mdi:clock-fast", "light-blue"),
+    ChargerState.DEACTIVATED: StateIcon("mdi:power-plug-off-outline", "grey"),
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: KraftvaktConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     async_add_entities(RegulationSensor(entry, entry.runtime_data, description) for description in SENSORS)
+    async_setup_item_entities(hass, entry, async_add_entities, "sensor", (ChargerStateSensor,))
 
 
 class RegulationSensor(KraftvaktEntity, SensorEntity):
@@ -144,3 +171,41 @@ class RegulationSensor(KraftvaktEntity, SensorEntity):
     @property
     def available(self) -> bool:
         return self.native_value is not None
+
+
+class ChargerStateSensor(ChargerEntity, SensorEntity):
+    """The state of the charger after the last decision, as on the status page.
+
+    The icon and the colour are attributes, not icon translations, so templates can read them.
+    """
+
+    settings = ("state",)
+    _attr_device_class = SensorDeviceClass.ENUM
+    _unrecorded_attributes = frozenset({"icon", "color"})
+
+    async def async_added_to_hass(self) -> None:
+        """Follow the settings and the decisions."""
+        await super().async_added_to_hass()
+        self.async_on_remove(self._runtime.async_add_status_listener(self.async_write_ha_state))
+
+    def _charger_state(self) -> ChargerState | None:
+        status = self._runtime.chargers.get(self._item_id)
+        return None if status is None else status.state
+
+    @property
+    def options(self) -> list[str]:
+        return [state.value for state in ChargerState]
+
+    @property
+    def native_value(self) -> ChargerState | None:
+        return self._charger_state()
+
+    @property
+    def icon(self) -> str | None:
+        state = self._charger_state()
+        return None if state is None else CHARGER_STATE_ICONS[state].icon
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        state = self._charger_state()
+        return None if state is None else {"color": CHARGER_STATE_ICONS[state].color}

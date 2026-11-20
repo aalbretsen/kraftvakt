@@ -66,7 +66,7 @@
     "window_overridden": "The charging window is overridden",
     "finishing_at": "Finishing the charging that went on when the charging window ended, at {current} A",
     "chip_charging": "Charging",
-    "chip_no_car": "No car connected",
+    "chip_no_car": "Car disconnected",
     "chip_queued": "Queued",
     "chip_starting": "Starting",
     "chip_excluded": "Excluded",

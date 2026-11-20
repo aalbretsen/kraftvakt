@@ -19,7 +19,7 @@ description: How Kraftvakt is tested - the test layout, the scenario language fo
   vitest is a build tool of the panel, so it gets its newest release, not the version of the Home Assistant frontend.
 - Where the panel mirrors the backend, its tests read fixtures made from the backend, so both sides are tested against the same values.
   `tests/unit/test_panel_fixtures.py` fails when the backend no longer matches them: write them again with `.venv/bin/python -m tests.unit.test_panel_fixtures`
-  and run the panel's tests.
+  and format them with `npm run format` in `frontend/`, since the panel's format check covers them, then run the panel's tests.
 - Each charger profile has its own test file in `tests/charger_profiles/profiles/`, with the device and entities as its integration registers them,
   the fields the profile fills, and a save of a charger made from them, which the backend must accept.
   The file records how we read the integration, from its source, so a change in the shared code that breaks a profile is found.

@@ -287,7 +287,7 @@ Automations can set the power limit with it:
 
 ## Status entities
 
-Penalty active, penalty overconsumption and power free have no entity category, so they show as sensors; the others have entity category diagnostic.
+Penalty active, penalty overconsumption, power free and the state of each charger have no entity category, so they show as sensors; the others have entity category diagnostic.
 
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside the overconsumption state.
@@ -300,6 +300,8 @@ Penalty active, penalty overconsumption and power free have no entity category, 
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
   Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),
   so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
+- State (per charger): the charger's state as on the status page, deactivated while the regulation is stopped,
+  with an icon and a colour that templates can read, for a dashboard.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
   without the longer waiting time on repeated turn-on or the held power reserves. Unavailable without an average.
 

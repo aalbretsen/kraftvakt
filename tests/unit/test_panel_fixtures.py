@@ -1,7 +1,7 @@
 """The fixtures the panel's tests read, made from the backend.
 
 The panel mirrors parts of the backend, and its tests use these files, so the two are tested against the same values.
-After a change in the backend, write them again with `python -m tests.unit.test_panel_fixtures` and run the panel's tests.
+After a change in the backend, write them again with `python -m tests.unit.test_panel_fixtures`, format them with `npm run format` and run the panel's tests.
 """
 
 from __future__ import annotations
@@ -14,7 +14,9 @@ from typing import Any
 import pytest
 
 from custom_components.kraftvakt.config_model import regulation_window_options
+from custom_components.kraftvakt.regulation.charging import ChargerState
 from custom_components.kraftvakt.regulation.waiting import RepeatedTurnOnGrowth, WaitingCurve, repeated_turn_on_waiting_time
+from custom_components.kraftvakt.sensor import CHARGER_STATE_ICONS
 from custom_components.kraftvakt.websocket_api import capabilities
 
 FIXTURES = Path(__file__).parents[2] / "frontend" / "test" / "fixtures"
@@ -46,8 +48,17 @@ def regulation_window() -> dict[str, Any]:
     return {"options": [[interval_s, regulation_window_options(interval_s)] for interval_s in [1, 2, 2.5, 3, 3.3, 10, 15, 60, 130]]}
 
 
+def charger_states() -> dict[str, Any]:
+    return {state.value: CHARGER_STATE_ICONS[state]._asdict() for state in ChargerState}
+
+
 def panel_fixtures() -> dict[str, Any]:
-    return {"capabilities.json": capabilities(), "waiting.json": waiting(), "regulation_window.json": regulation_window()}
+    return {
+        "capabilities.json": capabilities(),
+        "waiting.json": waiting(),
+        "regulation_window.json": regulation_window(),
+        "charger_states.json": charger_states(),
+    }
 
 
 @pytest.mark.parametrize("name", panel_fixtures())

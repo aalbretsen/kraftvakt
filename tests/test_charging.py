@@ -22,6 +22,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -601,7 +602,7 @@ async def test_override_lasts_until_the_car_has_been_disconnected(
     await advance_until(hass, freezer, "2026-11-08T07:20")
     assert "current 7" in actions
     assert f"on {CHARGER}" not in actions
-    assert entry_charger_state(hass) is ChargerState.OVERRIDE
+    assert entry_charger_state(hass) is ChargerState.CHARGING
     assert status_snapshot(hass, hass.config_entries.async_entries(DOMAIN)[0].runtime_data)["priority"][0]["chargers"][0]["charging"]
     assert switch_state(hass, "c1", "window_override") == STATE_ON
 
@@ -934,6 +935,50 @@ async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, action
     assert state.name == "Kraftvakt Garage allowed to charge"
 
 
+@pytest.mark.parametrize(
+    ("language", "name", "labels"),
+    [
+        ("en", "Garage state", ["First decision", "Activated", "Charging", "Deactivated"]),
+        ("nb", "Garage tilstand", ["Første avgjørelse", "Aktivert", "Lader", "Deaktivert"]),
+    ],
+)
+async def test_state_sensor_gives_templates_the_label_icon_and_colour_of_the_state(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    setup_kraftvakt,
+    language: str,
+    name: str,
+    labels: list[str],
+) -> None:
+    """Named after the charger, in the language of Home Assistant, and deactivated while the regulation is stopped."""
+    await hass.config.async_update(language=language)
+    set_power(hass, CHARGER_POWER, "0")
+    entry = await setup_kraftvakt()
+    entity_id = "sensor.kraftvakt_charger_garage_state"
+    template = Template("{{ states(e) }}|{{ state_translated(e) }}|{{ state_attr(e, 'icon') }}|{{ state_attr(e, 'color') }}", hass)
+
+    def shown() -> list[str]:
+        return template.async_render({"e": entity_id}, parse_result=False).split("|")
+
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.name == f"Kraftvakt {name}"
+    assert "deactivated" in state.attributes["options"]
+    assert shown() == ["first_decision", labels[0], "mdi:timer-sand", "grey"]
+
+    await advance(hass, freezer)
+    assert shown() == ["activated", labels[1], "mdi:power-plug", "green"]
+
+    set_power(hass, CHARGER_POWER, "4100")
+    await advance(hass, freezer)
+    assert shown() == ["charging", labels[2], "mdi:lightning-bolt", "green"]
+
+    entry.runtime_data.async_stop_regulation()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert shown() == ["deactivated", labels[3], "mdi:power-plug-off-outline", "grey"]
+
+
 async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, actions, config, setup_kraftvakt) -> None:
     """The switches of appliances and chargers configure them, and the rest are controls, sensors or diagnostics."""
     config["appliances"] = [{"id": "a", "entity_id": "light.heater", "turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}]
@@ -958,6 +1003,7 @@ async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, acti
         "charger_c1_window_override": EntityCategory.CONFIG,
         "charger_c1_finish_after_window": EntityCategory.CONFIG,
         "charger_c1_allowed_to_charge": EntityCategory.DIAGNOSTIC,
+        "charger_c1_state": None,
     }
 
 

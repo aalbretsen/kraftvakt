@@ -235,8 +235,10 @@ The section header, the description and the footer note are in `section-styles.t
     A group's row shows how many of its chargers are charging of all.
   - The current column has the current before one bar per ampere from min to max, filled up to the current. The filled bars of a bypassed charger are hatched.
     A charger without a current, which is deactivated, shows a dash and empty bars, and on a phone nothing.
-  - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, and the title of an excluded appliance is dimmed.
-    A charger shows its state from the status, with its charging window as the word when it is outside it. Fault is in the alarm colour.
+  - The state chip has an icon and a word, with the whole sentence as a tooltip. An appliance shows excluded, on or off, with a dot for on and off,
+    and the title of an excluded appliance is dimmed.
+    A charger shows its state from the status, with its charging window as the word when it is outside it, and the icon and colour of its state sensor.
+    Fault is in the alarm colour.
   - The row of an appliance or EV charger fires `hass-more-info` for its entity, the entity Kraftvakt turns on and off or activates,
     since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
     A row or tile clicked with the mouse lets go of the focus before the dialog opens, since Home Assistant gives the focus back when the dialog closes,

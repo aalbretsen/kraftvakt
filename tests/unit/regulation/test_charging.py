@@ -354,7 +354,8 @@ def test_with_dynamic_order_a_charger_whose_car_is_disconnected_is_deactivated()
 
 
 def test_status_of_each_charger() -> None:
-    configured = chargers("a", "b", "c", "d", "e")
+    """The override shows only for a charger that is deactivated."""
+    configured = chargers("a", "b", "c", "d", "e", "f")
     group = group_of(configured, one_at_a_time=False)
     state = activated(configured, e=1)
     assert state.status(group)["a"].state is ChargerState.FIRST_DECISION
@@ -362,18 +363,19 @@ def test_status_of_each_charger() -> None:
     evaluate(
         state,
         configured,
-        {"a": CHARGING, "b": IDLE, "c": ChargerReading(car_connected=False), "d": IDLE, "e": IDLE},
-        allowed=("a", "c", "d", "e"),
-        overridden=("a",),
+        {"a": CHARGING, "b": IDLE, "c": ChargerReading(car_connected=False), "d": IDLE, "e": IDLE, "f": IDLE},
+        allowed=("c", "d"),
+        overridden=("a", "e", "f"),
         one_at_a_time=False,
     )
 
     assert state.status(group) == {
-        "a": ChargerStatus(ChargerState.OVERRIDE, 4, 9, False, True, True),
+        "a": ChargerStatus(ChargerState.CHARGING, 4, 9, False, True, True),
         "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, True),
         "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
         "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True),
         "e": ChargerStatus(ChargerState.ACTIVATED, 1, 6, False, False, True),
+        "f": ChargerStatus(ChargerState.OVERRIDE, 0, None, False, False, True),
     }
 
 

@@ -46,10 +46,6 @@ export const chipStyles = css`
     background: rgba(var(--rgb-error-color, 219, 68, 55), 0.16);
     color: var(--error-color, #db4437);
   }
-  .chip.warning {
-    background: rgba(var(--rgb-warning-color, 255, 166, 0), 0.16);
-    color: var(--warning-color, #ffa600);
-  }
   .chip.outline {
     background: none;
     box-shadow: inset 0 0 0 1px var(--divider-color);

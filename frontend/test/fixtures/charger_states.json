@@ -1,0 +1,50 @@
+{
+  "first_decision": {
+    "icon": "mdi:timer-sand",
+    "color": "grey"
+  },
+  "fault": {
+    "icon": "mdi:alert-circle-outline",
+    "color": "red"
+  },
+  "excluded": {
+    "icon": "mdi:cancel",
+    "color": "grey"
+  },
+  "outside_window": {
+    "icon": "mdi:clock-outline",
+    "color": "grey"
+  },
+  "no_car": {
+    "icon": "mdi:car-off",
+    "color": "grey"
+  },
+  "queued": {
+    "icon": "mdi:timer-sand",
+    "color": "grey"
+  },
+  "starting": {
+    "icon": "mdi:cloud-clock-outline",
+    "color": "light-blue"
+  },
+  "finishing": {
+    "icon": "mdi:clock-end",
+    "color": "light-blue"
+  },
+  "charging": {
+    "icon": "mdi:lightning-bolt",
+    "color": "green"
+  },
+  "activated": {
+    "icon": "mdi:power-plug",
+    "color": "green"
+  },
+  "override": {
+    "icon": "mdi:clock-fast",
+    "color": "light-blue"
+  },
+  "deactivated": {
+    "icon": "mdi:power-plug-off-outline",
+    "color": "grey"
+  }
+}

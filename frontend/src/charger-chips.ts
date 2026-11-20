@@ -1,0 +1,45 @@
+import {
+  mdiAlertCircleOutline,
+  mdiCancel,
+  mdiCarOff,
+  mdiClockEnd,
+  mdiClockFast,
+  mdiClockOutline,
+  mdiCloudClockOutline,
+  mdiLightningBolt,
+  mdiPowerPlug,
+  mdiPowerPlugOffOutline,
+  mdiTimerSand,
+} from "@mdi/js";
+
+import type { ChargerState } from "./api";
+import type { TranslationKey } from "./localize";
+
+export type ChipKind = "on" | "off" | "alarm" | "outline" | "info";
+
+/** How a chip looks: its colour and its icon, or a dot without one. */
+export interface Chip {
+  kind: ChipKind;
+  icon?: string;
+}
+
+export const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
+
+/**
+ * The chip, its word and its sentence for each state of an EV charger, in the order the backend checks the states.
+ * The icons and colours are those of the charger's state sensor.
+ */
+export const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
+  first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
+  fault: [{ kind: "alarm", icon: mdiAlertCircleOutline }, "status.chip_fault", "status.fault"],
+  excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
+  outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
+  no_car: [{ kind: "off", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
+  queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
+  starting: [{ kind: "info", icon: mdiCloudClockOutline }, "status.chip_starting", "status.starting_until"],
+  finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
+  charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
+  activated: [{ kind: "on", icon: mdiPowerPlug }, "status.activated", "status.activated_not_charging"],
+  override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
+  deactivated: [{ kind: "off", icon: mdiPowerPlugOffOutline }, "status.deactivated", "status.deactivated"],
+};

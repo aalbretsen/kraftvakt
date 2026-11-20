@@ -64,10 +64,10 @@ class ChargerState(StrEnum):
     NO_CAR = "no_car"
     QUEUED = "queued"
     STARTING = "starting"
-    OVERRIDE = "override"
     FINISHING = "finishing"
     CHARGING = "charging"
     ACTIVATED = "activated"
+    OVERRIDE = "override"
     DEACTIVATED = "deactivated"
 
 
@@ -402,13 +402,15 @@ class ChargingState:
             return ChargerState.QUEUED
         if charger_id in self.starting:
             return ChargerState.STARTING
-        if permission is ChargingPermission.OVERRIDE and activated:
-            return ChargerState.OVERRIDE
         if permission is ChargingPermission.FINISHING:
             return ChargerState.FINISHING
         if charging:
             return ChargerState.CHARGING
-        return ChargerState.ACTIVATED if activated else ChargerState.DEACTIVATED
+        if activated:
+            return ChargerState.ACTIVATED
+        if permission is ChargingPermission.OVERRIDE:
+            return ChargerState.OVERRIDE
+        return ChargerState.DEACTIVATED
 
     def _update_starting(self, group: ChargerGroup, now: datetime) -> None:
         """Find the cloud-controlled chargers within their start delay whose car does not charge yet."""

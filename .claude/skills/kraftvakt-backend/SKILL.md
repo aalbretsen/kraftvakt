@@ -206,9 +206,14 @@ Every issue code needs a text in the panel's translations.
   Removed entities are looked for at every start of the regulation and after every failed action.
 - The waiting time next turn-on sensor is disabled by default.
 - Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a finish after window switch (configuration,
-  see above) and a binary sensor for allowed to charge, keyed by the item's id, with an entity id from the slug of the item's name. The positions of the switches are stored.
+  see above), a binary sensor for allowed to charge and a state sensor, keyed by the item's id, with an entity id from the slug of the item's name.
+  The positions of the switches are stored.
   The charger entities do not depend on the group, so moving a charger to another group keeps them.
   The switches of appliances and chargers have entity category config, since they configure the item, the override included.
+- Each charger has a state sensor, an enum sensor with the charger's state from the status snapshot and its labels as state translations,
+  so `state_translated` gives the label in a template. Its icon and colour, a colour name of the Home Assistant theme, are the `icon` property and a `color` attribute,
+  not icon translations, since a template cannot read those. Both are left out of the recorder. The panel's chips for a charger use the same icons and colours,
+  and its tests check them against a fixture made from the sensor's table.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
 
@@ -246,9 +251,10 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: first decision (before the first decision after a start), fault, excluded, outside its charging window,
-  no car connected (bypassed), queued (waiting and not activated), starting,
-  override (allowed only by the override while activated), finishing, charging, activated, deactivated. It is worked out in the engine from the last decision,
-  before its commands, so a charger activated at a decision shows its new state at the next one.
+  no car connected (bypassed), queued (waiting and not activated), starting, finishing, charging, activated,
+  override (allowed only by the override and deactivated), deactivated. It is worked out in the engine from the last decision,
+  before its commands, so a charger activated at a decision shows its new state at the next one. While the regulation is stopped, every charger is deactivated,
+  since a stop deactivates them.
   Fault comes first, since the user needs to know that the charger is broken.
   Excluded comes before bypassed, so a stale bypassed is not shown, and no car connected is a state of its own, because the user needs to know that the car is missing.
   Charging is true while the charger is activated and was actively charging at the last decision.

@@ -960,7 +960,7 @@ async def test_status_shows_the_chargers(
     config: dict[str, Any],
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """Whether each charger is activated, with its details."""
+    """Whether each charger is activated, with its details, and deactivated while the configuration is incomplete and the regulation stopped."""
     config["charger_groups"] = [
         {
             "id": "g1",
@@ -998,7 +998,7 @@ async def test_status_shows_the_chargers(
         {
             "id": "c1",
             "name": "input_boolean.charger",
-            "state": "first_decision",
+            "state": "deactivated",
             "activated": False,
             "current_a": None,
             "power_w": 3700.0,

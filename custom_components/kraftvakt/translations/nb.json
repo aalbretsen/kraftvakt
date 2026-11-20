@@ -48,6 +48,23 @@
       },
       "penalty_overconsumption": {
         "name": "Straff overforbruk"
+      },
+      "charger_state": {
+        "name": "{charger} tilstand",
+        "state": {
+          "first_decision": "Første avgjørelse",
+          "fault": "Feil",
+          "excluded": "Utenfor regulering",
+          "outside_window": "Utenfor ladetidsrom",
+          "no_car": "Bil frakoblet",
+          "queued": "I kø",
+          "starting": "Starter",
+          "finishing": "Fullfører",
+          "charging": "Lader",
+          "activated": "Aktivert",
+          "override": "Overstyrt",
+          "deactivated": "Deaktivert"
+        }
       }
     },
     "switch": {

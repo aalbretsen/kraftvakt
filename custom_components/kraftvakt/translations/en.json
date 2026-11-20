@@ -48,6 +48,23 @@
       },
       "penalty_overconsumption": {
         "name": "Penalty overconsumption"
+      },
+      "charger_state": {
+        "name": "{charger} state",
+        "state": {
+          "first_decision": "First decision",
+          "fault": "Fault",
+          "excluded": "Excluded",
+          "outside_window": "Outside charging window",
+          "no_car": "Car disconnected",
+          "queued": "Queued",
+          "starting": "Starting",
+          "finishing": "Finishing",
+          "charging": "Charging",
+          "activated": "Activated",
+          "override": "Override",
+          "deactivated": "Deactivated"
+        }
       }
     },
     "switch": {

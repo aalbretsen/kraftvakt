@@ -1,25 +1,10 @@
-import {
-  mdiAlertCircleOutline,
-  mdiArrowCollapseDown,
-  mdiArrowDown,
-  mdiCancel,
-  mdiCarElectric,
-  mdiCarOff,
-  mdiCloudClockOutline,
-  mdiClockEnd,
-  mdiClockFast,
-  mdiClockOutline,
-  mdiEvStation,
-  mdiFlash,
-  mdiLightningBolt,
-  mdiTimerOutline,
-  mdiTimerSand,
-} from "@mdi/js";
+import { mdiArrowCollapseDown, mdiArrowDown, mdiCarElectric, mdiEvStation, mdiFlash, mdiLightningBolt, mdiTimerOutline } from "@mdi/js";
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { type ApplianceStatus, type ChargerGroupStatus, type ChargerState, type ChargerStatus, type ConfigResponse, type StatusSnapshot } from "../api";
+import { type ApplianceStatus, type ChargerGroupStatus, type ChargerStatus, type ConfigResponse, type StatusSnapshot } from "../api";
 import "./countdown";
+import { CHARGER_CHIPS, CHIP_EXCLUDED, type Chip } from "../charger-chips";
 import { allChargers } from "../draft";
 import { controlledEntity, existingEntity } from "../entities";
 import { formatClockTime, formatNumber, formatPercent, formatPower } from "../format";
@@ -29,31 +14,8 @@ import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
 import { WidthQuery } from "../width-query";
 
-/** How a chip looks: its colour and its icon, or a dot without one. */
-interface Chip {
-  kind: "on" | "off" | "warning" | "alarm" | "outline" | "info";
-  icon?: string;
-}
-
 const CHIP_ON: Chip = { kind: "on" };
 const CHIP_OFF: Chip = { kind: "off" };
-const CHIP_EXCLUDED: Chip = { kind: "outline", icon: mdiCancel };
-
-/** The chip, its word and its sentence for each state of an EV charger. */
-const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, TranslationKey]> = {
-  first_decision: [{ kind: "off", icon: mdiTimerSand }, "status.chip_first_decision", "status.first_decision"],
-  fault: [{ kind: "alarm", icon: mdiAlertCircleOutline }, "status.chip_fault", "status.fault"],
-  excluded: [CHIP_EXCLUDED, "status.chip_excluded", "status.excluded"],
-  outside_window: [{ kind: "outline", icon: mdiClockOutline }, "status.chip_window", "status.outside_window"],
-  no_car: [{ kind: "warning", icon: mdiCarOff }, "status.chip_no_car", "status.bypassed_no_car"],
-  queued: [{ kind: "off", icon: mdiTimerSand }, "status.chip_queued", "status.waiting_charger"],
-  starting: [{ kind: "info", icon: mdiCloudClockOutline }, "status.chip_starting", "status.starting_until"],
-  override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
-  finishing: [{ kind: "info", icon: mdiClockEnd }, "status.chip_finishing", "status.finishing_at"],
-  charging: [{ kind: "on", icon: mdiLightningBolt }, "status.chip_charging", "status.charging_at"],
-  activated: [CHIP_ON, "status.activated", "status.activated_not_charging"],
-  deactivated: [CHIP_OFF, "status.deactivated", "status.deactivated"],
-};
 
 /** An entry in the priority list: an appliance, or a group with its EV chargers. */
 type PriorityEntry = { kind: "appliance"; appliance: ApplianceStatus; on: boolean } | { kind: "charger_group"; group: ChargerGroupStatus; on: boolean };

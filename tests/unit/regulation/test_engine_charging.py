@@ -53,6 +53,14 @@ def test_start_and_stop_deactivate_the_chargers() -> None:
     assert scenario.engine.stop() == off("x") + deactivate("c", 10)
 
 
+def test_charger_is_deactivated_while_stopped_and_waits_for_the_first_decision_after_a_start() -> None:
+    scenario = one_charger()
+    assert scenario.engine.chargers["c"].state is ChargerState.FIRST_DECISION
+
+    scenario.engine.stop()
+    assert scenario.engine.chargers["c"].state is ChargerState.DEACTIVATED
+
+
 def test_current_increases_one_ampere_per_ampere_step() -> None:
     """The first one activates the charger."""
     scenario = one_charger()
@@ -671,7 +679,7 @@ def test_fault_neither_arms_nor_ends_the_override() -> None:
 
     scenario.set_charger("c", car_connected=True, car_disconnected=False, fault=False)
     assert scenario.decide(0) == activate("c")
-    assert scenario.engine.chargers["c"].state is ChargerState.OVERRIDE
+    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
 
 
 def test_charger_charges_only_inside_its_charging_window() -> None:
@@ -755,7 +763,7 @@ def test_override_lasts_until_a_connected_car_is_disconnected() -> None:
 
     assert scenario.decide(0) == activate("c")
     assert scenario.overrides.armed == ["c"]
-    assert scenario.engine.chargers["c"].state is ChargerState.OVERRIDE
+    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
     assert scenario.decide(0, after=timedelta(hours=20)) == []
     assert scenario.overrides.ended == []
 
