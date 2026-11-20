@@ -167,7 +167,8 @@ One whose car is disconnected is deactivated, so a car connected again waits for
 The panel has the status page and four configuration pages: **General**, **Appliances**, **EV charging** and **Advanced**. Only administrators have access.
 Changes are collected in a draft and stored with **Save**. The configuration pages are locked while the regulation runs; a saved configuration is used from the next start.
 
-Actions adapt to the domain of the entity, and every action can also be a custom action made with the action editor of Home Assistant.
+Actions adapt to the domain of the entity, and every action can also be **Custom actions**, made with the action editor of Home Assistant,
+and every value from a template is a **Custom template**.
 A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way. Its target temperature may be a template.
 
 The status page shows the consumption and the averages against the power limit, the next decision, the safe state and the penalty,

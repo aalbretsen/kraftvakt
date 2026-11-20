@@ -101,6 +101,8 @@ The section header, the description and the footer note are in `section-styles.t
   and the set-current action as an entity that is not chosen.
   The panel checks, as the backend does, that the device exists and each entity belongs to it.
 - Labels name the kind of entity they take, such as «Binary sensor or switch», «Status sensor» or «Switch or thermostat», never a bare «Entity» or «State».
+  What the user writes is named Custom actions (Egendefinerte handlinger), made with the action editor, and Custom template (Egendefinert mal),
+  in every choice and label, never a bare «Custom», «Template» or «Actions».
 - Choosing another device clears every entity field that is not on the new device, and keeps templates and custom actions.
   It then asks the backend for the device's charger profile, and when there is one,
   the fields it fills replace those in the draft and an info under the device names the profile. Without a profile, nothing is filled in.
@@ -133,7 +135,7 @@ The section header, the description and the footer note are in `section-styles.t
   an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a choice of a fixed value or a template,
   then a number box in HA's temperature unit with the entity's range as helper, or a template editor. Switching between them starts the value empty.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
-- Actively charging is one group with the charging power (Power sensor or Template), required, and car charging (a condition of the kind actively charging), optional.
+- Actively charging is one group with the charging power (Power sensor or Custom template), required, and car charging (a condition of the kind actively charging), optional.
   A charging power template is previewed as W.
 - Car connected, car charging and the fault flag also offer Status sensor: an entity of the device, a choice of whether the chosen states are those for true
   (for example States for connected) or those for false (States for disconnected), and the states.
