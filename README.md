@@ -81,6 +81,8 @@ The helper texts in the panel tell what each setting does.
 - **Waiting time:** only for an appliance without a fixed load, since Kraftvakt does not know what it draws. None while plenty of power is free,
   and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
+  None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
+  nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
 - **Excluded appliance:** turned off, and gets no commands until it is included again.

@@ -40,7 +40,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Settling step | A step with a power reserve turned on since the start of the regulation window of the decision. It holds its power reserve, since that window's average shows it only in part. |
 | Held power reserve | The power reserve of a settling step or a starting charger, counted as used by the steps below it and the other steps of its group. |
 | Power to free | How far the regulation average must drop before the next step may be turned on: below the limit by the turn-on margin, and with room for its power reserve, with the held power reserves counted as used. Found at each decision and shown on the status page. |
-| Waiting time | Time that must pass before an appliance without a power reserve is turned on. |
+| Waiting time | Time that must pass before an appliance without a power reserve is turned on, while no step below it that may be switched off for room is on. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
 | Essential appliance | An appliance that is kept on, and turned off only in a penalty period, for an appliance that must always run, as a freezer. No step, no variants. |
@@ -199,7 +199,11 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 
 - A step with a power reserve does not wait: it is turned on at the first decision where it fits.
   Why: the reserve tells whether it fits, and the waiting time is for an appliance whose draw is unknown.
-- When the next step without a power reserve may be turned on, its waiting time starts.
+- Nor does a step with steps on below it that may be switched off for room (see Making room), as after a variant switch:
+  it is turned on at the first decision where the average is under the limit minus the turn-on margin.
+  Why: by the fixed order nothing below it can be turned on while it waits, so waiting changes nothing,
+  and if it takes the average above the limit, the steps below give way by Freeing power.
+- When the next step may be turned on and it waits, its waiting time starts.
   It is turned on at the first decision after the waiting time has passed, if the conditions still hold.
   Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.

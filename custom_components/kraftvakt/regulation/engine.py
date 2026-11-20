@@ -411,8 +411,8 @@ class RegulationEngine:
         """Switch off the lowest step that is on below the step."""
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
-        lowest_on = next((step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off), None)
-        return [] if lowest_on is None else self._switch(lowest_on.key, turn_on=False)
+        below_on = _steps_on_below(steps, place)
+        return self._switch(below_on[0].key, turn_on=False) if below_on else []
 
     def _free_power(self, steps_lowest_first: list[Step], needed_w: float) -> list[Command]:
         """Switch off steps, lowest first, until the power they are estimated to free covers `needed_w`.
@@ -473,14 +473,13 @@ class RegulationEngine:
         if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
             return [] if forced_off else self._make_room(steps, place, average_w + held_w)
-        if not self._has_waited(candidate, now, average_w + held_w):
+        if not self._has_waited(steps, place, now, average_w + held_w):
             return []
         return self._turn_on(candidate.key, now)
 
     def _make_room(self, steps: list[Step], place: int, average_w: float) -> list[Command]:
         """Switch off steps below the step at the place, as many as it is estimated to need to fit."""
-        below_on = [step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off]
-        return self._free_power(below_on, self._power_needed_w(steps[place], average_w))
+        return self._free_power(_steps_on_below(steps, place), self._power_needed_w(steps[place], average_w))
 
     def _power_to_free(self, average_w: float) -> PowerToFree | None:
         steps = self._steps()
@@ -543,9 +542,17 @@ class RegulationEngine:
         reserve_w = step.power_reserve_w
         return reserve_w is None or average_w + reserve_w <= limit_w
 
-    def _has_waited(self, step: Step, now: datetime, average_w: float) -> bool:
-        """Return whether the step has waited its waiting time; a step with a power reserve does not wait, since the reserve tells whether it fits."""
-        if step.power_reserve_w is not None:
+    def _has_waited(self, steps: list[Step], place: int, now: datetime, average_w: float) -> bool:
+        """Return whether the step at the place has waited its waiting time.
+
+        A step with a power reserve does not wait, since the reserve tells
+        whether it fits. Nor does one with steps on below it that may be
+        switched off for room: none of them can be turned on while it waits,
+        so waiting changes nothing, and they give way if it takes the average
+        above the limit.
+        """
+        step = steps[place]
+        if step.power_reserve_w is not None or _steps_on_below(steps, place):
             self._state.waiting = None
             return True
         waiting = self._state.waiting
@@ -630,6 +637,11 @@ class RegulationEngine:
 def _next_place(steps: list[Step]) -> int | None:
     """Return the place of the first step that is off and may be turned on, if any."""
     return next((place for place, step in enumerate(steps) if not step.is_on and step.can_turn_on), None)
+
+
+def _steps_on_below(steps: list[Step], place: int) -> list[Step]:
+    """Return the steps below the place that are on and may be switched off for room, lowest first."""
+    return [step for step in reversed(steps[place + 1 :]) if step.is_on and step.can_turn_off]
 
 
 def _held_reserves_w(steps: list[Step], place: int) -> float:

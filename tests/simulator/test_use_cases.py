@@ -171,7 +171,7 @@ async def test_use_case_1_heating_in_priority_order(hass: HomeAssistant, freezer
 
 
 async def test_use_case_2_water_heater_first_in_the_morning(hass: HomeAssistant, freezer: FrozenDateTimeFactory, hass_storage: dict[str, Any], add_device: AddDevice) -> None:
-    """The variant Morning moves the water heater from the bottom to the top, and the lowest heater gives it room at once."""
+    """The variant Morning moves the water heater from the bottom to the top, where it is turned on at once, and the lowest heater gives it room."""
     house = House(hass, freezer, hass_storage, add_device)
     await house.han(background_w=3000)
     cable = await house.heater("Heating cable", 3000)
@@ -192,15 +192,13 @@ async def test_use_case_2_water_heater_first_in_the_morning(hass: HomeAssistant,
 
     hass.states.async_set("input_boolean.morning", STATE_ON)
     await house.windows()
+    assert house.on(water_heater)
     assert not house.on(panel)
     assert house.on(cable)
     assert house.decisions()[-1]["commands"] == [
-        {"command": "TurnOffAppliance", "appliance_id": "water_heater", "variant_id": "morning"},
         {"command": "TurnOffAppliance", "appliance_id": "panel", "variant_id": None},
+        {"command": "TurnOnAppliance", "appliance_id": "water_heater", "variant_id": "morning"},
     ]
-
-    await house.until(lambda: house.on(water_heater), max_windows=10)
-    assert not house.on(panel)
     assert house.house_power() == 9500
 
 
@@ -328,3 +326,42 @@ async def test_use_case_6_penalty_when_an_unregulated_load_keeps_the_hour_too_hi
     assert house.on(freezer_switch)
     assert house.kraftvakt("sensor", "penalty_overconsumption") == "0.0"
     await house.until(lambda: house.on(water_heater), max_windows=5)
+
+
+async def test_use_case_7_pool_heating_moves_up_above_a_charging_car(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, hass_storage: dict[str, Any], add_device: AddDevice
+) -> None:
+    """The variant Swim moves the pool heating from the bottom to the top. It does not wait, since nothing below it can be turned on meanwhile,
+    and the car below gives up the amperes it needs."""
+    house = House(hass, freezer, hass_storage, add_device)
+    await house.han(background_w=2000)
+    cable = await house.heater("Heating cable", 1000)
+    pool = await house.heater("Pool heating", 2000)
+    garage = await house.charger("Garage")
+    house.appliance("cable", cable)
+    house.charger_group("home", [garage])
+    house.appliance("pool", pool)
+    house.variant("pool", "swim", "{{ is_state('input_boolean.swim', 'on') }}", place=0)
+    hass.states.async_set("input_boolean.swim", STATE_OFF)
+    await call(hass, "switch", "turn_on", "switch.garage_car_connected")
+    await house.start()
+
+    def current() -> float:
+        return float(state(hass, "number.garage_charging_current"))
+
+    await house.until(lambda: house.on(cable) and current() == 10, max_windows=60)
+    await house.windows(3)
+    assert not house.on(pool)
+
+    hass.states.async_set("input_boolean.swim", STATE_ON)
+    await house.windows()
+    assert current() == 9
+
+    await house.windows()
+    assert house.on(pool)
+
+    await house.windows()
+    assert house.on(pool)
+    assert house.on(cable)
+    assert current() == 7
+    assert house.house_power() <= LIMIT_W

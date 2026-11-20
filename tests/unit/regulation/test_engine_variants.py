@@ -1,7 +1,7 @@
 """Scenario tests for variants of appliances."""
 
-from .configs import appliance, make_config
-from .scenario import Scenario, off, on
+from .configs import appliance, charger, make_config
+from .scenario import Scenario, current, off, on
 
 
 def morning_heater_config(**settings):
@@ -146,18 +146,27 @@ def test_room_made_above_the_limit_is_enough_for_one_decision() -> None:
     assert scenario.decide(10500, true=("up",)) == off("a")
 
 
+def heater_moving_down_config():
+    """The heater is below b, and lower still with its variant."""
+    return make_config(
+        appliance("heater", variants=("low",)),
+        "b",
+        priority=("b", "heater", "heater:low"),
+    )
+
+
 def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
-    """Off after the switch, then on in the normal way after waiting."""
-    scenario = Scenario(morning_heater_config())
+    """Off after the switch, then on in the normal way after waiting, since nothing below it is on."""
+    scenario = Scenario(heater_moving_down_config())
     scenario.turn_on("b", "heater")
 
-    assert scenario.decide(8000, true=("morning",)) == off("heater:morning")
+    assert scenario.decide(8000, true=("low",)) == off("heater:low")
     assert scenario.engine.appliances_on == {"b"}
-    assert scenario.decide_many(8000, 4, true=("morning",)) == [
+    assert scenario.decide_many(8000, 4, true=("low",)) == [
         [],
         [],
         [],
-        on("heater:morning"),
+        on("heater:low"),
     ]
 
 
@@ -184,15 +193,6 @@ def test_switch_below_the_lowest_on_turns_nothing_off() -> None:
     scenario.turn_on("a")
 
     assert scenario.decide(9000, true=("down",)) == off("d:down") + on("b")
-
-
-def heater_moving_down_config():
-    """The heater is below b, and lower still with its variant."""
-    return make_config(
-        appliance("heater", variants=("low",)),
-        "b",
-        priority=("b", "heater", "heater:low"),
-    )
 
 
 def test_switch_restarts_the_waiting_time_of_the_appliance() -> None:
@@ -281,3 +281,47 @@ def test_everything_off_follows_the_current_variant() -> None:
 
     assert scenario.decide(None, sensor_lost=True) == off("heater:low", "b")
     assert scenario.engine.stop() == off("heater:low", "b")
+
+
+def pool_config(*lowest: str, chargers=()):
+    """The pool moves from last to just below the essential water heater when swimming, above the cables and the chargers."""
+    return make_config(
+        appliance("water", essential=True),
+        appliance("pool", variants=("swim",)),
+        "cable",
+        *lowest,
+        priority=("water", "pool:swim", "cable", *lowest, *(("ev",) if chargers else ()), "pool"),
+        chargers=chargers,
+    )
+
+
+def test_appliance_above_a_charging_car_does_not_wait() -> None:
+    """Nothing below the pool can be turned on while it waits, so it is turned on at once,
+    and the car gives up the amperes the average above the limit needs."""
+    scenario = Scenario(pool_config(chargers=(charger("car"),)))
+    scenario.turn_on("cable")
+    scenario.draw("car")
+    scenario.charge("car", 10)
+    scenario.settle()
+
+    assert scenario.decide(9000, true=("swim",)) == current("car", 9) + on("pool:swim")
+    assert scenario.decide(10800, true=("swim",)) == current("car", 7)
+
+
+def test_appliance_above_an_appliance_that_is_on_does_not_wait() -> None:
+    scenario = Scenario(pool_config("floor"))
+    scenario.turn_on("cable", "floor")
+
+    assert scenario.decide(9000, true=("swim",)) == off("floor") + on("pool:swim")
+    assert scenario.decide(10800, true=("swim",)) == off("cable")
+
+
+def test_appliance_above_a_car_that_does_not_charge_waits() -> None:
+    """Switching off a car that does not charge frees nothing, so the waiting time still tells whether the pool fits."""
+    scenario = Scenario(pool_config(chargers=(charger("car"),)))
+    scenario.turn_on("cable")
+    scenario.charge("car", 6)
+    scenario.settle()
+
+    assert scenario.decide_many(9000, 2, true=("swim",)) == [off("pool:swim", "cable"), []]
+    assert scenario.engine.waiting is not None
