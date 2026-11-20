@@ -53,22 +53,18 @@ export class KraftvaktActionField extends LitElement {
   protected render() {
     const mode = this.onlyMode ?? this.value?.mode;
     const domainAction = this.domainAction;
+    const shown = this.shownSchema(mode);
     return html`
       <div class="field ${this.error ? "invalid" : ""}">
         ${this.label ? html`<div class="label">${this.label}</div>` : nothing}
-        <ha-form
-          .hass=${this.hass}
-          .data=${{
-            mode: mode === "domain" ? this.value?.domain_action : mode,
-            action: this.value?.action ?? [],
-            entity_id: this.value?.entity_id ?? undefined,
-          }}
-          .schema=${this.schema(mode)}
-          .disabled=${this.disabled}
-          .computeLabel=${() => ""}
-          @value-changed=${this.valueChanged}
-        ></ha-form>
-        ${domainAction ? this.renderParameters(domainAction) : nothing}
+        ${this.onlyMode ? nothing : this.renderForm([{ name: "mode", selector: { select: { mode: "list", options: this.modeOptions } } }])}
+        ${
+          shown.length || domainAction
+            ? html`
+                <div class=${this.onlyMode ? "" : "shown"}>${shown.length ? this.renderForm(shown) : nothing} ${domainAction ? this.renderParameters(domainAction) : nothing}</div>
+              `
+            : nothing
+        }
         <div class="helper">${this.helperText(mode)}</div>
         ${this.error ? html`<div class="error">${this.error}</div>` : nothing}
       </div>
@@ -159,9 +155,24 @@ export class KraftvaktActionField extends LitElement {
     return this.modeOptions.length === 1 ? "custom" : undefined;
   }
 
-  private schema(mode: ActionConfig["mode"] | undefined) {
+  /** The way the action is given, or what that way shows: the entity or the action editor. */
+  private renderForm(schema: Record<string, unknown>[]) {
+    const mode = this.onlyMode ?? this.value?.mode;
+    return html`
+      <ha-form .hass=${this.hass} .data=${this.formData(mode)} .schema=${schema} .disabled=${this.disabled} .computeLabel=${() => ""} @value-changed=${this.valueChanged}></ha-form>
+    `;
+  }
+
+  private formData(mode: ActionConfig["mode"] | undefined) {
+    return {
+      mode: mode === "domain" ? this.value?.domain_action : mode,
+      action: this.value?.action ?? [],
+      entity_id: this.value?.entity_id ?? undefined,
+    };
+  }
+
+  private shownSchema(mode: ActionConfig["mode"] | undefined): Record<string, unknown>[] {
     return [
-      ...(this.onlyMode ? [] : [{ name: "mode", selector: { select: { mode: "list", options: this.modeOptions } } }]),
       ...(mode === "entity"
         ? [
             {
@@ -194,8 +205,8 @@ export class KraftvaktActionField extends LitElement {
 
   private valueChanged(event: CustomEvent<{ value: { mode?: string; action?: unknown; entity_id?: string } }>): void {
     event.stopPropagation();
-    const { action, entity_id } = event.detail.value;
-    const mode = this.onlyMode ?? event.detail.value.mode;
+    const { action, entity_id, mode: chosen } = { ...this.formData(this.onlyMode ?? this.value?.mode), ...event.detail.value };
+    const mode = this.onlyMode ?? chosen;
     const domainAction = mode ? this.domainActions[mode] : undefined;
     const value: ActionConfig | null = domainAction
       ? {
@@ -273,6 +284,14 @@ export class KraftvaktActionField extends LitElement {
     }
     .invalid .label {
       color: var(--error-color);
+    }
+    /* What the chosen way shows is divided from the choice by a line from edge to edge of the group, across its padding. */
+    .shown {
+      display: grid;
+      gap: 16px;
+      margin: 16px -16px 0;
+      padding: 16px 16px 0;
+      border-top: 1px solid var(--divider-color);
     }
     /* Indented as Home Assistant indents the helper text of a field. */
     .helper,
