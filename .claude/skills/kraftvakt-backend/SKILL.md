@@ -208,6 +208,7 @@ Every issue code needs a text in the panel's translations.
 - Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a finish after window switch (configuration,
   see above) and a binary sensor for allowed to charge, keyed by the item's id, with an entity id from the slug of the item's name. The positions of the switches are stored.
   The charger entities do not depend on the group, so moving a charger to another group keeps them.
+  The switches of appliances and chargers have entity category config, since they configure the item, the override included.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
 

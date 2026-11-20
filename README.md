@@ -177,7 +177,7 @@ with the waiting time or the power that must be freed before the next one is tur
 
 ### Entities
 
-All entities belong to the service device **Kraftvakt**.
+All entities belong to the service device **Kraftvakt**, whose page shows them under **Controls**, **Sensors**, **Configuration** and **Diagnostic**.
 
 | Entity | Description |
 |---|---|
@@ -189,19 +189,19 @@ All entities belong to the service device **Kraftvakt**.
 | `number.kraftvakt_power_limit` (Power limit) | The power limit in W, the same as in the panel. Can also be set while the regulation runs. |
 | `sensor.kraftvakt_power_regulation_average` (Power regulation average) | The regulation average in W. |
 | `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
-| `sensor.kraftvakt_power_free` (Power free) | Diagnostic. The power limit minus the regulation average, in W. Negative above the power limit. |
+| `sensor.kraftvakt_power_free` (Power free) | The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
 | `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power reserves kept free. |
 | **Penalty** | |
-| `binary_sensor.kraftvakt_penalty_active` (Penalty active) | Diagnostic. On during a penalty period. |
-| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | Diagnostic. The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |
+| `binary_sensor.kraftvakt_penalty_active` (Penalty active) | On during a penalty period. |
+| `sensor.kraftvakt_penalty_overconsumption` (Penalty overconsumption) | The overconsumption in Wh at the last decision: the net energy above the power limit since the tariff average went above it. 0 when there is none. |
 | **Appliance** | |
-| `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on and gets no repeated commands. |
+| `switch.kraftvakt_appliance_<appliance>_excluded` (‹appliance› excluded from regulation) | Configuration. One per appliance. Turn on to take the appliance out of the regulation, so it is never turned on and gets no repeated commands. |
 | **EV charger** | |
-| `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
-| `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
-| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
+| `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | Configuration. One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
+| `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | Configuration. One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
+| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | Configuration. One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
 | `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, has no fault, and is inside its charging window, has the override on, or is finishing the charging after the window. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,

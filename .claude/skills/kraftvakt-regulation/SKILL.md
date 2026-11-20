@@ -285,9 +285,9 @@ Automations can set the power limit with it:
 - The new limit is used from the next decision, also while running, without a restart. Above a lower limit, steps are switched off one per decision as usual.
   A value equal to the stored one changes nothing.
 
-## Diagnostic entities
+## Status entities
 
-All with entity category diagnostic:
+Penalty active, penalty overconsumption and power free have no entity category, so they show as sensors; the others have entity category diagnostic.
 
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside the overconsumption state.

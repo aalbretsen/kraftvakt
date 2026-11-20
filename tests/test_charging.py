@@ -923,7 +923,7 @@ async def test_allowed_sensor_follows_finishing_and_the_excluded_switch(
 
 
 async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, actions, setup_kraftvakt) -> None:
-    """A diagnostic named after the charger."""
+    """Named after the charger."""
     await setup_kraftvakt()
 
     entity_id = allowed_sensor_id(hass, "c1")
@@ -932,9 +932,33 @@ async def test_allowed_sensor_is_on_without_a_window(hass: HomeAssistant, action
     assert state is not None
     assert state.state == STATE_ON
     assert state.name == "Kraftvakt Garage allowed to charge"
-    registry_entry = er.async_get(hass).async_get(entity_id)
-    assert registry_entry is not None
-    assert registry_entry.entity_category is EntityCategory.DIAGNOSTIC
+
+
+async def test_entities_are_grouped_by_entity_category(hass: HomeAssistant, actions, config, setup_kraftvakt) -> None:
+    """The switches of appliances and chargers configure them, and the rest are controls, sensors or diagnostics."""
+    config["appliances"] = [{"id": "a", "entity_id": "light.heater", "turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}]
+    config["priority"].append({"type": "appliance", "appliance_id": "a", "variant_id": None})
+    entry = await setup_kraftvakt()
+
+    categories = {registry_entry.unique_id: registry_entry.entity_category for registry_entry in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)}
+    assert categories == {
+        "regulation": None,
+        "power_limit": None,
+        "regulation_safe_state": None,
+        "power_regulation_average": None,
+        "power_tariff_average": None,
+        "power_free": None,
+        "penalty_active": None,
+        "penalty_overconsumption": None,
+        "regulation_steps_on": EntityCategory.DIAGNOSTIC,
+        "waiting_time_remaining": EntityCategory.DIAGNOSTIC,
+        "waiting_time_next_turn_on": EntityCategory.DIAGNOSTIC,
+        "appliance_a_excluded": EntityCategory.CONFIG,
+        "charger_c1_excluded": EntityCategory.CONFIG,
+        "charger_c1_window_override": EntityCategory.CONFIG,
+        "charger_c1_finish_after_window": EntityCategory.CONFIG,
+        "charger_c1_allowed_to_charge": EntityCategory.DIAGNOSTIC,
+    }
 
 
 async def test_allowed_sensor_follows_the_configuration_without_reload(

@@ -88,12 +88,10 @@ SENSORS: tuple[RegulationSensorDescription, ...] = (
     PowerSensorDescription(key="power_tariff_average", value_fn=_tariff_average_w),
     PowerSensorDescription(
         key="power_free",
-        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=_power_free_w,
     ),
     RegulationSensorDescription(
         key="penalty_overconsumption",
-        entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
         suggested_display_precision=0,

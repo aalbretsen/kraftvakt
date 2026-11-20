@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -72,6 +73,8 @@ class RegulationSwitch(KraftvaktEntity, SwitchEntity):
 class ItemSwitch(ItemEntity, SwitchEntity):
     """A user's switch for an appliance or a charger, kept over any restart."""
 
+    _attr_entity_category = EntityCategory.CONFIG
+
     @property
     def is_on(self) -> bool:
         return bool(getattr(self._positions(), self._setting))
@@ -118,6 +121,7 @@ class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
     """A setting of a charger in the configuration, also shown in the panel."""
 
     settings = ("finish_after_window",)
+    _attr_entity_category = EntityCategory.CONFIG
 
     @property
     def is_on(self) -> bool | None:

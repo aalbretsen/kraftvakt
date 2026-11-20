@@ -38,7 +38,6 @@ BINARY_SENSORS: tuple[RegulationBinarySensorDescription, ...] = (
     ),
     RegulationBinarySensorDescription(
         key="penalty_active",
-        entity_category=EntityCategory.DIAGNOSTIC,
         is_on_fn=lambda runtime: runtime.penalty.active,
     ),
 )
