@@ -81,9 +81,7 @@ class House:
                     {
                         "id": name,
                         "device_id": registry.async_get(f"switch.{name}_charging_allowed").device_id,
-                        "entity_id": f"switch.{name}_charging_allowed",
-                        "activate": DEFAULT,
-                        "deactivate": DEFAULT,
+                        "on_off_entity": f"switch.{name}_charging_allowed",
                         "set_current": {"mode": "entity", "entity_id": f"number.{name}_charging_current"},
                         "charging_power": {"type": "power_sensor", "value": f"sensor.{name}_charging_power"},
                         "car_connected": {"type": "entity", "value": f"switch.{name}_car_connected"},

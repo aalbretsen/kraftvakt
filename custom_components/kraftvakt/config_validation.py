@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 from collections import Counter
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import replace
 from typing import Any
 
@@ -16,6 +16,7 @@ from .config_model import (
     SETTING_RANGES,
     THERMOSTAT_TEMPERATURE_TYPES,
     ActionConfig,
+    ActionMode,
     Appliance,
     Charger,
     ChargerGroup,
@@ -29,10 +30,12 @@ from .config_model import (
     PriorityEntry,
     PriorityEntryType,
     Range,
+    SwitchedBy,
     Variant,
     regulation_window_options,
 )
 from .config_reader import ConfigReader
+from .domain_actions import domain_action_templates
 
 
 def parse_config(data: Mapping[str, Any]) -> KraftvaktConfig:
@@ -82,13 +85,22 @@ def action_and_template_issues(config: KraftvaktConfig) -> list[Issue]:
             cv.SCRIPT_SCHEMA(copy.deepcopy(list(action.steps)))
         except vol.Invalid:
             issues.append(Issue("invalid_action", section, target, field_name))
+    for section, target, field_name, action in _domain_actions(config):
+        for parameter, template in domain_action_templates(action).items():
+            if not _is_template(template):
+                issues.append(Issue("invalid_template", section, target, f"{field_name}.{parameter}"))
     for section, target, field_name, condition in _conditions(config):
-        if condition.type is ConditionType.TEMPLATE and condition.value:
-            try:
-                cv.template(condition.value)
-            except vol.Invalid:
-                issues.append(Issue("invalid_template", section, target, field_name))
+        if condition.type is ConditionType.TEMPLATE and condition.value and not _is_template(condition.value):
+            issues.append(Issue("invalid_template", section, target, field_name))
     return issues
+
+
+def _is_template(value: str) -> bool:
+    try:
+        cv.template(value)
+    except vol.Invalid:
+        return False
+    return True
 
 
 def missing_items(config: KraftvaktConfig) -> list[Issue]:
@@ -99,7 +111,9 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
     if config.general.regulation_window_length is None:
         missing.append(Issue("missing_regulation_window", "general", None, "regulation_window_updates"))
     for appliance in config.appliances:
-        missing += _missing_entity_and_actions("appliances", appliance)
+        if appliance.entity_id is None:
+            missing.append(Issue("missing_entity", "appliances", appliance.id, "entity_id"))
+        missing += _missing_actions("appliances", appliance)
         missing += [
             Issue(
                 "missing_condition",
@@ -113,7 +127,9 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
     for charger in config.chargers:
         if charger.device_id is None:
             missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
-        missing += _missing_entity_and_actions("chargers", charger)
+        if charger.switched_by is SwitchedBy.ON_OFF_ENTITY and charger.on_off_entity is None:
+            missing.append(Issue("missing_on_off_entity", "chargers", charger.id, "on_off_entity"))
+        missing += _missing_actions("chargers", charger)
         if not _is_set(charger.car_connected):
             missing.append(Issue("missing_car_connected", "chargers", charger.id, "car_connected"))
         if not _is_set(charger.charging_power):
@@ -181,7 +197,7 @@ def _charger_group_issues(groups: Iterable[ChargerGroup]) -> list[Issue]:
 def _charger_issues(charger: Charger) -> list[Issue]:
     location = IssueLocation("chargers", charger.id)
     issues = [
-        *_entity_format_issues(location, "entity_id", charger.entity_id),
+        *_entity_format_issues(location, "on_off_entity", charger.on_off_entity),
         *_entity_format_issues(
             location,
             "set_current",
@@ -245,11 +261,11 @@ def _duplicate_ids(
 
 def _unique_entity_issues(config: KraftvaktConfig) -> list[Issue]:
     owners = [
-        *(("appliances", item.id, item.entity_id) for item in config.appliances),
-        *(("chargers", item.id, item.entity_id) for item in config.chargers),
+        *(("appliances", item.id, "entity_id", item.controlled_entity) for item in config.appliances),
+        *(("chargers", item.id, "on_off_entity", item.controlled_entity) for item in config.chargers),
     ]
-    counts = Counter(entity_id for _, _, entity_id in owners if entity_id)
-    return [Issue("duplicate_entity", section, target, "entity_id") for section, target, entity_id in owners if entity_id and counts[entity_id] > 1]
+    counts = Counter(entity_id for *_, entity_id in owners if entity_id)
+    return [Issue("duplicate_entity", section, target, field_name) for section, target, field_name, entity_id in owners if entity_id and counts[entity_id] > 1]
 
 
 def _priority_issues(config: KraftvaktConfig) -> list[Issue]:
@@ -308,10 +324,23 @@ def _priority_field(entry: PriorityEntry) -> str | None:
 def _custom_actions(
     config: KraftvaktConfig,
 ) -> Iterable[tuple[str, str, str, ActionConfig]]:
+    return _actions(config, lambda action: bool(action.steps))
+
+
+def _domain_actions(
+    config: KraftvaktConfig,
+) -> Iterable[tuple[str, str, str, ActionConfig]]:
+    return _actions(config, lambda action: action.mode is ActionMode.DOMAIN)
+
+
+def _actions(
+    config: KraftvaktConfig,
+    wanted: Callable[[ActionConfig], bool],
+) -> Iterable[tuple[str, str, str, ActionConfig]]:
     for section, item in config.items():
         for action_field in item.action_fields():
             action = action_field.action
-            if action is not None and action.steps:
+            if action is not None and wanted(action):
                 yield section, item.id, action_field.field, action
 
 
@@ -324,12 +353,5 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
             yield "chargers", charger.id, field_name, condition
 
 
-def _missing_entity_and_actions(section: str, item: Appliance | Charger) -> list[Issue]:
-    missing = []
-    if item.entity_id is None:
-        missing.append(Issue("missing_entity", section, item.id, "entity_id"))
-    for action_field in item.action_fields():
-        action = action_field.action
-        if action is None or action.is_missing:
-            missing.append(Issue("missing_action", section, item.id, action_field.field))
-    return missing
+def _missing_actions(section: str, item: Appliance | Charger) -> list[Issue]:
+    return [Issue("missing_action", section, item.id, action_field.field) for action_field in item.action_fields() if action_field.action is None or action_field.action.is_missing]

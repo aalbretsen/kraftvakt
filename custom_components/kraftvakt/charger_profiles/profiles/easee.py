@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from ...config_model import SwitchedBy
 from ..profile import (
     ChargerProfile,
     DeviceMatch,
@@ -19,7 +20,7 @@ from ..profile import (
 
 
 def _service(service: str, **data: Any) -> dict[str, Any]:
-    return {"action": f"easee.{service}", "data": {"device_id": "{{ device_id(entity_id) }}", **data}}
+    return {"action": f"easee.{service}", "data": {"device_id": "{{ device_id }}", **data}}
 
 
 _STATUS: Final = ProfileEntity("sensor", translation_key="easee_status")
@@ -29,7 +30,7 @@ _STATUS: Final = ProfileEntity("sensor", translation_key="easee_status")
 PROFILE: Final = ChargerProfile(
     name="Easee",
     device=DeviceMatch(integration="easee"),
-    entity=ProfileEntity("switch", translation_key="is_enabled"),
+    switched_by=SwitchedBy.ACTIONS,
     activate=custom_action(_service("set_charger_access", access_level="open_for_all")),
     deactivate=custom_action(_service("set_charger_access", access_level="whitelist")),
     set_current=custom_action(_service("set_charger_dynamic_limit", current="{{ current }}")),

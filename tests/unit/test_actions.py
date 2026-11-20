@@ -31,6 +31,7 @@ from custom_components.kraftvakt.config_model import (
     GeneralConfig,
     Issue,
     KraftvaktConfig,
+    SwitchedBy,
     Variant,
 )
 from custom_components.kraftvakt.regulation.model import (
@@ -62,12 +63,14 @@ def appliance(
     )
 
 
-def charger(entity_id: str, set_current: ActionConfig | None = DEFAULT) -> Charger:
+CURRENT_ENTITY = ActionConfig(ActionMode.ENTITY, entity_id="number.charger_current")
+
+
+def charger(on_off_entity: str, set_current: ActionConfig | None = CURRENT_ENTITY) -> Charger:
     return Charger(
         "c1",
-        entity_id=entity_id,
-        activate=DEFAULT,
-        deactivate=DEFAULT,
+        device_id="garage",
+        on_off_entity=on_off_entity,
         set_current=set_current,
         min_current_a=6,
         max_current_a=16,
@@ -158,10 +161,14 @@ async def test_default_actions_must_exist_for_the_domain(hass: HomeAssistant) ->
         Issue("default_action_unavailable", "appliances", "a2", "turn_on"),
         Issue("default_action_unavailable", "appliances", "a3", "turn_on"),
         Issue("default_action_unavailable", "appliances", "a3", "turn_off"),
-        Issue("default_action_unavailable", "chargers", "c1", "set_current"),
-        Issue("default_action_unavailable", "chargers", "c2", "activate"),
-        Issue("default_action_unavailable", "chargers", "c2", "deactivate"),
+        Issue("unsupported_entity_domain", "chargers", "c2", "on_off_entity"),
     ]
+
+
+async def test_on_off_entity_is_checked_only_while_the_charger_is_switched_by_it(hass: HomeAssistant) -> None:
+    chargers = tuple(replace(charger("number.charger"), id=f"c{switched_by}", switched_by=switched_by) for switched_by in (SwitchedBy.ACTIONS, SwitchedBy.CURRENT))
+
+    assert action_issues(hass, KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=chargers),))) == []
 
 
 @pytest.mark.parametrize(("current", "expected"), [(3, 6), (6, 6), (9, 9), (40, 16)])
@@ -174,9 +181,9 @@ def test_current_is_kept_between_min_and_max(current: int, expected: int) -> Non
     }
 
 
-@pytest.mark.parametrize(("switched_by_current", "expected"), [(False, 6), (True, 0)])
-def test_only_a_charger_switched_by_its_current_is_set_to_0_a(switched_by_current: bool, expected: int) -> None:
-    assert set_current_variables(replace(charger("switch.charger"), switched_by_current=switched_by_current), 0)["current"] == expected
+@pytest.mark.parametrize(("switched_by", "expected"), [(SwitchedBy.ON_OFF_ENTITY, 6), (SwitchedBy.ACTIONS, 6), (SwitchedBy.CURRENT, 0)])
+def test_only_a_charger_switched_by_its_current_is_set_to_0_a(switched_by: SwitchedBy, expected: int) -> None:
+    assert set_current_variables(replace(charger("switch.charger"), switched_by=switched_by), 0)["current"] == expected
 
 
 async def test_default_actions_call_the_domain_service(hass: HomeAssistant) -> None:
@@ -424,7 +431,7 @@ async def test_cancelled_waiting_commands_run_with_the_next(hass: HomeAssistant)
 
 
 async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) -> None:
-    """The current is kept between the minimum and max."""
+    """The current is kept between the minimum and max, and the on/off entity is turned on and off."""
     activated = async_mock_service(hass, "switch", "turn_on")
     deactivated = async_mock_service(hass, "switch", "turn_off")
     currents = async_mock_service(hass, "test", "current")
@@ -432,7 +439,7 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
         {
             "action": "test.current",
             "data": {
-                "entity": "{{ entity_id }}",
+                "device": "{{ device_id }}",
                 "value": "{{ current }}",
                 "range": "{{ min_current }}-{{ max_current }}",
             },
@@ -450,11 +457,42 @@ async def test_charger_actions_get_the_current_variables(hass: HomeAssistant) ->
     )
 
     assert [call.data for call in currents] == [
-        {"entity": "switch.charger", "value": 6, "range": "6-16"},
-        {"entity": "switch.charger", "value": 16, "range": "6-16"},
+        {"device": "garage", "value": 6, "range": "6-16"},
+        {"device": "garage", "value": 16, "range": "6-16"},
     ]
     assert [call.data["entity_id"] for call in activated] == [["switch.charger"]]
     assert [call.data["entity_id"] for call in deactivated] == [["switch.charger"]]
+
+
+async def test_charger_switched_by_actions_runs_them_with_its_device(hass: HomeAssistant) -> None:
+    """Its on/off entity is kept, but not switched."""
+    turned_on = async_mock_service(hass, "switch", "turn_on")
+    calls = async_mock_service(hass, "test", "record")
+
+    def record(name: str) -> ActionConfig:
+        return custom({"action": "test.record", "data": {"name": name, "device": "{{ device_id }}"}})
+
+    switched = replace(charger("switch.charger"), switched_by=SwitchedBy.ACTIONS, activate=record("on"), deactivate=record("off"))
+    config = KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=(switched,)),))
+
+    await ActionRunner(hass, config).async_execute([ActivateCharger("c1"), DeactivateCharger("c1")])
+
+    assert [call.data for call in calls] == [{"name": "on", "device": "garage"}, {"name": "off", "device": "garage"}]
+    assert turned_on == []
+
+
+async def test_appliance_without_an_entity_is_logged(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    await ActionRunner(hass, KraftvaktConfig(appliances=(Appliance("a1", turn_on=DEFAULT),))).async_execute([TurnOnAppliance("a1")])
+
+    assert "Could not turn_on a1: the entity is not chosen" in caplog.text
+
+
+async def test_charger_without_an_on_off_entity_is_logged_by_its_name(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    config = KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=(replace(charger("switch.charger"), on_off_entity=None),)),))
+
+    await ActionRunner(hass, config).async_execute([ActivateCharger("c1")])
+
+    assert "Could not turn_on c1: the action is not configured" in caplog.text
 
 
 async def test_charging_current_can_be_set_on_a_chosen_number_entity(
@@ -514,17 +552,16 @@ async def test_charger_switched_by_its_current_needs_a_current_entity_that_takes
     hass.states.async_set("number.from_6", "6", {"min": 6})
     hass.states.async_set("number.from_0", "6", {"min": 0})
     switched = (
-        ("c1", "number.from_6", DEFAULT, True),
-        ("c2", "switch.c2", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), True),
-        ("c3", "switch.c3", ActionConfig(ActionMode.ENTITY, entity_id="number.from_0"), True),
-        ("c4", "number.unknown", DEFAULT, True),
-        ("c5", "switch.c5", ActionConfig(ActionMode.CUSTOM, steps=({"action": "number.set_value"},)), True),
-        ("c6", "switch.c6", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), False),
-        ("c7", "switch.c7", None, True),
-        ("c8", "switch.c8", ActionConfig(ActionMode.ENTITY), True),
+        ("c1", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), SwitchedBy.CURRENT),
+        ("c2", ActionConfig(ActionMode.ENTITY, entity_id="number.from_0"), SwitchedBy.CURRENT),
+        ("c3", ActionConfig(ActionMode.ENTITY, entity_id="number.unknown"), SwitchedBy.CURRENT),
+        ("c4", ActionConfig(ActionMode.CUSTOM, steps=({"action": "number.set_value"},)), SwitchedBy.CURRENT),
+        ("c5", ActionConfig(ActionMode.ENTITY, entity_id="number.from_6"), SwitchedBy.ON_OFF_ENTITY),
+        ("c6", None, SwitchedBy.CURRENT),
+        ("c7", ActionConfig(ActionMode.ENTITY), SwitchedBy.CURRENT),
     )
-    chargers = tuple(replace(charger(entity_id, set_current), id=charger_id, switched_by_current=by_current) for charger_id, entity_id, set_current, by_current in switched)
+    chargers = tuple(replace(charger(f"switch.{charger_id}", set_current), id=charger_id, switched_by=switched_by) for charger_id, set_current, switched_by in switched)
 
     issues = action_issues(hass, KraftvaktConfig(charger_groups=(ChargerGroup(id="g1", chargers=chargers),)))
 
-    assert issues == [Issue("current_off_unsupported", "chargers", charger_id, "set_current") for charger_id in ("c1", "c2")]
+    assert issues == [Issue("current_off_unsupported", "chargers", "c1", "set_current")]

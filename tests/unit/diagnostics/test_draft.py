@@ -5,7 +5,6 @@ from typing import Any
 import pytest
 
 from custom_components.kraftvakt.charger_profiles.profile import (
-    DEFAULT_ACTION,
     DeviceMatch,
     ProfileCondition,
     ProfileEntity,
@@ -15,7 +14,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     state_condition,
     template_condition,
 )
-from custom_components.kraftvakt.config_model import ConditionType
+from custom_components.kraftvakt.config_model import ConditionType, SwitchedBy
 from diagnostics.charger_profile.draft import Drafts, ProfileDraft, draft_profiles
 from diagnostics.diagnostics_file import DiagnosticsFile, NotADiagnosticsFileError
 
@@ -43,9 +42,7 @@ def charger(charger_id: str = "c1", **fields: Any) -> dict[str, Any]:
     return {
         "id": charger_id,
         "device_id": DEVICE_ID,
-        "entity_id": "switch.box_allowed",
-        "activate": {"mode": "default"},
-        "deactivate": {"mode": "default"},
+        "on_off_entity": "switch.box_allowed",
         "set_current": {"mode": "entity", "entity_id": "number.box_current"},
         "car_connected": {"type": "entity", "value": "binary_sensor.box_car"},
         "charging_power": {"type": "power_sensor", "value": "sensor.box"},
@@ -69,8 +66,9 @@ def test_a_charger_with_entities_of_its_device_gives_a_profile_without_notes() -
     assert result.module == "acme_b_1"
     assert result.profile.name == "Acme B-1"
     assert result.profile.device == DeviceMatch("acme")
-    assert result.profile.entity == ProfileEntity("switch", translation_key="allowed")
-    assert result.profile.activate == DEFAULT_ACTION
+    assert result.profile.switched_by is SwitchedBy.ON_OFF_ENTITY
+    assert result.profile.on_off_entity == ProfileEntity("switch", translation_key="allowed")
+    assert (result.profile.activate, result.profile.deactivate) == (None, None)
     assert result.profile.set_current == entity_action(ProfileEntity("number", name="Current"))
     assert result.profile.car_connected == entity_condition(ProfileEntity("binary_sensor", translation_key="car"))
     assert result.profile.actively_charging is None
@@ -109,11 +107,11 @@ def test_an_optional_condition_that_is_not_set_may_be_left_out() -> None:
     assert result.notes == ("actively_charging: not set. Fill in the condition, or leave it out if the integration has nothing for it.",)
 
 
-def test_a_charger_switched_by_its_current_gives_a_profile_without_actions_to_activate_and_deactivate() -> None:
-    result = draft(switched_by_current=True)
+def test_a_charger_switched_by_its_current_gives_a_profile_without_an_on_off_entity_or_actions() -> None:
+    result = draft(switched_by="current")
 
-    assert result.profile.switched_by_current
-    assert (result.profile.activate, result.profile.deactivate) == (None, None)
+    assert result.profile.switched_by is SwitchedBy.CURRENT
+    assert (result.profile.on_off_entity, result.profile.activate, result.profile.deactivate) == (None, None, None)
 
 
 def test_chargers_without_a_device_of_their_own_kind_are_skipped() -> None:
@@ -167,7 +165,7 @@ def test_entities_a_profile_cannot_find_are_noted() -> None:
     assert result.profile.car_connected == entity_condition(ProfileEntity("binary_sensor", translation_key="car"))
     assert result.profile.actively_charging == ProfileCondition(ConditionType.ENTITY)
     assert result.notes == (
-        "entity_id: switch.box_allowed is disabled on this device, and a profile only uses enabled entities.",
+        "on_off_entity: switch.box_allowed is disabled on this device, and a profile only uses enabled entities.",
         "set_current: number.box_current has no name of its own apart from the device, so its name 'Box Current' may hold the device's name.",
         "car_connected: binary_sensor.box_car is not the only entity of the device that fits "
         "ProfileEntity(domain='binary_sensor', translation_key='car', name=None), so the profile leaves the field out.",
@@ -177,39 +175,39 @@ def test_entities_a_profile_cannot_find_are_noted() -> None:
 
 
 def test_fields_that_are_not_set_are_noted_and_left_empty() -> None:
-    result = draft(entity_id=None, activate=None, set_current={"mode": "entity", "entity_id": "number.elsewhere"}, car_connected=None)
+    result = draft(on_off_entity=None, set_current={"mode": "entity", "entity_id": "number.elsewhere"}, car_connected=None)
 
-    assert result.profile.entity == ProfileEntity("switch")
-    assert result.profile.activate == custom_action()
+    assert result.profile.on_off_entity == ProfileEntity("switch")
     assert result.profile.set_current == custom_action()
     assert result.profile.car_connected == ProfileCondition(ConditionType.ENTITY)
     assert result.notes == (
-        "entity_id: not set. Fill in the entity that is activated.",
-        "activate: not set. Fill in the action.",
+        "on_off_entity: not set. Fill in the entity that turns charging on and off.",
         "set_current: number.elsewhere is not an entity of the charger's device, so a profile cannot find it.",
         "car_connected: not set. Fill in the condition.",
     )
 
 
-def test_a_main_entity_from_another_device_keeps_its_domain() -> None:
-    result = draft(entity_id="light.elsewhere")
+def test_actions_that_are_not_set_are_noted_and_left_empty() -> None:
+    result = draft(switched_by="actions", activate=None, deactivate={"mode": "custom", "action": [{"action": "acme.pause"}]})
 
-    assert result.profile.entity == ProfileEntity("light")
-    assert result.notes == ("entity_id: light.elsewhere is not an entity of the charger's device, so a profile cannot find it.",)
+    assert result.profile.on_off_entity is None
+    assert result.profile.activate == custom_action()
+    assert result.notes == ("activate: not set. Fill in the action.",)
 
 
-def test_script_steps_name_the_charger_by_the_variable_entity_id() -> None:
-    steps = [
-        {"action": "acme.pause", "data": {"device_id": DEVICE_ID, "level": 1}},
-        {"action": "switch.turn_off", "target": {"entity_id": ["switch.box_allowed", "{{ entity_id }}"]}},
-    ]
+def test_an_on_off_entity_from_another_device_keeps_its_domain() -> None:
+    result = draft(on_off_entity="light.elsewhere")
 
-    result = draft(deactivate={"mode": "custom", "action": steps})
+    assert result.profile.on_off_entity == ProfileEntity("light")
+    assert result.notes == ("on_off_entity: light.elsewhere is not an entity of the charger's device, so a profile cannot find it.",)
 
-    assert result.profile.deactivate == custom_action(
-        {"action": "acme.pause", "data": {"device_id": "{{ device_id(entity_id) }}", "level": 1}},
-        {"action": "switch.turn_off", "target": {"entity_id": ["{{ entity_id }}", "{{ entity_id }}"]}},
-    )
+
+def test_script_steps_name_the_charger_by_the_variable_device_id() -> None:
+    steps = [{"action": "acme.pause", "data": {"device_id": [DEVICE_ID], "level": 1}}]
+
+    result = draft(switched_by="actions", deactivate={"mode": "custom", "action": steps}, activate={"mode": "custom", "action": steps})
+
+    assert result.profile.deactivate == custom_action({"action": "acme.pause", "data": {"device_id": ["{{ device_id }}"], "level": 1}})
     assert result.notes == ()
 
 
@@ -220,28 +218,14 @@ def test_script_steps_that_name_other_devices_and_entities_are_noted() -> None:
         {"action": "light.turn_on", "target": {"entity_id": "light.porch"}},
     ]
 
-    result = draft(activate={"mode": "custom", "action": steps})
+    result = draft(switched_by="actions", activate={"mode": "custom", "action": steps}, deactivate={"mode": "custom", "action": [{"action": "acme.pause"}]})
 
     assert result.profile.activate == custom_action(*steps)
     assert result.notes == (
         f"activate: the action names the device {OTHER_DEVICE_ID}, which is not the charger's device.",
-        "activate: the action names sensor.box in \"{{ states('sensor.box') }}\". Give it by the variable entity_id, or leave it out.",
-        "activate: the action names number.box_current, but script steps in a profile can only name the charger's own entity, by the variable entity_id.",
+        "activate: the action names sensor.box in \"{{ states('sensor.box') }}\". Find it from the variable device_id, or leave it out.",
+        "activate: the action names number.box_current, but script steps in a profile can only name the charger's device, by the variable device_id.",
         "activate: the action names light.porch, which is not on the charger's device.",
-    )
-
-
-def test_a_domain_action_is_written_as_its_script_steps() -> None:
-    entities = [entity("climate.box", None, None), *ENTITIES[1:]]
-    domain_action = {"mode": "domain", "domain_action": "climate_hvac_mode", "data": {"hvac_mode": "heat"}}
-
-    result = draft({"entities": entities}, entity_id="climate.box", activate=domain_action, deactivate=domain_action | {"domain_action": "unknown"})
-
-    assert result.profile.activate == custom_action({"action": "climate.set_hvac_mode", "target": {"entity_id": "{{ entity_id }}"}, "data": {"hvac_mode": "heat"}})
-    assert result.profile.deactivate == custom_action()
-    assert result.notes == (
-        "activate: the domain action climate_hvac_mode is written as the script steps it runs.",
-        "deactivate: the domain action unknown does not fit the entity climate.box. Fill in the action.",
     )
 
 

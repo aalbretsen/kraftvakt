@@ -1,7 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { chargerName, entityName, existingEntity, measuredPowerW, ownEntities, ownEntity, temperatureSources, thermostatTemperature } from "../src/entities";
+import {
+  chargerName,
+  controlledEntity,
+  entityName,
+  existingEntity,
+  measuredPowerW,
+  ownEntities,
+  ownEntity,
+  templateVariables,
+  temperatureSources,
+  thermostatTemperature,
+} from "../src/entities";
 import type { HomeAssistant } from "../src/types";
-import { charger, hass, state } from "./builders";
+import { appliance, charger, hass, state } from "./builders";
+
+describe("the entity Kraftvakt turns on and off", () => {
+  it("is an appliance's entity, or a charger's on/off entity while it is switched by it", () => {
+    expect(controlledEntity(appliance("heater"))).toBe("switch.heater");
+    expect(controlledEntity(charger("garage"))).toBe("switch.garage");
+    expect(controlledEntity(charger("garage", { switched_by: "current" }))).toBeNull();
+  });
+});
+
+describe("the variables of templates and actions", () => {
+  it("are an appliance's entity, with its state, and a charger's device", () => {
+    const heater = state("on");
+    expect(templateVariables(hass({ "switch.heater": heater }), appliance("heater"))).toEqual({ entity_id: "switch.heater", entity: heater });
+    expect(templateVariables(hass(), appliance("heater", { entity_id: null }))).toEqual({ entity_id: null, entity: null });
+    expect(templateVariables(hass(), charger("garage"))).toEqual({ device_id: "device_garage" });
+  });
+});
 
 describe("the power a sensor measures", () => {
   it.each([
@@ -30,12 +58,13 @@ describe("names", () => {
     expect(entityName(home, {}, "switch.gone")).toBe("switch.gone");
   });
 
-  it("of a charger are as the backend names it: the user's name for the device, its name, or else the entity's", () => {
+  it("of a charger are as the backend names it: the user's name for the device, its name, or else its on/off entity's", () => {
     const named = { ...home, devices: { device_garage: { name: "Easee", name_by_user: "Garage" } } };
     expect(chargerName(named, {}, charger("garage"))).toBe("Garage");
     expect(chargerName(home, {}, charger("garage"))).toBe("garage");
     expect(chargerName(home, {}, charger("garage", { device_id: null }))).toBe("Garage Charging allowed");
-    expect(chargerName(home, {}, charger("garage", { device_id: null, entity_id: null }))).toBeNull();
+    expect(chargerName(home, {}, charger("garage", { device_id: null, switched_by: "actions" }))).toBeNull();
+    expect(chargerName(home, {}, charger("garage", { device_id: null, on_off_entity: null }))).toBeNull();
   });
 });
 

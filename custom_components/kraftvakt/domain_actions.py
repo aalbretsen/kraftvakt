@@ -18,7 +18,10 @@ from .config_model import ActionConfig, ActionKind
 
 
 class ParameterType(StrEnum):
-    """What kind of value a parameter takes, and how the panel shows it."""
+    """What kind of value a parameter takes, and how the panel shows it.
+
+    A temperature may also be a template, rendered when the action runs.
+    """
 
     OPTION = "option"
     TEMPERATURE = "temperature"
@@ -73,6 +76,8 @@ class ActionParameter:
             options = attribute(self.options_attribute)
             if isinstance(options, list) and value not in options:
                 return "unsupported_option"
+            return None
+        if isinstance(value, str):
             return None
         if not _is_number(value):
             return "invalid_type"
@@ -178,6 +183,16 @@ def domain_action_issues(kind: ActionKind, entity_id: str, action: ActionConfig,
         elif code := parameter.issue(action.data[parameter.name], state):
             issues.append((parameter.name, code))
     return issues
+
+
+def domain_action_templates(action: ActionConfig) -> dict[str, str]:
+    """Return the values of the domain action given as templates, by parameter."""
+    domain_action = DOMAIN_ACTIONS.get(action.domain_action or "")
+    if domain_action is None:
+        return {}
+    return {
+        parameter.name: value for parameter in domain_action.parameters if parameter.type is ParameterType.TEMPERATURE and isinstance(value := action.data.get(parameter.name), str)
+    }
 
 
 def _available(kind: ActionKind, entity_id: str, key: str | None) -> DomainAction | None:

@@ -21,6 +21,7 @@ from custom_components.kraftvakt.config_model import (
     KraftvaktConfig,
     OverrideEnd,
     PriorityEntry,
+    SwitchedBy,
     Variant,
 )
 
@@ -65,7 +66,7 @@ def charger(
     override_ends: OverrideEnd = OverrideEnd.MANUAL,
     cloud_controlled: bool = False,
     start_delay_s: int = 300,
-    switched_by_current: bool = False,
+    switched_by: SwitchedBy = SwitchedBy.ON_OFF_ENTITY,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""
     charging_window = None
@@ -74,10 +75,8 @@ def charger(
         charging_window = ChargingWindow(start, end)
     return Charger(
         id=charger_id,
-        entity_id=f"switch.{charger_id}",
-        activate=DEFAULT_ACTION,
-        deactivate=DEFAULT_ACTION,
-        set_current=DEFAULT_ACTION,
+        on_off_entity=f"switch.{charger_id}",
+        set_current=ActionConfig(ActionMode.ENTITY, entity_id=f"number.{charger_id}_current"),
         min_current_a=min_a,
         max_current_a=max_a,
         min_current_power_w=min_current_power_w,
@@ -86,7 +85,7 @@ def charger(
         charging_window=charging_window,
         override_ends=override_ends,
         cloud_controlled=cloud_controlled,
-        switched_by_current=switched_by_current,
+        switched_by=switched_by,
         start_delay_s=start_delay_s,
     )
 

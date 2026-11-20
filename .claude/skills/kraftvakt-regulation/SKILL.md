@@ -53,7 +53,8 @@ The ranges and defaults below are part of the specification; the code holds them
 | Penalty threshold | 0–10 000 W above the power limit, default 100 W. |
 | Overconsumption | Net energy above the power limit since the overconsumption state started (above adds, below subtracts). |
 | Penalty period | Safety valve: everything held off until the overconsumption is paid back. Should never be needed. |
-| Switched by current | A charger setting, off by default, for a charger that can only be told a current: its minimum current activates it, and 0 A deactivates it. |
+| Switched by | A charger setting: how it is activated and deactivated. By its on/off entity (the default), by custom actions to activate and deactivate, or by current, for a charger that can only be told a current: its minimum current activates it, and 0 A deactivates it. |
+| On/off entity | The entity, usually a switch that allows charging, that a charger switched by it gets turned on to activate it and off to deactivate it. |
 | Cloud-controlled charger | A charger setting, off by default, for a charger controlled through a cloud service: no command repeat while no car is connected, and its start delay. |
 | Start delay | 0–900 s, default 300 s. The longest time a cloud-controlled charger takes from activation until the car draws power and it reports actively charging, and so how long it holds its power at minimum current. |
 | Starting charger | An activated cloud-controlled charger within its start delay whose car does not charge actively yet, whose power at minimum current is held for the car that is about to draw power. |
@@ -63,9 +64,9 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charger profile | How Kraftvakt controls the chargers of a known integration: the entities, actions and conditions it fills in when the user chooses a charger's device. |
 | Charger group | A named group of chargers with its own entry in the priority list and its own EV charging settings. A charger is in exactly one group. |
 | Ampere step | One ampere of an EV charger's current, treated by the regulation as an appliance. |
-| Charging on/off | An optional condition of the charger that is true while the car charges. |
+| Car charging | An optional condition of the charger that is true while the car charges. |
 | Charging power | A power sensor of the charger, in W or kW, or a template giving the charger's power in W. Above 100 W counts as actively charging. Every charger has one. |
-| Actively charging | The car draws power: the charging power or the charging on/off shows it, and either is enough. |
+| Actively charging | The car draws power: the charging power or car charging shows it, and either is enough. |
 | Held at minimum | A charger whose car does not charge actively with at least 50 % of the charger's power at minimum current. It gets no more than its first ampere step. |
 | Estimated draw | What a charger draws with fewer ampere steps on: its charging power, at most its current times its power per ampere, and 0 deactivated. |
 | Freeing power | Switching off steps from the lowest until their estimated draw covers the power needed, at once. |
@@ -101,7 +102,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   bypassed chargers, measured power per ampere, current variants, excluded appliances, when each appliance and charger last got a command)
   starts again with defaults at every start: HA or integration start, user start, after the safe state and after a penalty.
   The configuration and the switch positions are kept over any restart.
-- True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, the charging on/off and the fault flag)
+- True/false from HA is a condition: a boolean entity or a template, and for the conditions of a charger (car connected, car charging and the fault flag)
   also the states of an entity. The chosen states count as true, or, when the user chooses so, as false, and every other state as the opposite.
   The charging power is a power sensor or a template that gives a number.
   Only evidence makes it true: an entity that is `on`, a state that counts as true, a template that gives the boolean true, or a valid power above 100 W.
@@ -352,13 +353,14 @@ All with entity category diagnostic:
   Later ones: set the new current. Their power reserve is the charger's power per ampere.
   Switching off: set the lower current, or for the last one set current to min and then deactivate. Every deactivation sets min current first.
   The set-current action always gets a current between min and max, except 0 A for a charger switched by its current.
-- Switched by current (per charger setting, default off): for a charger that can only be told a current. It gets only the current:
-  its minimum to activate it, and 0 A to deactivate it, one command each. Its actions to activate and deactivate are kept, and neither used nor needed.
+- Switched by (per charger setting, default its on/off entity): activating turns the on/off entity on or runs the action to activate, and deactivating the opposite.
+  By current, for a charger that can only be told a current, it gets only the current: its minimum to activate it, and 0 A to deactivate it, one command each.
+  The on/off entity and the actions of the ways it is not switched are kept, and neither used nor needed.
 - Car connected: required for every charger, read at each decision, true only with evidence (see Ground rules).
   Why: without it, a car could only be found by activating the charger, and chargers without a car would be activated in turn.
-- Actively charging: read at each decision, also when deactivated, from the charging power and the charging on/off, true when either gives evidence (see Ground rules).
-  Every charger has a charging power; the charging on/off is optional. Evidence that it does not charge needs each of them that is given to show it.
-  Why: the on/off often reports a car that starts sooner than the power, and a charger that has lost power or its connection reports unavailable, and does not charge.
+- Actively charging: read at each decision, also when deactivated, from the charging power and car charging, true when either gives evidence (see Ground rules).
+  Every charger has a charging power; car charging is optional. Evidence that it does not charge needs each of them that is given to show it.
+  Why: car charging often reports a car that starts sooner than the power, and a charger that has lost power or its connection reports unavailable, and does not charge.
 - A charger that charges is activated and charges actively. Kraftvakt never guesses that a car is done: a car that is full stays activated at its minimum current,
   and may draw power again at any time, as when it heats before a trip, or the user raises its charging limit.
 - Held at minimum: a charger whose car does not charge actively with at least 50 % of its power at minimum current gets only its first ampere step,
@@ -429,7 +431,7 @@ All with entity category diagnostic:
   When it ends, the switch is set back to off.
   - Manual (default): never ends by itself.
   - When the car no longer charges: armed when the charger is activated and actively charging;
-    ends at the first decision where the charger is activated and the charging power and the charging on/off give evidence that it does not charge.
+    ends at the first decision where the charger is activated and the charging power and car charging give evidence that it does not charge.
     A charger the regulation has deactivated neither arms nor ends it. A car that never starts charging, as one that is already full, never arms it.
   - When the car is disconnected: armed when car connected is true; ends at the first decision where it is false.
 - Only evidence of false ends an override: car connected from an entity that is off, a state that counts as false or a template that gives false,

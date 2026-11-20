@@ -1,14 +1,12 @@
-import { html, nothing } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { OVERRIDE_ENDS, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd } from "../api";
+import { OVERRIDE_ENDS, SWITCHED_BY, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd, type SwitchedBy } from "../api";
 import { changesForDevice, deviceEntities } from "../devices";
-import { chargerErrors, missingInCharger } from "../validation";
+import { chargerErrors, defaultActionOf, missingInCharger } from "../validation";
 import "./condition-field";
 import type { ConditionKind } from "./condition-field";
 import { ItemDialog } from "./item-dialog";
-
-const ENTITY_VARIABLES = ["entity_id", "entity"];
 
 /** Adds or edits one EV charger. */
 @customElement("kraftvakt-charger-dialog")
@@ -16,14 +14,6 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
   protected readonly section = "chargers";
 
   protected readonly texts = "charger";
-
-  protected actionsForEntity(entityId: string | null): Partial<Charger> {
-    return {
-      activate: this.actionForEntity("activate", this.draft.activate, entityId),
-      deactivate: this.actionForEntity("deactivate", this.draft.deactivate, entityId),
-      set_current: this.actionForEntity("set_current", this.draft.set_current, entityId),
-    };
-  }
 
   /** The charger profile that filled in the fields when the device was chosen. */
   @state() private profile: string | null = null;
@@ -43,28 +33,50 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
 
   protected renderFields(issues: Issue[]) {
     return html`
-      ${this.renderDevice(issues)} ${this.renderEntity(issues)}
+      ${this.renderDevice(issues)}
       ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) => this.changeDraft({ min_current_power_w: value.min_current_power_w as number }))}
-      ${this.renderSwitchedBy(issues)}
-      ${
-        this.draft.switched_by_current
-          ? nothing
-          : html`${this.renderActionGroup("activate", issues, ENTITY_VARIABLES)} ${this.renderActionGroup("deactivate", issues, ENTITY_VARIABLES)}`
-      }
-      ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl(issues)}
+      ${this.renderOnOff(issues)} ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl(issues)}
       ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
 
-  /** The actions to activate and deactivate are kept while the charger is switched by its current, since it uses neither. */
-  private renderSwitchedBy(issues: Issue[]) {
-    const options = (["actions", "current"] as const).map((value) => ({ value, label: this.localize(`charger.switched_by.${value}`) }));
-    return this.renderForm(
-      [{ name: "switched_by_current", required: true, selector: { select: { mode: "list", options } } }],
-      issues,
-      (value) => this.changeDraft({ switched_by_current: value.switched_by_current === "current" }),
-      { switched_by_current: this.draft.switched_by_current ? "current" : "actions" },
+  /** The on/off entity and the actions are kept while the charger is switched another way, since it uses neither. */
+  private renderOnOff(issues: Issue[]) {
+    const options = SWITCHED_BY.map((value) => ({ value, label: this.localize(`charger.switched_by.${value}`) }));
+    const switchedBy = this.renderForm([{ name: "switched_by", required: true, selector: { select: { mode: "list", options } } }], issues, (value) =>
+      this.switchedByChanged(value.switched_by as SwitchedBy),
     );
+    return this.renderGroup({
+      title: this.localize("charger.on_off"),
+      description: this.localize("charger.on_off_info"),
+      content: html`${switchedBy} ${this.renderOnOffChoice(issues)}`,
+    });
+  }
+
+  private renderOnOffChoice(issues: Issue[]) {
+    switch (this.draft.switched_by) {
+      case "on_off_entity":
+        return this.renderEntityField(
+          "on_off_entity",
+          issues,
+          (entityId) => this.changeDraft({ on_off_entity: entityId }),
+          defaultActionOf(this.capabilities, "chargers", "activate").domains,
+        );
+      case "actions":
+        return html`${this.renderAction("activate", issues)} ${this.renderAction("deactivate", issues)}`;
+      case "current":
+        return html`<div class="helper">${this.localize("charger.switched_by_current_info")}</div>`;
+    }
+  }
+
+  /** Actions that are not given start as empty custom actions, the only kind an EV charger has. */
+  private switchedByChanged(switchedBy: SwitchedBy | undefined): void {
+    const empty = { mode: "custom" as const, action: [] };
+    this.changeDraft({
+      switched_by: switchedBy ?? this.draft.switched_by,
+      activate: this.draft.activate ?? empty,
+      deactivate: this.draft.deactivate ?? empty,
+    });
   }
 
   private renderChargingCurrent(issues: Issue[]) {
@@ -85,7 +97,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
             max_current_a: value.max_current_a as number,
           }),
         )}
-        ${this.renderAction("set_current", issues, ["current", "min_current", "max_current", ...ENTITY_VARIABLES], true)}
+        ${this.renderAction("set_current", issues, { entityAllowed: true, extraVariables: ["current", "min_current", "max_current"] })}
       `,
     });
   }
@@ -102,9 +114,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     if (deviceId === this.draft.device_id) {
       return;
     }
-    const changes = changesForDevice(this.draft, deviceId, this.hass);
-    this.changeDraft(changes);
-    this.entityChanged(changes.entity_id ?? null);
+    this.changeDraft(changesForDevice(this.draft, deviceId, this.hass));
     this.profile = null;
     if (!deviceId) {
       return;
@@ -124,7 +134,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
-  /** The charging power, which every EV charger needs, and the optional charging on/off, which may tell sooner that the car charges. */
+  /** The charging power, which every EV charger needs, and the optional car charging, which may tell sooner that the car charges. */
   private renderActivelyCharging(issues: Issue[]) {
     return this.renderGroup({
       title: this.label("actively_charging"),
@@ -147,7 +157,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
         .hass=${this.hass}
         .localize=${this.localize}
         .value=${this.draft[field]}
-        .entityId=${this.draft.entity_id}
+        .variables=${this.variables}
         .includeEntities=${this.entityScope}
         .kind=${kind}
         .optional=${optional}
@@ -246,7 +256,17 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     );
   }
 
-  static styles = ItemDialog.styles;
+  static styles = [
+    ItemDialog.styles,
+    css`
+      /* Indented as Home Assistant indents the helper text of a field. */
+      .helper {
+        padding-inline-start: 16px;
+        font-size: var(--ha-font-size-s, 12px);
+        color: var(--secondary-text-color);
+      }
+    `,
+  ];
 }
 
 /** The time selector may give seconds, but the charging window uses whole minutes. */

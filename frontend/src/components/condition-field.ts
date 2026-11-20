@@ -40,9 +40,8 @@ interface TemplateResult {
  * temperature from a sensor or a template, and shows the value it gives now.
  *
  * The template is previewed with Home Assistant's `render_template`
- * subscription while the user writes. It gets `entity_id` and `entity`
- * of the appliance or charger, as in the regulation. Fires
- * `value-changed` with the new condition.
+ * subscription while the user writes. It gets the variables of the appliance
+ * or charger, as in the regulation. Fires `value-changed` with the new condition.
  */
 @customElement("kraftvakt-condition-field")
 export class KraftvaktConditionField extends LitElement {
@@ -52,8 +51,8 @@ export class KraftvaktConditionField extends LitElement {
 
   @property({ attribute: false }) value: Condition | null = null;
 
-  /** The entity of the appliance or charger the condition belongs to. */
-  @property({ attribute: false }) entityId: string | null = null;
+  /** The variables of the appliance or charger the condition belongs to, which its template gets. */
+  @property({ attribute: false }) variables: Record<string, unknown> = {};
 
   /** The only entities that may be chosen, when they are limited. */
   @property({ attribute: false }) includeEntities?: string[];
@@ -80,6 +79,9 @@ export class KraftvaktConditionField extends LitElement {
 
   private previewTimer?: number;
 
+  /** The variables the preview was made with, since the dialog gives a new object at every render. */
+  private previewedVariables = "";
+
   private unsubscribePreview?: Promise<() => Promise<void>>;
 
   disconnectedCallback(): void {
@@ -88,7 +90,9 @@ export class KraftvaktConditionField extends LitElement {
   }
 
   protected updated(changed: PropertyValues<this>): void {
-    if (changed.has("value") || changed.has("entityId")) {
+    const variables = JSON.stringify(this.variables);
+    if (changed.has("value") || variables !== this.previewedVariables) {
+      this.previewedVariables = variables;
       this.schedulePreview();
     }
     if (changed.has("value")) {
@@ -355,7 +359,7 @@ export class KraftvaktConditionField extends LitElement {
   private computeHelper = (field: { name: string }): string => {
     switch (field.name) {
       case "value":
-        return this.text(`${this.shownType()}_helper`);
+        return this.text(`${this.shownType()}_helper`, { variables: Object.keys(this.variables).join(", ") });
       case "states":
         return this.text("states_helper");
       default:
@@ -393,11 +397,10 @@ export class KraftvaktConditionField extends LitElement {
   }
 
   private startPreview(template: string): void {
-    const entity = this.entityId ? (this.hass.states[this.entityId] ?? null) : null;
     this.unsubscribePreview = this.hass.connection.subscribeMessage<TemplateResult>((result) => (this.preview = result), {
       type: "render_template",
       template,
-      variables: { entity_id: this.entityId, entity },
+      variables: this.variables,
       report_errors: true,
     });
     this.unsubscribePreview.catch((error: unknown) => {

@@ -245,6 +245,7 @@ def capabilities() -> dict[str, Any]:
                 "dynamic_order": group.dynamic_order,
             },
             "chargers": {
+                "switched_by": charger.switched_by.value,
                 "min_current_a": charger.min_current_a,
                 "max_current_a": charger.max_current_a,
                 "min_current_power_w": charger.min_current_power_w,
@@ -261,7 +262,7 @@ def entity_names(hass: HomeAssistant, config: KraftvaktConfig) -> dict[str, str]
         *config.appliances,
         *config.chargers,
     ]
-    return {item.entity_id: item_name(hass, item) for item in items if item.entity_id is not None}
+    return {entity_id: item_name(hass, item) for item in items if (entity_id := item.controlled_entity) is not None}
 
 
 def _send_regulation_running(connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:

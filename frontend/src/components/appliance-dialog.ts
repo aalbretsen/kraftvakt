@@ -3,14 +3,13 @@ import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import type { Appliance, Condition, Issue, Variant } from "../api";
+import type { ActionConfig, Appliance, Condition, Issue, Variant } from "../api";
+import { actionForEntity } from "../actions";
 import { displaySensorScope, displayValuesForEntity } from "../devices";
 import { moveItem, newId } from "../draft";
 import { APPLIANCE_ACTIONS, applianceErrors, missingInAppliance } from "../validation";
 import "./condition-field";
 import { ItemDialog } from "./item-dialog";
-
-export const APPLIANCE_ACTION_VARIABLES = ["entity_id", "entity"];
 
 /**
  * Adds or edits one appliance, and lists its variants by label.
@@ -40,18 +39,20 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
     }
   }
 
-  /** Also clears the display sensors that are not on the device of the new entity. */
-  protected actionsForEntity(entityId: string | null): Partial<Appliance> {
-    return {
+  /** A new entity adapts the actions to it, see `actionForEntity`, and clears the display sensors that are not on its device. */
+  private entityChanged = (entityId: string | null): void => {
+    const adapted = (name: string, action: ActionConfig | null) => actionForEntity(this.capabilities, name, action, entityId, entityId ? this.hass.states[entityId] : undefined);
+    this.changeDraft({
+      entity_id: entityId,
       ...displayValuesForEntity(this.draft, entityId, this.hass),
-      turn_on: this.actionForEntity("turn_on", this.draft.turn_on, entityId),
-      turn_off: this.actionForEntity("turn_off", this.draft.turn_off, entityId),
+      turn_on: adapted("turn_on", this.draft.turn_on),
+      turn_off: adapted("turn_off", this.draft.turn_off),
       variants: this.draft.variants.map((variant) => ({
         ...variant,
-        actions: Object.fromEntries(Object.entries(variant.actions).map(([name, action]) => [name, this.actionForEntity(name, action ?? null, entityId)])),
+        actions: Object.fromEntries(Object.entries(variant.actions).map(([name, action]) => [name, adapted(name, action ?? null)])),
       })),
-    };
-  }
+    });
+  };
 
   protected errors(): Issue[] {
     return applianceErrors(this.draft, this.capabilities, this.hass);
@@ -64,8 +65,8 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   protected renderFields(issues: Issue[]) {
     const essential = this.draft.essential;
     return html`
-      ${this.renderEntity(issues)} ${this.renderActions(issues)} ${this.renderEssential(issues)} ${essential ? nothing : this.renderFixedLoad(issues)}
-      ${essential ? nothing : this.renderVariants()} ${this.renderDisplayValues(issues)}
+      ${this.renderEntityField("entity_id", issues, this.entityChanged)} ${this.renderActions(issues)} ${this.renderEssential(issues)}
+      ${essential ? nothing : this.renderFixedLoad(issues)} ${essential ? nothing : this.renderVariants()} ${this.renderDisplayValues(issues)}
     `;
   }
 
@@ -127,7 +128,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
         .hass=${this.hass}
         .localize=${this.localize}
         .value=${this.draft[field]}
-        .entityId=${this.draft.entity_id}
+        .variables=${this.variables}
         .includeEntities=${displaySensorScope(this.hass, this.draft)}
         .kind=${field}
         optional
@@ -139,7 +140,7 @@ export class KraftvaktApplianceDialog extends ItemDialog<Appliance> {
   }
 
   private renderActions(issues: Issue[]) {
-    return APPLIANCE_ACTIONS.map((name) => this.renderActionGroup(name, issues, APPLIANCE_ACTION_VARIABLES));
+    return APPLIANCE_ACTIONS.map((name) => this.renderActionGroup(name, issues));
   }
 
   /** The variants, sorted in the order their expressions are evaluated, with their errors. Left out in view mode when there are none. */

@@ -50,10 +50,10 @@ What the tool carries over:
 
 - The device: the integration of the device, and also its manufacturer and model ID when the integration serves devices of many makers, such as MQTT or ZHA.
 - Each entity: by its translation key, or by the name the integration gives it when there is no translation key, or as the main entity of the device when it has neither.
-- Actions: the default action, the default action of another entity of the device, and script steps. In script steps, the charger's own device and entity are given by
-  the variable `entity_id`, so the profile works for every EV charger of its kind. A domain action becomes the script steps it runs.
+- How charging is turned on and off: the on/off entity, the actions to activate and deactivate, or **the charging current**.
+- Actions: the default action of an entity of the device, and script steps. In script steps, the charger's own device is given by
+  the variable `device_id`, so the profile works for every EV charger of its kind.
 - Conditions: an entity or a power sensor of the device, or a template, with each entity of the device in the template as a `$name` placeholder.
 - **Cloud-controlled EV charger** and the **Start delay**.
-- Charging turned on and off by **the charging current**, without the actions to activate and deactivate.
 
 EV chargers with the same kind of device give one draft, from the first of them.

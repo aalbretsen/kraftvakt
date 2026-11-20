@@ -9,11 +9,11 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final
 
-from homeassistant.core import Context, HomeAssistant, split_entity_id
+from homeassistant.core import Context, HomeAssistant, split_entity_id, valid_entity_id
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.script import Script, async_validate_actions_config
 
-from .conditions import context_variables
+from .conditions import item_variables
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
     CHARGER_ACTION_KINDS,
@@ -31,6 +31,7 @@ from .domain_actions import (
     domain_action_steps,
     domain_actions_for,
 )
+from .entity import item_name
 from .regulation.model import (
     ActivateCharger,
     Command,
@@ -103,23 +104,33 @@ def action_issues(hass: HomeAssistant, config: KraftvaktConfig) -> list[Issue]:
     """
     issues = []
     for section, item in config.items():
+        entity_id = item.entity_id if isinstance(item, Appliance) else None
         for action_field in item.action_fields():
             action, field_name = action_field.action, action_field.field
             if action is None:
                 continue
-            if code := _unavailable_default(item.entity_id, action, action_field.kind):
+            if code := _unavailable_default(entity_id, action, action_field.kind):
                 issues.append(Issue(code, section, item.id, field_name))
-            if action.mode is ActionMode.DOMAIN and item.entity_id is not None:
+            if action.mode is ActionMode.DOMAIN and entity_id is not None:
                 issues += [
                     Issue(code, section, item.id, _join(field_name, parameter))
                     for parameter, code in domain_action_issues(
                         action_field.kind,
-                        item.entity_id,
+                        entity_id,
                         action,
-                        hass.states.get(item.entity_id),
+                        hass.states.get(entity_id),
                     )
                 ]
-    return issues + [Issue("current_off_unsupported", "chargers", charger.id, "set_current") for charger in config.chargers if not _may_set_0_a(hass, charger)]
+    return [
+        *issues,
+        *(Issue("unsupported_entity_domain", "chargers", charger.id, "on_off_entity") for charger in config.chargers if not _has_on_off_actions(charger)),
+        *(Issue("current_off_unsupported", "chargers", charger.id, "set_current") for charger in config.chargers if not _may_set_0_a(hass, charger)),
+    ]
+
+
+def _has_on_off_actions(charger: Charger) -> bool:
+    entity_id = charger.controlled_entity
+    return entity_id is None or not valid_entity_id(entity_id) or split_entity_id(entity_id)[0] in _ON_OFF_DOMAINS
 
 
 def _may_set_0_a(hass: HomeAssistant, charger: Charger) -> bool:
@@ -129,8 +140,8 @@ def _may_set_0_a(hass: HomeAssistant, charger: Charger) -> bool:
     """
     if not charger.switched_by_current or charger.set_current is None:
         return True
-    entity_id = charger.set_current.entity_id if charger.set_current.mode is ActionMode.ENTITY else charger.entity_id
-    if charger.set_current.mode not in (ActionMode.DEFAULT, ActionMode.ENTITY) or entity_id is None:
+    entity_id = charger.set_current.entity_id
+    if charger.set_current.mode is not ActionMode.ENTITY or entity_id is None:
         return True
     state = hass.states.get(entity_id)
     lowest = None if state is None else state.attributes.get("min")
@@ -139,12 +150,15 @@ def _may_set_0_a(hass: HomeAssistant, charger: Charger) -> bool:
 
 def default_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
     """Return the default action of each action field, by section."""
-    return _by_field(lambda kind: DEFAULT_ACTIONS[kind].to_dict())
+    return {
+        section: {field_name: DEFAULT_ACTIONS[kind].to_dict() for field_name, kind in fields.items()}
+        for section, fields in (("appliances", APPLIANCE_ACTION_KINDS), ("chargers", CHARGER_ACTION_KINDS))
+    }
 
 
 def domain_actions_by_field() -> dict[str, dict[str, dict[str, Any]]]:
-    """Return the domain actions each action field may be, by section."""
-    return _by_field(domain_actions_for)
+    """Return the domain actions each action field of an appliance may be; a charger has no entity of its own for them."""
+    return {"appliances": {field_name: domain_actions_for(kind) for field_name, kind in APPLIANCE_ACTION_KINDS.items()}}
 
 
 def set_current_variables(charger: Charger, current: int) -> dict[str, int]:
@@ -185,7 +199,7 @@ class ActionRunner:
         self._chargers = {charger.id: charger for charger in config.chargers}
         self._lock = lock or asyncio.Lock()
         self._timeout_s = config.general.action_timeout_s
-        self._scripts: dict[tuple[str, str, ActionKind], Script] = {}
+        self._scripts: dict[tuple[str, ActionKind], Script] = {}
         self._queued: list[Command] = []
         self._queued_done: asyncio.Future[None] | None = None
 
@@ -195,7 +209,7 @@ class ActionRunner:
             "action_timeout_s": self._timeout_s,
             "waiting_for_lock": self._queued_done is not None,
             "queued_commands": [command_dict(command) for command in self._queued],
-            "scripts": [{"entity_id": entity_id, "owner": owner, "kind": kind} for entity_id, owner, kind in self._scripts],
+            "scripts": [{"owner": owner, "kind": kind} for owner, kind in self._scripts],
         }
 
     async def async_execute(self, commands: Sequence[Command]) -> None:
@@ -224,15 +238,15 @@ class ActionRunner:
                 await self._async_run_appliance(appliance_id, variant_id, "turn_off", ActionKind.TURN_OFF)
             case ActivateCharger(charger_id):
                 charger = self._chargers[charger_id]
-                await self._async_run(charger, charger.activate, ActionKind.TURN_ON)
+                await self._async_run(charger, charger.action(ActionKind.TURN_ON), ActionKind.TURN_ON)
             case DeactivateCharger(charger_id):
                 charger = self._chargers[charger_id]
-                await self._async_run(charger, charger.deactivate, ActionKind.TURN_OFF)
+                await self._async_run(charger, charger.action(ActionKind.TURN_OFF), ActionKind.TURN_OFF)
             case SetChargingCurrent(charger_id, current):
                 charger = self._chargers[charger_id]
                 await self._async_run(
                     charger,
-                    charger.set_current,
+                    charger.action(ActionKind.SET_CURRENT),
                     ActionKind.SET_CURRENT,
                     set_current_variables(charger, current),
                 )
@@ -257,11 +271,11 @@ class ActionRunner:
     ) -> None:
         """`owner` is the variant that overrides the action, or else the item."""
         try:
-            script = await self._async_script(item.entity_id, action, kind, owner or item.id)
+            script = await self._async_script(item, action, kind, owner or item.id)
             async with asyncio.timeout(self._timeout_s):
                 await script.async_run(
                     {
-                        **context_variables(self._hass, item.entity_id),
+                        **item_variables(self._hass, item),
                         **(variables or {}),
                     },
                     Context(),
@@ -272,28 +286,28 @@ class ActionRunner:
             self._failed(kind, item, str(err))
 
     def _failed(self, kind: ActionKind, item: Appliance | Charger, error: str) -> None:
-        action = f"{kind} {item.entity_id}"
+        action = f"{kind} {_target(self._hass, item)}"
         _LOGGER.error("Could not %s: %s", action, error)
         if self._on_failure is not None:
             self._on_failure(action, error)
 
     async def _async_script(
         self,
-        entity_id: str | None,
+        item: Appliance | Charger,
         action: ActionConfig | None,
         kind: ActionKind,
         owner: str,
     ) -> Script:
-        if entity_id is None or action is None:
+        if action is None:
             raise ValueError("the action is not configured")
-        key = (entity_id, owner, kind)
+        key = (owner, kind)
         if key not in self._scripts:
-            steps = _action_steps(entity_id, action, kind)
+            steps = _action_steps(item.entity_id if isinstance(item, Appliance) else None, action, kind)
             sequence = await async_validate_actions_config(self._hass, cv.SCRIPT_SCHEMA(steps))
             self._scripts[key] = Script(
                 self._hass,
                 sequence,
-                f"{kind} {entity_id}",
+                f"{kind} {_target(self._hass, item)}",
                 DOMAIN,
                 logger=_LOGGER,
                 log_exceptions=False,
@@ -301,33 +315,31 @@ class ActionRunner:
         return self._scripts[key]
 
 
-def _by_field(
-    describe: Callable[[ActionKind], dict[str, Any]],
-) -> dict[str, dict[str, dict[str, Any]]]:
-    return {
-        section: {field_name: describe(kind) for field_name, kind in fields.items()}
-        for section, fields in (
-            ("appliances", APPLIANCE_ACTION_KINDS),
-            ("chargers", CHARGER_ACTION_KINDS),
-        )
-    }
-
-
 def _join(field_name: str, parameter: str | None) -> str:
     return field_name if parameter is None else f"{field_name}.{parameter}"
 
 
-def _action_steps(entity_id: str, action: ActionConfig, kind: ActionKind) -> list[dict[str, Any]]:
+def _action_steps(entity_id: str | None, action: ActionConfig, kind: ActionKind) -> list[dict[str, Any]]:
+    """`entity_id` is the appliance's, which the default and domain actions are for."""
     match action.mode:
-        case ActionMode.DEFAULT:
-            return default_action_steps(kind, entity_id)
         case ActionMode.ENTITY if action.entity_id is not None:
             return default_action_steps(kind, action.entity_id)
         case ActionMode.ENTITY:
             raise ValueError("the entity of the action is not chosen")
-        case ActionMode.DOMAIN:
+        case ActionMode.DEFAULT | ActionMode.DOMAIN if entity_id is None:
+            raise ValueError("the entity is not chosen")
+        case ActionMode.DEFAULT if entity_id is not None:
+            return default_action_steps(kind, entity_id)
+        case ActionMode.DOMAIN if entity_id is not None:
             return domain_action_steps(kind, entity_id, action)
     return copy.deepcopy(list(action.steps))
+
+
+def _target(hass: HomeAssistant, item: Appliance | Charger) -> str:
+    """Return what the log and the diagnostics call the item: an appliance's entity, a charger's name."""
+    if isinstance(item, Appliance) and item.entity_id is not None:
+        return item.entity_id
+    return item_name(hass, item)
 
 
 def _unavailable_default(entity_id: str | None, action: ActionConfig, kind: ActionKind) -> str | None:

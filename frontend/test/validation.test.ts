@@ -74,7 +74,7 @@ describe("missing items", () => {
     expect(missingItems(draft)).toEqual([{ code: "missing_car_connected", section: "chargers", target: "garage", field: "car_connected" }]);
   });
 
-  it("include the charging power of every charger, but not the charging on/off", () => {
+  it("include the charging power of every charger, but not whether the car charges", () => {
     const missing = (parts: Partial<Charger>, groupParts: Partial<ChargerGroup> = {}) =>
       missingItems(config({ charger_groups: [group("garage", [charger("garage", parts)], groupParts)] }));
     const issue = { code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" };
@@ -93,15 +93,22 @@ describe("missing items", () => {
     expect(missing({ deactivate_on_fault: false, fault_flag: empty })).toEqual([]);
   });
 
-  it("leave out the actions to activate and deactivate of a charger switched by its current", () => {
-    const missing = (parts: Partial<Charger>) => missingItems(config({ charger_groups: [group("garage", [charger("garage", { activate: null, ...parts })])] }));
-    expect(missing({})).toEqual([{ code: "missing_action", section: "chargers", target: "garage", field: "activate" }]);
-    expect(missing({ switched_by_current: true })).toEqual([]);
+  it("of a charger are what the way it is switched uses: its on/off entity, or its actions to activate and deactivate", () => {
+    const missing = (parts: Partial<Charger>) =>
+      missingItems(config({ charger_groups: [group("garage", [charger("garage", { on_off_entity: null, activate: null, ...parts })])] }));
+    expect(missing({})).toEqual([{ code: "missing_on_off_entity", section: "chargers", target: "garage", field: "on_off_entity" }]);
+    expect(missing({ switched_by: "actions" })).toEqual([{ code: "missing_action", section: "chargers", target: "garage", field: "activate" }]);
+    expect(missing({ switched_by: "current" })).toEqual([]);
   });
 
   it("an action that is set is not missing", () => {
     expect(isMissingAction({ mode: "custom", action: [{ action: "light.turn_on" }] })).toBe(false);
     expect(isMissingAction({ mode: "domain", domain_action: "climate_hvac_mode", data: { hvac_mode: "heat" } })).toBe(false);
+    expect(isMissingAction({ mode: "domain", domain_action: "climate_temperature", data: { temperature: "{{ 20 }}" } })).toBe(false);
+  });
+
+  it("an empty temperature template is missing", () => {
+    expect(isMissingAction({ mode: "domain", domain_action: "climate_temperature", data: { temperature: "" } })).toBe(true);
   });
 });
 
@@ -222,21 +229,36 @@ describe("actions", () => {
     ]);
   });
 
+  it("of a temperature template are not checked against the range of the entity", () => {
+    const heater = appliance("heater", {
+      entity_id: "climate.heater",
+      turn_on: { mode: "domain", domain_action: "climate_temperature", data: { temperature: "{{ 99 }}" } },
+      turn_off: { mode: "domain", domain_action: "climate_temperature", data: { temperature: 8 } },
+    });
+    expect(errors(config({ appliances: [heater] }), { "climate.heater": CLIMATE })).toEqual([]);
+  });
+
+  it("of a charger's on/off entity need a domain with actions to turn on and off, while the charger is switched by it", () => {
+    const draft = (parts: Partial<Charger>) => config({ charger_groups: [group("garage", [charger("garage", { on_off_entity: "number.garage_current", ...parts })])] });
+    expect(errors(draft({}))).toEqual([{ code: "unsupported_entity_domain", section: "chargers", target: "garage", field: "on_off_entity" }]);
+    expect(errors(draft({ switched_by: "actions" }))).toEqual([]);
+  });
+
   it("to set the current of a charger switched by its current must take 0 A, when the entity tells its lowest value", () => {
-    const draft = (parts: Partial<Charger>) => config({ charger_groups: [group("garage", [charger("garage", { switched_by_current: true, ...parts })])] });
+    const draft = (parts: Partial<Charger>) => config({ charger_groups: [group("garage", [charger("garage", { switched_by: "current", ...parts })])] });
     const issue = { code: "current_off_unsupported", section: "chargers", target: "garage", field: "set_current" };
     expect(errors(draft({}), { "number.garage_current": state("6", { min: 6 }) })).toEqual([issue]);
     expect(errors(draft({}), { "number.garage_current": state("6", { min: 0 }) })).toEqual([]);
     expect(errors(draft({}))).toEqual([]);
-    expect(errors(draft({ switched_by_current: false }), { "number.garage_current": state("6", { min: 6 }) })).toEqual([]);
+    expect(errors(draft({ switched_by: "on_off_entity" }), { "number.garage_current": state("6", { min: 6 }) })).toEqual([]);
     expect(errors(draft({ set_current: { mode: "custom", action: [{ action: "number.set_value" }] } }), { "number.garage_current": state("6", { min: 6 }) })).toEqual([]);
     expect(errors(draft({ set_current: null }))).toEqual([]);
   });
 
   it("are not checked before the entity is chosen, and a custom action is always available", () => {
     expect(errors(config({ appliances: [appliance("heater", { entity_id: null })] }))).toEqual([]);
-    expect(isActionAvailable(CAPABILITIES, "appliances", "turn_on", "sensor.heater", { mode: "custom", action: [] })).toBe(true);
-    expect(isActionAvailable(CAPABILITIES, "appliances", "turn_on", null, { mode: "default" })).toBe(false);
+    expect(isActionAvailable(CAPABILITIES, "turn_on", "sensor.heater", { mode: "custom", action: [] })).toBe(true);
+    expect(isActionAvailable(CAPABILITIES, "turn_on", null, { mode: "default" })).toBe(false);
   });
 });
 

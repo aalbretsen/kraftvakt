@@ -4,7 +4,7 @@ import type { ActionConfig } from "../src/api";
 import { CAPABILITIES, state } from "./builders";
 
 const forEntity = (field: string, action: ActionConfig | null, entityId: string | null, attributes?: Record<string, unknown>) =>
-  actionForEntity(CAPABILITIES, "appliances", field, action, entityId, attributes && state("heat", attributes));
+  actionForEntity(CAPABILITIES, field, action, entityId, attributes && state("heat", attributes));
 
 describe("a thermostat that is not set up yet", () => {
   it("gets its HVAC mode set, with the modes it supports", () => {

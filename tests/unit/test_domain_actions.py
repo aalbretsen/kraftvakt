@@ -15,13 +15,13 @@ from custom_components.kraftvakt.config_model import (
     ActionConfig,
     ActionMode,
     Appliance,
-    Charger,
-    ChargerGroup,
+    ConfigValidationError,
     Issue,
     KraftvaktConfig,
 )
+from custom_components.kraftvakt.config_validation import missing_items, parse_config
+from custom_components.kraftvakt.domain_actions import domain_action_templates
 from custom_components.kraftvakt.regulation.model import (
-    ActivateCharger,
     TurnOffAppliance,
     TurnOnAppliance,
 )
@@ -59,12 +59,7 @@ def test_hvac_mode_defaults_depend_on_the_action_kind() -> None:
     assert turn_on["service"] == "set_hvac_mode"
     assert turn_on["parameters"][0]["preferred_options"] == ["heat", "auto"]
     assert turn_off["parameters"][0]["preferred_options"] == ["off", "auto"]
-    assert actions["chargers"]["activate"].keys() == {
-        "climate_hvac_mode",
-        "climate_temperature",
-        "climate_hvac_mode_and_temperature",
-    }
-    assert actions["chargers"]["set_current"] == {}
+    assert actions.keys() == {"appliances"}
 
 
 def test_hvac_mode_is_the_suggested_action_and_no_domain_has_two() -> None:
@@ -206,25 +201,11 @@ async def test_domain_action_must_belong_to_the_entity(hass: HomeAssistant) -> N
                 turn_on=domain("unknown"),
             ),
         ),
-        charger_groups=(
-            ChargerGroup(
-                "g1",
-                chargers=(
-                    Charger(
-                        "c1",
-                        entity_id="climate.charger",
-                        activate=domain("climate_hvac_mode", hvac_mode="heat"),
-                        set_current=domain("climate_temperature", temperature=20),
-                    ),
-                ),
-            ),
-        ),
     )
 
     assert action_issues(hass, config) == [
         Issue("domain_action_unavailable", "appliances", "a1", "turn_on"),
         Issue("domain_action_unavailable", "appliances", "a1", "turn_off"),
-        Issue("domain_action_unavailable", "chargers", "c1", "set_current"),
     ]
 
 
@@ -237,25 +218,35 @@ async def test_every_value_of_the_action_is_required(hass: HomeAssistant) -> Non
     assert action_issues(hass, config) == [Issue("required", "appliances", "a1", "turn_on.hvac_mode")]
 
 
-async def test_charger_can_be_activated_with_a_domain_action(
-    hass: HomeAssistant,
-) -> None:
-    modes = async_mock_service(hass, "climate", "set_hvac_mode")
-    config = KraftvaktConfig(
-        charger_groups=(
-            ChargerGroup(
-                "g1",
-                chargers=(
-                    Charger(
-                        "c1",
-                        entity_id="climate.charger",
-                        activate=domain("climate_hvac_mode", hvac_mode="heat"),
-                    ),
-                ),
-            ),
-        )
-    )
+async def test_temperature_template_is_rendered_with_the_variables_when_the_action_runs(hass: HomeAssistant) -> None:
+    """It is not checked against the range of the entity, since its value is known only when it runs."""
+    temperatures = async_mock_service(hass, "climate", "set_temperature")
+    hass.states.async_set("climate.hall", "heat", THERMOSTAT_ATTRIBUTES | {"current_temperature": 18})
+    config = thermostat(domain("climate_temperature", temperature="{{ entity.attributes.current_temperature + 50 }}"), domain("climate_temperature", temperature=8))
 
-    await ActionRunner(hass, config).async_execute([ActivateCharger("c1")])
+    await ActionRunner(hass, config).async_execute([TurnOnAppliance("a1")])
 
-    assert [call.data["hvac_mode"] for call in modes] == ["heat"]
+    assert action_issues(hass, config) == []
+    assert [call.data["temperature"] for call in temperatures] == [68]
+
+
+async def test_temperature_template_must_be_valid_and_given(hass: HomeAssistant) -> None:
+    data = thermostat(domain("climate_temperature", temperature="{{ 20 "), domain("climate_temperature", temperature="")).to_dict()
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_template", "appliances", "a1", "turn_on.temperature")]
+    data["appliances"][0]["turn_on"]["data"]["temperature"] = "{{ 20 }}"
+    assert Issue("missing_action", "appliances", "a1", "turn_off") in missing_items(parse_config(data))
+
+
+def test_an_unknown_domain_action_has_no_templates() -> None:
+    assert domain_action_templates(domain("unknown", temperature="{{ 20 }}")) == {}
+
+
+async def test_hvac_mode_cannot_be_a_template(hass: HomeAssistant) -> None:
+    config = thermostat(domain("climate_hvac_mode", hvac_mode="{{ 'heat' }}"), domain("climate_hvac_mode", hvac_mode="off"))
+    hass.states.async_set("climate.hall", "heat", THERMOSTAT_ATTRIBUTES)
+
+    assert action_issues(hass, config) == [Issue("unsupported_option", "appliances", "a1", "turn_on.hvac_mode")]

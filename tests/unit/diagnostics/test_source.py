@@ -3,7 +3,6 @@
 from pathlib import Path
 
 from custom_components.kraftvakt.charger_profiles.profile import (
-    DEFAULT_ACTION,
     ChargerProfile,
     DeviceMatch,
     ProfileCondition,
@@ -14,7 +13,7 @@ from custom_components.kraftvakt.charger_profiles.profile import (
     state_condition,
     template_condition,
 )
-from custom_components.kraftvakt.config_model import ConditionType
+from custom_components.kraftvakt.config_model import ConditionType, SwitchedBy
 from diagnostics.charger_profile.draft import DescribedEntity, ProfileDraft
 from diagnostics.charger_profile.source import harness_entities, profile_source, profile_test_source
 
@@ -31,9 +30,9 @@ ENTITIES = (
 PROFILE = ChargerProfile(
     name="Acme Box (mqtt)",
     device=DeviceMatch("mqtt", manufacturer="Acme", model_id="B-1"),
-    entity=ProfileEntity("switch"),
-    activate=DEFAULT_ACTION,
-    deactivate=custom_action({"action": "acme.pause", "data": {"device_id": "{{ device_id(entity_id) }}", "now": True}}),
+    switched_by=SwitchedBy.ACTIONS,
+    activate=custom_action({"action": "acme.resume", "data": {"device_id": "{{ device_id }}"}}),
+    deactivate=custom_action({"action": "acme.pause", "data": {"device_id": "{{ device_id }}", "now": True}}),
     set_current=entity_action(ProfileEntity("number", name="Current")),
     car_connected=template_condition("{{ states('$power') != '$$' }}", power=ProfileEntity("sensor", translation_key="power")),
     charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
@@ -56,7 +55,7 @@ def written(tmp_path: Path, source: str, name: str) -> Path:
 def test_the_written_profile_is_the_drafted_profile(tmp_path: Path) -> None:
     source = profile_source(DRAFT)
 
-    assert "from ...config_model import ConditionType\nfrom ..profile import DEFAULT_ACTION, ChargerProfile, DeviceMatch, ProfileCondition," in source
+    assert "from ...config_model import ConditionType, SwitchedBy\nfrom ..profile import ChargerProfile, DeviceMatch, ProfileCondition," in source
     assert load(written(tmp_path, source, "acme_box_mqtt"), PROFILES_PACKAGE).PROFILE == PROFILE
 
 
@@ -64,10 +63,8 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
     profile = ChargerProfile(
         name="Acme",
         device=DeviceMatch("acme"),
-        entity=ProfileEntity("switch", translation_key="allowed"),
-        activate=DEFAULT_ACTION,
-        deactivate=DEFAULT_ACTION,
-        set_current=DEFAULT_ACTION,
+        on_off_entity=ProfileEntity("switch", translation_key="allowed"),
+        set_current=entity_action(ProfileEntity("number", translation_key="current")),
         car_connected=state_condition(ProfileEntity("sensor", translation_key="status"), ("disconnected",), states_are_true=False),
         actively_charging=state_condition(ProfileEntity("sensor", translation_key="status"), ("charging",)),
         charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
@@ -79,7 +76,7 @@ def test_a_profile_without_cloud_controlled_leaves_the_setting_out(tmp_path: Pat
     assert "cloud_controlled" not in source
     assert "fault" not in source
     assert "start_delay_s" not in source
-    assert "ConditionType" not in source
+    assert "config_model" not in source
     assert draft.profile == load(written(tmp_path, source, "acme"), PROFILES_PACKAGE).PROFILE
 
 
@@ -87,9 +84,8 @@ def test_a_profile_switched_by_current_is_written_without_actions_to_activate_an
     profile = ChargerProfile(
         name="Acme",
         device=DeviceMatch("acme"),
-        entity=ProfileEntity("number", translation_key="current"),
-        switched_by_current=True,
-        set_current=DEFAULT_ACTION,
+        switched_by=SwitchedBy.CURRENT,
+        set_current=entity_action(ProfileEntity("number", translation_key="current")),
         car_connected=state_condition(ProfileEntity("sensor", translation_key="status"), ("disconnected",), states_are_true=False),
         charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
     )
@@ -97,8 +93,9 @@ def test_a_profile_switched_by_current_is_written_without_actions_to_activate_an
 
     source = profile_source(draft)
 
-    assert "    switched_by_current=True,\n" in source
+    assert "    switched_by=SwitchedBy.CURRENT,\n" in source
     assert "activate" not in source
+    assert "on_off_entity" not in source
     assert draft.profile == load(written(tmp_path, source, "acme_switched"), PROFILES_PACKAGE).PROFILE
 
 

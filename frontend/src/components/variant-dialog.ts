@@ -3,7 +3,6 @@ import { customElement, property } from "lit/decorators.js";
 
 import type { ActionConfig, Appliance, ApplianceActions, Condition, Issue, Variant } from "../api";
 import { APPLIANCE_ACTIONS, applianceErrors, isOverridden, missingInAppliance } from "../validation";
-import { APPLIANCE_ACTION_VARIABLES } from "./appliance-dialog";
 import "./condition-field";
 import { ItemDialog } from "./item-dialog";
 
@@ -28,10 +27,6 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
 
   /** The own actions of overrides switched off, kept while the dialog is open. */
   private setAsideActions = new Map<ApplianceAction, ActionConfig | null>();
-
-  protected actionsForEntity(): Partial<Appliance> {
-    return {};
-  }
 
   protected errors(): Issue[] {
     return this.ofVariant(applianceErrors(this.draft, this.capabilities, this.hass));
@@ -72,7 +67,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
             .hass=${this.hass}
             .localize=${this.localize}
             .value=${variant.condition}
-            .entityId=${this.draft.entity_id}
+            .variables=${this.variables}
             .error=${conditionIssue ? this.describe(conditionIssue) : undefined}
             .disabled=${this.locked}
             @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeCondition(event.detail.value)}
@@ -92,7 +87,7 @@ export class KraftvaktVariantDialog extends ItemDialog<Appliance> {
       description: this.helper(`override_${name}`),
       toggle: { checked: overridden, changed: (checked) => this.override(name, checked) },
       content: overridden
-        ? this.renderActionField({ name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null, label: "" }, issues, APPLIANCE_ACTION_VARIABLES, (value) =>
+        ? this.renderActionField({ name, field: `${this.fieldPrefix}${name}`, value: own?.[name] ?? null, label: "" }, issues, (value) =>
             this.changeVariant({ actions: { ...own, [name]: value } }),
           )
         : nothing,

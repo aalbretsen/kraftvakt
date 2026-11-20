@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ConfigResponse, Issue } from "../src/api";
 import { describeIssue, errorsByField, fieldErrorText, pageForIssue } from "../src/issues";
 import { localizer } from "../src/localize";
-import { appliance, CAPABILITIES, charger, config, group, variant } from "./builders";
+import { appliance, CAPABILITIES, charger, config, group, hass, variant } from "./builders";
 
 const localize = localizer("en");
 
@@ -28,7 +28,7 @@ describe("a missing item", () => {
     entity_names: { "switch.heater": "Water heater", "switch.garage": "Garage" },
     missing: [],
   };
-  const missingText = (issue: Issue) => describeIssue(issue, response, localize);
+  const missingText = (issue: Issue) => describeIssue(issue, response, localize, hass());
 
   it("names the appliance or charger, the variant and the action", () => {
     const variantAction = missingText({ code: "missing_action", section: "appliances", target: "heater", field: "variants.morning.turn_on" });
@@ -37,9 +37,10 @@ describe("a missing item", () => {
     expect(missingText({ code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" })).toContain("Garage");
   });
 
-  it("names an appliance without an entity by what it is", () => {
+  it("names an appliance without an entity, and a charger without a device or an on/off entity, by what it is", () => {
     const issue: Issue = { code: "missing_action", section: "appliances", target: "new", field: "turn_off" };
     expect(missingText(issue)).toContain(localize("missing.appliance_without_entity"));
+    expect(missingText({ code: "missing_device", section: "chargers", target: "other", field: "device_id" })).toContain(localize("missing.charger_without_device"));
   });
 
   it("with a code the panel does not know shows the code", () => {

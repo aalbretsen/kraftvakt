@@ -2,8 +2,8 @@ import { LitElement, css, html, nothing, type CSSResultGroup, type PropertyValue
 import { property, state } from "lit/decorators.js";
 
 import type { ActionConfig, Appliance, Capabilities, Charger, Issue } from "../api";
-import { actionForEntity } from "../actions";
 import { domainActionsFor } from "../domain-actions";
+import { templateVariables } from "../entities";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize, TranslationKey } from "../localize";
 import { renderDescription, renderSectionHeader, sectionStyles } from "../section-styles";
@@ -37,7 +37,7 @@ export interface Group {
 
 /**
  * What the dialogs for an appliance and an EV charger have in common: the
- * entity, the actions, the fields with limits, and the buttons.
+ * entity pickers, the actions, the fields with limits, and the buttons.
  *
  * The dialog edits a copy of the item. «OK» fires `item-changed` with the
  * item, and «Delete» fires `item-deleted` with its id. Both only change the
@@ -71,9 +71,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   /** The first part of the keys of the dialog's texts. */
   protected abstract readonly texts: "appliance" | "charger";
 
-  /** Return the changes that keep the actions working with a new entity, see `actionForEntity`. */
-  protected abstract actionsForEntity(entityId: string | null): Partial<T>;
-
   /** The mistakes in the item that stop the dialog from being confirmed. */
   protected abstract errors(): Issue[];
 
@@ -105,37 +102,47 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
     return undefined;
   }
 
-  protected renderEntity(issues: Issue[]) {
+  /** The entity the default and domain actions run for: an appliance's, since an EV charger has none. */
+  protected get actionEntity(): string | null {
+    return "entity_id" in this.draft ? this.draft.entity_id : null;
+  }
+
+  /** The variables the item's templates and actions get. */
+  protected get variables(): Record<string, unknown> {
+    return templateVariables(this.hass, this.draft);
+  }
+
+  /** The entity Kraftvakt turns on and off, which no other appliance or EV charger may use; `domains` limits it to those. */
+  protected renderEntityField(field: string, issues: Issue[], changed: (entityId: string | null) => void, domains?: string[]) {
     const schema = [
       {
-        name: "entity_id",
+        name: field,
         required: true,
-        selector: { entity: { include_entities: this.entityScope, exclude_entities: this.usedEntities } },
+        selector: { entity: { filter: domains ? { domain: domains } : undefined, include_entities: this.entityScope, exclude_entities: this.usedEntities } },
       },
     ];
-    return this.renderForm(schema, issues, (value) => this.entityChanged((value.entity_id as string) || null));
+    return this.renderForm(schema, issues, (value) => changed((value[field] as string) || null));
   }
 
   /**
    * One of the item's own action fields; `entityAllowed` offers to give it as
    * an entity with the same default action, and `label` replaces the field's.
    */
-  protected renderAction(field: string, issues: Issue[], variables: string[], entityAllowed = false, label?: string) {
+  protected renderAction(field: string, issues: Issue[], options: { entityAllowed?: boolean; label?: string; extraVariables?: string[] } = {}) {
     return this.renderActionField(
-      { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field], label },
+      { name: field, field, value: (this.draft as unknown as Record<string, ActionConfig | null>)[field], label: options.label },
       issues,
-      variables,
       (value) => this.changeDraft({ [field]: value } as Partial<T>),
-      entityAllowed,
+      options,
     );
   }
 
   /** One of the item's own action fields in a group of its own, with the field's label as title and its helper as description. */
-  protected renderActionGroup(field: string, issues: Issue[], variables: string[]) {
+  protected renderActionGroup(field: string, issues: Issue[]) {
     return this.renderGroup({
       title: this.label(field),
       description: this.helper(field),
-      content: this.renderAction(field, issues, variables, false, ""),
+      content: this.renderAction(field, issues, { label: "" }),
     });
   }
 
@@ -146,38 +153,33 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   protected renderActionField(
     action: { name: string; field: string; value: ActionConfig | null; label?: string },
     issues: Issue[],
-    variables: string[],
     changed: (value: ActionConfig | null) => void,
-    entityAllowed = false,
+    { entityAllowed = false, extraVariables = [] }: { entityAllowed?: boolean; extraVariables?: string[] } = {},
   ) {
     const { name, field } = action;
     const issue = issues.find((item) => item.field === field);
     const parameterErrors = errorsByField(issues, `${field}.`, this.describe);
     const defaultAction = defaultActionOf(this.capabilities, this.section, name);
+    const entityId = this.actionEntity;
     return html`
       <kraftvakt-action-field
         .hass=${this.hass}
         .localize=${this.localize}
         .label=${action.label ?? this.label(name)}
         .value=${action.value}
-        .entityId=${this.draft.entity_id}
+        .entityId=${entityId}
         .defaultAction=${defaultAction}
-        .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, name, this.draft.entity_id)}
+        .defaultAvailable=${hasDefaultAction(this.capabilities, this.section, name, entityId)}
         .entityDomains=${entityAllowed ? defaultAction.domains : []}
         .includeEntities=${this.entityScope}
-        .domainActions=${domainActionsFor(this.capabilities, this.section, name, this.draft.entity_id)}
-        .variables=${variables}
+        .domainActions=${this.section === "appliances" ? domainActionsFor(this.capabilities, name, entityId) : {}}
+        .variables=${[...extraVariables, ...Object.keys(this.variables)]}
         .error=${issue ? this.describe(issue) : undefined}
         .parameterErrors=${parameterErrors}
         .disabled=${this.locked}
         @value-changed=${(event: CustomEvent<{ value: ActionConfig | null }>) => changed(event.detail.value)}
       ></kraftvakt-action-field>
     `;
-  }
-
-  /** Return the action to use with a new entity, see `actionForEntity` in `actions.ts`. */
-  protected actionForEntity(name: string, action: ActionConfig | null, entityId: string | null): ActionConfig | null {
-    return actionForEntity(this.capabilities, this.section, name, action, entityId, entityId ? this.hass.states[entityId] : undefined);
   }
 
   protected renderForm(schema: FormField[], issues: Issue[], changed: (value: Record<string, unknown>) => void, data: object = this.draft) {
@@ -261,10 +263,6 @@ export abstract class ItemDialog<T extends Item> extends LitElement {
   }
 
   protected describe = (issue: Issue): string => fieldErrorText(issue, this.localize, this.capabilities, this.hass.language);
-
-  protected entityChanged(entityId: string | null): void {
-    this.changeDraft({ entity_id: entityId, ...this.actionsForEntity(entityId) } as Partial<T>);
-  }
 
   private renderButtons(hasErrors: boolean) {
     if (this.locked) {

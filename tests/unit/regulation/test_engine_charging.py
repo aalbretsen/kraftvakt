@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from custom_components.kraftvakt.config_model import OverrideEnd
+from custom_components.kraftvakt.config_model import OverrideEnd, SwitchedBy
 from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
     ChargerStatus,
@@ -317,7 +317,7 @@ def test_bypassed_charger_keeps_its_current_when_room_is_made() -> None:
 
 def test_charger_switched_by_its_current_gets_only_the_current() -> None:
     """Its minimum current activates it and 0 A deactivates it, also at the start, the stop and the command repeat."""
-    scenario = one_charger(switched_by_current=True)
+    scenario = one_charger(switched_by=SwitchedBy.CURRENT)
     assert scenario.start_commands == current("c", 0)
     scenario.draw("c")
 

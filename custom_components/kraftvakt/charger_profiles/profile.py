@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Final
 
-from ..config_model import ActionMode, Charger, ConditionType
+from ..config_model import ActionMode, Charger, ConditionType, SwitchedBy
 
 DEFAULT_CHARGER: Final = Charger(id="")
 
@@ -35,7 +35,7 @@ class ProfileEntity:
 
 @dataclass(frozen=True, slots=True)
 class ProfileAction:
-    """An action: the default action of the charger's entity, script steps, or the default action of another entity of the device."""
+    """An action: script steps, or the default action of an entity of the device."""
 
     mode: ActionMode
     steps: tuple[dict[str, Any], ...] = ()
@@ -61,29 +61,26 @@ class ProfileCondition:
 class ChargerProfile:
     """How Kraftvakt controls the chargers of a known integration. The name is shown to the user.
 
-    A profile has a charging power, and may have a charging on/off (`actively_charging`).
-    It has actions to activate and deactivate, unless the charger is `switched_by_current`.
+    A profile has a charging power, and may have a car charging condition (`actively_charging`).
+    It has an on/off entity when it is switched by one, and actions to activate and deactivate when it is switched by actions.
     `cloud_controlled` is for chargers controlled through a cloud service, with its start delay.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
 
     name: str
     device: DeviceMatch
-    entity: ProfileEntity
     set_current: ProfileAction
     car_connected: ProfileCondition
     charging_power: ProfileCondition
+    switched_by: SwitchedBy = SwitchedBy.ON_OFF_ENTITY
+    on_off_entity: ProfileEntity | None = None
     activate: ProfileAction | None = None
     deactivate: ProfileAction | None = None
-    switched_by_current: bool = False
     actively_charging: ProfileCondition | None = None
     cloud_controlled: bool = False
     start_delay_s: int = DEFAULT_CHARGER.start_delay_s
     deactivate_on_fault: bool = False
     fault_flag: ProfileCondition | None = None
-
-
-DEFAULT_ACTION = ProfileAction(ActionMode.DEFAULT)
 
 
 def custom_action(*steps: dict[str, Any]) -> ProfileAction:

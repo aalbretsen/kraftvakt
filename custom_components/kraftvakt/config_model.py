@@ -75,7 +75,8 @@ class ActionMode(StrEnum):
 
     `ENTITY` runs the default action of another entity, and is offered only for
     setting the charging current. `DOMAIN` runs an action that belongs to the
-    domain of the entity, with values the user has chosen.
+    domain of the entity, with values the user has chosen. A charger has no
+    entity of its own, so its actions are only `ENTITY` and `CUSTOM`.
     """
 
     DEFAULT = "default"
@@ -108,6 +109,19 @@ CHARGER_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.STATE, Con
 POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
 THERMOSTAT_TEMPERATURE_TYPES: Final = (ConditionType.CURRENT_TEMPERATURE, ConditionType.TARGET_TEMPERATURE)
 TEMPERATURE_TYPES: Final = (ConditionType.TEMPERATURE_SENSOR, *THERMOSTAT_TEMPERATURE_TYPES, ConditionType.TEMPLATE)
+
+
+class SwitchedBy(StrEnum):
+    """How a charger turns charging on and off.
+
+    `ON_OFF_ENTITY` runs the default actions of its on/off entity, `ACTIONS`
+    its custom actions to activate and deactivate, and `CURRENT` sets the
+    charging current, where 0 A stops it.
+    """
+
+    ON_OFF_ENTITY = "on_off_entity"
+    ACTIONS = "actions"
+    CURRENT = "current"
 
 
 class OverrideEnd(StrEnum):
@@ -161,7 +175,7 @@ class ActionConfig:
             case ActionMode.ENTITY:
                 return self.entity_id is None
             case ActionMode.DOMAIN:
-                return any(value is None for value in self.data.values())
+                return any(value is None or value == "" for value in self.data.values())
         return False
 
 
@@ -188,6 +202,14 @@ class Condition:
 APPLIANCE_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {
     "turn_on": ActionKind.TURN_ON,
     "turn_off": ActionKind.TURN_OFF,
+}
+
+APPLIANCE_ACTION_MODES: Final = (ActionMode.DEFAULT, ActionMode.DOMAIN, ActionMode.CUSTOM)
+
+CHARGER_ACTION_MODES: Final[Mapping[str, tuple[ActionMode, ...]]] = {
+    "activate": (ActionMode.CUSTOM,),
+    "deactivate": (ActionMode.CUSTOM,),
+    "set_current": (ActionMode.ENTITY, ActionMode.CUSTOM),
 }
 
 CHARGER_ACTION_KINDS: Final[Mapping[str, ActionKind]] = {
@@ -240,6 +262,11 @@ class Appliance:
     variants: tuple[Variant, ...] = ()
     display_power: Condition | None = None
     display_temperature: Condition | None = None
+
+    @property
+    def controlled_entity(self) -> str | None:
+        """Return the entity Kraftvakt turns on and off."""
+        return self.entity_id
 
     def overriding_variant(self, variant_id: str | None, name: str) -> Variant | None:
         """Return the variant if it overrides the action `name`."""
@@ -320,12 +347,18 @@ class ChargingWindow:
 
 @dataclass(frozen=True, slots=True)
 class Charger:
+    """An EV charger, which is a device in Home Assistant.
+
+    The on/off entity, and the actions to activate and deactivate, are kept
+    while the charger is switched another way, but not used.
+    """
+
     id: str
     device_id: str | None = None
-    entity_id: str | None = None
+    switched_by: SwitchedBy = SwitchedBy.ON_OFF_ENTITY
+    on_off_entity: str | None = None
     activate: ActionConfig | None = None
     deactivate: ActionConfig | None = None
-    switched_by_current: bool = False
     set_current: ActionConfig | None = None
     min_current_a: int = 6
     max_current_a: int = 16
@@ -341,10 +374,27 @@ class Charger:
     deactivate_on_fault: bool = False
     fault_flag: Condition | None = None
 
+    @property
+    def switched_by_current(self) -> bool:
+        return self.switched_by is SwitchedBy.CURRENT
+
+    @property
+    def controlled_entity(self) -> str | None:
+        """Return the entity Kraftvakt turns on and off, if the charger is switched by one."""
+        return self.on_off_entity if self.switched_by is SwitchedBy.ON_OFF_ENTITY else None
+
+    def action(self, kind: ActionKind) -> ActionConfig | None:
+        """Return the action that runs for the kind: to turn on or off with an on/off entity, its default action."""
+        if kind is ActionKind.SET_CURRENT:
+            return self.set_current
+        if self.switched_by is SwitchedBy.ON_OFF_ENTITY:
+            return None if self.on_off_entity is None else ActionConfig(ActionMode.ENTITY, entity_id=self.on_off_entity)
+        return self.activate if kind is ActionKind.TURN_ON else self.deactivate
+
     def action_fields(self) -> Iterator[ActionField]:
-        """Return the actions the charger uses; one switched by its current keeps its actions to activate and deactivate, but uses neither."""
+        """Return the actions the user gives that the charger uses."""
         for name, kind in CHARGER_ACTION_KINDS.items():
-            if not self.switched_by_current or kind is ActionKind.SET_CURRENT:
+            if kind is ActionKind.SET_CURRENT or self.switched_by is SwitchedBy.ACTIONS:
                 yield ActionField(name, kind, getattr(self, name))
 
     def conditions(self) -> Iterator[tuple[str, Condition]]:
@@ -356,8 +406,8 @@ class Charger:
 
     def device_entities(self) -> Iterator[tuple[str, str]]:
         """Return each field and entity that must belong to the device."""
-        if self.entity_id is not None:
-            yield "entity_id", self.entity_id
+        if self.controlled_entity is not None:
+            yield "on_off_entity", self.controlled_entity
         if self.set_current is not None and self.set_current.entity_id is not None:
             yield "set_current", self.set_current.entity_id
         for field_name, condition in self.conditions():

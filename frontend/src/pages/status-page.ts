@@ -151,7 +151,7 @@ export class KraftvaktStatusPage extends LitElement {
             const page = pageForIssue(issue);
             return html`
               <li>
-                ${describeIssue(issue, this.config, this.localize)}
+                ${describeIssue(issue, this.config, this.localize, this.hass)}
                 <a href="${PANEL_PATH}/${page}" @click=${(event: Event) => this.openPage(event, page)}> ${this.localize(`tabs.${page}`)} </a>
               </li>
             `;

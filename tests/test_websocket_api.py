@@ -171,6 +171,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "data": {"value": "{{ current }}"},
     }
     assert result["domain_actions"]["appliances"]["turn_off"]["climate_hvac_mode"]["service"] == "set_hvac_mode"
+    assert "chargers" not in result["domain_actions"]
     assert result["limits"]["general"]["power_limit_w"] == {
         "min": 1000,
         "max": 50_000,
@@ -214,6 +215,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "appliances": {"power_reserve_w": None},
         "charger_groups": {"one_at_a_time": True, "dynamic_order": False},
         "chargers": {
+            "switched_by": "on_off_entity",
             "min_current_a": 6,
             "max_current_a": 16,
             "min_current_power_w": 4157,
@@ -362,7 +364,7 @@ async def test_runtime_refuses_a_new_configuration_while_running(hass: HomeAssis
                         "chargers": [
                             {
                                 "id": "c1",
-                                "entity_id": "switch.charger",
+                                "on_off_entity": "switch.charger",
                                 "set_current": {
                                     "mode": "entity",
                                     "entity_id": "switch.charger_current",
@@ -613,9 +615,7 @@ def config_with_charger(device_id: str, **settings: Any) -> dict[str, Any]:
                 {
                     "id": "c1",
                     "device_id": device_id,
-                    "entity_id": "switch.charger",
-                    "activate": DEFAULT,
-                    "deactivate": DEFAULT,
+                    "on_off_entity": "switch.charger",
                     "set_current": {
                         "mode": "custom",
                         "action": [{"action": "number.set_value"}],
@@ -661,7 +661,7 @@ async def test_charger_entities_must_belong_to_its_device(
                 "target": "c1",
                 "field": field,
             }
-            for field in ("entity_id", "charging_power")
+            for field in ("on_off_entity", "charging_power")
         ],
     }
 
@@ -968,9 +968,7 @@ async def test_status_shows_the_chargers(
             "chargers": [
                 {
                     "id": "c1",
-                    "entity_id": "input_boolean.charger",
-                    "activate": DEFAULT,
-                    "deactivate": DEFAULT,
+                    "on_off_entity": "input_boolean.charger",
                     "set_current": {
                         "mode": "custom",
                         "action": [{"action": "number.set_value"}],
@@ -1037,9 +1035,7 @@ def charger(charger_id: str, **settings: Any) -> dict[str, Any]:
     return {
         "id": charger_id,
         "device_id": f"{charger_id}_device",
-        "entity_id": f"input_boolean.{charger_id}",
-        "activate": DEFAULT,
-        "deactivate": DEFAULT,
+        "on_off_entity": f"input_boolean.{charger_id}",
         "set_current": {"mode": "custom", "action": [{"action": "number.set_value"}]},
         "car_connected": {"type": "entity", "value": f"binary_sensor.{charger_id}_car"},
         "charging_power": {

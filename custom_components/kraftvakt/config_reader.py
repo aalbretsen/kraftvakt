@@ -11,10 +11,13 @@ import re
 from collections.abc import Mapping
 from dataclasses import Field, fields
 from datetime import time
+from enum import StrEnum
 from typing import Any
 
 from .config_model import (
     APPLIANCE_ACTION_KINDS,
+    APPLIANCE_ACTION_MODES,
+    CHARGER_ACTION_MODES,
     CHARGER_CONDITION_TYPES,
     POWER_TYPES,
     TEMPERATURE_TYPES,
@@ -33,7 +36,6 @@ from .config_model import (
     IssueLocation,
     ItemSwitches,
     KraftvaktConfig,
-    OverrideEnd,
     PriorityEntry,
     PriorityEntryType,
     Variant,
@@ -170,11 +172,11 @@ class ConfigReader:
         return Charger(
             id=charger_id,
             device_id=self._text(values, "device_id", location),
-            entity_id=self._text(values, "entity_id", location),
-            activate=self._action(values, "activate", location),
-            deactivate=self._action(values, "deactivate", location),
-            switched_by_current=self._bool(values, "switched_by_current", defaults.switched_by_current, location),
-            set_current=self._action(values, "set_current", location, entity_allowed=True),
+            switched_by=self._choice(values, "switched_by", defaults.switched_by, location),
+            on_off_entity=self._text(values, "on_off_entity", location),
+            activate=self._action(values, "activate", location, CHARGER_ACTION_MODES["activate"]),
+            deactivate=self._action(values, "deactivate", location, CHARGER_ACTION_MODES["deactivate"]),
+            set_current=self._action(values, "set_current", location, CHARGER_ACTION_MODES["set_current"]),
             min_current_a=self._integer(values, "min_current_a", defaults.min_current_a, location),
             max_current_a=self._integer(values, "max_current_a", defaults.max_current_a, location),
             min_current_power_w=self._integer(values, "min_current_power_w", defaults.min_current_power_w, location),
@@ -183,7 +185,7 @@ class ConfigReader:
             charging_power=self._condition(values.get("charging_power"), "charging_power", location, POWER_TYPES),
             charging_window=self._charging_window(values, location),
             finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
-            override_ends=self._override_end(values, defaults.override_ends, location),
+            override_ends=self._choice(values, "override_ends", defaults.override_ends, location),
             cloud_controlled=self._bool(values, "cloud_controlled", defaults.cloud_controlled, location),
             start_delay_s=self._integer(values, "start_delay_s", defaults.start_delay_s, location),
             deactivate_on_fault=self._bool(values, "deactivate_on_fault", defaults.deactivate_on_fault, location),
@@ -195,17 +197,16 @@ class ConfigReader:
         values: Mapping[str, Any],
         key: str,
         location: IssueLocation,
-        *,
-        entity_allowed: bool = False,
+        modes: tuple[ActionMode, ...] = APPLIANCE_ACTION_MODES,
     ) -> ActionConfig | None:
         action = values.get(key)
         if action is None:
             return None
-        if isinstance(action, Mapping):
+        if isinstance(action, Mapping) and action.get("mode") in modes:
             if action.get("mode") == ActionMode.DEFAULT:
                 return ActionConfig(ActionMode.DEFAULT)
             entity_id = action.get("entity_id") or None
-            if entity_allowed and action.get("mode") == ActionMode.ENTITY and (entity_id is None or isinstance(entity_id, str)):
+            if action.get("mode") == ActionMode.ENTITY and (entity_id is None or isinstance(entity_id, str)):
                 return ActionConfig(ActionMode.ENTITY, entity_id=entity_id)
             domain_action = action.get("domain_action")
             data = action.get("data", {})
@@ -279,12 +280,12 @@ class ConfigReader:
             return None
         return value
 
-    def _override_end(self, values: Mapping[str, Any], default: OverrideEnd, location: IssueLocation) -> OverrideEnd:
-        value = values.get("override_ends", default)
-        if value not in tuple(OverrideEnd):
-            self.issues.append(location.issue("invalid_type", "override_ends"))
+    def _choice[T: StrEnum](self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation) -> T:
+        value = values.get(key, default)
+        if value not in tuple(type(default)):
+            self.issues.append(location.issue("invalid_type", key))
             return default
-        return OverrideEnd(value)
+        return type(default)(value)
 
     def _bool(
         self,

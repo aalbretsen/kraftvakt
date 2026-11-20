@@ -133,7 +133,7 @@ def test_appliance_power_reserve(value: float, code: str | None) -> None:
         ("min_current_power_w", 5001, "out_of_range"),
         ("min_current_a", 1, None),
         ("min_current_a", 0, "out_of_range"),
-        ("entity_id", "switch", "invalid_entity_id"),
+        ("on_off_entity", "switch", "invalid_entity_id"),
         ("charging_power", {"type": "power_sensor", "value": "Sensor.X"}, "invalid_entity_id"),
         ("charging_power", {"type": "power_sensor", "value": ""}, None),
         ("actively_charging", {"type": "state", "value": "Sensor.X", "states": ["charging"]}, "invalid_entity_id"),
@@ -259,13 +259,20 @@ def test_variant_labels_must_be_unique_per_appliance() -> None:
 def test_entity_is_unique_across_appliances_and_chargers() -> None:
     def mutate(data: dict[str, Any]) -> None:
         data["appliances"][1]["entity_id"] = "switch.water_heater"
-        data["charger_groups"][0]["chargers"][0]["entity_id"] = "switch.water_heater"
+        data["charger_groups"][0]["chargers"][0]["on_off_entity"] = "switch.water_heater"
 
     assert _issues_after(mutate) == [
         Issue("duplicate_entity", "appliances", "a1", "entity_id"),
         Issue("duplicate_entity", "appliances", "a2", "entity_id"),
-        Issue("duplicate_entity", "chargers", "c1", "entity_id"),
+        Issue("duplicate_entity", "chargers", "c1", "on_off_entity"),
     ]
+
+
+def test_on_off_entity_that_is_not_used_may_be_used_by_another() -> None:
+    def mutate(data: dict[str, Any]) -> None:
+        data["charger_groups"][0]["chargers"][0] |= {"on_off_entity": "switch.water_heater", "switched_by": "current"}
+
+    assert _issues_after(mutate) == []
 
 
 @pytest.mark.parametrize(
@@ -391,7 +398,7 @@ def test_charger_group_name_is_required_and_unique() -> None:
 def test_ids_are_unique_across_charger_groups() -> None:
     def mutate(data: dict[str, Any]) -> None:
         group = data["charger_groups"][0]
-        charger = {**group["chargers"][0], "entity_id": "switch.charger_2"}
+        charger = {**group["chargers"][0], "on_off_entity": "switch.charger_2"}
         data["charger_groups"].append({**group, "name": "Cabin", "chargers": [charger]})
 
     assert _issues_after(mutate) == [
@@ -497,10 +504,13 @@ async def test_wrong_type_is_reported_once(hass: HomeAssistant) -> None:
     ("field", "action"),
     [
         ("activate", {"mode": "entity", "entity_id": "number.x"}),
+        ("deactivate", {"mode": "default"}),
+        ("activate", {"mode": "domain", "domain_action": "climate_hvac_mode", "data": {"hvac_mode": "off"}}),
+        ("set_current", {"mode": "default"}),
         ("set_current", {"mode": "entity", "entity_id": 7}),
     ],
 )
-async def test_only_the_charging_current_may_be_given_as_an_entity(hass: HomeAssistant, field: str, action: dict[str, Any]) -> None:
+async def test_charger_actions_are_custom_and_the_charging_current_may_be_an_entity(hass: HomeAssistant, field: str, action: dict[str, Any]) -> None:
     data = full_config_data()
     data["charger_groups"][0]["chargers"][0][field] = action
 
@@ -587,15 +597,15 @@ async def test_parse_config_does_not_change_actions(hass: HomeAssistant) -> None
     assert original["target"] == {"entity_id": "{{ entity_id }}"}
 
 
-@pytest.mark.parametrize("value", ["when_full", True])
-async def test_override_end_must_be_one_of_the_choices(hass: HomeAssistant, value: Any) -> None:
+@pytest.mark.parametrize(("field", "value"), [("override_ends", "when_full"), ("override_ends", True), ("switched_by", "relay")])
+async def test_choice_must_be_one_of_the_choices(hass: HomeAssistant, field: str, value: Any) -> None:
     data = full_config_data()
-    data["charger_groups"][0]["chargers"][0]["override_ends"] = value
+    data["charger_groups"][0]["chargers"][0][field] = value
 
     with pytest.raises(ConfigValidationError) as error:
         parse_config(data)
 
-    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", "override_ends")]
+    assert error.value.issues == [Issue("invalid_type", "chargers", "c1", field)]
 
 
 def test_essential_appliance_has_no_variants() -> None:

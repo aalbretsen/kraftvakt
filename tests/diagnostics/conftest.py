@@ -38,15 +38,9 @@ def driveway_charger(device_id: str) -> dict:
     return {
         "id": "c1",
         "device_id": device_id,
-        "entity_id": "switch.driveway_charging_allowed",
-        "activate": {"mode": "default"},
-        "deactivate": {
-            "mode": "custom",
-            "action": [
-                {"action": "example_charger.pause", "data": {"device_id": device_id}},
-                {"action": "switch.turn_off", "target": {"entity_id": "switch.driveway_charging_allowed"}},
-            ],
-        },
+        "switched_by": "actions",
+        "activate": {"mode": "custom", "action": [{"action": "example_charger.resume", "data": {"device_id": device_id}}]},
+        "deactivate": {"mode": "custom", "action": [{"action": "example_charger.pause", "data": {"device_id": device_id}}]},
         "set_current": {"mode": "entity", "entity_id": "number.driveway_charging_current"},
         "car_connected": {
             "type": "template",

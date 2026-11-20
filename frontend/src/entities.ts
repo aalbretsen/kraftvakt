@@ -1,4 +1,4 @@
-import type { Charger, TemperatureSource } from "./api";
+import type { Appliance, Charger, TemperatureSource } from "./api";
 import type { HomeAssistant } from "./types";
 
 /** The domains whose entities are on or off, and so can be boolean entities. */
@@ -9,9 +9,25 @@ export function entityName(hass: HomeAssistant, names: Record<string, string>, e
   return names[entityId] ?? hass.states[entityId]?.attributes.friendly_name ?? entityId;
 }
 
+/** Return the entity Kraftvakt turns on and off: an appliance's, or a charger's on/off entity when it is switched by one. */
+export function controlledEntity(item: Appliance | Charger): string | null {
+  if ("switched_by" in item) {
+    return item.switched_by === "on_off_entity" ? item.on_off_entity : null;
+  }
+  return item.entity_id;
+}
+
+/** Return the variables the templates and actions of the item get, as in the backend: an appliance's entity, a charger's device. */
+export function templateVariables(hass: HomeAssistant, item: Appliance | Charger): Record<string, unknown> {
+  if ("switched_by" in item) {
+    return { device_id: item.device_id };
+  }
+  return { entity_id: item.entity_id, entity: item.entity_id ? (hass.states[item.entity_id] ?? null) : null };
+}
+
 /**
  * Return the name of a charger as the backend names it: its device's, or
- * else its entity's. Null when it has neither.
+ * else its on/off entity's. Null when it has neither.
  */
 export function chargerName(hass: HomeAssistant, names: Record<string, string>, charger: Charger): string | null {
   const device = charger.device_id ? hass.devices?.[charger.device_id] : undefined;
@@ -19,7 +35,8 @@ export function chargerName(hass: HomeAssistant, names: Record<string, string>, 
   if (deviceName) {
     return deviceName;
   }
-  return charger.entity_id ? entityName(hass, names, charger.entity_id) : null;
+  const entityId = controlledEntity(charger);
+  return entityId ? entityName(hass, names, entityId) : null;
 }
 
 /**

@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .conditions import charging_evidence, condition_evidence, evaluate_condition, power_value_w
+from .conditions import charging_evidence, condition_evidence, evaluate_condition, item_variables, power_value_w
 from .config_model import Charger
 from .measurement import WindowAverages
 from .regulation.charging import ChargerReading
@@ -34,7 +34,9 @@ def read_decision_input(
         ],
         power_sensor_valid=averages.sensor_valid,
         power_sensor_lost=power_sensor_lost,
-        variant_conditions={variant.id: evaluate_condition(hass, variant.condition, appliance.entity_id) for appliance in config.appliances for variant in appliance.variants},
+        variant_conditions={
+            variant.id: evaluate_condition(hass, variant.condition, item_variables(hass, appliance)) for appliance in config.appliances for variant in appliance.variants
+        },
         chargers={charger.id: _charger_reading(hass, settings, charger) for charger in config.chargers},
         excluded_appliances=excluded_appliances(settings),
         time_zone=dt_util.get_default_time_zone(),
@@ -51,15 +53,16 @@ def excluded_chargers(settings: Settings) -> frozenset[str]:
 
 def chargers_without_car(hass: HomeAssistant, settings: Settings) -> frozenset[str]:
     """Return the chargers with evidence that no car is connected."""
-    return frozenset(charger.id for charger in settings.config.chargers if condition_evidence(hass, charger.car_connected, charger.entity_id) is False)
+    return frozenset(charger.id for charger in settings.config.chargers if condition_evidence(hass, charger.car_connected, item_variables(hass, charger)) is False)
 
 
 def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) -> ChargerReading:
     switches = settings.charger_switches(charger.id)
-    car_connected = condition_evidence(hass, charger.car_connected, charger.entity_id)
-    power_w = power_value_w(hass, charger.charging_power, charger.entity_id)
+    variables = item_variables(hass, charger)
+    car_connected = condition_evidence(hass, charger.car_connected, variables)
+    power_w = power_value_w(hass, charger.charging_power, variables)
     charging = [
-        *([] if charger.actively_charging is None else [condition_evidence(hass, charger.actively_charging, charger.entity_id)]),
+        *([] if charger.actively_charging is None else [condition_evidence(hass, charger.actively_charging, variables)]),
         *([] if charger.charging_power is None else [charging_evidence(power_w)]),
     ]
     return ChargerReading(
@@ -72,5 +75,5 @@ def _charger_reading(hass: HomeAssistant, settings: Settings, charger: Charger) 
         window_override=switches.window_override,
         override_armed=settings.override_armed(charger.id),
         finish_after_window=charger.finish_after_window,
-        fault=charger.deactivate_on_fault and charger.fault_flag is not None and evaluate_condition(hass, charger.fault_flag, charger.entity_id),
+        fault=charger.deactivate_on_fault and charger.fault_flag is not None and evaluate_condition(hass, charger.fault_flag, variables),
     )

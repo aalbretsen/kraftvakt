@@ -128,6 +128,8 @@ a value from another device, such as whether the car is connected from the car's
 When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.
 
 An EV charger charges only when Kraftvakt has activated it, so a car that is connected does not start charging by itself.
+Kraftvakt activates and deactivates it in one of three ways: by turning on and off a switch that allows charging, by custom actions,
+or by the charging current, where 0 A stops charging.
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
 - An EV charger with a car is activated when its **power at minimum current** is free, and keeps the minimum current until the car draws at least half of it.
@@ -138,7 +140,7 @@ An EV charger charges only when Kraftvakt has activated it, so a car that is con
 - A car that suddenly draws more than the regulation counted on is cut back at once: above the power limit,
   as many amperes are taken as the power above the limit needs, by what the car draws per ampere.
 
-**Car connected**, the optional **charging on/off** and the fault flag are each a boolean entity, the states of an entity, or a template.
+**Car connected**, the optional **car charging** and the fault flag are each a boolean entity, the states of an entity, or a template.
 An unavailable entity or a template that fails counts as false.
 
 The settings of the group decide how its cars share the power:
@@ -158,7 +160,7 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   The status page shows it as **Starting** meanwhile.
 - **Deactivate on fault:** while a fault flag shows a fault, the EV charger is deactivated, and the others in its group may charge.
   An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
-- An EV charger that can only take a current is set to turn charging on and off by **the charging current**: it is stopped with 0 A, so its current entity must take 0 A.
+- An EV charger that can only take a current is turned on and off by **the charging current**: it is stopped with 0 A, so its current entity must take 0 A.
 
 ### The panel
 
@@ -166,7 +168,7 @@ The panel has the status page and four configuration pages: **General**, **Appli
 Changes are collected in a draft and stored with **Save**. The configuration pages are locked while the regulation runs; a saved configuration is used from the next start.
 
 Actions adapt to the domain of the entity, and every action can also be a custom action made with the action editor of Home Assistant.
-A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way.
+A thermostat starts with the action that sets its HVAC mode, since most thermostats are better controlled that way. Its target temperature may be a template.
 
 The status page shows the consumption and the averages against the power limit, the next decision, the safe state and the penalty,
 and the appliances and EV chargers as they stand, in priority order,
@@ -224,8 +226,9 @@ What it holds in memory includes the measurements of the power sensor over the l
 
 Templates use the template language of Home Assistant (Jinja2), and actions are the same as in automations and scripts.
 In the action editor you can switch to YAML from the ⋮ menu and paste the examples.
-Every template and action gets the variables `entity_id` (the entity of the appliance or EV charger) and `entity` (its state object,
+Every template and action of an appliance gets the variables `entity_id` (the entity of the appliance) and `entity` (its state object,
 for example `entity.state` and `entity.attributes`), so the templates keep working when the entity is replaced.
+Those of an EV charger get `device_id`, the device of the EV charger.
 The action for the charging current also gets `current`, `min_current` and `max_current`. `current` is always between the minimum and maximum charging current,
 except 0 for an EV charger whose charging is turned on and off by the charging current.
 
@@ -255,7 +258,7 @@ A template is true only when it gives the boolean value true. Anything else, inc
 {{ states('sensor.garage_charger_power_kw') | float * 1000 }}
 ```
 
-**Charging on/off** from a sensor with the charging current the charger reports:
+**Car charging** from a sensor with the charging current the charger reports:
 
 ```jinja
 {{ states('sensor.garage_charger_current') | float(0) > 1 }}
@@ -297,7 +300,7 @@ the EV charger still counts as not charging, but the override does not end.
 ```yaml
 - action: my_charger.set_current
   data:
-    charger_id: garage
+    device_id: "{{ device_id }}"
     phase1: "{{ current }}"
     phase2: "{{ current }}"
     phase3: "{{ current }}"

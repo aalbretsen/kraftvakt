@@ -28,9 +28,7 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from custom_components.kraftvakt.config_model import (
-    Charger,
-)
+from custom_components.kraftvakt.config_model import Charger, SwitchedBy
 from custom_components.kraftvakt.config_reader import (
     read_config,
 )
@@ -52,9 +50,8 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
     return {
         "id": charger_id,
         "device_id": f"{charger_id}_device",
-        "entity_id": entity_id,
-        "activate": {"mode": "default"},
-        "deactivate": {"mode": "default"},
+        "switched_by": "on_off_entity",
+        "on_off_entity": entity_id,
         "set_current": {
             "mode": "custom",
             "action": [
@@ -231,8 +228,8 @@ async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freez
 
 
 async def test_charger_switched_by_its_current_is_set_to_0_a_instead_of_deactivated(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
-    """Its actions to activate and deactivate are kept but never run."""
-    config["charger_groups"][0]["chargers"][0] |= {"switched_by_current": True, "activate": None}
+    """Its on/off entity is kept but never switched."""
+    config["charger_groups"][0]["chargers"][0] |= {"switched_by": "current"}
     set_power(hass, CHARGER_POWER, "0")
     await setup_kraftvakt()
     assert actions == ["current 0"]
@@ -359,7 +356,7 @@ async def test_charger_without_evidence_counts_as_not_charging(
 async def test_car_gets_more_current_only_while_it_draws_half_of_its_power_at_minimum_current(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt
 ) -> None:
-    """The charging on/off may tell that the car charges, but only the charging power tells that it uses the current it has."""
+    """Car charging may tell that the car charges, but only the charging power tells that it uses the current it has."""
     charger = config["charger_groups"][0]["chargers"][0]
     charger["actively_charging"] = {"type": "entity", "value": "binary_sensor.charger_charging"}
     hass.states.async_set("binary_sensor.charger_charging", STATE_OFF)
@@ -1067,12 +1064,13 @@ async def test_switches_of_removed_chargers_are_removed_at_setup(hass: HomeAssis
 
 
 async def test_charger_name_without_a_device(hass: HomeAssistant) -> None:
-    """The entity's name is used, from the registry before it has a state."""
+    """The on/off entity's name is used, from the registry before it has a state, while the charger is switched by it."""
     registry = er.async_get(hass)
     entry = registry.async_get_or_create("switch", "test", "garage", original_name="Garage charger")
 
-    assert item_name(hass, Charger("c1", entity_id=entry.entity_id)) == ("Garage charger")
-    assert item_name(hass, Charger("c1", entity_id="switch.unknown")) == ("switch.unknown")
+    assert item_name(hass, Charger("c1", on_off_entity=entry.entity_id)) == ("Garage charger")
+    assert item_name(hass, Charger("c1", on_off_entity="switch.unknown")) == ("switch.unknown")
+    assert item_name(hass, Charger("c1", switched_by=SwitchedBy.ACTIONS, on_off_entity="switch.unknown")) == "c1"
     assert item_name(hass, Charger("c1", device_id="unknown")) == "c1"
     assert item_name(hass, Charger("c1")) == "c1"
 
@@ -1082,7 +1080,7 @@ async def test_charger_is_named_after_its_device(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain="test")
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, identifiers={("test", "a")}, name="Charger A")
-    charger = Charger("c1", device_id=device.id, entity_id="switch.a_allowed")
+    charger = Charger("c1", device_id=device.id, on_off_entity="switch.a_allowed")
 
     assert item_name(hass, charger) == "Charger A"
 

@@ -9,7 +9,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .conditions import power_value_w, temperature_value
+from .conditions import item_variables, power_value_w, temperature_value
 from .config_model import Appliance, Charger, ChargerGroup, PriorityEntryType
 from .entity import item_name
 from .regulation.charging import ChargerStatus
@@ -91,7 +91,7 @@ def _appliance_status(hass: HomeAssistant, runtime: KraftvaktRuntime, appliance:
         "on": appliance.id in runtime.appliances_on,
         "excluded": appliance.id in runtime.excluded_appliances,
         "variant": None if variant is None else variant.label,
-        "power_w": power_value_w(hass, appliance.display_power, appliance.entity_id),
+        "power_w": power_value_w(hass, appliance.display_power, item_variables(hass, appliance)),
         "temperature": _temperature(hass, appliance),
         **_waiting_fields(runtime, ApplianceStepKey(appliance.id)),
         "power_to_free_w": _power_to_free_w(runtime, ApplianceStepKey(appliance.id)),
@@ -110,7 +110,7 @@ def _charger_status(
         "state": status.state.value,
         "activated": status.ampere_steps_on > 0,
         "current_a": status.current_a,
-        "power_w": power_value_w(hass, charger.charging_power, charger.entity_id),
+        "power_w": power_value_w(hass, charger.charging_power, item_variables(hass, charger)),
         "bypassed": status.bypassed,
         "charging": status.charging,
         "starting_until": _local_time(status.starting_until),
@@ -119,7 +119,7 @@ def _charger_status(
 
 
 def _temperature(hass: HomeAssistant, appliance: Appliance) -> dict[str, Any] | None:
-    temperature = temperature_value(hass, appliance.display_temperature, appliance.entity_id)
+    temperature = temperature_value(hass, appliance.display_temperature, item_variables(hass, appliance))
     return None if temperature is None else {"value": temperature[0], "unit": temperature[1]}
 
 

@@ -91,15 +91,20 @@ The section header, the description and the footer note are in `section-styles.t
   A custom action starts as the default action. The rule is in `actions.ts`.
 - The entity picker of an appliance or charger leaves out the entities that other appliances and chargers use.
 - The charger dialog starts with the device, required, and every entity picker in it offers only the device's entities, none before a device is chosen.
-- Whether charging is turned on and off by actions or by the charging current is a choice of two (a list of radio buttons) before the actions to activate and deactivate,
-  which are left out of view, and kept, while it is the current.
+- The charger dialog has no entity of its own. After the device and the power at minimum current, the group Turn charging on and off holds a choice of three
+  (a list of radio buttons): the switch for on and off, which shows an entity picker limited to the domains with a default action to turn on and off;
+  the charging current, which shows a line that points to the charging current group; and custom actions, which shows the action editors to activate and deactivate,
+  without a choice of kind, since a charger has only custom actions. What the other choices hold is kept out of view.
+  A new charger starts with the switch for on and off, the default in the capabilities, empty custom actions,
+  and the set-current action as an entity that is not chosen.
   The panel checks, as the backend does, that the device exists and each entity belongs to it.
-- Choosing another device clears every entity field that is not on the new device, keeps templates and custom actions,
-  and adapts the actions to the new entity as a new entity does. It then asks the backend for the device's charger profile,
-  and when there is one, the fields it fills replace those in the draft and an info under the device names the profile. Without a profile, nothing is filled in.
+- Labels name the kind of entity they take, such as «Binary sensor or switch», «Status sensor» or «Switch or thermostat», never a bare «Entity» or «State».
+- Choosing another device clears every entity field that is not on the new device, and keeps templates and custom actions.
+  It then asks the backend for the device's charger profile, and when there is one,
+  the fields it fills replace those in the draft and an info under the device names the profile. Without a profile, nothing is filled in.
   The panel has no knowledge of chargers of its own.
-- Each action of an appliance or charger has a group of its own, as the variant dialog has one per action it can override,
-  except set charging current, which is in the charging current group with the currents it sets.
+- Each action of an appliance has a group of its own, as the variant dialog has one per action it can override.
+  The actions of a charger are in the group of what they do: activate and deactivate in Turn charging on and off, and set charging current in the charging current group.
 - The appliance dialog has, after the entity, the actions, the group Essential appliance with a switch, Fixed load with a switch and the power reserve,
   the variants, and Display values with the display power and temperature, condition fields of the kinds display power and display temperature that preview the value.
   The display temperature lists the temperatures of the device in one dropdown under Entity: each temperature sensor, and each thermostat's current and set temperature,
@@ -123,11 +128,12 @@ The section header, the description and the footer note are in `section-styles.t
 - A new entity adapts the actions of the appliance and every action a variant overrides the same way.
 - The domain actions of the entity's domain are offered after Default, in the order of the table. Choosing one fills each value with the one already chosen for the parameter,
   or its default for the entity, so switching between them keeps a chosen HVAC mode. The values are a second `ha-form` under the choice:
-  an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a number box in HA's temperature unit with the entity's range as helper.
+  an option is a dropdown of the entity's options with HA's names for the states, and a temperature is a choice of a fixed value or a template,
+  then a number box in HA's temperature unit with the entity's range as helper, or a template editor. Switching between them starts the value empty.
   A cleared value is `null`. A domain action becomes an empty custom action when the entity changes to one where it is not available.
-- Actively charging is one group with the charging power (Sensor or Template), required, and the charging on/off (a condition of the kind actively charging), optional.
+- Actively charging is one group with the charging power (Power sensor or Template), required, and car charging (a condition of the kind actively charging), optional.
   A charging power template is previewed as W.
-- Car connected, the charging on/off and the fault flag also offer State: an entity of the device, a choice of whether the chosen states are those for true
+- Car connected, car charging and the fault flag also offer Status sensor: an entity of the device, a choice of whether the chosen states are those for true
   (for example States for connected) or those for false (States for disconnected), and the states.
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
@@ -138,10 +144,11 @@ The section header, the description and the footer note are in `section-styles.t
   The start delay is kept when the switch is turned off, since it has no effect then.
 - Finish charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
-- Set charging current also offers Entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.
+- Set charging current offers Number entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.
   Required until an entity is chosen.
 - The boolean entity picker offers binary sensors, input booleans, switches and schedules. Templates are previewed with HA's `render_template` subscription,
-  with `entity` as the frontend's state object. A result that is not a boolean gets a warning that it counts as false.
+  with the item's variables as in the backend, `entity` being the frontend's state object, and the helper lists them.
+  A result that is not a boolean gets a warning that it counts as false.
 - Missing items are not marked in a dialog until a new item has been added. A new variant starts as an empty template, which is missing, not an error,
   so the appliance can be confirmed before the variant gets its expression.
   Car connected has no «not set», offers a boolean entity first and shows it until one is chosen.

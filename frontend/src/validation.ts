@@ -15,6 +15,7 @@ import {
 } from "./api";
 import { chargerDeviceEntities, deviceOfEntity, displaySensors } from "./devices";
 import { allChargers } from "./draft";
+import { controlledEntity } from "./entities";
 import { availableDomainAction, parameterIssues } from "./domain-actions";
 import type { HassEntity, HomeAssistant } from "./types";
 
@@ -50,9 +51,9 @@ export function isOverridden(actions: Partial<ApplianceActions> | undefined, nam
   return actions?.[name] !== undefined;
 }
 
-/** A charger switched by its current keeps its actions to activate and deactivate, but uses neither. */
+/** The actions the user gives that the charger uses; it keeps the others. */
 function chargerActions(charger: Charger): ActionEntry[] {
-  const names = charger.switched_by_current ? (["set_current"] as const) : (["activate", "deactivate", "set_current"] as const);
+  const names = charger.switched_by === "actions" ? (["activate", "deactivate", "set_current"] as const) : (["set_current"] as const);
   return names.map((name) => ({ name, field: name, action: charger[name] }));
 }
 
@@ -62,10 +63,10 @@ function chargerActions(charger: Charger): ActionEntry[] {
  */
 function maySet0A(charger: Charger, states: States): boolean {
   const action = charger.set_current;
-  if (!charger.switched_by_current || !action) {
+  if (charger.switched_by !== "current" || !action) {
     return true;
   }
-  const entityId = action.mode === "entity" ? action.entity_id : action.mode === "default" ? charger.entity_id : null;
+  const entityId = action.mode === "entity" ? action.entity_id : null;
   const lowest = entityId ? states[entityId]?.attributes.min : undefined;
   return typeof lowest !== "number" || lowest <= 0;
 }
@@ -106,14 +107,18 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
 
 export function missingInAppliance(appliance: Appliance): Issue[] {
   return [
-    ...missingEntityAndActions("appliances", appliance, applianceActions(appliance)),
+    ...(appliance.entity_id ? [] : [applianceIssue(appliance, "missing_entity", "entity_id")]),
+    ...missingActions("appliances", appliance, applianceActions(appliance)),
     ...appliance.variants.filter((variant) => !isSet(variant.condition)).map((variant) => applianceIssue(appliance, "missing_condition", `variants.${variant.id}.condition`)),
   ];
 }
 
 export function missingInCharger(charger: Charger): Issue[] {
   const missing: Issue[] = charger.device_id ? [] : [{ code: "missing_device", section: "chargers", target: charger.id, field: "device_id" }];
-  missing.push(...missingEntityAndActions("chargers", charger, chargerActions(charger)));
+  if (charger.switched_by === "on_off_entity" && !charger.on_off_entity) {
+    missing.push({ code: "missing_on_off_entity", section: "chargers", target: charger.id, field: "on_off_entity" });
+  }
+  missing.push(...missingActions("chargers", charger, chargerActions(charger)));
   if (!isSet(charger.car_connected)) {
     missing.push({ code: "missing_car_connected", section: "chargers", target: charger.id, field: "car_connected" });
   }
@@ -130,13 +135,13 @@ export function defaultActionOf(capabilities: Capabilities, section: ActionSecti
   return (capabilities.default_actions[section] as Record<string, DefaultAction>)[field];
 }
 
-/** Return whether the action, given as the default or a domain action, can run for the entity. */
-export function isActionAvailable(capabilities: Capabilities, section: ActionSection, field: string, entityId: string | null, action: ActionConfig | null): boolean {
+/** Return whether the appliance's action, given as the default or a domain action, can run for the entity. */
+export function isActionAvailable(capabilities: Capabilities, field: string, entityId: string | null, action: ActionConfig | null): boolean {
   switch (action?.mode) {
     case "default":
-      return hasDefaultAction(capabilities, section, field, entityId);
+      return hasDefaultAction(capabilities, "appliances", field, entityId);
     case "domain":
-      return availableDomainAction(capabilities, section, field, entityId, action) !== undefined;
+      return availableDomainAction(capabilities, field, entityId, action) !== undefined;
     default:
       return true;
   }
@@ -157,7 +162,7 @@ export function isMissingAction(action: ActionConfig | null): boolean {
     action === null ||
     (action.mode === "custom" && (action.action ?? []).length === 0) ||
     (action.mode === "entity" && !action.entity_id) ||
-    (action.mode === "domain" && Object.values(action.data ?? {}).includes(null))
+    (action.mode === "domain" && Object.values(action.data ?? {}).some((value) => value === null || value === ""))
   );
 }
 
@@ -166,7 +171,7 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
   const deviceId = deviceOfEntity(hass, appliance.entity_id);
   return [
     ...rangeIssues("appliances", appliance.id, appliance, capabilities.limits.appliances, false),
-    ...actionIssues("appliances", appliance, applianceActions(appliance), capabilities, hass.states),
+    ...actionIssues(appliance, capabilities, hass.states),
     ...(deviceId
       ? displaySensors(appliance)
           .filter(([, entityId]) => deviceOfEntity(hass, entityId) !== deviceId)
@@ -187,11 +192,11 @@ export function applianceErrors(appliance: Appliance, capabilities: Capabilities
 
 export function chargerErrors(charger: Charger, capabilities: Capabilities, hass: HomeAssistant): Issue[] {
   const issue = (code: string, field: string): Issue => ({ code, section: "chargers", target: charger.id, field });
-  const issues = [
-    ...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true),
-    ...actionIssues("chargers", charger, chargerActions(charger), capabilities, hass.states),
-    ...deviceIssues(charger, hass).map(([code, field]) => issue(code, field)),
-  ];
+  const issues = [...rangeIssues("chargers", charger.id, charger, capabilities.limits.chargers, true), ...deviceIssues(charger, hass).map(([code, field]) => issue(code, field))];
+  const onOffEntity = controlledEntity(charger);
+  if (onOffEntity && !hasDefaultAction(capabilities, "chargers", "activate", onOffEntity)) {
+    issues.push(issue("unsupported_entity_domain", "on_off_entity"));
+  }
   if (!maySet0A(charger, hass.states)) {
     issues.push(issue("current_off_unsupported", "set_current"));
   }
@@ -234,23 +239,18 @@ function rangeCode(value: number, range: Range): string | undefined {
   return Math.abs(multiple - Math.round(multiple)) < 1e-6 ? undefined : "invalid_resolution";
 }
 
-/** The actions that cannot run for the entity of the item, as the backend checks them. */
-function actionIssues(section: ActionSection, item: Appliance | Charger, entries: ActionEntry[], capabilities: Capabilities, states: States): Issue[] {
-  const entityId = item.entity_id;
+/** The actions that cannot run for the entity of the appliance, as the backend checks them. */
+function actionIssues(appliance: Appliance, capabilities: Capabilities, states: States): Issue[] {
+  const entityId = appliance.entity_id;
   if (entityId === null) {
     return [];
   }
-  return entries.flatMap(({ name, field, action }): Issue[] => {
-    const issue = (code: string, parameter?: string): Issue => ({
-      code,
-      section,
-      target: item.id,
-      field: parameter ? `${field}.${parameter}` : field,
-    });
-    if (!isActionAvailable(capabilities, section, name, entityId, action)) {
+  return applianceActions(appliance).flatMap(({ name, field, action }): Issue[] => {
+    const issue = (code: string, parameter?: string): Issue => applianceIssue(appliance, code, parameter ? `${field}.${parameter}` : field);
+    if (!isActionAvailable(capabilities, name, entityId, action)) {
       return [issue(action?.mode === "default" ? "default_action_unavailable" : "domain_action_unavailable")];
     }
-    const domainAction = availableDomainAction(capabilities, section, name, entityId, action);
+    const domainAction = availableDomainAction(capabilities, name, entityId, action);
     if (!domainAction) {
       return [];
     }
@@ -258,11 +258,8 @@ function actionIssues(section: ActionSection, item: Appliance | Charger, entries
   });
 }
 
-function missingEntityAndActions(section: "appliances" | "chargers", item: Appliance | Charger, entries: ActionEntry[]): Issue[] {
-  return [
-    ...(item.entity_id ? [] : [{ code: "missing_entity", section, target: item.id, field: "entity_id" }]),
-    ...entries.filter(({ action }) => isMissingAction(action)).map(({ field }) => ({ code: "missing_action", section, target: item.id, field })),
-  ];
+function missingActions(section: "appliances" | "chargers", item: Appliance | Charger, entries: ActionEntry[]): Issue[] {
+  return entries.filter(({ action }) => isMissingAction(action)).map(({ field }) => ({ code: "missing_action", section, target: item.id, field }));
 }
 
 /** Return a device that does not exist, or the fields whose entities are not on the charger's device. */

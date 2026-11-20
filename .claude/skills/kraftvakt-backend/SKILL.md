@@ -19,15 +19,18 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - The panel edits a local draft and saves the whole configuration at once.
 - The entities of appliances and chargers are added and removed when the configuration is saved, without reloading the config entry (a reload would start the regulation).
   Registry entries of removed items are removed.
-- A charger is a device in HA, stored as its `device_id`, and every entity it names (its own, the set-current entity,
-  the entities of car connected, the charging on/off, the charging power and the fault flag) must belong to that device.
+- A charger is a device in HA, stored as its `device_id`, without an entity of its own. Every entity it names (the on/off entity, the set-current entity,
+  the entities of car connected, car charging, the charging power and the fault flag) must belong to that device.
   Templates and custom actions are not checked, and cover a charger whose values are elsewhere.
 - The display sensors of an appliance must belong to the device of its entity, `entity_not_on_device` otherwise; templates are not checked.
   An appliance whose entity has no device, as a helper or a template switch, may show any sensor.
   Why: integrations group a charger's entities as a device, so picking them from it keeps the setup easy for most users.
-- A charger is named after its device (the user's name for the device first), and after its entity while the device is missing or unknown; an appliance is named after its entity.
+- A charger is named after its device (the user's name for the device first), and after its on/off entity while the device is missing or unknown;
+  an appliance is named after its entity.
   The status, the entity names sent to the panel and the charger switches use the same function for this, and the panel mirrors it for a charger that is not saved yet.
-  Why: the entity that allows charging often has a name like «Garage Charging allowed».
+  Why: the on/off entity often has a name like «Garage Charging allowed».
+- The entity Kraftvakt turns on and off (`controlled_entity`) is an appliance's entity, or a charger's on/off entity while it is switched by it.
+  It is unique in the configuration, is reported when it no longer exists, and names the item in the panel.
 - Templates and actions run with HA's `Template` and `Script`.
 - The configure button of the integration opens the panel through `config_panel_domain` when the panel is registered.
 - The action lock is shared over reloads, so a new runtime's turn-off commands wait until the previous runtime's actions are done.
@@ -81,10 +84,10 @@ The format is defined by the dataclasses and their serialization in `config_mode
   its variants (id, label, condition and the actions it overrides), and the display power and display temperature.
   In a variant's actions, a key that is left out is not overridden, and a key with `null` is overridden but not set, so it is missing.
 - `priority`: the priority list, with an entry per appliance and variant and an entry per charger group.
-- `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, its entity, activate,
-  deactivate and set-current actions, switched by current, min and max current, power at minimum current (`min_current_power_w`), car connected,
-  the charging on/off (`actively_charging`), the charging power, an optional charging window, finish after window, the override end, cloud-controlled, the start delay,
-  deactivate on fault and its fault flag.
+- `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, how it is switched
+  (`switched_by`: `on_off_entity`, `actions` or `current`), its on/off entity, the activate, deactivate and set-current actions, min and max current,
+  power at minimum current (`min_current_power_w`), car connected, car charging (`actively_charging`), the charging power, an optional charging window,
+  finish after window, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flag.
   A group has its name, one at a time and dynamic charging order.
   A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
@@ -95,7 +98,7 @@ Before the first stable release, the stored format and the entities change witho
 
 IDs are short UUIDs, so entities can change without losing the place in the list.
 An action is `default`, `custom` (a script), `entity` or `domain` (the key of a domain action and a value per parameter, `null` while not chosen).
-A condition is an entity or a template, and for car connected, the charging on/off and the fault flag also the states of an entity (`states`, and `states_are_true`,
+A condition is an entity or a template, and for car connected, car charging and the fault flag also the states of an entity (`states`, and `states_are_true`,
 which is false when the chosen states count as false). The charging power and the display power are a power sensor or a template,
 and the display temperature a temperature sensor, the current or target temperature of a climate entity (`current_temperature`, `target_temperature`, else `not_a_thermostat`),
 or a template.
@@ -131,7 +134,9 @@ An empty condition is missing, not an error; a variant is added in the appliance
 Missing items and validation errors are both issues with a code, a section, a target (the id of the appliance or charger) and a field;
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
 and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
-A charger without a charging power is `missing_charging_power`; the charging on/off is optional.
+A charger without a charging power is `missing_charging_power`; car charging is optional.
+A charger switched by its on/off entity without one is `missing_on_off_entity`, and an on/off entity of a domain without a default action to turn on and off
+is `unsupported_entity_domain`.
 A charger's power at minimum current is at least 1000 W, since the regulation estimates from it what the charger draws per ampere,
 and when its car may get more than the minimum current.
 Every issue code needs a text in the panel's translations.
@@ -147,14 +152,14 @@ Every issue code needs a text in the panel's translations.
 - An entity is found by what does not change with the language: its translation key, the name the integration gives it (for integrations that do not translate),
   or as the main entity, without a name of its own. Only enabled entities count. A field is left out when its entity is missing or not the only one that fits,
   and so is a template that names such an entity. `$name` in a profile's template is replaced by the entity ID of the entity `name`.
-- A profile has a charging power, and may have a charging on/off and a fault flag.
-  It has actions to activate and deactivate, unless the charger is switched by its current.
-  It always fills switched by current, cloud-controlled and the start delay, the last with the charger default when the profile leaves it out,
+- A profile has a charging power, and may have a car charging condition and a fault flag.
+  It has an on/off entity or actions to activate and deactivate, unless the charger is switched by its current.
+  It always fills how the charger is switched, cloud-controlled and the start delay, the last with the charger default when the profile leaves it out,
   so choosing a device never keeps the settings of the charger's previous device.
   The other settings, such as the currents, the power at minimum current and the charging window, are not part of a profile and follow the standard defaults.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
   so choosing a device never turns the setting on without a flag.
-- The actions and templates of a profile use `entity_id`, for example `device_id(entity_id)`, so one profile works for every charger of its kind.
+- The actions and templates of a profile use `device_id`, so one profile works for every charger of its kind.
 - A profile is not validated when it is loaded; its test saves a charger made from it, which the backend must accept.
 - `DeviceEntities` finds entities in anything with an entity ID, a domain, a translation key and an original name, so the charger profile extractor in `diagnostics/`
   finds them with the same code in the entities a diagnostics file describes.
@@ -162,20 +167,24 @@ Every issue code needs a text in the panel's translations.
 ## Actions and templates
 
 - A default action exists for switch-like domains (turn on and off) and for number-like domains (set value, for the charging current).
-  The table is in one place in `actions.py` and is sent to the panel, and the `entity` mode uses the same table for the chosen entity.
+  The table is in one place in `actions.py` and is sent to the panel, and the `entity` mode and a charger's on/off entity use the same table.
+- A charger has no entity of its own, so its actions to activate and deactivate are custom, and its set-current action an entity or custom.
+  Any other mode is `invalid_type`, and the panel gets no domain actions for a charger.
 - A domain action is a service of the entity's domain with values the user chooses, such as the thermostat actions (HVAC mode, temperature, or both).
   The panel renders the parameters from the table in `domain_actions.py` and has no code per domain. The keys start with the domain.
-  - A domain action belongs to action kinds, not sections, so it is offered wherever an action of that kind is, chargers included. Why: no special cases per section.
   - A domain action may be suggested: the panel chooses it for a new entity of its domain, before the default action, and a domain has at most one in each field.
     Setting the HVAC mode is suggested for thermostats, since most thermostats are better controlled by their mode than turned on and off.
   - A parameter has a type (an option or a temperature) and names the entity's attributes that hold its options and range.
     The default option is the first preferred option for the action kind that the entity supports, worked out in the panel; a number parameter has a fixed default.
     The temperature defaults to 0, outside every thermostat's range, so the user must set it.
+    A temperature may also be a template, rendered with the item's variables when the action runs; it is checked for syntax, not against the range,
+    and an empty one is missing. An option is never a template.
   - At save, the domain action must belong to the domain of the entity and the action kind, every parameter must be present,
     and the values must be of the right type and among the options or within the range the entity reports. Without the entity's state, only the types are checked.
     A value that is not chosen (`null`) is missing, not an error. Issues for a parameter are addressed as `<field>.<parameter>`.
 - The commands for an appliance carry its current variant, and the action runner runs the variant's action if it overrides it, otherwise the appliance's.
-- All templates and actions get `entity_id` and `entity` (the state object of the appliance's or charger's entity, `none` when missing).
+- All templates and actions of an appliance get `entity_id` and `entity` (the state object of its entity, `none` when missing),
+  and those of a charger `device_id`, since a charger has no entity of its own.
   The set-current action also gets `current`, `min_current` and `max_current`; `current` is clamped between min and max,
   except 0 A for a charger switched by its current that is deactivated.
 

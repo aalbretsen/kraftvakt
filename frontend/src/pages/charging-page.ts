@@ -16,10 +16,10 @@ import { ConfigPage, type ItemList } from "./config-page";
 
 const CHARGER_FIELDS = [
   "device_id",
-  "entity_id",
+  "switched_by",
+  "on_off_entity",
   "activate",
   "deactivate",
-  "switched_by_current",
   "set_current",
   "min_current_a",
   "max_current_a",
@@ -154,7 +154,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         charger.charging_power.type === "template" ? this.localize("charging.power_template") : this.localize("charging.power_from", { source: charger.charging_power.value }),
       );
     }
-    if (charger.switched_by_current) {
+    if (charger.switched_by === "current") {
       details.push(this.localize("charging.switched_by_current"));
     }
     if (charger.deactivate_on_fault) {
@@ -163,7 +163,7 @@ export class KraftvaktChargingPage extends ConfigPage {
     const issues = issuesFor(this.issues, "chargers", charger.id);
     return {
       key: charger.id,
-      title: chargerName(this.hass, this.entityNames, charger) ?? this.localize("missing.charger_without_entity"),
+      title: chargerName(this.hass, this.entityNames, charger) ?? this.localize("missing.charger_without_device"),
       iconPath: mdiEvStation,
       details,
       errors: issues.map((issue) => `${this.fieldLabel(issue)}: ${this.describeIssue(issue)}`),
@@ -234,11 +234,11 @@ export class KraftvaktChargingPage extends ConfigPage {
     const charger: Charger = {
       id: newId(),
       device_id: null,
-      entity_id: null,
-      activate: null,
-      deactivate: null,
-      switched_by_current: false,
-      set_current: null,
+      switched_by: defaults.switched_by,
+      on_off_entity: null,
+      activate: { mode: "custom", action: [] },
+      deactivate: { mode: "custom", action: [] },
+      set_current: { mode: "entity", entity_id: null },
       min_current_a: defaults.min_current_a,
       max_current_a: defaults.max_current_a,
       min_current_power_w: defaults.min_current_power_w,

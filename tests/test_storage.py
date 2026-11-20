@@ -88,7 +88,7 @@ async def test_switches_follow_configured_chargers(hass: HomeAssistant, hass_sto
         {
             **data["charger_groups"][0]["chargers"][0],
             "id": "c2",
-            "entity_id": "switch.charger_2",
+            "on_off_entity": "switch.charger_2",
         }
     )
     config = read_config(data)

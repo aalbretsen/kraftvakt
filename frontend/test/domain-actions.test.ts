@@ -3,14 +3,14 @@ import type { DomainAction } from "../src/api";
 import { domainActionsFor, initialData, parameterOptions, parameterRange } from "../src/domain-actions";
 import { CAPABILITIES, state } from "./builders";
 
-const actions = (field: "turn_on" | "turn_off") => domainActionsFor(CAPABILITIES, "appliances", field, "climate.heater");
+const actions = (field: "turn_on" | "turn_off") => domainActionsFor(CAPABILITIES, field, "climate.heater");
 const HVAC_MODE_AND_TEMPERATURE: DomainAction = actions("turn_off").climate_hvac_mode_and_temperature;
 const [HVAC_MODE, TEMPERATURE] = HVAC_MODE_AND_TEMPERATURE.parameters;
 
 describe("domain actions", () => {
   it("are those of the entity's domain", () => {
     expect(Object.keys(actions("turn_on"))).toEqual(["climate_hvac_mode", "climate_temperature", "climate_hvac_mode_and_temperature"]);
-    expect(domainActionsFor(CAPABILITIES, "appliances", "turn_on", "switch.heater")).toEqual({});
+    expect(domainActionsFor(CAPABILITIES, "turn_on", "switch.heater")).toEqual({});
   });
 
   it("start with the first preferred option the entity supports, the default temperature, or the values chosen before", () => {

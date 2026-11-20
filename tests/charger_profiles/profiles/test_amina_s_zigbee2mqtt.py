@@ -49,10 +49,8 @@ async def test_amina_s_has_entities_for_every_field(hass: HomeAssistant, command
     assert result == {
         "profile": "Amina S (Zigbee2MQTT)",
         "fields": {
-            "entity_id": "switch.amina",
-            "activate": {"mode": "default"},
-            "deactivate": {"mode": "default"},
-            "switched_by_current": False,
+            "switched_by": "on_off_entity",
+            "on_off_entity": "switch.amina",
             "start_delay_s": 300,
             "set_current": {"mode": "entity", "entity_id": "number.amina_charge_limit"},
             "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},

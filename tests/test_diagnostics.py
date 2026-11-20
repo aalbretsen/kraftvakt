@@ -50,9 +50,7 @@ def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
                     {
                         "id": "c",
                         "device_id": "device",
-                        "entity_id": "input_boolean.charger",
-                        "activate": DEFAULT,
-                        "deactivate": DEFAULT,
+                        "on_off_entity": "input_boolean.charger",
                         "set_current": {"mode": "entity", "entity_id": "input_number.current"},
                         "min_current_a": 6,
                         "max_current_a": 7,
@@ -175,7 +173,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     }
     assert diagnostics["decision_clock"] == {"windows_since_decision": []}
     assert diagnostics["action_runner"]["queued_commands"] == []
-    assert {"entity_id": "light.a", "owner": "a", "kind": "turn_on"} in diagnostics["action_runner"]["scripts"]
+    assert {"owner": "a", "kind": "turn_on"} in diagnostics["action_runner"]["scripts"]
     assert diagnostics["settings"] == {
         "appliance_switches": {"a": {"excluded": False}},
         "charger_switches": {"c": {"excluded": False, "window_override": False}},

@@ -20,7 +20,7 @@ describe("moving a charger to a device", () => {
 
   it("keeps the entities on the new device, the templates and the actions, and clears the other entities", () => {
     const garage = charger("garage", {
-      entity_id: "switch.cabin",
+      on_off_entity: "switch.cabin",
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
       charging_power: { type: "template", value: "{{ 2300 }}" },
@@ -28,7 +28,7 @@ describe("moving a charger to a device", () => {
     });
     expect(changesForDevice(garage, "device_cabin", cabin)).toEqual({
       device_id: "device_cabin",
-      entity_id: "switch.cabin",
+      on_off_entity: "switch.cabin",
       set_current: { mode: "entity", entity_id: null },
       car_connected: { type: "template", value: "{{ true }}" },
       actively_charging: { type: "entity", value: "binary_sensor.cabin_charging" },
@@ -45,7 +45,7 @@ describe("moving a charger to a device", () => {
   it("clears every entity when the device is removed", () => {
     expect(changesForDevice(charger("garage"), null, cabin)).toEqual({
       device_id: null,
-      entity_id: null,
+      on_off_entity: null,
       set_current: { mode: "entity", entity_id: null },
       car_connected: null,
       actively_charging: null,

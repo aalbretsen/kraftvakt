@@ -63,8 +63,8 @@ The tools help a developer read a diagnostics file, for example one from a bug r
   The profile's name is the manufacturer and model, with the integration in parentheses for those integrations; the module is its slug.
 - Templates: each entity of the device becomes a `$name` placeholder named by its translation key or name, unique and a valid keyword argument,
   and a `$` already in the template becomes `$$`. Quoted entity IDs left in the template are noted as entities from another device.
-- Script steps: a `device_id` equal to the charger's device becomes `{{ device_id(entity_id) }}`, and an `entity_id` equal to the charger's entity becomes `{{ entity_id }}`.
-  Other devices and entities, and entities of the device inside larger strings, are noted. A domain action becomes the script steps `domain_action_steps` gives.
+- Script steps: a `device_id` equal to the charger's device becomes `{{ device_id }}`.
+  Other devices and entities, and entities of the device inside larger strings, are noted.
 - A field that is not set, or cannot be found, is written as an empty action (`custom_action()`) or an empty condition of the field's first kind,
   as `ProfileCondition(ConditionType.ENTITY)` or `ProfileCondition(ConditionType.POWER_SENSOR)` for the charging power, which fill nothing.
   The note for a required condition, car connected or the charging power, does not offer to leave it out.

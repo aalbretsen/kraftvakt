@@ -11,7 +11,6 @@ from typing import Any, Final
 from homeassistant.util import slugify
 
 from custom_components.kraftvakt.charger_profiles.profile import (
-    DEFAULT_ACTION,
     ChargerProfile,
     DeviceMatch,
     ProfileAction,
@@ -26,7 +25,6 @@ from custom_components.kraftvakt.charger_profiles.profile import (
 )
 from custom_components.kraftvakt.charger_profiles.recognition import DeviceEntities
 from custom_components.kraftvakt.config_model import (
-    CHARGER_ACTION_KINDS,
     CHARGER_CONDITION_TYPES,
     POWER_TYPES,
     ActionConfig,
@@ -35,9 +33,9 @@ from custom_components.kraftvakt.config_model import (
     Condition,
     ConditionType,
     ConfigValidationError,
+    SwitchedBy,
 )
 from custom_components.kraftvakt.config_reader import read_config
-from custom_components.kraftvakt.domain_actions import domain_action_steps
 
 from ..diagnostics_file import DiagnosticsFile, NotADiagnosticsFileError
 
@@ -143,10 +141,10 @@ class ProfileDrafting:
         profile = ChargerProfile(
             name=name,
             device=match,
-            entity=self._main_entity(),
-            activate=None if charger.switched_by_current else self._action("activate", charger.activate),
-            deactivate=None if charger.switched_by_current else self._action("deactivate", charger.deactivate),
-            switched_by_current=charger.switched_by_current,
+            switched_by=charger.switched_by,
+            on_off_entity=self._on_off_entity() if charger.switched_by is SwitchedBy.ON_OFF_ENTITY else None,
+            activate=self._action("activate", charger.activate) if charger.switched_by is SwitchedBy.ACTIONS else None,
+            deactivate=self._action("deactivate", charger.deactivate) if charger.switched_by is SwitchedBy.ACTIONS else None,
             set_current=self._action("set_current", charger.set_current),
             car_connected=self._condition("car_connected", charger.car_connected, required=True),
             charging_power=self._condition("charging_power", charger.charging_power, required=True, kinds=POWER_TYPES),
@@ -178,12 +176,12 @@ class ProfileDrafting:
             self._notes.append(f"device: {integration} serves devices of many makers, and the device has no model ID, so the profile fits every model of its manufacturer.")
         return DeviceMatch(integration, manufacturer=self._device.get("manufacturer"), model_id=model_id)
 
-    def _main_entity(self) -> ProfileEntity:
-        entity_id = self._charger.entity_id
+    def _on_off_entity(self) -> ProfileEntity:
+        entity_id = self._charger.on_off_entity
         if entity_id is None:
-            self._notes.append("entity_id: not set. Fill in the entity that is activated.")
+            self._notes.append("on_off_entity: not set. Fill in the entity that turns charging on and off.")
             return ProfileEntity("switch")
-        return self._profile_entity("entity_id", entity_id) or ProfileEntity(entity_id.partition(".")[0])
+        return self._profile_entity("on_off_entity", entity_id) or ProfileEntity(entity_id.partition(".")[0])
 
     def _profile_entity(self, field: str, entity_id: str) -> ProfileEntity | None:
         """Return how the profile finds the entity, or None when it is not on the device."""
@@ -214,27 +212,13 @@ class ProfileDrafting:
         if action is None or action.is_missing:
             self._notes.append(f"{field}: not set. Fill in the action.")
             return missing
-        if action.mode is ActionMode.DEFAULT:
-            return DEFAULT_ACTION
         if action.mode is ActionMode.ENTITY and action.entity_id is not None:
             entity = self._profile_entity(field, action.entity_id)
             return missing if entity is None else entity_action(entity)
-        if action.mode is ActionMode.DOMAIN:
-            return self._domain_action(field, action) or missing
         return custom_action(*(self._general_step(field, step) for step in action.steps))
 
-    def _domain_action(self, field: str, action: ActionConfig) -> ProfileAction | None:
-        entity_id = self._charger.entity_id
-        try:
-            steps = domain_action_steps(CHARGER_ACTION_KINDS[field], entity_id or "", action)
-        except ValueError:
-            self._notes.append(f"{field}: the domain action {action.domain_action} does not fit the entity {entity_id}. Fill in the action.")
-            return None
-        self._notes.append(f"{field}: the domain action {action.domain_action} is written as the script steps it runs.")
-        return custom_action(*(self._general_step(field, step) for step in steps))
-
     def _general_step(self, field: str, step: dict[str, Any]) -> dict[str, Any]:
-        """Return the step with the charger's own device and entity given by the variable `entity_id`, so it works for any charger of the kind."""
+        """Return the step with the charger's own device given by the variable `device_id`, so it works for any charger of the kind."""
 
         def general(key: str | None, value: Any) -> Any:
             if isinstance(value, Mapping):
@@ -244,19 +228,17 @@ class ProfileDrafting:
             if not isinstance(value, str):
                 return value
             if key == "device_id" and value == self._charger.device_id:
-                return "{{ device_id(entity_id) }}"
-            if key == "entity_id" and value == self._charger.entity_id:
-                return "{{ entity_id }}"
+                return "{{ device_id }}"
             if key == "device_id" and DEVICE_ID.fullmatch(value):
                 self._notes.append(f"{field}: the action names the device {value}, which is not the charger's device.")
             elif key == "entity_id" and "{" not in value and value in self._by_id:
-                self._notes.append(f"{field}: the action names {value}, but script steps in a profile can only name the charger's own entity, by the variable entity_id.")
+                self._notes.append(f"{field}: the action names {value}, but script steps in a profile can only name the charger's device, by the variable device_id.")
             elif key == "entity_id" and "{" not in value:
                 self._notes.append(f"{field}: the action names {value}, which is not on the charger's device.")
             else:
                 for entity_id in self._by_id:
                     if _names(value, entity_id):
-                        self._notes.append(f"{field}: the action names {entity_id} in {value!r}. Give it by the variable entity_id, or leave it out.")
+                        self._notes.append(f"{field}: the action names {entity_id} in {value!r}. Find it from the variable device_id, or leave it out.")
             return value
 
         result: dict[str, Any] = general(None, step)

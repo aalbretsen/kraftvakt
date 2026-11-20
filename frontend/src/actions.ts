@@ -1,10 +1,8 @@
-/** The action a field gets when its appliance or charger gets a new entity. */
+/** The action a field gets when its appliance gets a new entity. */
 import type { ActionConfig, Capabilities } from "./api";
 import { domainActionsFor, initialData } from "./domain-actions";
 import type { HassEntity } from "./types";
 import { hasDefaultAction, isActionAvailable } from "./validation";
-
-type ActionSection = keyof Capabilities["default_actions"];
 
 /**
  * Return the action to use with a new entity. An action that is not set gets the suggested domain action of the entity's domain,
@@ -13,23 +11,22 @@ type ActionSection = keyof Capabilities["default_actions"];
  */
 export function actionForEntity(
   capabilities: Capabilities,
-  section: ActionSection,
   field: string,
   action: ActionConfig | null,
   entityId: string | null,
   stateObj: HassEntity | undefined,
 ): ActionConfig | null {
   if (action === null) {
-    const suggested = Object.entries(domainActionsFor(capabilities, section, field, entityId)).find(([, domainAction]) => domainAction.suggested);
+    const suggested = Object.entries(domainActionsFor(capabilities, field, entityId)).find(([, domainAction]) => domainAction.suggested);
     if (suggested) {
       const [key, domainAction] = suggested;
       return { mode: "domain", domain_action: key, data: initialData(domainAction, stateObj) };
     }
-    if (hasDefaultAction(capabilities, section, field, entityId)) {
+    if (hasDefaultAction(capabilities, "appliances", field, entityId)) {
       return { mode: "default" };
     }
   }
-  if (entityId !== null && !isActionAvailable(capabilities, section, field, entityId, action)) {
+  if (entityId !== null && !isActionAvailable(capabilities, field, entityId, action)) {
     return { mode: "custom", action: [] };
   }
   return action;

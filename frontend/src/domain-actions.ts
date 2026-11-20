@@ -5,30 +5,22 @@
 import type { ActionConfig, ActionParameter, Capabilities, DomainAction, ParameterValue } from "./api";
 import type { HassEntity } from "./types";
 
-type ActionSection = keyof Capabilities["domain_actions"];
-
 export interface ParameterRange {
   min?: number;
   max?: number;
   step?: number;
 }
 
-/** Return the domain actions of the field that belong to the domain of the entity, by key. */
-export function domainActionsFor(capabilities: Capabilities, section: ActionSection, field: string, entityId: string | null): Record<string, DomainAction> {
-  const actions = (capabilities.domain_actions[section] as Record<string, Record<string, DomainAction>>)[field];
+/** Return the domain actions of the appliance's action field that belong to the domain of the entity, by key. */
+export function domainActionsFor(capabilities: Capabilities, field: string, entityId: string | null): Record<string, DomainAction> {
+  const actions = (capabilities.domain_actions.appliances as Record<string, Record<string, DomainAction>>)[field];
   const domain = entityId?.split(".")[0];
   return Object.fromEntries(Object.entries(actions).filter(([, action]) => action.domain === domain));
 }
 
 /** Return the domain action the action is, when it is available for the entity. */
-export function availableDomainAction(
-  capabilities: Capabilities,
-  section: ActionSection,
-  field: string,
-  entityId: string | null,
-  action: ActionConfig | null,
-): DomainAction | undefined {
-  return action?.domain_action ? domainActionsFor(capabilities, section, field, entityId)[action.domain_action] : undefined;
+export function availableDomainAction(capabilities: Capabilities, field: string, entityId: string | null, action: ActionConfig | null): DomainAction | undefined {
+  return action?.domain_action ? domainActionsFor(capabilities, field, entityId)[action.domain_action] : undefined;
 }
 
 /**
@@ -67,7 +59,7 @@ export function parameterIssues(action: DomainAction, data: Record<string, Param
 }
 
 function valueIssue(parameter: ActionParameter, value: ParameterValue, stateObj: HassEntity | undefined): string | undefined {
-  if (value === null) {
+  if (value === null || (parameter.type === "temperature" && typeof value === "string")) {
     return undefined;
   }
   if (parameter.type === "option") {

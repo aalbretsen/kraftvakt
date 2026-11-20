@@ -49,14 +49,13 @@ def test_appliance_needs_entity_and_both_actions() -> None:
     ]
 
 
-def test_charger_needs_device_entity_actions_and_conditions() -> None:
+def test_charger_needs_device_on_off_entity_actions_and_conditions() -> None:
     data = full_config_data()
-    data["charger_groups"][0]["chargers"].append({"id": "c2", "activate": {"mode": "default"}, "set_current": {"mode": "custom"}})
+    data["charger_groups"][0]["chargers"].append({"id": "c2", "set_current": {"mode": "custom"}})
 
     assert _missing(data) == [
         Issue("missing_device", "chargers", "c2", "device_id"),
-        Issue("missing_entity", "chargers", "c2", "entity_id"),
-        Issue("missing_action", "chargers", "c2", "deactivate"),
+        Issue("missing_on_off_entity", "chargers", "c2", "on_off_entity"),
         Issue("missing_action", "chargers", "c2", "set_current"),
         Issue("missing_car_connected", "chargers", "c2", "car_connected"),
         Issue("missing_charging_power", "chargers", "c2", "charging_power"),
@@ -108,14 +107,24 @@ def test_fault_flag_is_not_needed_while_deactivate_on_fault_is_off() -> None:
     assert _missing(data) == []
 
 
-def test_actions_to_activate_and_deactivate_are_not_needed_for_a_charger_switched_by_its_current() -> None:
+def test_charger_switched_by_its_current_needs_neither_an_on_off_entity_nor_actions() -> None:
     data = full_config_data()
     charger = data["charger_groups"][0]["chargers"][0]
-    charger["switched_by_current"] = True
-    charger["activate"] = None
-    charger["deactivate"] = {"mode": "custom", "steps": []}
+    charger["switched_by"] = "current"
+    charger["on_off_entity"] = None
+    charger["deactivate"] = {"mode": "custom", "action": []}
 
     assert _missing(data) == []
+
+
+def test_charger_switched_by_actions_needs_them_and_no_on_off_entity() -> None:
+    data = full_config_data()
+    charger = data["charger_groups"][0]["chargers"][0]
+    charger["switched_by"] = "actions"
+    charger["on_off_entity"] = None
+    charger["activate"] = {"mode": "custom", "action": [{"action": "switch.turn_on"}]}
+
+    assert _missing(data) == [Issue("missing_action", "chargers", "c1", "deactivate")]
 
 
 def test_charging_current_entity_must_be_chosen() -> None:
@@ -138,9 +147,7 @@ def test_chargers_of_every_group_count() -> None:
 
     assert _missing(data) == [
         Issue("missing_device", "chargers", "c2", "device_id"),
-        Issue("missing_entity", "chargers", "c2", "entity_id"),
-        Issue("missing_action", "chargers", "c2", "activate"),
-        Issue("missing_action", "chargers", "c2", "deactivate"),
+        Issue("missing_on_off_entity", "chargers", "c2", "on_off_entity"),
         Issue("missing_action", "chargers", "c2", "set_current"),
         Issue("missing_car_connected", "chargers", "c2", "car_connected"),
         Issue("missing_charging_power", "chargers", "c2", "charging_power"),

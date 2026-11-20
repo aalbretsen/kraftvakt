@@ -9,7 +9,8 @@ import type { HomeAssistant } from "../types";
 /**
  * An action as the default action for the entity, a domain action with values
  * from the user, the default action of another entity, or a custom one made
- * with Home Assistant's action editor.
+ * with Home Assistant's action editor. With only one way to give it, there is
+ * no choice. A temperature of a domain action is a number or a template.
  *
  * Kept in one place, since the action editor may change between versions.
  * Fires `value-changed` with the new action.
@@ -50,7 +51,7 @@ export class KraftvaktActionField extends LitElement {
   @property({ type: Boolean }) disabled = false;
 
   protected render() {
-    const mode = this.value?.mode;
+    const mode = this.onlyMode ?? this.value?.mode;
     const domainAction = this.domainAction;
     return html`
       <div class="field ${this.error ? "invalid" : ""}">
@@ -74,42 +75,59 @@ export class KraftvaktActionField extends LitElement {
     `;
   }
 
+  /** A temperature has a choice of whether it is a number or a template before its value, named `<parameter>_from`. */
   private renderParameters(domainAction: DomainAction) {
     const data = this.value?.data ?? {};
+    const choices = Object.fromEntries(domainAction.parameters.filter(isTemperature).map(({ name }) => [`${name}_from`, typeof data[name] === "string" ? "template" : "number"]));
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${Object.fromEntries(Object.entries(data).map(([name, value]) => [name, value ?? undefined]))}
-        .schema=${domainAction.parameters.map((parameter) => this.parameterField(parameter))}
+        .data=${{ ...Object.fromEntries(Object.entries(data).map(([name, value]) => [name, value ?? undefined])), ...choices }}
+        .schema=${domainAction.parameters.flatMap((parameter) => this.parameterFields(parameter, data[parameter.name] ?? null))}
         .error=${this.parameterErrors}
         .disabled=${this.disabled}
         .computeLabel=${(field: { name: string }) => this.localize(`action.parameters.${field.name}` as TranslationKey)}
-        .computeHelper=${(field: { name: string }) => this.parameterHelper(domainAction, field.name)}
+        .computeHelper=${(field: { name: string }) => this.parameterHelper(domainAction, field.name, data[field.name] ?? null)}
         @value-changed=${this.parametersChanged}
       ></ha-form>
     `;
   }
 
-  private parameterField(parameter: ActionParameter) {
+  private parameterFields(parameter: ActionParameter, value: ParameterValue): Record<string, unknown>[] {
     const stateObj = this.stateObj;
     if (parameter.type === "option") {
       const options = parameterOptions(parameter, stateObj).map((option) => ({
         value: option,
         label: stateObj ? this.hass.formatEntityState(stateObj, option) : option,
       }));
-      return { name: parameter.name, required: true, selector: { select: { mode: "dropdown", options } } };
+      return [{ name: parameter.name, required: true, selector: { select: { mode: "dropdown", options } } }];
+    }
+    const choice = {
+      name: `${parameter.name}_from`,
+      selector: {
+        select: { mode: "list", options: (["number", "template"] as const).map((from) => ({ value: from, label: this.localize(`action.value_from.${from}`) })) },
+      },
+    };
+    if (typeof value === "string") {
+      return [choice, { name: parameter.name, required: true, selector: { template: {} } }];
     }
     const { min, max, step } = parameterRange(parameter, stateObj);
     const unit = this.hass.config.unit_system.temperature;
-    return {
-      name: parameter.name,
-      required: true,
-      selector: { number: { min, max, step: step ?? "any", mode: "box", unit_of_measurement: unit } },
-    };
+    return [
+      choice,
+      {
+        name: parameter.name,
+        required: true,
+        selector: { number: { min, max, step: step ?? "any", mode: "box", unit_of_measurement: unit } },
+      },
+    ];
   }
 
-  /** The range of a value, when the entity tells it. */
-  private parameterHelper(domainAction: DomainAction, name: string): string {
+  /** The variables of a template, or the range of a number, when the entity tells it. */
+  private parameterHelper(domainAction: DomainAction, name: string, value: ParameterValue): string {
+    if (typeof value === "string" && domainAction.parameters.some((parameter) => parameter.name === name && isTemperature(parameter))) {
+      return this.localize("action.variables", { variables: this.variables.join(", ") });
+    }
     const parameter = domainAction.parameters.find((item) => item.name === name);
     const { min, max } = parameter ? parameterRange(parameter, this.stateObj) : {};
     if (min === undefined || max === undefined) {
@@ -123,8 +141,9 @@ export class KraftvaktActionField extends LitElement {
     });
   }
 
-  private schema(mode: ActionConfig["mode"] | undefined) {
-    const options = [
+  /** The ways the action may be given: the default, each domain action by its key, an entity, and custom. */
+  private get modeOptions(): { value: string; label: string }[] {
+    return [
       ...(this.defaultAvailable ? [{ value: "default", label: this.localize("action.default") }] : []),
       ...Object.keys(this.domainActions).map((key) => ({
         value: key,
@@ -133,8 +152,16 @@ export class KraftvaktActionField extends LitElement {
       ...(this.entityDomains.length ? [{ value: "entity", label: this.localize("action.entity") }] : []),
       { value: "custom", label: this.localize("action.custom") },
     ];
+  }
+
+  /** The only way the action may be given, which needs no choice: custom. */
+  private get onlyMode(): "custom" | undefined {
+    return this.modeOptions.length === 1 ? "custom" : undefined;
+  }
+
+  private schema(mode: ActionConfig["mode"] | undefined) {
     return [
-      { name: "mode", selector: { select: { mode: "list", options } } },
+      ...(this.onlyMode ? [] : [{ name: "mode", selector: { select: { mode: "list", options: this.modeOptions } } }]),
       ...(mode === "entity"
         ? [
             {
@@ -167,7 +194,8 @@ export class KraftvaktActionField extends LitElement {
 
   private valueChanged(event: CustomEvent<{ value: { mode?: string; action?: unknown; entity_id?: string } }>): void {
     event.stopPropagation();
-    const { mode, action, entity_id } = event.detail.value;
+    const { action, entity_id } = event.detail.value;
+    const mode = this.onlyMode ?? event.detail.value.mode;
     const domainAction = mode ? this.domainActions[mode] : undefined;
     const value: ActionConfig | null = domainAction
       ? {
@@ -180,15 +208,29 @@ export class KraftvaktActionField extends LitElement {
         : mode === "entity"
           ? { mode, entity_id: entity_id || null }
           : mode === "custom"
-            ? { mode, action: this.value?.mode === "custom" ? toList(action) : this.defaultSteps() }
+            ? { mode, action: this.value?.mode === "custom" || this.onlyMode ? toList(action) : this.defaultSteps() }
             : null;
     this.fireChanged(value);
   }
 
-  /** A value that is cleared becomes null, which counts as not chosen. */
+  /**
+   * A value that is cleared becomes null, which counts as not chosen. A temperature that changes
+   * between a number and a template starts empty: an empty template, or null.
+   */
   private parametersChanged(event: CustomEvent<{ value: Record<string, ParameterValue | undefined> }>): void {
     event.stopPropagation();
-    const data = Object.fromEntries((this.domainAction?.parameters ?? []).map(({ name }) => [name, event.detail.value[name] ?? null]));
+    const values = event.detail.value;
+    const previous = this.value?.data ?? {};
+    const data = Object.fromEntries(
+      (this.domainAction?.parameters ?? []).map((parameter) => {
+        const { name } = parameter;
+        const template = values[`${name}_from`] === "template";
+        if (isTemperature(parameter) && template !== (typeof previous[name] === "string")) {
+          return [name, template ? "" : null];
+        }
+        return [name, values[name] ?? (template ? "" : null)];
+      }),
+    );
     this.fireChanged({ ...this.value!, data });
   }
 
@@ -247,6 +289,10 @@ export class KraftvaktActionField extends LitElement {
       color: var(--error-color);
     }
   `;
+}
+
+function isTemperature(parameter: ActionParameter): boolean {
+  return parameter.type === "temperature";
 }
 
 /** The action editor gives a list of actions, or one action. */

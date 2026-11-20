@@ -9,6 +9,7 @@ from homeassistant.helpers import entity_registry as er
 from custom_components.kraftvakt.charger_profiles import recognition
 from custom_components.kraftvakt.charger_profiles.profile import ProfileEntity, entity_condition, state_condition, template_condition
 from custom_components.kraftvakt.charger_profiles.profiles import amina_s_zigbee2mqtt
+from custom_components.kraftvakt.config_model import SwitchedBy
 
 from .conftest import Command, Device, DeviceEntity, charger_profile, register, save_charger
 from .profiles.test_amina_s_zigbee2mqtt import AMINA_S
@@ -32,9 +33,7 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
     fields = (await charger_profile(command, register(hass, amina)))["fields"]
 
     assert fields == {
-        "activate": {"mode": "default"},
-        "deactivate": {"mode": "default"},
-        "switched_by_current": False,
+        "switched_by": "on_off_entity",
         "start_delay_s": 300,
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "charging_power": {"type": "power_sensor", "value": "sensor.amina_total_active_power"},
@@ -59,7 +58,7 @@ async def test_template_needs_every_entity_it_names(hass: HomeAssistant, command
     fields = (await charger_profile(command, register(hass, easee)))["fields"]
 
     assert "car_connected" not in fields
-    assert fields["entity_id"] == "switch.garage_charger_enabled"
+    assert fields["charging_power"] == {"type": "power_sensor", "value": "sensor.garage_power"}
 
 
 async def test_profile_fills_the_fault_flag_it_finds(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -95,14 +94,15 @@ async def test_profile_fills_the_states_of_an_entity(hass: HomeAssistant, comman
     assert fields["car_connected"] == {"type": "state", "value": "binary_sensor.amina_ev_connected", "states": ["off"], "states_are_true": False}
 
 
-async def test_profile_switched_by_current_fills_no_actions_to_activate_and_deactivate(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
-    profile = replace(amina_s_zigbee2mqtt.PROFILE, switched_by_current=True, activate=None, deactivate=None)
+async def test_profile_switched_by_current_fills_no_on_off_entity_or_actions(hass: HomeAssistant, command: Command, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = replace(amina_s_zigbee2mqtt.PROFILE, switched_by=SwitchedBy.CURRENT, on_off_entity=None)
     monkeypatch.setattr(recognition, "PROFILES", (profile,))
     device_id = register(hass, AMINA_S)
 
     fields = (await charger_profile(command, device_id))["fields"]
 
-    assert fields["switched_by_current"] is True
+    assert fields["switched_by"] == "current"
+    assert "on_off_entity" not in fields
     assert "activate" not in fields
     assert "deactivate" not in fields
     saved = await save_charger(command, device_id, fields)

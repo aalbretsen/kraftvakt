@@ -84,14 +84,15 @@
     "missing_power_sensor": "The power sensor is not chosen.",
     "missing_regulation_window": "The regulation window is not set.",
     "missing_device": "{item}: the device is not chosen.",
-    "missing_entity": "{item}: the entity is not chosen.",
+    "missing_entity": "{item}: the switch or thermostat is not chosen.",
+    "missing_on_off_entity": "{item}: the switch that turns charging on and off is not chosen.",
     "missing_action": "{item}: the action to {action} is missing.",
     "missing_condition": "{item}: the expression is missing.",
     "missing_car_connected": "{item}: «car connected» is missing.",
     "missing_fault_flag": "{item}: «fault flag» is missing.",
     "unknown": "{item}: {code}",
-    "appliance_without_entity": "An appliance without an entity",
-    "charger_without_entity": "An EV charger without an entity",
+    "appliance_without_entity": "An appliance without a switch or thermostat",
+    "charger_without_device": "An EV charger without a device",
     "actions": {
       "turn_on": "turn it on",
       "turn_off": "turn it off",
@@ -140,11 +141,11 @@
     "window_start_equals_end": "Start and end cannot be the same.",
     "duplicate_entity": "The entity is already used by another appliance or EV charger.",
     "unknown_device": "The device no longer exists in Home Assistant.",
-    "entity_not_on_device": "The entity does not belong to the device of the EV charger, or of the appliance's entity.",
+    "entity_not_on_device": "The entity does not belong to the device of the EV charger, or to the device of the appliance's switch.",
     "invalid_action": "Home Assistant cannot read the action.",
     "invalid_template": "The template has a syntax error.",
     "default_action_unavailable": "The entity has no standard action. Choose a custom action.",
-    "unsupported_entity_domain": "The entity cannot be used. Choose a number entity.",
+    "unsupported_entity_domain": "This type of entity cannot be used here. Choose one from the list.",
     "domain_action_unavailable": "The action is not available for the entity. Choose another action.",
     "unsupported_option": "The entity does not support this value.",
     "outside_entity_range": "Outside the range of the entity.",
@@ -255,7 +256,7 @@
     "power_reserve": "power reserve {power} W",
     "essential": "Essential",
     "variant_count": "variants: {count}",
-    "variant_entity": "Variant · entity {entity}",
+    "variant_entity": "Variant · {entity}",
     "variant_template": "Variant · template",
     "variant_own_actions": "own actions",
     "variant_own_turn_on": "own action to turn on",
@@ -273,8 +274,8 @@
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
-        "label": "Entity",
-        "helper": "What Kraftvakt turns on and off, for example the switch of a water heater. Its name becomes the name of the appliance."
+        "label": "Switch or thermostat",
+        "helper": "What Kraftvakt turns on and off, for example the switch of the water heater. The appliance gets the name of this entity."
       },
       "essential": {
         "label": "Essential appliance",
@@ -282,11 +283,11 @@
       },
       "turn_on": {
         "label": "Action to turn on",
-        "helper": "Standard works for most entities."
+        "helper": "Standard works for most."
       },
       "turn_off": {
         "label": "Action to turn off",
-        "helper": "Standard works for most entities."
+        "helper": "Standard works for most."
       },
       "fixed_load": {
         "label": "Fixed load",
@@ -328,7 +329,7 @@
   "action": {
     "default": "Standard",
     "custom": "Custom",
-    "entity": "Entity",
+    "entity": "Number entity",
     "domain_actions": {
       "climate_hvac_mode": "HVAC mode",
       "climate_temperature": "Temperature",
@@ -336,28 +337,33 @@
     },
     "default_runs": "Runs {service} for the entity.",
     "entity_runs": "Runs {service} for the chosen entity with the current as value.",
-    "no_default": "The entity type has no standard action, so the action must be custom.",
+    "no_default": "This type of entity has no standard action, so the action must be custom.",
     "choose_entity": "Choose the entity to use the standard action.",
-    "choose_action_entity": "Choose the entity to set the value of.",
+    "choose_action_entity": "Choose the number entity that gets the charging current.",
     "variables": "Variables: {variables}.",
     "parameters": {
       "hvac_mode": "HVAC mode",
-      "temperature": "Target temperature"
+      "temperature": "Target temperature",
+      "temperature_from": "Target temperature from"
+    },
+    "value_from": {
+      "number": "Fixed value",
+      "template": "Template"
     },
     "parameter_range": "{min}–{max} {unit} for the entity."
   },
   "condition": {
-    "entity": "Entity",
+    "entity": "Binary sensor or switch",
     "template": "Template",
-    "entity_label": "Boolean entity",
+    "entity_label": "Binary sensor or switch",
     "template_label": "Template",
     "entity_helper": "True only when it is on. Unavailable counts as false.",
-    "state": "State",
-    "state_label": "Entity with a state",
-    "state_helper": "For example a status sensor of the EV charger.",
+    "state": "Status sensor",
+    "state_label": "Status sensor",
+    "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
     "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as false.",
-    "template_helper": "True only when it gives true. Variables: entity_id, entity.",
+    "template_helper": "True only when the template gives true. Variables: {variables}.",
     "now": "Now: {value}",
     "true": "true",
     "false": "false",
@@ -365,70 +371,70 @@
     "invalid": "The template gives {value}, which is not true or false, so it counts as false."
   },
   "actively_charging": {
-    "type_label": "Charging on/off from",
-    "entity": "Entity",
+    "type_label": "Car charging from",
+    "entity": "Binary sensor or switch",
     "template": "Template",
-    "entity_label": "Boolean entity",
+    "entity_label": "Binary sensor or switch",
     "template_label": "Template",
     "entity_helper": "On while the car charges. Unavailable counts as not charging.",
-    "state": "State",
-    "state_label": "Entity with a state",
-    "state_helper": "For example a status sensor of the EV charger.",
+    "state": "Status sensor",
+    "state_label": "Status sensor",
+    "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
     "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as not charging.",
-    "template_helper": "True means charging, anything else not charging. Variables: entity_id, entity.",
+    "template_helper": "True means the car charges, anything else that it does not. Variables: {variables}.",
     "true": "charging",
     "false": "not charging",
     "invalid": "The template gives {value}, which is not true or false, so it counts as not charging."
   },
   "charging_power": {
     "type_label": "Charging power from",
-    "power_sensor": "Sensor",
+    "power_sensor": "Power sensor",
     "template": "Template",
-    "power_sensor_label": "Sensor for charging power",
+    "power_sensor_label": "Power sensor",
     "template_label": "Template for charging power",
     "power_sensor_helper": "Above 100 W counts as charging. W or kW.",
-    "template_helper": "The power in W; above 100 W counts as charging. Variables: entity_id, entity.",
+    "template_helper": "The power in W; above 100 W counts as charging. Variables: {variables}.",
     "true": "charging",
     "false": "not charging",
     "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
   },
   "display_power": {
     "type_label": "Power from",
-    "power_sensor": "Sensor",
+    "power_sensor": "Power sensor",
     "template": "Template",
-    "power_sensor_label": "Power",
+    "power_sensor_label": "Power sensor",
     "template_label": "Template for power",
-    "power_sensor_helper": "A sensor of the same device as the entity. W or kW.",
-    "template_helper": "The power in W, also from another device. Variables: entity_id, entity.",
+    "power_sensor_helper": "A sensor of the same device as the switch or thermostat. W or kW.",
+    "template_helper": "The power in W, also from another device. Variables: {variables}.",
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },
   "display_temperature": {
     "type_label": "Temperature from",
-    "temperature_sensor": "Entity",
+    "temperature_sensor": "Sensor or thermostat",
     "template": "Template",
     "current_temperature": "{name}: current temperature",
     "target_temperature": "{name}: set temperature",
-    "temperature_sensor_label": "Temperature",
+    "temperature_sensor_label": "Temperature sensor or thermostat",
     "template_label": "Template for temperature",
-    "temperature_sensor_helper": "A temperature sensor of the same device as the entity, or a thermostat's current or set temperature.",
-    "template_helper": "A temperature in the unit of Home Assistant, also from another device. Variables: entity_id, entity.",
+    "temperature_sensor_helper": "A temperature sensor of the same device as the switch or thermostat, or a thermostat's current or set temperature.",
+    "template_helper": "A temperature in the unit of Home Assistant, also from another device. Variables: {variables}.",
     "no_value": "no value",
     "invalid": "The template gives {value}, which is not a number, so nothing is shown."
   },
   "fault": {
-    "entity": "Entity",
+    "entity": "Binary sensor or switch",
     "template": "Template",
-    "entity_label": "Boolean entity",
+    "entity_label": "Binary sensor or switch",
     "template_label": "Template",
     "entity_helper": "On means a fault. Unavailable is no fault.",
-    "state": "State",
-    "state_label": "Entity with a state",
-    "state_helper": "For example a status sensor of the EV charger.",
+    "state": "Status sensor",
+    "state_label": "Status sensor",
+    "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
     "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which is no fault.",
-    "template_helper": "True means a fault, anything else no fault. Variables: entity_id, entity.",
+    "template_helper": "True means a fault, anything else no fault. Variables: {variables}.",
     "true": "fault",
     "false": "no fault",
     "invalid": "The template gives {value}, which is not true or false, so it counts as no fault."
@@ -458,18 +464,21 @@
     "always_allowed": "always allowed to charge",
     "car_from": "car connected from {source}",
     "car_template": "car connected from a template",
-    "charging_from": "actively charging from {source}",
-    "charging_template": "actively charging from a template",
+    "charging_from": "car charging from {source}",
+    "charging_template": "car charging from a template",
     "power_from": "charging power from {source}",
     "power_template": "charging power from a template",
     "deactivated_on_fault": "deactivated on fault",
-    "switched_by_current": "turned on and off by the current"
+    "switched_by_current": "turned on and off by the charging current"
   },
   "charger": {
     "add_title": "Add EV charger",
     "edit_title": "Edit EV charger",
     "view_title": "EV charger",
     "charging_current": "Charging current",
+    "on_off": "Turn charging on and off",
+    "on_off_info": "How Kraftvakt activates the EV charger when power is free, and deactivates it when the power is needed elsewhere.",
+    "switched_by_current_info": "The EV charger is activated with the minimum current and deactivated with 0 A. Choose the entity or action that sets the current under Charging current.",
     "profile_applied": "Filled in from the charger profile {profile}. Check every field before you save.",
     "override_ends": {
       "manual": "When I turn it off",
@@ -480,19 +489,20 @@
     "fields": {
       "device_id": {
         "label": "Device",
-        "helper": "The EV charger in Home Assistant. Its entities are chosen below, and filled in when Kraftvakt knows the charger."
+        "helper": "The EV charger in Home Assistant. The fields below choose among its entities, and are filled in when Kraftvakt knows the charger."
       },
-      "entity_id": {
-        "label": "Charger entity",
-        "helper": "Usually the switch that allows charging."
+      "switched_by": {
+        "label": ""
+      },
+      "on_off_entity": {
+        "label": "Switch that allows charging",
+        "helper": "Turned on to activate the EV charger and off to deactivate it."
       },
       "activate": {
-        "label": "Action to activate",
-        "helper": "Standard works for most entities."
+        "label": "Action to activate"
       },
       "deactivate": {
-        "label": "Action to deactivate",
-        "helper": "Standard works for most entities."
+        "label": "Action to deactivate"
       },
       "min_current_a": {
         "label": "Minimum charging current"
@@ -513,7 +523,7 @@
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "The charging power is required, and tells how much the car draws. The charging on/off is optional, and may tell sooner that the car charges."
+        "helper": "The charging power is required, and tells how much the car draws. «Car charging» is optional, and may tell sooner that the car has started charging."
       },
       "charging_power": {
         "label": "Charging power"
@@ -550,10 +560,6 @@
       "override_ends": {
         "label": "End the override",
         "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives."
-      },
-      "switched_by_current": {
-        "label": "Charging is turned on and off by",
-        "helper": "Choose the current for an EV charger that has no way to turn charging on and off: 0 A stops it."
       }
     },
     "charging_current_info": "The current is raised and lowered one ampere at a time by the free power. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow.",
@@ -572,8 +578,9 @@
       }
     },
     "switched_by": {
-      "actions": "Actions to activate and deactivate",
-      "current": "The charging current"
+      "on_off_entity": "Switch for on and off",
+      "current": "The charging current, where 0 A stops charging",
+      "actions": "Custom actions"
     }
   }
 }

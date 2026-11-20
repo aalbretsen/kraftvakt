@@ -6,9 +6,9 @@ from typing import Any, Final
 
 from homeassistant.util import slugify
 
-from custom_components.kraftvakt.charger_profiles.profile import DEFAULT_ACTION, DEFAULT_CHARGER, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
+from custom_components.kraftvakt.charger_profiles.profile import DEFAULT_CHARGER, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
 from custom_components.kraftvakt.charger_profiles.recognition import DeviceEntities
-from custom_components.kraftvakt.config_model import ActionMode, ConditionType
+from custom_components.kraftvakt.config_model import ActionMode, ConditionType, SwitchedBy
 
 from .draft import DescribedEntity, ProfileDraft
 
@@ -24,10 +24,12 @@ def profile_source(draft: ProfileDraft) -> str:
     fields = {
         "name": repr(profile.name),
         "device": writer.device_match(profile.device),
-        "entity": writer.entity(profile.entity),
     }
-    if profile.switched_by_current:
-        fields["switched_by_current"] = "True"
+    if profile.switched_by is not SwitchedBy.ON_OFF_ENTITY:
+        writer.config_model_names.add("SwitchedBy")
+        fields["switched_by"] = f"SwitchedBy.{profile.switched_by.name}"
+    if profile.on_off_entity is not None:
+        fields["on_off_entity"] = writer.entity(profile.on_off_entity)
     if profile.activate is not None:
         fields["activate"] = writer.action(profile.activate)
     if profile.deactivate is not None:
@@ -46,8 +48,8 @@ def profile_source(draft: ProfileDraft) -> str:
     if profile.fault_flag is not None:
         fields["fault_flag"] = writer.condition(profile.fault_flag)
     imports = [f"from ..profile import {', '.join(sorted(writer.profile_names, key=_import_order))}"]
-    if writer.uses_condition_type:
-        imports.insert(0, "from ...config_model import ConditionType")
+    if writer.config_model_names:
+        imports.insert(0, f"from ...config_model import {', '.join(sorted(writer.config_model_names))}")
     arguments = "".join(f"    {name}={value},\n" for name, value in fields.items())
     return (
         f'"""{profile.name} with the {profile.device.integration} integration."""\n\n'
@@ -112,7 +114,7 @@ class _ProfileWriter:
 
     def __init__(self) -> None:
         self.profile_names = {"ChargerProfile"}
-        self.uses_condition_type = False
+        self.config_model_names: set[str] = set()
 
     def _call(self, function: str, *arguments: str, **keywords: Any) -> str:
         self.profile_names.add(function)
@@ -125,9 +127,6 @@ class _ProfileWriter:
         return self._call("ProfileEntity", repr(entity.domain), translation_key=entity.translation_key, name=entity.name)
 
     def action(self, action: ProfileAction) -> str:
-        if action == DEFAULT_ACTION:
-            self.profile_names.add("DEFAULT_ACTION")
-            return "DEFAULT_ACTION"
         if action.mode is ActionMode.ENTITY and action.entity is not None:
             return self._call("entity_action", self.entity(action.entity))
         return self._call("custom_action", *(repr(step) for step in action.steps))
@@ -141,5 +140,5 @@ class _ProfileWriter:
             return self._call("state_condition", self.entity(condition.entity), repr(condition.states), *states_are_true)
         if condition.entity is not None:
             return self._call(CONDITION_HELPERS[condition.type], self.entity(condition.entity))
-        self.uses_condition_type = True
+        self.config_model_names.add("ConditionType")
         return self._call("ProfileCondition", f"ConditionType.{condition.type.name}")

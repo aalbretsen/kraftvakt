@@ -21,7 +21,7 @@ import { customElement, property } from "lit/decorators.js";
 import { type ApplianceStatus, type ChargerGroupStatus, type ChargerState, type ChargerStatus, type ConfigResponse, type StatusSnapshot } from "../api";
 import "./countdown";
 import { allChargers } from "../draft";
-import { existingEntity } from "../entities";
+import { controlledEntity, existingEntity } from "../entities";
 import { formatClockTime, formatNumber, formatPercent, formatPower } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { showMoreInfo } from "../navigation";
@@ -254,7 +254,7 @@ export class KraftvaktPriorityList extends LitElement {
   private renderChargerRow(charger: ChargerStatus) {
     return this.renderRow(
       `charger ${charger.activated ? "" : "off"}`,
-      existingEntity(this.hass, this.chargerConfig(charger)?.entity_id),
+      existingEntity(this.hass, this.chargerEntity(charger)),
       html`
         ${this.renderRank(null)}
         <div class="row-title">
@@ -403,6 +403,12 @@ export class KraftvaktPriorityList extends LitElement {
 
   private chargerConfig(charger: ChargerStatus) {
     return this.config && allChargers(this.config.config).find((item) => item.id === charger.id);
+  }
+
+  /** The on/off entity of the charger, when it is switched by one. */
+  private chargerEntity(charger: ChargerStatus): string | null {
+    const config = this.chargerConfig(charger);
+    return config ? controlledEntity(config) : null;
   }
 
   private sharesByChargingPower(charger: ChargerStatus): boolean {

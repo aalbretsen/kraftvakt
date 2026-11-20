@@ -48,6 +48,7 @@ export interface ActionConfig {
   data?: Record<string, ParameterValue>;
 }
 
+/** A temperature given as a string is a template, rendered when the action runs. */
 export type ParameterValue = string | number | null;
 
 export interface GeneralConfig {
@@ -101,12 +102,20 @@ export interface ChargingWindow {
   end: string;
 }
 
+export const SWITCHED_BY = ["on_off_entity", "current", "actions"] as const;
+/** How the EV charger turns charging on and off: by the default actions of its on/off entity, by custom actions, or by the charging current, 0 A being off. */
+export type SwitchedBy = (typeof SWITCHED_BY)[number];
+
+/** An EV charger, a device in Home Assistant. Its on/off entity and actions are kept while it is switched another way. */
 export interface Charger {
   id: string;
   device_id: string | null;
-  entity_id: string | null;
+  switched_by: SwitchedBy;
+  on_off_entity: string | null;
+  /** Custom actions. */
   activate: ActionConfig | null;
   deactivate: ActionConfig | null;
+  /** An entity or a custom action. */
   set_current: ActionConfig | null;
   min_current_a: number;
   max_current_a: number;
@@ -122,8 +131,6 @@ export interface Charger {
   finish_after_window: boolean;
   /** What ends the override of the charging window, besides the user. */
   override_ends: OverrideEnd;
-  /** Whether the EV charger is turned on and off by its charging current, 0 A being off, instead of its actions to activate and deactivate. */
-  switched_by_current: boolean;
   /** Whether the EV charger is controlled through a cloud service. */
   cloud_controlled: boolean;
   /** How long a cloud-controlled EV charger may take from activation until the car draws power. */
@@ -201,15 +208,12 @@ export interface DomainAction {
   suggested: boolean;
 }
 
-type ActionFields<T> = {
-  appliances: Record<"turn_on" | "turn_off", T>;
-  chargers: Record<"activate" | "deactivate" | "set_current", T>;
-};
+type ApplianceActionFields<T> = Record<"turn_on" | "turn_off", T>;
 
 export interface Capabilities {
-  default_actions: ActionFields<DefaultAction>;
-  /** The domain actions of each field, by key. */
-  domain_actions: ActionFields<Record<string, DomainAction>>;
+  default_actions: { appliances: ApplianceActionFields<DefaultAction>; chargers: Record<"activate" | "deactivate" | "set_current", DefaultAction> };
+  /** The domain actions of each field of an appliance, by key. */
+  domain_actions: { appliances: ApplianceActionFields<Record<string, DomainAction>> };
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
   /** The shortest and longest regulation window in seconds, and at most how many lengths to choose from. */
   regulation_window: { seconds: Range; choices: number };
@@ -218,6 +222,7 @@ export interface Capabilities {
     appliances: { power_reserve_w: number | null };
     charger_groups: { one_at_a_time: boolean; dynamic_order: boolean };
     chargers: {
+      switched_by: SwitchedBy;
       min_current_a: number;
       max_current_a: number;
       min_current_power_w: number;

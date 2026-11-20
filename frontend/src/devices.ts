@@ -48,7 +48,7 @@ export function displayValuesForEntity(appliance: Appliance, entityId: string | 
 /** Return each field of the charger that names an entity, which must belong to its device. */
 export function chargerDeviceEntities(charger: Charger): [string, string][] {
   const entities: [string, string | null | undefined][] = [
-    ["entity_id", charger.entity_id],
+    ["on_off_entity", charger.switched_by === "on_off_entity" ? charger.on_off_entity : null],
     ["set_current", charger.set_current?.mode === "entity" ? charger.set_current.entity_id : null],
     ["car_connected", entityOfCondition(charger.car_connected)],
     ["actively_charging", entityOfCondition(charger.actively_charging)],
@@ -77,7 +77,7 @@ export function changesForDevice(charger: Charger, deviceId: string | null, hass
   const setCurrent = charger.set_current;
   return {
     device_id: deviceId,
-    entity_id: kept(charger.entity_id),
+    on_off_entity: kept(charger.on_off_entity),
     set_current: setCurrent?.mode === "entity" && !kept(setCurrent.entity_id) ? { mode: "entity", entity_id: null } : setCurrent,
     car_connected: keptCondition(charger.car_connected, onDevice),
     actively_charging: keptCondition(charger.actively_charging, onDevice),

@@ -66,10 +66,10 @@ class DeviceEntities:
     def fields(self, profile: ChargerProfile) -> dict[str, Any]:
         """Return the fields of a charger the profile fills, as stored, leaving out those it cannot fill."""
         fields: dict[str, Any] = {
-            "entity_id": self.find(profile.entity),
+            "switched_by": profile.switched_by.value,
+            "on_off_entity": None if profile.on_off_entity is None else self.find(profile.on_off_entity),
             "activate": None if profile.activate is None else self.action(profile.activate),
             "deactivate": None if profile.deactivate is None else self.action(profile.deactivate),
-            "switched_by_current": profile.switched_by_current,
             "set_current": self.action(profile.set_current),
             "car_connected": self.condition(profile.car_connected),
             "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),

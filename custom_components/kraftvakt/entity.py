@@ -60,12 +60,12 @@ def entity_name(hass: HomeAssistant, entity_id: str) -> str:
 def item_name(hass: HomeAssistant, item: Appliance | Charger) -> str:
     """Return the name of an appliance or charger.
 
-    A charger is named after its device, since the entity that allows charging
-    often has a name like «Garage Charging allowed». Without a device, the
-    name is the entity's, and the id until it has an entity.
+    A charger is named after its device, since its on/off entity often has a
+    name like «Garage Charging allowed». Without a device, the name is the
+    on/off entity's, and the id until it has one.
     """
     if isinstance(item, Charger) and (name := device_name(hass, item.device_id)):
         return name
-    if item.entity_id is None:
+    if item.controlled_entity is None:
         return item.id
-    return entity_name(hass, item.entity_id)
+    return entity_name(hass, item.controlled_entity)

@@ -1,13 +1,16 @@
 import type { Capabilities, ConfigResponse, Issue } from "./api";
 import { allChargers } from "./draft";
+import { chargerName, entityName } from "./entities";
 import type { Localize, TranslationKey } from "./localize";
 import type { Page } from "./navigation";
+import type { HomeAssistant } from "./types";
 
 const ISSUE_TEXTS: Record<string, TranslationKey> = {
   missing_power_sensor: "missing.missing_power_sensor",
   missing_regulation_window: "missing.missing_regulation_window",
   missing_device: "missing.missing_device",
   missing_entity: "missing.missing_entity",
+  missing_on_off_entity: "missing.missing_on_off_entity",
   missing_action: "missing.missing_action",
   missing_condition: "missing.missing_condition",
   missing_car_connected: "missing.missing_car_connected",
@@ -51,9 +54,9 @@ export function pageForIssue(issue: Issue): Page {
 }
 
 /** Describe a missing setting or a validation error to the user. */
-export function describeIssue(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
+export function describeIssue(issue: Issue, config: ConfigResponse | undefined, localize: Localize, hass: HomeAssistant): string {
   const params = {
-    item: itemName(issue, config, localize),
+    item: itemName(issue, config, localize, hass),
     action: actionText(issue.field, localize),
     code: issue.code,
   };
@@ -67,15 +70,16 @@ function actionText(field: string | undefined, localize: Localize): string {
 }
 
 /** The name of the appliance or charger, followed by the label of the variant the issue is about. */
-function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize): string {
-  const items = issue.section === "chargers" ? config && allChargers(config.config) : config?.config.appliances;
-  const item = items?.find((candidate) => candidate.id === issue.target);
-  const entityId = item?.entity_id;
-  const name = entityId
-    ? (config?.entity_names[entityId] ?? entityId)
-    : localize(issue.section === "chargers" ? "missing.charger_without_entity" : "missing.appliance_without_entity");
+function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize, hass: HomeAssistant): string {
+  const names = config?.entity_names ?? {};
+  if (issue.section === "chargers") {
+    const charger = config && allChargers(config.config).find((candidate) => candidate.id === issue.target);
+    return (charger && chargerName(hass, names, charger)) ?? localize("missing.charger_without_device");
+  }
+  const appliance = config?.config.appliances.find((candidate) => candidate.id === issue.target);
+  const name = appliance?.entity_id ? entityName(hass, names, appliance.entity_id) : localize("missing.appliance_without_entity");
   const variantId = issue.field?.startsWith("variants.") ? issue.field.split(".")[1] : undefined;
-  const variant = item && "variants" in item ? item.variants.find((candidate) => candidate.id === variantId) : undefined;
+  const variant = appliance?.variants.find((candidate) => candidate.id === variantId);
   return variant ? `${name} «${variant.label}»` : name;
 }
 
@@ -85,6 +89,7 @@ const ERROR_TEXTS: Record<string, TranslationKey> = {
   missing_regulation_window: "errors.required",
   missing_device: "errors.required",
   missing_entity: "errors.required",
+  missing_on_off_entity: "errors.required",
   missing_action: "errors.required",
   missing_condition: "errors.required",
   missing_car_connected: "errors.required",

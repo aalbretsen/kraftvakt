@@ -59,9 +59,7 @@ def kraftvakt_config() -> dict[str, Any]:
                 "chargers": [
                     {
                         "id": "c1",
-                        "entity_id": CHARGING_ALLOWED,
-                        "activate": DEFAULT,
-                        "deactivate": DEFAULT,
+                        "on_off_entity": CHARGING_ALLOWED,
                         "set_current": {
                             "mode": "custom",
                             "action": [

@@ -38,7 +38,7 @@ EASEE = Device(
 
 
 def service(name: str, **data: str) -> dict:
-    return {"action": f"easee.{name}", "data": {"device_id": "{{ device_id(entity_id) }}", **data}}
+    return {"action": f"easee.{name}", "data": {"device_id": "{{ device_id }}", **data}}
 
 
 async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor_and_has_a_fault_by_its_status(hass: HomeAssistant, command: Command) -> None:
@@ -51,10 +51,9 @@ async def test_easee_is_switched_by_its_access_level_charges_by_its_power_sensor
     car_connected = fields.pop("car_connected")
     fault_flag = fields.pop("fault_flag")
     assert fields == {
-        "entity_id": "switch.garage_charger_enabled",
+        "switched_by": "actions",
         "activate": {"mode": "custom", "action": [service("set_charger_access", access_level="open_for_all")]},
         "deactivate": {"mode": "custom", "action": [service("set_charger_access", access_level="whitelist")]},
-        "switched_by_current": False,
         "start_delay_s": 300,
         "set_current": {"mode": "custom", "action": [service("set_charger_dynamic_limit", current="{{ current }}")]},
         "charging_power": {"type": "power_sensor", "value": "sensor.garage_power"},

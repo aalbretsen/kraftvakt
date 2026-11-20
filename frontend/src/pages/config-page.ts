@@ -6,6 +6,7 @@ import type { Capabilities, Issue, KraftvaktConfig } from "../api";
 import "../components/sortable-list";
 import type { ItemAdded, ListRow } from "../components/sortable-list";
 import { allChargers, fireDraftChanged } from "../draft";
+import { controlledEntity } from "../entities";
 import { errorsByField, fieldErrorText } from "../issues";
 import type { Localize } from "../localize";
 import { renderDescription, sectionStyles } from "../section-styles";
@@ -80,7 +81,10 @@ export class ConfigPage extends LitElement {
 
   /** Return the entities other appliances and EV chargers than the item use, which it cannot use as well. */
   protected entitiesUsedBesides(itemId: string): string[] {
-    return [...this.config.appliances, ...allChargers(this.config)].filter((item) => item.id !== itemId && item.entity_id).map((item) => item.entity_id as string);
+    return [...this.config.appliances, ...allChargers(this.config)].flatMap((item) => {
+      const entityId = item.id === itemId ? null : controlledEntity(item);
+      return entityId ? [entityId] : [];
+    });
   }
 
   protected renderCard(card: Card) {
