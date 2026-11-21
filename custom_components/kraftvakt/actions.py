@@ -205,6 +205,11 @@ class ActionRunner:
         self._queued: list[Command] = []
         self._queued_done: asyncio.Future[None] | None = None
 
+    @property
+    def queued_commands(self) -> int:
+        """Return how many commands wait for an action that runs."""
+        return len(self._queued)
+
     def diagnostics(self) -> dict[str, Any]:
         """Return the commands that wait for an action that runs, and the actions made into scripts so far."""
         return {

@@ -22,11 +22,11 @@ from .config_validation import missing_items
 from .decision_clock import DecisionClock, first_decision_from
 from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
 from .json_values import plain
-from .measurement import WindowAverages
+from .measurement import IntervalChange, MissedWindows, WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
-from .regulation.model import Command, DecisionInput, PowerToFree, Waiting, command_dict
+from .regulation.model import Command, DecisionInput, PowerToFree, RepeatsDue, Waiting, command_dict
 from .regulation.penalty import PenaltyState
 from .repairs import (
     async_check_entities,
@@ -91,6 +91,37 @@ class KraftvaktRuntime:
     @property
     def latest_averages(self) -> WindowAverages | None:
         return self._measurement.latest_averages
+
+    @property
+    def power_measurements(self) -> list[tuple[datetime, float]]:
+        return self._measurement.measurements
+
+    @property
+    def power_sensor_valid(self) -> bool:
+        return self._measurement.sensor_valid
+
+    @property
+    def update_interval(self) -> timedelta | None:
+        return self._measurement.update_interval
+
+    @property
+    def interval_change(self) -> IntervalChange | None:
+        return self._measurement.interval_change
+
+    @property
+    def last_missed_windows(self) -> MissedWindows | None:
+        return self._measurement.last_missed_windows
+
+    @property
+    def queued_commands(self) -> int:
+        return self._actions.queued_commands
+
+    @property
+    def started_at(self) -> datetime | None:
+        return self._engine.started_at
+
+    def repeats_due_at(self) -> RepeatsDue:
+        return self._engine.repeats_due_at(excluded_appliances(self._settings), excluded_chargers(self._settings), chargers_without_car(self._hass, self._settings))
 
     @property
     def config(self) -> KraftvaktConfig:

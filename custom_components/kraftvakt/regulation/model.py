@@ -186,6 +186,14 @@ class RegulationState:
     chargers_commanded_at: dict[str, datetime] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class RepeatsDue:
+    """When the command for each appliance and charger is repeated, by their ids."""
+
+    appliances: dict[str, datetime]
+    chargers: dict[str, datetime]
+
+
 @dataclass(slots=True)
 class OverrideChanges:
     """The chargers whose window override arms or ends at a decision."""

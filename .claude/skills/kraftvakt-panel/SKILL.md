@@ -6,8 +6,8 @@ description: The Kraftvakt panel in frontend/ - Lit and TypeScript structure, ro
 
 # Kraftvakt panel
 
-The panel is the only user interface: a sidebar panel for administrators with a top menu holding the status page and the configuration pages (General, Appliances, EV charging,
-Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
+The panel is the only user interface: a sidebar panel for administrators with a top menu holding the status page, the configuration pages (General, Appliances, EV charging,
+Advanced) and the diagnostics page. Messages to the backend are in the `kraftvakt-backend` skill.
 
 ## Build
 
@@ -27,6 +27,7 @@ Advanced). Messages to the backend are in the `kraftvakt-backend` skill.
 shared components in `components/`, and modules for the API, translations, navigation, the draft, validation, issue texts, entity names, formatting, the width query,
 the styles the status page shares with its components, and the parts the configuration pages and the dialogs share (`section-styles.ts`).
 The status page holds the regulation card; the power tiles with the meter, and the priority list, are components of their own.
+The diagnostics page subscribes to its own feed while it is open, and works out its history in `diagnostics.ts`.
 One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
 
 A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport:
@@ -75,7 +76,8 @@ The section header, the description and the footer note are in `section-styles.t
 - The configuration pages share one draft. Save stores everything, Discard goes back to the saved configuration.
   The panel checks the draft against the limits from `kraftvakt/capabilities` and works out what is missing itself, so errors show before saving,
   and Save is disabled while there are errors. Errors from the backend show at the fields until the next save.
-- The panel asks before discarding unsaved changes when going to the status page; the browser asks when the page is closed. HA sidebar navigation cannot be stopped.
+- The panel asks before discarding unsaved changes when going to the status page or the diagnostics page; the browser asks when the page is closed.
+  HA sidebar navigation cannot be stopped.
   The draft is discarded when the regulation starts.
 - The configuration is fetched again at the first status, when the regulation starts or stops, when what is missing changes, and when the config version in the status changes,
   since entities can change the stored configuration at any time. A draft with unsaved changes is kept while stopped.
@@ -260,6 +262,23 @@ The section header, the description and the footer note are in `section-styles.t
   and HA's active and inactive state colours for appliance icons. Each appliance shows its entity's icon, and what is off is dimmed.
   An appliance whose entity is missing, or whose icon HA cannot show in the panel (an icon set that is not loaded renders nothing), shows a default icon instead:
   the icon step is one icon wide, and the entity's icon pushes the default icon out of it. The safe state and penalty chips are in the alarm colour and show only while active.
+
+### Diagnostics page
+
+- The last page in the menu, for advanced users. It shows only what Kraftvakt already holds in memory for Download diagnostics, and never explains in words why a step
+  is on, off or waiting, since such texts would have to follow every rule of the regulation and would mislead in an edge case.
+- It is shown also while the regulation is stopped, since what is kept stays until a reload or a restart.
+- First a row of health tiles: the power sensor, the actions, the regulation and the command repeat, each with a dot in the success, warning or alarm colour, or grey.
+- Then the last hour: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average and the power limit,
+  with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
+  A lane shows what each command set until the next command: an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max,
+  and the waiting hatched. One without a command since the oldest decision kept is as it is now while the regulation runs.
+  Before its first command, and before the last start, it is hatched as not known, since the commands of a start and a stop are not kept, and nothing is guessed.
+  Hovering shows the consumption at that time and the decision that covers it. 15 minutes or 1 hour can be chosen.
+- Then the event log: the commands of the decisions kept and the failed actions, newest first, filtered by all, commands or failed actions.
+  A row opens the decision with its averages, whether the power sensor was valid, the safe state, the penalty, the waiting and all its commands,
+  or the error of a failed action, and marks its time in the chart. The footer links to the integration's page for Download diagnostics.
+- Commands are named by the item's name in the status, with the variant's label after it; a failed action shows its action as the backend gives it, in English.
 
 ## Home Assistant components
 

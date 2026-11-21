@@ -1,4 +1,4 @@
-import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse, mdiTune } from "@mdi/js";
+import { mdiCarElectric, mdiCog, mdiFormatListNumbered, mdiPulse, mdiStethoscope, mdiTune } from "@mdi/js";
 import { LitElement, css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { live } from "lit/directives/live.js";
@@ -28,6 +28,7 @@ import { navigateToPage, pageForPath, type Page } from "./navigation";
 import "./pages/advanced-page";
 import "./pages/appliances-page";
 import "./pages/charging-page";
+import "./pages/diagnostics-page";
 import "./pages/general-page";
 import "./pages/status-page";
 import type { HomeAssistant, Route } from "./types";
@@ -39,7 +40,13 @@ const TAB_ICONS: Record<Page, string> = {
   appliances: mdiFormatListNumbered,
   charging: mdiCarElectric,
   advanced: mdiTune,
+  diagnostics: mdiStethoscope,
 };
+
+/** The pages that show the regulation, not the draft of the configuration. */
+const REGULATION_PAGES = ["status", "diagnostics"] as const;
+
+type ConfigPage = Exclude<Page, (typeof REGULATION_PAGES)[number]>;
 
 /** The element of each configuration page; they all get the same properties. */
 const CONFIG_PAGE_ELEMENTS = {
@@ -167,6 +174,16 @@ export class KraftvaktPanel extends LitElement {
         return html`
           <kraftvakt-status-page .hass=${this.hass} .localize=${this.localize} .narrow=${this.narrow} .status=${this.status} .config=${this.config}></kraftvakt-status-page>
         `;
+      case "diagnostics":
+        return html`
+          <kraftvakt-diagnostics-page
+            .hass=${this.hass}
+            .localize=${this.localize}
+            .narrow=${this.narrow}
+            .status=${this.status}
+            .config=${this.config}
+          ></kraftvakt-diagnostics-page>
+        `;
       case "general":
       case "appliances":
       case "charging":
@@ -175,7 +192,7 @@ export class KraftvaktPanel extends LitElement {
     }
   }
 
-  private renderConfigPage(page: Exclude<Page, "status">) {
+  private renderConfigPage(page: ConfigPage) {
     if (!this.hass || !this.status || !this.config || !this.draft || !this.capabilities) {
       return "";
     }
@@ -203,7 +220,7 @@ export class KraftvaktPanel extends LitElement {
     `;
   }
 
-  private renderConfigPageContent(page: Exclude<Page, "status">, config: KraftvaktConfig, issues: Issue[], locked: boolean) {
+  private renderConfigPageContent(page: ConfigPage, config: KraftvaktConfig, issues: Issue[], locked: boolean) {
     const tag = CONFIG_PAGE_ELEMENTS[page];
     return staticHtml`
       <${tag}
@@ -302,14 +319,14 @@ export class KraftvaktPanel extends LitElement {
 
   /**
    * The draft is shared by the configuration pages, so the panel asks to discard
-   * unsaved changes only when going to the status page.
+   * unsaved changes only when going to a page that shows the regulation.
    */
   private tabShown(event: CustomEvent<{ name: Page }>): void {
     const page = event.detail.name;
     if (page === this.currentPage) {
       return;
     }
-    if (page === "status" && this.dirty) {
+    if ((REGULATION_PAGES as readonly Page[]).includes(page) && this.dirty) {
       this.leavingTo = page;
       return;
     }

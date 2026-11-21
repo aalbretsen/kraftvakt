@@ -34,3 +34,9 @@ export function formatEnergy(language: string, wattHours: number): string {
 export function formatClockTime(language: string, moment: string): string {
   return new Date(moment).toLocaleTimeString(language);
 }
+
+/** Format a moment as its clock time when it is today, and with its date before otherwise, in the user's language. */
+export function formatMoment(language: string, moment: string, today = new Date()): string {
+  const date = new Date(moment);
+  return date.toDateString() === today.toDateString() ? date.toLocaleTimeString(language) : date.toLocaleString(language);
+}

@@ -31,6 +31,7 @@ from .config_validation import (
 )
 from .const import DOMAIN
 from .devices import device_issues
+from .diagnostics_feed import DiagnosticsFeed
 from .entity import item_name
 from .power_measurement import async_measure_update_interval
 from .runtime import ConfigIncompleteError, KraftvaktRuntime, RegulationRunningError
@@ -48,6 +49,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_save_config)
     websocket_api.async_register_command(hass, websocket_set_running)
     websocket_api.async_register_command(hass, websocket_subscribe_status)
+    websocket_api.async_register_command(hass, websocket_subscribe_diagnostics)
 
 
 @callback
@@ -212,6 +214,28 @@ def _send_status(
     runtime: KraftvaktRuntime,
 ) -> None:
     connection.send_message(websocket_api.event_message(subscription_id, status_snapshot(hass, runtime)))
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/diagnostics/subscribe"})
+@websocket_api.require_admin
+@callback
+def websocket_subscribe_diagnostics(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Send what the diagnostics page shows now and each time the status may change."""
+    if (runtime := _loaded_runtime(hass, connection, msg)) is None:
+        return
+    feed = DiagnosticsFeed()
+
+    @callback
+    def send(runtime: KraftvaktRuntime) -> None:
+        connection.send_message(websocket_api.event_message(msg["id"], feed.event(runtime)))
+
+    connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, SIGNAL_STATUS, send)
+    connection.send_result(msg["id"])
+    send(runtime)
 
 
 def validated_config(hass: HomeAssistant, data: dict[str, Any]) -> KraftvaktConfig:

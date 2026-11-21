@@ -124,3 +124,25 @@ def test_activated_cloud_controlled_charger_gets_no_current_after_the_car_has_le
     assert scenario.decide(0) == current("c", 6)
 
     assert scenario.repeat(REPEAT_INTERVAL) == []
+
+
+def test_repeats_are_due_an_interval_after_the_last_command() -> None:
+    """A was turned on at the first decision; B is excluded, and the cloud-controlled charger has no car."""
+    scenario = Scenario(make_config("a", "b", chargers=(charger("cloud", cloud_controlled=True), charger("local")), wait_at_limit_s=0), excluded=("b",))
+    started = scenario.now
+    scenario.set_charger("cloud", car_connected=False, car_disconnected=True)
+    assert scenario.decide(0) == on("a")
+
+    due = scenario.engine.repeats_due_at(scenario.excluded_appliances, frozenset(), frozenset({"cloud"}))
+
+    assert due.appliances == {"a": scenario.now + REPEAT_INTERVAL}
+    assert due.chargers == {"local": started + REPEAT_INTERVAL}
+
+
+def test_no_repeats_are_due_while_stopped() -> None:
+    scenario = Scenario(make_config("a", chargers=(charger("c"),)))
+    scenario.engine.stop()
+
+    due = scenario.engine.repeats_due_at(frozenset(), frozenset(), frozenset())
+
+    assert (due.appliances, due.chargers) == ({}, {})

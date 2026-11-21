@@ -42,6 +42,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
   A type it does not know is an error, so the black box tests of the diagnostics find it before a release.
   The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.
   State added to the backend is added to its object's `diagnostics()`.
+- The panel's diagnostics page shows what the diagnostics hold, and nothing is kept for it alone.
 
 ## Modules
 
@@ -70,6 +71,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
 | `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, an entity of an appliance or charger no longer exists, and the power sensor no longer reports at the update interval stored with it. |
+| `diagnostics_feed.py` | What the diagnostics page gets, per subscription: the health of the power sensor and the actions, the start, when commands are repeated, and the measurements and the decisions in parts, every one kept in the first and after a reload, then only the new ones. |
 | `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the last decisions and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. The diagnostics tools in `diagnostics/` read `config` and `charger_devices`, see the `kraftvakt-diagnostics` skill. |
 | `json_values.py` | `plain`, which turns the state held in memory into JSON for the diagnostics. |
 
@@ -244,6 +246,7 @@ All commands require an administrator. Commands that need the runtime fail with 
 | `kraftvakt/config/save` | `config` | Saved with the completed priority list and what is missing, or not saved with the errors. Refused with `regulation_running` while running, checked before validation. Errors are a result, not a WebSocket error, because HA's error cannot carry data. |
 | `kraftvakt/regulation/set_running` | `running` | The new state. Start refused with `config_incomplete`. |
 | `kraftvakt/status/subscribe` | – | Empty result, then status events: at once, at every window, decision, start, stop and save, and when missed windows are skipped. Survives a reload. Events may arrive before the result of another command on the same connection. |
+| `kraftvakt/diagnostics/subscribe` | – | Empty result, then events for the diagnostics page at the same times as the status. The measurements and the decisions come in parts: a part replaces what the panel holds, or holds the items from the first one that may have changed, and tells from when items are kept. The last two measurements are sent again, since a new measurement at the same time replaces the last one and may merge it into the one before. |
 
 A saved configuration is used from the next start without a reload.
 

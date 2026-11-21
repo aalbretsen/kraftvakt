@@ -178,7 +178,8 @@ One whose car is disconnected is deactivated, so a car connected again waits for
 
 ### The panel
 
-The panel has the status page and four configuration pages: **General**, **Appliances**, **EV charging** and **Advanced**. Only administrators have access.
+The panel has the status page, four configuration pages: **General**, **Appliances**, **EV charging** and **Advanced**, and the **Diagnostics** page.
+Only administrators have access.
 Changes are collected in a draft and stored with **Save**. The configuration pages are locked while the regulation runs; a saved configuration is used from the next start.
 
 Actions adapt to the domain of the entity, and every action can also be **Custom actions**, made with the action editor of Home Assistant,
@@ -239,6 +240,11 @@ The entity ID keeps the name from when the appliance or EV charger was added.
 **Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the last decisions and failed actions,
 and the device of each EV charger with its entities and their values, for a bug report.
 What it holds in memory includes the measurements of the power sensor over the last hour.
+
+The **Diagnostics** page in the panel shows the same as it happens: whether the power sensor and the actions are healthy, when the regulation started,
+when each command is repeated, the consumption over the last hour with the averages and what each appliance and EV charger was set to, and the commands and failed actions.
+Kraftvakt keeps only the last decisions, so with a short regulation window the averages and the lanes cover less than the hour.
+What an appliance or EV charger was set to before its first command since the last start is not known, since the commands of a start and a stop are not kept.
 
 ### Template and action examples
 
@@ -454,6 +460,7 @@ The panel talks to the integration over its own WebSocket commands. All of them 
 | `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
 | `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |
 | `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save, and when missed regulation windows are skipped. |
+| `kraftvakt/diagnostics/subscribe` | Sends what the diagnostics page shows at the same times as the status, with the measurements and decisions in full at first and then only the new ones. |
 
 ### Logo and icon
 

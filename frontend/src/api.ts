@@ -362,3 +362,73 @@ export const setRunning = (hass: HomeAssistant, running: boolean) => hass.callWS
 /** Get the status now and at each change, until the returned function is called. */
 export const subscribeStatus = (hass: HomeAssistant, onStatus: (status: StatusSnapshot) => void) =>
   hass.connection.subscribeMessage<StatusSnapshot>(onStatus, { type: "kraftvakt/status/subscribe" });
+
+/** A command of a decision, as the backend keeps it. */
+export type DecisionCommand =
+  | { command: "TurnOnAppliance" | "TurnOffAppliance"; appliance_id: string; variant_id: string | null }
+  | { command: "ActivateCharger" | "DeactivateCharger"; charger_id: string }
+  | { command: "SetChargingCurrent"; charger_id: string; current_a: number };
+
+/** The step that waits: an appliance, or an ampere step of an EV charger counted from 0. */
+export type WaitingStep = { appliance_id: string } | { charger_id: string; index: number };
+
+/** A decision, as the backend keeps the last ones. */
+export interface DecisionRecord {
+  time: string;
+  regulation_average_w: number | null;
+  tariff_average_w: number | null;
+  power_sensor_valid: boolean;
+  safe_state: boolean;
+  penalty_active: boolean;
+  overconsumption_wh: number;
+  waiting: { key: WaitingStep; started_at: string; until: string } | null;
+  commands: DecisionCommand[];
+}
+
+export interface FailedAction {
+  time: string;
+  /** What should have been done and to which entity, in English, like `turn_on light.hall`. */
+  action: string;
+  error: string;
+}
+
+/** The power in W from `start` until the next measurement starts. */
+export interface Measurement {
+  start: string;
+  power_w: number;
+}
+
+/**
+ * Items the backend keeps, sent in parts. A part replaces what the panel holds, or holds the items
+ * from the first one that may have changed; items before `kept_from` are no longer kept.
+ */
+export interface DiagnosticsPart<Item> {
+  replace: boolean;
+  kept_from: string | null;
+  items: Item[];
+}
+
+/** What the diagnostics page shows of what Kraftvakt holds in memory. Times are ISO 8601. */
+export interface DiagnosticsEvent {
+  /** When the regulation last started, null while it is stopped. */
+  started_at: string | null;
+  power_sensor: {
+    valid: boolean;
+    /** The update interval of the current window. */
+    update_interval_s: number | null;
+    /** How often the power sensor reports, when it no longer reports at its update interval. */
+    reported_interval_s: number | null;
+    last_missed_windows: { start: string; end: string } | null;
+  };
+  /** Commands that wait for an action that runs. */
+  queued_commands: number;
+  /** When each appliance and EV charger, by id, gets its command again. */
+  repeats_due_at: { appliances: Record<string, string>; chargers: Record<string, string> };
+  measurements: DiagnosticsPart<Measurement>;
+  decisions: DiagnosticsPart<DecisionRecord>;
+  failed_actions: FailedAction[];
+}
+
+/** Get what the diagnostics page shows now and at each change of the status, until the returned function is called. */
+export const subscribeDiagnostics = (hass: HomeAssistant, onEvent: (event: DiagnosticsEvent) => void) =>
+  hass.connection.subscribeMessage<DiagnosticsEvent>(onEvent, { type: "kraftvakt/diagnostics/subscribe" });

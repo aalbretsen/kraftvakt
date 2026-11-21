@@ -8,6 +8,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -126,6 +127,7 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": False},
         {"type": "kraftvakt/status/subscribe"},
+        {"type": "kraftvakt/diagnostics/subscribe"},
     ],
 )
 async def test_commands_require_an_administrator(
@@ -266,6 +268,7 @@ async def test_config_get_gives_configuration_names_and_missing(
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": True},
         {"type": "kraftvakt/status/subscribe"},
+        {"type": "kraftvakt/diagnostics/subscribe"},
     ],
 )
 async def test_commands_need_kraftvakt_to_be_loaded(
@@ -1213,3 +1216,123 @@ def row_ids(status: dict[str, Any]) -> list[str]:
 
 def appliance_rows(status: dict[str, Any]) -> list[dict[str, Any]]:
     return [row for row in status["priority"] if row["type"] == "appliance"]
+
+
+SHORT_WINDOW = timedelta(seconds=10)
+
+
+def with_short_window(config: dict[str, Any]) -> None:
+    """Report every 10 seconds, since the heartbeat of the WebSocket closes a connection when time moves on by a minute twice."""
+    config["general"]["power_sensor_interval_s"] = 10
+
+
+async def subscribe_diagnostics(client) -> dict[str, Any]:
+    """Subscribe to what the diagnostics page shows and return the first event."""
+    response = await send(client, "kraftvakt/diagnostics/subscribe")
+    assert response["success"]
+    return await next_status(client)
+
+
+async def test_diagnostics_are_sent_at_once_and_then_only_what_is_new(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    lights: list[str],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    started = dt_util.utcnow()
+    with_short_window(config)
+    set_power(hass, "2000")
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+
+    diagnostics = await subscribe_diagnostics(client)
+
+    assert diagnostics == {
+        "started_at": local(started),
+        "power_sensor": {
+            "valid": True,
+            "update_interval_s": 10,
+            "reported_interval_s": None,
+            "last_missed_windows": None,
+        },
+        "queued_commands": 0,
+        "repeats_due_at": {
+            "appliances": {"a": local(started + timedelta(minutes=30)), "b": local(started + timedelta(minutes=30))},
+            "chargers": {},
+        },
+        "measurements": {"replace": True, "kept_from": local(started), "items": [{"start": local(started), "power_w": 2000}]},
+        "decisions": {"replace": True, "kept_from": None, "items": []},
+        "failed_actions": [],
+    }
+
+    await advance(hass, freezer, SHORT_WINDOW)
+    diagnostics = await next_status(client)
+
+    decision = {
+        "time": local(started + SHORT_WINDOW),
+        "regulation_average_w": 2000,
+        "tariff_average_w": 2000,
+        "power_sensor_valid": True,
+        "safe_state": False,
+        "penalty_active": False,
+        "overconsumption_wh": 0,
+        "waiting": None,
+        "commands": [{"command": "TurnOnAppliance", "appliance_id": "a", "variant_id": None}],
+    }
+    assert diagnostics["decisions"] == {"replace": False, "kept_from": local(started + SHORT_WINDOW), "items": [decision]}
+    assert diagnostics["measurements"] == {"replace": False, "kept_from": local(started), "items": [{"start": local(started), "power_w": 2000}]}
+    assert diagnostics["repeats_due_at"]["appliances"]["a"] == local(started + SHORT_WINDOW + timedelta(minutes=30))
+
+    set_power(hass, "3000")
+    await advance(hass, freezer, SHORT_WINDOW)
+    await next_status(client)
+    set_power(hass, "4000")
+    await advance(hass, freezer, SHORT_WINDOW)
+    diagnostics = await next_status(client)
+
+    assert [item["time"] for item in diagnostics["decisions"]["items"]] == [local(started + 3 * SHORT_WINDOW)]
+    assert diagnostics["decisions"]["kept_from"] == local(started + SHORT_WINDOW)
+    assert diagnostics["measurements"]["items"] == [
+        {"start": local(started), "power_w": 2000},
+        {"start": local(started + SHORT_WINDOW), "power_w": 3000},
+        {"start": local(started + 2 * SHORT_WINDOW), "power_w": 4000},
+    ]
+
+
+async def test_diagnostics_show_failed_actions_and_the_stopped_regulation(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    config: dict[str, Any],
+    lights: list[str],
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    def fail(call) -> None:
+        raise HomeAssistantError("Light is gone")
+
+    hass.services.async_register("light", "turn_on", fail)
+    with_short_window(config)
+    set_power(hass, "2000")
+    entry = await setup_entry(hass)
+    subscriber = await hass_ws_client(hass)
+    commander = await hass_ws_client(hass)
+    await subscribe_diagnostics(subscriber)
+
+    await advance(hass, freezer, SHORT_WINDOW)
+    diagnostics = await next_status(subscriber)
+    while not diagnostics["failed_actions"]:
+        diagnostics = await next_status(subscriber)
+
+    assert diagnostics["failed_actions"] == [{"time": local(dt_util.utcnow()), "action": "turn_on light.a", "error": "Light is gone"}]
+
+    await set_running(commander, False)
+    diagnostics = await next_status(subscriber)
+    assert diagnostics["started_at"] is None
+    assert diagnostics["repeats_due_at"] == {"appliances": {}, "chargers": {}}
+    assert len(diagnostics["decisions"]["items"]) == 0
+    assert diagnostics["decisions"]["kept_from"] is not None
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    diagnostics = await next_status(subscriber)
+    assert diagnostics["decisions"] == {"replace": True, "kept_from": None, "items": []}
+    assert diagnostics["measurements"]["replace"]

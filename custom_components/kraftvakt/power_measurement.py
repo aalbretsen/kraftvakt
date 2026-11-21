@@ -32,6 +32,8 @@ from .config_model import REGULATION_WINDOW_S, GeneralConfig
 from .measurement import (
     CONSECUTIVE_INVALID_CLOSES_BEFORE_UNKNOWN,
     TARIFF_WINDOW,
+    IntervalChange,
+    MissedWindows,
     PowerAverager,
     ReportIntervalCheck,
     WindowAverages,
@@ -99,6 +101,28 @@ class PowerMeasurement:
     def window_end(self) -> datetime:
         """Return when the current window is expected to close."""
         return self._averager.window_start + self.window_length
+
+    @property
+    def sensor_valid(self) -> bool:
+        return self._averager.sensor_valid
+
+    @property
+    def update_interval(self) -> timedelta | None:
+        """Return the update interval of the current window."""
+        return self._averager.update_interval
+
+    @property
+    def interval_change(self) -> IntervalChange | None:
+        """Return how often the power sensor reports, when it no longer reports at its update interval."""
+        return self._interval_check.change
+
+    @property
+    def last_missed_windows(self) -> MissedWindows | None:
+        return self._averager.last_missed_windows
+
+    @property
+    def measurements(self) -> list[tuple[datetime, float]]:
+        return self._averager.measurements
 
     @property
     def sensor_lost(self) -> bool:

@@ -132,6 +132,15 @@ class PowerAverager:
     def sensor_valid(self) -> bool:
         return self._sensor_valid
 
+    @property
+    def measurements(self) -> list[tuple[datetime, float]]:
+        """Return the power in W from each start until the next, oldest first, over the tariff window and the step that reaches into it."""
+        return [(step.start, step.power_w) for step in self._steps]
+
+    @property
+    def last_missed_windows(self) -> MissedWindows | None:
+        return self._last_missed
+
     def diagnostics(self) -> dict[str, Any]:
         return {
             "window_start": self._window_start,

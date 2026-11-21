@@ -32,6 +32,7 @@ from .model import (
     OverrideChanges,
     PowerToFree,
     RegulationState,
+    RepeatsDue,
     SetChargingCurrent,
     Step,
     StepKey,
@@ -183,32 +184,48 @@ class RegulationEngine:
     ) -> list[Command]:
         """Return the command for the current state again where it is due.
 
-        Due means no command for the repeat interval. An activated charger
-        gets its current, a deactivated one is deactivated again. Waiting
-        times and repeated turn-on counters are not touched, and excluded appliances
-        and chargers get nothing, nor a cloud-controlled charger while no car is connected to it.
+        An activated charger gets its current, a deactivated one is deactivated
+        again. Waiting times and repeated turn-on counters are not touched.
         """
-        if not self._running:
-            return []
-        due_at = now - timedelta(minutes=self._config.general.command_repeat_interval_min)
+        due = self.repeats_due_at(excluded_appliances, excluded_chargers, chargers_without_car)
         state = self._state
         commands: list[Command] = []
-        for appliance in self._config.appliances:
-            appliance_id = appliance.id
-            if appliance_id in excluded_appliances or state.appliances_commanded_at[appliance_id] > due_at:
+        for appliance_id, due_at in due.appliances.items():
+            if due_at > now:
                 continue
             variant_id = state.current_variants.get(appliance_id)
             if appliance_id in state.appliances_on:
                 commands.append(TurnOnAppliance(appliance_id, variant_id))
             else:
                 commands.append(TurnOffAppliance(appliance_id, variant_id))
-        for charger in self._chargers.values():
-            if charger.id in excluded_chargers or state.chargers_commanded_at[charger.id] > due_at:
-                continue
-            if charger.cloud_controlled and charger.id in chargers_without_car:
-                continue
-            commands += self._charger_commands(charger, self._charging_of(charger.id).ampere_steps_on[charger.id])
+        for charger_id, due_at in due.chargers.items():
+            if due_at <= now:
+                commands += self._charger_commands(self._chargers[charger_id], self._charging_of(charger_id).ampere_steps_on[charger_id])
         return self._record_commands(commands, now)
+
+    def repeats_due_at(
+        self,
+        excluded_appliances: frozenset[str],
+        excluded_chargers: frozenset[str],
+        chargers_without_car: frozenset[str],
+    ) -> RepeatsDue:
+        """Return when the command for each appliance and charger is repeated, in the order of the configuration.
+
+        It is due when it has had no command for the repeat interval. Excluded
+        appliances and chargers get none, nor a cloud-controlled charger while
+        no car is connected to it, and nothing does while the regulation is stopped.
+        """
+        if not self._running:
+            return RepeatsDue({}, {})
+        interval = timedelta(minutes=self._config.general.command_repeat_interval_min)
+        state = self._state
+        appliances = {appliance.id: state.appliances_commanded_at[appliance.id] + interval for appliance in self._config.appliances if appliance.id not in excluded_appliances}
+        chargers = {
+            charger.id: state.chargers_commanded_at[charger.id] + interval
+            for charger in self._chargers.values()
+            if charger.id not in excluded_chargers and not (charger.cloud_controlled and charger.id in chargers_without_car)
+        }
+        return RepeatsDue(appliances, chargers)
 
     def _decide(self, decision: DecisionInput) -> DecisionResult:
         if not self._running:

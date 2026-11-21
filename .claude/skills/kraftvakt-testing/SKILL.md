@@ -87,6 +87,8 @@ Read those two files before writing an engine test, and extend them rather than 
 - The test `hass` is running, so the regulation starts at setup.
   To test the start when HA has started, set `hass.set_state(CoreState.starting)` before setup and fire `EVENT_HOMEASSISTANT_STARTED` afterwards.
 - With a status subscription, use one WebSocket client for the subscription and another for commands; events can come before a command's result.
+- The heartbeat of the WebSocket closes a client's connection when time moves on by a minute twice, so a test that moves time on more than once with a client open
+  uses a power sensor that reports every 10 seconds.
 
 ## Manual test against a local Home Assistant
 
