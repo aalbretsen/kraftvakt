@@ -216,6 +216,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   It is turned on at the first decision after the waiting time has passed, if the conditions still hold.
   Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
 - Waiting time at the limit: 0–600 s, default 300 s.
+- Every waiting time is rounded to whole seconds, half up, so one under half a second is none.
+  Why: just above half the limit the curve gives a few milliseconds, which would otherwise hold the turn-on back a whole window.
 - Curve: waiting time = waiting time at the limit × share(average / limit), recalculated at each decision while it runs.
   The average includes the held power reserves above the step and in its own group.
   Why: an appliance should hardly wait while there is plenty of free power, and wait the whole time only close to the limit.

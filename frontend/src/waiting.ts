@@ -33,10 +33,10 @@ export function repeatedTurnOnWaiting(turnOn: number, waitAtLimit: number, incre
 }
 
 /**
- * Return how long a step actually waits: it is turned on at the first
- * decision after the waiting time has passed, and decisions come every
- * `decisionInterval` seconds.
+ * Return how long a step actually waits: its waiting time is rounded to whole
+ * seconds, half up, and it is turned on at the first decision after that has
+ * passed, with decisions every `decisionInterval` seconds.
  */
 export function untilDecision(waiting: number, decisionInterval: number): number {
-  return Math.max(0, Math.ceil(waiting / decisionInterval - 1e-9)) * decisionInterval;
+  return Math.max(0, Math.ceil(Math.round(waiting) / decisionInterval - 1e-9)) * decisionInterval;
 }

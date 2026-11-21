@@ -925,7 +925,7 @@ async def test_status_shows_the_variant_and_the_waiting_time(
     assert appliance_rows(status)[0]["variant"] == "Morning"
     assert appliance_rows(status)[0]["waiting_since"] == local(started + WINDOW)
     waiting_until = dt_util.parse_datetime(appliance_rows(status)[0]["waiting_until"])
-    assert (waiting_until - started - WINDOW).total_seconds() == pytest.approx(75.4758, abs=1e-3)
+    assert (waiting_until - started - WINDOW).total_seconds() == 75
     assert appliance_rows(status)[0]["waiting_ends_at"] == local(started + 3 * WINDOW)
     assert appliance_rows(status)[1]["waiting_until"] is None
 

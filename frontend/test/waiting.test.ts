@@ -26,6 +26,8 @@ describe("repeated turn-on", () => {
 describe("actual waiting", () => {
   it.each([
     [0, 0],
+    [0.002, 0],
+    [0.5, 10],
     [1, 10],
     [10, 10],
     [10.000000001, 10],

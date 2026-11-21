@@ -71,6 +71,14 @@ def test_waiting_time_on_repeated_turn_on_for_appliances() -> None:
     assert minutes == [5, 7, 9, 11, 13, 15, 15, 15]
 
 
+def test_waiting_time_is_rounded_to_whole_seconds() -> None:
+    """Half up, as the panel does: 303 s at the limit with growth 0.25 and 0.5 gives 378.75 s and 454.5 s the second time it is turned on again."""
+    assert waiting_time(9000, 10_000, FIVE_MINUTES, DEFAULT_CURVE, 0, APPLIANCE_GROWTH) == timedelta(seconds=290)
+    for factor, seconds in ((0.25, 379), (0.5, 455)):
+        growth = RepeatedTurnOnGrowth.from_waiting_at_limit(303, factor, 4)
+        assert waiting_time(1000, 10_000, timedelta(seconds=303), DEFAULT_CURVE, 3, growth) == timedelta(seconds=seconds)
+
+
 def test_growth_are_parameters() -> None:
     """Chargers use another increment and another cap."""
     growth = RepeatedTurnOnGrowth(increment=timedelta(minutes=5), cap=timedelta(minutes=30))

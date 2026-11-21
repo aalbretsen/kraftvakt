@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Hashable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -63,7 +64,15 @@ def _above_start(utilization: float) -> float:
 
 
 def repeated_turn_on_waiting_time(repeat: int, wait_at_limit: timedelta, growth: RepeatedTurnOnGrowth) -> timedelta:
-    return min(growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT))
+    return _whole_seconds(min(growth.cap, wait_at_limit + growth.increment * (repeat - GROWTH_FROM_REPEAT)))
+
+
+def curve_waiting_time(average_w: float, limit_w: float, wait_at_limit: timedelta, curve: WaitingCurve) -> timedelta:
+    return _whole_seconds(wait_at_limit * curve.share(average_w / limit_w))
+
+
+def _whole_seconds(duration: timedelta) -> timedelta:
+    return timedelta(seconds=math.floor(duration.total_seconds() + 0.5))
 
 
 def waiting_time(
@@ -80,7 +89,7 @@ def waiting_time(
     """
     if repeat >= GROWTH_FROM_REPEAT:
         return repeated_turn_on_waiting_time(repeat, wait_at_limit, growth)
-    return wait_at_limit * curve.share(average_w / limit_w)
+    return curve_waiting_time(average_w, limit_w, wait_at_limit, curve)
 
 
 class RepeatedTurnOnCounter:

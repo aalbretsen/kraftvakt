@@ -51,6 +51,13 @@ def test_zero_average_gives_no_waiting_time() -> None:
     assert scenario.decide(0) == on("a")
 
 
+def test_waiting_time_under_half_a_second_turns_on_at_the_same_decision() -> None:
+    """Just above half the limit the curve gives a few milliseconds, rounded to none."""
+    scenario = Scenario(make_config("a"))
+
+    assert scenario.decide(5326) == on("a")
+
+
 def test_waiting_time_is_calculated_again_at_each_decision() -> None:
     scenario = Scenario(make_config("a"))
 

@@ -942,7 +942,7 @@ async def test_waiting_time_sensors_follow_the_waiting_time(
     set_power(hass, "9000")
     enable_next_turn_on_sensor(hass)
     await setup_kraftvakt()
-    curve_waiting_s = 300 * WaitingCurve.from_settings(6, 80).share(0.9)
+    curve_waiting_s = round(300 * WaitingCurve.from_settings(6, 80).share(0.9))
     windows_to_wait = math.ceil(curve_waiting_s / WINDOW.total_seconds())
     assert windows_to_wait > 1
     assert state_of(hass, "sensor", "waiting_time_remaining") == "0"

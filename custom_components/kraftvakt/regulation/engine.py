@@ -42,7 +42,7 @@ from .model import (
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import ampere_steps, build_steps, current_variant
-from .waiting import RepeatedTurnOnGrowth, WaitingCurve, waiting_time
+from .waiting import RepeatedTurnOnGrowth, WaitingCurve, curve_waiting_time, waiting_time
 
 
 class RegulationEngine:
@@ -90,7 +90,7 @@ class RegulationEngine:
     def curve_waiting_time(self, average_w: float) -> timedelta:
         """Return the waiting time from the curve for a regulation average."""
         general = self._config.general
-        return timedelta(seconds=general.wait_at_limit_s) * self._waiting_curve.share(average_w / general.power_limit_w)
+        return curve_waiting_time(average_w, general.power_limit_w, timedelta(seconds=general.wait_at_limit_s), self._waiting_curve)
 
     @property
     def appliances_on(self) -> frozenset[str]:
