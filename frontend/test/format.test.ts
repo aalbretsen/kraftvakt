@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClockTime, formatEnergy, formatMinutes, formatMoment, formatNumber, formatPercent, formatPower } from "../src/format";
+import { formatClockTime, formatDateTime, formatDuration, formatEnergy, formatMinutes, formatMoment, formatNumber, formatPercent, formatPower } from "../src/format";
 
 describe("formatting", () => {
   it("shows power and energy in kilo with two decimals in the user's language, and a dash for an unknown power", () => {
@@ -28,5 +28,18 @@ describe("formatting", () => {
     expect(formatClockTime("en-GB", morning)).toBe("07:30:00");
     expect(formatMoment("en-GB", morning, today)).toBe("07:30:00");
     expect(formatMoment("en-GB", yesterday, today)).toBe("04/01/2026, 07:30:00");
+  });
+
+  it("shows how long something has lasted with its two largest units", () => {
+    const minute = 60_000;
+    expect(formatDuration("en", 59_000)).toBe("0 minutes");
+    expect(formatDuration("en", 1 * minute)).toBe("1 minute");
+    expect(formatDuration("en", (3 * 60 + 20) * minute)).toBe("3 hours 20 minutes");
+    expect(formatDuration("en", ((30 * 24 + 3) * 60 + 59) * minute)).toBe("30 days 3 hours");
+    expect(formatDuration("nb", (24 * 60 + 5) * minute)).toBe("1 døgn 0 timer");
+  });
+
+  it("shows a date and time without seconds", () => {
+    expect(formatDateTime("en-GB", new Date(2026, 9, 22, 20, 57, 22).toISOString())).toBe("22/10/2026, 20:57");
   });
 });

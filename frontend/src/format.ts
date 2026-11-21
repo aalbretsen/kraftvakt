@@ -40,3 +40,23 @@ export function formatMoment(language: string, moment: string, today = new Date(
   const date = new Date(moment);
   return date.toDateString() === today.toDateString() ? date.toLocaleTimeString(language) : date.toLocaleString(language);
 }
+
+/** Format a moment as its date and time without seconds, like 22.10.2026, 20:57, in the user's language. */
+export function formatDateTime(language: string, moment: string): string {
+  return new Date(moment).toLocaleString(language, { dateStyle: "short", timeStyle: "short" });
+}
+
+/** Format a duration in ms with its two largest units, days and hours, hours and minutes, or minutes, in the user's language. */
+export function formatDuration(language: string, milliseconds: number): string {
+  const minutes = Math.floor(milliseconds / 60_000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const unit = (value: number, name: "day" | "hour" | "minute") => new Intl.NumberFormat(language, { style: "unit", unit: name, unitDisplay: "long" }).format(value);
+  if (days > 0) {
+    return `${unit(days, "day")} ${unit(hours % 24, "hour")}`;
+  }
+  if (hours > 0) {
+    return `${unit(hours, "hour")} ${unit(minutes % 60, "minute")}`;
+  }
+  return unit(minutes, "minute");
+}

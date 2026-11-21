@@ -269,12 +269,13 @@ The section header, the description and the footer note are in `section-styles.t
   is on, off or waiting, since such texts would have to follow every rule of the regulation and would mislead in an edge case.
 - It is shown also while the regulation is stopped, since what is kept stays until a reload or a restart.
 - First a row of health tiles: the power sensor, the actions, the regulation and the command repeat, each with a dot in the success, warning or alarm colour, or grey.
-- Then the last hour: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average and the power limit,
+  The regulation tile shows how long it has run, in its two largest units, with the start under it, since a date and time is hard to read for a long run.
+- Then the timeline: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average and the power limit,
   with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
   A lane shows what each command set until the next command: an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max,
   and the waiting hatched. One without a command since the oldest decision kept is as it is now while the regulation runs.
   Before its first command, and before the last start, it is hatched as not known, since the commands of a start and a stop are not kept, and nothing is guessed.
-  Hovering shows the consumption at that time and the decision that covers it. 15 minutes or 1 hour can be chosen.
+  Hovering shows the consumption at that time and the decision that covers it. 15, 30 or 60 minutes can be chosen, no longer than the measurements kept.
 - Then the event log: the commands of the decisions kept and the failed actions, newest first, filtered by all, commands or failed actions.
   A row opens the decision with its averages, whether the power sensor was valid, the safe state, the penalty, the waiting and all its commands,
   or the error of a failed action, and marks its time in the chart. The footer links to the integration's page for Download diagnostics.

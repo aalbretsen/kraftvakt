@@ -12,12 +12,12 @@ import {
   type StatusSnapshot,
 } from "../api";
 import { applianceRows, chargerRows, lanes, logRows, mergePart, repeatsDue, type Lanes, type LogRow, type Segment } from "../diagnostics";
-import { formatClockTime, formatMoment, formatNumber, formatPower } from "../format";
+import { formatClockTime, formatDateTime, formatDuration, formatMoment, formatNumber, formatPower } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
 
-const RANGES_MIN = [15, 60];
+const RANGES_MIN = [15, 30, 60];
 
 type LogFilter = "all" | "commands" | "failed";
 
@@ -166,8 +166,11 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         ${this.renderTile(
           "status.regulation",
           !running ? "off" : status.safe_state || status.penalty.active ? "alarm" : "ok",
-          running ? this.localize("diagnostics.running_since", { time: formatMoment(language, diagnostics.started_at ?? "") }) : this.localize("status.stopped"),
+          diagnostics.started_at === null
+            ? this.localize("status.stopped")
+            : this.localize("diagnostics.running_for", { duration: formatDuration(language, Date.now() - Date.parse(diagnostics.started_at)) }),
           [
+            ...(diagnostics.started_at === null ? [] : ([["diagnostics.started", formatDateTime(language, diagnostics.started_at)]] as [TranslationKey, string][])),
             ["status.safe_state_title", this.localize(status.safe_state ? "diagnostics.yes" : "diagnostics.no")],
             ["status.penalty_title", this.localize(status.penalty.active ? "diagnostics.yes" : "diagnostics.no")],
             ["diagnostics.overconsumption", this.localize("diagnostics.watt_hours", { energy: formatNumber(language, Math.max(0, status.penalty.overconsumption_wh), 0) })],
@@ -204,7 +207,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     return html`
       <ha-card>
         <div class="card-header">
-          <span>${this.localize("diagnostics.last_hour")}</span>
+          <span>${this.localize("diagnostics.timeline")}</span>
           <span class="spacer"></span>
           <span class="toggles">
             ${RANGES_MIN.map(
@@ -285,7 +288,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       .filter((decision) => decision.tariff_average_w !== null)
       .map((decision, index) => `${index === 0 ? "M" : "L"}${x(Date.parse(decision.time))},${y(decision.tariff_average_w!)}`)
       .join("");
-    const tickStep = (this.rangeMin <= 15 ? 5 : 10) * (this.compactChart ? 2 : 1) * 60_000;
+    const tickStep = (this.rangeMin <= 30 ? 5 : 10) * (this.compactChart ? 2 : 1) * 60_000;
     const ticks: number[] = [];
     for (let tick = Math.ceil(start / tickStep) * tickStep; tick < now - tickStep / 2; tick += tickStep) {
       ticks.push(tick);
