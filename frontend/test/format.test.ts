@@ -30,13 +30,13 @@ describe("formatting", () => {
     expect(formatMoment("en-GB", yesterday, today)).toBe("04/01/2026, 07:30:00");
   });
 
-  it("shows how long something has lasted with its two largest units", () => {
+  it("shows how long something has lasted in its largest whole unit, rounded down", () => {
     const minute = 60_000;
-    expect(formatDuration("en", 59_000)).toBe("0 minutes");
-    expect(formatDuration("en", 1 * minute)).toBe("1 minute");
-    expect(formatDuration("en", (3 * 60 + 20) * minute)).toBe("3 hours 20 minutes");
-    expect(formatDuration("en", ((30 * 24 + 3) * 60 + 59) * minute)).toBe("30 days 3 hours");
-    expect(formatDuration("nb", (24 * 60 + 5) * minute)).toBe("1 døgn 0 timer");
+    expect(formatDuration("en", 0)).toBe("0 minutes");
+    expect(formatDuration("en", 5 * minute + 59_000)).toBe("5 minutes");
+    expect(formatDuration("en", 70 * minute)).toBe("1 hour");
+    expect(formatDuration("en", ((20 * 24 + 7) * 60 + 15) * minute)).toBe("20 days");
+    expect(formatDuration("nb", 24 * 60 * minute)).toBe("1 døgn");
   });
 
   it("shows a date and time without seconds", () => {

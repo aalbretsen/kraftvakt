@@ -46,17 +46,11 @@ export function formatDateTime(language: string, moment: string): string {
   return new Date(moment).toLocaleString(language, { dateStyle: "short", timeStyle: "short" });
 }
 
-/** Format a duration in ms with its two largest units, days and hours, hours and minutes, or minutes, in the user's language. */
+/** Format a duration in ms as whole days, or else whole hours, or else whole minutes, rounded down, in the user's language. */
 export function formatDuration(language: string, milliseconds: number): string {
   const minutes = Math.floor(milliseconds / 60_000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  const unit = (value: number, name: "day" | "hour" | "minute") => new Intl.NumberFormat(language, { style: "unit", unit: name, unitDisplay: "long" }).format(value);
-  if (days > 0) {
-    return `${unit(days, "day")} ${unit(hours % 24, "hour")}`;
-  }
-  if (hours > 0) {
-    return `${unit(hours, "hour")} ${unit(minutes % 60, "minute")}`;
-  }
-  return unit(minutes, "minute");
+  const [value, unit] = days > 0 ? [days, "day"] : hours > 0 ? [hours, "hour"] : [minutes, "minute"];
+  return new Intl.NumberFormat(language, { style: "unit", unit, unitDisplay: "long" }).format(value);
 }
