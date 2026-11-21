@@ -53,6 +53,9 @@
     "power_to_free_activate": "{power} kW må bli ledig før elbilladeren kan aktiveres",
     "power_to_free_ampere": "{power} kW må bli ledig før elbilladeren kan få én ampere til",
     "delayed_turn_on": "Venter med å slå på",
+    "damping": "Demping av strømendringer",
+    "damping_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
+    "damping_activate_at": "Aktiveres ved avgjørelsen kl. {time}",
     "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
     "bypassed_no_car": "Hoppes over: ingen bil tilkoblet",
@@ -213,6 +216,10 @@
         "label": "Antall økninger",
         "helper": "{min}–{max}, standard {default}."
       },
+      "ampere_damping_s": {
+        "label": "Dempingstid",
+        "helper": "Lengre gir jevnere forbruk, kortere gir mer ladeeffekt. {min}–{max} s, standard {default} s."
+      },
       "command_repeat_interval_min": {
         "label": "Send kommandoen på nytt etter",
         "helper": "{min}–{max} min, standard {default} min."
@@ -237,6 +244,8 @@
     "repeated_turn_on": "Ventetid når det samme slås på igjen og igjen",
     "repeated_turn_on_info": "Slås det samme apparatet på igjen og igjen, uten at noe annet slås av eller på imellom, øker ventetiden fra tredje gang. De to første gangene følger kurven, og tabellen viser dem ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
+    "ampere_damping": "Demping av strømendringer",
+    "ampere_damping_info": "Går strømmen til en elbillader opp og ned mellom de samme to amperene fordi forbruket endrer seg i korte øyeblikk, venter amperen som ble tatt tilbake så lenge før den kommer tilbake. Det holder forbruket jevnt.",
     "command_repeat": "Gjentatte kommandoer",
     "command_repeat_info": "Et apparat eller en elbillader kan skifte tilstand av seg selv, for eksempel etter et strømbrudd. Har det ikke fått noen kommando på så lang tid, får det den siste på nytt. Det som er utenfor regulering, får være i fred.",
     "timeouts": "Tidsgrenser",

@@ -217,6 +217,7 @@ class RegulationEngine:
         if average is None:
             return DecisionResult([])
         self._forget_settled(decision.window_start)
+        self._forget_damping(decision.now)
         overrides = self._overrides(decision)
         penalty = self._decide_penalty(decision)
         if penalty is PenaltyOutcome.ENDED:
@@ -233,7 +234,7 @@ class RegulationEngine:
         commands += self._place_appliances(decision)
         forced_off = bool(appliances_on_before - self._state.appliances_on) or self._ampere_steps_on() < ampere_steps_on_before
         if average > self._config.general.power_limit_w:
-            commands += self._switch_off_above_limit(average, forced_off)
+            commands += self._switch_off_above_limit(average, forced_off, decision.now)
         else:
             commands += self._turn_on_next(decision.now, average, forced_off)
         self._state.power_to_free = self._power_to_free(average)
@@ -242,6 +243,18 @@ class RegulationEngine:
     def _forget_settled(self, window_start: datetime) -> None:
         """Keep the steps turned on since the start of the regulation window of the decision, since its average shows them only in part."""
         self._state.settling_since = {key: since for key, since in self._state.settling_since.items() if since >= window_start}
+
+    def _forget_damping(self, now: datetime) -> None:
+        self._state.damped_since = {key: since for key, since in self._state.damped_since.items() if now < since + self._ampere_damping_time}
+
+    @property
+    def _ampere_damping_time(self) -> timedelta:
+        return timedelta(seconds=self._config.general.ampere_damping_s)
+
+    def _damping(self, key: StepKey) -> Waiting | None:
+        """Return the damping of an ampere step taken back for power, while it lasts."""
+        since = self._state.damped_since.get(key) if isinstance(key, AmpereStepKey) else None
+        return None if since is None else Waiting(key, since, since + self._ampere_damping_time)
 
     def _new_charging_groups(self) -> dict[str, ChargingState]:
         return {group.id: ChargingState.for_chargers(group.chargers) for group in self._groups}
@@ -372,7 +385,7 @@ class RegulationEngine:
             if appliance_id in self._state.appliances_on or (was_off and switched_variant):
                 commands += self._switch(key, turn_on=False)
             if was_off and appliance_id not in excluded:
-                commands += self._make_room_below(key)
+                commands += self._make_room_below(key, decision.now)
             self._forget_waiting(key)
             self._state.repeats.reset(key)
         return commands
@@ -417,7 +430,7 @@ class RegulationEngine:
     def _steps_on_lowest_first(self) -> Iterator[Step]:
         return (step for step in reversed(self._steps()) if step.is_on and step.can_turn_off)
 
-    def _switch_off_above_limit(self, average_w: float, forced_off: bool) -> list[Command]:
+    def _switch_off_above_limit(self, average_w: float, forced_off: bool, now: datetime) -> list[Command]:
         """Switch off the lowest priority steps that are on, as many as the power above the limit needs.
 
         Nothing more is switched off when the decision has already forced
@@ -426,16 +439,22 @@ class RegulationEngine:
         self._state.waiting = None
         if forced_off:
             return []
-        return self._free_power(list(self._steps_on_lowest_first()), average_w - self._config.general.power_limit_w)
+        return self._free_power(list(self._steps_on_lowest_first()), average_w - self._config.general.power_limit_w, now)
 
-    def _make_room_below(self, key: StepKey) -> list[Command]:
+    def _make_room_below(self, key: StepKey, now: datetime) -> list[Command]:
         """Switch off the lowest step that is on below the step."""
         steps = self._steps()
         place = next(place for place, step in enumerate(steps) if step.key == key)
         below_on = _steps_on_below(steps, place)
-        return self._switch(below_on[0].key, turn_on=False) if below_on else []
+        return self._take_back(below_on[0].key, now) if below_on else []
 
-    def _free_power(self, steps_lowest_first: list[Step], needed_w: float) -> list[Command]:
+    def _take_back(self, key: StepKey, now: datetime) -> list[Command]:
+        """Switch off a step for power. An ampere step is damped from now."""
+        if isinstance(key, AmpereStepKey):
+            self._state.damped_since[key] = now
+        return self._switch(key, turn_on=False)
+
+    def _free_power(self, steps_lowest_first: list[Step], needed_w: float, now: datetime) -> list[Command]:
         """Switch off steps, lowest first, until the power they are estimated to free covers `needed_w`.
 
         Only what a charger draws is known, from its charging power, so an
@@ -447,11 +466,11 @@ class RegulationEngine:
         draws_before: dict[str, float] = {}
         for step in steps_lowest_first:
             if isinstance(step.key, ApplianceStepKey):
-                return commands or self._switch(step.key, turn_on=False)
+                return commands or self._take_back(step.key, now)
             charger_id = step.key.charger_id
             if charger_id not in draws_before:
                 draws_before[charger_id] = self._draw_now_w(charger_id)
-            commands += self._switch(step.key, turn_on=False)
+            commands += self._take_back(step.key, now)
             freed_w = sum(draw_w - self._draw_after_w(drawing_id, draw_w) for drawing_id, draw_w in draws_before.items())
             if freed_w >= needed_w:
                 break
@@ -490,17 +509,21 @@ class RegulationEngine:
             self._state.waiting = None
             return []
         candidate = steps[place]
+        damping = self._damping(candidate.key)
+        if damping is not None:
+            self._state.waiting = damping
+            return []
         held_w = _held_reserves_w(steps, place)
         if not self._may_turn_on(candidate, average_w + held_w):
             self._state.waiting = None
-            return [] if forced_off else self._make_room(steps, place, average_w + held_w)
+            return [] if forced_off else self._make_room(steps, place, average_w + held_w, now)
         if not self._has_waited(steps, place, now, average_w + held_w):
             return []
         return self._turn_on(candidate.key, now)
 
-    def _make_room(self, steps: list[Step], place: int, average_w: float) -> list[Command]:
+    def _make_room(self, steps: list[Step], place: int, average_w: float, now: datetime) -> list[Command]:
         """Switch off steps below the step at the place, as many as it is estimated to need to fit."""
-        return self._free_power(_steps_on_below(steps, place), self._power_needed_w(steps[place], average_w))
+        return self._free_power(_steps_on_below(steps, place), self._power_needed_w(steps[place], average_w), now)
 
     def _power_to_free(self, average_w: float) -> PowerToFree | None:
         steps = self._steps()
@@ -525,7 +548,8 @@ class RegulationEngine:
         above its minimum.
         Nothing above the group may be waiting for room, and no charger of the
         group may be starting, since its charging power would then be from
-        before the last switch-over.
+        before the last switch-over. A damped queued charger waits for its
+        damping time to pass.
         """
         for group in self._groups:
             charging = self._charging(group.id)
@@ -535,9 +559,11 @@ class RegulationEngine:
             group_places = [index for index, step in enumerate(steps) if step.group_id == group.id]
             if place is not None and place < group_places[0]:
                 continue
+            key = AmpereStepKey(queued[0], 0)
+            if self._damping(key) is not None:
+                continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
             freed_w = sum(self._draw_above_minimum_w(charger_id) for charger_id in above_minimum)
-            key = AmpereStepKey(queued[0], 0)
             step = next(step for step in steps if step.key == key)
             held_w = _held_reserves_w(steps, group_places[0])
             if not self._may_turn_on(step, average_w + held_w - freed_w):
@@ -653,6 +679,8 @@ class RegulationEngine:
         self._state.repeats.record(key, turn_on)
         if not turn_on:
             self._state.settling_since.pop(key, None)
+        elif isinstance(key, AmpereStepKey):
+            self._state.damped_since.pop(key, None)
 
 
 def _next_place(steps: list[Step]) -> int | None:

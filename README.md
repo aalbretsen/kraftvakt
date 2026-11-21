@@ -84,6 +84,10 @@ The helper texts in the panel tell what each setting does.
   An appliance that is turned on again and again waits longer each time.
   None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
   nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
+- **Damping of current changes:** an ampere an EV charger loses above the power limit, or to make room for something higher up,
+  comes back only when the damping time, 300 seconds by default, has passed since it was taken back.
+  It keeps consumption that changes for short moments from moving the charger up and down between the same two amperes.
+  Meanwhile, nothing below the EV charger is turned on, and the status page shows the countdown instead of the power to free.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
 - **Excluded appliance:** turned off, and gets no commands until it is included again.
@@ -200,7 +204,7 @@ All entities belong to the service device **Kraftvakt**, whose page shows them u
 | `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
 | `sensor.kraftvakt_power_free` (Power free) | The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
-| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, 0 when nothing waits. |
+| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, or the damped ampere of an EV charger comes back, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power reserves kept free. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | On during a penalty period. |

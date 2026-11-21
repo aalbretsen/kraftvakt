@@ -13,7 +13,7 @@ from .conditions import item_variables, power_value_w, temperature_value
 from .config_model import Appliance, Charger, ChargerGroup, PriorityEntryType
 from .entity import item_name
 from .regulation.charging import ChargerStatus
-from .regulation.model import AmpereStepKey, ApplianceStepKey
+from .regulation.model import AmpereStepKey, ApplianceStepKey, StepKey
 from .runtime import KraftvaktRuntime
 
 NO_WAITING: Mapping[str, None] = {
@@ -114,6 +114,7 @@ def _charger_status(
         "bypassed": status.bypassed,
         "charging": status.charging,
         "starting_until": _local_time(status.starting_until),
+        **_waiting_fields(runtime, charger.id),
         "power_to_free_w": _power_to_free_w(runtime, charger.id),
     }
 
@@ -123,11 +124,11 @@ def _temperature(hass: HomeAssistant, appliance: Appliance) -> dict[str, Any] | 
     return None if temperature is None else {"value": temperature[0], "unit": temperature[1]}
 
 
-def _waiting_fields(runtime: KraftvaktRuntime, key: ApplianceStepKey) -> Mapping[str, str | None]:
-    """Return when the waiting started and ends, for the appliance that waits."""
+def _waiting_fields(runtime: KraftvaktRuntime, item: ApplianceStepKey | str) -> Mapping[str, str | None]:
+    """Return when the waiting started and ends, on the row of the appliance that waits, or of the charger, given by its id, whose ampere step is damped."""
     waiting = runtime.waiting
     ends_at = runtime.waiting_ends_at
-    if waiting is None or ends_at is None or waiting.key != key:
+    if waiting is None or ends_at is None or not _is_row_of(waiting.key, item):
         return NO_WAITING
     return {
         "waiting_since": _local_time(waiting.started_at),
@@ -139,11 +140,11 @@ def _waiting_fields(runtime: KraftvaktRuntime, key: ApplianceStepKey) -> Mapping
 def _power_to_free_w(runtime: KraftvaktRuntime, item: ApplianceStepKey | str) -> float | None:
     """Return the power to free for the next step, on the row of its appliance, or of its charger given by its id."""
     power_to_free = runtime.power_to_free
-    if power_to_free is None:
-        return None
-    key = power_to_free.key
-    is_item = key == item or (isinstance(key, AmpereStepKey) and key.charger_id == item)
-    return power_to_free.power_w if is_item else None
+    return power_to_free.power_w if power_to_free is not None and _is_row_of(power_to_free.key, item) else None
+
+
+def _is_row_of(key: StepKey, item: ApplianceStepKey | str) -> bool:
+    return key == item or (isinstance(key, AmpereStepKey) and key.charger_id == item)
 
 
 def _in_order(chargers: Sequence[Charger], priority: Sequence[str]) -> list[Charger]:

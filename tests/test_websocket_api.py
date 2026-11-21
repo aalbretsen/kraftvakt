@@ -207,6 +207,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "wait_curve_pivot": 80,
             "appliance_repeat_increment_factor": 0.5,
             "appliance_repeat_increments": 4,
+            "ampere_damping_s": 300,
             "penalty_threshold_w": 100,
             "command_repeat_interval_min": 30,
             "action_timeout_s": 60,
@@ -1032,6 +1033,9 @@ async def test_status_shows_the_chargers(
             "bypassed": False,
             "starting_until": None,
             "charging": False,
+            "waiting_since": None,
+            "waiting_until": None,
+            "waiting_ends_at": None,
             "power_to_free_w": None,
         }
     ]

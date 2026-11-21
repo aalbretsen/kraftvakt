@@ -53,6 +53,9 @@
     "power_to_free_activate": "{power} kW must be freed before the EV charger is activated",
     "power_to_free_ampere": "{power} kW must be freed before the EV charger gets one more ampere",
     "delayed_turn_on": "Delayed turn-on",
+    "damping": "Damping of current changes",
+    "damping_ampere_at": "One more ampere at the decision at {time}",
+    "damping_activate_at": "Activated at the decision at {time}",
     "charging_at": "Charging at {current} A",
     "first_decision": "Waiting for the first decision",
     "bypassed_no_car": "Bypassed: no car connected",
@@ -213,6 +216,10 @@
         "label": "Most increases",
         "helper": "{min}–{max}, default {default}."
       },
+      "ampere_damping_s": {
+        "label": "Damping time",
+        "helper": "Longer gives steadier consumption, shorter more charging power. {min}–{max} s, default {default} s."
+      },
       "command_repeat_interval_min": {
         "label": "Repeat the command after",
         "helper": "{min}–{max} min, default {default} min."
@@ -237,6 +244,8 @@
     "repeated_turn_on": "Waiting time on repeated turn-on",
     "repeated_turn_on_info": "When the same appliance is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
+    "ampere_damping": "Damping of current changes",
+    "ampere_damping_info": "When an EV charger's current goes up and down between the same two amperes, because the consumption changes for short moments, the ampere taken back waits this long before it comes back. It keeps the consumption steady.",
     "command_repeat": "Command repeat",
     "command_repeat_info": "An appliance or EV charger can change state by itself, for example after a power cut. When it has had no command for this long, it gets the last one again. Excluded ones are left alone.",
     "timeouts": "Timeouts",

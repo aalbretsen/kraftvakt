@@ -209,6 +209,11 @@
         "max": 9,
         "resolution": 1
       },
+      "ampere_damping_s": {
+        "min": 60,
+        "max": 1800,
+        "resolution": 1
+      },
       "penalty_threshold_w": {
         "min": 0,
         "max": 10000,
@@ -280,6 +285,7 @@
       "wait_curve_pivot": 80,
       "appliance_repeat_increment_factor": 0.5,
       "appliance_repeat_increments": 4,
+      "ampere_damping_s": 300,
       "penalty_threshold_w": 100,
       "command_repeat_interval_min": 30,
       "action_timeout_s": 60,

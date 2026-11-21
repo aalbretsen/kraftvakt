@@ -2,7 +2,7 @@ import { mdiArrowCollapseDown, mdiArrowDown, mdiCarElectric, mdiEvStation, mdiFl
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { type ApplianceStatus, type ChargerGroupStatus, type ChargerStatus, type ConfigResponse, type StatusSnapshot } from "../api";
+import { type ApplianceStatus, type ChargerGroupStatus, type ChargerStatus, type ConfigResponse, type StatusSnapshot, type WaitingFields } from "../api";
 import "./countdown";
 import { CHARGER_CHIPS, CHIP_EXCLUDED, type Chip } from "../charger-chips";
 import { allChargers } from "../draft";
@@ -148,7 +148,7 @@ export class KraftvaktPriorityList extends LitElement {
           ${this.renderApplianceIcon(appliance)}${this.renderName(appliance.name)}
           ${appliance.variant && !this.phone ? html`<span class="variant" title=${appliance.variant}>${appliance.variant}</span>` : nothing}
         </div>
-        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)} ${this.renderWaiting(appliance)} ${this.renderApplianceChip(appliance)}
+        ${this.renderTemperature(appliance)} ${this.renderPower(appliance.power_w)} ${this.renderApplianceWaiting(appliance)} ${this.renderApplianceChip(appliance)}
       `,
     );
   }
@@ -223,27 +223,41 @@ export class KraftvaktPriorityList extends LitElement {
           <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
           ${this.renderName(charger.name)}
         </div>
-        ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)} ${this.renderPower(charger.power_w)}
-        ${this.renderPowerToFree(charger.power_to_free_w, charger.activated ? "status.power_to_free_ampere" : "status.power_to_free_activate")} ${this.renderChargerChip(charger)}
+        ${this.phone ? this.renderPhoneCurrent(charger) : this.renderAmperes(charger)} ${this.renderPower(charger.power_w)} ${this.renderChargerWaiting(charger)}
+        ${this.renderChargerChip(charger)}
       `,
+    );
+  }
+
+  private renderApplianceWaiting(appliance: ApplianceStatus) {
+    return this.renderWaiting(
+      appliance,
+      (time) => `${this.localize("status.delayed_turn_on")}: ${this.localize("status.waiting_ends_at", { time })}`,
+      () => this.renderPowerToFree(appliance.power_to_free_w, "status.power_to_free_turn_on"),
+    );
+  }
+
+  /** While a damped ampere step waits, the damping is the reason the EV charger gets no more current, not the power to free. */
+  private renderChargerWaiting(charger: ChargerStatus) {
+    return this.renderWaiting(
+      charger,
+      (time) => `${this.localize("status.damping")}: ${this.localize(charger.activated ? "status.damping_ampere_at" : "status.damping_activate_at", { time })}`,
+      () => this.renderPowerToFree(charger.power_to_free_w, charger.activated ? "status.power_to_free_ampere" : "status.power_to_free_activate"),
     );
   }
 
   /**
    * An icon and a bar that empties from when the waiting started until the decision that ends it,
-   * or else the power to free before the appliance is turned on. On a phone, the icon alone.
+   * or else what `otherwise` renders. On a phone, the icon alone.
    */
-  private renderWaiting(appliance: ApplianceStatus) {
-    if (!appliance.waiting_since || !appliance.waiting_ends_at) {
-      return this.renderPowerToFree(appliance.power_to_free_w, "status.power_to_free_turn_on");
+  private renderWaiting(row: WaitingFields, title: (time: string) => string, otherwise: () => unknown) {
+    if (!row.waiting_since || !row.waiting_ends_at) {
+      return otherwise();
     }
-    const time = formatClockTime(this.hass.language, appliance.waiting_ends_at);
     return html`
-      <span class="waiting" title="${this.localize("status.delayed_turn_on")}: ${this.localize("status.waiting_ends_at", { time })}">
+      <span class="waiting" title=${title(formatClockTime(this.hass.language, row.waiting_ends_at))}>
         <ha-svg-icon .path=${mdiTimerOutline}></ha-svg-icon>
-        ${this.renderWideOnly(
-          html`<kraftvakt-countdown-bar .start=${Date.parse(appliance.waiting_since)} .end=${Date.parse(appliance.waiting_ends_at)}></kraftvakt-countdown-bar>`,
-        )}
+        ${this.renderWideOnly(html`<kraftvakt-countdown-bar .start=${Date.parse(row.waiting_since)} .end=${Date.parse(row.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
       </span>
     `;
   }

@@ -73,6 +73,7 @@ export interface GeneralConfig {
   wait_curve_pivot: number;
   appliance_repeat_increment_factor: number;
   appliance_repeat_increments: number;
+  ampere_damping_s: number;
   penalty_threshold_w: number;
   command_repeat_interval_min: number;
   action_timeout_s: number;
@@ -241,7 +242,15 @@ export interface Capabilities {
   };
 }
 
-export interface ApplianceStatus {
+/** When the next step started to wait and when it ends: an appliance's waiting time, or the damping of an EV charger's ampere step. */
+export interface WaitingFields {
+  waiting_since: string | null;
+  waiting_until: string | null;
+  /** The decision that ends the waiting: the first at or after `waiting_until`. */
+  waiting_ends_at: string | null;
+}
+
+export interface ApplianceStatus extends WaitingFields {
   type: "appliance";
   id: string;
   name: string;
@@ -254,10 +263,6 @@ export interface ApplianceStatus {
   power_w: number | null;
   /** The display temperature, null without one or without a valid value. */
   temperature: { value: number; unit: string } | null;
-  waiting_since: string | null;
-  waiting_until: string | null;
-  /** The decision that ends the waiting: the first at or after `waiting_until`. */
-  waiting_ends_at: string | null;
   /** How far the regulation average must drop before the appliance, as the next step, may be turned on. */
   power_to_free_w: number | null;
 }
@@ -266,7 +271,7 @@ export interface ApplianceStatus {
 export type ChargerState =
   "stopped" | "fault" | "first_decision" | "no_car" | "excluded" | "outside_window" | "queued" | "starting" | "charging" | "activated" | "override" | "deactivated";
 
-export interface ChargerStatus {
+export interface ChargerStatus extends WaitingFields {
   id: string;
   name: string;
   state: ChargerState;

@@ -166,7 +166,8 @@ class RegulationState:
 
     `appliances_commanded_at` and `chargers_commanded_at` hold when each
     appliance and charger was last sent a command. `settling_since` holds when
-    each settling step was turned on.
+    each settling step was turned on, and `damped_since` when each ampere step
+    was taken back for power.
     """
 
     started_at: datetime | None = None
@@ -176,6 +177,7 @@ class RegulationState:
     waiting: Waiting | None = None
     power_to_free: PowerToFree | None = None
     settling_since: dict[StepKey, datetime] = field(default_factory=dict)
+    damped_since: dict[AmpereStepKey, datetime] = field(default_factory=dict)
     repeats: RepeatedTurnOnCounter = field(default_factory=RepeatedTurnOnCounter)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False

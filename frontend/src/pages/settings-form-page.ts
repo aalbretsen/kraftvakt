@@ -18,6 +18,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
   power_limit_w: "W",
   turn_on_margin_w: "W",
   wait_at_limit_s: "s",
+  ampere_damping_s: "s",
   penalty_threshold_w: "W",
   command_repeat_interval_min: "min",
   action_timeout_s: "s",

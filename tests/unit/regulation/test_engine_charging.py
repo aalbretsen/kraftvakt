@@ -25,6 +25,7 @@ from .scenario import (
 
 ABOVE_LIMIT = 10_500
 NO_CAR = {"car_connected": False}
+AMPERE_DAMPING_TIME = timedelta(minutes=5)
 
 
 def one_charger(**settings) -> Scenario:
@@ -144,12 +145,12 @@ def test_freeing_power_ends_at_an_appliance() -> None:
 
 
 def test_ampere_steps_do_not_wait_even_when_turned_on_again() -> None:
-    """Their power reserve tells whether they fit."""
+    """Their power reserve tells whether they fit, and the damping time has passed since each was taken back."""
     scenario = Scenario(make_config(chargers=(charger("c", max_a=6),), wait_at_limit_s=300))
     scenario.draw("c")
     for _ in range(4):
         assert scenario.decide(9000) == []
-        assert scenario.decide(5000) == activate("c")
+        assert scenario.decide(5000, after=AMPERE_DAMPING_TIME) == activate("c")
         assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
 
 
@@ -729,7 +730,7 @@ def test_charger_that_charged_in_its_window_may_charge_until_the_car_is_disconne
     assert scenario.decide(0) == current("c", 9)
     assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
     assert scenario.decide(20_000) == deactivate("c")
-    assert scenario.decide(0) == activate("c")
+    assert scenario.decide(0, after=AMPERE_DAMPING_TIME) == activate("c")
     scenario.draw("c", drawing=False)
     assert scenario.decide(0) == []
     assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED

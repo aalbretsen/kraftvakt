@@ -228,6 +228,35 @@ async def test_charger_current_follows_the_free_power(hass: HomeAssistant, freez
     assert steps_switched_on(hass) == "1"
 
 
+async def test_ampere_taken_back_above_the_limit_is_damped_and_shown_as_waiting(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    actions,
+    config,
+    setup_kraftvakt,
+) -> None:
+    """The ampere comes back at the first decision two minutes after it was taken back, though it fits at once."""
+    config["general"]["ampere_damping_s"] = 120
+    set_power(hass, CHARGER_POWER, "4100")
+    entry = await setup_kraftvakt()
+    await advance_windows(hass, freezer, 3)
+    set_power(hass, POWER_SENSOR, "10500")
+    await advance(hass, freezer)
+    taken_back_at = dt_util.utcnow()
+    assert actions[-1] == "current 7"
+    actions.clear()
+
+    set_power(hass, POWER_SENSOR, "9000")
+    await advance(hass, freezer)
+    row = status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]
+    assert row["waiting_since"] == dt_util.as_local(taken_back_at).isoformat()
+    assert row["waiting_until"] == row["waiting_ends_at"] == dt_util.as_local(taken_back_at + timedelta(seconds=120)).isoformat()
+    assert hass.states.get("sensor.kraftvakt_waiting_time_remaining").state == "60"
+    await advance(hass, freezer)
+    assert actions == ["current 8"]
+    assert status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]["waiting_since"] is None
+
+
 async def test_charger_switched_by_its_current_is_set_to_0_a_instead_of_deactivated(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
     """Its on/off entity is kept but never switched."""
     config["charger_groups"][0]["chargers"][0] |= {"switched_by": "current"}

@@ -15,6 +15,7 @@ const RESTORED_FIELDS: readonly GeneralField[] = [
   "wait_curve_pivot",
   "appliance_repeat_increment_factor",
   "appliance_repeat_increments",
+  "ampere_damping_s",
   "command_repeat_interval_min",
   "action_timeout_s",
   "power_sensor_timeout_s",
@@ -55,7 +56,8 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
 
   protected render() {
     return html`
-      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
+      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderAmpereDampingCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()}
+      ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 
@@ -75,6 +77,14 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
       title: this.localize("advanced.repeated_turn_on"),
       description: this.localize("advanced.repeated_turn_on_info"),
       content: this.renderRepeatedTurnOn(),
+    });
+  }
+
+  private renderAmpereDampingCard() {
+    return this.renderCard({
+      title: this.localize("advanced.ampere_damping"),
+      description: this.localize("advanced.ampere_damping_info"),
+      content: this.renderForm([this.numberField("ampere_damping_s")]),
     });
   }
 
