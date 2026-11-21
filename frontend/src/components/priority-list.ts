@@ -237,11 +237,17 @@ export class KraftvaktPriorityList extends LitElement {
     );
   }
 
-  /** While a damped ampere step waits, the damping is the reason the EV charger gets no more current, not the power to free. */
+  /**
+   * While its next ampere step waits, that is the reason the EV charger gets no more current, not the power to free:
+   * the damping of an ampere taken back, or the waiting time of an EV charger activated again.
+   */
   private renderChargerWaiting(charger: ChargerStatus) {
     return this.renderWaiting(
       charger,
-      (time) => `${this.localize("status.damping")}: ${this.localize(charger.activated ? "status.damping_ampere_at" : "status.damping_activate_at", { time })}`,
+      (time) =>
+        charger.activated
+          ? `${this.localize("status.damping")}: ${this.localize("status.damping_ampere_at", { time })}`
+          : `${this.localize("status.delayed_activation")}: ${this.localize("status.activated_at", { time })}`,
       () => this.renderPowerToFree(charger.power_to_free_w, charger.activated ? "status.power_to_free_ampere" : "status.power_to_free_activate"),
     );
   }

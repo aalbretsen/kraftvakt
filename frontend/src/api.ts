@@ -74,6 +74,8 @@ export interface GeneralConfig {
   appliance_repeat_increment_factor: number;
   appliance_repeat_increments: number;
   ampere_damping_s: number;
+  /** How many times the waiting time of appliances an EV charger activated again waits. */
+  charger_waiting_factor: number;
   penalty_threshold_w: number;
   command_repeat_interval_min: number;
   action_timeout_s: number;

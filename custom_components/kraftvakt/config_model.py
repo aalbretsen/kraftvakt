@@ -50,6 +50,7 @@ SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
         "appliance_repeat_increment_factor": Range(0.25, 1, 0.25),
         "appliance_repeat_increments": Range(1, 9, 1),
         "ampere_damping_s": Range(60, 1800, 1),
+        "charger_waiting_factor": Range(1, 5, 1),
         "penalty_threshold_w": Range(0, 10_000, 1),
         "command_repeat_interval_min": Range(10, 60, 1),
         "action_timeout_s": Range(10, 300, 1),
@@ -456,6 +457,7 @@ class GeneralConfig:
     appliance_repeat_increment_factor: float = 0.5
     appliance_repeat_increments: int = 4
     ampere_damping_s: int = 300
+    charger_waiting_factor: int = 2
     penalty_threshold_w: int = 100
     command_repeat_interval_min: int = 30
     action_timeout_s: int = 60

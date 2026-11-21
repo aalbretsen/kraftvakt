@@ -35,15 +35,14 @@ def test_steps_below_wait_while_an_ampere_is_damped() -> None:
     assert scenario.decide_many(0, 2) == [current("c", 8), on("x")]
 
 
-def test_charger_deactivated_above_the_limit_is_activated_when_the_damping_time_has_passed() -> None:
-    """Every ampere taken back at once is damped from then, so the ones after the first come back without waiting."""
+def test_amperes_above_the_first_are_damped_when_the_charger_is_deactivated() -> None:
+    """Every ampere taken back at once is damped from then, but the first, which waits its waiting time instead, none at an average of 0."""
     scenario = Scenario(make_config(chargers=(charger("c", max_a=8),)))
     scenario.draw("c")
     scenario.charge("c", 8)
 
     assert scenario.decide(20_000) == deactivate("c")
-    assert scenario.decide_many(0, 4) == [[], [], [], []]
-    assert scenario.decide_many(0, 3) == [activate("c"), current("c", 7), current("c", 8)]
+    assert scenario.decide_many(0, 6) == [activate("c"), [], [], [], current("c", 7), current("c", 8)]
 
 
 def test_ampere_taken_back_to_make_room_is_damped() -> None:
@@ -65,8 +64,8 @@ def test_ampere_taken_back_to_make_room_is_damped() -> None:
     assert scenario.decide(0, true=morning) == current("c", 7)
 
 
-def test_no_switch_over_to_a_queued_charger_that_is_damped() -> None:
-    """b, deactivated above the limit, is queued behind a, which gets its next ampere instead."""
+def test_no_switch_over_to_a_queued_charger_that_would_be_activated_again() -> None:
+    """b, deactivated above the limit, is queued behind a, which gets its next ampere instead, and b waits its waiting time when it is next."""
     scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True, wait_at_limit_s=0))
     scenario.set_charger("a", car_connected=False)
     scenario.draw("b")

@@ -192,7 +192,7 @@ The section header, the description and the footer note are in `section-styles.t
   then dropdowns for the step and the number of steps,
   and a table with one column per turn-on in a row up to the one that reaches the cap, marked as holding for every time after it, with the waiting time and the actual waiting time.
   The first two follow the curve and show the waiting time at the pivot point, which the text says. Dropdowns keep their values as numbers in the draft.
-- Third card, damping of current changes: a short text on what it is for, and the damping time in seconds.
+- Third card, EV chargers: a short text on what it is for, the damping time in seconds, and the waiting time for EV chargers as a dropdown of factors.
 - Fourth card, command repeat: a short text on why commands are repeated and that excluded appliances and chargers are left alone, and the interval in minutes.
 - Fifth card, timeouts: a short text on what each timeout guards against, and the action timeout and the power sensor timeout in seconds.
 - On a page at most 760 px wide the tables are left out and the graph is drawn small. Narrower, the tables do not fit with the most columns.
@@ -210,7 +210,8 @@ The section header, the description and the footer note are in `section-styles.t
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
-  An EV charger whose next ampere step is damped shows the same, with the damping as the reason, instead of the power to free.
+  An EV charger whose next ampere step waits shows the same instead of the power to free, with the reason:
+  the damping for an activated EV charger, and the waiting time for one that is activated again.
 - Otherwise the row of the next step shows, in the same column, an icon and the power to free in kW, with a sentence as tooltip that tells what it is freed for:
   turning on an appliance, activating an EV charger or giving it one more ampere. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.

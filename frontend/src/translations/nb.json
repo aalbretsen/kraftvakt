@@ -55,7 +55,8 @@
     "delayed_turn_on": "Venter med å slå på",
     "damping": "Demping av strømendringer",
     "damping_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
-    "damping_activate_at": "Aktiveres ved avgjørelsen kl. {time}",
+    "delayed_activation": "Venter med å aktivere",
+    "activated_at": "Aktiveres ved avgjørelsen kl. {time}",
     "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
     "bypassed_no_car": "Hoppes over: ingen bil tilkoblet",
@@ -196,7 +197,7 @@
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",
-        "helper": "Hvor lenge et apparat uten fast last venter før det slås på når det er lite ledig effekt. Jo mer ledig effekt, jo kortere ventetid. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge et apparat venter før det slås på når det er lite ledig effekt. Jo mer ledig effekt, jo kortere ventetid. {min}–{max} s, standard {default} s."
       },
       "penalty_threshold_w": {
         "label": "Straffeterskel",
@@ -220,6 +221,10 @@
         "label": "Dempingstid",
         "helper": "Lengre gir jevnere forbruk, kortere gir mer ladeeffekt. {min}–{max} s, standard {default} s."
       },
+      "charger_waiting_factor": {
+        "label": "Ventetid for elbilladere",
+        "helper": "Ganger ventetiden for apparater, for en elbillader som aktiveres igjen. {min}×–{max}×, standard {default}×."
+      },
       "command_repeat_interval_min": {
         "label": "Send kommandoen på nytt etter",
         "helper": "{min}–{max} min, standard {default} min."
@@ -237,15 +242,15 @@
   },
   "advanced": {
     "wait_curve": "Ventetidskurve",
-    "wait_curve_info": "Hvor lenge et apparat uten fast last venter, etter hvor mye effekt som er ledig. Den faktiske ventetiden rundes opp til neste avgjørelse.",
+    "wait_curve_info": "Hvor lenge et apparat venter, etter hvor mye effekt som er ledig. Den faktiske ventetiden rundes opp til neste avgjørelse.",
     "free_power_kw": "Ledig effekt kW",
     "waiting_minutes": "Ventetid min:s",
     "actual_waiting_minutes": "Faktisk ventetid min:s",
     "repeated_turn_on": "Ventetid når det samme slås på igjen og igjen",
     "repeated_turn_on_info": "Slås det samme apparatet på igjen og igjen, uten at noe annet slås av eller på imellom, øker ventetiden fra tredje gang. De to første gangene følger kurven, og tabellen viser dem ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
-    "ampere_damping": "Demping av strømendringer",
-    "ampere_damping_info": "Går strømmen til en elbillader opp og ned mellom de samme to amperene fordi forbruket endrer seg i korte øyeblikk, venter amperen som ble tatt tilbake så lenge før den kommer tilbake. Det holder forbruket jevnt.",
+    "chargers": "Elbilladere",
+    "chargers_info": "Hindrer at en elbillader går opp og ned mellom de samme to amperene, eller av og på, når forbruket endrer seg i korte øyeblikk. En ampere som tas tilbake, venter dempingstiden før den kommer tilbake, og en elbillader som aktiveres igjen, venter som et apparat, ganget med faktoren.",
     "command_repeat": "Gjentatte kommandoer",
     "command_repeat_info": "Et apparat eller en elbillader kan skifte tilstand av seg selv, for eksempel etter et strømbrudd. Har det ikke fått noen kommando på så lang tid, får det den siste på nytt. Det som er utenfor regulering, får være i fred.",
     "timeouts": "Tidsgrenser",
@@ -304,7 +309,7 @@
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Det apparatet trekker når det er på. Det slås på uten å vente så snart så mye effekt er ledig. Gjelder alle variantene."
+        "helper": "Det apparatet trekker når det er på. Første gang slås det på uten å vente så snart så mye effekt er ledig; slås det på igjen, venter det som andre apparater. Gjelder alle variantene."
       },
       "label": {
         "label": "Navn"

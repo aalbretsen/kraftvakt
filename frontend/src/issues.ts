@@ -41,6 +41,7 @@ const ADVANCED_FIELDS = new Set([
   "appliance_repeat_increment_factor",
   "appliance_repeat_increments",
   "ampere_damping_s",
+  "charger_waiting_factor",
   "command_repeat_interval_min",
   "action_timeout_s",
   "power_sensor_timeout_s",

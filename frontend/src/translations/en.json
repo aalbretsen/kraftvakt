@@ -55,7 +55,8 @@
     "delayed_turn_on": "Delayed turn-on",
     "damping": "Damping of current changes",
     "damping_ampere_at": "One more ampere at the decision at {time}",
-    "damping_activate_at": "Activated at the decision at {time}",
+    "delayed_activation": "Delayed activation",
+    "activated_at": "Activated at the decision at {time}",
     "charging_at": "Charging at {current} A",
     "first_decision": "Waiting for the first decision",
     "bypassed_no_car": "Bypassed: no car connected",
@@ -196,7 +197,7 @@
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance without a fixed load waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
+        "helper": "How long an appliance waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
@@ -220,6 +221,10 @@
         "label": "Damping time",
         "helper": "Longer gives steadier consumption, shorter more charging power. {min}–{max} s, default {default} s."
       },
+      "charger_waiting_factor": {
+        "label": "Waiting time for EV chargers",
+        "helper": "Times the waiting time of appliances, for an EV charger activated again. {min}×–{max}×, default {default}×."
+      },
       "command_repeat_interval_min": {
         "label": "Repeat the command after",
         "helper": "{min}–{max} min, default {default} min."
@@ -237,15 +242,15 @@
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
-    "wait_curve_info": "How long an appliance without a fixed load waits, by how much power is free. The actual waiting time is rounded up to the next decision.",
+    "wait_curve_info": "How long an appliance waits, by how much power is free. The actual waiting time is rounded up to the next decision.",
     "free_power_kw": "Free power kW",
     "waiting_minutes": "Waiting time min:s",
     "actual_waiting_minutes": "Actual waiting time min:s",
     "repeated_turn_on": "Waiting time on repeated turn-on",
     "repeated_turn_on_info": "When the same appliance is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
-    "ampere_damping": "Damping of current changes",
-    "ampere_damping_info": "When an EV charger's current goes up and down between the same two amperes, because the consumption changes for short moments, the ampere taken back waits this long before it comes back. It keeps the consumption steady.",
+    "chargers": "EV chargers",
+    "chargers_info": "Keeps an EV charger from going up and down between the same two amperes, or on and off, when the consumption changes for short moments. An ampere taken back waits the damping time before it comes back, and an EV charger activated again waits as an appliance does, times the factor.",
     "command_repeat": "Command repeat",
     "command_repeat_info": "An appliance or EV charger can change state by itself, for example after a power cut. When it has had no command for this long, it gets the last one again. Excluded ones are left alone.",
     "timeouts": "Timeouts",
@@ -304,7 +309,7 @@
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "What the appliance draws while it is on. It is turned on without waiting as soon as this much power is free. Applies to every variant."
+        "helper": "What the appliance draws while it is on. The first time, it is turned on without waiting as soon as this much power is free; turned on again, it waits as other appliances do. Applies to every variant."
       },
       "label": {
         "label": "Label"

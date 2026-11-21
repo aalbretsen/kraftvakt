@@ -18,6 +18,7 @@ def full_config_data() -> dict[str, Any]:
             "appliance_repeat_increment_factor": 0.75,
             "appliance_repeat_increments": 3,
             "ampere_damping_s": 120,
+            "charger_waiting_factor": 3,
             "penalty_threshold_w": 500,
             "command_repeat_interval_min": 45,
             "action_timeout_s": 90,

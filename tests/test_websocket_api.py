@@ -208,6 +208,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "appliance_repeat_increment_factor": 0.5,
             "appliance_repeat_increments": 4,
             "ampere_damping_s": 300,
+            "charger_waiting_factor": 2,
             "penalty_threshold_w": 100,
             "command_repeat_interval_min": 30,
             "action_timeout_s": 60,

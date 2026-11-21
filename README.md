@@ -47,7 +47,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - You set a **power limit**, the step of the capacity tariff you want to stay below, for example 10,000 W.
   Kraftvakt keeps the average consumption over the last hour, the **tariff average**, below it.
 - You sort the appliances and EV chargers in a **priority list**. When power is free, the next one in the list is turned on:
-  at once when Kraftvakt knows what it draws and there is room for it, and otherwise after a short waiting time.
+  at once when Kraftvakt knows what it draws, there is room for it, and it was not just turned off, and otherwise after a short waiting time.
   Above the power limit, the lowest one that is on is turned off.
 - An **EV charger** gets one ampere at a time, when the power one more ampere draws is free, and only while a car is connected.
 - An **essential appliance**, such as a freezer, is always kept on.
@@ -79,14 +79,17 @@ The helper texts in the panel tell what each setting does.
 - **Power reserve:** the free power a step needs before it is turned on. An appliance with a **fixed load** has its power as reserve.
   The first ampere of an EV charger needs its power at minimum current, and each ampere after it what the car drew per ampere at the last decision,
   its charging power divided by its current. A step that was just turned on keeps its power reserve until the regulation average shows it.
-- **Waiting time:** only for an appliance without a fixed load, since Kraftvakt does not know what it draws. None while plenty of power is free,
+- **Waiting time:** for an appliance without a fixed load, since Kraftvakt does not know what it draws. None while plenty of power is free,
   and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
+  An appliance with a fixed load, and an EV charger, are turned on at once the first time, but wait when they are turned on again,
+  so they are not switched on and off again and again. An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
   None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
   nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
 - **Damping of current changes:** an ampere an EV charger loses above the power limit, or to make room for something higher up,
   comes back only when the damping time, 300 seconds by default, has passed since it was taken back.
   It keeps consumption that changes for short moments from moving the charger up and down between the same two amperes.
+  An EV charger that loses its last ampere waits its waiting time instead before it is activated again.
   Meanwhile, nothing below the EV charger is turned on, and the status page shows the countdown instead of the power to free.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
@@ -204,7 +207,7 @@ All entities belong to the service device **Kraftvakt**, whose page shows them u
 | `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
 | `sensor.kraftvakt_power_free` (Power free) | The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
-| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, or the damped ampere of an EV charger comes back, 0 when nothing waits. |
+| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, or an EV charger gets its next ampere or is activated again, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power reserves kept free. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | On during a penalty period. |

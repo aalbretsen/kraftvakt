@@ -16,6 +16,7 @@ const RESTORED_FIELDS: readonly GeneralField[] = [
   "appliance_repeat_increment_factor",
   "appliance_repeat_increments",
   "ampere_damping_s",
+  "charger_waiting_factor",
   "command_repeat_interval_min",
   "action_timeout_s",
   "power_sensor_timeout_s",
@@ -56,7 +57,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
 
   protected render() {
     return html`
-      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderAmpereDampingCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()}
+      ${this.renderWaitCurveCard()} ${this.renderRepeatedTurnOnCard()} ${this.renderChargersCard()} ${this.renderCommandRepeatCard()} ${this.renderTimeoutsCard()}
       ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
@@ -80,11 +81,11 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     });
   }
 
-  private renderAmpereDampingCard() {
+  private renderChargersCard() {
     return this.renderCard({
-      title: this.localize("advanced.ampere_damping"),
-      description: this.localize("advanced.ampere_damping_info"),
-      content: this.renderForm([this.numberField("ampere_damping_s")]),
+      title: this.localize("advanced.chargers"),
+      description: this.localize("advanced.chargers_info"),
+      content: this.renderForm([this.numberField("ampere_damping_s"), this.selectField("charger_waiting_factor", (factor) => `${factor}×`)]),
     });
   }
 

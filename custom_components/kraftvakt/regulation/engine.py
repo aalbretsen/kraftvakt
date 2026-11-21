@@ -65,6 +65,12 @@ class RegulationEngine:
             general.appliance_repeat_increment_factor,
             general.appliance_repeat_increments,
         )
+        self._charger_wait_at_limit_s = general.wait_at_limit_s * general.charger_waiting_factor
+        self._charger_growth = RepeatedTurnOnGrowth.from_waiting_at_limit(
+            self._charger_wait_at_limit_s,
+            general.appliance_repeat_increment_factor,
+            general.appliance_repeat_increments,
+        )
         self._running = False
         self._state = RegulationState(charging_groups=self._new_charging_groups())
 
@@ -143,6 +149,8 @@ class RegulationEngine:
             "power_limit_w": self._config.general.power_limit_w,
             "waiting_curve": self._waiting_curve,
             "appliance_growth": self._appliance_growth,
+            "charger_wait_at_limit_s": self._charger_wait_at_limit_s,
+            "charger_growth": self._charger_growth,
             "state": self._state,
         }
 
@@ -449,8 +457,8 @@ class RegulationEngine:
         return self._take_back(below_on[0].key, now) if below_on else []
 
     def _take_back(self, key: StepKey, now: datetime) -> list[Command]:
-        """Switch off a step for power. An ampere step is damped from now."""
-        if isinstance(key, AmpereStepKey):
+        """Switch off a step for power. An ampere step above the first is damped from now; the first waits its waiting time when it is turned on again."""
+        if isinstance(key, AmpereStepKey) and key.index > 0:
             self._state.damped_since[key] = now
         return self._switch(key, turn_on=False)
 
@@ -548,8 +556,8 @@ class RegulationEngine:
         above its minimum.
         Nothing above the group may be waiting for room, and no charger of the
         group may be starting, since its charging power would then be from
-        before the last switch-over. A damped queued charger waits for its
-        damping time to pass.
+        before the last switch-over. A queued charger that would be activated
+        again waits its waiting time instead.
         """
         for group in self._groups:
             charging = self._charging(group.id)
@@ -560,7 +568,7 @@ class RegulationEngine:
             if place is not None and place < group_places[0]:
                 continue
             key = AmpereStepKey(queued[0], 0)
-            if self._damping(key) is not None:
+            if self._state.repeats.upcoming_repeat(key):
                 continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
             freed_w = sum(self._draw_above_minimum_w(charger_id) for charger_id in above_minimum)
@@ -592,14 +600,19 @@ class RegulationEngine:
     def _has_waited(self, steps: list[Step], place: int, now: datetime, average_w: float) -> bool:
         """Return whether the step at the place has waited its waiting time.
 
-        A step with a power reserve does not wait, since the reserve tells
-        whether it fits. Nor does one with steps on below it that may be
-        switched off for room: none of them can be turned on while it waits,
-        so waiting changes nothing, and they give way if it takes the average
-        above the limit.
+        A step with a power reserve waits only when it is turned on again,
+        since the reserve tells whether it fits, and an ampere step above the
+        first never waits, since it is damped instead. Nor does a step with
+        steps on below it that may be switched off for room wait: none of them
+        can be turned on while it waits, so waiting changes nothing, and they
+        give way if it takes the average above the limit. The first ampere step
+        of a charger waits the waiting time for EV chargers.
         """
         step = steps[place]
-        if step.power_reserve_w is not None or _steps_on_below(steps, place):
+        repeat = self._state.repeats.upcoming_repeat(step.key)
+        is_ampere_step = isinstance(step.key, AmpereStepKey)
+        above_first = isinstance(step.key, AmpereStepKey) and step.key.index > 0
+        if above_first or (step.power_reserve_w is not None and not repeat) or _steps_on_below(steps, place):
             self._state.waiting = None
             return True
         waiting = self._state.waiting
@@ -608,10 +621,10 @@ class RegulationEngine:
         required = waiting_time(
             average_w,
             general.power_limit_w,
-            timedelta(seconds=general.wait_at_limit_s),
+            timedelta(seconds=self._charger_wait_at_limit_s if is_ampere_step else general.wait_at_limit_s),
             self._waiting_curve,
-            self._state.repeats.upcoming_repeat(step.key),
-            self._appliance_growth,
+            repeat,
+            self._charger_growth if is_ampere_step else self._appliance_growth,
         )
         self._state.waiting = Waiting(step.key, started_at, started_at + required)
         return now - started_at >= required
