@@ -149,7 +149,7 @@ The section header, the description and the footer note are in `section-styles.t
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
   The start delay is kept when the switch is turned off, since it has no effect then.
-- Finish charging after the charging window and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
+- Charge until the car is disconnected and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
 - Set charging current offers Number entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.
   Required until an entity is chosen.

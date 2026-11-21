@@ -120,7 +120,7 @@ class ChargerSwitch(ItemSwitch, ChargerEntity):
 class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
     """A setting of a charger in the configuration, also shown in the panel."""
 
-    settings = ("finish_after_window",)
+    settings = ("charge_until_disconnected",)
     _attr_entity_category = EntityCategory.CONFIG
 
     @property
@@ -131,8 +131,8 @@ class ChargerConfigSwitch(ChargerEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Save the setting on, also while the regulation runs."""
-        await self._runtime.async_set_finish_after_window(self._item_id, True)
+        await self._runtime.async_set_charge_until_disconnected(self._item_id, True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Save the setting off, also while the regulation runs."""
-        await self._runtime.async_set_finish_after_window(self._item_id, False)
+        await self._runtime.async_set_charge_until_disconnected(self._item_id, False)

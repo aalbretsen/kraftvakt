@@ -374,7 +374,7 @@ class Charger:
     actively_charging: Condition | None = None
     charging_power: Condition | None = None
     charging_window: ChargingWindow | None = None
-    finish_after_window: bool = False
+    charge_until_disconnected: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
     cloud_controlled: bool = False
     start_delay_s: int = 300

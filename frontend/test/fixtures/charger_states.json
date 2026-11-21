@@ -31,10 +31,6 @@
     "icon": "mdi:cloud-clock-outline",
     "color": "light-blue"
   },
-  "finishing": {
-    "icon": "mdi:clock-end",
-    "color": "green"
-  },
   "charging": {
     "icon": "mdi:lightning-bolt",
     "color": "green"

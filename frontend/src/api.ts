@@ -136,8 +136,8 @@ export interface Charger {
   /** A power sensor or a template giving the charging power. Every EV charger needs one. */
   charging_power: Condition | null;
   charging_window: ChargingWindow | null;
-  /** Whether ongoing charging may finish after the charging window has ended. */
-  finish_after_window: boolean;
+  /** Whether a car that has used power within the charging window may go on charging after it until it is disconnected. */
+  charge_until_disconnected: boolean;
   /** What ends the override of the charging window, besides the user. */
   override_ends: OverrideEnd;
   /** Whether the EV charger is controlled through a cloud service. */
@@ -264,7 +264,7 @@ export interface ApplianceStatus {
 
 /** How an EV charger stands after the last decision, the most important first. */
 export type ChargerState =
-  "stopped" | "fault" | "first_decision" | "no_car" | "excluded" | "outside_window" | "queued" | "starting" | "finishing" | "charging" | "activated" | "override" | "deactivated";
+  "stopped" | "fault" | "first_decision" | "no_car" | "excluded" | "outside_window" | "queued" | "starting" | "charging" | "activated" | "override" | "deactivated";
 
 export interface ChargerStatus {
   id: string;

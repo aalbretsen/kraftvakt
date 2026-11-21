@@ -192,9 +192,18 @@ class OverrideChanges:
     ended: list[str] = field(default_factory=list)
 
 
+@dataclass(slots=True)
+class ChargedInWindowChanges:
+    """The chargers that start or stop counting as charged in their charging window at a decision."""
+
+    added: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+
+
 @dataclass(frozen=True, slots=True)
 class DecisionResult:
-    """The commands of a decision, and the window overrides that arm or end."""
+    """The commands of a decision, the window overrides that arm or end, and the chargers that start or stop counting as charged in their window."""
 
     commands: list[Command]
     overrides: OverrideChanges = field(default_factory=OverrideChanges)
+    charged_in_window: ChargedInWindowChanges = field(default_factory=ChargedInWindowChanges)

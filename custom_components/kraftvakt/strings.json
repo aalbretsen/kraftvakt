@@ -60,7 +60,6 @@
           "outside_window": "Outside charging window",
           "queued": "Queued",
           "starting": "Starting",
-          "finishing": "Finishing",
           "charging": "Charging",
           "activated": "Activated",
           "override": "Override",
@@ -81,8 +80,8 @@
       "charger_window_override": {
         "name": "{charger} override charging window"
       },
-      "charger_finish_after_window": {
-        "name": "{charger} finish charging after charging window"
+      "charger_charge_until_disconnected": {
+        "name": "{charger} charge until car disconnected"
       }
     }
   },

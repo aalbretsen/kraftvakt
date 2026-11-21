@@ -184,7 +184,7 @@ class ConfigReader:
             actively_charging=self._condition(values.get("actively_charging"), "actively_charging", location, CHARGER_CONDITION_TYPES),
             charging_power=self._condition(values.get("charging_power"), "charging_power", location, POWER_TYPES),
             charging_window=self._charging_window(values, location),
-            finish_after_window=self._bool(values, "finish_after_window", defaults.finish_after_window, location),
+            charge_until_disconnected=self._bool(values, "charge_until_disconnected", defaults.charge_until_disconnected, location),
             override_ends=self._choice(values, "override_ends", defaults.override_ends, location),
             cloud_controlled=self._bool(values, "cloud_controlled", defaults.cloud_controlled, location),
             start_delay_s=self._integer(values, "start_delay_s", defaults.start_delay_s, location),

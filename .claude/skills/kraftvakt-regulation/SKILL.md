@@ -75,11 +75,12 @@ The ranges and defaults below are part of the specification; the code holds them
 | Queued charger | A charger that is allowed to charge and has a car, but waits for its turn: with one charger at a time after the one that charges, and with several at once and dynamic charging order behind the activated chargers. |
 | Switch-over | With several at once and dynamic charging order: the chargers that charge are set to their minimum current at once to make room for a queued charger. |
 | Charging window | Optional daily time span in whole minutes, in HA's time zone, may span midnight, start ≠ end. |
-| Allowed to charge | A charger without a fault that is not excluded, and has no charging window, is inside it, has an active window override, or is finishing. |
+| Allowed to charge | A charger without a fault that is not excluded, and has no charging window, is inside it, has an active window override, or charges until disconnected. |
 | Window override | A charger's switch that allows charging outside its charging window, until it is switched off or its override end ends it. |
 | Override end | What switches a window override off besides the user: manual, when the car no longer charges, or when the car is disconnected. |
 | Armed override | A window override where what ends it has started since it was switched on: the car charging or connected. Only an armed override ends. |
-| Finishing | A charger that was charging when its window ended going on until it stops, with finish after window. |
+| Charged in window | A charger that was activated and actively charging at a decision inside its charging window, since its car was last disconnected. |
+| Charging until disconnected | A charger charged in window, with charge until disconnected, allowed to charge outside its window until its car is disconnected. |
 
 Resolution of settings: power in whole watts, the waiting time at the limit in whole seconds, the update interval in tenths of a second, currents in whole amperes.
 Power is in W everywhere inside the regulation, the configuration and the entities, energy in Wh; the status page shows kW.
@@ -96,7 +97,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 - Only the current configuration is regulated. Kraftvakt never hands an appliance or charger back: removed, excluded, with the regulation stopped or the integration removed,
   it stays as last commanded, and the user sets it as wanted.
 - The configuration can only be changed while the regulation is stopped, except the user's switches (one per appliance, two per charger),
-  finish after window (see EV charging) and the power limit (see Power limit entity).
+  charge until disconnected (see EV charging) and the power limit (see Power limit entity).
   Everything is off while stopped, so removed appliances are already off and new ones are controlled from the next start.
 - The state of the regulation (on/off, waiting times, repeated turn-on counters, settling steps, overconsumption, penalty, current charging priority,
   bypassed chargers, measured power per ampere, current variants, excluded appliances, when each appliance and charger last got a command)
@@ -107,7 +108,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   The charging power is a power sensor or a template that gives a number.
   Only evidence makes it true: an entity that is `on`, a state that counts as true, a template that gives the boolean true, or a valid power above 100 W.
   Everything else is false, also unavailable entities and sensors, `unknown` and `unavailable` of an entity with states, and failing templates.
-  The exceptions are the override end and the deactivation of a charger whose car is disconnected with dynamic charging order (see EV charging), which need evidence of false.
+  The exceptions are the override end, the end of charged in window, and the deactivation of a charger whose car is disconnected with dynamic charging order (see EV charging),
+  which need evidence of false.
   Settings are named so that true means the thing is the case.
 
 ## Measurement
@@ -307,10 +309,10 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision expected to turn on the waiting appliance, with the windows lasting their length at the update interval,
   a whole number of window lengths after a decision. 0 when nothing waits. Updated at each window, decision, start and stop, and when missed windows are skipped.
-- Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and finish after window as they are now.
+- Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and charge until disconnected as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.
-  Finishing and a fault are judged from what the last decision read (activated, actively charging, car connected, fault),
-  so the sensor stays on without a break when the window ends with a charger that goes on finishing, and goes off at the decision that ends it.
+  Charged in window and a fault are as the last decision found them,
+  so the sensor stays on without a break when the window ends with a charger that charges until disconnected, and goes off at the decision that finds the car disconnected.
 - State (per charger): the charger's state as on the status page, stopped while the regulation is stopped,
   with an icon and a colour that templates can read, for a dashboard.
 - Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
@@ -422,13 +424,17 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   Without dynamic charging order, a charger higher up that gets a car is activated with room made below it, if need be from the one that charges,
   and takes over when its car draws power. With dynamic charging order, the one that charges keeps its turn while it draws, since it is first in the current charging priority.
 - A charger charges only when the regulation has activated it, so a car that is connected to a deactivated charger never starts by itself.
-- Allowed to charge: no fault, not excluded, and no charging window, inside it, with an active override, or finishing.
+- Allowed to charge: no fault, not excluded, and no charging window, inside it, with an active override, or charging until disconnected.
   A charger that is not allowed has all ampere steps switched off at once and is deactivated at the first decision.
-- Finishing (per charger setting finish after window, default off): outside the window, without an active override, a charger may go on while it is activated,
-  actively charging, not excluded and car connected is true. It is regulated as inside the window, so it may get and lose amperes.
-  The first decision where one of these does not hold ends it, and a deactivation for any reason (the limit taking its last ampere, a stop, safe state, penalty,
-  a start) ends it too, since a deactivated charger is never allowed outside the window. A charger whose car does not charge at the end of the window is deactivated.
+- Charge until disconnected (per charger setting, default off, only with a charging window): a charger charged in window is allowed to charge outside its window
+  until car connected gives evidence that the car is disconnected. Why: a car cannot tell the charger that it is done, so only unplugging ends a charging session.
+  It is regulated as without a window, so it may get and lose amperes, and be deactivated and activated again as room allows; the limit taking its last ampere does not end it.
+  It shows the same charger states as without a window. A charger whose car has not charged in the window is deactivated when the window ends.
   The setting is configuration, but also a switch that may be changed while the regulation runs; it applies from the next decision without a restart.
+- Charged in window is found at every decision while the regulation runs, also in the safe state and during a penalty, from what the decision reads before its commands:
+  it starts at a decision inside the window where the charger is activated and actively charging, and ends at one where car connected gives evidence that the car is disconnected,
+  whatever the setting. It is kept in memory over stops, the safe state and penalties, and lost at a restart of HA or the integration.
+  Why the safe state and penalties: a car that is disconnected meanwhile must not leave the next car allowed.
 - Excluded switch (per charger, default off): while on, the charger never charges.
 - Deactivate on fault (per charger setting, default off): a charger has a fault while its fault flag shows one, read at each decision.
   Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,

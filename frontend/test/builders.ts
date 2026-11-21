@@ -55,7 +55,7 @@ export function charger(id: string, parts: Partial<Charger> = {}): Charger {
     actively_charging: { type: "entity", value: `binary_sensor.${id}_charging` },
     charging_power: { type: "power_sensor", value: `sensor.${id}_power` },
     charging_window: null,
-    finish_after_window: false,
+    charge_until_disconnected: false,
     override_ends: "manual",
     cloud_controlled: false,
     start_delay_s: 300,

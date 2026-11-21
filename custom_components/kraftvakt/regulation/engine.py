@@ -13,6 +13,7 @@ from .charging import (
     ChargerState,
     ChargerStatus,
     ChargingState,
+    charges_in_window,
     charging_current,
     charging_permission,
     estimated_draw_w,
@@ -23,6 +24,7 @@ from .model import (
     ActivateCharger,
     AmpereStepKey,
     ApplianceStepKey,
+    ChargedInWindowChanges,
     Command,
     DeactivateCharger,
     DecisionInput,
@@ -159,9 +161,10 @@ class RegulationEngine:
         return commands
 
     def decide(self, decision: DecisionInput) -> DecisionResult:
+        charged_in_window = self._charged_in_window(decision)
         result = self._decide(decision)
         commands = without_superseded(result.commands)
-        return replace(result, commands=self._record_commands(commands, decision.now))
+        return replace(result, commands=self._record_commands(commands, decision.now), charged_in_window=charged_in_window)
 
     def repeat_commands(
         self,
@@ -264,6 +267,25 @@ class RegulationEngine:
                 changes.armed.append(charger.id)
         return changes
 
+    def _charged_in_window(self, decision: DecisionInput) -> ChargedInWindowChanges:
+        """Return the chargers that start or stop counting as charged in their charging window, judged before the commands of the decision.
+
+        Also judged in the safe state and during a penalty, so a car that is
+        disconnected meanwhile does not leave the next car allowed.
+        """
+        changes = ChargedInWindowChanges()
+        if not self._running:
+            return changes
+        local_time = decision.now.astimezone(decision.time_zone).time()
+        for charger in self._chargers.values():
+            reading = decision.chargers.get(charger.id, ChargerReading())
+            if reading.car_disconnected:
+                if reading.charged_in_window:
+                    changes.removed.append(charger.id)
+            elif not reading.charged_in_window and charges_in_window(charger, reading, self._charging_of(charger.id).ampere_steps_on[charger.id] > 0, local_time):
+                changes.added.append(charger.id)
+        return changes
+
     def _decide_chargers(self, decision: DecisionInput, ended_overrides: list[str]) -> list[Command]:
         """Switch off what the chargers must, an exception to one step per decision."""
         local_time = decision.now.astimezone(decision.time_zone).time()
@@ -274,7 +296,6 @@ class RegulationEngine:
                 readings[charger.id],
                 readings[charger.id].window_override and charger.id not in ended_overrides,
                 local_time,
-                self._charging_of(charger.id).charges(charger.id, readings[charger.id]),
             )
             for charger in self._chargers.values()
         }

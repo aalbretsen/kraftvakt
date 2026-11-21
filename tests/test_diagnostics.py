@@ -181,6 +181,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "appliance_switches": {"a": {"excluded": False}},
         "charger_switches": {"c": {"excluded": False, "window_override": False}},
         "armed_overrides": [],
+        "charged_in_window": [],
     }
 
 

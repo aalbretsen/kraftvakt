@@ -31,6 +31,7 @@ class Settings:
         self._appliance_switches = appliance_switches_for(stored.config, stored.appliance_switches)
         self._charger_switches = charger_switches_for(stored.config, stored.charger_switches)
         self._armed_overrides: set[str] = set()
+        self._charged_in_window: set[str] = set()
         self._listeners: list[SwitchListener] = []
 
     @property
@@ -38,11 +39,12 @@ class Settings:
         return self._config
 
     def diagnostics(self) -> dict[str, Any]:
-        """Return the switches and the armed overrides; the configuration is a section of its own."""
+        """Return the switches, the armed overrides and the chargers charged in their window; the configuration is a section of its own."""
         return {
             "appliance_switches": self._appliance_switches,
             "charger_switches": self._charger_switches,
             "armed_overrides": self._armed_overrides,
+            "charged_in_window": self._charged_in_window,
         }
 
     def appliance_switches(self, appliance_id: str) -> ApplianceSwitches:
@@ -62,6 +64,17 @@ class Settings:
     @callback
     def async_arm_overrides(self, charger_ids: Iterable[str]) -> None:
         self._armed_overrides |= {charger_id for charger_id in charger_ids if self.charger_switches(charger_id).window_override}
+
+    def charged_in_window(self, charger_id: str) -> bool:
+        """Return whether the charger charged inside its charging window since the car was connected.
+
+        It is kept in memory only, so a restart forgets it.
+        """
+        return charger_id in self._charged_in_window
+
+    @callback
+    def async_update_charged_in_window(self, added: Iterable[str], removed: Iterable[str]) -> None:
+        self._charged_in_window = (self._charged_in_window | set(added)) - set(removed)
 
     async def async_set_appliance(self, appliance_id: str, *, excluded: bool) -> None:
         """Change the switches for the appliance and save them at once."""
@@ -98,6 +111,7 @@ class Settings:
         self._charger_switches = charger_switches_for(config, self._charger_switches)
         current_ends = _override_ends(config)
         self._armed_overrides = {charger_id for charger_id in self._armed_overrides if charger_id in current_ends and previous_ends.get(charger_id) is current_ends[charger_id]}
+        self._charged_in_window &= current_ends.keys()
         self._notify()
 
     @callback

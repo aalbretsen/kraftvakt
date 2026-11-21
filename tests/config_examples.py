@@ -113,7 +113,7 @@ def full_config_data() -> dict[str, Any]:
                             "states_are_true": False,
                         },
                         "charging_window": {"start": "22:00", "end": "06:00"},
-                        "finish_after_window": True,
+                        "charge_until_disconnected": True,
                         "cloud_controlled": True,
                         "start_delay_s": 120,
                         "override_ends": "car_disconnected",

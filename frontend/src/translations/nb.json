@@ -64,7 +64,6 @@
     "chargers_charging": "{charging} av {total} elbilladere lader",
     "activated_not_charging": "Aktivert: bilen trekker ikke strøm, og venter på minste ladestrøm",
     "window_overridden": "Ladetidsrommet er overstyrt",
-    "finishing_at": "Fullfører ladingen etter ladetidsrommet, med {current} A",
     "chip_charging": "Lader",
     "chip_no_car": "Bil frakoblet",
     "chip_queued": "I kø",
@@ -72,7 +71,6 @@
     "chip_excluded": "Utenfor regulering",
     "chip_window": "{start}–{end}",
     "chip_override": "Overstyrt",
-    "chip_finishing": "Fullfører",
     "chip_stopped": "Stoppet",
     "regulation_stopped": "Reguleringen er stoppet, så elbilladeren er deaktivert",
     "chip_first_decision": "Første avgjørelse",
@@ -469,11 +467,11 @@
     "unnamed_group": "Gruppe uten navn",
     "delete_group": "Slett gruppe",
     "delete_group_not_empty": "Flytt eller slett elbilladerne før du sletter gruppen.",
-    "switches_info": "Hver elbillader får tre brytere du kan bruke mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› fullfør lading etter ladetidsrom».",
+    "switches_info": "Hver elbillader får tre brytere du kan bruke mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› lad til bilen kobles fra».",
     "currents": "{min}–{max} A",
     "min_current_power": "{power} W ved minste ladestrøm",
     "window": "ladetidsrom {start}–{end}",
-    "finishes_after_window": "fullfører ladingen etter ladetidsrommet",
+    "charges_until_disconnected": "lader til bilen kobles fra",
     "always_allowed": "kan alltid lade",
     "car_from": "bil tilkoblet ifølge {source}",
     "car_template": "bil tilkoblet ifølge en egendefinert mal",
@@ -566,9 +564,9 @@
       "end": {
         "label": "Slutt"
       },
-      "finish_after_window": {
-        "label": "Fullfør lading etter ladetidsrommet",
-        "helper": "En bil som lader når ladetidsrommet slutter, kan lade videre til den stopper av seg selv. Etterpå venter den på neste ladetidsrom."
+      "charge_until_disconnected": {
+        "label": "Lad til bilen kobles fra",
+        "helper": "En bil som har brukt strøm i ladetidsrommet, kan lade videre etterpå når det er plass, til den kobles fra."
       },
       "override_ends": {
         "label": "Avslutt overstyringen",

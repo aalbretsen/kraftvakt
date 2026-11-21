@@ -78,7 +78,6 @@ def test_current_increases_one_ampere_per_ampere_step() -> None:
         current_a=8,
         bypassed=False,
         charging=True,
-        car_connected=True,
     )
 
 
@@ -702,8 +701,8 @@ def test_charger_charges_only_inside_its_charging_window() -> None:
     ]
 
 
-def window_ending_scenario(**reading) -> Scenario:
-    """Return charger c, 6 A to 10 A, charging at 8 A when its window ends at 22:03."""
+def window_ending_scenario() -> Scenario:
+    """Return charger c, 6 A to 10 A, with charge until disconnected, charging at 8 A when its window ends at 22:03."""
     scenario = Scenario(
         make_config(
             chargers=(charger("c", max_a=10, window="22:00-22:03"),),
@@ -712,47 +711,76 @@ def window_ending_scenario(**reading) -> Scenario:
         start=datetime(2026, 11, 7, 21, 58, tzinfo=UTC),
     )
     scenario.draw("c")
-    scenario.set_charger("c", finish_after_window=True, **reading)
+    scenario.set_charger("c", charge_until_disconnected=True)
     assert scenario.decide_many(0, 4) == [
         [],
         activate("c"),
         current("c", 7),
         current("c", 8),
     ]
+    assert scenario.charged_in_window == {"c"}
     return scenario
 
 
-def test_charger_finishes_ongoing_charging_after_its_window() -> None:
-    """It is regulated as before, until it stops charging."""
+def test_charger_that_charged_in_its_window_may_charge_until_the_car_is_disconnected() -> None:
+    """It is regulated as inside the window, also after the limit has taken its last ampere or the car has stopped charging."""
     scenario = window_ending_scenario()
 
     assert scenario.decide(0) == current("c", 9)
-    assert scenario.engine.chargers["c"].state is ChargerState.FINISHING
-    assert scenario.decide(ABOVE_LIMIT) == current("c", 8)
+    assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
+    assert scenario.decide(20_000) == deactivate("c")
+    assert scenario.decide(0) == activate("c")
     scenario.draw("c", drawing=False)
+    assert scenario.decide(0) == []
+    assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
+
+    scenario.set_charger("c", car_connected=False, car_disconnected=True)
     assert scenario.decide(0) == deactivate("c")
+    assert scenario.charged_in_window == set()
+    scenario.set_charger("c", car_connected=True, car_disconnected=False)
+    assert scenario.decide_many(0, 2) == [[], []]
     assert scenario.engine.chargers["c"].state is ChargerState.OUTSIDE_WINDOW
 
 
-def test_charger_is_not_turned_on_again_after_its_window() -> None:
-    """Whatever stopped it, here a disconnected car."""
+def test_charging_until_disconnected_needs_evidence_that_the_car_is_disconnected() -> None:
+    """A car sensor without a value bypasses the charger, but does not end it."""
     scenario = window_ending_scenario()
     scenario.set_charger("c", car_connected=False)
 
-    assert scenario.decide(0) == deactivate("c")
+    assert scenario.decide(0) == current("c", 6)
+    assert scenario.charged_in_window == {"c"}
     scenario.set_charger("c", car_connected=True)
-    assert scenario.decide_many(0, 3) == [[], [], []]
+    assert scenario.decide(0) == current("c", 7)
+
+
+def test_charge_until_disconnected_turned_off_ends_the_charging_after_the_window() -> None:
+    scenario = window_ending_scenario()
+    scenario.set_charger("c", charge_until_disconnected=False)
+
+    assert scenario.decide(0) == deactivate("c")
     assert scenario.engine.chargers["c"].state is ChargerState.OUTSIDE_WINDOW
 
 
-def test_charger_whose_car_does_not_charge_when_its_window_ends_does_not_finish() -> None:
+def test_charged_in_window_is_kept_in_the_safe_state_until_the_car_is_disconnected() -> None:
+    scenario = window_ending_scenario()
+
+    assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == deactivate("c")
+    assert scenario.decide(None, sensor_valid=False) == []
+    assert scenario.charged_in_window == {"c"}
+    scenario.set_charger("c", car_connected=False, car_disconnected=True)
+    assert scenario.decide(None, sensor_valid=False) == []
+    assert scenario.charged_in_window == set()
+
+
+def test_charger_whose_car_did_not_use_power_in_its_window_waits_for_the_next() -> None:
     scenario = Scenario(
         make_config(chargers=(charger("c", window="22:00-22:02"),), wait_at_limit_s=0),
         start=datetime(2026, 11, 7, 21, 59, tzinfo=UTC),
     )
-    scenario.set_charger("c", finish_after_window=True)
+    scenario.set_charger("c", charge_until_disconnected=True)
 
     assert scenario.decide_many(0, 3) == [activate("c"), [], deactivate("c")]
+    assert scenario.charged_in_window == set()
 
 
 def test_override_lasts_until_a_connected_car_is_disconnected() -> None:

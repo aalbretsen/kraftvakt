@@ -64,7 +64,6 @@
     "chargers_charging": "{charging} of {total} EV chargers are charging",
     "activated_not_charging": "Activated: the car does not draw power, so it waits at the minimum current",
     "window_overridden": "The charging window is overridden",
-    "finishing_at": "Finishing the charging that went on when the charging window ended, at {current} A",
     "chip_charging": "Charging",
     "chip_no_car": "Car disconnected",
     "chip_queued": "Queued",
@@ -72,7 +71,6 @@
     "chip_excluded": "Excluded",
     "chip_window": "{start}–{end}",
     "chip_override": "Override",
-    "chip_finishing": "Finishing",
     "chip_stopped": "Stopped",
     "regulation_stopped": "The regulation is stopped, so the EV charger is deactivated",
     "chip_first_decision": "First decision",
@@ -469,11 +467,11 @@
     "unnamed_group": "Group without a name",
     "delete_group": "Delete group",
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
-    "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› finish charging after charging window».",
+    "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› charge until car disconnected».",
     "currents": "{min}–{max} A",
     "min_current_power": "{power} W at minimum current",
     "window": "charging window {start}–{end}",
-    "finishes_after_window": "finishes ongoing charging after the window",
+    "charges_until_disconnected": "charges until the car is disconnected",
     "always_allowed": "always allowed to charge",
     "car_from": "car connected from {source}",
     "car_template": "car connected from a custom template",
@@ -566,9 +564,9 @@
       "end": {
         "label": "End"
       },
-      "finish_after_window": {
-        "label": "Finish charging after the charging window",
-        "helper": "A car that is charging when the charging window ends may go on until it stops. It then waits for the next charging window."
+      "charge_until_disconnected": {
+        "label": "Charge until the car is disconnected",
+        "helper": "A car that has used power within the charging window may go on charging after it, when there is room, until it is disconnected."
       },
       "override_ends": {
         "label": "End the override",

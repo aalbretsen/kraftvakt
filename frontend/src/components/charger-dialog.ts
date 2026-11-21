@@ -228,7 +228,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
           { name: "end", required: true, selector: { time: { no_second: true } } },
         ],
       },
-      { name: "finish_after_window", selector: { boolean: {} } },
+      { name: "charge_until_disconnected", selector: { boolean: {} } },
       {
         name: "override_ends",
         required: true,
@@ -243,7 +243,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     const data = {
       start: window?.start ?? "",
       end: window?.end ?? "",
-      finish_after_window: this.draft.finish_after_window,
+      charge_until_disconnected: this.draft.charge_until_disconnected,
       override_ends: this.draft.override_ends,
     };
     return this.renderForm(
@@ -252,7 +252,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       (value) =>
         this.changeDraft({
           charging_window: { start: wholeMinutes(value.start), end: wholeMinutes(value.end) },
-          finish_after_window: !!value.finish_after_window,
+          charge_until_disconnected: !!value.charge_until_disconnected,
           override_ends: (value.override_ends as OverrideEnd | undefined) ?? this.draft.override_ends,
         }),
       data,

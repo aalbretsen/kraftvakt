@@ -19,8 +19,11 @@ class ChargerReading:
     that they are false. `charging_power_w` is the power the charger reports,
     None without a valid value. `override_armed` is whether what ends the
     override has been seen at a decision since it was switched on: the car
-    connected, or the charger activated and actively charging. `fault` is
-    whether a fault flag shows a fault while the charger is deactivated on fault.
+    connected, or the charger activated and actively charging.
+    `charged_in_window` is whether the charger was activated and actively
+    charging at a decision inside its charging window since the car was
+    connected. `fault` is whether a fault flag shows a fault while the charger
+    is deactivated on fault.
     """
 
     actively_charging: bool = False
@@ -31,7 +34,8 @@ class ChargerReading:
     excluded: bool = False
     window_override: bool = False
     override_armed: bool = False
-    finish_after_window: bool = False
+    charge_until_disconnected: bool = False
+    charged_in_window: bool = False
     fault: bool = False
 
 
@@ -43,14 +47,14 @@ class ChargingPermission(StrEnum):
     OUTSIDE_WINDOW = "outside_window"
     WINDOW = "window"
     OVERRIDE = "override"
-    FINISHING = "finishing"
+    UNTIL_DISCONNECTED = "until_disconnected"
 
     @property
     def allowed(self) -> bool:
         return self in (
             ChargingPermission.WINDOW,
             ChargingPermission.OVERRIDE,
-            ChargingPermission.FINISHING,
+            ChargingPermission.UNTIL_DISCONNECTED,
         )
 
 
@@ -65,7 +69,6 @@ class ChargerState(StrEnum):
     OUTSIDE_WINDOW = "outside_window"
     QUEUED = "queued"
     STARTING = "starting"
-    FINISHING = "finishing"
     CHARGING = "charging"
     ACTIVATED = "activated"
     OVERRIDE = "override"
@@ -85,7 +88,6 @@ class ChargerStatus:
     current_a: int | None
     bypassed: bool
     charging: bool
-    car_connected: bool
     starting_until: datetime | None = None
 
 
@@ -156,19 +158,19 @@ def _override_may_end(charger: Charger, reading: ChargerReading) -> bool:
     return charger.charging_window is not None and charger.override_ends is not OverrideEnd.MANUAL and reading.window_override and not reading.fault
 
 
+def charges_in_window(charger: Charger, reading: ChargerReading, activated: bool, local_time: time) -> bool:
+    """Return whether the charger is activated and actively charging inside its charging window."""
+    window = charger.charging_window
+    return window is not None and in_charging_window(window, local_time) and activated and reading.actively_charging
+
+
 def charging_permission(
     charger: Charger,
     reading: ChargerReading,
     override_active: bool,
     local_time: time,
-    charging: bool,
 ) -> ChargingPermission:
-    """Return whether the charger may charge, and why.
-
-    `charging` is whether the charger is activated and charges actively.
-    Finishing needs that at every decision since its window ended, so a stop
-    for any reason ends it until the window allows charging again.
-    """
+    """Return whether the charger may charge, and why."""
     window = charger.charging_window
     if reading.fault:
         return ChargingPermission.FAULT
@@ -178,8 +180,8 @@ def charging_permission(
         return ChargingPermission.WINDOW
     if override_active:
         return ChargingPermission.OVERRIDE
-    if reading.finish_after_window and charging and reading.car_connected:
-        return ChargingPermission.FINISHING
+    if reading.charge_until_disconnected and reading.charged_in_window and not reading.car_disconnected:
+        return ChargingPermission.UNTIL_DISCONNECTED
     return ChargingPermission.OUTSIDE_WINDOW
 
 
@@ -188,22 +190,22 @@ def charging_allowed_now(
     status: ChargerStatus | None,
     excluded: bool,
     window_override: bool,
+    charged_in_window: bool,
     local_time: time,
 ) -> bool:
     """Return whether the charger may charge at `local_time`.
 
-    The charging window follows the clock, while finishing and a fault are
-    judged from what the last decision read, so a charger that was charging
-    when its window ended stays allowed until a decision ends the finishing.
+    The charging window follows the clock, while a fault is judged from what
+    the last decision read.
     """
     reading = ChargerReading(
         fault=status is not None and status.state is ChargerState.FAULT,
-        car_connected=status is not None and status.car_connected,
         excluded=excluded,
         window_override=window_override,
-        finish_after_window=charger.finish_after_window,
+        charge_until_disconnected=charger.charge_until_disconnected,
+        charged_in_window=charged_in_window,
     )
-    return charging_permission(charger, reading, window_override, local_time, status is not None and status.charging).allowed
+    return charging_permission(charger, reading, window_override, local_time).allowed
 
 
 @dataclass(slots=True)
@@ -383,7 +385,6 @@ class ChargingState:
             current_a=charging_current(charger, steps_on) if steps_on else None,
             bypassed=charger.id in self.bypassed,
             charging=charging,
-            car_connected=reading.car_connected,
             starting_until=self.starting.get(charger.id),
         )
 
@@ -403,8 +404,6 @@ class ChargingState:
             return ChargerState.QUEUED
         if charger_id in self.starting:
             return ChargerState.STARTING
-        if permission is ChargingPermission.FINISHING:
-            return ChargerState.FINISHING
         if charging:
             return ChargerState.CHARGING
         if activated:

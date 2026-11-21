@@ -288,8 +288,8 @@ class KraftvaktRuntime:
             return
         await self._async_change_config(replace(self.config, general=replace(general, power_limit_w=power_limit_w)))
 
-    async def async_set_finish_after_window(self, charger_id: str, finish_after_window: bool) -> None:
-        """Save whether the charger finishes ongoing charging after its window.
+    async def async_set_charge_until_disconnected(self, charger_id: str, charge_until_disconnected: bool) -> None:
+        """Save whether the charger may charge until the car is disconnected after its window.
 
         It can be changed while the regulation runs, and applies from the next
         decision without a restart.
@@ -298,9 +298,9 @@ class KraftvaktRuntime:
             (charger for charger in self.config.chargers if charger.id == charger_id),
             None,
         )
-        if charger is None or charger.finish_after_window == finish_after_window:
+        if charger is None or charger.charge_until_disconnected == charge_until_disconnected:
             return
-        await self._async_change_config(self.config.with_charger(replace(charger, finish_after_window=finish_after_window)))
+        await self._async_change_config(self.config.with_charger(replace(charger, charge_until_disconnected=charge_until_disconnected)))
 
     async def _async_change_config(self, config: KraftvaktConfig) -> None:
         """Save a change made by an entity, also while the regulation runs."""
@@ -351,6 +351,7 @@ class KraftvaktRuntime:
         for charger_id in result.overrides.ended:
             self._settings.async_reset_window_override(charger_id)
         self._settings.async_arm_overrides(result.overrides.armed)
+        self._settings.async_update_charged_in_window(result.charged_in_window.added, result.charged_in_window.removed)
         self._record_decision(decision, result.commands)
         self._execute(result.commands)
 

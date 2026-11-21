@@ -64,7 +64,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `decision_clock.py` | Counts the closed windows to decisions, and when the next decision and the one that ends a waiting time are expected. Pure Python. |
 | `decision_input.py` | Reads the conditions, the chargers and the user's switches into the input of a decision. |
 | `runtime.py` | Connects the engine to HA: makes a decision when the decision clock says so, runs the commands in a background task, repeats commands, starts when HA has started, saves configuration changes, keeps the last decisions and failed actions for the diagnostics, and gives the state of each of its parts for them. |
-| `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and which window overrides are armed (memory only). |
+| `settings.py` | The one owner of the stored configuration and the positions of the user's switches, saved together, and which window overrides are armed and which chargers charged in window (memory only). |
 | `websocket_api.py` | The WebSocket commands. |
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
@@ -87,11 +87,11 @@ The format is defined by the dataclasses and their serialization in `config_mode
 - `charger_groups`: each with an id, a name, one at a time, and its chargers in charging priority, each with an id, its device, how it is switched
   (`switched_by`: `on_off_entity`, `actions` or `current`), its on/off entity, the activate, deactivate and set-current actions, min and max current,
   power at minimum current (`min_current_power_w`), car connected, car charging (`actively_charging`), the charging power, an optional charging window,
-  finish after window, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flag.
+  charge until disconnected, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flag.
   A group has its name, one at a time and dynamic charging order.
   A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
-- `charger_switches`: the positions of the two switches per charger. Finish after window is a field of the charger, not a switch position.
+- `charger_switches`: the positions of the two switches per charger. Charge until disconnected is a field of the charger, not a switch position.
 
 The store and the config entry are at version 1, without migrations.
 Before the first stable release, the stored format and the entities change without migrations, and installations are set up again from scratch.
@@ -202,9 +202,9 @@ Every issue code needs a text in the panel's translations.
   An entity suggests its object id (the key unless given), which HA prefixes with the device name. The names are grouped the same way, in every language.
 - The averages, power free and the power limit are power in W, also as shown. The overconsumption is energy in Wh without a state class, since it is not a total.
   The waiting times are durations in seconds.
-- The power limit entity and the finish after window switch of each charger change the stored configuration, also while running.
+- The power limit entity and the charge until disconnected switch of each charger change the stored configuration, also while running.
   They save at once, through the settings, so configuration and switches are saved together.
-  While running, the engine gets the new power limit for the next decision, and finish after window reaches it in the charger readings.
+  While running, the engine gets the new power limit for the next decision, and charge until disconnected reaches it in the charger readings.
 - The runtime counts every change of the stored configuration in a config version, sent in the status, so the panel fetches the configuration again when an entity has changed it.
 - The regulation switch has no stored position; it is the same function as start and stop in the panel.
   With an incomplete configuration, turning it on raises a translated `ServiceValidationError` and it stays off.
@@ -213,7 +213,7 @@ Every issue code needs a text in the panel's translations.
   Removed entities are looked for at every start of the regulation and after every failed action.
   A changed update interval of the power sensor is not persistent: it is found again after a restart.
 - The waiting time next turn-on sensor is disabled by default.
-- Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a finish after window switch (configuration,
+- Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a charge until disconnected switch (configuration,
   see above), a binary sensor for allowed to charge and a state sensor, keyed by the item's id, with an entity id from the slug of the item's name.
   The positions of the switches are stored.
   The charger entities do not depend on the group, so moving a charger to another group keeps them.
@@ -226,7 +226,7 @@ Every issue code needs a text in the panel's translations.
   and grey and amber as an icon read better on a dark theme.
   Red is for what keeps a charger from charging until someone acts: stopped and fault.
   Amber is for a car that is connected and waits to be allowed: outside its charging window, queued and deactivated.
-  Green is for an activated charger: activated, charging and finishing.
+  Green is for an activated charger: activated and charging.
   The panel's chips for a charger use the same icons and colours, and its tests check them against a fixture made from the sensor's table.
 - The allowed to charge binary sensor uses the engine's own permission rule with the clock, the switches and the charger's status after the last decision, updated by the settings,
   the status of the regulation and at every whole minute, since windows are in whole minutes.
@@ -265,7 +265,7 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: stopped (while the regulation is stopped), fault, first decision (before the first decision after a start),
-  no car connected (bypassed), excluded, outside its charging window, queued (waiting and not activated), starting, finishing, charging, activated,
+  no car connected (bypassed), excluded, outside its charging window, queued (waiting and not activated), starting, charging, activated,
   override (allowed only by the override and deactivated), deactivated. It is worked out in the engine from the last decision,
   before its commands, so a charger activated at a decision shows its new state at the next one.
   Stopped comes before fault, since the fault flag is not read while the regulation is stopped.

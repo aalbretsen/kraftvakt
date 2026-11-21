@@ -30,7 +30,7 @@ const CHARGER_FIELDS = [
   "cloud_controlled",
   "start_delay_s",
   "charging_window",
-  "finish_after_window",
+  "charge_until_disconnected",
   "override_ends",
   "deactivate_on_fault",
   "fault_flag",
@@ -136,8 +136,8 @@ export class KraftvaktChargingPage extends ConfigPage {
       this.localize("charging.min_current_power", { power: formatNumber(language, charger.min_current_power_w, 0) }),
       charger.charging_window ? this.localize("charging.window", { ...charger.charging_window }) : this.localize("charging.always_allowed"),
     ];
-    if (charger.charging_window && charger.finish_after_window) {
-      details.push(this.localize("charging.finishes_after_window"));
+    if (charger.charging_window && charger.charge_until_disconnected) {
+      details.push(this.localize("charging.charges_until_disconnected"));
     }
     if (charger.car_connected) {
       details.push(charger.car_connected.type === "entity" ? this.localize("charging.car_from", { source: charger.car_connected.value }) : this.localize("charging.car_template"));
@@ -246,7 +246,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       actively_charging: null,
       charging_power: null,
       charging_window: null,
-      finish_after_window: false,
+      charge_until_disconnected: false,
       override_ends: defaults.override_ends,
       cloud_controlled: false,
       start_delay_s: defaults.start_delay_s,

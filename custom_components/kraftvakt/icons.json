@@ -64,10 +64,10 @@
           "on": "mdi:clock-fast"
         }
       },
-      "charger_finish_after_window": {
-        "default": "mdi:clock-outline",
+      "charger_charge_until_disconnected": {
+        "default": "mdi:power-plug-outline",
         "state": {
-          "on": "mdi:clock-end"
+          "on": "mdi:power-plug"
         }
       }
     }

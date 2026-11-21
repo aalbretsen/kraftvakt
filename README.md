@@ -160,7 +160,8 @@ With dynamic charging order, an EV charger that stops charging, for whatever rea
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.
 
 - **Charging window:** the EV charger charges only within this time each day, in the time zone of Home Assistant.
-  With **Finish charging after the charging window**, a car that is charging when the window ends may go on until it stops.
+  With **Charge until the car is disconnected**, a car that has used power within the charging window may go on charging after it,
+  when there is room, until it is disconnected. Kraftvakt forgets that the car has used power at a restart of Home Assistant.
 - **‹charger› override charging window** lets the EV charger charge outside the charging window. It only allows charging: it does not move the EV charger ahead of the others.
 - **Cloud-controlled EV charger:** gets no repeated commands while no car is connected, and its power at minimum current is kept free for the **Start delay** after it is activated.
   The status page shows it as **Starting** meanwhile.
@@ -209,8 +210,8 @@ All entities belong to the service device **Kraftvakt**, whose page shows them u
 | **EV charger** | |
 | `switch.kraftvakt_charger_<charger>_excluded` (‹charger› excluded from regulation) | Configuration. One per EV charger. Turn on to take the EV charger out of the regulation, so the car never charges and the EV charger gets no repeated commands. |
 | `switch.kraftvakt_charger_<charger>_window_override` (‹charger› override charging window) | Configuration. One per EV charger. Turn on to let the EV charger charge outside the charging window. Turns itself off as chosen in **End the override**. |
-| `switch.kraftvakt_charger_<charger>_finish_after_window` (‹charger› finish charging after charging window) | Configuration. One per EV charger. The same setting as **Finish charging after the charging window** in the panel. Can be changed while the regulation runs. |
-| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, has no fault, and is inside its charging window, has the override on, or is finishing the charging after the window. |
+| `switch.kraftvakt_charger_<charger>_charge_until_disconnected` (‹charger› charge until car disconnected) | Configuration. One per EV charger. The same setting as **Charge until the car is disconnected** in the panel. Can be changed while the regulation runs. |
+| `binary_sensor.kraftvakt_charger_<charger>_allowed_to_charge` (‹charger› allowed to charge) | Diagnostic. One per EV charger. On while the EV charger may charge: it is not excluded, has no fault, and is inside its charging window, has the override on, or has charge until the car is disconnected on and its car has used power within the window and is not disconnected. |
 | `sensor.kraftvakt_charger_<charger>_state` (‹charger› state) | Diagnostic. One per EV charger. The state of the EV charger as on the status page, such as charging, queued or car disconnected, and stopped while the regulation is stopped. The attributes `icon`, `color` and `badge_color` follow the state, for templates in a dashboard: `color` for the icon, and `badge_color` for a circle behind the icon in white, darker for the grey and amber states. The colours are colour names of Home Assistant. |
 
 The sensors are updated every time a regulation window closes. The sensors that depend on the averages are unavailable until the first regulation window has closed,
@@ -219,7 +220,7 @@ and after two regulation windows in a row closed without a valid value from the 
 When Kraftvakt starts, the hour before is read from the history of the power sensor in the recorder, so the tariff average is right also just after a restart.
 When Home Assistant has been paused, for example on a host that sleeps, the regulation windows it missed are skipped, with a warning in the log.
 
-The power limit, the switches and **finish charging after charging window** can be changed while the regulation runs, and apply from the next decision without a restart.
+The power limit, the switches and **charge until car disconnected** can be changed while the regulation runs, and apply from the next decision without a restart.
 Their state is stored at once and kept over a restart. The entities of an EV charger are kept when it is moved to another group.
 
 The entity IDs are the same in every language. The names follow the language of Home Assistant:

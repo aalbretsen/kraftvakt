@@ -60,7 +60,6 @@
           "outside_window": "Utenfor ladetidsrom",
           "queued": "I kø",
           "starting": "Starter",
-          "finishing": "Fullfører",
           "charging": "Lader",
           "activated": "Aktivert",
           "override": "Overstyrt",
@@ -81,8 +80,8 @@
       "charger_window_override": {
         "name": "{charger} overstyr ladetidsrom"
       },
-      "charger_finish_after_window": {
-        "name": "{charger} fullfør lading etter ladetidsrom"
+      "charger_charge_until_disconnected": {
+        "name": "{charger} lad til bilen kobles fra"
       }
     }
   },

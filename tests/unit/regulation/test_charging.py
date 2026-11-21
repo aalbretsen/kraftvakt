@@ -19,6 +19,7 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargingPermission,
     ChargingState,
     ampere_step_count,
+    charges_in_window,
     charging_allowed_now,
     charging_current,
     charging_permission,
@@ -118,43 +119,51 @@ def test_override_arms_when_the_car_is_connected_or_charging() -> None:
 def test_charging_permission() -> None:
     night = charger(charging_window=NIGHT)
     excluded = ChargerReading(excluded=True)
-    finishing = replace(CHARGING, finish_after_window=True)
+    until_disconnected = ChargerReading(charge_until_disconnected=True, charged_in_window=True)
 
-    assert charging_permission(charger(), IDLE, False, time(12), False) == "window"
-    assert charging_permission(charger(), excluded, True, time(12), True) == "excluded"
-    assert charging_permission(night, replace(excluded, fault=True), True, time(23), True) == "fault"
-    assert charging_permission(night, IDLE, False, time(23), False) == "window"
-    assert charging_permission(night, IDLE, True, time(23), False) == "window"
-    assert charging_permission(night, IDLE, True, time(12), False) == "override"
-    assert charging_permission(night, IDLE, False, time(12), True) == "outside_window"
-    assert charging_permission(night, finishing, False, time(12), True) == "finishing"
-    assert charging_permission(night, finishing, False, time(12), False) == "outside_window"
+    assert charging_permission(charger(), IDLE, False, time(12)) == "window"
+    assert charging_permission(charger(), excluded, True, time(12)) == "excluded"
+    assert charging_permission(night, replace(excluded, fault=True), True, time(23)) == "fault"
+    assert charging_permission(night, IDLE, False, time(23)) == "window"
+    assert charging_permission(night, IDLE, True, time(23)) == "window"
+    assert charging_permission(night, IDLE, True, time(12)) == "override"
+    assert charging_permission(night, CHARGING, False, time(12)) == "outside_window"
+    assert charging_permission(night, until_disconnected, False, time(12)) == "until_disconnected"
+    assert charging_permission(night, replace(until_disconnected, charged_in_window=False), False, time(12)) == "outside_window"
+    assert charging_permission(night, replace(until_disconnected, charge_until_disconnected=False), False, time(12)) == "outside_window"
 
 
-def test_finishing_ends_without_a_car() -> None:
-    no_car = ChargerReading(actively_charging=True, finish_after_window=True, car_connected=False)
+def test_charging_until_disconnected_ends_only_with_evidence_that_the_car_is_disconnected() -> None:
+    until_disconnected = ChargerReading(charge_until_disconnected=True, charged_in_window=True)
+    night = charger(charging_window=NIGHT)
 
-    assert charging_permission(charger(charging_window=NIGHT), no_car, False, time(12), True) == "outside_window"
+    assert charging_permission(night, until_disconnected, False, time(12)) == "until_disconnected"
+    assert charging_permission(night, replace(until_disconnected, car_disconnected=True), False, time(12)) == "outside_window"
+
+
+def test_charges_in_window() -> None:
+    night = charger(charging_window=NIGHT)
+
+    assert charges_in_window(night, CHARGING, True, time(23))
+    assert not charges_in_window(night, CHARGING, True, time(12))
+    assert not charges_in_window(night, CHARGING, False, time(23))
+    assert not charges_in_window(night, IDLE, True, time(23))
+    assert not charges_in_window(charger(), CHARGING, True, time(23))
 
 
 def test_charging_allowed_now() -> None:
-    """Finishing is judged from the status after the last decision."""
-    night = charger(charging_window=NIGHT, finish_after_window=True)
-    charging = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, True)
-    no_car = ChargerStatus(ChargerState.CHARGING, 2, 7, False, True, False)
-    deactivated = ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True)
-    fault = ChargerStatus(ChargerState.FAULT, 0, None, False, False, True)
+    """A fault is judged from the status after the last decision."""
+    night = charger(charging_window=NIGHT, charge_until_disconnected=True)
+    fault = ChargerStatus(ChargerState.FAULT, 0, None, False, False)
 
-    assert charging_allowed_now(charger(), None, False, False, time(12))
-    assert not charging_allowed_now(charger(), None, True, False, time(12))
-    assert charging_allowed_now(night, None, False, True, time(12))
-    assert not charging_allowed_now(night, None, False, False, time(12))
-    assert charging_allowed_now(night, charging, False, False, time(12))
-    assert not charging_allowed_now(night, charging, True, False, time(12))
-    assert not charging_allowed_now(night, no_car, False, False, time(12))
-    assert not charging_allowed_now(night, deactivated, False, False, time(12))
-    assert not charging_allowed_now(charger(charging_window=NIGHT), charging, False, False, time(12))
-    assert not charging_allowed_now(charger(), fault, False, False, time(12))
+    assert charging_allowed_now(charger(), None, False, False, False, time(12))
+    assert not charging_allowed_now(charger(), None, True, False, False, time(12))
+    assert charging_allowed_now(night, None, False, True, False, time(12))
+    assert not charging_allowed_now(night, None, False, False, False, time(12))
+    assert charging_allowed_now(night, None, False, False, True, time(12))
+    assert not charging_allowed_now(night, None, True, False, True, time(12))
+    assert not charging_allowed_now(charger(charging_window=NIGHT), None, False, False, True, time(12))
+    assert not charging_allowed_now(charger(), fault, False, False, False, time(12))
 
 
 @pytest.mark.parametrize(
@@ -376,15 +385,15 @@ def test_status_of_each_charger() -> None:
     )
 
     assert state.status(group) == {
-        "a": ChargerStatus(ChargerState.CHARGING, 4, 9, False, True, True),
-        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False, True),
-        "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
-        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False, True),
-        "e": ChargerStatus(ChargerState.ACTIVATED, 1, 6, False, False, True),
-        "f": ChargerStatus(ChargerState.OVERRIDE, 0, None, False, False, True),
-        "g": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
-        "h": ChargerStatus(ChargerState.FAULT, 0, None, True, False, False),
-        "i": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False, False),
+        "a": ChargerStatus(ChargerState.CHARGING, 4, 9, False, True),
+        "b": ChargerStatus(ChargerState.OUTSIDE_WINDOW, 0, None, False, False),
+        "c": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False),
+        "d": ChargerStatus(ChargerState.DEACTIVATED, 0, None, False, False),
+        "e": ChargerStatus(ChargerState.ACTIVATED, 1, 6, False, False),
+        "f": ChargerStatus(ChargerState.OVERRIDE, 0, None, False, False),
+        "g": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False),
+        "h": ChargerStatus(ChargerState.FAULT, 0, None, True, False),
+        "i": ChargerStatus(ChargerState.NO_CAR, 0, None, True, False),
     }
 
 
@@ -409,7 +418,7 @@ def test_cloud_controlled_charger_holds_its_power_in_its_start_delay_until_it_ch
     evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
     assert ("a" in state.starting) is starting
     if starting:
-        assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, True, starting_until=NOW + timedelta(minutes=5))
+        assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, starting_until=NOW + timedelta(minutes=5))
     evaluate(state, configured, {"a": CHARGING}, now=NOW + 2 * WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
     assert state.starting == {}
     evaluate(state, configured, {"a": IDLE}, now=NOW + 5 * WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)

@@ -81,8 +81,8 @@ class ChargerAllowedBinarySensor(ChargerEntity, BinarySensorEntity):
 
     The charging window and the switches follow the clock and the settings,
     so it is also right while the regulation is stopped. A charging window is
-    in whole minutes, so it is updated at every whole minute, and finishing
-    is updated at the decisions.
+    in whole minutes, so it is updated at every whole minute, and whether the
+    charger charged in its window is updated at the decisions.
     """
 
     settings = ("allowed_to_charge",)
@@ -109,5 +109,6 @@ class ChargerAllowedBinarySensor(ChargerEntity, BinarySensorEntity):
             self._runtime.chargers.get(self._item_id),
             switches.excluded,
             switches.window_override,
+            self._settings.charged_in_window(self._item_id),
             dt_util.now().time(),
         )

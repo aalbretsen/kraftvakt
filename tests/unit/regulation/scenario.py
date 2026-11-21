@@ -66,7 +66,8 @@ class Scenario:
 
     Every charger reads as idle with a car connected until the test changes it
     with `set_charger` or `draw`, and only the appliances in `excluded` are
-    excluded until the test changes it with `exclude`.
+    excluded until the test changes it with `exclude`. Whether a charger
+    charged in its window is kept from the decisions, as the runtime does.
     """
 
     def __init__(
@@ -84,6 +85,7 @@ class Scenario:
         self.chargers = {charger.id: ChargerReading(car_connected=True) for charger in config.chargers}
         self.excluded_appliances = frozenset(excluded)
         self.overrides = OverrideChanges()
+        self.charged_in_window: set[str] = set()
         self.start_commands = self.engine.start(self.now, self.excluded_appliances)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
@@ -104,7 +106,7 @@ class Scenario:
             self.set_charger(charger_id, actively_charging=False, charging_power_w=0.0)
 
     def _readings(self) -> dict[str, ChargerReading]:
-        readings = dict(self.chargers)
+        readings = {charger_id: replace(reading, charged_in_window=charger_id in self.charged_in_window) for charger_id, reading in self.chargers.items()}
         for charger_id in self.drawing:
             charger = self.configured_chargers[charger_id]
             current_a = self.engine.chargers[charger_id].current_a
@@ -155,6 +157,7 @@ class Scenario:
             )
         )
         self.overrides = result.overrides
+        self.charged_in_window = (self.charged_in_window | set(result.charged_in_window.added)) - set(result.charged_in_window.removed)
         return result.commands
 
     def repeat(self, after: timedelta) -> list[Command]:
