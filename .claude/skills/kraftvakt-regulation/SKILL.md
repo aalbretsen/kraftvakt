@@ -435,6 +435,8 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   it starts at a decision inside the window where the charger is activated and actively charging, and ends at one where car connected gives evidence that the car is disconnected,
   whatever the setting. It is kept in memory over stops, the safe state and penalties, and lost at a restart of HA or the integration.
   Why the safe state and penalties: a car that is disconnected meanwhile must not leave the next car allowed.
+  No decisions are made while the regulation is stopped, so a car disconnected then is not noticed, and a car connected before the start is allowed until it is disconnected.
+  Why it is kept anyway: clearing it at a stop would end the charging of a car that stays connected over a stop and start.
 - Excluded switch (per charger, default off): while on, the charger never charges.
 - Deactivate on fault (per charger setting, default off): a charger has a fault while its fault flag shows one, read at each decision.
   Only evidence is a fault (see Ground rules). Why: a charger controlled through a cloud service reports unavailable while the service is down,
