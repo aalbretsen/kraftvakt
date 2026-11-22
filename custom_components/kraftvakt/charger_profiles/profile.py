@@ -9,6 +9,7 @@ from typing import Any, Final
 from ..config_model import ActionMode, Charger, ConditionType, SwitchedBy
 
 DEFAULT_CHARGER: Final = Charger(id="")
+"""What a new charger starts with, and the default profile fills for a device without a profile."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +64,8 @@ class ChargerProfile:
 
     A profile has a charging power, and may have a car charging condition (`actively_charging`).
     It has an on/off entity when it is switched by one, and actions to activate and deactivate when it is switched by actions.
-    `cloud_controlled` is for chargers controlled through a cloud service, with its start delay.
+    `cloud_controlled` is for chargers controlled through a cloud service. `start_delay_s` is how long the car may take to draw power,
+    the default profile's when the profile leaves it out.
     A profile with a fault flag also sets whether the charger is deactivated on fault.
     """
 

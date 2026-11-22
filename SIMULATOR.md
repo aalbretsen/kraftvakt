@@ -30,7 +30,7 @@ Add the integration under **Settings → Devices & services**, and add one devic
   Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
   Turn **Car fully charged** on and off to test a full car that stays activated at the minimum current and draws power again, as when it heats in the morning.
   With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
-  as with a charger controlled through a cloud service; set the same or a longer start delay on a cloud-controlled EV charger in Kraftvakt.
+  as with a charger controlled through a cloud service; set the same or a longer start delay on the EV charger in Kraftvakt.
 
 Heating devices, thermostats and EV chargers also have the switch **Unplugged**. While it is on, the device uses nothing, whatever the other switches are set to.
 The cycle of a heating device runs on while it is unplugged.

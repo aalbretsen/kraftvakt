@@ -39,6 +39,7 @@ from .model import (
     TurnOffAppliance,
     TurnOnAppliance,
     Waiting,
+    WaitingReason,
     without_superseded,
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
@@ -286,7 +287,19 @@ class RegulationEngine:
     def _damping(self, key: StepKey) -> Waiting | None:
         """Return the damping of an ampere step taken back for power, while it lasts."""
         since = self._state.damped_since.get(key) if isinstance(key, AmpereStepKey) else None
-        return None if since is None else Waiting(key, since, since + self._ampere_damping_time)
+        return None if since is None else Waiting(key, since, since + self._ampere_damping_time, WaitingReason.DAMPING)
+
+    def _start_delay(self, steps: list[Step], place: int, key: StepKey) -> Waiting | None:
+        """Return the start delay of a starting charger whose first ampere step is above the place, unless `key` is one of its own ampere steps."""
+        for step in steps[:place]:
+            above = step.key
+            if not isinstance(above, AmpereStepKey) or above.index > 0 or (isinstance(key, AmpereStepKey) and key.charger_id == above.charger_id):
+                continue
+            charging = self._charging_of(above.charger_id)
+            until = charging.starting.get(above.charger_id)
+            if until is not None:
+                return Waiting(above, charging.activated_at[above.charger_id], until, WaitingReason.START_DELAY)
+        return None
 
     def _new_state(self, started_at: datetime | None = None, excluded_appliances: frozenset[str] = frozenset()) -> RegulationState:
         return RegulationState(
@@ -546,9 +559,9 @@ class RegulationEngine:
             self._state.waiting = None
             return []
         candidate = steps[place]
-        damping = self._damping(candidate.key)
-        if damping is not None:
-            self._state.waiting = damping
+        holding_back = self._start_delay(steps, place, candidate.key) or self._damping(candidate.key)
+        if holding_back is not None:
+            self._state.waiting = holding_back
             return []
         held_w = _held_reserves_w(steps, place)
         if not self._may_turn_on(candidate, average_w + held_w):
@@ -585,8 +598,8 @@ class RegulationEngine:
         above its minimum.
         Nothing above the group may be waiting for room, and no charger of the
         group may be starting, since its charging power would then be from
-        before the last switch-over. A queued charger that would be activated
-        again waits its waiting time instead.
+        before the last switch-over, nor a charger above the group. A queued
+        charger that would be activated again waits its waiting time instead.
         """
         for group in self._groups:
             charging = self._charging(group.id)
@@ -597,7 +610,7 @@ class RegulationEngine:
             if place is not None and place < group_places[0]:
                 continue
             key = AmpereStepKey(queued[0], 0)
-            if self._state.activations.upcoming_repeat(queued[0], now):
+            if self._state.activations.upcoming_repeat(queued[0], now) or self._start_delay(steps, group_places[0], key):
                 continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
             freed_w = sum(self._draw_above_minimum_w(charger_id) for charger_id in above_minimum)
@@ -636,7 +649,9 @@ class RegulationEngine:
         can be turned on while it waits, so waiting changes nothing, and they
         give way if it takes the average above the limit. The first ampere step
         of a charger waits the waiting time for EV chargers, the charger counted
-        as one unit for the growth on repeated turn-on.
+        as one unit for the growth on repeated turn-on. A step with a power
+        reserve counts it in the curve, so it waits by how close it would bring
+        the average to the limit.
         """
         step = steps[place]
         key = step.key
@@ -650,7 +665,7 @@ class RegulationEngine:
         started_at = waiting.started_at if waiting is not None and waiting.key == step.key else now
         general = self._config.general
         required = waiting_time(
-            average_w,
+            average_w + (step.power_reserve_w or 0),
             general.power_limit_w,
             timedelta(seconds=self._charger_wait_at_limit_s if is_ampere_step else general.wait_at_limit_s),
             self._waiting_curve,

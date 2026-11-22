@@ -379,7 +379,7 @@ class Charger:
     charge_until_disconnected: bool = False
     override_ends: OverrideEnd = OverrideEnd.MANUAL
     cloud_controlled: bool = False
-    start_delay_s: int = 300
+    start_delay_s: int = 180
     deactivate_on_fault: bool = False
     fault_flag: Condition | None = None
 

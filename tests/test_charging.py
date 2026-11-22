@@ -68,6 +68,7 @@ def charger_data(charger_id: str = "c1", entity_id: str = CHARGER) -> dict[str, 
         "car_connected": {"type": "entity", "value": CAR_CONNECTED},
         "charging_power": {"type": "power_sensor", "value": CHARGER_POWER},
         "min_current_power_w": 4000,
+        "start_delay_s": 0,
     }
 
 
@@ -264,7 +265,7 @@ async def test_charger_activated_again_waits_the_waiting_time_for_ev_chargers_an
     config,
     setup_kraftvakt,
 ) -> None:
-    """Deactivated above the limit, it waits twice the waiting time at the limit by the curve before it is activated again: 30 s at 7000 W."""
+    """Deactivated above the limit, it waits twice the waiting time at the limit by the curve before it is activated again: 30 s at 5000 W with its own 2000 W."""
     config["general"]["wait_at_limit_s"] = 60
     config["charger_groups"][0]["chargers"][0]["min_current_power_w"] = 2000
     set_power(hass, CHARGER_POWER, "4100")
@@ -275,13 +276,14 @@ async def test_charger_activated_again_waits_the_waiting_time_for_ev_chargers_an
     assert actions[-2:] == ["current 6", f"off {CHARGER}"]
     actions.clear()
 
-    set_power(hass, POWER_SENSOR, "7000")
+    set_power(hass, POWER_SENSOR, "5000")
     await advance(hass, freezer)
     waiting_since = dt_util.utcnow()
     assert actions == []
     row = status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]
     assert row["waiting_since"] == dt_util.as_local(waiting_since).isoformat()
     assert row["waiting_until"] == dt_util.as_local(waiting_since + timedelta(seconds=30)).isoformat()
+    assert row["waiting_reason"] == "waiting_time"
     await advance(hass, freezer)
     assert actions == ["current 6", f"on {CHARGER}"]
 
@@ -546,16 +548,18 @@ async def test_cloud_controlled_charger_gets_no_repeated_commands_until_a_car_is
     assert actions == ["current 6", f"off {CHARGER}"]
 
 
-async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as_not_charging(
+async def test_starting_charger_shows_its_start_delay_while_it_holds_back_the_steps_below(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     config,
     actions,
     setup_kraftvakt,
 ) -> None:
-    charger = config["charger_groups"][0]["chargers"][0]
-    charger["cloud_controlled"] = True
-    charger["start_delay_s"] = 180
+    """The heater below gets the power only when the start delay has ended, since the car does not draw it."""
+    config["charger_groups"][0]["chargers"][0]["start_delay_s"] = 180
+    config["appliances"] = [{"id": "a", "entity_id": "input_boolean.heater", "turn_on": {"mode": "default"}, "turn_off": {"mode": "default"}}]
+    config["priority"].append({"type": "appliance", "appliance_id": "a", "variant_id": None})
+    hass.states.async_set("input_boolean.heater", STATE_OFF)
     hass.states.async_set(CAR_CONNECTED, STATE_ON)
     set_power(hass, CHARGER_POWER, "0")
     entry = await setup_kraftvakt()
@@ -568,9 +572,12 @@ async def test_cloud_controlled_charger_gets_its_start_delay_before_it_counts_as
     row = status_snapshot(hass, entry.runtime_data)["priority"][0]["chargers"][0]
     assert row["state"] == "starting"
     assert row["starting_until"] == dt_util.as_local(activated_at + timedelta(seconds=180)).isoformat()
+    assert row["waiting_since"] == dt_util.as_local(activated_at).isoformat()
+    assert row["waiting_until"] == row["starting_until"]
+    assert row["waiting_reason"] == "start_delay"
     await advance(hass, freezer)
     assert entry.runtime_data.chargers["c1"].state is ChargerState.ACTIVATED
-    assert actions == ["current 6", f"on {CHARGER}"]
+    assert actions == ["current 6", f"on {CHARGER}", "on input_boolean.heater"]
 
 
 async def test_charger_with_a_fault_is_deactivated_until_the_fault_clears(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:

@@ -56,13 +56,15 @@
     "delayed_turn_on": "Venter med å slå på",
     "damping": "Demping av strømendringer",
     "damping_ampere_at": "Én ampere til ved avgjørelsen kl. {time}",
+    "start_delay": "Startforsinkelse",
+    "start_delay_ends_at": "Ingenting under den slås på før avgjørelsen kl. {time}",
     "delayed_activation": "Venter med å aktivere",
     "activated_at": "Aktiveres ved avgjørelsen kl. {time}",
     "charging_at": "Lader med {current} A",
     "first_decision": "Venter på første avgjørelse",
     "bypassed_no_car": "Hoppes over: ingen bil tilkoblet",
     "waiting_charger": "I kø: en annen elbillader i gruppen har tur",
-    "starting_until": "Venter til kl. {time} på at bilen begynner å lade. Effekten ved minste ladestrøm holdes ledig så lenge.",
+    "starting_until": "Venter til kl. {time} på at bilen begynner å lade. Ingenting under den slås på før det.",
     "excluded": "Utenfor regulering",
     "outside_window": "Utenfor ladetidsrommet ({start}–{end})",
     "amperes": "{current} A",
@@ -114,6 +116,9 @@
     "minutes": "{minutes} min",
     "consumption": "Forbruk",
     "waiting": "Venter",
+    "waiting_time": "Ventetid",
+    "damping": "Demping",
+    "start_delay": "Startforsinkelse",
     "not_known": "Ukjent",
     "oldest_decision": "Eldste avgjørelse tatt vare på",
     "chart_label": "Forbruk, reguleringssnitt, tariffsnitt og effektgrense den siste timen",
@@ -613,11 +618,11 @@
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Til elbilladere som styres via internett. Den får færre gjentatte kommandoer, og effekten holdes ledig mens bilen kommer i gang med ladingen."
+        "helper": "Til elbilladere som styres via internett. Den får ingen gjentatte kommandoer mens ingen bil er tilkoblet."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
-        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Effekten ved minste ladestrøm holdes ledig så lenge. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Ingenting under elbilladeren slås på så lenge. {min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",

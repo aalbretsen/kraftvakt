@@ -145,7 +145,7 @@ export interface Charger {
   override_ends: OverrideEnd;
   /** Whether the EV charger is controlled through a cloud service. */
   cloud_controlled: boolean;
-  /** How long a cloud-controlled EV charger may take from activation until the car draws power. */
+  /** How long the car may take from activation until it draws power. Nothing below the EV charger is turned on meanwhile. */
   start_delay_s: number;
   /** Whether the EV charger is deactivated while a fault flag shows a fault. */
   deactivate_on_fault: boolean;
@@ -244,12 +244,16 @@ export interface Capabilities {
   };
 }
 
-/** When the next step started to wait and when it ends: an appliance's waiting time, or the damping of an EV charger's ampere step. */
+/** Why the next step waits: its waiting time, the damping of an EV charger's ampere step, or the start delay of an EV charger above it. */
+export type WaitingReason = "waiting_time" | "damping" | "start_delay";
+
+/** When the next step started to wait, when it ends, and why: on the row of its appliance, or of the EV charger whose ampere step waits or whose start delay holds it back. */
 export interface WaitingFields {
   waiting_since: string | null;
   waiting_until: string | null;
   /** The decision that ends the waiting: the first at or after `waiting_until`. */
   waiting_ends_at: string | null;
+  waiting_reason: WaitingReason | null;
 }
 
 export interface ApplianceStatus extends WaitingFields {
@@ -284,7 +288,7 @@ export interface ChargerStatus extends WaitingFields {
   bypassed: boolean;
   /** Activated and actively charging at the last decision. */
   charging: boolean;
-  /** When the start delay of a starting EV charger ends, whose power at minimum current is kept free until then. */
+  /** When the start delay of a starting EV charger ends. Nothing below it is turned on until then. */
   starting_until: string | null;
   /** How far the regulation average must drop before the next ampere step of the EV charger, as the next step, may be turned on. */
   power_to_free_w: number | null;
@@ -341,7 +345,7 @@ export function errorMessage(error: unknown): string {
 
 export const fetchCapabilities = (hass: HomeAssistant) => hass.callWS<Capabilities>({ type: "kraftvakt/capabilities" });
 
-/** The charger profile of a device, null without one, and the fields of a charger it fills. */
+/** The charger profile of a device, null without one, and the fields of a charger it fills: without one, the settings of the default profile. */
 export interface ChargerProfileFields {
   profile: string | null;
   fields: Partial<Charger>;
@@ -381,7 +385,7 @@ export interface DecisionRecord {
   safe_state: boolean;
   penalty_active: boolean;
   overconsumption_wh: number;
-  waiting: { key: WaitingStep; started_at: string; until: string } | null;
+  waiting: { key: WaitingStep; started_at: string; until: string; reason: WaitingReason } | null;
   commands: DecisionCommand[];
 }
 

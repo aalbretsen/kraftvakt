@@ -108,7 +108,8 @@ The section header, the description and the footer note are in `section-styles.t
   in every choice and label, never a bare «Custom», «Template» or «Actions».
 - Choosing another device clears every entity field that is not on the new device, and keeps templates and custom actions.
   It then asks the backend for the device's charger profile, and when there is one,
-  the fields it fills replace those in the draft and an info under the device names the profile. Without a profile, nothing is filled in.
+  the fields it fills replace those in the draft and an info under the device names the profile.
+  Without a profile, the default profile fills the settings, without the info.
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance has a group of its own, as the variant dialog has one per action it can override.
   The actions of a charger are in the group of what they do: activate and deactivate in Turn charging on and off, and set charging current in the charging current group.
@@ -148,10 +149,10 @@ The section header, the description and the footer note are in `section-styles.t
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
   Both are disabled, with a line in their helpers that says why, while the group has fewer than two chargers, since they make no difference then, and keep their values.
-- Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
+- The start delay is the last field of actively charging, since it is about when the car starts to draw power.
+  Cloud-controlled EV charger is a group with a switch and no fields under it.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
-  The start delay is kept when the switch is turned off, since it has no effect then.
 - Charge until the car is disconnected and End the override (a dropdown) are shown under the times of the charging window, only while the charger has one.
   Their values are kept when the window is removed, since they have no effect without one.
 - Set charging current offers Number entity: an entity picker limited to the domains with a default set-current action, with a helper telling which service runs.
@@ -213,8 +214,8 @@ The section header, the description and the footer note are in `section-styles.t
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
-  An EV charger whose next ampere step waits shows the same instead of the power to free, with the reason:
-  the damping for an activated EV charger, and the waiting time for one that is activated again.
+  An EV charger whose next ampere step waits, or whose start delay holds back the next step, shows the same instead of the power to free,
+  with the reason from the status as a short text: the damping, the start delay, or the waiting time of an EV charger that is activated again.
 - Otherwise the row of the next step shows, in the same column, an icon and the power to free in kW, with a sentence as tooltip that tells what it is freed for:
   turning on an appliance, activating an EV charger or giving it one more ampere. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.
@@ -256,8 +257,7 @@ The section header, the description and the footer note are in `section-styles.t
   - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
     An activated charger whose car does not charge tells that it waits at the minimum current.
     A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
-  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that its power at minimum current is kept free until then,
-    since nothing else on the page tells why nothing below it is turned on while power looks free.
+  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that nothing below it is turned on until then.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.
     It is hidden when nothing is on, or when only excluded appliances are below the last entry that is on, so something that can be turned on is always below it.
     It shows the free power and its share of the power limit while that is above 0, and explains itself in a tooltip. By the fixed order nothing below the line is on.
@@ -279,7 +279,8 @@ The section header, the description and the footer note are in `section-styles.t
   and the power limit, with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
   The card has no description: a legend under its title names every colour and mark, also on and the charging current of the lanes.
   A lane shows what each command set until the next command, starting with the commands before the decisions kept:
-  an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max, and the waiting hatched.
+  an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max, and the waiting hatched,
+  in its own colour for each reason: the waiting time, the damping and the start delay.
   One without a command since the last start is as it is now while the regulation runs.
   Before the last start, and after the last decision while stopped, it is hatched as not known, since the commands of a stop are not kept, and nothing is guessed,
   so the lanes are hatched just after a start and fully known after an hour.

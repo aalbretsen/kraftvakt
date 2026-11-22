@@ -56,13 +56,15 @@
     "delayed_turn_on": "Delayed turn-on",
     "damping": "Damping of current changes",
     "damping_ampere_at": "One more ampere at the decision at {time}",
+    "start_delay": "Start delay",
+    "start_delay_ends_at": "Nothing below it is turned on before the decision at {time}",
     "delayed_activation": "Delayed activation",
     "activated_at": "Activated at the decision at {time}",
     "charging_at": "Charging at {current} A",
     "first_decision": "Waiting for the first decision",
     "bypassed_no_car": "Bypassed: no car connected",
     "waiting_charger": "Queued: another EV charger in the group has its turn",
-    "starting_until": "Waiting until {time} for the car to start charging. Its power at minimum current is kept free until then.",
+    "starting_until": "Waiting until {time} for the car to start charging. Nothing below it is turned on until then.",
     "excluded": "Excluded from the regulation",
     "outside_window": "Outside the charging window ({start}–{end})",
     "amperes": "{current} A",
@@ -114,6 +116,9 @@
     "minutes": "{minutes} min",
     "consumption": "Consumption",
     "waiting": "Waiting",
+    "waiting_time": "Waiting time",
+    "damping": "Damping",
+    "start_delay": "Start delay",
     "not_known": "Not known",
     "oldest_decision": "Oldest decision kept",
     "chart_label": "Consumption, regulation average, tariff average and power limit over the last hour",
@@ -613,11 +618,11 @@
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "For an EV charger controlled over the internet. It gets fewer repeated commands, and its power is kept free while the car starts charging."
+        "helper": "For an EV charger controlled over the internet. It gets no repeated commands while no car is connected."
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "How long the car may take to start charging after the EV charger is activated. Its power at minimum current is kept free meanwhile. {min}–{max} s, default {default} s."
+        "helper": "How long the car may take to start charging after the EV charger is activated. Nothing below the EV charger is turned on meanwhile. {min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",

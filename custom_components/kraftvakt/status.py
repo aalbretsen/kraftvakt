@@ -20,6 +20,7 @@ NO_WAITING: Mapping[str, None] = {
     "waiting_since": None,
     "waiting_until": None,
     "waiting_ends_at": None,
+    "waiting_reason": None,
 }
 
 
@@ -125,7 +126,11 @@ def _temperature(hass: HomeAssistant, appliance: Appliance) -> dict[str, Any] | 
 
 
 def _waiting_fields(runtime: KraftvaktRuntime, item: ApplianceStepKey | str) -> Mapping[str, str | None]:
-    """Return when the waiting started and ends, on the row of the appliance that waits, or of the charger, given by its id, whose ampere step is damped."""
+    """Return when the waiting started and ends, and why.
+
+    It is on the row of the appliance that waits, or of the charger, given by
+    its id, whose ampere step waits or whose start delay holds back the next step.
+    """
     waiting = runtime.waiting
     ends_at = runtime.waiting_ends_at
     if waiting is None or ends_at is None or not _is_row_of(waiting.key, item):
@@ -134,6 +139,7 @@ def _waiting_fields(runtime: KraftvaktRuntime, item: ApplianceStepKey | str) -> 
         "waiting_since": _local_time(waiting.started_at),
         "waiting_until": _local_time(waiting.until),
         "waiting_ends_at": _local_time(ends_at),
+        "waiting_reason": waiting.reason.value,
     }
 
 

@@ -65,7 +65,7 @@ def charger(
     window: str | None = None,
     override_ends: OverrideEnd = OverrideEnd.MANUAL,
     cloud_controlled: bool = False,
-    start_delay_s: int = 300,
+    start_delay_s: int = 0,
     switched_by: SwitchedBy = SwitchedBy.ON_OFF_ENTITY,
 ) -> Charger:
     """Return a charger with default actions and the given charging window."""

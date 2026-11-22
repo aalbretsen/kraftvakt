@@ -11,7 +11,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from ..config_model import ActionConfig, ActionMode, Condition, ConditionType
-from .profile import ChargerProfile, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
+from .profile import DEFAULT_CHARGER, ChargerProfile, DeviceMatch, ProfileAction, ProfileCondition, ProfileEntity
 from .profiles import PROFILES
 
 
@@ -19,12 +19,18 @@ def charger_profile_fields(hass: HomeAssistant, device_id: str) -> tuple[Charger
     """Return the profile of the device and the fields of a charger it fills, as stored.
 
     A field whose entity is not on the device, or is disabled, is left out.
+    A device without a profile gets the default profile, which fills only the
+    settings, so a charger never keeps those of its previous device.
     """
     device = dr.async_get(hass).async_get(device_id)
     profile = _profile_of(hass, device) if isinstance(device, dr.DeviceEntry) else None
     if profile is None:
-        return None, {}
+        return None, _settings(DEFAULT_CHARGER.cloud_controlled, DEFAULT_CHARGER.start_delay_s)
     return profile, DeviceEntities(er.async_entries_for_device(er.async_get(hass), device_id)).fields(profile)
+
+
+def _settings(cloud_controlled: bool, start_delay_s: int) -> dict[str, Any]:
+    return {"cloud_controlled": cloud_controlled, "start_delay_s": start_delay_s}
 
 
 def device_integration(hass: HomeAssistant, device: dr.DeviceEntry) -> str | None:
@@ -74,8 +80,7 @@ class DeviceEntities:
             "car_connected": self.condition(profile.car_connected),
             "actively_charging": None if profile.actively_charging is None else self.condition(profile.actively_charging),
             "charging_power": self.condition(profile.charging_power),
-            "cloud_controlled": profile.cloud_controlled,
-            "start_delay_s": profile.start_delay_s,
+            **_settings(profile.cloud_controlled, profile.start_delay_s),
         }
         fault_flag = None if profile.fault_flag is None else self.condition(profile.fault_flag)
         if fault_flag is not None:

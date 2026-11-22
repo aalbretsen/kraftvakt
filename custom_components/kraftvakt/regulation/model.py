@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime, tzinfo
+from enum import StrEnum
 from typing import Any
 
 from .charging import ChargerReading, ChargingState
@@ -140,9 +141,17 @@ class Step:
     group_id: str | None = None
 
 
+class WaitingReason(StrEnum):
+    """Why the next step waits."""
+
+    WAITING_TIME = "waiting_time"
+    DAMPING = "damping"
+    START_DELAY = "start_delay"
+
+
 @dataclass(frozen=True, slots=True)
 class Waiting:
-    """A waiting time that runs before the step may be turned on.
+    """What holds back the next step until `until`: its waiting time or its damping, or the start delay of the charger of `key`.
 
     The step is turned on at the first decision at or after `until`.
     """
@@ -150,6 +159,7 @@ class Waiting:
     key: StepKey
     started_at: datetime
     until: datetime
+    reason: WaitingReason = WaitingReason.WAITING_TIME
 
 
 @dataclass(frozen=True, slots=True)

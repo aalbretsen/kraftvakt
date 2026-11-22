@@ -35,7 +35,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return html`
       ${this.renderDevice(issues)}
       ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) => this.changeDraft({ min_current_power_w: value.min_current_power_w as number }))}
-      ${this.renderOnOff(issues)} ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl(issues)}
+      ${this.renderOnOff(issues)} ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl()}
       ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
@@ -112,7 +112,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /** A new device clears the entities that are not on it, and fills in the fields from its charger profile when it has one. */
+  /** A new device clears the entities that are not on it, and fills in the fields from its charger profile, or the settings of the default profile without one. */
   private async deviceChanged(deviceId: string | null): Promise<void> {
     if (deviceId === this.draft.device_id) {
       return;
@@ -123,7 +123,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       return;
     }
     const { profile, fields } = await fetchChargerProfile(this.hass, deviceId).catch(() => ({ profile: null, fields: {} }));
-    if (profile && this.draft.device_id === deviceId) {
+    if (this.draft.device_id === deviceId) {
       this.changeDraft(fields);
       this.profile = profile;
     }
@@ -137,12 +137,19 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
-  /** The charging power, which every EV charger needs, and the optional car charging, which may tell sooner that the car charges. */
+  /**
+   * The charging power, which every EV charger needs, the optional car charging, which may tell sooner that the car charges,
+   * and the start delay, how long the car may take to charge after the EV charger is activated.
+   */
   private renderActivelyCharging(issues: Issue[]) {
     return this.renderGroup({
       title: this.label("actively_charging"),
       description: this.helper("actively_charging"),
-      content: [this.renderCondition("charging_power", "charging_power", issues), this.renderCondition("actively_charging", "actively_charging", issues, true)],
+      content: [
+        this.renderCondition("charging_power", "charging_power", issues),
+        this.renderCondition("actively_charging", "actively_charging", issues, true),
+        this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) => this.changeDraft({ start_delay_s: value.start_delay_s as number })),
+      ],
     });
   }
 
@@ -172,19 +179,12 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /**
-   * The start delay is kept while the switch is off, since it has no effect then.
-   * It stays in view while it has an error, so the error that keeps the draft from being saved can be seen.
-   */
-  private renderCloudControl(issues: Issue[]) {
-    const showDelay = this.draft.cloud_controlled || issues.some((issue) => issue.field === "start_delay_s");
+  private renderCloudControl() {
     return this.renderGroup({
       title: this.label("cloud_controlled"),
       description: this.helper("cloud_controlled"),
       toggle: { checked: this.draft.cloud_controlled, changed: (checked) => this.changeDraft({ cloud_controlled: checked }) },
-      content: showDelay
-        ? this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) => this.changeDraft({ start_delay_s: value.start_delay_s as number }))
-        : nothing,
+      content: nothing,
     });
   }
 

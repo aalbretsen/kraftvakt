@@ -310,7 +310,7 @@
       "max_current_a": 16,
       "min_current_power_w": 4157,
       "override_ends": "manual",
-      "start_delay_s": 300
+      "start_delay_s": 180
     }
   }
 }

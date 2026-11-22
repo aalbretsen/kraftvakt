@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from custom_components.kraftvakt.regulation.model import AmpereStepKey, Waiting
+from custom_components.kraftvakt.regulation.model import AmpereStepKey, Waiting, WaitingReason
 
 from .configs import appliance, charger, make_config
 from .scenario import Scenario, activate, current, deactivate, off, on
@@ -20,7 +20,7 @@ def test_ampere_taken_back_above_the_limit_comes_back_when_the_damping_time_has_
     assert scenario.decide(10_072) == current("c", 12)
     taken_back_at = scenario.now
     assert scenario.decide_many(9179, 4) == [[], [], [], []]
-    assert scenario.engine.waiting == Waiting(AmpereStepKey("c", 7), taken_back_at, taken_back_at + timedelta(minutes=5))
+    assert scenario.engine.waiting == Waiting(AmpereStepKey("c", 7), taken_back_at, taken_back_at + timedelta(minutes=5), WaitingReason.DAMPING)
     assert scenario.decide(9179) == current("c", 13)
     assert scenario.engine.waiting is None
 

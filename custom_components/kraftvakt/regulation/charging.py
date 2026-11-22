@@ -99,16 +99,18 @@ def charging_current(charger: Charger, ampere_steps_on: int) -> int:
     return charger.min_current_a + max(ampere_steps_on, 1) - 1
 
 
-def may_step_up(charger: Charger, reading: ChargerReading) -> bool:
+def may_step_up(charger: Charger, reading: ChargerReading, starting: bool) -> bool:
     """Return whether the car draws enough power to get more than the minimum current.
 
     It must charge actively and draw at least half of the power at minimum
     current, which the user sets to what the car draws at the minimum current,
     so a car that draws little or nothing, as one that is full, cannot
-    suddenly draw much more.
+    suddenly draw much more. While the charger is starting, the car must have
+    ramped up to almost all of it.
     """
     power_w = reading.charging_power_w
-    return reading.actively_charging and power_w is not None and power_w >= 0.5 * charger.min_current_power_w
+    share = 0.9 if starting else 0.5
+    return reading.actively_charging and power_w is not None and power_w >= share * charger.min_current_power_w
 
 
 def estimated_draw_w(charger: Charger, power_w: float, ampere_steps_on: int, power_per_ampere_w: float) -> float:
@@ -214,8 +216,8 @@ class ChargingState:
 
     `charging` has the activated chargers that charge actively and may go on,
     `held_at_min` the chargers whose car does not draw enough to get more than
-    the minimum current, and `starting` when the start delay of each starting
-    charger ends. `may_charge` has the chargers that may have ampere steps on,
+    the minimum current, and `starting` when the start delay of each activated
+    charger ends, while it lasts. `may_charge` has the chargers that may have ampere steps on,
     and `waiting` the queued ones. `measured_power_per_ampere_w` has what each
     charger drew per ampere at the last decision where it was activated and drew power.
     """
@@ -309,10 +311,10 @@ class ChargingState:
         newly_bypassed = [charger.id for charger in chargers if not self.last_readings[charger.id].car_connected and charger.id not in self.bypassed]
         self.bypassed = {charger.id for charger in chargers if not self.last_readings[charger.id].car_connected}
         self.charging = {charger.id for charger in chargers if self._charges_and_may_go_on(charger.id)}
-        self.held_at_min = {charger.id for charger in chargers if not may_step_up(charger, self.last_readings[charger.id])}
         self._update_priority(group, previously_charging, newly_bypassed)
         self._select(group)
         self._update_starting(group, now)
+        self.held_at_min = {charger.id for charger in chargers if not may_step_up(charger, self.last_readings[charger.id], charger.id in self.starting)}
         return newly_bypassed
 
     def _measure_power_per_ampere(self, group: ChargerGroup) -> None:
@@ -402,10 +404,10 @@ class ChargingState:
             return ChargerState.OUTSIDE_WINDOW
         if charger_id in self.waiting and not activated:
             return ChargerState.QUEUED
-        if charger_id in self.starting:
-            return ChargerState.STARTING
         if charging:
             return ChargerState.CHARGING
+        if charger_id in self.starting:
+            return ChargerState.STARTING
         if activated:
             return ChargerState.ACTIVATED
         if permission is ChargingPermission.OVERRIDE:
@@ -413,15 +415,11 @@ class ChargingState:
         return ChargerState.DEACTIVATED
 
     def _update_starting(self, group: ChargerGroup, now: datetime) -> None:
-        """Find the cloud-controlled chargers within their start delay whose car does not charge yet."""
+        """Find the activated chargers within their start delay, whether their car draws power yet or not."""
         self.starting = {
             charger.id: self.activated_at[charger.id] + timedelta(seconds=charger.start_delay_s)
             for charger in group.chargers
-            if charger.cloud_controlled
-            and charger.id in self.may_charge
-            and charger.id in self.activated_at
-            and not self.last_readings[charger.id].actively_charging
-            and now < self.activated_at[charger.id] + timedelta(seconds=charger.start_delay_s)
+            if charger.id in self.may_charge and charger.id in self.activated_at and now < self.activated_at[charger.id] + timedelta(seconds=charger.start_delay_s)
         }
 
     def _select(self, group: ChargerGroup) -> None:

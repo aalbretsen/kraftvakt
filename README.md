@@ -83,7 +83,8 @@ The helper texts in the panel tell what each setting does.
   and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
   An appliance with a fixed load, and an EV charger, are turned on at once the first time, but wait when they are turned on again,
-  so they are not switched on and off again and again.
+  so they are not switched on and off again and again. Their waiting time counts their own power reserve,
+  so one turned off just above the power limit waits close to the whole waiting time.
   An EV charger counts as turned on again when it is activated after it was deactivated, whatever was switched meanwhile,
   unless it stayed activated or deactivated for longer than the longest waiting time, or its car was disconnected.
   An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
@@ -94,6 +95,10 @@ The helper texts in the panel tell what each setting does.
   It keeps consumption that changes for short moments from moving the charger up and down between the same two amperes.
   An EV charger that loses its last ampere waits its waiting time instead before it is activated again.
   Meanwhile, nothing below the EV charger is turned on, and the status page shows the countdown instead of the power to free.
+- **Start delay:** after an EV charger is activated, nothing below it is turned on until its start delay has passed,
+  and the other EV chargers of its group get no more current, since the car takes a while to draw power.
+  It gets more current itself when the car draws almost all of its power at minimum current.
+  The status page shows the EV charger as **Starting** until the car draws power, and the countdown while the start delay holds back the next step.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
 - **Excluded appliance:** turned off, and gets no commands until it is included again.
@@ -131,7 +136,7 @@ Kraftvakt logs the failure, goes on as if the command worked, and sends it again
 so an appliance may stay on longer than the regulation wants and the power limit may be exceeded.
 An action that does not finish is stopped by the action timeout, and the commands that waited for it are merged,
 so only the newest command for each appliance and EV charger is sent.
-Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**.
+Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**, and give it a start delay that covers how long the car takes to start charging.
 
 An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**.
 An entity that is only unavailable, for example while its cloud service is down, is not.
@@ -174,8 +179,9 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   With **Charge until the car is disconnected**, a car that has used power within the charging window may go on charging after it,
   when there is room, until it is disconnected. Kraftvakt forgets that the car has used power at a restart of Home Assistant.
 - **‹charger› override charging window** lets the EV charger charge outside the charging window. It only allows charging: it does not move the EV charger ahead of the others.
-- **Cloud-controlled EV charger:** gets no repeated commands while no car is connected, and its power at minimum current is kept free for the **Start delay** after it is activated.
-  The status page shows it as **Starting** meanwhile.
+- **Start delay:** how long the car may take to start charging after the EV charger is activated. Nothing below the EV charger is turned on meanwhile.
+  The charger profile fills it in when the device is chosen, and an EV charger without a profile gets 180 seconds.
+- **Cloud-controlled EV charger:** gets no repeated commands while no car is connected.
 - **Deactivate on fault:** while a fault flag shows a fault, the EV charger is deactivated, and the others in its group may charge.
   An unavailable entity is no fault, so a cloud service that is down does not stop the charging.
 - An EV charger that can only take a current is turned on and off by **the charging current**: it is stopped with 0 A, so its current entity must take 0 A.
@@ -212,7 +218,7 @@ All entities belong to the service device **Kraftvakt**, whose page shows them u
 | `sensor.kraftvakt_power_tariff_average` (Power tariff average) | The tariff average in W. |
 | `sensor.kraftvakt_power_free` (Power free) | The power limit minus the regulation average, in W. Negative above the power limit. |
 | **Waiting time** | |
-| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, or an EV charger gets its next ampere or is activated again, 0 when nothing waits. |
+| `sensor.kraftvakt_waiting_time_remaining` (Waiting time remaining) | Diagnostic. Seconds until the decision where the waiting appliance is turned on, or an EV charger gets its next ampere or is activated again, or the start delay of an EV charger ends, 0 when nothing waits. |
 | `sensor.kraftvakt_waiting_time_next_turn_on` (Waiting time next turn-on (calculated)) | Diagnostic, disabled by default. The waiting time in seconds the next turn-on gets from the last regulation average and the waiting time curve, without the growth on repeated turn-on or the power reserves kept free. |
 | **Penalty** | |
 | `binary_sensor.kraftvakt_penalty_active` (Penalty active) | On during a penalty period. |

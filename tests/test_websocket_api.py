@@ -224,7 +224,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "max_current_a": 16,
             "min_current_power_w": 4157,
             "override_ends": "manual",
-            "start_delay_s": 300,
+            "start_delay_s": 180,
         },
     }
 
@@ -871,6 +871,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
+                "waiting_reason": None,
                 "power_to_free_w": None,
             },
             {
@@ -886,6 +887,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
                 "waiting_since": None,
                 "waiting_until": None,
                 "waiting_ends_at": None,
+                "waiting_reason": None,
                 "power_to_free_w": None,
             },
         ],
@@ -1040,6 +1042,7 @@ async def test_status_shows_the_chargers(
             "waiting_since": None,
             "waiting_until": None,
             "waiting_ends_at": None,
+            "waiting_reason": None,
             "power_to_free_w": None,
         }
     ]

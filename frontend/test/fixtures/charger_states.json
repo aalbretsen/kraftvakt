@@ -28,7 +28,7 @@
     "color": "amber"
   },
   "starting": {
-    "icon": "mdi:cloud-clock-outline",
+    "icon": "mdi:car-clock",
     "color": "light-blue"
   },
   "charging": {

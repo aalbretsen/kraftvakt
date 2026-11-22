@@ -158,12 +158,13 @@ def test_charger_held_at_minimum_can_only_get_its_first_ampere_step() -> None:
     assert [step.can_turn_on for step in steps] == [True, False, False]
 
 
-def test_only_the_first_ampere_step_of_a_starting_charger_holds_its_reserve() -> None:
+def test_starting_charger_holds_no_reserve_once_it_has_settled() -> None:
+    """It holds back the steps after it instead."""
     state = charging_state({"a": 1}, {"a", "b"}, held_at_min={"a"}, starting={"a"})
 
     steps = ampere_steps("ev", [[charger("a", 6, 7), charger("b", 6, 6)]], state)
 
-    assert [step.holds_reserve for step in steps] == [True, False, False]
+    assert [step.holds_reserve for step in steps] == [False, False, False]
 
 
 def test_ampere_step_that_is_on_and_settling_holds_its_reserve() -> None:

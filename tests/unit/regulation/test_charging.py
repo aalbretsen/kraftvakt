@@ -40,6 +40,8 @@ IDLE = ChargerReading(car_connected=True, charging_power_w=0)
 
 
 def charger(charger_id: str = "c", min_a: int = 6, max_a: int = 16, **settings) -> Charger:
+    """Return a charger without a start delay unless it is given."""
+    settings.setdefault("start_delay_s", 0)
     return Charger(charger_id, min_current_a=min_a, max_current_a=max_a, **settings)
 
 
@@ -167,16 +169,18 @@ def test_charging_allowed_now() -> None:
 
 
 @pytest.mark.parametrize(
-    ("reading", "expected"),
+    ("reading", "starting", "expected"),
     [
-        (ChargerReading(actively_charging=True, charging_power_w=2000), True),
-        (ChargerReading(actively_charging=True, charging_power_w=1999), False),
-        (ChargerReading(actively_charging=True), False),
-        (ChargerReading(charging_power_w=2000), False),
+        (ChargerReading(actively_charging=True, charging_power_w=2000), False, True),
+        (ChargerReading(actively_charging=True, charging_power_w=1999), False, False),
+        (ChargerReading(actively_charging=True, charging_power_w=3600), True, True),
+        (ChargerReading(actively_charging=True, charging_power_w=3599), True, False),
+        (ChargerReading(actively_charging=True), False, False),
+        (ChargerReading(charging_power_w=4000), False, False),
     ],
 )
-def test_car_may_step_up_when_it_charges_with_half_of_the_power_at_minimum_current(reading: ChargerReading, expected: bool) -> None:
-    assert may_step_up(charger(min_current_power_w=4000), reading) is expected
+def test_car_may_step_up_when_it_charges_with_half_of_the_power_at_minimum_current_or_almost_all_while_starting(reading: ChargerReading, starting: bool, expected: bool) -> None:
+    assert may_step_up(charger(min_current_power_w=4000), reading, starting) is expected
 
 
 def test_estimated_draw_follows_the_current_and_never_exceeds_what_the_car_draws() -> None:
@@ -409,19 +413,31 @@ def test_charging_needs_an_activated_charger() -> None:
     assert not state.status(group_of(configured))["b"].charging
 
 
-@pytest.mark.parametrize(("cloud_controlled", "one_at_a_time", "dynamic_order", "starting"), [(True, True, False, True), (False, False, True, False)])
-def test_cloud_controlled_charger_holds_its_power_in_its_start_delay_until_it_charges(cloud_controlled: bool, one_at_a_time: bool, dynamic_order: bool, starting: bool) -> None:
-    configured = [charger("a", cloud_controlled=cloud_controlled, start_delay_s=300)]
+@pytest.mark.parametrize(("one_at_a_time", "dynamic_order"), [(True, False), (False, True)])
+def test_charger_is_starting_for_its_whole_start_delay(one_at_a_time: bool, dynamic_order: bool) -> None:
+    """Also while its car charges, which shows as charging. A car that draws just over half its power at minimum current is held at minimum only while starting."""
+    configured = [charger("a", start_delay_s=300)]
     group = group_of(configured, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
     state = activated(configured, a=1)
+    ends = NOW + timedelta(minutes=5)
+    half = replace(CHARGING, charging_power_w=2100)
 
     evaluate(state, configured, {"a": IDLE}, now=NOW + WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
-    assert ("a" in state.starting) is starting
-    if starting:
-        assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, starting_until=NOW + timedelta(minutes=5))
-    evaluate(state, configured, {"a": CHARGING}, now=NOW + 2 * WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    assert state.status(group)["a"] == ChargerStatus(ChargerState.STARTING, 1, 6, False, False, starting_until=ends)
+    evaluate(state, configured, {"a": half}, now=NOW + 2 * WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    assert state.status(group)["a"] == ChargerStatus(ChargerState.CHARGING, 1, 6, False, True, starting_until=ends)
+    assert state.held_at_min == {"a"}
+    evaluate(state, configured, {"a": half}, now=ends, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
     assert state.starting == {}
-    evaluate(state, configured, {"a": IDLE}, now=NOW + 5 * WINDOW, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
+    assert state.held_at_min == set()
+
+
+def test_charger_is_not_starting_without_a_start_delay_or_its_activation() -> None:
+    configured = [charger("a"), charger("b", start_delay_s=300)]
+    state = activated(configured, a=1)
+
+    evaluate(state, configured, {"a": IDLE, "b": IDLE}, now=NOW + WINDOW, one_at_a_time=False)
+
     assert state.starting == {}
 
 

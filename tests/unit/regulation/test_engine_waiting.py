@@ -104,12 +104,15 @@ def test_switching_off_cancels_the_waiting_time() -> None:
 
 
 def test_appliance_with_a_power_reserve_waits_only_when_it_is_turned_on_again() -> None:
-    """Its power reserve tells whether it fits the first time. Turned on again, it waits as any appliance from when it is next: 75 s by the curve, then 5 minutes."""
+    """Its power reserve tells whether it fits the first time.
+
+    Turned on again, it waits as any appliance from when it is next, with its own reserve counted: 75 s by the curve, then 5 minutes.
+    """
     scenario = Scenario(make_config(appliance("a", reserve_w=2000)))
 
     assert scenario.decide(7900) == on("a")
     assert scenario.engine.waiting is None
     assert scenario.decide(10_500) == off("a")
-    assert scenario.decide_many(7000, 3) == [[], [], on("a")]
+    assert scenario.decide_many(5000, 3) == [[], [], on("a")]
     assert scenario.decide(10_500) == off("a")
-    assert scenario.decide_many(7000, 6) == [[]] * 5 + [on("a")]
+    assert scenario.decide_many(5000, 6) == [[]] * 5 + [on("a")]

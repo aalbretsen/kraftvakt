@@ -225,7 +225,9 @@ export class KraftvaktDiagnosticsPage extends LitElement {
           <span><i class="swatch line limit"></i>${this.localize("status.power_limit")}</span>
           <span><i class="swatch on"></i>${this.localize("status.on")}</span>
           <span><i class="swatch current"></i>${this.localize("charger.charging_current")}</span>
-          <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting")}</span>
+          <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting_time")}</span>
+          <span><i class="swatch waiting damping"></i>${this.localize("diagnostics.damping")}</span>
+          <span><i class="swatch waiting start_delay"></i>${this.localize("diagnostics.start_delay")}</span>
           <span><i class="swatch unknown"></i>${this.localize("diagnostics.not_known")}</span>
           <span><i class="swatch oldest"></i>${this.localize("diagnostics.oldest_decision")}</span>
         </div>
@@ -333,9 +335,13 @@ export class KraftvaktDiagnosticsPage extends LitElement {
           <pattern id="unknown" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
             <line x1="0" y1="0" x2="0" y2="6" class="unknown-line"></line>
           </pattern>
-          <pattern id="waiting" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="5" class="waiting-line"></line>
-          </pattern>
+          ${(["waiting_time", "damping", "start_delay"] as const).map(
+            (reason) => svg`
+              <pattern id=${reason} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="5" class="waiting-line ${reason}"></line>
+              </pattern>
+            `,
+          )}
         </defs>
         ${rows.map((row, index) => {
           const top = index * rowHeight + 1;
@@ -356,7 +362,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
                   )
                 : (history.appliances[row.id] ?? []).map((segment) => (segment.value ? bar(segment, top) : nothing))
             }
-            ${(history.waiting[row.id] ?? []).map((segment) => bar(segment, top, 1, "waiting"))}
+            ${(history.waiting[row.id] ?? []).map((segment) => bar(segment, top, 1, `waiting ${segment.value}`))}
           `;
         })}
         ${this.renderCursor(marked, 0, height, x, start)} ${this.renderCursor(hover, 0, height, x, start, "hover")}
@@ -513,7 +519,13 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         <dt>${this.localize("diagnostics.overconsumption")}</dt>
         <dd>${this.localize("diagnostics.watt_hours", { energy: formatNumber(language, decision.overconsumption_wh, 0) })}</dd>
         <dt>${this.localize("diagnostics.waiting")}</dt>
-        <dd>${waiting ? `${waitingItem}, ${formatClockTime(language, waiting.started_at)}–${formatClockTime(language, waiting.until)}` : this.localize("diagnostics.none")}</dd>
+        <dd>
+          ${
+            waiting
+              ? `${waitingItem}, ${this.localize(`diagnostics.${waiting.reason}`)}, ${formatClockTime(language, waiting.started_at)}–${formatClockTime(language, waiting.until)}`
+              : this.localize("diagnostics.none")
+          }
+        </dd>
         <dt>${this.localize("diagnostics.commands")}</dt>
         <dd>${decision.commands.map((command) => this.commandText(command)).join(", ")}</dd>
       </dl>
@@ -568,6 +580,8 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         --kraftvakt-ev-color: var(--teal-color, #009688);
         --kraftvakt-on-color: var(--state-active-color, var(--amber-color, #ffc107));
         --kraftvakt-waiting-color: var(--purple-color, #926bc7);
+        --kraftvakt-damping-color: var(--orange-color, #ff9800);
+        --kraftvakt-start-delay-color: var(--light-blue-color, #03a9f4);
       }
       .cards {
         display: grid;
@@ -702,9 +716,18 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         background: color-mix(in srgb, var(--kraftvakt-ev-color) 45%, transparent);
         box-sizing: border-box;
       }
+      .waiting {
+        --kraftvakt-reason-color: var(--kraftvakt-waiting-color);
+      }
+      .damping {
+        --kraftvakt-reason-color: var(--kraftvakt-damping-color);
+      }
+      .start_delay {
+        --kraftvakt-reason-color: var(--kraftvakt-start-delay-color);
+      }
       .swatch.waiting {
-        border: 1px solid var(--kraftvakt-waiting-color);
-        background: repeating-linear-gradient(45deg, transparent 0 3px, var(--kraftvakt-waiting-color) 3px 4px);
+        border: 1px solid var(--kraftvakt-reason-color);
+        background: repeating-linear-gradient(45deg, transparent 0 3px, var(--kraftvakt-reason-color) 3px 4px);
         box-sizing: border-box;
       }
       .swatch.unknown {
@@ -788,13 +811,25 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         stroke: var(--kraftvakt-ev-color);
       }
       rect.waiting {
-        fill: url(#waiting);
-        stroke: var(--kraftvakt-waiting-color);
+        fill: url(#waiting_time);
+        stroke: var(--kraftvakt-reason-color);
         stroke-width: 0.8;
+      }
+      rect.damping {
+        fill: url(#damping);
+      }
+      rect.start_delay {
+        fill: url(#start_delay);
       }
       .waiting-line {
         stroke: var(--kraftvakt-waiting-color);
         stroke-width: 1.6;
+      }
+      .waiting-line.damping {
+        stroke: var(--kraftvakt-damping-color);
+      }
+      .waiting-line.start_delay {
+        stroke: var(--kraftvakt-start-delay-color);
       }
       .tooltip {
         position: absolute;

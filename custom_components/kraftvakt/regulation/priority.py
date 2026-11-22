@@ -61,8 +61,7 @@ def ampere_steps(group_id: str, blocks: Sequence[Sequence[Charger]], charging: C
     The first ampere step of a charger needs its power at minimum current, and
     the others its power per ampere. A charger held at minimum may only have its
     first ampere step turned on, and only the ampere steps of a charger that may
-    be switched off for room are. A step that is settling, and the first of a
-    starting charger, hold their power reserve.
+    be switched off for room are. A step that is settling holds its power reserve.
     """
     return [step for chargers in blocks for step in _interleaved(group_id, chargers, charging, settling)]
 
@@ -76,7 +75,6 @@ def _interleaved(group_id: str, chargers: Sequence[Charger], charging: ChargingS
                 continue
             key = AmpereStepKey(charger.id, index)
             is_on = index < charging.ampere_steps_on.get(charger.id, 0)
-            starting = index == 0 and charger.id in charging.starting
             steps.append(
                 Step(
                     key=key,
@@ -84,7 +82,7 @@ def _interleaved(group_id: str, chargers: Sequence[Charger], charging: ChargingS
                     power_reserve_w=charger.min_current_power_w if index == 0 else charging.power_per_ampere_w(charger),
                     can_turn_on=charger.id in charging.may_charge and (index == 0 or charger.id not in charging.held_at_min),
                     can_turn_off=charging.may_switch_off(charger.id),
-                    holds_reserve=is_on and (starting or key in settling),
+                    holds_reserve=is_on and key in settling,
                     group_id=group_id,
                 )
             )

@@ -40,6 +40,7 @@ PROFILE: Final = ChargerProfile(
     ),
     charging_power=power_sensor_condition(ProfileEntity("sensor", translation_key="power")),
     cloud_controlled=True,
+    start_delay_s=300,
     deactivate_on_fault=True,
     # An erratic car is a fault too, so the user sees why it does not charge. It ends when the car is disconnected.
     fault_flag=template_condition(

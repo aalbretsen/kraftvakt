@@ -12,6 +12,7 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
     ChargerStatus,
 )
+from custom_components.kraftvakt.regulation.model import AmpereStepKey, Waiting, WaitingReason
 
 from .configs import appliance, charger, charger_group, make_config
 from .scenario import (
@@ -146,16 +147,17 @@ def test_freeing_power_ends_at_an_appliance() -> None:
 def test_charger_activated_again_waits_the_waiting_time_for_ev_chargers() -> None:
     """It is activated at once the first time.
 
-    Activated again, it waits from when it is next as an appliance would with twice the waiting time at the limit: 151 s by the curve, then 10 minutes.
+    Activated again, it waits from when it is next as an appliance would with twice the waiting time at the limit, with its own power at minimum current counted:
+    151 s by the curve, then 10 minutes.
     """
     scenario = Scenario(make_config(chargers=(charger("c", max_a=6, min_current_power_w=2000),), wait_at_limit_s=300))
     scenario.draw("c")
 
     assert scenario.decide(7000) == activate("c")
     assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-    assert scenario.decide_many(7000, 4) == [[], [], [], activate("c")]
+    assert scenario.decide_many(5000, 4) == [[], [], [], activate("c")]
     assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-    assert scenario.decide_many(7000, 11) == [[]] * 10 + [activate("c")]
+    assert scenario.decide_many(5000, 11) == [[]] * 10 + [activate("c")]
 
 
 def test_charger_is_one_unit_for_the_growth_on_repeated_turn_on() -> None:
@@ -165,9 +167,9 @@ def test_charger_is_one_unit_for_the_growth_on_repeated_turn_on() -> None:
 
     assert scenario.decide_many(7000, 2) == [activate("c"), current("c", 7)]
     assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-    assert scenario.decide_many(7000, 5) == [[], [], [], activate("c"), current("c", 7)]
+    assert scenario.decide_many(5000, 5) == [[], [], [], activate("c"), current("c", 7)]
     assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
-    assert scenario.decide_many(7000, 11) == [[]] * 10 + [activate("c")]
+    assert scenario.decide_many(5000, 11) == [[]] * 10 + [activate("c")]
 
 
 def test_command_to_an_appliance_leaves_a_charger_activated_again_waiting() -> None:
@@ -180,7 +182,7 @@ def test_command_to_an_appliance_leaves_a_charger_activated_again_waiting() -> N
 
     scenario.exclude("x")
 
-    assert scenario.decide_many(7000, 4) == [off("x"), [], [], activate("c")]
+    assert scenario.decide_many(5000, 4) == [off("x"), [], [], activate("c")]
 
 
 def test_car_connected_again_is_activated_as_the_first_time() -> None:
@@ -215,7 +217,21 @@ def test_command_to_another_charger_leaves_a_charger_activated_again_waiting() -
 
     scenario.set_charger("a", excluded=True)
 
-    assert scenario.decide_many(7000, 4) == [deactivate("a"), [], [], activate("b")]
+    assert scenario.decide_many(5000, 4) == [deactivate("a"), [], [], activate("b")]
+
+
+def test_charger_deactivated_just_above_the_limit_is_not_activated_again_at_the_next_decision() -> None:
+    """The flip from a diagnostics file: 73 W above the limit deactivates the charger, and 5655 W is far below it,
+    but with its own 4157 W the charger would be at 98 % of the limit, which gives 598 s by the curve."""
+    scenario = Scenario(make_config(chargers=(charger("c", min_current_power_w=4157),), wait_at_limit_s=300))
+    scenario.draw("c")
+    assert scenario.decide(1000) == activate("c")
+    assert scenario.decide(10_073) == deactivate("c")
+
+    assert scenario.decide(5655) == []
+    waiting = scenario.engine.waiting
+    assert waiting is not None
+    assert waiting.until - waiting.started_at == timedelta(seconds=598)
 
 
 def test_charger_deactivated_longer_ago_than_the_longest_waiting_time_is_activated_at_once() -> None:
@@ -292,63 +308,62 @@ def test_car_that_pauses_is_held_at_its_minimum_and_gets_its_amperes_back() -> N
     assert scenario.decide_many(0, 2) == [current("c", 7), current("c", 8)]
 
 
-@pytest.mark.parametrize(
-    ("cloud_controlled", "expected"),
-    [
-        (False, [activate("c"), [], on("x"), [], [], []]),
-        (True, [activate("c"), [], [], [], [], on("x")]),
-    ],
-)
-def test_starting_cloud_controlled_charger_holds_its_power_at_minimum_current(cloud_controlled: bool, expected: list) -> None:
-    """The appliance below has room only when the car that is about to draw power is left out, for at most the start delay.
+def test_starting_charger_holds_back_the_appliance_below_for_its_whole_start_delay() -> None:
+    """The pool heater from a diagnostics file: plenty of power is free, but the car is about to draw it. A car that does not draw lets it on when the start delay ends."""
+    scenario = Scenario(make_config("pool", chargers=(charger("c", start_delay_s=180),), priority=("ev", "pool"), wait_at_limit_s=0))
+    assert scenario.decide(1250) == activate("c")
+    activated_at = scenario.now
 
-    Any charger holds it at the decision after the activation, since the average shows the charger only in part.
-    """
-    scenario = Scenario(
-        make_config(
-            "x",
-            chargers=(charger("c", cloud_controlled=cloud_controlled),),
-            priority=("ev", "x"),
-            wait_at_limit_s=0,
-        )
-    )
-
-    assert scenario.decide_many(6000, 6) == expected
+    assert scenario.decide_many(1250, 2) == [[], []]
+    assert scenario.engine.waiting == Waiting(AmpereStepKey("c", 0), activated_at, activated_at + timedelta(minutes=3), WaitingReason.START_DELAY)
+    assert scenario.engine.chargers["c"].state is ChargerState.STARTING
+    assert scenario.engine.chargers["c"].starting_until == activated_at + timedelta(minutes=3)
+    assert scenario.decide(1250) == on("pool")
     assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
 
 
-def test_starting_charger_shows_when_its_start_delay_ends() -> None:
-    scenario = one_charger(cloud_controlled=True, start_delay_s=300)
-    assert scenario.decide(0) == activate("c")
-    activated_at = scenario.now
+def test_starting_charger_holds_back_the_appliance_below_also_while_its_car_ramps_up() -> None:
+    """A car that charges with less than 90 % of its power at minimum current gets no more current while it is starting."""
+    scenario = Scenario(make_config("pool", chargers=(charger("c", start_delay_s=180),), priority=("ev", "pool"), wait_at_limit_s=0))
+    assert scenario.decide(1250) == activate("c")
 
-    scenario.decide(0)
+    scenario.set_charger("c", actively_charging=True, charging_power_w=3500)
 
-    assert scenario.engine.chargers["c"].state is ChargerState.STARTING
-    assert scenario.engine.chargers["c"].starting_until == activated_at + timedelta(minutes=5)
-
-
-@pytest.mark.parametrize(
-    ("cloud_controlled", "expected"),
-    [
-        (False, [activate("c"), [], on("x"), [], [], []]),
-        (True, [activate("c"), [], [], [], [], on("x")]),
-    ],
-)
-def test_waiting_time_counts_the_held_power_at_minimum_current(cloud_controlled: bool, expected: list) -> None:
-    """There is room for the appliance below, but 5000 W with 4000 W held is close to the limit, so it waits."""
-    scenario = Scenario(make_config("x", chargers=(charger("c", cloud_controlled=cloud_controlled),), priority=("ev", "x"), wait_at_limit_s=300))
-
-    assert scenario.decide_many(5000, 6) == expected
+    assert scenario.decide_many(4750, 2) == [[], []]
+    assert scenario.engine.chargers["c"].state is ChargerState.CHARGING
+    assert scenario.decide(4750) == current("c", 7)
 
 
-def test_held_power_at_minimum_current_ends_when_the_car_starts_charging() -> None:
-    scenario = Scenario(make_config("x", chargers=(charger("c", max_a=7, cloud_controlled=True),), priority=("ev", "x"), wait_at_limit_s=0))
-    assert scenario.decide_many(6000, 2) == [activate("c"), []]
+def test_starting_charger_gets_more_amperes_when_its_car_draws_almost_all_its_power_at_minimum_current() -> None:
+    scenario = Scenario(make_config("x", chargers=(charger("c", max_a=7, start_delay_s=180),), priority=("ev", "x"), wait_at_limit_s=0))
+    assert scenario.decide(1000) == activate("c")
 
     scenario.draw("c")
 
-    assert scenario.decide_many(6000, 2) == [current("c", 7), on("x")]
+    assert scenario.decide_many(1000, 3) == [current("c", 7), [], on("x")]
+
+
+def test_starting_charger_does_not_hold_back_the_steps_above_it() -> None:
+    scenario = Scenario(make_config("x", chargers=(charger("c", start_delay_s=180),), priority=("x", "ev"), wait_at_limit_s=0), excluded=("x",))
+    assert scenario.decide(1000) == activate("c")
+
+    scenario.exclude()
+
+    assert scenario.decide(1000) == on("x")
+
+
+def test_starting_charger_holds_back_the_next_charger_of_its_group() -> None:
+    """With one charger at a time, both cars wait at the minimum current, but b is activated only when a's start delay has ended."""
+    scenario = Scenario(make_config(chargers=(charger("a", start_delay_s=180), charger("b", start_delay_s=180)), wait_at_limit_s=0))
+
+    assert scenario.decide_many(0, 4) == [activate("a"), [], [], activate("b")]
+
+
+def test_waiting_time_counts_the_held_power_at_minimum_current() -> None:
+    """There is room for the appliance below, but 5000 W with 4000 W held is close to the limit, so it waits."""
+    scenario = Scenario(make_config("x", chargers=(charger("c"),), priority=("ev", "x"), wait_at_limit_s=300))
+
+    assert scenario.decide_many(5000, 6) == [activate("c"), [], on("x"), [], [], []]
 
 
 def test_appliance_below_is_turned_on_while_a_car_does_not_draw_power() -> None:
@@ -666,9 +681,9 @@ def test_switch_over_does_not_wait() -> None:
     assert scenario.decide(9100) == current("b", 6) + activate("a")
 
 
-def test_starting_charger_holds_its_power_from_the_charger_that_charges() -> None:
-    """b does not take the power the car of the cloud-controlled a is about to draw, and no second switch-over is made on b's old charging power."""
-    scenario = sharing_chargers(b_amperes=12, cloud_controlled=True)
+def test_starting_charger_holds_back_the_charger_that_charges() -> None:
+    """b does not take the power the car of a is about to draw, and no second switch-over is made on b's old charging power."""
+    scenario = sharing_chargers(b_amperes=12, start_delay_s=180)
     scenario.set_charger("b", charging_power_w=8300)
     scenario.decide(9100)
 
@@ -1002,6 +1017,29 @@ def two_groups() -> Scenario:
             wait_at_limit_s=0,
         )
     )
+
+
+def test_starting_charger_holds_back_a_switch_over_in_a_group_below() -> None:
+    scenario = Scenario(
+        make_config(
+            chargers=(charger("a", start_delay_s=180),),
+            groups=(charger_group("g2", charger("b"), charger("c"), one_at_a_time=False, dynamic_order=True),),
+            priority=("ev", "@g2"),
+            wait_at_limit_s=0,
+        )
+    )
+    scenario.set_charger("a", **NO_CAR)
+    scenario.set_charger("c", **NO_CAR)
+    scenario.draw("b")
+    scenario.charge("b", 12)
+    scenario.draw("b", drawing=False)
+    scenario.set_charger("b", actively_charging=True, charging_power_w=8000)
+    scenario.set_charger("a", car_connected=True)
+    scenario.set_charger("c", car_connected=True)
+
+    assert scenario.decide(1000) == activate("a")
+    assert scenario.decide_many(1000, 2) == [[], []]
+    assert scenario.decide(1000) == current("b", 6) + activate("c")
 
 
 def test_each_charger_group_has_its_own_place_and_one_at_a_time() -> None:

@@ -16,11 +16,12 @@ from .profiles.test_amina_s_zigbee2mqtt import AMINA_S
 from .profiles.test_easee import EASEE
 
 
-async def test_device_without_a_profile_fills_nothing(hass: HomeAssistant, command: Command) -> None:
+async def test_device_without_a_profile_gets_the_settings_of_the_default_profile(hass: HomeAssistant, command: Command) -> None:
     plug = Device(integration="mqtt", name="Plug", manufacturer="IKEA", model_id="E1603", entities=[DeviceEntity("switch", None)])
 
-    assert await charger_profile(command, register(hass, plug)) == {"profile": None, "fields": {}}
-    assert await charger_profile(command, "unknown") == {"profile": None, "fields": {}}
+    default = {"profile": None, "fields": {"cloud_controlled": False, "start_delay_s": 180}}
+    assert await charger_profile(command, register(hass, plug)) == default
+    assert await charger_profile(command, "unknown") == default
 
 
 async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_left_out(hass: HomeAssistant, command: Command) -> None:
@@ -34,7 +35,7 @@ async def test_entity_that_is_missing_disabled_or_not_the_only_one_that_fits_is_
 
     assert fields == {
         "switched_by": "on_off_entity",
-        "start_delay_s": 300,
+        "start_delay_s": 60,
         "car_connected": {"type": "entity", "value": "binary_sensor.amina_ev_connected"},
         "charging_power": {"type": "power_sensor", "value": "sensor.amina_total_active_power"},
         "cloud_controlled": False,

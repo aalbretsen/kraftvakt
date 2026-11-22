@@ -12,6 +12,7 @@ import type {
   DiagnosticsPart,
   FailedAction,
   StatusSnapshot,
+  WaitingReason,
   WaitingStep,
 } from "./api";
 
@@ -32,8 +33,8 @@ export interface Lanes {
   to: number;
   appliances: Record<string, Segment<boolean>[]>;
   chargers: Record<string, Segment<number | null>[]>;
-  /** The waiting of the next step, by the id of its appliance or EV charger. */
-  waiting: Record<string, Segment<null>[]>;
+  /** The waiting of the next step and why, by the id of its appliance or EV charger. */
+  waiting: Record<string, Segment<WaitingReason>[]>;
 }
 
 /** Return what the panel holds after a part: the part's items, after the held items that are still kept and come before them. */
@@ -126,14 +127,14 @@ function chargerValue(command: DecisionCommand, chargerId: string): number | nul
   }
 }
 
-/** The waiting of each step, from when it started, or `from`, until the decision where it no longer waits, or `to` when it still waits. */
-function waitingSegments(decisions: DecisionRecord[], from: number, to: number, running: boolean): Record<string, Segment<null>[]> {
-  const waiting: Record<string, Segment<null>[]> = {};
-  let open: { id: string; startedAt: string; segment: Segment<null> } | undefined;
+/** The waiting of each step and why, from when it started, or `from`, until the decision where it no longer waits, or `to` when it still waits. */
+function waitingSegments(decisions: DecisionRecord[], from: number, to: number, running: boolean): Record<string, Segment<WaitingReason>[]> {
+  const waiting: Record<string, Segment<WaitingReason>[]> = {};
+  let open: { id: string; startedAt: string; reason: WaitingReason; segment: Segment<WaitingReason> } | undefined;
   for (const decision of decisions) {
     const time = Date.parse(decision.time);
-    const current = decision.waiting && { id: waitingItem(decision.waiting.key), startedAt: decision.waiting.started_at };
-    if (open && current?.id === open.id && current.startedAt === open.startedAt) {
+    const current = decision.waiting && { id: waitingItem(decision.waiting.key), startedAt: decision.waiting.started_at, reason: decision.waiting.reason };
+    if (open && current?.id === open.id && current.startedAt === open.startedAt && current.reason === open.reason) {
       open.segment.end = time;
       continue;
     }
@@ -142,7 +143,7 @@ function waitingSegments(decisions: DecisionRecord[], from: number, to: number, 
     }
     open = undefined;
     if (current) {
-      const segment = { start: Math.max(Date.parse(current.startedAt), from), end: time, value: null };
+      const segment = { start: Math.max(Date.parse(current.startedAt), from), end: time, value: current.reason };
       (waiting[current.id] ??= []).push(segment);
       open = { ...current, segment };
     }

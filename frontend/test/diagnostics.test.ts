@@ -37,6 +37,7 @@ function applianceRow(id: string, on: boolean): ApplianceStatus {
     waiting_since: null,
     waiting_until: null,
     waiting_ends_at: null,
+    waiting_reason: null,
     power_to_free_w: null,
   };
 }
@@ -55,6 +56,7 @@ function chargerRow(id: string, currentA: number | null): ChargerStatus {
     waiting_since: null,
     waiting_until: null,
     waiting_ends_at: null,
+    waiting_reason: null,
     power_to_free_w: null,
   };
 }
@@ -177,8 +179,8 @@ describe("lanes", () => {
   });
 
   it("shows the waiting from when it started until the decision where it no longer waits, or until now", () => {
-    const waitingA = { key: { appliance_id: "a" }, started_at: at(-130), until: at(60) };
-    const waitingC = { key: { charger_id: "c", index: 3 }, started_at: at(20), until: at(50) };
+    const waitingA = { key: { appliance_id: "a" }, started_at: at(-130), until: at(60), reason: "waiting_time" as const };
+    const waitingC = { key: { charger_id: "c", index: 3 }, started_at: at(20), until: at(50), reason: "damping" as const };
     const decisions = [
       decision(0, [], { waiting: waitingA }),
       decision(10, [], { waiting: waitingA }),
@@ -189,20 +191,32 @@ describe("lanes", () => {
     const result = lanes(decisions, started, status([applianceRow("a", false)], [chargerRow("c", 6)]), at(-100), T0 + 40_000);
 
     expect(result.waiting).toEqual({
-      a: [{ start: T0 - 100_000, end: T0 + 20_000, value: null }],
-      c: [{ start: T0 + 20_000, end: T0 + 40_000, value: null }],
+      a: [{ start: T0 - 100_000, end: T0 + 20_000, value: "waiting_time" }],
+      c: [{ start: T0 + 20_000, end: T0 + 40_000, value: "damping" }],
     });
   });
 
   it("ends a waiting that starts again at the decision where the new one starts", () => {
-    const first = { key: { appliance_id: "a" }, started_at: at(0), until: at(20) };
-    const second = { key: { appliance_id: "a" }, started_at: at(10), until: at(40) };
+    const first = { key: { appliance_id: "a" }, started_at: at(0), until: at(20), reason: "waiting_time" as const };
+    const second = { key: { appliance_id: "a" }, started_at: at(10), until: at(40), reason: "waiting_time" as const };
 
     const result = lanes([decision(0, [], { waiting: first }), decision(10, [], { waiting: second })], started, status([applianceRow("a", false)]), null, T0 + 60_000);
 
     expect(result.waiting.a).toEqual([
-      { start: T0, end: T0 + 10_000, value: null },
-      { start: T0 + 10_000, end: T0 + 10_000, value: null },
+      { start: T0, end: T0 + 10_000, value: "waiting_time" },
+      { start: T0 + 10_000, end: T0 + 10_000, value: "waiting_time" },
+    ]);
+  });
+
+  it("ends a waiting whose reason changes, as when the start delay of an EV charger ends and the damping of its ampere holds back the next step", () => {
+    const starting = { key: { charger_id: "c", index: 0 }, started_at: at(0), until: at(20), reason: "start_delay" as const };
+    const damping = { key: { charger_id: "c", index: 0 }, started_at: at(0), until: at(40), reason: "damping" as const };
+
+    const result = lanes([decision(10, [], { waiting: starting }), decision(20, [], { waiting: damping })], started, status([], [chargerRow("c", 6)]), null, T0 + 30_000);
+
+    expect(result.waiting.c).toEqual([
+      { start: T0, end: T0 + 20_000, value: "start_delay" },
+      { start: T0, end: T0 + 20_000, value: "damping" },
     ]);
   });
 });

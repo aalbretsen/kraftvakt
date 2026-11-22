@@ -50,7 +50,7 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   It draws power only while charging is allowed, a car is connected, the car is not fully charged and its fault switch is off.
   The fault switch is meant as a fault flag of Kraftvakt's deactivate on fault, so it has no binary sensor of its own.
   Its charging binary sensor is on while it draws power, so Kraftvakt's actively charging can be tested from an entity.
-  With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed, as with a cloud-controlled charger.
+  With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed, as through a cloud service.
   A change of current while it charges does not delay it.
 - Heating devices, thermostats and chargers have an unplugged switch. While it is on, the device uses no power whatever its other switches say.
   A heater's cycle runs on while unplugged. The HAN has no such switch: set its background power instead.

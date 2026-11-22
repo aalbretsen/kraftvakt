@@ -148,7 +148,8 @@ Every issue code needs a text in the panel's translations.
 ## Charger profiles
 
 - A charger profile is data: one module per profile in `charger_profiles/profiles/` with a `PROFILE`, listed in `PROFILES`. The shared code sits next to that folder,
-  so adding a profile changes no shared code. Without a profile nothing is filled in.
+  so adding a profile changes no shared code. A device without a profile gets the default profile, which fills only cloud-controlled and the start delay,
+  with the defaults of a new charger.
 - The backend recognises and applies a profile, and the panel only applies the fields it gets back.
   Why: the backend sees the integration, manufacturer, model, translation keys and the integration's own entity names, and the panel keeps no knowledge of chargers.
 - A device has a profile when its config entry is of the profile's integration, and its manufacturer and model ID match where the profile names them.
@@ -240,7 +241,7 @@ All commands require an administrator. Commands that need the runtime fail with 
 
 | Command | In | Out |
 |---|---|---|
-| `kraftvakt/charger_profile/get` | `device_id` | The name of the device's charger profile and the fields of a charger it fills, as stored; `null` and no fields without a profile. Needs no runtime. |
+| `kraftvakt/charger_profile/get` | `device_id` | The name of the device's charger profile and the fields of a charger it fills, as stored; `null` and the fields of the default profile without one. Needs no runtime. |
 | `kraftvakt/capabilities` | – | The default action (domains, service and data) and the domain actions (by key, with their parameters for the field's action kind) per section and field, limits per field (`max: null` means no upper limit), the shortest and longest regulation window in seconds with the most choices, and defaults. |
 | `kraftvakt/power_sensor/interval` | `entity_id` | How often the sensor reports, in seconds, `null` when it cannot be found. May take up to 30 seconds. Needs no runtime. |
 | `kraftvakt/config/get` | – | The configuration, the entity names and what is missing. |
@@ -260,9 +261,11 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - The next decision time is `null` while stopped. It and the decision that ends a waiting time are expected times, with the windows lasting their length at the update interval.
 - `regulation_window_s` is that length in seconds, the shortest window while the regulation window is not set.
 - The penalty part holds whether a penalty is active, the overconsumption and whether recovery has started.
-- The waiting fields are set only on the row of the next step while it waits: an appliance, or the charger of an ampere step that is damped or activated again.
+- The waiting fields are set only on the row of the next step while it waits: an appliance, or the charger of an ampere step that is damped or activated again,
+  and on the row of a starting charger while its start delay holds back the next step. `waiting_reason` tells which: the waiting time, the damping or the start delay.
   They hold when the waiting started, when it ends, and the decision that turns the step on, the first at or after its end.
-  The engine keeps a damped ampere step that is next as the waiting, so the waiting time remaining sensor counts down to it as to any waiting.
+  The engine keeps a damped ampere step that is next, and a start delay that holds back the next step, as the waiting, with its reason,
+  so the waiting time remaining sensor counts down to it as to any waiting, and the decisions kept for the diagnostics show why.
 - The power to free from the last decision is set only on the row of the next step: its appliance, or the charger of its ampere step.
   It is `null` on the other rows, and when the next step fits.
 - An appliance's variant is the label of its current variant, or `null`.
@@ -270,7 +273,7 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.
 - An appliance is excluded when it was excluded at the last decision, so it is false before the first decision after a start.
 - A charger's state is the first that holds of: stopped (while the regulation is stopped), fault, first decision (before the first decision after a start),
-  no car connected (bypassed), excluded, outside its charging window, queued (waiting and not activated), starting, charging, activated,
+  no car connected (bypassed), excluded, outside its charging window, queued (waiting and not activated), charging, starting, activated,
   override (allowed only by the override and deactivated), deactivated. It is worked out in the engine from the last decision,
   before its commands, so a charger activated at a decision shows its new state at the next one.
   Stopped comes before fault, since the fault flag is not read while the regulation is stopped.
