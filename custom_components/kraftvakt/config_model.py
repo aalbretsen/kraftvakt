@@ -35,7 +35,7 @@ class Range:
 POWER_LIMIT_MAX_W: Final = 50_000
 POWER_LIMIT_W = Range(1000, POWER_LIMIT_MAX_W, 1)
 REGULATION_WINDOW_S = Range(10, 60, 1)
-REGULATION_WINDOW_CHOICES: Final = 12
+REGULATION_WINDOW_CHOICES: Final = 6
 CHARGING_CURRENT_A = Range(1, None, 1)
 
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {

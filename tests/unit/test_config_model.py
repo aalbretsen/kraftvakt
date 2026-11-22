@@ -114,7 +114,7 @@ def test_issue_to_dict_leaves_out_empty_keys() -> None:
     ],
 )
 def test_regulation_window_options_are_multiples_of_the_fewest_updates_that_last_10_seconds(interval_s: float, expected: list[int]) -> None:
-    """No window is longer than 60 seconds."""
+    """At most six choices, and no window longer than 60 seconds."""
     assert regulation_window_options(interval_s) == expected
 
 

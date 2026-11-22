@@ -194,7 +194,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "max": 1,
         "resolution": 0.25,
     }
-    assert result["regulation_window"] == {"seconds": {"min": 10, "max": 60, "resolution": 1}, "choices": 12}
+    assert result["regulation_window"] == {"seconds": {"min": 10, "max": 60, "resolution": 1}, "choices": 6}
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
     assert result["limits"]["chargers"]["min_current_power_w"]["max"] == 5000
     assert result["defaults"] == {
