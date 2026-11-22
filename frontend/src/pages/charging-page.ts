@@ -36,13 +36,14 @@ const CHARGER_FIELDS = [
   "fault_flag",
 ] as const;
 
-const GROUP_SCHEMA = [{ name: "name", required: true, selector: { text: {} } }];
-
-/** How the chargers of a group share the power, shown only for a group with more than one, where it makes a difference. Their values are kept meanwhile. */
-const SHARING_SCHEMA = [
+const GROUP_SCHEMA = [
+  { name: "name", required: true, selector: { text: {} } },
   { name: "one_at_a_time", selector: { boolean: {} } },
   { name: "dynamic_order", selector: { boolean: {} } },
 ];
+
+/** How the chargers of a group share the power makes no difference with fewer than two, so these settings are disabled then, and keep their values. */
+const SHARING_FIELDS = new Set(["one_at_a_time", "dynamic_order"]);
 
 /** The groups of EV chargers, each with its settings and its chargers. */
 @customElement("kraftvakt-charging-page")
@@ -90,11 +91,11 @@ export class KraftvaktChargingPage extends ConfigPage {
         <ha-form
           .hass=${this.hass}
           .data=${group}
-          .schema=${group.chargers.length > 1 ? [...GROUP_SCHEMA, ...SHARING_SCHEMA] : GROUP_SCHEMA}
+          .schema=${GROUP_SCHEMA.map((field) => (this.sharingDisabled(group, field.name) ? { ...field, disabled: true } : field))}
           .error=${this.formErrors("charger_groups", group.id)}
           .disabled=${this.locked}
           .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
-          .computeHelper=${(field: { name: string }) => withLineBreaks(this.localize(`charging.${field.name}_sub` as TranslationKey))}
+          .computeHelper=${(field: { name: string }) => withLineBreaks(this.groupHelper(group, field.name))}
           .computeError=${(error: string) => error}
           @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
         ></ha-form>
@@ -111,6 +112,15 @@ export class KraftvaktChargingPage extends ConfigPage {
         `,
       ),
     });
+  }
+
+  private sharingDisabled(group: ChargerGroup, field: string): boolean {
+    return group.chargers.length < 2 && SHARING_FIELDS.has(field);
+  }
+
+  private groupHelper(group: ChargerGroup, field: string): string {
+    const helper = this.localize(`charging.${field}_sub` as TranslationKey);
+    return this.sharingDisabled(group, field) ? `${helper}\n${this.localize("charging.needs_two_chargers")}` : helper;
   }
 
   private renderDialog(charger: Charger, groupId: string, isNew: boolean) {

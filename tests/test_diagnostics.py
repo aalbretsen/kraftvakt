@@ -125,7 +125,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     assert state["power_to_free"] is None
     assert state["settling_since"] == {"ApplianceStepKey(appliance_id='a')": local(now - WINDOW), "AmpereStepKey(charger_id='c', index=0)": local(now)}
     assert state["repeats"] == {"last_key": {"charger_id": "c", "index": 0}, "repeats": 0}
-    assert state["activations"] == {"forgotten_after": 0, "chargers": {}}
+    assert state["activations"] == {"forgotten_after": 0, "chargers": {"c": {"repeats": 0, "activated": True, "changed_at": local(now)}}}
     assert state["penalty"] == {"overconsuming": False, "overconsumption_wh": 0, "active": False, "recovery_started": False}
     assert not state["safe_state"]
     assert state["charging_groups"]["g"] | {"last_readings": None} == {

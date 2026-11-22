@@ -172,8 +172,15 @@ class RegulationEngine:
     def decide(self, decision: DecisionInput) -> DecisionResult:
         charged_in_window = self._charged_in_window(decision)
         result = self._decide(decision)
+        self._forget_activations_of_disconnected_cars(decision)
         commands = without_superseded(result.commands)
         return replace(result, commands=self._record_commands(commands, decision.now), charged_in_window=charged_in_window)
+
+    def _forget_activations_of_disconnected_cars(self, decision: DecisionInput) -> None:
+        """A charger whose car is disconnected was not switched on and off, so a car connected again is activated as the first time."""
+        for charger_id, reading in decision.chargers.items():
+            if reading.car_disconnected:
+                self._state.activations.forget(charger_id)
 
     def repeat_commands(
         self,
@@ -715,8 +722,6 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
-        if isinstance(key, ApplianceStepKey):
-            self._state.activations.reset()
         if not turn_on:
             self._state.settling_since.pop(key, None)
         elif isinstance(key, AmpereStepKey):

@@ -523,11 +523,12 @@
   },
   "charging": {
     "name": "Name",
-    "name_sub": "Shown in the priority list and on the status page while the group has more than one EV charger.",
+    "name_sub": "Shown in the priority list, and on the status page while the group has more than one EV charger.",
     "one_at_a_time": "One EV charger at a time",
     "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that draws power gets the turn.",
     "dynamic_order": "Dynamic charging order",
     "dynamic_order_sub": "Off: the charging priority below always applies, so a car higher up that draws power takes over from one charging below it.\nOn: EV chargers that charge go first, and the others wait their turn.",
+    "needs_two_chargers": "Makes a difference with two or more EV chargers in the group.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",

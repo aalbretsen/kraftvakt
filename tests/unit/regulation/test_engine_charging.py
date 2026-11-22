@@ -170,7 +170,8 @@ def test_charger_is_one_unit_for_the_growth_on_repeated_turn_on() -> None:
     assert scenario.decide_many(7000, 11) == [[]] * 10 + [activate("c")]
 
 
-def test_command_to_an_appliance_lets_a_charger_be_activated_again_at_once() -> None:
+def test_command_to_an_appliance_leaves_a_charger_activated_again_waiting() -> None:
+    """x is switched off while c waits, and c still waits its 151 s by the curve."""
     scenario = Scenario(make_config("x", chargers=(charger("c", max_a=6, min_current_power_w=2000),), wait_at_limit_s=300))
     scenario.turn_on("x")
     scenario.draw("c")
@@ -179,7 +180,23 @@ def test_command_to_an_appliance_lets_a_charger_be_activated_again_at_once() -> 
 
     scenario.exclude("x")
 
-    assert scenario.decide(7000) == off("x") + activate("c")
+    assert scenario.decide_many(7000, 4) == [off("x"), [], [], activate("c")]
+
+
+def test_car_connected_again_is_activated_as_the_first_time() -> None:
+    """b, deactivated when its car left, gets a switch-over at once when a car is connected again, instead of waiting until a charges at its maximum."""
+    scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True))
+    scenario.draw("a")
+    scenario.draw("b")
+    scenario.charge("a", 8)
+    scenario.draw("b", False)
+    scenario.set_charger("b", car_connected=False, car_disconnected=True)
+    assert deactivate("b")[-1] in scenario.decide(5000)
+
+    scenario.set_charger("b", car_connected=True, car_disconnected=False)
+    scenario.draw("b")
+
+    assert scenario.decide(6000) == current("a", 6) + activate("b")
 
 
 def test_command_to_another_charger_leaves_a_charger_activated_again_waiting() -> None:

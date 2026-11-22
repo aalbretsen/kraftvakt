@@ -147,7 +147,7 @@ The section header, the description and the footer note are in `section-styles.t
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
-  Both are shown only while the group has more than one charger, since they make no difference with one, and keep their values meanwhile.
+  Both are disabled, with a line in their helpers that says why, while the group has fewer than two chargers, since they make no difference then, and keep their values.
 - Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
@@ -225,8 +225,8 @@ The section header, the description and the footer note are in `section-styles.t
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
 - Appliances and chargers share one full-width card, Appliances and EV chargers, in priority order. Each charger group has a row with its name and its own rank at its position,
   and its chargers are indented under it in the group's current charging priority.
-  A group with one charger is that charger's row alone, with the group's rank and without indent, and its entry in the priority list on the Appliances page
-  has the charger's name, since the group's name and settings make no difference then. Every row is one line, with columns that line up without headings: rank,
+  A group with one charger is that charger's row alone, with the group's rank and without indent, since the group's name and settings make no difference then.
+  The configuration pages always name the group, also in the priority list. Every row is one line, with columns that line up without headings: rank,
   name with the variant after it, current, power, waiting and state chip. An appliance has no current, so its name also takes the current column.
   The power is an appliance's display power or a charger's charging power, in kW, left out when no row has one.
   An appliance's display temperature, with one decimal, is in the current column, right aligned with the ampere bars, since an EV charger never has one;

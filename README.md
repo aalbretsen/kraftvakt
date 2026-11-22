@@ -84,8 +84,9 @@ The helper texts in the panel tell what each setting does.
   An appliance that is turned on again and again waits longer each time.
   An appliance with a fixed load, and an EV charger, are turned on at once the first time, but wait when they are turned on again,
   so they are not switched on and off again and again.
-  An EV charger counts as turned on again when it is activated after it was deactivated, whatever its current did meanwhile,
-  until an appliance is switched or the longest waiting time has passed. An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
+  An EV charger counts as turned on again when it is activated after it was deactivated, whatever was switched meanwhile,
+  unless it stayed activated or deactivated for longer than the longest waiting time, or its car was disconnected.
+  An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
   None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
   nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
 - **Damping of current changes:** an ampere an EV charger loses above the power limit, or to make room for something higher up,
@@ -138,7 +139,7 @@ An entity that is only unavailable, for example while its cloud service is down,
 ### EV charging
 
 EV chargers are put in groups, for example one for the garage and one for the cabin. A group has its own place in the priority list and its own settings.
-A group with one EV charger is shown as that EV charger, and the settings for how the cars share the power are shown only with more than one.
+A group with one EV charger is shown as that EV charger on the status page, and the settings for how the cars share the power can be changed only with more than one.
 An EV charger is a device in Home Assistant, and its entities belong to that device;
 a value from another device, such as whether the car is connected from the car's own integration, is given as a template.
 When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.

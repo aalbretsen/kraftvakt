@@ -123,18 +123,19 @@ class RepeatedTurnOnCounter:
         return {"last_key": self._last_key, "repeats": self._repeats}
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class _Activations:
     repeats: int
-    deactivated_at: datetime
+    activated: bool
+    changed_at: datetime
 
 
 class RepeatedActivationCounter:
     """Counts how many times each charger is activated again, the charger as one unit.
 
-    Its ampere steps above the first neither count nor end the count. A
-    command to an appliance ends the count of every charger, and so does a
-    deactivation longer ago than `forgotten_after`, the longest a charger can wait.
+    Only its activations and deactivations count, and nothing else ends the
+    count but `forget`, or the charger staying activated or deactivated for
+    longer than `forgotten_after`, the longest a charger can wait.
     """
 
     def __init__(self, forgotten_after: timedelta) -> None:
@@ -142,23 +143,26 @@ class RepeatedActivationCounter:
         self._chargers: dict[str, _Activations] = {}
 
     def record(self, charger_id: str, activated: bool, now: datetime) -> None:
-        activations = self._remembered(charger_id, now)
-        if not activated:
-            self._chargers[charger_id] = _Activations(activations.repeats if activations else 0, now)
-        elif activations is not None:
-            activations.repeats += 1
+        before = self._remembered(charger_id, now)
+        if before is None:
+            repeats = 0
+        elif activated:
+            repeats = 0 if before.activated else before.repeats + 1
+        else:
+            repeats = before.repeats
+        self._chargers[charger_id] = _Activations(repeats, activated, now)
 
     def upcoming_repeat(self, charger_id: str, now: datetime) -> int:
         """Return the count the charger gets if it is activated next, 0 if not again."""
         activations = self._remembered(charger_id, now)
-        return 0 if activations is None else activations.repeats + 1
+        return 0 if activations is None or activations.activated else activations.repeats + 1
 
-    def reset(self) -> None:
-        self._chargers.clear()
+    def forget(self, charger_id: str) -> None:
+        self._chargers.pop(charger_id, None)
 
     def _remembered(self, charger_id: str, now: datetime) -> _Activations | None:
         activations = self._chargers.get(charger_id)
-        if activations is None or now - activations.deactivated_at > self._forgotten_after:
+        if activations is None or now - activations.changed_at > self._forgotten_after:
             return None
         return activations
 
