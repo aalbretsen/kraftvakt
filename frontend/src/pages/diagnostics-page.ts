@@ -199,19 +199,11 @@ export class KraftvaktDiagnosticsPage extends LitElement {
   }
 
   private renderTimeline(history: Lanes, now: number) {
-    const oldest = this.decisions[0]?.time;
     return html`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("diagnostics.timeline")}</span>
         </div>
-        <p class="description">
-          ${
-            oldest === undefined
-              ? this.localize("diagnostics.no_decisions")
-              : this.localize("diagnostics.kept_from", { count: this.decisions.length, time: formatClockTime(this.hass.language, oldest) })
-          }
-        </p>
         <div class="legend">
           <span><i class="swatch consumption"></i>${this.localize("diagnostics.consumption")}</span>
           <span><i class="swatch line"></i>${this.localize("status.regulation_average")}</span>
@@ -219,6 +211,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
           <span><i class="swatch line limit"></i>${this.localize("status.power_limit")}</span>
           <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting")}</span>
           <span><i class="swatch unknown"></i>${this.localize("diagnostics.not_known")}</span>
+          <span><i class="swatch oldest"></i>${this.localize("diagnostics.oldest_decision")}</span>
         </div>
         <div class="chart" @pointermove=${this.pointerMoved} @pointerleave=${() => (this.hoverMs = undefined)}>
           ${this.chartWidth > 0 ? this.renderChart(history, now) : nothing} ${this.renderTooltip(now)}
@@ -694,6 +687,11 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         border: 1px solid var(--divider-color);
         background: repeating-linear-gradient(-45deg, transparent 0 3px, var(--divider-color) 3px 5px);
         box-sizing: border-box;
+      }
+      .swatch.oldest {
+        width: 0;
+        height: 12px;
+        border-left: 1px dashed var(--secondary-text-color);
       }
       .chart {
         position: relative;

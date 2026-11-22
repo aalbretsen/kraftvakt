@@ -273,6 +273,7 @@ The section header, the description and the footer note are in `section-styles.t
   since a date and time is hard to read for a long run.
 - Then the timeline over the last hour: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average
   and the power limit, with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
+  The card has no description: a legend under its title names every colour and mark.
   A lane shows what each command set until the next command, starting with the commands before the decisions kept:
   an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max, and the waiting hatched.
   One without a command since the last start is as it is now while the regulation runs.
