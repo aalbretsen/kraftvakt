@@ -36,8 +36,10 @@ const CHARGER_FIELDS = [
   "fault_flag",
 ] as const;
 
-const GROUP_SCHEMA = [
-  { name: "name", required: true, selector: { text: {} } },
+const GROUP_SCHEMA = [{ name: "name", required: true, selector: { text: {} } }];
+
+/** How the chargers of a group share the power, shown only for a group with more than one, where it makes a difference. Their values are kept meanwhile. */
+const SHARING_SCHEMA = [
   { name: "one_at_a_time", selector: { boolean: {} } },
   { name: "dynamic_order", selector: { boolean: {} } },
 ];
@@ -88,7 +90,7 @@ export class KraftvaktChargingPage extends ConfigPage {
         <ha-form
           .hass=${this.hass}
           .data=${group}
-          .schema=${GROUP_SCHEMA}
+          .schema=${group.chargers.length > 1 ? [...GROUP_SCHEMA, ...SHARING_SCHEMA] : GROUP_SCHEMA}
           .error=${this.formErrors("charger_groups", group.id)}
           .disabled=${this.locked}
           .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}

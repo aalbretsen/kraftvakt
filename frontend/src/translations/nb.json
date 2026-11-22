@@ -523,7 +523,7 @@
   },
   "charging": {
     "name": "Navn",
-    "name_sub": "Vises i prioritetslisten og på statussiden.",
+    "name_sub": "Vises i prioritetslisten og på statussiden når gruppen har mer enn én elbillader.",
     "one_at_a_time": "Én elbillader om gangen",
     "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen. Mens ingen lader, kan alle biler vente på minste ladestrøm, og den første som begynner å trekke strøm, får tur.",
     "dynamic_order": "Dynamisk ladeprioritet",

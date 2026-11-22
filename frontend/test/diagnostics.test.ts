@@ -208,7 +208,7 @@ describe("lanes", () => {
 });
 
 describe("the event log", () => {
-  it("lists the commands and the failed actions newest first, with the commands of a decision in their order", () => {
+  it("lists the commands and the failed actions newest first, also the commands of a decision", () => {
     const first = decision(0, [turnOn("a")]);
     const second = decision(20, [turnOff("b"), turnOff("a")]);
     const failed = { time: at(10), action: "turn_on light.a", error: "Light is gone" };
@@ -216,8 +216,8 @@ describe("the event log", () => {
     const rows = logRows([first, second], [failed]);
 
     expect(rows).toEqual([
-      { time: at(20), command: turnOff("b"), decision: second },
       { time: at(20), command: turnOff("a"), decision: second },
+      { time: at(20), command: turnOff("b"), decision: second },
       { time: at(10), failed },
       { time: at(0), command: turnOn("a"), decision: first },
     ]);

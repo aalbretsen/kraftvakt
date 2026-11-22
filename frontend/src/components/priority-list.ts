@@ -191,8 +191,12 @@ export class KraftvaktPriorityList extends LitElement {
     `;
   }
 
+  /** A group with one EV charger is shown as that EV charger alone, since the group's settings make no difference then. */
   private renderChargerGroup(group: ChargerGroupStatus, rank: number) {
     const chargers = group.chargers;
+    if (chargers.length === 1) {
+      return this.renderChargerRow(chargers[0], rank);
+    }
     const charging = chargers.filter((charger) => charger.charging).length;
     return html`
       <div class="row group">
@@ -209,16 +213,17 @@ export class KraftvaktPriorityList extends LitElement {
               </span>`,
         )}
       </div>
-      ${chargers.map((charger) => this.renderChargerRow(charger))}
+      ${chargers.map((charger) => this.renderChargerRow(charger, null))}
     `;
   }
 
-  private renderChargerRow(charger: ChargerStatus) {
+  /** An EV charger with a rank stands alone, and one without is indented under its group. */
+  private renderChargerRow(charger: ChargerStatus, rank: number | null) {
     return this.renderRow(
-      `charger ${charger.activated ? "" : "off"}`,
+      `charger ${rank === null ? "" : "alone"} ${charger.activated ? "" : "off"}`,
       existingEntity(this.hass, this.chargerEntity(charger)),
       html`
-        ${this.renderRank(null)}
+        ${this.renderRank(rank)}
         <div class="row-title">
           <ha-svg-icon class="device-icon ev ${charger.activated ? "on" : ""}" .path=${mdiEvStation}></ha-svg-icon>
           ${this.renderName(charger.name)}
@@ -453,7 +458,7 @@ export class KraftvaktPriorityList extends LitElement {
         outline: 2px solid var(--primary-color);
         outline-offset: -2px;
       }
-      .row.charger {
+      .row.charger:not(.alone) {
         min-height: 44px;
         border-top-style: dashed;
       }
@@ -466,10 +471,10 @@ export class KraftvaktPriorityList extends LitElement {
       .row.appliance:not(.with-temperature) .row-title {
         grid-column: span 2;
       }
-      .row.charger .row-title {
+      .row.charger:not(.alone) .row-title {
         padding-inline-start: 24px;
       }
-      :host([narrow]) .row.charger .row-title {
+      :host([narrow]) .row.charger:not(.alone) .row-title {
         padding-inline-start: 16px;
       }
       /* The rank stays close to the name, whatever the gap between the columns. */

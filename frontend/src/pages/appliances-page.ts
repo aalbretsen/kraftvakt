@@ -2,13 +2,13 @@ import { mdiEvStation } from "@mdi/js";
 import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import type { Appliance, Issue, PriorityEntry, Variant } from "../api";
+import type { Appliance, ChargerGroup, Issue, PriorityEntry, Variant } from "../api";
 import "../components/appliance-dialog";
 import "../components/manual-control-warning";
 import "../components/variant-dialog";
 import type { ListRow } from "../components/sortable-list";
 import { moveItem, newId, priorityKey } from "../draft";
-import { entityName } from "../entities";
+import { chargerName, entityName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -94,6 +94,15 @@ export class KraftvaktAppliancesPage extends ConfigPage {
     `;
   }
 
+  /** A group with one EV charger is named after it, as on the status page. */
+  private groupTitle(group: ChargerGroup): string {
+    const [charger, ...others] = group.chargers;
+    if (!charger || others.length > 0) {
+      return group.name;
+    }
+    return chargerName(this.hass, this.entityNames, charger) ?? this.localize("missing.charger_without_device");
+  }
+
   private applianceSaveErrors(appliance: Appliance): Issue[] {
     return issuesFor(this.saveErrors, "appliances", appliance.id);
   }
@@ -113,7 +122,7 @@ export class KraftvaktAppliancesPage extends ConfigPage {
       const group = this.config.charger_groups.find((item) => item.id === entry.group_id);
       return {
         key: priorityKey(entry),
-        title: group?.name ?? "",
+        title: group ? this.groupTitle(group) : "",
         iconPath: mdiEvStation,
         details: [
           html`${this.localize("appliances.charger_group_sub", { count: group?.chargers.length ?? 0 })}

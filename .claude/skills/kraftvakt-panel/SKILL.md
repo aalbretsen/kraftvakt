@@ -147,6 +147,7 @@ The section header, the description and the footer note are in `section-styles.t
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
+  Both are shown only while the group has more than one charger, since they make no difference with one, and keep their values meanwhile.
 - Cloud-controlled EV charger is a group with a switch under actively charging, and shows the start delay while it is on or the delay has an error.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.
@@ -223,7 +224,9 @@ The section header, the description and the footer note are in `section-styles.t
 - The meter is a bar for consumption now. Each other value is a triangle above the bar pointing down at it, in its own colour, and each tile has the same triangle as swatch.
   Nothing else is drawn on the meter. Under the bar is a kW scale with readable ticks, reaching a bit above the limit and every value.
 - Appliances and chargers share one full-width card, Appliances and EV chargers, in priority order. Each charger group has a row with its name and its own rank at its position,
-  and its chargers are indented under it in the group's current charging priority. Every row is one line, with columns that line up without headings: rank,
+  and its chargers are indented under it in the group's current charging priority.
+  A group with one charger is that charger's row alone, with the group's rank and without indent, and its entry in the priority list on the Appliances page
+  has the charger's name, since the group's name and settings make no difference then. Every row is one line, with columns that line up without headings: rank,
   name with the variant after it, current, power, waiting and state chip. An appliance has no current, so its name also takes the current column.
   The power is an appliance's display power or a charger's charging power, in kW, left out when no row has one.
   An appliance's display temperature, with one decimal, is in the current column, right aligned with the ampere bars, since an EV charger never has one;
@@ -281,7 +284,8 @@ The section header, the description and the footer note are in `section-styles.t
   Before the last start, and after the last decision while stopped, it is hatched as not known, since the commands of a stop are not kept, and nothing is guessed,
   so the lanes are hatched just after a start and fully known after an hour.
   Hovering shows the consumption at that time and the decision that covers it.
-- Then the event log: the commands of the decisions kept and the failed actions, newest first, filtered by all, commands or failed actions.
+- Then the event log: the commands of the decisions kept and the failed actions, newest first, also the commands of one decision,
+  so the log reads in one direction. Filtered by all, commands or failed actions.
   A row opens the decision with its averages, whether the power sensor was valid, the safe state, the penalty, the waiting and all its commands,
   or the error of a failed action, and marks its time in the chart. The footer links to the integration's page for Download diagnostics.
 - Commands are named by the item's name in the status, with the variant's label after it; a failed action shows its action as the backend gives it, in English.

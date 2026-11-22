@@ -168,7 +168,7 @@ export function chargerRows(status: StatusSnapshot): ChargerStatus[] {
 /** A row of the event log: a command of a decision, or a failed action. */
 export type LogRow = { time: string; command: DecisionCommand; decision: DecisionRecord } | { time: string; failed: FailedAction };
 
-/** Return the commands of the decisions and the failed actions, newest first, with the commands of a decision in their order. */
+/** Return the commands of the decisions and the failed actions, newest first, also the commands of a decision, so the log reads in one direction. */
 export function logRows(decisions: DecisionRecord[], failed: FailedAction[]): LogRow[] {
   const rows: LogRow[] = [
     ...decisions.flatMap((decision) => decision.commands.map((command) => ({ time: decision.time, command, decision }))),
@@ -176,7 +176,7 @@ export function logRows(decisions: DecisionRecord[], failed: FailedAction[]): Lo
   ];
   return rows
     .map((row, index) => ({ row, index }))
-    .sort((a, b) => Date.parse(b.row.time) - Date.parse(a.row.time) || a.index - b.index)
+    .sort((a, b) => Date.parse(b.row.time) - Date.parse(a.row.time) || b.index - a.index)
     .map(({ row }) => row);
 }
 

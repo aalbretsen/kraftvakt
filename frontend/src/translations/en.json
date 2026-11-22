@@ -523,7 +523,7 @@
   },
   "charging": {
     "name": "Name",
-    "name_sub": "Shown in the priority list and on the status page.",
+    "name_sub": "Shown in the priority list and on the status page while the group has more than one EV charger.",
     "one_at_a_time": "One EV charger at a time",
     "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that draws power gets the turn.",
     "dynamic_order": "Dynamic charging order",
