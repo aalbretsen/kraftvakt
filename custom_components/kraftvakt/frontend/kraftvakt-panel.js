@@ -892,17 +892,21 @@ function e(e,t,r,i){var a,n=arguments.length,s=n<3?t:null===i?i=Object.getOwnPro
           </span>
         </div>
         <div class="legend">
-          <span><i class="swatch consumption"></i>${this.localize("diagnostics.consumption")}</span>
-          <span><i class="swatch line"></i>${this.localize("status.regulation_average")}</span>
-          <span><i class="swatch line tariff"></i>${this.localize("status.tariff_average")}</span>
-          <span><i class="swatch line limit"></i>${this.localize("status.power_limit")}</span>
-          <span><i class="swatch on"></i>${this.localize("status.on")}</span>
-          <span><i class="swatch current"></i>${this.localize("charger.charging_current")}</span>
-          <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting_time")}</span>
-          <span><i class="swatch waiting damping"></i>${this.localize("diagnostics.damping")}</span>
-          <span><i class="swatch waiting start_delay"></i>${this.localize("diagnostics.start_delay")}</span>
-          <span><i class="swatch unknown"></i>${this.localize("diagnostics.not_known")}</span>
-          <span><i class="swatch oldest"></i>${this.localize("diagnostics.oldest_decision")}</span>
+          <div class="legend-group">
+            <span><i class="swatch oldest"></i>${this.localize("diagnostics.oldest_decision")}</span>
+            <span><i class="swatch consumption"></i>${this.localize("diagnostics.consumption")}</span>
+            <span><i class="swatch line"></i>${this.localize("status.regulation_average")}</span>
+            <span><i class="swatch line tariff"></i>${this.localize("status.tariff_average")}</span>
+            <span><i class="swatch line limit"></i>${this.localize("status.power_limit")}</span>
+          </div>
+          <div class="legend-group">
+            <span><i class="swatch on"></i>${this.localize("status.on")}</span>
+            <span><i class="swatch current"></i>${this.localize("charger.charging_current")}</span>
+            <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting_time")}</span>
+            <span><i class="swatch waiting damping"></i>${this.localize("diagnostics.damping")}</span>
+            <span><i class="swatch waiting start_delay"></i>${this.localize("diagnostics.start_delay")}</span>
+            <span><i class="swatch unknown"></i>${this.localize("diagnostics.not_known")}</span>
+          </div>
         </div>
         <div class="chart" @pointermove=${this.pointerMoved} @pointerleave=${()=>this.hoverMs=void 0}>
           ${this.chartWidth>0?this.renderChart(e,t):te} ${this.renderTooltip(t)}
@@ -1129,12 +1133,16 @@ function e(e,t,r,i){var a,n=arguments.length,s=n<3?t:null===i?i=Object.getOwnPro
         color: var(--text-primary-color, #fff);
       }
       .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 14px;
+        display: grid;
+        gap: 6px;
         padding: 0 16px 4px;
         font-size: var(--ha-font-size-s, 12px);
         color: var(--secondary-text-color);
+      }
+      .legend-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
       }
       .legend span {
         display: inline-flex;
