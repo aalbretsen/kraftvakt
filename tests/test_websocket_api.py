@@ -1263,6 +1263,10 @@ async def test_diagnostics_are_sent_at_once_and_then_only_what_is_new(
         },
         "measurements": {"replace": True, "kept_from": local(started), "items": [{"start": local(started), "power_w": 2000}]},
         "decisions": {"replace": True, "kept_from": None, "items": []},
+        "commands_before_decisions": {
+            "time": local(started),
+            "commands": [{"command": "TurnOffAppliance", "appliance_id": appliance_id, "variant_id": None} for appliance_id in ("a", "b")],
+        },
         "failed_actions": [],
     }
 

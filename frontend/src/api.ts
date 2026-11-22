@@ -426,7 +426,15 @@ export interface DiagnosticsEvent {
   repeats_due_at: { appliances: Record<string, string>; chargers: Record<string, string> };
   measurements: DiagnosticsPart<Measurement>;
   decisions: DiagnosticsPart<DecisionRecord>;
+  /** The commands that set the appliances and EV chargers before the decisions kept: those of the last start, with the decisions that have left the hour. */
+  commands_before_decisions: CommandsBefore | null;
   failed_actions: FailedAction[];
+}
+
+export interface CommandsBefore {
+  /** When the last of the commands was sent. */
+  time: string;
+  commands: DecisionCommand[];
 }
 
 /** Get what the diagnostics page shows now and at each change of the status, until the returned function is called. */

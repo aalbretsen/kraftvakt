@@ -271,14 +271,14 @@ The section header, the description and the footer note are in `section-styles.t
 - First a row of health tiles: the power sensor, the actions, the regulation and the command repeat, each with a dot in the success, warning or alarm colour, or grey.
   The regulation tile shows how long it has run as whole days, or else hours, or else minutes, rounded down, with the start under it,
   since a date and time is hard to read for a long run.
-- Then the timeline: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average and the power limit,
-  with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
-  A lane shows what each command set until the next command: an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max,
-  and the waiting hatched. One without a command since the oldest decision kept is as it is now while the regulation runs.
-  Before its first command, and before the last start, it is hatched as not known, since the commands of a start and a stop are not kept, and nothing is guessed.
+- Then the timeline over the last hour: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average
+  and the power limit, with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
+  A lane shows what each command set until the next command, starting with the commands before the decisions kept:
+  an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max, and the waiting hatched.
+  One without a command since the last start is as it is now while the regulation runs.
+  Before the last start, and after the last decision while stopped, it is hatched as not known, since the commands of a stop are not kept, and nothing is guessed,
+  so the lanes are hatched just after a start and fully known after an hour.
   Hovering shows the consumption at that time and the decision that covers it.
-  The time axis starts at the window of the oldest decision kept, at most an hour before now, and one window before now when none is kept,
-  so it grows from one window after the first decision; its labels get seconds when the step between them is shorter than a minute.
 - Then the event log: the commands of the decisions kept and the failed actions, newest first, filtered by all, commands or failed actions.
   A row opens the decision with its averages, whether the power sensor was valid, the safe state, the penalty, the waiting and all its commands,
   or the error of a failed action, and marks its time in the chart. The footer links to the integration's page for Download diagnostics.

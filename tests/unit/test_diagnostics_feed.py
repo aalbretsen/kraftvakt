@@ -23,6 +23,7 @@ def runtime(measurements: list[tuple[datetime, float]]) -> Any:
         repeats_due_at=lambda: RepeatsDue({}, {}),
         power_measurements=measurements,
         recent_decisions=[],
+        commands_before_decisions=None,
         failed_actions=[],
     )
 

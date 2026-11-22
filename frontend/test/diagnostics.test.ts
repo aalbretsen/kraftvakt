@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ApplianceStatus, ChargerStatus, DecisionCommand, DecisionRecord, StatusSnapshot } from "../src/api";
-import { lanes, logRows, mergePart, repeatsDue, timeTicks, timelineStart } from "../src/diagnostics";
+import { lanes, logRows, mergePart, repeatsDue } from "../src/diagnostics";
 
 const T0 = Date.parse("2026-01-05T12:00:00Z");
 
@@ -99,45 +99,60 @@ describe("merging the parts of the diagnostics", () => {
 });
 
 describe("lanes", () => {
-  it("shows what each command set until the next, and nothing before the first", () => {
+  const started = { time: at(-100), commands: [] };
+
+  it("shows what each command set until the next", () => {
     const decisions = [decision(0), decision(10, [turnOn("a")]), decision(20, [turnOn("b"), setCurrent("c", 6)]), decision(30, [turnOff("a")])];
 
-    const result = lanes(decisions, status([applianceRow("a", false)]), at(-100), T0 + 40_000);
+    const result = lanes(decisions, started, status([applianceRow("a", false)]), at(-100), T0 + 40_000);
 
-    expect(result.from).toBe(T0);
+    expect(result.from).toBe(T0 - 100_000);
     expect(result.appliances.a).toEqual([
       { start: T0 + 10_000, end: T0 + 30_000, value: true },
       { start: T0 + 30_000, end: T0 + 40_000, value: false },
     ]);
   });
 
+  it("starts with what the commands before the decisions set", () => {
+    const before = { time: at(-100), commands: [turnOff("a"), setCurrent("c", 6), { command: "DeactivateCharger" as const, charger_id: "c" }] };
+
+    const result = lanes([decision(0, [turnOn("a")])], before, status([applianceRow("a", true)], [chargerRow("c", null)]), at(-200), T0 + 10_000);
+
+    expect(result.appliances.a).toEqual([
+      { start: T0 - 100_000, end: T0, value: false },
+      { start: T0, end: T0 + 10_000, value: true },
+    ]);
+    expect(result.chargers.c).toEqual([{ start: T0 - 100_000, end: T0 + 10_000, value: null }]);
+  });
+
   it("shows an appliance without commands as it is now while the regulation runs, and not while it is stopped", () => {
     const decisions = [decision(0), decision(10)];
 
-    expect(lanes(decisions, status([applianceRow("a", true)]), at(-100), T0 + 20_000).appliances.a).toEqual([{ start: T0, end: T0 + 20_000, value: true }]);
-    expect(lanes(decisions, status([applianceRow("a", true)]), null, T0 + 20_000).appliances.a).toEqual([]);
+    expect(lanes(decisions, started, status([applianceRow("a", true)]), at(-100), T0 + 20_000).appliances.a).toEqual([{ start: T0 - 100_000, end: T0 + 20_000, value: true }]);
+    expect(lanes(decisions, started, status([applianceRow("a", true)]), null, T0 + 20_000).appliances.a).toEqual([]);
   });
 
-  it("leaves out the decisions before the regulation started, since the commands of a start are not kept", () => {
+  it("leaves out the decisions before the commands before the decisions, since they are from before the last start", () => {
     const decisions = [decision(0, [turnOn("a")]), decision(10)];
 
-    const result = lanes(decisions, status([applianceRow("a", false)]), at(5), T0 + 20_000);
+    const result = lanes(decisions, { time: at(5), commands: [turnOff("a")] }, status([applianceRow("a", true)]), at(5), T0 + 20_000);
 
-    expect(result.from).toBe(T0 + 10_000);
-    expect(result.appliances.a).toEqual([{ start: T0 + 10_000, end: T0 + 20_000, value: false }]);
+    expect(result.from).toBe(T0 + 5_000);
+    expect(result.appliances.a).toEqual([{ start: T0 + 5_000, end: T0 + 20_000, value: false }]);
   });
 
-  it("starts at the start of the regulation before its first decision", () => {
-    const result = lanes([], status([applianceRow("a", false)]), at(0), T0 + 5_000);
+  it("knows nothing before the first start", () => {
+    const result = lanes([], null, status([applianceRow("a", false)]), null, T0);
 
-    expect(result.appliances.a).toEqual([{ start: T0, end: T0 + 5_000, value: false }]);
+    expect(result).toMatchObject({ from: T0, to: T0, appliances: { a: [] } });
   });
 
-  it("ends at the last decision while the regulation is stopped", () => {
-    const result = lanes([decision(0, [turnOn("a")]), decision(10)], status([applianceRow("a", false)]), null, T0 + 60_000);
+  it("ends at the last decision while the regulation is stopped, or at the start without one", () => {
+    const result = lanes([decision(0, [turnOn("a")]), decision(10)], started, status([applianceRow("a", false)]), null, T0 + 60_000);
 
     expect(result.to).toBe(T0 + 10_000);
     expect(result.appliances.a).toEqual([{ start: T0, end: T0 + 10_000, value: true }]);
+    expect(lanes([], started, status([applianceRow("a", false)]), null, T0 + 60_000).to).toBe(T0 - 100_000);
   });
 
   it("gives an EV charger the current of its commands, and none while deactivated", () => {
@@ -149,20 +164,20 @@ describe("lanes", () => {
       decision(40, [setCurrent("c", 0), setCurrent("d", 8), turnOn("a")]),
     ];
 
-    const result = lanes(decisions, status([], [chargerRow("c", null)]), at(-100), T0 + 50_000);
+    const result = lanes(decisions, started, status([], [chargerRow("c", null)]), at(-100), T0 + 50_000);
 
     expect(result.chargers.c.map((segment) => segment.value)).toEqual([6, 7, null, 6, null]);
   });
 
   it("shows an EV charger without commands with its current now", () => {
-    const result = lanes([decision(0)], status([], [chargerRow("c", 8), chargerRow("d", null)]), at(-100), T0 + 10_000);
+    const result = lanes([decision(0)], started, status([], [chargerRow("c", 8), chargerRow("d", null)]), at(-100), T0 + 10_000);
 
-    expect(result.chargers.c).toEqual([{ start: T0, end: T0 + 10_000, value: 8 }]);
-    expect(result.chargers.d).toEqual([{ start: T0, end: T0 + 10_000, value: null }]);
+    expect(result.chargers.c).toEqual([{ start: T0 - 100_000, end: T0 + 10_000, value: 8 }]);
+    expect(result.chargers.d).toEqual([{ start: T0 - 100_000, end: T0 + 10_000, value: null }]);
   });
 
   it("shows the waiting from when it started until the decision where it no longer waits, or until now", () => {
-    const waitingA = { key: { appliance_id: "a" }, started_at: at(-30), until: at(60) };
+    const waitingA = { key: { appliance_id: "a" }, started_at: at(-130), until: at(60) };
     const waitingC = { key: { charger_id: "c", index: 3 }, started_at: at(20), until: at(50) };
     const decisions = [
       decision(0, [], { waiting: waitingA }),
@@ -171,10 +186,10 @@ describe("lanes", () => {
       decision(30, [], { waiting: waitingC }),
     ];
 
-    const result = lanes(decisions, status([applianceRow("a", false)], [chargerRow("c", 6)]), at(-100), T0 + 40_000);
+    const result = lanes(decisions, started, status([applianceRow("a", false)], [chargerRow("c", 6)]), at(-100), T0 + 40_000);
 
     expect(result.waiting).toEqual({
-      a: [{ start: T0, end: T0 + 20_000, value: null }],
+      a: [{ start: T0 - 100_000, end: T0 + 20_000, value: null }],
       c: [{ start: T0 + 20_000, end: T0 + 40_000, value: null }],
     });
   });
@@ -183,7 +198,7 @@ describe("lanes", () => {
     const first = { key: { appliance_id: "a" }, started_at: at(0), until: at(20) };
     const second = { key: { appliance_id: "a" }, started_at: at(10), until: at(40) };
 
-    const result = lanes([decision(0, [], { waiting: first }), decision(10, [], { waiting: second })], status([applianceRow("a", false)]), null, T0 + 60_000);
+    const result = lanes([decision(0, [], { waiting: first }), decision(10, [], { waiting: second })], started, status([applianceRow("a", false)]), null, T0 + 60_000);
 
     expect(result.waiting.a).toEqual([
       { start: T0, end: T0 + 10_000, value: null },
@@ -216,39 +231,5 @@ describe("command repeats", () => {
       { type: "charger", id: "c", dueAt: at(20) },
       { type: "appliance", id: "a", dueAt: at(30) },
     ]);
-  });
-});
-
-describe("timeline start", () => {
-  const window = 10_000;
-
-  it("is one window before now when no decision is kept", () => {
-    expect(timelineStart([], window, T0)).toBe(T0 - window);
-  });
-
-  it("is the start of the window of the oldest decision kept, one window just after the first decision", () => {
-    expect(timelineStart([decision(0)], window, T0)).toBe(T0 - window);
-    expect(timelineStart([decision(0), decision(10), decision(20)], window, T0 + 25_000)).toBe(T0 - window);
-  });
-
-  it("is at most an hour before now", () => {
-    expect(timelineStart([decision(0)], window, T0 + 7_200_000)).toBe(T0 + 3_600_000);
-  });
-
-  it("covers at least one window when the clock of the browser is behind", () => {
-    expect(timelineStart([decision(60)], window, T0)).toBe(T0 - window);
-  });
-});
-
-describe("time ticks", () => {
-  it("are the multiples of the shortest step that gives at most the labels asked for, with room for the end", () => {
-    expect(timeTicks(T0 - 10_000, T0, 6)).toEqual({ stepMs: 10_000, ticks: [T0 - 10_000] });
-    expect(timeTicks(T0 - 3_600_000, T0, 6)).toEqual({ stepMs: 600_000, ticks: [0, 1, 2, 3, 4, 5].map((index) => T0 - 3_600_000 + index * 600_000) });
-    expect(timeTicks(T0 - 3_600_000, T0, 3).stepMs).toBe(1_800_000);
-    expect(timeTicks(T0 - 95_000, T0, 6)).toEqual({ stepMs: 30_000, ticks: [T0 - 90_000, T0 - 60_000, T0 - 30_000] });
-  });
-
-  it("use the longest step for a span longer than it allows", () => {
-    expect(timeTicks(T0 - 7_200_000, T0, 3).stepMs).toBe(1_800_000);
   });
 });

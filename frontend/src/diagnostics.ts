@@ -2,7 +2,18 @@
  * The history the diagnostics page draws, worked out from what the backend keeps: the last
  * decisions with their commands, and the state now.
  */
-import type { ApplianceStatus, ChargerStatus, DecisionCommand, DecisionRecord, DiagnosticsEvent, DiagnosticsPart, FailedAction, StatusSnapshot, WaitingStep } from "./api";
+import type {
+  ApplianceStatus,
+  ChargerStatus,
+  CommandsBefore,
+  DecisionCommand,
+  DecisionRecord,
+  DiagnosticsEvent,
+  DiagnosticsPart,
+  FailedAction,
+  StatusSnapshot,
+  WaitingStep,
+} from "./api";
 
 /** A time span in ms since the epoch, with what held over it. */
 export interface Segment<Value> {
@@ -25,33 +36,6 @@ export interface Lanes {
   waiting: Record<string, Segment<null>[]>;
 }
 
-/** The hour the backend keeps the measurements and the decisions for. */
-const HOUR_MS = 3_600_000;
-
-/**
- * Return when the timeline starts: at the start of the window of the oldest decision kept, at most
- * an hour before now. With no decision kept, and always at least, it covers one window.
- */
-export function timelineStart(decisions: DecisionRecord[], windowMs: number, now: number): number {
-  const oldest = decisions.length > 0 ? Date.parse(decisions[0].time) : now;
-  return Math.min(Math.max(oldest - windowMs, now - HOUR_MS), now - windowMs);
-}
-
-const TICK_STEPS_S = [10, 15, 30, 60, 120, 300, 600, 900, 1800];
-
-/**
- * Return the times to label on the time axis from `start` to `end`: the multiples of the shortest step
- * that gives at most `most` labels, leaving room for the label of the end.
- */
-export function timeTicks(start: number, end: number, most: number): { stepMs: number; ticks: number[] } {
-  const stepMs = (TICK_STEPS_S.find((step) => (end - start) / (step * 1000) <= most) ?? TICK_STEPS_S[TICK_STEPS_S.length - 1]) * 1000;
-  const ticks: number[] = [];
-  for (let tick = Math.ceil(start / stepMs) * stepMs; tick < end - stepMs / 2; tick += stepMs) {
-    ticks.push(tick);
-  }
-  return { stepMs, ticks };
-}
-
 /** Return what the panel holds after a part: the part's items, after the held items that are still kept and come before them. */
 export function mergePart<Item>(held: Item[], part: DiagnosticsPart<Item>, time: (item: Item) => string): Item[] {
   if (part.replace) {
@@ -67,36 +51,42 @@ export function mergePart<Item>(held: Item[], part: DiagnosticsPart<Item>, time:
 }
 
 /**
- * Return what each appliance and EV charger was set to since the oldest decision kept, or since the
- * regulation started when that is later, until now, or until the last decision while stopped.
+ * Return what each appliance and EV charger was set to from the commands before the decisions kept
+ * until now, or until the last decision while stopped.
  *
  * After a command, it is what the command set. One without a command in that time is as it is now,
- * while the regulation runs. Before its first command, and while stopped, it is not known, since the
- * commands of a start and a stop are not kept.
+ * while the regulation runs. Before the last start, and while stopped, it is not known, since the
+ * commands of a stop are not kept.
  */
-export function lanes(decisions: DecisionRecord[], status: StatusSnapshot, startedAt: string | null, now: number): Lanes {
+export function lanes(decisions: DecisionRecord[], before: CommandsBefore | null, status: StatusSnapshot, startedAt: string | null, now: number): Lanes {
   const running = startedAt !== null;
-  const started = startedAt === null ? -Infinity : Date.parse(startedAt);
-  const sinceStart = decisions.filter((decision) => Date.parse(decision.time) >= started);
-  const oldestKept = sinceStart.length > 0 ? Date.parse(sinceStart[0].time) : undefined;
-  const latestKept = sinceStart.length > 0 ? Date.parse(sinceStart[sinceStart.length - 1].time) : undefined;
-  const from = oldestKept ?? (running ? started : now);
-  const to = running ? now : (latestKept ?? now);
+  const from = before === null ? now : Date.parse(before.time);
+  const kept = decisions.filter((decision) => Date.parse(decision.time) > from);
+  const latestKept = kept.length > 0 ? Date.parse(kept[kept.length - 1].time) : from;
+  const to = running ? now : latestKept;
+  const commands = before === null ? kept : [{ time: before.time, commands: before.commands }, ...kept];
   const appliances: Record<string, Segment<boolean>[]> = {};
   for (const appliance of applianceRows(status)) {
-    appliances[appliance.id] = segments(sinceStart, from, to, running, appliance.on, (command) => applianceValue(command, appliance.id));
+    appliances[appliance.id] = segments(commands, from, to, running, appliance.on, (command) => applianceValue(command, appliance.id));
   }
   const chargers: Record<string, Segment<number | null>[]> = {};
   for (const charger of chargerRows(status)) {
-    chargers[charger.id] = segments(sinceStart, from, to, running, charger.activated ? charger.current_a : null, (command) => chargerValue(command, charger.id));
+    chargers[charger.id] = segments(commands, from, to, running, charger.activated ? charger.current_a : null, (command) => chargerValue(command, charger.id));
   }
-  return { from, to, appliances, chargers, waiting: waitingSegments(sinceStart, from, to, running) };
+  return { from, to, appliances, chargers, waiting: waitingSegments(kept, from, to, running) };
 }
 
 /** What a command sets the item to: undefined when it is not for the item, or does not tell. */
 type CommandValue<Value> = (command: DecisionCommand) => Value | undefined;
 
-function segments<Value>(decisions: DecisionRecord[], from: number, to: number, running: boolean, now: Value, valueOf: CommandValue<Value>): Segment<Value>[] {
+function segments<Value>(
+  decisions: Pick<DecisionRecord, "time" | "commands">[],
+  from: number,
+  to: number,
+  running: boolean,
+  now: Value,
+  valueOf: CommandValue<Value>,
+): Segment<Value>[] {
   const changes: { time: number; value: Value }[] = [];
   for (const decision of decisions) {
     let value: Value | undefined;

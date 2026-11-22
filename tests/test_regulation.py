@@ -393,18 +393,32 @@ async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
     assert "Decision: {'time': " in caplog.text
 
 
-async def test_the_decisions_of_the_last_hour_are_kept(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
-    """A decision is kept while its time is within the hour before the last decision, the same hour as the measurements."""
-    set_power(hass, "2000")
-    entry = await setup_kraftvakt()
+async def test_the_decisions_of_the_last_hour_are_kept_with_the_commands_before_them(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
+    """A decision is kept while its time is within the hour before the last decision, the same hour as the measurements.
 
-    for _ in range(61):
+    The commands before the decisions are those of the start, and then of the decisions that have left the hour,
+    so what each appliance was set to is known from the start on.
+    """
+    set_power(hass, "2000")
+    started_at = dt_util.now()
+    entry = await setup_kraftvakt()
+    runtime = entry.runtime_data
+    turn_off = [{"command": "TurnOffAppliance", "appliance_id": appliance_id, "variant_id": None} for appliance_id in ("a", "b")]
+    assert runtime.commands_before_decisions == {"time": started_at.isoformat(), "commands": turn_off}
+
+    await advance(hass, freezer)
+    first_decision_at = dt_util.now()
+    for _ in range(60):
         await advance(hass, freezer)
 
-    decisions = entry.runtime_data.recent_decisions
+    decisions = runtime.recent_decisions
     assert len(decisions) == 60
     assert decisions[0]["time"] == (dt_util.now() - timedelta(minutes=59)).isoformat()
     assert decisions[-1]["time"] == dt_util.now().isoformat()
+    assert runtime.commands_before_decisions == {
+        "time": first_decision_at.isoformat(),
+        "commands": [turn_off[1], {"command": "TurnOnAppliance", "appliance_id": "a", "variant_id": None}],
+    }
 
 
 async def test_safe_state_when_the_power_sensor_is_lost(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:

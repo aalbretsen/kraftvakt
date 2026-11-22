@@ -21,8 +21,9 @@ from .config_model import Issue, KraftvaktConfig
 from .config_validation import missing_items
 from .decision_clock import DecisionClock, first_decision_from
 from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
+from .decision_log import DecisionLog
 from .json_values import plain
-from .measurement import TARIFF_WINDOW, IntervalChange, MissedWindows, WindowAverages
+from .measurement import IntervalChange, MissedWindows, WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
@@ -81,7 +82,7 @@ class KraftvaktRuntime:
         self._engine = RegulationEngine(config)
         self._action_lock = action_lock or asyncio.Lock()
         self._actions = self._action_runner(config)
-        self._recent_decisions: deque[tuple[datetime, dict[str, Any]]] = deque()
+        self._decision_log = DecisionLog()
         self._failed_actions: deque[dict[str, Any]] = deque(maxlen=20)
         self._measurement = PowerMeasurement(hass, lambda: self.config.general, self._notify_status)
         self._decisions = DecisionClock()
@@ -207,7 +208,12 @@ class KraftvaktRuntime:
     @property
     def recent_decisions(self) -> list[dict[str, Any]]:
         """Return the decisions of the hour before the last one, oldest first, for the diagnostics."""
-        return [record for _, record in self._recent_decisions]
+        return self._decision_log.records
+
+    @property
+    def commands_before_decisions(self) -> dict[str, Any] | None:
+        """Return the commands that set the appliances and chargers before the decisions kept, for the diagnostics."""
+        return self._decision_log.commands_before
 
     @property
     def failed_actions(self) -> list[dict[str, Any]]:
@@ -358,7 +364,9 @@ class KraftvaktRuntime:
         async_clear_not_started(self._hass)
         async_check_entities(self._hass, self.config)
         self._decisions.restart()
-        self._execute(self._engine.start(now, excluded_appliances(self._settings)))
+        commands = self._engine.start(now, excluded_appliances(self._settings))
+        self._decision_log.start(now, commands)
+        self._execute(commands)
         self._notify_status()
 
     @callback
@@ -401,9 +409,7 @@ class KraftvaktRuntime:
                 "commands": [command_dict(command) for command in commands],
             }
         )
-        self._recent_decisions.append((decision.now, record))
-        while self._recent_decisions[0][0] <= decision.now - TARIFF_WINDOW:
-            self._recent_decisions.popleft()
+        self._decision_log.add(decision.now, commands, record)
         _LOGGER.debug("Decision: %s", record)
 
     def _action_runner(self, config: KraftvaktConfig) -> ActionRunner:

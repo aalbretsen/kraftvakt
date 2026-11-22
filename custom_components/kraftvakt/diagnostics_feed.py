@@ -46,6 +46,7 @@ class DiagnosticsFeed:
             "repeats_due_at": plain(runtime.repeats_due_at()),
             "measurements": self._measurements_part(runtime.power_measurements, replace),
             "decisions": self._decisions_part(runtime.recent_decisions, replace),
+            "commands_before_decisions": runtime.commands_before_decisions,
             "failed_actions": runtime.failed_actions,
         }
 
