@@ -240,6 +240,12 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   + step × (n − 2)), where n is the count of turn-ons again. The step is a share of the waiting time at the limit, 0.25, 0.5, 0.75 or 1,
     and the cap is the waiting time at the limit plus a number of steps, 1–9, default 0.5 and 4.
     With waiting time 0 at the limit, the step and the cap are 0, so the waiting time does not grow. Any command for another step, also forced ones, resets the counter.
+- A charger is one unit for repeated turn-on: activated after it has been deactivated, it is turned on again,
+  and its ampere steps above the first neither count nor reset its counter.
+  Only a command for an appliance, also a forced one, resets it, and a deactivation longer ago than the cap for chargers is forgotten.
+  A command for a charger still resets the counter of an appliance.
+  Why: switching a charger on and off wears the relays of the charger and the car, and a change of its current does not.
+  A deactivation longer ago than the longest it can wait is no longer switching on and off.
 - Known limitation, to revisit if it shows up in real use: two steps that alternate (A on, B on, B off, A off, A on …) reset each other's counter,
   so their waiting time never grows.
 

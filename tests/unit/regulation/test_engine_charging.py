@@ -158,6 +158,61 @@ def test_charger_activated_again_waits_the_waiting_time_for_ev_chargers() -> Non
     assert scenario.decide_many(7000, 11) == [[]] * 10 + [activate("c")]
 
 
+def test_charger_is_one_unit_for_the_growth_on_repeated_turn_on() -> None:
+    """Its own amperes up and down neither count nor end the count, so the third activation waits 10 minutes, not 151 s by the curve."""
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=7, min_current_power_w=2000),), wait_at_limit_s=300))
+    scenario.draw("c")
+
+    assert scenario.decide_many(7000, 2) == [activate("c"), current("c", 7)]
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
+    assert scenario.decide_many(7000, 5) == [[], [], [], activate("c"), current("c", 7)]
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
+    assert scenario.decide_many(7000, 11) == [[]] * 10 + [activate("c")]
+
+
+def test_command_to_an_appliance_lets_a_charger_be_activated_again_at_once() -> None:
+    scenario = Scenario(make_config("x", chargers=(charger("c", max_a=6, min_current_power_w=2000),), wait_at_limit_s=300))
+    scenario.turn_on("x")
+    scenario.draw("c")
+    assert scenario.decide(7000) == activate("c")
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
+
+    scenario.exclude("x")
+
+    assert scenario.decide(7000) == off("x") + activate("c")
+
+
+def test_command_to_another_charger_leaves_a_charger_activated_again_waiting() -> None:
+    """a is deactivated while b waits, and b still waits its 151 s by the curve."""
+    scenario = Scenario(
+        make_config(
+            chargers=(charger("a", max_a=6, min_current_power_w=2000), charger("b", max_a=6, min_current_power_w=2000)),
+            one_at_a_time=False,
+            wait_at_limit_s=300,
+        )
+    )
+    scenario.draw("a")
+    scenario.draw("b")
+    assert scenario.decide_many(0, 2) == [activate("a"), activate("b")]
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("b")
+
+    scenario.set_charger("a", excluded=True)
+
+    assert scenario.decide_many(7000, 4) == [deactivate("a"), [], [], activate("b")]
+
+
+def test_charger_deactivated_longer_ago_than_the_longest_waiting_time_is_activated_at_once() -> None:
+    """The longest it can wait is 30 minutes: 10 minutes at the limit and four steps of 5 minutes."""
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=6, min_current_power_w=2000),), wait_at_limit_s=300))
+    scenario.draw("c")
+    assert scenario.decide(7000) == activate("c")
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("c")
+    assert scenario.decide_many(10_000, 29) == [[]] * 29
+
+    assert scenario.decide(7000) == []
+    assert scenario.decide(7000) == activate("c")
+
+
 def test_several_chargers_take_turns() -> None:
     """The first ampere step of each charger, then the second."""
     scenario = two_chargers(one_at_a_time=False)

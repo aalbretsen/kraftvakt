@@ -43,7 +43,7 @@ from .model import (
 )
 from .penalty import PenaltyLimits, PenaltyOutcome, PenaltyState
 from .priority import ampere_steps, build_steps, current_variant
-from .waiting import RepeatedTurnOnGrowth, WaitingCurve, curve_waiting_time, waiting_time
+from .waiting import RepeatedActivationCounter, RepeatedTurnOnGrowth, WaitingCurve, curve_waiting_time, waiting_time
 
 
 class RegulationEngine:
@@ -73,7 +73,7 @@ class RegulationEngine:
             general.appliance_repeat_increments,
         )
         self._running = False
-        self._state = RegulationState(charging_groups=self._new_charging_groups())
+        self._state = self._new_state()
 
     @property
     def running(self) -> bool:
@@ -158,7 +158,7 @@ class RegulationEngine:
     def start(self, now: datetime, excluded_appliances: frozenset[str] = frozenset()) -> list[Command]:
         """Start with everything off, except the essential appliances that are not excluded."""
         self._running = True
-        self._state = RegulationState(started_at=now, charging_groups=self._new_charging_groups(), excluded_appliances=excluded_appliances)
+        self._state = self._new_state(started_at=now, excluded_appliances=excluded_appliances)
         return self._record_commands(self._hold_everything_off(essential_on=True), now)
 
     def stop(self, excluded_appliances: frozenset[str] = frozenset()) -> list[Command]:
@@ -166,7 +166,7 @@ class RegulationEngine:
         self._running = False
         self._state.excluded_appliances = excluded_appliances
         commands = self._hold_everything_off(essential_on=True)
-        self._state = RegulationState(charging_groups=self._new_charging_groups())
+        self._state = self._new_state()
         return commands
 
     def decide(self, decision: DecisionInput) -> DecisionResult:
@@ -281,8 +281,13 @@ class RegulationEngine:
         since = self._state.damped_since.get(key) if isinstance(key, AmpereStepKey) else None
         return None if since is None else Waiting(key, since, since + self._ampere_damping_time)
 
-    def _new_charging_groups(self) -> dict[str, ChargingState]:
-        return {group.id: ChargingState.for_chargers(group.chargers) for group in self._groups}
+    def _new_state(self, started_at: datetime | None = None, excluded_appliances: frozenset[str] = frozenset()) -> RegulationState:
+        return RegulationState(
+            started_at=started_at,
+            excluded_appliances=excluded_appliances,
+            charging_groups={group.id: ChargingState.for_chargers(group.chargers) for group in self._groups},
+            activations=RepeatedActivationCounter(forgotten_after=self._charger_growth.cap),
+        )
 
     def _charging(self, group_id: str) -> ChargingState:
         return self._state.charging_groups[group_id]
@@ -343,9 +348,9 @@ class RegulationEngine:
             newly_bypassed = charging.evaluate(group, readings, permissions, decision.now)
             for charger_id in charging.activated():
                 if charging.must_deactivate(group, charger_id):
-                    commands += self._set_ampere_steps_on(charger_id, 0)
+                    commands += self._set_ampere_steps_on(charger_id, 0, decision.now)
                 elif (charger_id in newly_bypassed or charger_id in charging.held_at_min) and charging.ampere_steps_on[charger_id] > 1:
-                    commands += self._set_ampere_steps_on(charger_id, 1)
+                    commands += self._set_ampere_steps_on(charger_id, 1, decision.now)
         return commands
 
     def _decide_penalty(self, decision: DecisionInput) -> PenaltyOutcome:
@@ -401,14 +406,14 @@ class RegulationEngine:
         was_on = self._state.appliances_on & set(moving)
         commands = self._place_essential_appliances()
         for appliance_id in sorted((excluded & self._state.appliances_on) - self._essential):
-            commands += self._switch(ApplianceStepKey(appliance_id), turn_on=False)
+            commands += self._switch(ApplianceStepKey(appliance_id), turn_on=False, now=decision.now)
         places = {step.key: place for place, step in enumerate(self._steps())}
         for key in sorted(map(ApplianceStepKey, moving), key=lambda key: places[key]):
             appliance_id = key.appliance_id
             was_off = appliance_id not in was_on
             switched_variant = previous_variants.get(appliance_id) != self._state.current_variants[appliance_id]
             if appliance_id in self._state.appliances_on or (was_off and switched_variant):
-                commands += self._switch(key, turn_on=False)
+                commands += self._switch(key, turn_on=False, now=decision.now)
             if was_off and appliance_id not in excluded:
                 commands += self._make_room_below(key, decision.now)
             self._forget_waiting(key)
@@ -477,7 +482,7 @@ class RegulationEngine:
         """Switch off a step for power. An ampere step above the first is damped from now; the first waits its waiting time when it is turned on again."""
         if isinstance(key, AmpereStepKey) and key.index > 0:
             self._state.damped_since[key] = now
-        return self._switch(key, turn_on=False)
+        return self._switch(key, turn_on=False, now=now)
 
     def _free_power(self, steps_lowest_first: list[Step], needed_w: float, now: datetime) -> list[Command]:
         """Switch off steps, lowest first, until the power they are estimated to free covers `needed_w`.
@@ -585,7 +590,7 @@ class RegulationEngine:
             if place is not None and place < group_places[0]:
                 continue
             key = AmpereStepKey(queued[0], 0)
-            if self._state.repeats.upcoming_repeat(key):
+            if self._state.activations.upcoming_repeat(queued[0], now):
                 continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
             freed_w = sum(self._draw_above_minimum_w(charger_id) for charger_id in above_minimum)
@@ -596,7 +601,7 @@ class RegulationEngine:
             self._state.waiting = None
             commands: list[Command] = []
             for charger_id in sorted(above_minimum, key=charging.order(group).index):
-                commands += self._set_ampere_steps_on(charger_id, 1)
+                commands += self._set_ampere_steps_on(charger_id, 1, now)
             return commands + self._turn_on(key, now)
         return None
 
@@ -623,12 +628,14 @@ class RegulationEngine:
         steps on below it that may be switched off for room wait: none of them
         can be turned on while it waits, so waiting changes nothing, and they
         give way if it takes the average above the limit. The first ampere step
-        of a charger waits the waiting time for EV chargers.
+        of a charger waits the waiting time for EV chargers, the charger counted
+        as one unit for the growth on repeated turn-on.
         """
         step = steps[place]
-        repeat = self._state.repeats.upcoming_repeat(step.key)
-        is_ampere_step = isinstance(step.key, AmpereStepKey)
-        above_first = isinstance(step.key, AmpereStepKey) and step.key.index > 0
+        key = step.key
+        is_ampere_step = isinstance(key, AmpereStepKey)
+        repeat = self._state.activations.upcoming_repeat(key.charger_id, now) if isinstance(key, AmpereStepKey) else self._state.repeats.upcoming_repeat(key)
+        above_first = isinstance(key, AmpereStepKey) and key.index > 0
         if above_first or (step.power_reserve_w is not None and not repeat) or _steps_on_below(steps, place):
             self._state.waiting = None
             return True
@@ -656,8 +663,7 @@ class RegulationEngine:
         self._state.settling_since[key] = now
         return commands
 
-    def _switch(self, key: StepKey, turn_on: bool, now: datetime | None = None) -> list[Command]:
-        """`now` is needed only to turn on the first ampere step of a charger."""
+    def _switch(self, key: StepKey, turn_on: bool, now: datetime) -> list[Command]:
         if isinstance(key, ApplianceStepKey):
             appliance_id = key.appliance_id
             self._record_switch(key, turn_on)
@@ -670,12 +676,14 @@ class RegulationEngine:
         count = key.index + 1 if turn_on else key.index
         return self._set_ampere_steps_on(key.charger_id, count, now)
 
-    def _set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> list[Command]:
+    def _set_ampere_steps_on(self, charger_id: str, count: int, now: datetime) -> list[Command]:
         charging = self._charging_of(charger_id)
         before = charging.ampere_steps_on[charger_id]
         turn_on = count > before
         for index in range(min(before, count), max(before, count)):
             self._record_switch(AmpereStepKey(charger_id, index), turn_on)
+        if (before == 0) != (count == 0):
+            self._state.activations.record(charger_id, activated=count > 0, now=now)
         charging.set_ampere_steps_on(charger_id, count, now)
         return self._charger_commands(self._chargers[charger_id], count, activate=before == 0 and count > 0)
 
@@ -707,6 +715,8 @@ class RegulationEngine:
     def _record_switch(self, key: StepKey, turn_on: bool) -> None:
         self._forget_waiting(key)
         self._state.repeats.record(key, turn_on)
+        if isinstance(key, ApplianceStepKey):
+            self._state.activations.reset()
         if not turn_on:
             self._state.settling_since.pop(key, None)
         elif isinstance(key, AmpereStepKey):

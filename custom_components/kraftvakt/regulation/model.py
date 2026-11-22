@@ -9,7 +9,7 @@ from typing import Any
 
 from .charging import ChargerReading, ChargingState
 from .penalty import PenaltyState, RegulationAverage
-from .waiting import RepeatedTurnOnCounter
+from .waiting import RepeatedActivationCounter, RepeatedTurnOnCounter
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +167,8 @@ class RegulationState:
     `appliances_commanded_at` and `chargers_commanded_at` hold when each
     appliance and charger was last sent a command. `settling_since` holds when
     each settling step was turned on, and `damped_since` when each ampere step
-    was taken back for power.
+    was taken back for power. `repeats` counts the steps turned on again, and
+    `activations` the chargers activated again.
     """
 
     started_at: datetime | None = None
@@ -179,6 +180,7 @@ class RegulationState:
     settling_since: dict[StepKey, datetime] = field(default_factory=dict)
     damped_since: dict[AmpereStepKey, datetime] = field(default_factory=dict)
     repeats: RepeatedTurnOnCounter = field(default_factory=RepeatedTurnOnCounter)
+    activations: RepeatedActivationCounter = field(kw_only=True)
     penalty: PenaltyState = field(default_factory=PenaltyState)
     safe_state: bool = False
     charging_groups: dict[str, ChargingState] = field(default_factory=dict)

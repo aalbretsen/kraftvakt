@@ -83,7 +83,9 @@ The helper texts in the panel tell what each setting does.
   and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
   An appliance with a fixed load, and an EV charger, are turned on at once the first time, but wait when they are turned on again,
-  so they are not switched on and off again and again. An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
+  so they are not switched on and off again and again.
+  An EV charger counts as turned on again when it is activated after it was deactivated, whatever its current did meanwhile,
+  until an appliance is switched or the longest waiting time has passed. An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
   None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
   nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
 - **Damping of current changes:** an ampere an EV charger loses above the power limit, or to make room for something higher up,

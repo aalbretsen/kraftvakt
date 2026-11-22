@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Hashable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 GROWTH_FROM_REPEAT: Final = 2
@@ -121,3 +121,46 @@ class RepeatedTurnOnCounter:
 
     def diagnostics(self) -> dict[str, Any]:
         return {"last_key": self._last_key, "repeats": self._repeats}
+
+
+@dataclass(slots=True)
+class _Activations:
+    repeats: int
+    deactivated_at: datetime
+
+
+class RepeatedActivationCounter:
+    """Counts how many times each charger is activated again, the charger as one unit.
+
+    Its ampere steps above the first neither count nor end the count. A
+    command to an appliance ends the count of every charger, and so does a
+    deactivation longer ago than `forgotten_after`, the longest a charger can wait.
+    """
+
+    def __init__(self, forgotten_after: timedelta) -> None:
+        self._forgotten_after = forgotten_after
+        self._chargers: dict[str, _Activations] = {}
+
+    def record(self, charger_id: str, activated: bool, now: datetime) -> None:
+        activations = self._remembered(charger_id, now)
+        if not activated:
+            self._chargers[charger_id] = _Activations(activations.repeats if activations else 0, now)
+        elif activations is not None:
+            activations.repeats += 1
+
+    def upcoming_repeat(self, charger_id: str, now: datetime) -> int:
+        """Return the count the charger gets if it is activated next, 0 if not again."""
+        activations = self._remembered(charger_id, now)
+        return 0 if activations is None else activations.repeats + 1
+
+    def reset(self) -> None:
+        self._chargers.clear()
+
+    def _remembered(self, charger_id: str, now: datetime) -> _Activations | None:
+        activations = self._chargers.get(charger_id)
+        if activations is None or now - activations.deactivated_at > self._forgotten_after:
+            return None
+        return activations
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {"forgotten_after": self._forgotten_after, "chargers": self._chargers}

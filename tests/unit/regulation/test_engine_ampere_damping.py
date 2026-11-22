@@ -66,7 +66,7 @@ def test_ampere_taken_back_to_make_room_is_damped() -> None:
 
 def test_no_switch_over_to_a_queued_charger_that_would_be_activated_again() -> None:
     """b, deactivated above the limit, is queued behind a, which gets its next ampere instead, and b waits its waiting time when it is next."""
-    scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True, wait_at_limit_s=0))
+    scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True))
     scenario.set_charger("a", car_connected=False)
     scenario.draw("b")
     scenario.charge("b", 7)

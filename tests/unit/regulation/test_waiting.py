@@ -1,10 +1,11 @@
 """Unit tests for the waiting time."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from custom_components.kraftvakt.regulation.waiting import (
+    RepeatedActivationCounter,
     RepeatedTurnOnCounter,
     RepeatedTurnOnGrowth,
     WaitingCurve,
@@ -144,3 +145,46 @@ def test_reset_forgets_only_the_given_slot() -> None:
 
     counter.reset("a")
     assert counter.upcoming_repeat("a") == 0
+
+
+T0 = datetime(2026, 11, 22, 12, 0, tzinfo=UTC)
+HALF_AN_HOUR = timedelta(minutes=30)
+
+
+def test_activation_counter_counts_a_charger_activated_again_after_a_deactivation() -> None:
+    """The first activation is no repeat, nor is it counted before the charger has been deactivated."""
+    counter = RepeatedActivationCounter(forgotten_after=HALF_AN_HOUR)
+
+    counter.record("c", activated=True, now=T0)
+    assert counter.upcoming_repeat("c", T0) == 0
+    counter.record("c", activated=False, now=T0)
+    assert counter.upcoming_repeat("c", T0) == 1
+    counter.record("c", activated=True, now=T0)
+    counter.record("c", activated=False, now=T0)
+    assert counter.upcoming_repeat("c", T0) == 2
+    assert counter.upcoming_repeat("d", T0) == 0
+
+
+def test_activation_counter_forgets_a_deactivation_longer_ago_than_the_longest_waiting_time() -> None:
+    """A charger that has been activated for longer is deactivated as the first time."""
+    counter = RepeatedActivationCounter(forgotten_after=HALF_AN_HOUR)
+    for activated in (False, True, False):
+        counter.record("c", activated, now=T0)
+
+    assert counter.upcoming_repeat("c", T0 + HALF_AN_HOUR) == 2
+    assert counter.upcoming_repeat("c", T0 + HALF_AN_HOUR + timedelta(seconds=1)) == 0
+
+    counter.record("c", activated=True, now=T0 + timedelta(minutes=10))
+    counter.record("c", activated=False, now=T0 + timedelta(hours=2))
+    assert counter.upcoming_repeat("c", T0 + timedelta(hours=2)) == 1
+
+
+def test_activation_counter_reset_forgets_every_charger() -> None:
+    counter = RepeatedActivationCounter(forgotten_after=HALF_AN_HOUR)
+    counter.record("c", activated=False, now=T0)
+    counter.record("d", activated=False, now=T0)
+
+    counter.reset()
+
+    assert counter.upcoming_repeat("c", T0) == 0
+    assert counter.upcoming_repeat("d", T0) == 0
