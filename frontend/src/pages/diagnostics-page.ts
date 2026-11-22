@@ -17,6 +17,8 @@ import type { Localize, TranslationKey } from "../localize";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
 
+const RANGES_MIN = [15, 30, 60];
+
 type LogFilter = "all" | "commands" | "failed";
 
 /** One lane in the chart: an appliance or an EV charger, in priority order. */
@@ -47,6 +49,8 @@ export class KraftvaktDiagnosticsPage extends LitElement {
   @state() private decisions: DecisionRecord[] = [];
 
   @state() private error?: unknown;
+
+  @state() private rangeMin = 60;
 
   @state() private filter: LogFilter = "all";
 
@@ -203,12 +207,24 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       <ha-card>
         <div class="card-header">
           <span>${this.localize("diagnostics.timeline")}</span>
+          <span class="spacer"></span>
+          <span class="toggles">
+            ${RANGES_MIN.map(
+              (minutes) => html`
+                <button class="toggle" aria-pressed=${minutes === this.rangeMin} @click=${() => (this.rangeMin = minutes)}>
+                  ${this.localize("diagnostics.minutes", { minutes })}
+                </button>
+              `,
+            )}
+          </span>
         </div>
         <div class="legend">
           <span><i class="swatch consumption"></i>${this.localize("diagnostics.consumption")}</span>
           <span><i class="swatch line"></i>${this.localize("status.regulation_average")}</span>
           <span><i class="swatch line tariff"></i>${this.localize("status.tariff_average")}</span>
           <span><i class="swatch line limit"></i>${this.localize("status.power_limit")}</span>
+          <span><i class="swatch on"></i>${this.localize("status.on")}</span>
+          <span><i class="swatch current"></i>${this.localize("charger.charging_current")}</span>
           <span><i class="swatch waiting"></i>${this.localize("diagnostics.waiting")}</span>
           <span><i class="swatch unknown"></i>${this.localize("diagnostics.not_known")}</span>
           <span><i class="swatch oldest"></i>${this.localize("diagnostics.oldest_decision")}</span>
@@ -230,7 +246,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     const width = this.chartWidth;
     const left = this.compactChart ? 96 : 176;
     const right = 8;
-    const start = now - 3_600_000;
+    const start = now - this.rangeMin * 60_000;
     const x = (moment: number) => left + ((Math.min(Math.max(moment, start), now) - start) / (now - start)) * (width - left - right);
     return { width, left, right, start, x };
   }
@@ -267,7 +283,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       .filter((decision) => decision.tariff_average_w !== null)
       .map((decision, index) => `${index === 0 ? "M" : "L"}${x(Date.parse(decision.time))},${y(decision.tariff_average_w!)}`)
       .join("");
-    const tickStep = (this.compactChart ? 20 : 10) * 60_000;
+    const tickStep = (this.rangeMin <= 30 ? 5 : 10) * (this.compactChart ? 2 : 1) * 60_000;
     const ticks: number[] = [];
     for (let tick = Math.ceil(start / tickStep) * tickStep; tick < now - tickStep / 2; tick += tickStep) {
       ticks.push(tick);
@@ -677,6 +693,14 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       }
       .swatch.line.limit {
         border-top: 2px dashed var(--error-color, #db4437);
+      }
+      .swatch.on {
+        background: var(--kraftvakt-on-color);
+      }
+      .swatch.current {
+        border: 1px solid var(--kraftvakt-ev-color);
+        background: color-mix(in srgb, var(--kraftvakt-ev-color) 45%, transparent);
+        box-sizing: border-box;
       }
       .swatch.waiting {
         border: 1px solid var(--kraftvakt-waiting-color);

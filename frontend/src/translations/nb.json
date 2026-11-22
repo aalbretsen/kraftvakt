@@ -111,6 +111,7 @@
     "command_repeat": "Gjentatte kommandoer",
     "next_at": "Neste kl. {time}",
     "timeline": "Tidslinje",
+    "minutes": "{minutes} min",
     "consumption": "Forbruk",
     "waiting": "Venter",
     "not_known": "Ukjent",

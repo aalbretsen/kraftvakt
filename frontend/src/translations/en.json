@@ -111,6 +111,7 @@
     "command_repeat": "Command repeat",
     "next_at": "Next at {time}",
     "timeline": "Timeline",
+    "minutes": "{minutes} min",
     "consumption": "Consumption",
     "waiting": "Waiting",
     "not_known": "Not known",

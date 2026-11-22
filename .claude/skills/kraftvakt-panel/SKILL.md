@@ -271,9 +271,10 @@ The section header, the description and the footer note are in `section-styles.t
 - First a row of health tiles: the power sensor, the actions, the regulation and the command repeat, each with a dot in the success, warning or alarm colour, or grey.
   The regulation tile shows how long it has run as whole days, or else hours, or else minutes, rounded down, with the start under it,
   since a date and time is hard to read for a long run.
-- Then the timeline over the last hour: the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average
+- Then the timeline over the last 15, 30 or 60 minutes, as the user chooses, 60 at first:
+  the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average
   and the power limit, with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.
-  The card has no description: a legend under its title names every colour and mark.
+  The card has no description: a legend under its title names every colour and mark, also on and the charging current of the lanes.
   A lane shows what each command set until the next command, starting with the commands before the decisions kept:
   an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max, and the waiting hatched.
   One without a command since the last start is as it is now while the regulation runs.
