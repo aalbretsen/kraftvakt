@@ -77,8 +77,8 @@ def test_charger_switches_default_off() -> None:
         (POWER_LIMIT_W, 999, False),
         (POWER_LIMIT_W, 50_001, False),
         (REGULATION_WINDOW_S, 9, False),
-        (REGULATION_WINDOW_S, 120, True),
-        (REGULATION_WINDOW_S, 121, False),
+        (REGULATION_WINDOW_S, 60, True),
+        (REGULATION_WINDOW_S, 61, False),
         (Range(0, None, 0.01), 1000, True),
         (Range(0, None, 0.01), -0.01, False),
     ],
@@ -103,16 +103,18 @@ def test_issue_to_dict_leaves_out_empty_keys() -> None:
 @pytest.mark.parametrize(
     ("interval_s", "expected"),
     [
-        (10, list(range(1, 13))),
-        (2, list(range(5, 61, 5))),
-        (2.5, list(range(4, 49, 4))),
-        (3, list(range(4, 41, 4))),
-        (15, list(range(1, 9))),
-        (130, []),
+        (1, list(range(10, 61, 10))),
+        (0.5, list(range(20, 121, 20))),
+        (0.4, list(range(25, 151, 25))),
+        (2.5, list(range(4, 25, 4))),
+        (3, list(range(4, 21, 4))),
+        (15, list(range(1, 5))),
+        (60, [1]),
+        (61, []),
     ],
 )
 def test_regulation_window_options_are_multiples_of_the_fewest_updates_that_last_10_seconds(interval_s: float, expected: list[int]) -> None:
-    """At most twelve choices, and no window longer than 120 seconds."""
+    """No window is longer than 60 seconds."""
     assert regulation_window_options(interval_s) == expected
 
 

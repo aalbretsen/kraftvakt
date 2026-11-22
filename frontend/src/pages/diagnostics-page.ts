@@ -11,13 +11,11 @@ import {
   type Measurement,
   type StatusSnapshot,
 } from "../api";
-import { applianceRows, chargerRows, lanes, logRows, mergePart, repeatsDue, type Lanes, type LogRow, type Segment } from "../diagnostics";
+import { applianceRows, chargerRows, lanes, logRows, mergePart, repeatsDue, timeTicks, timelineStart, type Lanes, type LogRow, type Segment } from "../diagnostics";
 import { formatClockTime, formatDateTime, formatDuration, formatMoment, formatNumber, formatPower } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
-
-const RANGES_MIN = [15, 30, 60];
 
 type LogFilter = "all" | "commands" | "failed";
 
@@ -49,8 +47,6 @@ export class KraftvaktDiagnosticsPage extends LitElement {
   @state() private decisions: DecisionRecord[] = [];
 
   @state() private error?: unknown;
-
-  @state() private rangeMin = 60;
 
   @state() private filter: LogFilter = "all";
 
@@ -117,7 +113,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     }
     const now = Date.now();
     const history = lanes(this.decisions, this.status, this.diagnostics.started_at, now);
-    return html` <div class="cards">${this.renderHealth(this.diagnostics, this.status, this.config)} ${this.renderLastHour(history, now)} ${this.renderLog()}</div> `;
+    return html` <div class="cards">${this.renderHealth(this.diagnostics, this.status, this.config)} ${this.renderTimeline(history, now)} ${this.renderLog()}</div> `;
   }
 
   private renderHealth(diagnostics: DiagnosticsEvent, status: StatusSnapshot, config: ConfigResponse) {
@@ -202,22 +198,12 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     `;
   }
 
-  private renderLastHour(history: Lanes, now: number) {
+  private renderTimeline(history: Lanes, now: number) {
     const oldest = this.decisions[0]?.time;
     return html`
       <ha-card>
         <div class="card-header">
           <span>${this.localize("diagnostics.timeline")}</span>
-          <span class="spacer"></span>
-          <span class="toggles">
-            ${RANGES_MIN.map(
-              (minutes) => html`
-                <button class="toggle" aria-pressed=${minutes === this.rangeMin} @click=${() => (this.rangeMin = minutes)}>
-                  ${this.localize("diagnostics.minutes", { minutes })}
-                </button>
-              `,
-            )}
-          </span>
         </div>
         <p class="description">
           ${
@@ -251,7 +237,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     const width = this.chartWidth;
     const left = this.compactChart ? 96 : 176;
     const right = 8;
-    const start = now - this.rangeMin * 60_000;
+    const start = timelineStart(this.decisions, (this.status?.regulation_window_s ?? 0) * 1000, now);
     const x = (moment: number) => left + ((Math.min(Math.max(moment, start), now) - start) / (now - start)) * (width - left - right);
     return { width, left, right, start, x };
   }
@@ -288,11 +274,8 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       .filter((decision) => decision.tariff_average_w !== null)
       .map((decision, index) => `${index === 0 ? "M" : "L"}${x(Date.parse(decision.time))},${y(decision.tariff_average_w!)}`)
       .join("");
-    const tickStep = (this.rangeMin <= 30 ? 5 : 10) * (this.compactChart ? 2 : 1) * 60_000;
-    const ticks: number[] = [];
-    for (let tick = Math.ceil(start / tickStep) * tickStep; tick < now - tickStep / 2; tick += tickStep) {
-      ticks.push(tick);
-    }
+    const { stepMs, ticks } = timeTicks(start, now, this.compactChart ? 3 : 6);
+    const tickFormat: Intl.DateTimeFormatOptions = stepMs < 60_000 ? { hour: "2-digit", minute: "2-digit", second: "2-digit" } : { hour: "2-digit", minute: "2-digit" };
     const kwTicks = Array.from({ length: topKw / stepKw + 1 }, (_, index) => index * stepKw);
     const oldest = this.decisions[0] ? Date.parse(this.decisions[0].time) : undefined;
     const marked = this.openRow && Date.parse(this.openRow.time);
@@ -304,7 +287,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
             <text x=${left - 6} y=${y(kw * 1000) + 4} text-anchor="end">${kw === topKw ? `${kw} kW` : kw}</text>
           `,
         )}
-        ${ticks.map((tick) => svg`<text x=${x(tick)} y=${height - 6} text-anchor="middle">${new Date(tick).toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" })}</text>`)}
+        ${ticks.map((tick) => svg`<text x=${x(tick)} y=${height - 6} text-anchor="middle">${new Date(tick).toLocaleTimeString(language, tickFormat)}</text>`)}
         <text x=${width - right} y=${height - 6} text-anchor="end">${this.localize("diagnostics.now")}</text>
         ${area ? svg`<path class="consumption" d="M${firstX},${y(0)}${area}L${x(now)},${y(0)}Z"></path>` : nothing}
         <path class="tariff" d=${tariffPath}></path>

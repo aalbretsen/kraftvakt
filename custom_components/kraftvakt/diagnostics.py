@@ -13,7 +13,7 @@ from .status import status_snapshot
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> dict[str, Any]:
-    """Return the configuration, the status, the state held in memory, the last decisions and failures, and the device of each charger.
+    """Return the configuration, the status, the state held in memory, the decisions and the last failures, and the device of each charger.
 
     The configuration is not redacted, since it holds no credentials. The devices are described so a charger profile can be written from them.
     """

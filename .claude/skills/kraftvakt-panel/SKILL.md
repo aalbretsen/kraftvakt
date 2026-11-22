@@ -276,7 +276,9 @@ The section header, the description and the footer note are in `section-styles.t
   A lane shows what each command set until the next command: an appliance on in the state colour, an EV charger's current as a teal bar of its height from min to max,
   and the waiting hatched. One without a command since the oldest decision kept is as it is now while the regulation runs.
   Before its first command, and before the last start, it is hatched as not known, since the commands of a start and a stop are not kept, and nothing is guessed.
-  Hovering shows the consumption at that time and the decision that covers it. 15, 30 or 60 minutes can be chosen, no longer than the measurements kept.
+  Hovering shows the consumption at that time and the decision that covers it.
+  The time axis starts at the window of the oldest decision kept, at most an hour before now, and one window before now when none is kept,
+  so it grows from one window after the first decision; its labels get seconds when the step between them is shorter than a minute.
 - Then the event log: the commands of the decisions kept and the failed actions, newest first, filtered by all, commands or failed actions.
   A row opens the decision with its averages, whether the power sensor was valid, the safe state, the penalty, the waiting and all its commands,
   or the error of a failed action, and marks its time in the chart. The footer links to the integration's page for Download diagnostics.

@@ -22,7 +22,7 @@ from .config_validation import missing_items
 from .decision_clock import DecisionClock, first_decision_from
 from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
 from .json_values import plain
-from .measurement import IntervalChange, MissedWindows, WindowAverages
+from .measurement import TARIFF_WINDOW, IntervalChange, MissedWindows, WindowAverages
 from .power_measurement import PowerMeasurement, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
@@ -81,7 +81,7 @@ class KraftvaktRuntime:
         self._engine = RegulationEngine(config)
         self._action_lock = action_lock or asyncio.Lock()
         self._actions = self._action_runner(config)
-        self._recent_decisions: deque[dict[str, Any]] = deque(maxlen=100)
+        self._recent_decisions: deque[tuple[datetime, dict[str, Any]]] = deque()
         self._failed_actions: deque[dict[str, Any]] = deque(maxlen=20)
         self._measurement = PowerMeasurement(hass, lambda: self.config.general, self._notify_status)
         self._decisions = DecisionClock()
@@ -206,8 +206,8 @@ class KraftvaktRuntime:
 
     @property
     def recent_decisions(self) -> list[dict[str, Any]]:
-        """Return the last decisions, oldest first, for the diagnostics."""
-        return list(self._recent_decisions)
+        """Return the decisions of the hour before the last one, oldest first, for the diagnostics."""
+        return [record for _, record in self._recent_decisions]
 
     @property
     def failed_actions(self) -> list[dict[str, Any]]:
@@ -401,7 +401,9 @@ class KraftvaktRuntime:
                 "commands": [command_dict(command) for command in commands],
             }
         )
-        self._recent_decisions.append(record)
+        self._recent_decisions.append((decision.now, record))
+        while self._recent_decisions[0][0] <= decision.now - TARIFF_WINDOW:
+            self._recent_decisions.popleft()
         _LOGGER.debug("Decision: %s", record)
 
     def _action_runner(self, config: KraftvaktConfig) -> ActionRunner:

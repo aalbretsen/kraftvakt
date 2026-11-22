@@ -393,6 +393,20 @@ async def test_each_decision_is_logged_and_kept_for_the_diagnostics(
     assert "Decision: {'time': " in caplog.text
 
 
+async def test_the_decisions_of_the_last_hour_are_kept(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
+    """A decision is kept while its time is within the hour before the last decision, the same hour as the measurements."""
+    set_power(hass, "2000")
+    entry = await setup_kraftvakt()
+
+    for _ in range(61):
+        await advance(hass, freezer)
+
+    decisions = entry.runtime_data.recent_decisions
+    assert len(decisions) == 60
+    assert decisions[0]["time"] == (dt_util.now() - timedelta(minutes=59)).isoformat()
+    assert decisions[-1]["time"] == dt_util.now().isoformat()
+
+
 async def test_safe_state_when_the_power_sensor_is_lost(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, setup_kraftvakt) -> None:
     """One lost window is tolerated, two are not."""
     set_power(hass, "2000")

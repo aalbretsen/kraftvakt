@@ -17,7 +17,7 @@ describe("closest window", () => {
     [30, 2.5, 12],
     [17, 2, 10],
     [15, 10, 1],
-    [120, 15, 8],
+    [60, 15, 4],
   ])("to %s s with updates every %s s is %s updates", (seconds, interval, updates) => {
     expect(closestWindowUpdates(seconds, interval, LIMITS)).toBe(updates);
   });

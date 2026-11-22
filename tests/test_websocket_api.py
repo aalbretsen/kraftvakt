@@ -194,7 +194,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "max": 1,
         "resolution": 0.25,
     }
-    assert result["regulation_window"] == {"seconds": {"min": 10, "max": 120, "resolution": 1}, "choices": 12}
+    assert result["regulation_window"] == {"seconds": {"min": 10, "max": 60, "resolution": 1}, "choices": 12}
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
     assert result["limits"]["chargers"]["min_current_power_w"]["max"] == 5000
     assert result["defaults"] == {
@@ -582,7 +582,7 @@ async def test_saved_power_sensor_and_window_are_measured(
     hass.states.async_set("sensor.other", "4", {ATTR_UNIT_OF_MEASUREMENT: "kW"})
     client = await hass_ws_client(hass)
     changed = config_data()
-    changed["general"].update(power_sensor="sensor.other", regulation_window_updates=2)
+    changed["general"].update(power_sensor="sensor.other", power_sensor_interval_s=30, regulation_window_updates=2)
     await send(client, "kraftvakt/config/save", config=changed)
 
     async def report_other() -> None:

@@ -25,6 +25,33 @@ export interface Lanes {
   waiting: Record<string, Segment<null>[]>;
 }
 
+/** The hour the backend keeps the measurements and the decisions for. */
+const HOUR_MS = 3_600_000;
+
+/**
+ * Return when the timeline starts: at the start of the window of the oldest decision kept, at most
+ * an hour before now. With no decision kept, and always at least, it covers one window.
+ */
+export function timelineStart(decisions: DecisionRecord[], windowMs: number, now: number): number {
+  const oldest = decisions.length > 0 ? Date.parse(decisions[0].time) : now;
+  return Math.min(Math.max(oldest - windowMs, now - HOUR_MS), now - windowMs);
+}
+
+const TICK_STEPS_S = [10, 15, 30, 60, 120, 300, 600, 900, 1800];
+
+/**
+ * Return the times to label on the time axis from `start` to `end`: the multiples of the shortest step
+ * that gives at most `most` labels, leaving room for the label of the end.
+ */
+export function timeTicks(start: number, end: number, most: number): { stepMs: number; ticks: number[] } {
+  const stepMs = (TICK_STEPS_S.find((step) => (end - start) / (step * 1000) <= most) ?? TICK_STEPS_S[TICK_STEPS_S.length - 1]) * 1000;
+  const ticks: number[] = [];
+  for (let tick = Math.ceil(start / stepMs) * stepMs; tick < end - stepMs / 2; tick += stepMs) {
+    ticks.push(tick);
+  }
+  return { stepMs, ticks };
+}
+
 /** Return what the panel holds after a part: the part's items, after the held items that are still kept and come before them. */
 export function mergePart<Item>(held: Item[], part: DiagnosticsPart<Item>, time: (item: Item) => string): Item[] {
   if (part.replace) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ApplianceStatus, ChargerStatus, DecisionCommand, DecisionRecord, StatusSnapshot } from "../src/api";
-import { lanes, logRows, mergePart, repeatsDue } from "../src/diagnostics";
+import { lanes, logRows, mergePart, repeatsDue, timeTicks, timelineStart } from "../src/diagnostics";
 
 const T0 = Date.parse("2026-01-05T12:00:00Z");
 
@@ -216,5 +216,39 @@ describe("command repeats", () => {
       { type: "charger", id: "c", dueAt: at(20) },
       { type: "appliance", id: "a", dueAt: at(30) },
     ]);
+  });
+});
+
+describe("timeline start", () => {
+  const window = 10_000;
+
+  it("is one window before now when no decision is kept", () => {
+    expect(timelineStart([], window, T0)).toBe(T0 - window);
+  });
+
+  it("is the start of the window of the oldest decision kept, one window just after the first decision", () => {
+    expect(timelineStart([decision(0)], window, T0)).toBe(T0 - window);
+    expect(timelineStart([decision(0), decision(10), decision(20)], window, T0 + 25_000)).toBe(T0 - window);
+  });
+
+  it("is at most an hour before now", () => {
+    expect(timelineStart([decision(0)], window, T0 + 7_200_000)).toBe(T0 + 3_600_000);
+  });
+
+  it("covers at least one window when the clock of the browser is behind", () => {
+    expect(timelineStart([decision(60)], window, T0)).toBe(T0 - window);
+  });
+});
+
+describe("time ticks", () => {
+  it("are the multiples of the shortest step that gives at most the labels asked for, with room for the end", () => {
+    expect(timeTicks(T0 - 10_000, T0, 6)).toEqual({ stepMs: 10_000, ticks: [T0 - 10_000] });
+    expect(timeTicks(T0 - 3_600_000, T0, 6)).toEqual({ stepMs: 600_000, ticks: [0, 1, 2, 3, 4, 5].map((index) => T0 - 3_600_000 + index * 600_000) });
+    expect(timeTicks(T0 - 3_600_000, T0, 3).stepMs).toBe(1_800_000);
+    expect(timeTicks(T0 - 95_000, T0, 6)).toEqual({ stepMs: 30_000, ticks: [T0 - 90_000, T0 - 60_000, T0 - 30_000] });
+  });
+
+  it("use the longest step for a span longer than it allows", () => {
+    expect(timeTicks(T0 - 7_200_000, T0, 3).stepMs).toBe(1_800_000);
   });
 });

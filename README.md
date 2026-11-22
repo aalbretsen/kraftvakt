@@ -237,13 +237,13 @@ The entity ID keeps the name from when the appliance or EV charger was added.
 
 ### Diagnostics
 
-**Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the last decisions and failed actions,
+**Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the decisions and the last failed actions,
 and the device of each EV charger with its entities and their values, for a bug report.
-What it holds in memory includes the measurements of the power sensor over the last hour.
+What it holds in memory includes the measurements of the power sensor over the last hour, and the decisions of the hour before the last decision.
 
 The **Diagnostics** page in the panel shows the same as it happens: whether the power sensor and the actions are healthy, when the regulation started,
-when each command is repeated, the consumption over the last hour with the averages and what each appliance and EV charger was set to, and the commands and failed actions.
-Kraftvakt keeps only the last decisions, so with a short regulation window the averages and the lanes cover less than the hour.
+when each command is repeated, the consumption with the averages and what each appliance and EV charger was set to, and the commands and failed actions.
+The timeline covers the decisions kept, at most the last hour, so just after the first decision it covers one regulation window.
 What an appliance or EV charger was set to before its first command since the last start is not known, since the commands of a start and a stop are not kept.
 
 ### Template and action examples
