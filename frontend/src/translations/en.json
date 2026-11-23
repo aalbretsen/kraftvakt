@@ -85,7 +85,8 @@
     "fault": "A fault flag shows a fault, so the EV charger is deactivated until the fault clears",
     "free_power": "{power} kW ({share}) free",
     "power_runs_out": "The power runs out here. What is below waits for free power.",
-    "queued_for_room": "Queued: waiting for room beside the EV chargers that charge"
+    "queued_for_room": "Queued: waiting for room beside the EV chargers that charge",
+    "queued_waiting_time": "Queued: next in turn, after its waiting time"
   },
   "diagnostics": {
     "power_sensor": "Power sensor",

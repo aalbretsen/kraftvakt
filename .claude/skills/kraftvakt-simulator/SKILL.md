@@ -50,7 +50,7 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   It draws power only while charging is allowed, a car is connected, the car is not fully charged and its fault switch is off.
   The fault switch is meant as a fault flag of Kraftvakt's deactivate on fault, so it has no binary sensor of its own.
   Its charging binary sensor is on while it draws power, so Kraftvakt's actively charging can be tested from an entity.
-  With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed, as through a cloud service.
+  With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed.
   With a ramp-up time, also in the config entry data, it then rises evenly from 0 W to the power of its current, updated each second.
   A change of current while it charges, also during the ramp-up, is not delayed.
 - The EV charger is generic, so Kraftvakt has no charger profile for it and uses the default profile.

@@ -258,7 +258,8 @@ The section header, the description and the footer note are in `section-styles.t
     since Home Assistant has no such dialog for a device. A row whose entity Home Assistant does not have, and a group's row, opens nothing.
     A row or tile clicked with the mouse lets go of the focus before the dialog opens, since Home Assistant gives the focus back when the dialog closes,
     and the focus ring would look like a selection. Opened from the keyboard, it keeps the focus.
-  - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
+  - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room,
+    and while it waits its waiting time, where it is next in turn.
     An activated charger whose car does not charge tells that it waits at the minimum current.
     A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
   - A starting charger whose car does not charge yet is shown as starting, and its sentence tells when its start delay ends,

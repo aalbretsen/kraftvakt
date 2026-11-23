@@ -4,7 +4,7 @@ import type { ActionConfig, Capabilities } from "../src/api";
 import { changesForDevice, chargerProfileOf, deviceEntities, displaySensorScope, displaySensors, displayValuesForEntity } from "../src/devices";
 import type { HomeAssistant } from "../src/types";
 import { applianceErrors } from "../src/validation";
-import { appliance, charger } from "./builders";
+import { appliance, CAPABILITIES, charger } from "./builders";
 
 /** A device `device_<id>` with the given entities. */
 function device(id: string, entityIds: string[]): HomeAssistant {
@@ -106,6 +106,7 @@ describe("the charger profile of a device", () => {
       await chargerProfileOf(
         answering(() => Promise.resolve(answer)),
         "device_a",
+        CAPABILITIES,
       ),
     ).toEqual(answer);
   });
@@ -115,7 +116,8 @@ describe("the charger profile of a device", () => {
       await chargerProfileOf(
         answering(() => Promise.reject(new Error("lost"))),
         "device_a",
+        CAPABILITIES,
       ),
-    ).toEqual({ profile: null, fields: { cloud_controlled: false } });
+    ).toEqual({ profile: null, fields: { cloud_controlled: CAPABILITIES.defaults.chargers.cloud_controlled } });
   });
 });

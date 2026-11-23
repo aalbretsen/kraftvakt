@@ -423,8 +423,9 @@ class Charger:
 
     def used_entities(self) -> Iterator[str]:
         """Return each entity the charger names and uses, but those in templates and actions."""
-        for _, entity_id in self.device_entities():
-            yield entity_id
+        for field_name, entity_id in self.device_entities():
+            if field_name != "fault_flag" or self.deactivate_on_fault:
+                yield entity_id
 
     def device_entities(self) -> Iterator[tuple[str, str]]:
         """Return each field and entity that must belong to the device."""

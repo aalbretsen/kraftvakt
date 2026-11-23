@@ -274,6 +274,7 @@ def capabilities() -> dict[str, Any]:
                 "max_current_a": charger.max_current_a,
                 "min_current_power_w": charger.min_current_power_w,
                 "override_ends": charger.override_ends.value,
+                "cloud_controlled": charger.cloud_controlled,
                 "start_delay_s": charger.start_delay_s,
             },
         },

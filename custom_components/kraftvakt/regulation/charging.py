@@ -248,10 +248,11 @@ class ChargingState:
         """Return the chargers with at least one ampere step on."""
         return [charger_id for charger_id, on in self.ampere_steps_on.items() if on]
 
-    def set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None) -> None:
+    def set_ampere_steps_on(self, charger_id: str, count: int, now: datetime | None = None, start_delay: timedelta = timedelta()) -> None:
         """Record how many ampere steps of the charger are on.
 
-        `now` is needed only when the charger is activated.
+        `now` is needed only when the charger is activated, which starts its
+        start delay at once, so it shows from the decision that activates it.
         """
         if count == 0:
             self.activated_at.pop(charger_id, None)
@@ -260,6 +261,8 @@ class ChargingState:
             if now is None:
                 raise ValueError("The time is needed to activate a charger")
             self.activated_at[charger_id] = now
+            if start_delay:
+                self.starting[charger_id] = now + start_delay
         self.ampere_steps_on[charger_id] = count
 
     def power_per_ampere_w(self, charger: Charger) -> float:

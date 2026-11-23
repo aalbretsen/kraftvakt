@@ -273,6 +273,28 @@ def test_appliance_that_goes_off_anyway_gives_the_room_also_above_the_lowest_ste
     assert scenario.engine.appliances_on == {"x", "l"}
 
 
+def test_appliance_excluded_while_it_moves_up_gives_the_room_once() -> None:
+    """M2 is excluded and moves at the same decision, which gives M1 room. M3 gets its room from L."""
+    scenario = Scenario(
+        make_config(
+            appliance("m1", variants=("v1",)),
+            appliance("m3", variants=("v3",)),
+            appliance("m2", variants=("v2",)),
+            "x",
+            "l",
+            priority=("m1:v1", "m3:v3", "x", "l", "m2:v2", "m2", "m1", "m3"),
+            wait_at_limit_s=0,
+        )
+    )
+    scenario.turn_on("x", "l", "m2")
+    scenario.settle()
+    scenario.exclude("m2")
+
+    scenario.decide(9950, true=("v1", "v2", "v3"))
+
+    assert scenario.engine.appliances_on == {"x"}
+
+
 def test_switch_of_an_appliance_that_is_off_gives_the_new_turn_off_action() -> None:
     """Also a switch back to the appliance itself."""
     scenario = Scenario(heater_moving_down_config())

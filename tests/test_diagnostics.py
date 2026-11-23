@@ -136,7 +136,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "charging": [],
         "held_at_min": ["c"],
         "may_charge": ["c"],
-        "starting": {},
+        "starting": {"c": local(now + timedelta(seconds=180))},
         "waiting": [],
         "last_readings": None,
         "last_permissions": {"c": "window"},

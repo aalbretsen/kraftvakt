@@ -338,6 +338,18 @@ def test_starting_charger_holds_back_the_appliance_below_for_its_whole_start_del
     assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
 
 
+def test_charger_is_starting_from_the_decision_that_activates_it() -> None:
+    """Its row shows the start delay at once, and the appliance below it no power to free."""
+    scenario = Scenario(make_config("pool", chargers=(charger("c", start_delay_s=180),), priority=("ev", "pool"), wait_at_limit_s=0))
+
+    assert scenario.decide(1250) == activate("c")
+
+    activated_at = scenario.now
+    assert scenario.engine.chargers["c"].state is ChargerState.STARTING
+    assert scenario.engine.waiting == Waiting(AmpereStepKey("c", 0), activated_at, activated_at + timedelta(minutes=3), WaitingReason.START_DELAY)
+    assert scenario.engine.power_to_free is None
+
+
 def test_starting_charger_shows_no_power_to_free_for_the_step_it_holds_back() -> None:
     """Only the row of the starting charger tells what holds the appliance below back, until its start delay ends."""
     scenario = Scenario(make_config("pool", chargers=(charger("c", start_delay_s=180),), priority=("ev", "pool"), wait_at_limit_s=0))

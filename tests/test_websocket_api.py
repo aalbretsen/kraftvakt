@@ -224,6 +224,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "max_current_a": 16,
             "min_current_power_w": 4157,
             "override_ends": "manual",
+            "cloud_controlled": False,
             "start_delay_s": 180,
         },
     }

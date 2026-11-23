@@ -69,7 +69,7 @@
     "outside_window": "Utenfor ladetidsrommet ({start}–{end})",
     "amperes": "{current} A",
     "chargers_charging": "{charging} av {total} elbilladere lader",
-    "activated_not_charging": "Aktivert: bilen trekker ikke strøm, og venter på minste ladestrøm",
+    "activated_not_charging": "Aktivert: bilen bruker ikke strøm, og venter på minste ladestrøm",
     "window_overridden": "Ladetidsrommet er overstyrt",
     "chip_charging": "Lader",
     "chip_no_car": "Bil frakoblet",
@@ -85,7 +85,8 @@
     "fault": "Feilflagget viser feil, så elbilladeren er deaktivert til feilen er borte",
     "free_power": "{power} kW ({share}) ledig",
     "power_runs_out": "Her er effekten brukt opp. Det som står under, venter på ledig effekt.",
-    "queued_for_room": "I kø: venter på plass ved siden av elbilladerne som lader"
+    "queued_for_room": "I kø: venter på plass ved siden av elbilladerne som lader",
+    "queued_waiting_time": "I kø: neste i tur, etter ventetiden"
   },
   "diagnostics": {
     "power_sensor": "Effektsensor",
@@ -367,11 +368,11 @@
       },
       "fixed_load": {
         "label": "Fast last",
-        "helper": "Bare til apparater som alltid trekker like mye når de er på, som en takvifte. Ikke til apparater med termostat eller annen egen styring, for da regulerer Kraftvakt dårligere."
+        "helper": "Bare til apparater som alltid bruker like mye når de er på, som en takvifte. Ikke til apparater med termostat eller annen egen styring, for da regulerer Kraftvakt dårligere."
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Det apparatet trekker når det er på. Første gang slås det på uten å vente så snart så mye effekt er ledig; slås det på igjen, venter det som andre apparater. Gjelder alle variantene."
+        "helper": "Det apparatet bruker når det er på. Første gang slås det på uten å vente så snart så mye effekt er ledig; slås det på igjen, venter det som andre apparater. Gjelder alle variantene."
       },
       "label": {
         "label": "Navn"
@@ -530,7 +531,7 @@
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten, og på statussiden når gruppen har mer enn én elbillader.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen. Mens ingen lader, kan alle biler vente på minste ladestrøm, og den første som begynner å trekke strøm, får tur.",
+    "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen. Mens ingen lader, kan alle biler vente på minste ladestrøm, og den første som begynner å bruke strøm, får tur.",
     "dynamic_order": "Dynamisk ladeprioritet",
     "dynamic_order_sub": "Av: Ladeprioriteten under gjelder alltid, så en bil høyere opp som begynner å lade, tar over fra en lenger ned.\nPå: Elbilladere som lader, får fortsette, og de andre venter på tur.",
     "needs_two_chargers": "Har betydning med to eller flere elbilladere i gruppen.",
@@ -603,7 +604,7 @@
       },
       "min_current_power_w": {
         "label": "Effekt ved minste ladestrøm",
-        "helper": "Det bilen trekker på minste ladestrøm, omtrent 1400 W på én fase. Bilen får begynne å lade først når så mye effekt er ledig. {min}–{max} W, standard {default} W (6 A på tre faser)."
+        "helper": "Det bilen bruker på minste ladestrøm, omtrent 1400 W på én fase. Bilen får begynne å lade først når så mye effekt er ledig. {min}–{max} W, standard {default} W (6 A på tre faser)."
       },
       "car_connected": {
         "label": "Bil tilkoblet",
@@ -611,7 +612,7 @@
       },
       "actively_charging": {
         "label": "Lader aktivt",
-        "helper": "Ladeeffekten må fylles ut og viser hvor mye bilen trekker. «Bilen lader» er valgfritt, og kan vise tidligere at bilen har begynt å lade."
+        "helper": "Ladeeffekten må fylles ut og viser hvor mye bilen bruker. «Bilen lader» er valgfritt, og kan vise tidligere at bilen har begynt å lade."
       },
       "charging_power": {
         "label": "Ladeeffekt"

@@ -30,8 +30,8 @@ Add the integration under **Settings → Devices & services**, and add one devic
   so an EV charger whose charging is turned on and off by the charging current can be tested.
   Use **Fault** as a fault flag of an EV charger in Kraftvakt with **Deactivate on fault**.
   Turn **Car fully charged** on and off to test a full car that stays activated at the minimum current and draws power again, as when it heats in the morning.
-  With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging,
-  as with a charger controlled through a cloud service; set the same or a longer start delay on the EV charger in Kraftvakt.
+  With a **Start delay** (0 s by default), the car waits that long before it draws power each time it may start charging;
+  set the same or a longer start delay on the EV charger in Kraftvakt.
   With a **Ramp-up time** (0 s by default), the car then rises evenly from no power to the power of the charging current over that time,
   as a real car does when it starts charging. A change of the charging current while it charges takes effect at once.
 

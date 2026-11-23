@@ -59,7 +59,10 @@ function shortTime(time: string): string {
   return time.endsWith(":00") ? time.slice(0, -3) : time;
 }
 
-/** The chip of an EV charger. `queuedForRoom` holds when its group shares the power among the activated EV chargers. */
+/**
+ * The chip of an EV charger. `queuedForRoom` holds when its group shares the power among the activated EV chargers.
+ * A queued EV charger that waits its waiting time is next in turn, so its sentence tells that instead of what it is queued behind.
+ */
 export function chargerChip(charger: ChargerStatus, locale: TimeLocale, window: ChargingWindow | null | undefined, queuedForRoom: boolean): ChargerChip {
   const [chip, word, sentence] = CHARGER_CHIPS[charger.state];
   if (charger.state === "outside_window" && window) {
@@ -67,6 +70,9 @@ export function chargerChip(charger: ChargerStatus, locale: TimeLocale, window: 
   }
   if (charger.state === "starting" && charger.starting_until) {
     return { chip, word, sentence, wordParams: {}, sentenceParams: { time: formatClockTime(locale, charger.starting_until) } };
+  }
+  if (charger.state === "queued" && charger.waiting_reason === "waiting_time") {
+    return { chip, word, sentence: "status.queued_waiting_time", wordParams: {}, sentenceParams: {} };
   }
   if (charger.state === "queued" && queuedForRoom) {
     return { chip, word, sentence: "status.queued_for_room", wordParams: {}, sentenceParams: {} };

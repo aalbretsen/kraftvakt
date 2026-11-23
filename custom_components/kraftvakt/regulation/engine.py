@@ -436,7 +436,7 @@ class RegulationEngine:
         in_new_places = sorted(map(ApplianceStepKey, moving), key=lambda key: places[key])
         for key in in_new_places:
             switched_variant = previous_variants.get(key.appliance_id) != self._state.current_variants[key.appliance_id]
-            if key.appliance_id in was_on:
+            if key.appliance_id in was_on and key not in switched_off:
                 switched_off.append(key)
             if key.appliance_id in was_on or switched_variant:
                 commands += self._switch(key, turn_on=False, now=decision.now)
@@ -726,9 +726,16 @@ class RegulationEngine:
             self._state.waiting = None
 
     def _turn_on(self, key: StepKey, now: datetime) -> list[Command]:
-        """Turn the step on, settling until the average shows it."""
+        """Turn the step on, settling until the average shows it.
+
+        A charger it activates holds back the next step from this decision, so
+        its start delay shows at once.
+        """
         commands = self._switch(key, turn_on=True, now=now)
         self._state.settling_since[key] = now
+        steps = self._steps()
+        place = _next_place(steps)
+        self._state.waiting = None if place is None else self._start_delay(steps, place, steps[place].key)
         return commands
 
     def _switch(self, key: StepKey, turn_on: bool, now: datetime) -> list[Command]:
@@ -752,8 +759,9 @@ class RegulationEngine:
             self._record_switch(AmpereStepKey(charger_id, index), turn_on)
         if (before == 0) != (count == 0):
             self._state.activations.record(charger_id, activated=count > 0, now=now)
-        charging.set_ampere_steps_on(charger_id, count, now)
-        return self._charger_commands(self._chargers[charger_id], count, activate=before == 0 and count > 0)
+        charger = self._chargers[charger_id]
+        charging.set_ampere_steps_on(charger_id, count, now, timedelta(seconds=charger.start_delay_s))
+        return self._charger_commands(charger, count, activate=before == 0 and count > 0)
 
     def _charger_commands(self, charger: Charger, count: int, activate: bool = False) -> list[Command]:
         """Return the commands for the charger, always setting the current first.

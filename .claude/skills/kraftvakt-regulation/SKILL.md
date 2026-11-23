@@ -425,8 +425,8 @@ the others have entity category diagnostic.
   Why: the power is shared further only when what the car draws at its minimum current is known, so the currents do not go up and down while a car starts.
   A charger that is deactivated is no longer starting, also in a penalty or the safe state.
   Its state is starting only until its car charges; one whose car charges is shown as charging, though it is still starting.
-  The status shows the start delay as what holds back the next step, as the waiting, and without the power to free.
-  So it does when nothing else can be turned on and the start delay holds back only the charger's own next ampere step,
+  The status shows the start delay as what holds back the next step, as the waiting, and without the power to free,
+  from the decision that activates the charger. So it does when nothing else can be turned on and the start delay holds back only the charger's own next ampere step,
   since its car charges with at least 50 % but not 90 % of its power at minimum current.
   Why: a car takes some time from activation until it draws power and ramps up, longer through a cloud service, so the average shows its power as free meanwhile.
   A step turned on in that power would be switched off again when the car starts. The start delay ends it for a car that never starts, as one that is full.

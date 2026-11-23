@@ -55,4 +55,10 @@ describe("the chip of an EV charger", () => {
     expect(chargerChip(chargerStatus("c", { state: "queued" }), EN, null, true).sentence).toBe("status.queued_for_room");
     expect(chargerChip(chargerStatus("c", { state: "queued" }), EN, null, false).sentence).toBe("status.waiting_charger");
   });
+
+  it("tells a queued EV charger that waits its waiting time that it is next in turn", () => {
+    const waiting = chargerStatus("c", { state: "queued", waiting_reason: "waiting_time" });
+    expect(chargerChip(waiting, EN, null, true).sentence).toBe("status.queued_waiting_time");
+    expect(chargerChip(waiting, EN, null, false).sentence).toBe("status.queued_waiting_time");
+  });
 });

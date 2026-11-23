@@ -239,6 +239,7 @@ export interface Capabilities {
       max_current_a: number;
       min_current_power_w: number;
       override_ends: OverrideEnd;
+      cloud_controlled: boolean;
       start_delay_s: number;
     };
   };

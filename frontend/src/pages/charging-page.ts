@@ -260,7 +260,7 @@ export class KraftvaktChargingPage extends ConfigPage {
       charging_window: null,
       charge_until_disconnected: false,
       override_ends: defaults.override_ends,
-      cloud_controlled: false,
+      cloud_controlled: defaults.cloud_controlled,
       start_delay_s: defaults.start_delay_s,
       deactivate_on_fault: false,
       fault_flag: null,

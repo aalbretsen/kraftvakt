@@ -1170,7 +1170,7 @@ async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
 
 
 async def test_every_entity_a_charger_or_appliance_names_is_checked(hass: HomeAssistant) -> None:
-    """A charger switched by its current has no on/off entity, and a template names no entity that is checked."""
+    """A charger switched by its current has no on/off entity, a fault flag is used only with deactivate on fault, and a template names no entity that is checked."""
     charger = Charger(
         id="c",
         switched_by=SwitchedBy.CURRENT,
@@ -1178,6 +1178,7 @@ async def test_every_entity_a_charger_or_appliance_names_is_checked(hass: HomeAs
         set_current=ActionConfig(ActionMode.ENTITY, entity_id="number.current"),
         car_connected=Condition(ConditionType.ENTITY, "binary_sensor.car"),
         charging_power=Condition(ConditionType.TEMPLATE, "{{ states('sensor.in_template') }}"),
+        fault_flag=Condition(ConditionType.ENTITY, "binary_sensor.unused_fault"),
     )
     appliance = Appliance(id="a", entity_id="light.a", display_power=Condition(ConditionType.POWER_SENSOR, "sensor.a_power"))
     config = KraftvaktConfig(appliances=(appliance,), charger_groups=(ChargerGroup(id="g", chargers=(charger,)),))

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { formatClockTime, formatDateTime, formatDuration, formatEnergy, formatMinutes, formatMoment, formatNumber, formatPercent, formatPower, timeLocale } from "../src/format";
 import type { HomeAssistant } from "../src/types";
 
@@ -63,6 +63,15 @@ describe("times in the user's profile", () => {
     expect(formatClockTime(timeLocale({ ...profile("server", "24"), locale: { language: "en-US", time_zone: "server", time_format: "24" } } as HomeAssistant), moment, false)).toBe(
       "06:05",
     );
+  });
+
+  it("have the clock of the system when the user chose it", () => {
+    const resolvedOptions = vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions");
+    resolvedOptions.mockReturnValueOnce({ hour12: true } as Intl.ResolvedDateTimeFormatOptions);
+    expect(timeLocale(profile("local", "system")).hourCycle).toBe("h12");
+    resolvedOptions.mockReturnValueOnce({ hour12: false } as Intl.ResolvedDateTimeFormatOptions);
+    expect(timeLocale(profile("local", "system")).hourCycle).toBe("h23");
+    resolvedOptions.mockRestore();
   });
 
   it("are in the browser's time zone with the language's clock by default", () => {

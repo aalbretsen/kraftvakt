@@ -122,7 +122,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     if (!deviceId) {
       return;
     }
-    const { profile, fields } = await chargerProfileOf(this.hass, deviceId);
+    const { profile, fields } = await chargerProfileOf(this.hass, deviceId, this.capabilities);
     if (this.draft.device_id === deviceId) {
       this.changeDraft(fields);
       this.profile = profile;
