@@ -112,7 +112,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     `;
   }
 
-  /** A new device clears the entities that are not on it, and fills in the fields from its charger profile, or the settings of the default profile without one. */
+  /** A new device clears the entities that are not on it, and fills in the fields from its charger profile, or the default profile without one. */
   private async deviceChanged(deviceId: string | null): Promise<void> {
     if (deviceId === this.draft.device_id) {
       return;
@@ -122,7 +122,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     if (!deviceId) {
       return;
     }
-    const { profile, fields } = await chargerProfileOf(this.hass, deviceId, this.capabilities);
+    const { profile, fields } = await chargerProfileOf(this.hass, deviceId);
     if (this.draft.device_id === deviceId) {
       this.changeDraft(fields);
       this.profile = profile;

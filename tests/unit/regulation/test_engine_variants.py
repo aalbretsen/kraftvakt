@@ -251,7 +251,26 @@ def test_several_appliances_switching_up_switch_off_one_each() -> None:
     )
     scenario.turn_on("a", "b", "c")
 
-    assert scenario.decide(10000, true=("up", "up_too")) == off("d:up", "c", "e:up_too", "b")
+    assert scenario.decide(10000, true=("up", "up_too")) == off("d:up", "e:up_too", "c", "b")
+
+
+def test_appliance_that_goes_off_anyway_gives_the_room_also_above_the_lowest_step_on() -> None:
+    """M2 moves up and goes off, which gives M1 room, so L, the lowest step on, stays on."""
+    scenario = Scenario(
+        make_config(
+            appliance("m1", variants=("v1",)),
+            appliance("m2", variants=("v2",)),
+            "x",
+            "l",
+            priority=("m1:v1", "m2:v2", "x", "l", "m2", "m1"),
+            wait_at_limit_s=0,
+        )
+    )
+    scenario.turn_on("x", "l", "m2")
+    scenario.settle()
+
+    assert scenario.decide(9950, true=("v1", "v2")) == off("m1:v1", "m2:v2")
+    assert scenario.engine.appliances_on == {"x", "l"}
 
 
 def test_switch_of_an_appliance_that_is_off_gives_the_new_turn_off_action() -> None:

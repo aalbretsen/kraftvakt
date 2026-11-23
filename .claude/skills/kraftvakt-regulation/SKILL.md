@@ -57,7 +57,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Switched by | A charger setting: how it is activated and deactivated. By its on/off entity (the default), by custom actions to activate and deactivate, or by current, for a charger that can only be told a current: its minimum current activates it, and 0 A deactivates it. |
 | On/off entity | The entity, usually a switch that allows charging, that a charger switched by it gets turned on to activate it and off to deactivate it. |
 | Cloud-controlled charger | A charger setting, off by default, for a charger controlled through a cloud service: no command repeat while no car is connected. |
-| Start delay | A charger setting, 0–900 s. How long the car may take from activation until it draws power, and so how long a charger is starting. Filled in from the charger profile of its device, or from the default profile, 180 s, for a charger without one. |
+| Start delay | A charger setting, 0–900 s. How long the car may take from activation until it draws power, and so how long a charger is starting. Default 180 s. Filled in from the charger profile of its device, and kept when the device has none. |
 | Ampere damping time | 60–1800 s, default 300 s. How long an ampere step above the first taken back for power waits before it is turned on again, counted from when it was taken back. Why: consumption that changes for short moments would otherwise move a charger up and down between the same two amperes at every decision. |
 | Damped ampere step | An ampere step above the first taken back for power, by Freeing power above the limit or to make room for a step higher up, within the ampere damping time since. |
 | Starting charger | An activated charger within its start delay since activation. Nothing after its first ampere step is turned on but its own ampere steps (see EV charging). |
@@ -355,7 +355,8 @@ the others have entity category diagnostic.
   As in Freeing power, a bypassed charger and a charger whose car does not charge actively are passed, since switching them off frees nothing.
   Its waiting time and repeated turn-on counter are reset.
 - Several switching at the same decision are handled one by one in the order of their new place, highest first,
-  together with the appliances included again (see Excluded appliances). One that must go off anyway can be the one that gives room.
+  together with the appliances included again (see Excluded appliances).
+  An appliance below it that goes off anyway at the same decision, by a variant switch or the excluded switch, gives the room instead of the lowest step that is on.
 
 ## Excluded appliances
 
@@ -424,7 +425,9 @@ the others have entity category diagnostic.
   Why: the power is shared further only when what the car draws at its minimum current is known, so the currents do not go up and down while a car starts.
   A charger that is deactivated is no longer starting, also in a penalty or the safe state.
   Its state is starting only until its car charges; one whose car charges is shown as charging, though it is still starting.
-  The status shows the start delay as what holds back the next step, as the waiting.
+  The status shows the start delay as what holds back the next step, as the waiting, and without the power to free.
+  So it does when nothing else can be turned on and the start delay holds back only the charger's own next ampere step,
+  since its car charges with at least 50 % but not 90 % of its power at minimum current.
   Why: a car takes some time from activation until it draws power and ramps up, longer through a cloud service, so the average shows its power as free meanwhile.
   A step turned on in that power would be switched off again when the car starts. The start delay ends it for a car that never starts, as one that is full.
 - Bypassed: car connected is false. Evaluated at each decision, ends as soon as it does not hold.

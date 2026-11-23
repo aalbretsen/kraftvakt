@@ -12,7 +12,7 @@ import {
   type StatusSnapshot,
 } from "../api";
 import { applianceRows, chargerRows, lanes, logRows, mergePart, repeatsDue, type Lanes, type LogRow, type Segment } from "../diagnostics";
-import { formatClockTime, formatDateTime, formatDuration, formatMoment, formatNumber, formatPower } from "../format";
+import { type TimeLocale, formatClockTime, formatDateTime, formatDuration, formatMoment, formatNumber, formatPower, timeLocale } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
@@ -154,12 +154,12 @@ export class KraftvaktDiagnosticsPage extends LitElement {
             ],
             [
               "diagnostics.last_missed_windows",
-              missed === null ? this.localize("diagnostics.none") : `${formatMoment(language, missed.start)}–${formatClockTime(language, missed.end)}`,
+              missed === null ? this.localize("diagnostics.none") : `${formatMoment(this.timeLocale, missed.start)}–${formatClockTime(this.timeLocale, missed.end)}`,
             ],
           ],
         )}
         ${this.renderTile("diagnostics.actions", failed.length > 0 ? "warning" : "ok", this.localize("diagnostics.failed_count", { count: failed.length }), [
-          ["diagnostics.last_failed", failed.length > 0 ? formatMoment(language, failed[failed.length - 1].time) : this.localize("diagnostics.none")],
+          ["diagnostics.last_failed", failed.length > 0 ? formatMoment(this.timeLocale, failed[failed.length - 1].time) : this.localize("diagnostics.none")],
           ["diagnostics.commands_waiting", String(diagnostics.queued_commands)],
           ["diagnostics.action_timeout", seconds(general.action_timeout_s)],
         ])}
@@ -170,7 +170,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
             ? this.localize("status.stopped")
             : this.localize("diagnostics.running_for", { duration: formatDuration(language, Date.now() - Date.parse(diagnostics.started_at)) }),
           [
-            ...(diagnostics.started_at === null ? [] : ([["diagnostics.started", formatDateTime(language, diagnostics.started_at)]] as [TranslationKey, string][])),
+            ...(diagnostics.started_at === null ? [] : ([["diagnostics.started", formatDateTime(this.timeLocale, diagnostics.started_at)]] as [TranslationKey, string][])),
             ["status.safe_state_title", this.localize(status.safe_state ? "diagnostics.yes" : "diagnostics.no")],
             ["status.penalty_title", this.localize(status.penalty.active ? "diagnostics.yes" : "diagnostics.no")],
             ["diagnostics.overconsumption", this.localize("diagnostics.watt_hours", { energy: formatNumber(language, Math.max(0, status.penalty.overconsumption_wh), 0) })],
@@ -179,8 +179,8 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         ${this.renderTile(
           "diagnostics.command_repeat",
           "off",
-          repeats.length > 0 ? this.localize("diagnostics.next_at", { time: formatClockTime(language, repeats[0].dueAt) }) : this.localize("diagnostics.none"),
-          repeats.slice(0, 3).map((repeat) => [this.itemName(repeat.type, repeat.id), formatClockTime(language, repeat.dueAt)]),
+          repeats.length > 0 ? this.localize("diagnostics.next_at", { time: formatClockTime(this.timeLocale, repeats[0].dueAt) }) : this.localize("diagnostics.none"),
+          repeats.slice(0, 3).map((repeat) => [this.itemName(repeat.type, repeat.id), formatClockTime(this.timeLocale, repeat.dueAt)]),
         )}
       </div>
     `;
@@ -247,6 +247,10 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     return this.chartWidth < 560;
   }
 
+  private get timeLocale(): TimeLocale {
+    return timeLocale(this.hass);
+  }
+
   /** The horizontal scale of the chart and the lanes, which share it. */
   private scale(now: number) {
     const width = this.chartWidth;
@@ -259,7 +263,6 @@ export class KraftvaktDiagnosticsPage extends LitElement {
 
   private renderChart(history: Lanes, now: number) {
     const { width, left, right, start, x } = this.scale(now);
-    const language = this.hass.language;
     const status = this.status!;
     const height = this.compactChart ? 160 : 200;
     const top = 8;
@@ -305,7 +308,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
             <text x=${left - 6} y=${y(kw * 1000) + 4} text-anchor="end">${kw === topKw ? `${kw} kW` : kw}</text>
           `,
         )}
-        ${ticks.map((tick) => svg`<text x=${x(tick)} y=${height - 6} text-anchor="middle">${new Date(tick).toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" })}</text>`)}
+        ${ticks.map((tick) => svg`<text x=${x(tick)} y=${height - 6} text-anchor="middle">${formatClockTime(this.timeLocale, tick, false)}</text>`)}
         <text x=${width - right} y=${height - 6} text-anchor="end">${this.localize("diagnostics.now")}</text>
         ${area ? svg`<path class="consumption" d="M${firstX},${y(0)}${area}L${x(now)},${y(0)}Z"></path>` : nothing}
         <path class="tariff" d=${tariffPath}></path>
@@ -409,13 +412,13 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     const style = position > width / 2 ? `right: ${width - position + 12}px` : `left: ${position + 12}px`;
     return html`
       <div class="tooltip" style=${style}>
-        <b>${new Date(moment).toLocaleTimeString(language)}</b>
+        <b>${formatClockTime(this.timeLocale, moment)}</b>
         <div>${this.localize("diagnostics.consumption")}: ${measurement ? `${formatPower(language, measurement.power_w)} kW` : "–"}</div>
         ${
           decision
             ? html`
                 <div class="tooltip-decision">
-                  <b>${this.localize("diagnostics.decision_at", { time: formatClockTime(language, decision.time) })}</b>
+                  <b>${this.localize("diagnostics.decision_at", { time: formatClockTime(this.timeLocale, decision.time) })}</b>
                   <div>${this.localize("status.regulation_average")}: ${formatPower(language, decision.regulation_average_w)} kW</div>
                   <div>${this.localize("status.tariff_average")}: ${formatPower(language, decision.tariff_average_w)} kW</div>
                   ${decision.commands.map((command) => html`<div>${this.commandText(command)}</div>`)}
@@ -429,7 +432,6 @@ export class KraftvaktDiagnosticsPage extends LitElement {
 
   private renderLog() {
     const rows = logRows(this.decisions, this.diagnostics?.failed_actions ?? []).filter((row) => this.filter === "all" || (this.filter === "failed") === "failed" in row);
-    const language = this.hass.language;
     return html`
       <ha-card>
         <div class="card-header">
@@ -450,7 +452,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
                 <div class="table">
                   <table>
                     <tbody>
-                      ${rows.map((row) => this.renderLogRow(row, language))}
+                      ${rows.map((row) => this.renderLogRow(row))}
                     </tbody>
                   </table>
                 </div>
@@ -464,7 +466,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     `;
   }
 
-  private renderLogRow(row: LogRow, language: string) {
+  private renderLogRow(row: LogRow) {
     const key = `${row.time} ${"failed" in row ? row.failed.action : JSON.stringify(row.command)}`;
     const open = this.openRow?.key === key;
     const toggle = () => (this.openRow = open ? undefined : { key, time: row.time });
@@ -481,7 +483,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
           }
         }}
       >
-        <td class="time">${formatClockTime(language, row.time)}</td>
+        <td class="time">${formatClockTime(this.timeLocale, row.time)}</td>
         <td class="kind"><span class="chip ${kind}">${this.localize(`diagnostics.kind_${kind}`)}</span></td>
         <td>${"failed" in row ? row.failed.action : this.commandText(row.command)}</td>
       </tr>
@@ -526,7 +528,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
         <dd>
           ${
             waiting
-              ? `${waitingItem}, ${this.localize(`diagnostics.${waiting.reason}`)}, ${formatClockTime(language, waiting.started_at)}–${formatClockTime(language, waiting.until)}`
+              ? `${waitingItem}, ${this.localize(`diagnostics.${waiting.reason}`)}, ${formatClockTime(this.timeLocale, waiting.started_at)}–${formatClockTime(this.timeLocale, waiting.until)}`
               : this.localize("diagnostics.none")
           }
         </dd>

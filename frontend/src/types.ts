@@ -28,8 +28,9 @@ export interface HomeAssistant {
   states: Record<string, HassEntity>;
   entities: Record<string, EntityRegistryEntry>;
   devices: Record<string, DeviceRegistryEntry>;
-  locale: { language: string };
-  config: { unit_system: { temperature: string } };
+  /** The user's profile: the browser's or the server's time zone, and the language's, the system's, a 12-hour or a 24-hour clock. */
+  locale: { language: string; time_zone: "local" | "server"; time_format: "language" | "system" | "12" | "24" };
+  config: { unit_system: { temperature: string }; time_zone: string };
   formatEntityState(stateObj: HassEntity, state?: string): string;
   connection: Connection;
   callWS<Result>(message: { type: string; [key: string]: unknown }): Promise<Result>;

@@ -1,3 +1,5 @@
+import type { HomeAssistant } from "./types";
+
 /** Format a number with a fixed number of decimals in the user's language. */
 export function formatNumber(language: string, value: number, decimals: number): string {
   return new Intl.NumberFormat(language, {
@@ -30,20 +32,44 @@ export function formatEnergy(language: string, wattHours: number): string {
   return formatNumber(language, wattHours / 1000, 2);
 }
 
-/** Format the clock time of a moment, like 14:05:30, in the user's language. */
-export function formatClockTime(language: string, moment: string): string {
-  return new Date(moment).toLocaleTimeString(language);
+/** How times are shown: in the user's language, time zone and clock, as in the rest of Home Assistant. Without a time zone, the browser's. */
+export interface TimeLocale {
+  language: string;
+  timeZone?: string;
+  hourCycle?: "h12" | "h23";
 }
 
-/** Format a moment as its clock time when it is today, and with its date before otherwise, in the user's language. */
-export function formatMoment(language: string, moment: string, today = new Date()): string {
+/** Return how times are shown from the user's profile in Home Assistant. */
+export function timeLocale(hass: HomeAssistant): TimeLocale {
+  const { language, time_zone, time_format } = hass.locale;
+  const twelveHours = time_format === "system" ? new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hour12 : time_format === "12";
+  return {
+    language,
+    timeZone: time_zone === "server" ? hass.config.time_zone : undefined,
+    hourCycle: time_format === "language" ? undefined : twelveHours ? "h12" : "h23",
+  };
+}
+
+function options(locale: TimeLocale): Intl.DateTimeFormatOptions {
+  return { timeZone: locale.timeZone, hourCycle: locale.hourCycle };
+}
+
+/** Format the clock time of a moment, like 14:05:30, or 14:05 without seconds. */
+export function formatClockTime(locale: TimeLocale, moment: string | number, seconds = true): string {
+  const parts: Intl.DateTimeFormatOptions = seconds ? {} : { hour: "2-digit", minute: "2-digit" };
+  return new Date(moment).toLocaleTimeString(locale.language, { ...options(locale), ...parts });
+}
+
+/** Format a moment as its clock time when it is today, and with its date before otherwise. */
+export function formatMoment(locale: TimeLocale, moment: string, today = new Date()): string {
   const date = new Date(moment);
-  return date.toDateString() === today.toDateString() ? date.toLocaleTimeString(language) : date.toLocaleString(language);
+  const day = (value: Date) => value.toLocaleDateString("en-CA", { timeZone: locale.timeZone });
+  return day(date) === day(today) ? formatClockTime(locale, moment) : date.toLocaleString(locale.language, options(locale));
 }
 
-/** Format a moment as its date and time without seconds, like 22.10.2026, 20:57, in the user's language. */
-export function formatDateTime(language: string, moment: string): string {
-  return new Date(moment).toLocaleString(language, { dateStyle: "short", timeStyle: "short" });
+/** Format a moment as its date and time without seconds, like 22.10.2026, 20:57. */
+export function formatDateTime(locale: TimeLocale, moment: string): string {
+  return new Date(moment).toLocaleString(locale.language, { ...options(locale), dateStyle: "short", timeStyle: "short" });
 }
 
 /** Format a duration in ms as whole days, or else whole hours, or else whole minutes, rounded down, in the user's language. */

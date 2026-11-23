@@ -307,6 +307,14 @@ class Appliance:
             if condition is not None:
                 yield field_name, condition
 
+    def used_entities(self) -> Iterator[str]:
+        """Return each entity the appliance names, but those in templates and actions."""
+        if self.entity_id is not None:
+            yield self.entity_id
+        for _, condition in self.conditions():
+            if condition.type is not ConditionType.TEMPLATE and condition.value:
+                yield condition.value
+
     def display_sensors(self) -> Iterator[tuple[str, str]]:
         """Return each display value given as a sensor, with its field, which must belong to the device of the appliance's entity."""
         for field_name, condition in self.conditions():
@@ -412,6 +420,11 @@ class Charger:
             condition = getattr(self, field_name)
             if condition is not None:
                 yield field_name, condition
+
+    def used_entities(self) -> Iterator[str]:
+        """Return each entity the charger names and uses, but those in templates and actions."""
+        for _, entity_id in self.device_entities():
+            yield entity_id
 
     def device_entities(self) -> Iterator[tuple[str, str]]:
         """Return each field and entity that must belong to the device."""

@@ -7,7 +7,7 @@ import "../components/power-overview";
 import "../components/priority-list";
 import "../components/running-button";
 import { measuredPowerW } from "../entities";
-import { formatClockTime, formatEnergy } from "../format";
+import { formatClockTime, formatEnergy, timeLocale } from "../format";
 import { describeIssue, pageForIssue } from "../issues";
 import type { Localize } from "../localize";
 import { navigateToPage, PANEL_PATH } from "../navigation";
@@ -106,7 +106,7 @@ export class KraftvaktStatusPage extends LitElement {
   private renderNextDecision(status: StatusSnapshot, nextDecisionAt: string) {
     const end = Date.parse(nextDecisionAt);
     const interval = status.regulation_window_s * 1000;
-    const time = formatClockTime(this.hass.language, nextDecisionAt);
+    const time = formatClockTime(timeLocale(this.hass), nextDecisionAt);
     return html`
       <span class="next-decision" title=${this.localize("status.next_decision_at", { time })}>
         ${this.narrow ? nothing : this.localize("status.next_decision")}

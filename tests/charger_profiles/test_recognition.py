@@ -16,10 +16,10 @@ from .profiles.test_amina_s_zigbee2mqtt import AMINA_S
 from .profiles.test_easee import EASEE
 
 
-async def test_device_without_a_profile_gets_the_settings_of_the_default_profile(hass: HomeAssistant, command: Command) -> None:
+async def test_device_without_a_profile_gets_the_default_profile_which_keeps_the_start_delay(hass: HomeAssistant, command: Command) -> None:
     plug = Device(integration="mqtt", name="Plug", manufacturer="IKEA", model_id="E1603", entities=[DeviceEntity("switch", None)])
 
-    default = {"profile": None, "fields": {"cloud_controlled": False, "start_delay_s": 180}}
+    default = {"profile": None, "fields": {"cloud_controlled": False}}
     assert await charger_profile(command, register(hass, plug)) == default
     assert await charger_profile(command, "unknown") == default
 

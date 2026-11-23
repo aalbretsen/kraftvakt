@@ -42,13 +42,13 @@ def async_clear_not_started(hass: HomeAssistant) -> None:
 
 @callback
 def async_check_entities(hass: HomeAssistant, config: KraftvaktConfig) -> None:
-    """Report each entity of an appliance or charger that no longer exists.
+    """Report each entity an appliance or charger names that no longer exists, but those in templates and actions.
 
     The reports of entities that exist again, or are no longer used, are
     removed.
     """
     registry = er.async_get(hass)
-    used = {entity_id for _, item in config.items() if (entity_id := item.controlled_entity) is not None}
+    used = {entity_id for _, item in config.items() for entity_id in item.used_entities()}
     missing = {entity_id for entity_id in used if hass.states.get(entity_id) is None and registry.async_get(entity_id) is None}
     prefix = f"{MISSING_ENTITY}_"
     for domain, issue_id in list(ir.async_get(hass).issues):

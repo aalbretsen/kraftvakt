@@ -109,7 +109,8 @@ The section header, the description and the footer note are in `section-styles.t
 - Choosing another device clears every entity field that is not on the new device, and keeps templates and custom actions.
   It then asks the backend for the device's charger profile, and when there is one,
   the fields it fills replace those in the draft and an info under the device names the profile.
-  Without a profile, the default profile fills the settings, without the info, and so does the panel itself when the backend does not answer.
+  Without a profile, the default profile resets cloud-controlled and keeps the start delay, without the info,
+  and so does the panel itself when the backend does not answer.
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance has a group of its own, as the variant dialog has one per action it can override.
   The actions of a charger are in the group of what they do: activate and deactivate in Turn charging on and off, and set charging current in the charging current group.
@@ -210,12 +211,15 @@ The section header, the description and the footer note are in `section-styles.t
   Start and stop are in a footer under a divider, on every screen width; stop is a plain danger button, start a filled one.
 - While the power sensor is valid again but the safe state lasts until the next decision, the safe state banner is an info that the regulation starts again at the next decision,
   not the error that the sensor gives no valid measurement.
+- Clock times and dates follow the user's profile in Home Assistant: the browser's or the server's time zone, and the language's, the system's,
+  a 12-hour or a 24-hour clock, from `timeLocale` in `format.ts`.
 - Countdowns are never ticking text. The next decision is a small ring that empties over one regulation window, animated by the browser (Web Animations API) so it needs no clock;
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
-  An EV charger whose next ampere step waits, or whose start delay holds back the next step, shows the same instead of the power to free,
+  An EV charger whose next ampere step waits, or whose start delay holds back the next step or its own next ampere step, shows the same instead of the power to free,
   with the reason from the status as a short text: the damping, the start delay, or the waiting time of an EV charger that is activated again.
+  While a waiting holds back the next step, no row shows the power to free.
 - Otherwise the row of the next step shows, in the same column, an icon and the power to free in kW, with a sentence as tooltip that tells what it is freed for:
   turning on an appliance, activating an EV charger or giving it one more ampere. On a phone only the icon is shown.
 - The tiles are, from the left, consumption now, regulation average, average consumption and the power limit.

@@ -13,7 +13,7 @@ import {
 } from "@mdi/js";
 
 import type { ChargerState, ChargerStatus, ChargingWindow } from "./api";
-import { formatClockTime } from "./format";
+import { type TimeLocale, formatClockTime } from "./format";
 import type { TranslationKey } from "./localize";
 
 export type ChipKind = "on" | "off" | "alarm" | "outline" | "info" | "waiting";
@@ -60,13 +60,13 @@ function shortTime(time: string): string {
 }
 
 /** The chip of an EV charger. `queuedForRoom` holds when its group shares the power among the activated EV chargers. */
-export function chargerChip(charger: ChargerStatus, language: string, window: ChargingWindow | null | undefined, queuedForRoom: boolean): ChargerChip {
+export function chargerChip(charger: ChargerStatus, locale: TimeLocale, window: ChargingWindow | null | undefined, queuedForRoom: boolean): ChargerChip {
   const [chip, word, sentence] = CHARGER_CHIPS[charger.state];
   if (charger.state === "outside_window" && window) {
     return { chip, word, sentence, wordParams: { start: shortTime(window.start), end: shortTime(window.end) }, sentenceParams: { ...window } };
   }
   if (charger.state === "starting" && charger.starting_until) {
-    return { chip, word, sentence, wordParams: {}, sentenceParams: { time: formatClockTime(language, charger.starting_until) } };
+    return { chip, word, sentence, wordParams: {}, sentenceParams: { time: formatClockTime(locale, charger.starting_until) } };
   }
   if (charger.state === "queued" && queuedForRoom) {
     return { chip, word, sentence: "status.queued_for_room", wordParams: {}, sentenceParams: {} };

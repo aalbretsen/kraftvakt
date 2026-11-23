@@ -19,13 +19,13 @@ def charger_profile_fields(hass: HomeAssistant, device_id: str) -> tuple[Charger
     """Return the profile of the device and the fields of a charger it fills, as stored.
 
     A field whose entity is not on the device, or is disabled, is left out.
-    A device without a profile gets the default profile, which fills only the
-    settings, so a charger never keeps those of its previous device.
+    A device without a profile gets the default profile, which fills only
+    cloud-controlled, and keeps the start delay, which the user may have set.
     """
     device = dr.async_get(hass).async_get(device_id)
     profile = _profile_of(hass, device) if isinstance(device, dr.DeviceEntry) else None
     if profile is None:
-        return None, _settings(DEFAULT_CHARGER.cloud_controlled, DEFAULT_CHARGER.start_delay_s)
+        return None, {"cloud_controlled": DEFAULT_CHARGER.cloud_controlled}
     return profile, DeviceEntities(er.async_entries_for_device(er.async_get(hass), device_id)).fields(profile)
 
 

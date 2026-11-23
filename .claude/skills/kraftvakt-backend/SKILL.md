@@ -148,8 +148,8 @@ Every issue code needs a text in the panel's translations.
 ## Charger profiles
 
 - A charger profile is data: one module per profile in `charger_profiles/profiles/` with a `PROFILE`, listed in `PROFILES`. The shared code sits next to that folder,
-  so adding a profile changes no shared code. A device without a profile gets the default profile, which fills only cloud-controlled and the start delay,
-  with the defaults of a new charger.
+  so adding a profile changes no shared code. A device without a profile gets the default profile, which fills only cloud-controlled, as for a new charger,
+  and keeps the start delay, since the user may have set it.
 - The backend recognises and applies a profile, and the panel only applies the fields it gets back.
   Why: the backend sees the integration, manufacturer, model, translation keys and the integration's own entity names, and the panel keeps no knowledge of chargers.
 - A device has a profile when its config entry is of the profile's integration, and its manufacturer and model ID match where the profile names them.
@@ -160,7 +160,7 @@ Every issue code needs a text in the panel's translations.
 - A profile has a charging power, and may have a car charging condition and a fault flag.
   It has an on/off entity or actions to activate and deactivate, unless the charger is switched by its current.
   It always fills how the charger is switched, cloud-controlled and the start delay, the last with the charger default when the profile leaves it out,
-  so choosing a device never keeps the settings of the charger's previous device.
+  so choosing a device with a profile never keeps the settings of the charger's previous device.
   The other settings, such as the currents, the power at minimum current and the charging window, are not part of a profile and follow the standard defaults.
   It fills the fault flag, with its setting for deactivate on fault, only when it finds it,
   so choosing a device never turns the setting on without a flag.
@@ -264,12 +264,13 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - The penalty part holds whether a penalty is active, the overconsumption and whether recovery has started.
 - The waiting fields are set only on the row of the next step while it waits: an appliance,
   or the charger of an ampere step that is damped or activated again, also a queued charger before a switch-over,
-  and on the row of a starting charger while its start delay holds back the next step. `waiting_reason` tells which: the waiting time, the damping or the start delay.
+  and on the row of a starting charger while its start delay holds back the next step, or only its own next ampere step when nothing else can be turned on.
+  `waiting_reason` tells which: the waiting time, the damping or the start delay.
   They hold when the waiting started, when it ends, and the decision that turns the step on, the first at or after its end.
   The engine keeps a damped ampere step that is next, and a start delay that holds back the next step, as the waiting, with its reason,
   so the waiting time remaining sensor counts down to it as to any waiting, and the decisions kept for the diagnostics show why.
 - The power to free from the last decision is set only on the row of the next step: its appliance, or the charger of its ampere step.
-  It is `null` on the other rows, and when the next step fits.
+  It is `null` on the other rows, when the next step fits, and while a waiting holds the next step back, so one row tells what holds it.
 - An appliance's variant is the label of its current variant, or `null`.
 - The display values of an appliance, and the charging power of a charger, are read when the snapshot is built, `null` without a valid value.
   A temperature carries its unit: the sensor's, or Home Assistant's for a template.

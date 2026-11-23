@@ -100,7 +100,8 @@ The helper texts in the panel tell what each setting does.
   and the other EV chargers of its group get no more current, since the car takes a while to draw power.
   It gets more current itself when the car draws almost all of its power at minimum current, unless another EV charger of its group is next in turn:
   the currents of the group are shared further only when what the car draws is known.
-  The status page shows the EV charger as **Starting** until the car draws power, and the countdown while the start delay holds back the next step.
+  The status page shows the EV charger as **Starting** until the car draws power, and the countdown while the start delay holds back the next step,
+  or its own next ampere.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
 - **Excluded appliance:** turned off, and gets no commands until it is included again.
@@ -140,7 +141,7 @@ An action that does not finish is stopped by the action timeout, and the command
 so only the newest command for each appliance and EV charger is sent.
 Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**, and give it a start delay that covers how long the car takes to start charging.
 
-An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**.
+An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**, except one named only in a template or an action.
 An entity that is only unavailable, for example while its cloud service is down, is not.
 
 ### EV charging
@@ -182,7 +183,7 @@ One whose car is disconnected is deactivated, so a car connected again waits for
   when there is room, until it is disconnected. Kraftvakt forgets that the car has used power at a restart of Home Assistant.
 - **‹charger› override charging window** lets the EV charger charge outside the charging window. It only allows charging: it does not move the EV charger ahead of the others.
 - **Start delay:** how long the car may take to start charging after the EV charger is activated. Nothing below the EV charger is turned on meanwhile.
-  The charger profile fills it in when the device is chosen, and an EV charger without a profile gets 180 seconds.
+  The charger profile fills it in when the device is chosen. A new EV charger gets 180 seconds, which is kept when the device has no profile.
 - **Cloud-controlled EV charger:** gets no repeated commands while no car is connected.
 - **Deactivate on fault:** while a fault flag shows a fault, the EV charger is deactivated, and the others in its group may charge.
   An unavailable entity is no fault, so a cloud service that is down does not stop the charging.

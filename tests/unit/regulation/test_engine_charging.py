@@ -12,7 +12,7 @@ from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
     ChargerStatus,
 )
-from custom_components.kraftvakt.regulation.model import AmpereStepKey, Waiting, WaitingReason
+from custom_components.kraftvakt.regulation.model import AmpereStepKey, ApplianceStepKey, PowerToFree, Waiting, WaitingReason
 
 from .configs import appliance, charger, charger_group, make_config
 from .scenario import (
@@ -336,6 +336,41 @@ def test_starting_charger_holds_back_the_appliance_below_for_its_whole_start_del
     assert scenario.engine.chargers["c"].starting_until == activated_at + timedelta(minutes=3)
     assert scenario.decide(1250) == on("pool")
     assert scenario.engine.chargers["c"].state is ChargerState.ACTIVATED
+
+
+def test_starting_charger_shows_no_power_to_free_for_the_step_it_holds_back() -> None:
+    """Only the row of the starting charger tells what holds the appliance below back, until its start delay ends."""
+    scenario = Scenario(make_config("pool", chargers=(charger("c", start_delay_s=180),), priority=("ev", "pool"), wait_at_limit_s=0))
+    assert scenario.decide(1250) == activate("c")
+
+    assert scenario.decide_many(9950, 2) == [[], []]
+    assert scenario.engine.waiting is not None
+    assert scenario.engine.power_to_free is None
+    assert scenario.decide(9950) == []
+    assert scenario.engine.waiting is None
+    assert scenario.engine.power_to_free == PowerToFree(ApplianceStepKey("pool"), 50)
+
+
+def test_starting_charger_shows_its_start_delay_while_it_holds_back_only_its_own_next_ampere() -> None:
+    """Its car charges with 75 % of its power at minimum current, enough for more once the start delay has passed."""
+    scenario = Scenario(make_config(chargers=(charger("c", start_delay_s=180),)))
+    assert scenario.decide(0) == activate("c")
+    activated_at = scenario.now
+    scenario.set_charger("c", actively_charging=True, charging_power_w=3000)
+
+    assert scenario.decide_many(0, 2) == [[], []]
+    assert scenario.engine.waiting == Waiting(AmpereStepKey("c", 0), activated_at, activated_at + timedelta(minutes=3), WaitingReason.START_DELAY)
+    assert scenario.decide(0) == current("c", 7)
+    assert scenario.engine.waiting is None
+
+
+def test_starting_charger_whose_car_draws_too_little_also_after_its_start_delay_shows_no_start_delay() -> None:
+    scenario = Scenario(make_config(chargers=(charger("c", start_delay_s=180),)))
+    assert scenario.decide(0) == activate("c")
+    scenario.set_charger("c", actively_charging=True, charging_power_w=1000)
+
+    assert scenario.decide(0) == []
+    assert scenario.engine.waiting is None
 
 
 def test_starting_charger_holds_back_the_appliance_below_also_while_its_car_ramps_up() -> None:

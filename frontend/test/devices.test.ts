@@ -4,7 +4,7 @@ import type { ActionConfig, Capabilities } from "../src/api";
 import { changesForDevice, chargerProfileOf, deviceEntities, displaySensorScope, displaySensors, displayValuesForEntity } from "../src/devices";
 import type { HomeAssistant } from "../src/types";
 import { applianceErrors } from "../src/validation";
-import { CAPABILITIES, appliance, charger } from "./builders";
+import { appliance, charger } from "./builders";
 
 /** A device `device_<id>` with the given entities. */
 function device(id: string, entityIds: string[]): HomeAssistant {
@@ -106,21 +106,16 @@ describe("the charger profile of a device", () => {
       await chargerProfileOf(
         answering(() => Promise.resolve(answer)),
         "device_a",
-        CAPABILITIES,
       ),
     ).toEqual(answer);
   });
 
-  it("gives the settings of the default profile when the backend does not answer", async () => {
+  it("is the default profile, which keeps the start delay, when the backend does not answer", async () => {
     expect(
       await chargerProfileOf(
         answering(() => Promise.reject(new Error("lost"))),
         "device_a",
-        CAPABILITIES,
       ),
-    ).toEqual({
-      profile: null,
-      fields: { cloud_controlled: false, start_delay_s: CAPABILITIES.defaults.chargers.start_delay_s },
-    });
+    ).toEqual({ profile: null, fields: { cloud_controlled: false } });
   });
 });

@@ -13,10 +13,12 @@ from .charging import (
     ChargerState,
     ChargerStatus,
     ChargingState,
+    ampere_step_count,
     charges_in_window,
     charging_current,
     charging_permission,
     estimated_draw_w,
+    may_step_up,
     override_arms,
     override_ended,
 )
@@ -270,7 +272,7 @@ class RegulationEngine:
             commands += self._switch_off_above_limit(average, forced_off, decision.now)
         else:
             commands += self._turn_on_next(decision.now, average, forced_off)
-        self._state.power_to_free = self._power_to_free(average)
+        self._state.power_to_free = None if self._state.waiting is not None else self._power_to_free(average)
         return DecisionResult(commands, overrides)
 
     def _forget_settled(self, window_start: datetime) -> None:
@@ -406,7 +408,9 @@ class RegulationEngine:
         """Handle the appliances that are excluded, included again or switch variant.
 
         An excluded appliance that is on is switched off. An appliance at a new
-        place is off afterwards and gets room there. A variant switch sends the
+        place is off afterwards and gets room there, from an appliance below it
+        that is switched off anyway at this decision, or else by switching off
+        the lowest step that is on below it. A variant switch sends the
         turn-off action of the new variant also when the appliance was off,
         since variants may turn it off in different ways. Before the first
         decision after a start, the appliance itself is the variant. These
@@ -425,17 +429,24 @@ class RegulationEngine:
         ]
         was_on = self._state.appliances_on & set(moving)
         commands = self._place_essential_appliances()
-        for appliance_id in sorted((excluded & self._state.appliances_on) - self._essential):
-            commands += self._switch(ApplianceStepKey(appliance_id), turn_on=False, now=decision.now)
+        switched_off = [ApplianceStepKey(appliance_id) for appliance_id in sorted((excluded & self._state.appliances_on) - self._essential)]
+        for key in switched_off:
+            commands += self._switch(key, turn_on=False, now=decision.now)
         places = {step.key: place for place, step in enumerate(self._steps())}
-        for key in sorted(map(ApplianceStepKey, moving), key=lambda key: places[key]):
-            appliance_id = key.appliance_id
-            was_off = appliance_id not in was_on
-            switched_variant = previous_variants.get(appliance_id) != self._state.current_variants[appliance_id]
-            if appliance_id in self._state.appliances_on or (was_off and switched_variant):
+        in_new_places = sorted(map(ApplianceStepKey, moving), key=lambda key: places[key])
+        for key in in_new_places:
+            switched_variant = previous_variants.get(key.appliance_id) != self._state.current_variants[key.appliance_id]
+            if key.appliance_id in was_on:
+                switched_off.append(key)
+            if key.appliance_id in was_on or switched_variant:
                 commands += self._switch(key, turn_on=False, now=decision.now)
-            if was_off and appliance_id not in excluded:
-                commands += self._make_room_below(key, decision.now)
+        for key in in_new_places:
+            if key.appliance_id not in was_on and key.appliance_id not in excluded:
+                room = next((below for below in switched_off if places[below] > places[key]), None)
+                if room is None:
+                    commands += self._make_room_below(key, decision.now)
+                else:
+                    switched_off.remove(room)
             self._forget_waiting(key)
             self._state.repeats.reset(key)
         return commands
@@ -556,7 +567,7 @@ class RegulationEngine:
         if switch_over is not None:
             return switch_over
         if place is None:
-            self._state.waiting = None
+            self._state.waiting = self._own_start_delay(steps)
             return []
         candidate = steps[place]
         holding_back = self._start_delay(steps, place, candidate.key) or self._damping(candidate.key)
@@ -571,11 +582,30 @@ class RegulationEngine:
             return []
         return self._turn_on(candidate.key, now)
 
+    def _own_start_delay(self, steps: list[Step]) -> Waiting | None:
+        """Return the start delay of the first starting charger that holds back its own next ampere step only for it.
+
+        Its car charges, but not yet with 90 % of its power at minimum current,
+        which it would need only while it is starting.
+        """
+        for step in steps:
+            key = step.key
+            if not isinstance(key, AmpereStepKey) or key.index > 0 or not step.is_on:
+                continue
+            charger = self._chargers[key.charger_id]
+            charging = self._charging_of(charger.id)
+            until = charging.starting.get(charger.id)
+            held_only_while_starting = charger.id in charging.held_at_min and may_step_up(charger, charging.last_readings[charger.id], starting=False)
+            if until is not None and held_only_while_starting and charging.ampere_steps_on[charger.id] < ampere_step_count(charger):
+                return Waiting(key, charging.activated_at[charger.id], until, WaitingReason.START_DELAY)
+        return None
+
     def _make_room(self, steps: list[Step], place: int, average_w: float, now: datetime) -> list[Command]:
         """Switch off steps below the step at the place, as many as it is estimated to need to fit."""
         return self._free_power(_steps_on_below(steps, place), self._power_needed_w(steps[place], average_w), now)
 
     def _power_to_free(self, average_w: float) -> PowerToFree | None:
+        """Return how far the average must drop for the next step, which is not shown while a waiting holds it back, so one row tells what holds it."""
         steps = self._steps()
         place = _next_place(steps)
         if place is None:

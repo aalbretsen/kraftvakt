@@ -35,11 +35,23 @@ from pytest_homeassistant_custom_component.components.diagnostics import (
 )
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.kraftvakt.config_model import Issue
+from custom_components.kraftvakt.config_model import (
+    ActionConfig,
+    ActionMode,
+    Appliance,
+    Charger,
+    ChargerGroup,
+    Condition,
+    ConditionType,
+    Issue,
+    KraftvaktConfig,
+    SwitchedBy,
+)
 from custom_components.kraftvakt.config_reader import read_config
 from custom_components.kraftvakt.const import DOMAIN
 from custom_components.kraftvakt.json_values import plain
 from custom_components.kraftvakt.regulation.waiting import WaitingCurve
+from custom_components.kraftvakt.repairs import async_check_entities
 from custom_components.kraftvakt.status import status_snapshot
 from custom_components.kraftvakt.storage import STORAGE_KEY, STORAGE_VERSION
 
@@ -1155,6 +1167,25 @@ async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
 
     assert not issues.async_get_issue(DOMAIN, "missing_entity_light.a")
     assert issues.async_get_issue(DOMAIN, "missing_entity_light.b")
+
+
+async def test_every_entity_a_charger_or_appliance_names_is_checked(hass: HomeAssistant) -> None:
+    """A charger switched by its current has no on/off entity, and a template names no entity that is checked."""
+    charger = Charger(
+        id="c",
+        switched_by=SwitchedBy.CURRENT,
+        on_off_entity="switch.unused",
+        set_current=ActionConfig(ActionMode.ENTITY, entity_id="number.current"),
+        car_connected=Condition(ConditionType.ENTITY, "binary_sensor.car"),
+        charging_power=Condition(ConditionType.TEMPLATE, "{{ states('sensor.in_template') }}"),
+    )
+    appliance = Appliance(id="a", entity_id="light.a", display_power=Condition(ConditionType.POWER_SENSOR, "sensor.a_power"))
+    config = KraftvaktConfig(appliances=(appliance,), charger_groups=(ChargerGroup(id="g", chargers=(charger,)),))
+
+    async_check_entities(hass, config)
+
+    issues = sorted(issue_id for domain, issue_id in ir.async_get(hass).issues if domain == DOMAIN)
+    assert issues == [f"missing_entity_{entity_id}" for entity_id in ("binary_sensor.car", "light.a", "number.current", "sensor.a_power")]
 
 
 async def test_repair_issues_are_removed_with_the_integration(hass: HomeAssistant, setup_kraftvakt) -> None:

@@ -7,7 +7,7 @@ import "./countdown";
 import { CHIP_EXCLUDED, type Chip, chargerChip } from "../charger-chips";
 import { allChargers } from "../draft";
 import { controlledEntity, existingEntity } from "../entities";
-import { formatClockTime, formatNumber, formatPercent, formatPower } from "../format";
+import { formatClockTime, formatNumber, formatPercent, formatPower, timeLocale } from "../format";
 import type { Localize, TranslationKey } from "../localize";
 import { showMoreInfo } from "../navigation";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
@@ -267,7 +267,7 @@ export class KraftvaktPriorityList extends LitElement {
       return otherwise();
     }
     return html`
-      <span class="waiting" title=${title(formatClockTime(this.hass.language, row.waiting_ends_at))}>
+      <span class="waiting" title=${title(formatClockTime(timeLocale(this.hass), row.waiting_ends_at))}>
         <ha-svg-icon .path=${mdiTimerOutline}></ha-svg-icon>
         ${this.renderWideOnly(html`<kraftvakt-countdown-bar .start=${Date.parse(row.waiting_since)} .end=${Date.parse(row.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
       </span>
@@ -336,7 +336,7 @@ export class KraftvaktPriorityList extends LitElement {
   private renderChargerChip(charger: ChargerStatus) {
     const { chip, word, sentence, wordParams, sentenceParams } = chargerChip(
       charger,
-      this.hass.language,
+      timeLocale(this.hass),
       this.chargerConfig(charger)?.charging_window,
       this.sharesByChargingPower(charger),
     );

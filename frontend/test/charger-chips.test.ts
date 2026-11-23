@@ -29,29 +29,30 @@ describe("EV charger chips", () => {
 });
 
 describe("the chip of an EV charger", () => {
+  const EN = { language: "en" };
   const startingUntil = "2026-11-23T12:03:00+00:00";
 
   it("tells when the start delay of a starting EV charger ends", () => {
-    const chip = chargerChip(chargerStatus("c", { state: "starting", activated: true, current_a: 6, starting_until: startingUntil }), "en", null, false);
+    const chip = chargerChip(chargerStatus("c", { state: "starting", activated: true, current_a: 6, starting_until: startingUntil }), EN, null, false);
     expect(chip.sentence).toBe("status.starting_until");
-    expect(chip.sentenceParams).toEqual({ time: formatClockTime("en", startingUntil) });
+    expect(chip.sentenceParams).toEqual({ time: formatClockTime(EN, startingUntil) });
   });
 
   it("tells the current of an EV charger that charges within its start delay", () => {
     const charging = chargerStatus("c", { state: "charging", activated: true, charging: true, current_a: 6, starting_until: startingUntil });
-    const chip = chargerChip(charging, "en", null, false);
+    const chip = chargerChip(charging, EN, null, false);
     expect(chip.sentence).toBe("status.charging_at");
     expect(chip.sentenceParams).toEqual({ current: 6 });
   });
 
   it("shows the charging window short in the word and in full in the sentence", () => {
-    const chip = chargerChip(chargerStatus("c", { state: "outside_window" }), "en", { start: "22:00", end: "06:30" }, false);
+    const chip = chargerChip(chargerStatus("c", { state: "outside_window" }), EN, { start: "22:00", end: "06:30" }, false);
     expect(chip.wordParams).toEqual({ start: "22", end: "06:30" });
     expect(chip.sentenceParams).toEqual({ start: "22:00", end: "06:30" });
   });
 
   it("tells a queued EV charger of a group that shares the power that it waits for room", () => {
-    expect(chargerChip(chargerStatus("c", { state: "queued" }), "en", null, true).sentence).toBe("status.queued_for_room");
-    expect(chargerChip(chargerStatus("c", { state: "queued" }), "en", null, false).sentence).toBe("status.waiting_charger");
+    expect(chargerChip(chargerStatus("c", { state: "queued" }), EN, null, true).sentence).toBe("status.queued_for_room");
+    expect(chargerChip(chargerStatus("c", { state: "queued" }), EN, null, false).sentence).toBe("status.waiting_charger");
   });
 });
