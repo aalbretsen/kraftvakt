@@ -64,7 +64,7 @@
       },
       "charger": {
         "title": "Simulert elbillader",
-        "description": "En trefaset lader på 400 V. Den trekker √3 × 400 V × ladestrømmen når lading er tillatt, en bil er tilkoblet og bilen ikke er fulladet.",
+        "description": "En trefaset lader på 400 V. Den bruker √3 × 400 V × ladestrømmen når lading er tillatt, en bil er tilkoblet og bilen ikke er fulladet.",
         "data": {
           "name": "Navn",
           "min_current_a": "Minste ladestrøm",

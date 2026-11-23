@@ -47,9 +47,9 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 - You set a **power limit**, the step of the capacity tariff you want to stay below, for example 10,000 W.
   Kraftvakt keeps the average consumption over the last hour, the **tariff average**, below it.
 - You sort the appliances and EV chargers in a **priority list**. When power is free, the next one in the list is turned on:
-  at once when Kraftvakt knows what it draws, there is room for it, and it was not just turned off, and otherwise after a short waiting time.
+  at once when Kraftvakt knows what it uses, there is room for it, and it was not just turned off, and otherwise after a short waiting time.
   Above the power limit, the lowest one that is on is turned off.
-- An **EV charger** gets one ampere at a time, when the power one more ampere draws is free, and only while a car is connected.
+- An **EV charger** gets one ampere at a time, when the power one more ampere uses is free, and only while a car is connected.
 - An **essential appliance**, such as a freezer, is always kept on.
 - If the power sensor stops giving values, everything but the essential appliances is turned off until it is back.
 
@@ -61,7 +61,7 @@ The helper texts in the panel tell what each setting does.
   Turn on **‹appliance› excluded from regulation** to control one yourself.
 - Kraftvakt never hands an appliance back. When it is removed, excluded, or the regulation is stopped, it stays as Kraftvakt last set it, often off.
   Turn the water heater on again yourself, or it stays cold.
-- Prefer devices with local control for appliances that draw a lot of power. A device controlled through a cloud service may react late, or not at all while the service is down.
+- Prefer devices with local control for appliances that use a lot of power. A device controlled through a cloud service may react late, or not at all while the service is down.
 
 ## For advanced users
 
@@ -77,9 +77,9 @@ The helper texts in the panel tell what each setting does.
   or as many amperes of an EV charger as the power above the limit needs, at once. Appliances lower in the list give way when one higher up needs the room.
   The order is fixed: an appliance is never turned on before every appliance above it is on.
 - **Power reserve:** the free power a step needs before it is turned on. An appliance with a **fixed load** has its power as reserve.
-  The first ampere of an EV charger needs its power at minimum current, and each ampere after it what the car drew per ampere at the last decision,
+  The first ampere of an EV charger needs its power at minimum current, and each ampere after it what the car used per ampere at the last decision,
   its charging power divided by its current. A step that was just turned on keeps its power reserve until the regulation average shows it.
-- **Waiting time:** for an appliance without a fixed load, since Kraftvakt does not know what it draws. None while plenty of power is free,
+- **Waiting time:** for an appliance without a fixed load, since Kraftvakt does not know what it uses. None while plenty of power is free,
   and close to the power limit up to the waiting time at the power limit, 300 seconds by default.
   An appliance that is turned on again and again waits longer each time.
   An appliance with a fixed load, and an EV charger, are turned on at once the first time, but wait when they are turned on again,
@@ -97,10 +97,10 @@ The helper texts in the panel tell what each setting does.
   An EV charger that loses its last ampere waits its waiting time instead before it is activated again.
   Meanwhile, nothing below the EV charger is turned on, and the status page shows the countdown instead of the power to free.
 - **Start delay:** after an EV charger is activated, nothing below it is turned on until its start delay has passed,
-  and the other EV chargers of its group get no more current, since the car takes a while to draw power.
-  It gets more current itself when the car draws almost all of its power at minimum current, unless another EV charger of its group is next in turn:
-  the currents of the group are shared further only when what the car draws is known.
-  The status page shows the EV charger as **Starting** until the car draws power, and the countdown while the start delay holds back the next step,
+  and the other EV chargers of its group get no more current, since the car takes a while to start using power.
+  It gets more current itself when the car uses almost all of its power at minimum current, unless another EV charger of its group is next in turn:
+  the currents of the group are shared further only when what the car uses is known.
+  The status page shows the EV charger as **Starting** until the car uses power, and the countdown while the start delay holds back the next step,
   or its own next ampere.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
@@ -157,13 +157,13 @@ Kraftvakt activates and deactivates it in one of three ways: by turning on and o
 or by the charging current, where 0 A stops charging.
 
 - An EV charger without a car is not activated, and does not stand in the way of the others.
-- An EV charger with a car is activated when its **power at minimum current** is free, and keeps the minimum current until the car draws at least half of it.
-  Set the power at minimum current to what the car draws at the minimum current, since the regulation relies on it.
-- Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may draw power again whenever there is room,
+- An EV charger with a car is activated when its **power at minimum current** is free, and keeps the minimum current until the car uses at least half of it.
+  Set the power at minimum current to what the car uses at the minimum current, since the regulation relies on it.
+- Kraftvakt never guesses that a car is done. A full car stays activated at the minimum current, so it may use power again whenever there is room,
   for example to heat in the morning.
-- A car that charges gets one more ampere when the power it draws per ampere is free.
-- A car that suddenly draws more than the regulation counted on is cut back at once: above the power limit,
-  as many amperes are taken as the power above the limit needs, by what the car draws per ampere.
+- A car that charges gets one more ampere when the power it uses per ampere is free.
+- A car that suddenly uses more than the regulation counted on is cut back at once: above the power limit,
+  as many amperes are taken as the power above the limit needs, by what the car uses per ampere.
 
 **Car connected**, the optional **car charging** and the fault flag are each a boolean entity, the states of an entity, or a template.
 An unavailable entity or a template that fails counts as false.
@@ -172,7 +172,7 @@ The settings of the group decide how its cars share the power:
 
 | | Dynamic charging order off | Dynamic charging order on |
 |---|---|---|
-| **One EV charger at a time** | While no car charges, every car waits at the minimum current. The first in the charging priority that draws power charges, and the ones below it wait as **Queued**. A car higher up that draws power takes over. | While no car charges, every car waits at the minimum current. The first that draws power charges until it stops, and the others wait as **Queued**. |
+| **One EV charger at a time** | While no car charges, every car waits at the minimum current. The first in the charging priority that uses power charges, and the ones below it wait as **Queued**. A car higher up that uses power takes over. | While no car charges, every car waits at the minimum current. The first that uses power charges until it stops, and the others wait as **Queued**. |
 | **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power at minimum current is free, if need be after the others are set to their minimum current. An EV charger that was deactivated waits its waiting time first, and the others get no more current meanwhile. |
 
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.

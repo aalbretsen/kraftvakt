@@ -69,7 +69,7 @@
     "outside_window": "Outside the charging window ({start}–{end})",
     "amperes": "{current} A",
     "chargers_charging": "{charging} of {total} EV chargers are charging",
-    "activated_not_charging": "Activated: the car does not draw power, so it waits at the minimum current",
+    "activated_not_charging": "Activated: the car does not use power, so it waits at the minimum current",
     "window_overridden": "The charging window is overridden",
     "chip_charging": "Charging",
     "chip_no_car": "Car disconnected",
@@ -368,11 +368,11 @@
       },
       "fixed_load": {
         "label": "Fixed load",
-        "helper": "Only for an appliance that always draws the same power while it is on, such as a ceiling fan. Never for one with a thermostat or other control of its own: the regulation then works worse."
+        "helper": "Only for an appliance that always uses the same power while it is on, such as a ceiling fan. Never for one with a thermostat or other control of its own: the regulation then works worse."
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "What the appliance draws while it is on. The first time, it is turned on without waiting as soon as this much power is free; turned on again, it waits as other appliances do. Applies to every variant."
+        "helper": "What the appliance uses while it is on. The first time, it is turned on without waiting as soon as this much power is free; turned on again, it waits as other appliances do. Applies to every variant."
       },
       "label": {
         "label": "Label"
@@ -531,9 +531,9 @@
     "name": "Name",
     "name_sub": "Shown in the priority list, and on the status page while the group has more than one EV charger.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that draws power gets the turn.",
+    "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that uses power gets the turn.",
     "dynamic_order": "Dynamic charging order",
-    "dynamic_order_sub": "Off: the charging priority below always applies, so a car higher up that draws power takes over from one charging below it.\nOn: EV chargers that charge go first, and the others wait their turn.",
+    "dynamic_order_sub": "Off: the charging priority below always applies, so a car higher up that uses power takes over from one charging below it.\nOn: EV chargers that charge go first, and the others wait their turn.",
     "needs_two_chargers": "Makes a difference with two or more EV chargers in the group.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
@@ -604,7 +604,7 @@
       },
       "min_current_power_w": {
         "label": "Power at minimum current",
-        "helper": "What the car draws at the minimum current, about 1400 W on one phase. The car starts charging only when this much power is free. {min}–{max} W, default {default} W, 6 A on three phases."
+        "helper": "What the car uses at the minimum current, about 1400 W on one phase. The car starts charging only when this much power is free. {min}–{max} W, default {default} W, 6 A on three phases."
       },
       "car_connected": {
         "label": "Car connected",
@@ -612,7 +612,7 @@
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "The charging power is required, and tells how much the car draws. «Car charging» is optional, and may tell sooner that the car has started charging."
+        "helper": "The charging power is required, and tells how much the car uses. «Car charging» is optional, and may tell sooner that the car has started charging."
       },
       "charging_power": {
         "label": "Charging power"
