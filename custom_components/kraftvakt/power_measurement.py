@@ -259,9 +259,14 @@ class PowerMeasurement:
         async_report_interval_changed(self._hass, change)
 
     def _restart_silence_timer(self, reported_at: datetime) -> None:
+        """Start the timeout from the last report, or count the sensor as silent at once when the timeout has already passed, as for one silent before it was followed."""
         self._stop_silence_timer()
-        timeout = timedelta(seconds=self._general().power_sensor_timeout_s)
-        self._cancel_silence_timer = async_track_point_in_utc_time(self._hass, self._async_sensor_silent, reported_at + timeout)
+        timeout_at = reported_at + timedelta(seconds=self._general().power_sensor_timeout_s)
+        now = dt_util.utcnow()
+        if timeout_at <= now:
+            self._sensor_silent(now)
+            return
+        self._cancel_silence_timer = async_track_point_in_utc_time(self._hass, self._async_sensor_silent, timeout_at)
 
     @callback
     def _async_sensor_silent(self, timeout_at: datetime) -> None:
@@ -278,8 +283,11 @@ class PowerMeasurement:
             self._skip_windows(now)
             self._restart_silence_timer(now)
             return
-        self._averager.add_measurement(timeout_at, None, update=False)
-        self._follow_validity(timeout_at)
+        self._sensor_silent(timeout_at)
+
+    def _sensor_silent(self, since: datetime) -> None:
+        self._averager.add_measurement(since, None, update=False)
+        self._follow_validity(since)
 
     def _follow_validity(self, now: datetime) -> None:
         """Close windows by the clock while the power sensor is invalid, and by its updates again when it is valid."""

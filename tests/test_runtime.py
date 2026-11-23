@@ -149,6 +149,22 @@ async def test_silent_power_sensor_is_invalid_after_the_timeout(hass: HomeAssist
     ]
 
 
+async def test_power_sensor_silent_for_the_timeout_before_it_is_followed_is_invalid_at_once(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows, caplog: pytest.LogCaptureFixture
+) -> None:
+    """As at a reload while the HAN reader is silent: no paused event loop, and the windows close by the clock."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    await advance(hass, freezer, timedelta(seconds=400))
+    started = dt_util.utcnow()
+
+    with caplog.at_level(logging.WARNING):
+        start_runtime(config_with())
+        await advance(hass, freezer, WINDOW)
+
+    assert [(window.end, window.sensor_valid) for window in closed_windows] == [(started + WINDOW, False)]
+    assert "Skipped the windows" not in caplog.text
+
+
 async def test_windows_close_by_the_clock_without_power_sensor(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """Without a configured power sensor there are no averages."""
     start_runtime(config_with(power_sensor=None))

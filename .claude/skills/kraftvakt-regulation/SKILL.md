@@ -339,8 +339,8 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   so the sensor stays on without a break when the window ends with a charger that charges until disconnected, and goes off at the decision that finds the car disconnected.
 - State (per charger): the charger's state as on the status page, stopped while the regulation is stopped,
   with an icon and a colour that templates can read, for a dashboard.
-- Waiting time next turn-on (calculated) (s): the waiting time the next turn-on gets from the curve, for the last regulation average and the limit in use,
-  without the longer waiting time on repeated turn-on or the held power reserves. Unavailable without an average.
+- Waiting time next turn-on (calculated) (s): the waiting time an appliance without a power reserve gets from the curve, for the last regulation average and the limit in use,
+  without the longer waiting time on repeated turn-on, the held power reserves, or the longer waiting time for EV chargers. Unavailable without an average.
 
 ## Variants
 
@@ -421,6 +421,8 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   With several at once, one that comes after an ampere step of another charger waits behind it by the fixed order,
   so the chargers of the group keep their currents until the start delay has passed.
   Why: the power is shared further only when what the car draws at its minimum current is known, so the currents do not go up and down while a car starts.
+  A charger that is deactivated is no longer starting, also in a penalty or the safe state.
+  Its state is starting only until its car charges; one whose car charges is shown as charging, though it is still starting.
   The status shows the start delay as what holds back the next step, as the waiting.
   Why: a car takes some time from activation until it draws power and ramps up, longer through a cloud service, so the average shows its power as free meanwhile.
   A step turned on in that power would be switched off again when the car starts. The start delay ends it for a car that never starts, as one that is full.
