@@ -12,7 +12,8 @@ import {
   mdiTimerSand,
 } from "@mdi/js";
 
-import type { ChargerState } from "./api";
+import type { ChargerState, ChargerStatus, ChargingWindow } from "./api";
+import { formatClockTime } from "./format";
 import type { TranslationKey } from "./localize";
 
 export type ChipKind = "on" | "off" | "alarm" | "outline" | "info" | "waiting";
@@ -43,3 +44,32 @@ export const CHARGER_CHIPS: Record<ChargerState, [Chip, TranslationKey, Translat
   override: [{ kind: "info", icon: mdiClockFast }, "status.chip_override", "status.window_overridden"],
   deactivated: [{ kind: "waiting", icon: mdiPauseCircleOutline }, "status.deactivated", "status.deactivated"],
 };
+
+/** A chip as it is shown for one EV charger: its word and its sentence with their parameters. */
+export interface ChargerChip {
+  chip: Chip;
+  word: TranslationKey;
+  sentence: TranslationKey;
+  wordParams: Record<string, string | number>;
+  sentenceParams: Record<string, string | number>;
+}
+
+/** Return «22» for «22:00», and the time as it is otherwise. */
+function shortTime(time: string): string {
+  return time.endsWith(":00") ? time.slice(0, -3) : time;
+}
+
+/** The chip of an EV charger. `queuedForRoom` holds when its group shares the power among the activated EV chargers. */
+export function chargerChip(charger: ChargerStatus, language: string, window: ChargingWindow | null | undefined, queuedForRoom: boolean): ChargerChip {
+  const [chip, word, sentence] = CHARGER_CHIPS[charger.state];
+  if (charger.state === "outside_window" && window) {
+    return { chip, word, sentence, wordParams: { start: shortTime(window.start), end: shortTime(window.end) }, sentenceParams: { ...window } };
+  }
+  if (charger.state === "starting" && charger.starting_until) {
+    return { chip, word, sentence, wordParams: {}, sentenceParams: { time: formatClockTime(language, charger.starting_until) } };
+  }
+  if (charger.state === "queued" && queuedForRoom) {
+    return { chip, word, sentence: "status.queued_for_room", wordParams: {}, sentenceParams: {} };
+  }
+  return { chip, word, sentence, wordParams: {}, sentenceParams: { current: charger.current_a ?? 0 } };
+}

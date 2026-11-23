@@ -109,7 +109,7 @@ The section header, the description and the footer note are in `section-styles.t
 - Choosing another device clears every entity field that is not on the new device, and keeps templates and custom actions.
   It then asks the backend for the device's charger profile, and when there is one,
   the fields it fills replace those in the draft and an info under the device names the profile.
-  Without a profile, the default profile fills the settings, without the info.
+  Without a profile, the default profile fills the settings, without the info, and so does the panel itself when the backend does not answer.
   The panel has no knowledge of chargers of its own.
 - Each action of an appliance has a group of its own, as the variant dialog has one per action it can override.
   The actions of a charger are in the group of what they do: activate and deactivate in Turn charging on and off, and set charging current in the charging current group.
@@ -257,7 +257,8 @@ The section header, the description and the footer note are in `section-styles.t
   - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room.
     An activated charger whose car does not charge tells that it waits at the minimum current.
     A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
-  - A starting charger is shown as starting, and its sentence tells when its start delay ends, and that nothing below it is turned on until then.
+  - A starting charger whose car does not charge yet is shown as starting, and its sentence tells when its start delay ends,
+    and that nothing below it is turned on until then. One whose car charges is shown as charging.
   - A dashed cut-off line goes under the last entry that is on: an appliance, or a group's row while one of its chargers is activated and not bypassed.
     It is hidden when nothing is on, or when only excluded appliances are below the last entry that is on, so something that can be turned on is always below it.
     It shows the free power and its share of the power limit while that is above 0, and explains itself in a tooltip. By the fixed order nothing below the line is on.

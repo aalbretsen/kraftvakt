@@ -255,6 +255,7 @@ class ChargingState:
         """
         if count == 0:
             self.activated_at.pop(charger_id, None)
+            self.starting.pop(charger_id, None)
         elif not self.ampere_steps_on.get(charger_id):
             if now is None:
                 raise ValueError("The time is needed to activate a charger")

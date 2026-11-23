@@ -4,12 +4,13 @@ from datetime import timedelta
 
 import pytest
 
+from custom_components.kraftvakt.regulation.charging import ChargerState
 from custom_components.kraftvakt.regulation.engine import RegulationEngine
 from custom_components.kraftvakt.regulation.model import DecisionInput
 from custom_components.kraftvakt.regulation.penalty import PenaltyState
 
-from .configs import appliance, make_config
-from .scenario import START, Scenario, off, on
+from .configs import appliance, charger, make_config
+from .scenario import START, Scenario, activate, deactivate, off, on
 
 ABOVE_THRESHOLD = 11_500
 WH_PER_W_WINDOW = 1 / 60
@@ -52,6 +53,16 @@ def test_nothing_is_turned_on_during_the_penalty() -> None:
     assert scenario.decide(5000, tariff=ABOVE_THRESHOLD) == []
     assert scenario.decide(9500, tariff=2000) == []
     assert scenario.engine.penalty.active
+
+
+def test_charger_deactivated_by_the_penalty_is_no_longer_starting() -> None:
+    scenario = Scenario(make_config(chargers=(charger("c", start_delay_s=600),)))
+    assert scenario.decide_many(0, 2) == [activate("c"), []]
+    assert scenario.engine.chargers["c"].state is ChargerState.STARTING
+
+    assert start_penalty(scenario) == deactivate("c")
+    assert scenario.engine.chargers["c"].state is ChargerState.DEACTIVATED
+    assert scenario.engine.chargers["c"].starting_until is None
 
 
 def test_penalty_ends_with_a_restart_when_paid_back() -> None:

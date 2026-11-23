@@ -1,7 +1,9 @@
 """Scenario tests for the safe state in the engine."""
 
-from .configs import make_config
-from .scenario import Scenario, off, on
+from custom_components.kraftvakt.regulation.charging import ChargerState
+
+from .configs import charger, make_config
+from .scenario import Scenario, activate, deactivate, off, on
 
 ABOVE_THRESHOLD = 11_500
 
@@ -56,6 +58,16 @@ def test_safe_state_without_any_average() -> None:
     assert scenario.decide(None, sensor_valid=False) == []
     assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == off("a")
     assert scenario.engine.safe_state
+
+
+def test_charger_deactivated_in_the_safe_state_is_no_longer_starting() -> None:
+    scenario = Scenario(make_config(chargers=(charger("c", start_delay_s=600),)))
+    assert scenario.decide_many(0, 2) == [activate("c"), []]
+    assert scenario.engine.chargers["c"].state is ChargerState.STARTING
+
+    assert scenario.decide(None, sensor_valid=False, sensor_lost=True) == deactivate("c")
+    assert scenario.engine.chargers["c"].state is ChargerState.DEACTIVATED
+    assert scenario.engine.chargers["c"].starting_until is None
 
 
 def test_safe_state_ends_a_penalty() -> None:

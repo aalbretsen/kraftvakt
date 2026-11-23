@@ -86,3 +86,10 @@ def async_report_interval_changed(hass: HomeAssistant, change: IntervalChange) -
 @callback
 def async_clear_interval_changed(hass: HomeAssistant) -> None:
     ir.async_delete_issue(hass, DOMAIN, INTERVAL_CHANGED)
+
+
+@callback
+def async_clear_all(hass: HomeAssistant) -> None:
+    for domain, issue_id in list(ir.async_get(hass).issues):
+        if domain == DOMAIN:
+            ir.async_delete_issue(hass, DOMAIN, issue_id)

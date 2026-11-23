@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { type ApplianceStatus, type ChargerGroupStatus, type ChargerStatus, type ConfigResponse, type StatusSnapshot, type WaitingFields } from "../api";
 import "./countdown";
-import { CHARGER_CHIPS, CHIP_EXCLUDED, type Chip } from "../charger-chips";
+import { CHIP_EXCLUDED, type Chip, chargerChip } from "../charger-chips";
 import { allChargers } from "../draft";
 import { controlledEntity, existingEntity } from "../entities";
 import { formatClockTime, formatNumber, formatPercent, formatPower } from "../format";
@@ -49,11 +49,6 @@ function cutOffIndex(entries: PriorityEntry[]): number {
 function hasPower(status: StatusSnapshot): boolean {
   const rows = status.priority.flatMap((row): (ApplianceStatus | ChargerStatus)[] => (row.type === "appliance" ? [row] : row.chargers));
   return rows.some((row) => row.power_w !== null);
-}
-
-/** Return «22» for «22:00», and the time as it is otherwise. */
-function shortTime(time: string): string {
-  return time.endsWith(":00") ? time.slice(0, -3) : time;
 }
 
 /** The card with the priority list as it stands: appliances, and groups with their EV chargers. */
@@ -339,19 +334,13 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   private renderChargerChip(charger: ChargerStatus) {
-    const [chip, word, sentence] = CHARGER_CHIPS[charger.state];
-    const window = this.chargerConfig(charger)?.charging_window;
-    if (charger.state === "outside_window" && window) {
-      const short = { start: shortTime(window.start), end: shortTime(window.end) };
-      return this.renderChip(chip, word, sentence, short, { ...window });
-    }
-    if (charger.starting_until) {
-      return this.renderChip(chip, word, sentence, {}, { time: formatClockTime(this.hass.language, charger.starting_until) });
-    }
-    if (charger.state === "queued" && this.sharesByChargingPower(charger)) {
-      return this.renderChip(chip, word, "status.queued_for_room");
-    }
-    return this.renderChip(chip, word, sentence, {}, { current: charger.current_a ?? 0 });
+    const { chip, word, sentence, wordParams, sentenceParams } = chargerChip(
+      charger,
+      this.hass.language,
+      this.chargerConfig(charger)?.charging_window,
+      this.sharesByChargingPower(charger),
+    );
+    return this.renderChip(chip, word, sentence, wordParams, sentenceParams);
   }
 
   /** A chip with an icon (or a dot) and a word, and the whole sentence as a tooltip. */

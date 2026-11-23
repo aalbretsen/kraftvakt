@@ -1,8 +1,8 @@
 import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { OVERRIDE_ENDS, SWITCHED_BY, fetchChargerProfile, type Charger, type Condition, type Issue, type OverrideEnd, type SwitchedBy } from "../api";
-import { changesForDevice, deviceEntities } from "../devices";
+import { OVERRIDE_ENDS, SWITCHED_BY, type Charger, type Condition, type Issue, type OverrideEnd, type SwitchedBy } from "../api";
+import { changesForDevice, chargerProfileOf, deviceEntities } from "../devices";
 import { chargerErrors, defaultActionOf, missingInCharger } from "../validation";
 import "./condition-field";
 import type { ConditionKind } from "./condition-field";
@@ -122,7 +122,7 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     if (!deviceId) {
       return;
     }
-    const { profile, fields } = await fetchChargerProfile(this.hass, deviceId).catch(() => ({ profile: null, fields: {} }));
+    const { profile, fields } = await chargerProfileOf(this.hass, deviceId, this.capabilities);
     if (this.draft.device_id === deviceId) {
       this.changeDraft(fields);
       this.profile = profile;

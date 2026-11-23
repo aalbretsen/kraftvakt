@@ -24,6 +24,7 @@ from .const import (
     PANEL_URL_PATH,
     STATIC_URL,
 )
+from .repairs import async_clear_all
 from .runtime import KraftvaktConfigEntry, KraftvaktRuntime
 from .settings import Settings
 from .storage import KraftvaktStorage
@@ -72,6 +73,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -
     if unloaded:
         frontend.async_remove_panel(hass, PANEL_URL_PATH)
     return unloaded
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: KraftvaktConfigEntry) -> None:
+    async_clear_all(hass)
 
 
 def _action_lock(hass: HomeAssistant) -> asyncio.Lock:

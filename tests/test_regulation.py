@@ -1157,6 +1157,18 @@ async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
     assert issues.async_get_issue(DOMAIN, "missing_entity_light.b")
 
 
+async def test_repair_issues_are_removed_with_the_integration(hass: HomeAssistant, setup_kraftvakt) -> None:
+    issues = ir.async_get(hass)
+    set_power(hass, "2000")
+    entry = await setup_kraftvakt()
+    assert issues.async_get_issue(DOMAIN, "missing_entity_light.a")
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert [issue_id for domain, issue_id in issues.issues if domain == DOMAIN] == []
+
+
 async def test_next_turn_on_sensor_is_disabled_by_default(hass: HomeAssistant, setup_kraftvakt) -> None:
     await setup_kraftvakt()
 

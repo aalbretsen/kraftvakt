@@ -1,5 +1,5 @@
 /** The devices of EV chargers and appliances, and the entities they offer. */
-import type { Appliance, Charger, Condition } from "./api";
+import { type Appliance, type Capabilities, type Charger, type ChargerProfileFields, type Condition, fetchChargerProfile } from "./api";
 import type { HomeAssistant } from "./types";
 
 /** Return the entities of the device, none without a device. */
@@ -84,4 +84,12 @@ export function changesForDevice(charger: Charger, deviceId: string | null, hass
     charging_power: keptCondition(charger.charging_power, onDevice),
     fault_flag: keptCondition(charger.fault_flag, onDevice),
   };
+}
+
+/** The charger profile of a device, and without an answer from the backend the settings of the default profile, so a charger never keeps those of its previous device. */
+export function chargerProfileOf(hass: HomeAssistant, deviceId: string, capabilities: Capabilities): Promise<ChargerProfileFields> {
+  return fetchChargerProfile(hass, deviceId).catch(() => ({
+    profile: null,
+    fields: { cloud_controlled: false, start_delay_s: capabilities.defaults.chargers.start_delay_s },
+  }));
 }

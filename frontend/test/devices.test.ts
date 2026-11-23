@@ -1,10 +1,10 @@
 /** Moving a charger to a device, and the display sensors of an appliance. Filling a charger in from a charger profile is the backend's, and tested there. */
 import { describe, expect, it } from "vitest";
 import type { ActionConfig, Capabilities } from "../src/api";
-import { changesForDevice, deviceEntities, displaySensorScope, displaySensors, displayValuesForEntity } from "../src/devices";
+import { changesForDevice, chargerProfileOf, deviceEntities, displaySensorScope, displaySensors, displayValuesForEntity } from "../src/devices";
 import type { HomeAssistant } from "../src/types";
 import { applianceErrors } from "../src/validation";
-import { appliance, charger } from "./builders";
+import { CAPABILITIES, appliance, charger } from "./builders";
 
 /** A device `device_<id>` with the given entities. */
 function device(id: string, entityIds: string[]): HomeAssistant {
@@ -92,5 +92,35 @@ describe("the display sensors of an appliance", () => {
       { code: "entity_not_on_device", section: "appliances", target: "heater", field: "display_temperature" },
     ]);
     expect(applianceErrors({ ...heater, entity_id: "switch.helper", turn_on: null, turn_off: null }, capabilities, hass)).toEqual([]);
+  });
+});
+
+describe("the charger profile of a device", () => {
+  function answering(callWS: () => Promise<unknown>): HomeAssistant {
+    return { callWS } as unknown as HomeAssistant;
+  }
+
+  it("is the backend's answer", async () => {
+    const answer = { profile: "Easee", fields: { start_delay_s: 300 } };
+    expect(
+      await chargerProfileOf(
+        answering(() => Promise.resolve(answer)),
+        "device_a",
+        CAPABILITIES,
+      ),
+    ).toEqual(answer);
+  });
+
+  it("gives the settings of the default profile when the backend does not answer", async () => {
+    expect(
+      await chargerProfileOf(
+        answering(() => Promise.reject(new Error("lost"))),
+        "device_a",
+        CAPABILITIES,
+      ),
+    ).toEqual({
+      profile: null,
+      fields: { cloud_controlled: false, start_delay_s: CAPABILITIES.defaults.chargers.start_delay_s },
+    });
   });
 });

@@ -1,5 +1,5 @@
 /** Builders of complete configurations and of the parts of Home Assistant the panel reads, for the panel's tests. */
-import type { ActionConfig, Appliance, Capabilities, Charger, ChargerGroup, KraftvaktConfig, Variant } from "../src/api";
+import type { ActionConfig, Appliance, Capabilities, Charger, ChargerGroup, ChargerStatus, KraftvaktConfig, Variant } from "../src/api";
 import { chargerDeviceEntities } from "../src/devices";
 import type { HassEntity, HomeAssistant } from "../src/types";
 import capabilities from "./fixtures/capabilities.json";
@@ -70,6 +70,26 @@ export function group(id: string, chargers: Charger[], parts: Partial<ChargerGro
 }
 
 /** Home Assistant with the given states, and the devices of the chargers with their entities on them. */
+export function chargerStatus(id: string, parts: Partial<ChargerStatus> = {}): ChargerStatus {
+  return {
+    id,
+    name: id,
+    state: "deactivated",
+    activated: false,
+    current_a: null,
+    power_w: null,
+    bypassed: false,
+    charging: false,
+    starting_until: null,
+    power_to_free_w: null,
+    waiting_since: null,
+    waiting_until: null,
+    waiting_ends_at: null,
+    waiting_reason: null,
+    ...parts,
+  };
+}
+
 export function hass(states: Record<string, HassEntity> = {}, chargers: Charger[] = []): HomeAssistant {
   const onDevice = chargers.flatMap((item) => chargerDeviceEntities(item).map(([, entityId]) => [entityId, item.device_id] as const));
   return {

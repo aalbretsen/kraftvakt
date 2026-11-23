@@ -216,6 +216,7 @@ Every issue code needs a text in the panel's translations.
   The regulation that could not start is reported when HA or the integration starts, also right after a fresh install with nothing configured, and cleared at any start.
   Removed entities are looked for at every start of the regulation and after every failed action.
   A changed update interval of the power sensor is not persistent: it is found again after a restart.
+  Removing the integration removes all its repair issues.
 - The waiting time next turn-on sensor is disabled by default.
 - Each appliance has an excluded switch, and each charger an excluded switch, a window override switch, a charge until disconnected switch (configuration,
   see above), a binary sensor for allowed to charge and a state sensor, keyed by the item's id, with an entity id from the slug of the item's name.
