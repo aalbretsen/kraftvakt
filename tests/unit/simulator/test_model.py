@@ -8,6 +8,7 @@ from custom_components.kraftvakt_simulator.model import (
     ChargerState,
     ChargerStatus,
     DutyCycle,
+    ramp_share,
     thermostat_heats,
     three_phase_power_w,
 )
@@ -91,6 +92,20 @@ def test_the_charger_draws_power_only_for_a_car_that_charges(allowed: bool, conn
     )
 
     assert state.power_w == power_w
+
+
+def test_a_car_that_ramps_up_draws_its_share_of_the_power_of_its_current() -> None:
+    state = ChargerState(charging_allowed=True, current_a=10, car_connected=True, car_fully_charged=False, ramp_share=0.25)
+
+    assert state.power_w == pytest.approx(three_phase_power_w(10) / 4)
+
+
+@pytest.mark.parametrize(
+    ("elapsed_s", "ramp_up_s", "share"),
+    [(0, 20, 0.0), (5, 20, 0.25), (20, 20, 1.0), (30, 20, 1.0), (0, 0, 1.0)],
+)
+def test_ramp_share_rises_evenly_over_the_ramp_up(elapsed_s: int, ramp_up_s: int, share: float) -> None:
+    assert ramp_share(timedelta(seconds=elapsed_s), timedelta(seconds=ramp_up_s)) == share
 
 
 @pytest.mark.parametrize(

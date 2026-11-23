@@ -33,7 +33,7 @@ THERMOSTAT = {
     "room_temperature": 5.0,
     "temperature": 22.0,
 }
-CHARGER = {"min_current_a": 6, "max_current_a": 16, "start_delay_s": 0}
+CHARGER = {"min_current_a": 6, "max_current_a": 16, "start_delay_s": 0, "ramp_up_s": 0}
 SETTINGS = {
     DeviceKind.HAN: HAN,
     DeviceKind.HEATER: HEATER,

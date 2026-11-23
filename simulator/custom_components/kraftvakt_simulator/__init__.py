@@ -25,6 +25,7 @@ from .const import (
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_RAMP_UP_S,
     CONF_REPORT_INTERVAL_S,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
@@ -113,6 +114,7 @@ def create_device(hass: HomeAssistant, entry: ConfigEntry) -> SimulatedDevice:
                 data[CONF_MIN_CURRENT_A],
                 data[CONF_MAX_CURRENT_A],
                 timedelta(seconds=data[CONF_START_DELAY_S]),
+                timedelta(seconds=data[CONF_RAMP_UP_S]),
             )
 
 

@@ -24,7 +24,7 @@ from .const import (
     DEFAULT_TARGET_TEMPERATURE,
     DOMAIN,
 )
-from .model import HEATING_MODES, ChargerState, DutyCycle, thermostat_heats
+from .model import HEATING_MODES, ChargerState, DutyCycle, ramp_share, thermostat_heats
 
 POWER_BOARD: HassKey[PowerBoard] = HassKey(DOMAIN)
 
@@ -357,13 +357,16 @@ class SimulatedCharger(PluggedInDevice):
         min_current_a: int,
         max_current_a: int,
         start_delay: timedelta,
+        ramp_up: timedelta,
     ) -> None:
         """Start with charging not allowed, no car and the minimum current."""
         super().__init__(hass, consumer_id)
         self.min_current_a = min_current_a
         self.max_current_a = max_current_a
         self.start_delay = start_delay
-        self._cancel_start: CALLBACK_TYPE | None = None
+        self.ramp_up = ramp_up
+        self._ramp_started_at = dt_util.utcnow()
+        self._cancel_timer: CALLBACK_TYPE | None = None
         self.state = ChargerState(
             charging_allowed=False,
             current_a=min_current_a,
@@ -400,29 +403,50 @@ class SimulatedCharger(PluggedInDevice):
 
     @callback
     def async_stop(self) -> None:
-        self._async_cancel_start()
+        self._async_cancel_timer()
         super().async_stop()
 
     @callback
     def _async_update(self, **changes: Any) -> None:
-        """Let a car that starts to want power wait the start delay before it draws it."""
+        """Let a car that starts to want power wait the start delay, and then ramp up, before it draws all of it."""
         wanted_power = self.state.wants_power
         self.state = replace(self.state, **changes)
         if not self.state.wants_power:
-            self._async_cancel_start()
-            self.state = replace(self.state, starting=False)
+            self._async_cancel_timer()
+            self.state = replace(self.state, starting=False, ramp_share=1.0)
         elif not wanted_power and self.start_delay > timedelta(0):
             self.state = replace(self.state, starting=True)
-            self._cancel_start = async_track_point_in_utc_time(self.hass, self._async_started, dt_util.utcnow() + self.start_delay)
+            self._cancel_timer = async_track_point_in_utc_time(self.hass, self._async_started, dt_util.utcnow() + self.start_delay)
+        elif not wanted_power:
+            self._async_start_ramp(dt_util.utcnow())
         self._async_changed()
 
     @callback
-    def _async_started(self, _now: datetime) -> None:
-        self._cancel_start = None
-        self._async_update(starting=False)
+    def _async_started(self, now: datetime) -> None:
+        self.state = replace(self.state, starting=False)
+        self._async_start_ramp(now)
+        self._async_changed()
 
     @callback
-    def _async_cancel_start(self) -> None:
-        if self._cancel_start is not None:
-            self._cancel_start()
-            self._cancel_start = None
+    def _async_start_ramp(self, started_at: datetime) -> None:
+        self._ramp_started_at = started_at
+        self._async_set_ramp_share()
+
+    @callback
+    def _async_ramp(self, _now: datetime) -> None:
+        self._async_set_ramp_share()
+        self._async_changed()
+
+    @callback
+    def _async_set_ramp_share(self) -> None:
+        """Set the share of the ramp-up now, and follow it each second until the car draws all its power."""
+        now = dt_util.utcnow()
+        share = ramp_share(now - self._ramp_started_at, self.ramp_up)
+        self.state = replace(self.state, ramp_share=share)
+        self._cancel_timer = None if share == 1.0 else async_track_point_in_utc_time(self.hass, self._async_ramp, now + timedelta(seconds=1))
+
+    @callback
+    def _async_cancel_timer(self) -> None:
+        if self._cancel_timer is not None:
+            self._cancel_timer()
+            self._cancel_timer = None

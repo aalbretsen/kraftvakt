@@ -51,7 +51,11 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
   The fault switch is meant as a fault flag of Kraftvakt's deactivate on fault, so it has no binary sensor of its own.
   Its charging binary sensor is on while it draws power, so Kraftvakt's actively charging can be tested from an entity.
   With a start delay, a setting in the config entry data, a car that starts to want power draws none until the delay has passed, as through a cloud service.
-  A change of current while it charges does not delay it.
+  With a ramp-up time, also in the config entry data, it then rises evenly from 0 W to the power of its current, updated each second.
+  A change of current while it charges, also during the ramp-up, is not delayed.
+- The EV charger is generic, so Kraftvakt has no charger profile for it and uses the default profile.
+  Why: the same simulator code mimics any charger, set up with the currents, start delay and ramp-up time of the charger under test;
+  a new behaviour of a real charger becomes a setting, not a charger model.
 - Heating devices, thermostats and chargers have an unplugged switch. While it is on, the device uses no power whatever its other switches say.
   A heater's cycle runs on while unplugged. The HAN has no such switch: set its background power instead.
 - Entities that control the simulation and are not part of a real device have `EntityCategory.CONFIG`, so HA shows them under Configuration on the device page: background power,

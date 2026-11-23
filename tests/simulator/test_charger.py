@@ -101,6 +101,43 @@ async def test_car_draws_power_after_the_start_delay_each_time_it_may_charge(has
     await advance(hass, freezer, timedelta(seconds=60))
 
 
+async def test_car_ramps_up_after_the_start_delay_each_time_it_may_charge(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
+    """A change of current during the ramp-up keeps its share, and a car that stops wanting power ramps up again from nothing."""
+    entry = await add_device(DeviceKind.CHARGER, "Charger", start_delay_s=10, ramp_up_s=20)
+    await call(hass, "switch", "turn_on", CONNECTED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+
+    await advance(hass, freezer, timedelta(seconds=10))
+    assert power(hass, CHARGING_POWER) == 0
+    await advance(hass, freezer, timedelta(seconds=5))
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(6) / 4)
+    await call(hass, "number", "set_value", CURRENT, value=10)
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(10) / 4)
+    await advance(hass, freezer, timedelta(seconds=15))
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(10))
+
+    await call(hass, "switch", "turn_off", ALLOWED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+    await advance(hass, freezer, timedelta(seconds=20))
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(10) / 2)
+    await call(hass, "switch", "turn_off", CONNECTED)
+    assert power(hass, CHARGING_POWER) == 0
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_car_without_a_start_delay_ramps_up_at_once(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
+    await add_device(DeviceKind.CHARGER, "Charger", ramp_up_s=10)
+    await call(hass, "switch", "turn_on", CONNECTED)
+    await call(hass, "switch", "turn_on", ALLOWED)
+    assert power(hass, CHARGING_POWER) == 0
+
+    await advance(hass, freezer, timedelta(seconds=3))
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(6) * 0.3)
+    await advance(hass, freezer, timedelta(seconds=7))
+    assert power(hass, CHARGING_POWER) == pytest.approx(three_phase_power_w(6))
+
+
 async def test_unplugged_charger_draws_nothing_for_a_charging_car(hass: HomeAssistant, add_device: AddDevice) -> None:
     await add_device(DeviceKind.CHARGER, "Charger")
     await call(hass, "switch", "turn_on", ALLOWED)

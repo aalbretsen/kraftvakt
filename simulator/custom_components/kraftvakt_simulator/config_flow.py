@@ -39,6 +39,7 @@ from .const import (
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
+    CONF_RAMP_UP_S,
     CONF_REPORT_INTERVAL_S,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
@@ -141,6 +142,7 @@ SCHEMAS = {
             vol.Required(CONF_MIN_CURRENT_A, default=6): whole_number(1, MAX_CURRENT_A, UnitOfElectricCurrent.AMPERE),
             vol.Required(CONF_MAX_CURRENT_A, default=16): whole_number(1, MAX_CURRENT_A, UnitOfElectricCurrent.AMPERE),
             vol.Required(CONF_START_DELAY_S, default=0): whole_number(0, 900, UnitOfTime.SECONDS),
+            vol.Required(CONF_RAMP_UP_S, default=0): whole_number(0, 300, UnitOfTime.SECONDS),
         }
     ),
 }

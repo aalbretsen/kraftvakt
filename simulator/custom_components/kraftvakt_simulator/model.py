@@ -55,6 +55,11 @@ def three_phase_power_w(current_a: float) -> float:
     return math.sqrt(3) * 400 * current_a
 
 
+def ramp_share(elapsed: timedelta, ramp_up: timedelta) -> float:
+    """Return the share of its power a car draws `elapsed` into a ramp-up that rises evenly over `ramp_up`."""
+    return 1.0 if elapsed >= ramp_up else elapsed / ramp_up
+
+
 class ChargerStatus(StrEnum):
     """What a simulated EV charger reports as its status, as many real chargers do."""
 
@@ -71,7 +76,8 @@ class ChargerState:
     """What decides the power of a simulated EV charger.
 
     A car that wants power draws none while `starting`, as when a charger
-    controlled through a cloud service takes time to start charging. A
+    controlled through a cloud service takes time to start charging, and
+    then `ramp_share` of the power of its current while it ramps up. A
     charger with a `fault`, or at 0 A, gives no power.
     """
 
@@ -80,6 +86,7 @@ class ChargerState:
     car_connected: bool
     car_fully_charged: bool
     starting: bool = False
+    ramp_share: float = 1.0
     fault: bool = False
 
     @property
@@ -88,7 +95,7 @@ class ChargerState:
 
     @property
     def power_w(self) -> float:
-        return three_phase_power_w(self.current_a) if self.wants_power and not self.starting else 0.0
+        return three_phase_power_w(self.current_a) * self.ramp_share if self.wants_power and not self.starting else 0.0
 
     @property
     def status(self) -> ChargerStatus:

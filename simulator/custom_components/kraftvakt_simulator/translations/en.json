@@ -69,10 +69,12 @@
           "name": "Name",
           "min_current_a": "Minimum current",
           "max_current_a": "Maximum current",
-          "start_delay_s": "Start delay"
+          "start_delay_s": "Start delay",
+          "ramp_up_s": "Ramp-up time"
         },
         "data_description": {
-          "start_delay_s": "How long the car waits before it draws power each time it may start charging, as with a charger controlled through a cloud service."
+          "start_delay_s": "How long the car waits before it draws power each time it may start charging, as with a charger controlled through a cloud service.",
+          "ramp_up_s": "How long the car takes after the start delay to rise evenly from no power to the power of the charging current. A change of current while it charges is at once."
         }
       }
     },

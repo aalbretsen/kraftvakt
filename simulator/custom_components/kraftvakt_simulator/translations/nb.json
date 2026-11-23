@@ -69,10 +69,12 @@
           "name": "Navn",
           "min_current_a": "Minste ladestrøm",
           "max_current_a": "Største ladestrøm",
-          "start_delay_s": "Startforsinkelse"
+          "start_delay_s": "Startforsinkelse",
+          "ramp_up_s": "Opptrappingstid"
         },
         "data_description": {
-          "start_delay_s": "Hvor lenge bilen venter før den trekker strøm hver gang den kan begynne å lade, som med en lader som styres gjennom en skytjeneste."
+          "start_delay_s": "Hvor lenge bilen venter før den trekker strøm hver gang den kan begynne å lade, som med en lader som styres gjennom en skytjeneste.",
+          "ramp_up_s": "Hvor lang tid bilen bruker etter startforsinkelsen på å gå jevnt fra ingen strøm til effekten av ladestrømmen. En endring av ladestrømmen mens den lader skjer med en gang."
         }
       }
     },
