@@ -322,7 +322,8 @@ Automations can set the power limit with it:
 
 ## Status entities
 
-Penalty active, penalty overconsumption, power free and the state of each charger have no entity category, so they show as sensors; the others have entity category diagnostic.
+The safe state, the regulation and tariff averages, power free, penalty active and penalty overconsumption have no entity category, so they show as sensors;
+the others have entity category diagnostic.
 
 - Penalty active: on while a penalty period lasts.
 - Penalty overconsumption (Wh): the overconsumption at the last decision, 0 outside the overconsumption state.
