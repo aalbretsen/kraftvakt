@@ -599,7 +599,8 @@ class RegulationEngine:
         Nothing above the group may be waiting for room, and no charger of the
         group may be starting, since its charging power would then be from
         before the last switch-over, nor a charger above the group. A queued
-        charger that would be activated again waits its waiting time instead.
+        charger that would be activated again waits its waiting time first, as
+        the next step, so nothing else is turned on meanwhile.
         """
         for group in self._groups:
             charging = self._charging(group.id)
@@ -610,14 +611,17 @@ class RegulationEngine:
             if place is not None and place < group_places[0]:
                 continue
             key = AmpereStepKey(queued[0], 0)
-            if self._state.activations.upcoming_repeat(queued[0], now) or self._start_delay(steps, group_places[0], key):
+            if self._start_delay(steps, group_places[0], key):
                 continue
             above_minimum = [charger_id for charger_id in charging.charging if charging.ampere_steps_on[charger_id] > 1]
             freed_w = sum(self._draw_above_minimum_w(charger_id) for charger_id in above_minimum)
             step = next(step for step in steps if step.key == key)
-            held_w = _held_reserves_w(steps, group_places[0])
-            if not self._may_turn_on(step, average_w + held_w - freed_w):
+            average_after_w = average_w + _held_reserves_w(steps, group_places[0]) - freed_w
+            if not self._may_turn_on(step, average_after_w):
                 continue
+            repeat = self._state.activations.upcoming_repeat(queued[0], now)
+            if repeat and not self._waited(step, repeat, now, average_after_w):
+                return []
             self._state.waiting = None
             commands: list[Command] = []
             for charger_id in sorted(above_minimum, key=charging.order(group).index):
@@ -647,20 +651,32 @@ class RegulationEngine:
         first never waits, since it is damped instead. Nor does a step with
         steps on below it that may be switched off for room wait: none of them
         can be turned on while it waits, so waiting changes nothing, and they
-        give way if it takes the average above the limit. The first ampere step
-        of a charger waits the waiting time for EV chargers, the charger counted
-        as one unit for the growth on repeated turn-on. A step with a power
-        reserve counts it in the curve, so it waits by how close it would bring
-        the average to the limit.
+        give way if it takes the average above the limit. A charger activated
+        again waits also then, since its waiting protects the relays of the
+        charger and the car.
         """
         step = steps[place]
         key = step.key
-        is_ampere_step = isinstance(key, AmpereStepKey)
-        repeat = self._state.activations.upcoming_repeat(key.charger_id, now) if isinstance(key, AmpereStepKey) else self._state.repeats.upcoming_repeat(key)
-        above_first = isinstance(key, AmpereStepKey) and key.index > 0
-        if above_first or (step.power_reserve_w is not None and not repeat) or _steps_on_below(steps, place):
+        if isinstance(key, AmpereStepKey):
+            repeat = self._state.activations.upcoming_repeat(key.charger_id, now)
+            waits = key.index == 0 and bool(repeat)
+        else:
+            repeat = self._state.repeats.upcoming_repeat(key)
+            waits = (step.power_reserve_w is None or bool(repeat)) and not _steps_on_below(steps, place)
+        if not waits:
             self._state.waiting = None
             return True
+        return self._waited(step, repeat, now, average_w)
+
+    def _waited(self, step: Step, repeat: int, now: datetime, average_w: float) -> bool:
+        """Return whether the step has waited its waiting time, which starts now unless it already waits.
+
+        The first ampere step of a charger waits the waiting time for EV
+        chargers, the charger counted as one unit for the growth on repeated
+        turn-on. A step with a power reserve counts it in the curve, so it waits
+        by how close it would bring the average to the limit.
+        """
+        is_ampere_step = isinstance(step.key, AmpereStepKey)
         waiting = self._state.waiting
         started_at = waiting.started_at if waiting is not None and waiting.key == step.key else now
         general = self._config.general

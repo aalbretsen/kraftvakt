@@ -261,7 +261,8 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
 - The next decision time is `null` while stopped. It and the decision that ends a waiting time are expected times, with the windows lasting their length at the update interval.
 - `regulation_window_s` is that length in seconds, the shortest window while the regulation window is not set.
 - The penalty part holds whether a penalty is active, the overconsumption and whether recovery has started.
-- The waiting fields are set only on the row of the next step while it waits: an appliance, or the charger of an ampere step that is damped or activated again,
+- The waiting fields are set only on the row of the next step while it waits: an appliance,
+  or the charger of an ampere step that is damped or activated again, also a queued charger before a switch-over,
   and on the row of a starting charger while its start delay holds back the next step. `waiting_reason` tells which: the waiting time, the damping or the start delay.
   They hold when the waiting started, when it ends, and the decision that turns the step on, the first at or after its end.
   The engine keeps a damped ampere step that is next, and a start delay that holds back the next step, as the waiting, with its reason,

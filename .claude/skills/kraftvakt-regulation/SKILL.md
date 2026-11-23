@@ -40,7 +40,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Settling step | A step with a power reserve turned on since the start of the regulation window of the decision. It holds its power reserve, since that window's average shows it only in part. |
 | Held power reserve | The power reserve of a settling step, counted as used by the steps below it and the other steps of its group. |
 | Power to free | How far the regulation average must drop before the next step may be turned on: below the limit by the turn-on margin, and with room for its power reserve, with the held power reserves counted as used. Found at each decision and shown on the status page. |
-| Waiting time | Time that must pass before a step is turned on: an appliance without a power reserve, and a fixed-load appliance or the first ampere step of a charger that is turned on again, while no step below it that may be switched off for room is on. |
+| Waiting time | Time that must pass before a step is turned on: an appliance without a power reserve, and a fixed-load appliance that is turned on again, while no step below it that may be switched off for room is on, and the first ampere step of a charger that is turned on again. |
 | Waiting time for EV chargers | 1–5, default 2. How many times the waiting time at the limit the first ampere step of a charger waits, for the curve and the growth on repeated turn-on alike. |
 | Waiting time curve | The share of the waiting time at the limit, by how close the regulation average is to the limit. Set with steepness and pivot point. |
 | Appliance | An entity Kraftvakt turns on and off with configurable actions. |
@@ -218,13 +218,16 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   But one that is switched on and off again and again wears its relays, and a charger also those of the car: better not charged than switched on and off.
   Its own reserve makes it wait by how close it would bring the average to the limit, so one switched off just above the limit is not turned on again at the next decision,
   when the average without it is far below.
-- Nor does a step with steps on below it that may be switched off for room (see Making room), as after a variant switch:
+- Nor does an appliance with steps on below it that may be switched off for room (see Making room), as after a variant switch:
   it is turned on at the first decision where the average is under the limit minus the turn-on margin.
   Why: by the fixed order nothing below it can be turned on while it waits, so waiting changes nothing,
   and if it takes the average above the limit, the steps below give way by Freeing power.
+  The first ampere step of a charger that is turned on again waits also then. Why: its waiting protects the relays, whatever is on below,
+  and a charger deactivated at a decision where a step below it is turned on, as by a short fault, would otherwise be activated again at the next.
 - When the next step may be turned on and it waits, its waiting time starts.
   It is turned on at the first decision after the waiting time has passed, if the conditions still hold.
-  Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later. Only the step that is next can wait.
+  Waiting time 0 turns it on at the same decision. If the conditions fail, the waiting is cancelled and starts again later.
+  Only the step that is next can wait, and a queued charger before a switch-over (see EV charging).
 - Waiting time at the limit: 0–600 s, default 300 s.
 - Every waiting time is rounded to whole seconds, half up, so one under half a second is none.
   Why: just above half the limit the curve gives a few milliseconds, which would otherwise hold the turn-on back a whole window.
@@ -414,7 +417,10 @@ Penalty active, penalty overconsumption, power free and the state of each charge
 - Starting: every activated charger is starting for its whole start delay since activation, whether its car draws power or not.
   While it is starting, nothing after its first ampere step is turned on but its own ampere steps: neither the steps below its group
   nor the ampere steps of the other chargers in its group after it, and no room is made for them. The steps above it are turned on as usual.
-  Its own ampere steps are turned on as usual once its car draws 90 % of its power at minimum current (see Held at minimum).
+  Its own ampere steps are turned on once its car draws 90 % of its power at minimum current (see Held at minimum), when one of them is the next step.
+  With several at once, one that comes after an ampere step of another charger waits behind it by the fixed order,
+  so the chargers of the group keep their currents until the start delay has passed.
+  Why: the power is shared further only when what the car draws at its minimum current is known, so the currents do not go up and down while a car starts.
   The status shows the start delay as what holds back the next step, as the waiting.
   Why: a car takes some time from activation until it draws power and ramps up, longer through a cloud service, so the average shows its power as free meanwhile.
   A step turned on in that power would be switched off again when the car starts. The start delay ends it for a car that never starts, as one that is full.
@@ -444,8 +450,9 @@ Penalty active, penalty overconsumption, power free and the state of each charge
   covers the power at minimum current of the queued charger, also when none of them is above its minimum.
   The turn-on margin applies as for any step.
   Not above the limit, not at a decision where step 6 switched off something that was on,
-  not to a charger that is activated again, which waits its waiting time as the next step,
   and not while a charger of the group is starting, so the charging power read is not from before the last switch-over.
+  A charger that is activated again waits its waiting time first, as the next step does: nothing is turned on meanwhile, and the waiting is shown on its row.
+  Why: it is never the next step while the chargers that charge can take more, so it would otherwise wait until its activations are forgotten.
   Why: a charger at the minimum current draws little, so the cars can share the power instead of the queued one waiting until the others are full.
 - One at a time: the first charger in the current charging priority that charges may go on and get ampere steps, whatever the others do.
   The allowed chargers with a car before it may be activated, and wait at their minimum current, since they do not charge.

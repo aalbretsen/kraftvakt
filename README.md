@@ -88,8 +88,9 @@ The helper texts in the panel tell what each setting does.
   An EV charger counts as turned on again when it is activated after it was deactivated, whatever was switched meanwhile,
   unless it stayed activated or deactivated for longer than the longest waiting time, or its car was disconnected.
   An EV charger waits twice as long by default, set with **Waiting time for EV chargers**.
-  None either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
+  An appliance waits no time either while an appliance below it is on, or a car below it charges, as when a variant moves it up:
   nothing below it can be turned on while it waits, so it is turned on at once, and those below give way if the power limit is exceeded.
+  An EV charger activated again waits also then, so a short fault does not switch it off and on again at once.
 - **Damping of current changes:** an ampere an EV charger loses above the power limit, or to make room for something higher up,
   comes back only when the damping time, 300 seconds by default, has passed since it was taken back.
   It keeps consumption that changes for short moments from moving the charger up and down between the same two amperes.
@@ -97,7 +98,8 @@ The helper texts in the panel tell what each setting does.
   Meanwhile, nothing below the EV charger is turned on, and the status page shows the countdown instead of the power to free.
 - **Start delay:** after an EV charger is activated, nothing below it is turned on until its start delay has passed,
   and the other EV chargers of its group get no more current, since the car takes a while to draw power.
-  It gets more current itself when the car draws almost all of its power at minimum current.
+  It gets more current itself when the car draws almost all of its power at minimum current, unless another EV charger of its group is next in turn:
+  the currents of the group are shared further only when what the car draws is known.
   The status page shows the EV charger as **Starting** until the car draws power, and the countdown while the start delay holds back the next step.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
@@ -170,7 +172,7 @@ The settings of the group decide how its cars share the power:
 | | Dynamic charging order off | Dynamic charging order on |
 |---|---|---|
 | **One EV charger at a time** | While no car charges, every car waits at the minimum current. The first in the charging priority that draws power charges, and the ones below it wait as **Queued**. A car higher up that draws power takes over. | While no car charges, every car waits at the minimum current. The first that draws power charges until it stops, and the others wait as **Queued**. |
-| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power at minimum current is free, if need be after the others are set to their minimum current. |
+| **Several at once** | The EV chargers share the power, one ampere each in turn in the charging priority. A car connected higher up gets room first. | The EV chargers that are activated share the power. A car connected later waits as **Queued** until its power at minimum current is free, if need be after the others are set to their minimum current. An EV charger that was deactivated waits its waiting time first, and the others get no more current meanwhile. |
 
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.

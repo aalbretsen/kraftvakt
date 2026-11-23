@@ -172,6 +172,22 @@ def test_charger_is_one_unit_for_the_growth_on_repeated_turn_on() -> None:
     assert scenario.decide_many(5000, 11) == [[]] * 10 + [activate("c")]
 
 
+def test_charger_activated_again_waits_also_with_a_step_on_below() -> None:
+    """The waiting protects the relays of the charger and the car, so x on below does not let c go on again at once after a short fault.
+
+    It waits its 151 s by the curve, and x stays on meanwhile.
+    """
+    scenario = Scenario(make_config("x", chargers=(charger("c", max_a=6, min_current_power_w=2000),), priority=("ev", "x"), wait_at_limit_s=300))
+    scenario.draw("c")
+    assert scenario.decide_many(0, 2) == [activate("c"), on("x")]
+    scenario.set_charger("c", fault=True)
+    assert scenario.decide(0) == deactivate("c")
+
+    scenario.set_charger("c", fault=False)
+
+    assert scenario.decide_many(5000, 4) == [[], [], [], activate("c")]
+
+
 def test_command_to_an_appliance_leaves_a_charger_activated_again_waiting() -> None:
     """x is switched off while c waits, and c still waits its 151 s by the curve."""
     scenario = Scenario(make_config("x", chargers=(charger("c", max_a=6, min_current_power_w=2000),), wait_at_limit_s=300))
@@ -679,6 +695,29 @@ def test_switch_over_does_not_wait() -> None:
     scenario.set_charger("a", car_connected=True)
 
     assert scenario.decide(9100) == current("b", 6) + activate("a")
+
+
+def test_switch_over_to_a_charger_activated_again_waits_its_waiting_time() -> None:
+    """b, deactivated above the limit, is queued behind a, and waits on its own row before the switch-over.
+
+    a gets no more current meanwhile, as when any step waits.
+    """
+    scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True))
+    scenario.set_charger("a", car_connected=False)
+    scenario.draw("b")
+    scenario.charge("b", 7)
+    scenario.set_charger("a", car_connected=True)
+    scenario.draw("a")
+    assert scenario.decide(5000) == current("b", 6) + activate("a")
+    assert scenario.decide(ABOVE_LIMIT) == deactivate("b")
+
+    assert scenario.decide(5000) == []
+    waiting = scenario.engine.waiting
+    assert waiting is not None
+    assert (waiting.key, waiting.reason) == (AmpereStepKey("b", 0), WaitingReason.WAITING_TIME)
+    while scenario.now + timedelta(minutes=1) < waiting.until:
+        assert scenario.decide(5000) == []
+    assert scenario.decide(5000) == activate("b")
 
 
 def test_starting_charger_holds_back_the_charger_that_charges() -> None:

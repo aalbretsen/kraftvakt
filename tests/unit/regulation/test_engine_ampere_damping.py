@@ -62,17 +62,3 @@ def test_ampere_taken_back_to_make_room_is_damped() -> None:
     assert scenario.decide(0, true=morning) == on("h:morning")
     assert scenario.decide_many(0, 3, true=morning) == [[], [], []]
     assert scenario.decide(0, true=morning) == current("c", 7)
-
-
-def test_no_switch_over_to_a_queued_charger_that_would_be_activated_again() -> None:
-    """b, deactivated above the limit, is queued behind a, which gets its next ampere instead, and b waits its waiting time when it is next."""
-    scenario = Scenario(make_config(chargers=(charger("a"), charger("b")), one_at_a_time=False, dynamic_order=True))
-    scenario.set_charger("a", car_connected=False)
-    scenario.draw("b")
-    scenario.charge("b", 7)
-    scenario.set_charger("a", car_connected=True)
-    scenario.draw("a")
-    assert scenario.decide(5000) == current("b", 6) + activate("a")
-    assert scenario.decide(ABOVE_LIMIT) == deactivate("b")
-
-    assert scenario.decide(5000) == current("a", 7)
