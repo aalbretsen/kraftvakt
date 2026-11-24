@@ -221,6 +221,7 @@ The section header, the description and the footer note are in `section-styles.t
   the time is a tooltip. On a narrow screen only the ring is shown.
 - A waiting appliance shows a timer icon before a thin bar that empties smoothly from when the waiting started to the decision that turns it on, animated like the ring.
   What it is and the time are a tooltip. The bar is smooth because a wait can span very many regulation windows. On a phone only the icon is shown.
+  On a list wider than about 1000 px, the clock time of the decision that ends the waiting is in a column of its own after the bar.
   An EV charger whose next ampere step waits, or whose start delay holds back the next step or its own next ampere step, shows the same instead of the power to free,
   with the reason from the status as a short text: the damping, the start delay, or the waiting time of an EV charger that is activated again.
   While a waiting holds back the next step, no row shows the power to free.

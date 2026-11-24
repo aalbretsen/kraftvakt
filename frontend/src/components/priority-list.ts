@@ -71,6 +71,13 @@ export class KraftvaktPriorityList extends LitElement {
     return this.phoneQuery.matches;
   }
 
+  /** The widest list, in pixels, without the column with the clock time a waiting ends. */
+  private readonly narrowerQuery = new WidthQuery(this, 1000);
+
+  private get wide(): boolean {
+    return !this.narrowerQuery.matches;
+  }
+
   /** Whether some row has a power; without one, the column is left out, so it takes no room and no gap. */
   private hasPower = false;
 
@@ -100,12 +107,20 @@ export class KraftvaktPriorityList extends LitElement {
   }
 
   /**
-   * The columns of the list: rank, name, current, power, waiting and state.
+   * The columns of the list: rank, name, current, power, waiting, on a wide list the clock time the waiting ends, and state.
    * The name takes the room that is left, so the other columns, as wide as their content, line up at the right.
    * An appliance's temperature is in the current column, since an EV charger never has one.
    */
   private columns(): string {
-    const columns = ["minmax(24px, max-content)", "minmax(0, 1fr)", "max-content", ...(this.hasPower ? ["max-content"] : []), "var(--waiting-width)", "max-content"];
+    const columns = [
+      "minmax(24px, max-content)",
+      "minmax(0, 1fr)",
+      "max-content",
+      ...(this.hasPower ? ["max-content"] : []),
+      "var(--waiting-width)",
+      ...(this.wide ? ["max-content"] : []),
+      "max-content",
+    ];
     return `grid-template-columns: ${columns.join(" ")}`;
   }
 
@@ -260,17 +275,19 @@ export class KraftvaktPriorityList extends LitElement {
 
   /**
    * An icon and a bar that empties from when the waiting started until the decision that ends it,
-   * or else what `otherwise` renders. On a phone, the icon alone.
+   * or else what `otherwise` renders. On a phone, the icon alone, and on a wide list, the clock time after the bar.
    */
   private renderWaiting(row: WaitingFields, title: (time: string) => string, otherwise: () => unknown) {
     if (!row.waiting_since || !row.waiting_ends_at) {
-      return otherwise();
+      return html`${otherwise()}${this.wide ? html`<span></span>` : nothing}`;
     }
+    const time = formatClockTime(timeLocale(this.hass), row.waiting_ends_at);
     return html`
-      <span class="waiting" title=${title(formatClockTime(timeLocale(this.hass), row.waiting_ends_at))}>
+      <span class="waiting" title=${title(time)}>
         <ha-svg-icon .path=${mdiTimerOutline}></ha-svg-icon>
         ${this.renderWideOnly(html`<kraftvakt-countdown-bar .start=${Date.parse(row.waiting_since)} .end=${Date.parse(row.waiting_ends_at)}></kraftvakt-countdown-bar>`)}
       </span>
+      ${this.wide ? html`<span class="waiting-ends-at" title=${title(time)}>${time}</span>` : nothing}
     `;
   }
 
@@ -408,7 +425,7 @@ export class KraftvaktPriorityList extends LitElement {
       }
       /*
        * The spacing grows with the list's width, from tight just above the phone layout (600 px)
-       * to the widest list the panel gets (1040 px), where the columns after the name take its right half.
+       * to a list 1040 px wide, where the columns after the name take its right half.
        */
       ha-card {
         --column-gap: clamp(12px, 5.455cqi - 20.7px, 36px);
@@ -515,6 +532,12 @@ export class KraftvaktPriorityList extends LitElement {
       }
       .waiting kraftvakt-countdown-bar {
         flex: 1;
+      }
+      .waiting-ends-at {
+        color: var(--secondary-text-color);
+        font-size: var(--ha-font-size-s, 12px);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
       .power-to-free {
         color: var(--secondary-text-color);
