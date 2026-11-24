@@ -30,7 +30,8 @@ The status page holds the regulation card; the power tiles with the meter, and t
 The diagnostics page subscribes to its own feed while it is open, and works out its history in `diagnostics.ts`.
 One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
 
-The status page and the diagnostics page use the whole width of the panel, and the configuration pages are centred and kept narrow enough to read on a large screen.
+The status page and the diagnostics page are at most as wide as Home Assistant's Overview dashboard, three sections wide,
+and the configuration pages are kept narrow enough to read on a large screen. All pages are centred.
 A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport:
 HA's sidebar is docked on a phone in landscape in the app and leaves the page little room, while a tablet that HA calls narrow has room.
 

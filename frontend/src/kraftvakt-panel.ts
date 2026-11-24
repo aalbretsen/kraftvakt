@@ -438,12 +438,14 @@ export class KraftvaktPanel extends LitElement {
     :host([narrow]) .tab-label {
       display: none;
     }
+    /* As wide as Home Assistant's Overview dashboard: three sections of 500 px with 32 px between them. */
     .content {
+      max-width: 1564px;
+      margin: 0 auto;
       padding: 16px;
     }
     .content.config {
       max-width: 840px;
-      margin: 0 auto;
     }
     :host([narrow]) .content {
       padding: 8px;
