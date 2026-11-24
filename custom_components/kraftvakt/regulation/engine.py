@@ -407,12 +407,14 @@ class RegulationEngine:
     def _place_appliances(self, decision: DecisionInput) -> list[Command]:
         """Handle the appliances that are excluded, included again or switch variant.
 
-        An excluded appliance that is on is switched off. An appliance at a new
-        place is off afterwards and gets room there, from an appliance below it
-        that is switched off anyway at this decision, or else by switching off
-        the lowest step that is on below it. A variant switch sends the
-        turn-off action of the new variant also when the appliance was off,
-        since variants may turn it off in different ways. Before the first
+        An excluded appliance that is on is switched off. An appliance that is
+        on and switches variant stays on, with the turn-on action of the new
+        variant, when the fixed order holds at its new place. Any other
+        appliance at a new place is off afterwards and gets room there, from an
+        appliance below it that is switched off anyway at this decision, or else
+        by switching off the lowest step that is on below it. A variant switch
+        sends the turn-off action of the new variant also when the appliance was
+        off, since variants may turn it off in different ways. Before the first
         decision after a start, the appliance itself is the variant. These
         switch-offs are not limited to one step per decision.
         """
@@ -435,6 +437,9 @@ class RegulationEngine:
         places = {step.key: place for place, step in enumerate(self._steps())}
         in_new_places = sorted(map(ApplianceStepKey, moving), key=lambda key: places[key])
         for key in in_new_places:
+            if key.appliance_id in was_on and key.appliance_id not in excluded and self._step_above_is_on(key):
+                commands.append(TurnOnAppliance(key.appliance_id, self._state.current_variants[key.appliance_id]))
+                continue
             switched_variant = previous_variants.get(key.appliance_id) != self._state.current_variants[key.appliance_id]
             if key.appliance_id in was_on and key not in switched_off:
                 switched_off.append(key)
@@ -450,6 +455,12 @@ class RegulationEngine:
             self._forget_waiting(key)
             self._state.repeats.reset(key)
         return commands
+
+    def _step_above_is_on(self, key: StepKey) -> bool:
+        """Whether the nearest step above that is not skipped is on, or there is none."""
+        steps = self._steps()
+        place = next(place for place, step in enumerate(steps) if step.key == key)
+        return next((step.is_on for step in reversed(steps[:place]) if step.can_turn_on), True)
 
     def _place_essential_appliances(self) -> list[Command]:
         """Turn each essential appliance on, or off while it is excluded or a penalty lasts.

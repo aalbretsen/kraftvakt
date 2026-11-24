@@ -51,14 +51,24 @@ def test_restart_forgets_the_current_variant() -> None:
     assert scenario.engine.current_variants == {}
 
 
+def heater_below_an_appliance_that_is_off_config():
+    """The heater moves below b, which is off while nothing below a is turned on."""
+    return make_config(
+        "a",
+        appliance("heater", variants=("low",)),
+        "b",
+        priority=("a", "heater", "b", "heater:low"),
+    )
+
+
 def test_variant_switch_above_the_limit_switches_off_nothing_more() -> None:
     """Above the limit, nothing more is switched off when a variant switch has
     switched something off."""
-    scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
-    scenario.turn_on("b", "heater")
+    scenario = Scenario(heater_below_an_appliance_that_is_off_config())
+    scenario.turn_on("a", "heater")
 
-    assert scenario.decide(10500, true=("morning",)) == off("heater:morning")
-    assert scenario.engine.appliances_on == {"b"}
+    assert scenario.decide(10500, true=("low",)) == off("heater:low")
+    assert scenario.engine.appliances_on == {"a"}
 
 
 def test_switch_of_an_appliance_that_is_off_does_not_stop_the_switch_off() -> None:
@@ -155,28 +165,22 @@ def heater_moving_down_config():
     )
 
 
-def test_appliance_that_was_on_is_switched_off_and_on_again() -> None:
-    """Off after the switch, then on in the normal way after waiting, since nothing below it is on."""
-    scenario = Scenario(heater_moving_down_config())
-    scenario.turn_on("b", "heater")
+def test_appliance_that_moves_below_a_step_that_is_off_is_switched_off_and_on_again() -> None:
+    """Off after the switch, then on in the normal way when its turn comes, after b."""
+    scenario = Scenario(heater_below_an_appliance_that_is_off_config())
+    scenario.turn_on("a", "heater")
 
     assert scenario.decide(8000, true=("low",)) == off("heater:low")
-    assert scenario.engine.appliances_on == {"b"}
-    assert scenario.decide_many(8000, 4, true=("low",)) == [
-        [],
-        [],
-        [],
-        on("heater:low"),
-    ]
+    assert scenario.engine.appliances_on == {"a"}
+    scenario.turn_on("b", "heater:low", true=("low",))
 
 
-def test_appliance_turned_off_and_on_at_the_same_decision_only_gets_turn_on() -> None:
-    """Without waiting, an appliance that was on comes on again at once, with
-    the turn-on action of its new variant and no turn-off before it."""
+def test_appliance_that_moves_up_stays_on() -> None:
+    """It gets the turn-on action of its new variant, also within the turn-on margin, and no turn-off."""
     scenario = Scenario(morning_heater_config(wait_at_limit_s=0))
     scenario.turn_on("b", "heater")
 
-    assert scenario.decide(1000, true=("morning",)) == on("heater:morning")
+    assert scenario.decide(9950, true=("morning",)) == on("heater:morning")
     assert scenario.engine.appliances_on == {"b", "heater"}
 
 
@@ -220,7 +224,7 @@ def test_switch_resets_the_repeated_turn_on_counter() -> None:
 
 
 def test_several_switches_are_handled_one_by_one_by_new_place() -> None:
-    """E makes room by switching off D, which has to go off anyway."""
+    """D stays on below b, and is switched off to make room for E."""
     scenario = Scenario(
         make_config(
             "a",
@@ -366,3 +370,13 @@ def test_appliance_above_a_car_that_does_not_charge_waits() -> None:
 
     assert scenario.decide_many(9000, 2, true=("swim",)) == [off("pool:swim", "cable"), []]
     assert scenario.engine.waiting is not None
+
+
+def test_appliance_that_moves_below_a_step_that_is_on_stays_on() -> None:
+    """The pool keeps heating, with the turn-on action of its new place.
+    The excluded heater and the charger outside its charging window are skipped, so the floor is the step above it."""
+    scenario = Scenario(pool_config("floor", "heater", chargers=(charger("car", window="21:00-08:00"),)), excluded=("heater",))
+    scenario.turn_on("pool:swim", "cable", "floor", true=("swim",))
+
+    assert scenario.decide(8000) == on("pool")
+    assert scenario.engine.appliances_on == {"water", "pool", "cable", "floor"}

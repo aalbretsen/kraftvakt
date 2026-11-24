@@ -167,7 +167,7 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   5. EV chargers: allowed, bypassed, charging, held at minimum, current priority, queued.
   6. Forced switch-offs: chargers not allowed to charge, chargers whose car is known to have left with dynamic charging order,
      and with one charger at a time the chargers after the one that charges (all ampere steps off and deactivate),
-     newly bypassed chargers and chargers held at minimum down to one ampere step, excluded appliances, appliances that switch variant or are included again.
+     newly bypassed chargers and chargers held at minimum down to one ampere step, excluded appliances, appliances that switch variant and do not stay on (see Variants) or are included again.
      Essential appliances that are included again are turned on here (see Essential appliances).
   7. Build the ordered steps (current variants, ampere steps in place of the entry of their group).
   8. Above the limit: free the power above the limit (see Freeing power), without waiting, and cancel any waiting.
@@ -348,7 +348,12 @@ the others have entity category diagnostic.
 - Each ordinary appliance that is not essential may have variants, sorted, each with a non-empty label unique for the appliance and an expression. Same reserve as the appliance.
   A variant uses the actions of the appliance, or overrides the turn-on action, the turn-off action or both; an action it does not override is the appliance's.
   Every command for an appliance uses the actions of its current variant. Not for chargers or charger groups.
-- Evaluated at each decision. When an appliance switches variant: it is off afterwards at the new place and comes on again the normal way.
+- Evaluated at each decision. An appliance that is on and switches variant stays on when the nearest step above its new place that is not skipped is on,
+  or there is none, in either direction. It is sent the turn-on action of the new variant, and nothing else.
+  Why: the step above was on together with it, so there was room for both and the fixed order holds,
+  and the new variant may turn it on in another way (for example another target temperature).
+  Staying on is no switch: it does not count against one step per decision and leaves the repeated turn-on counters of the other steps alone.
+  Any other appliance that switches variant is off afterwards at the new place and comes on again the normal way.
   It is sent the turn-off action of the new variant also when it was off, since variants may turn it off in different ways (for example a thermostat in heat or cool mode).
   The appliance itself is the variant before the first decision after a start. If it was off and its new place is above a step that is on,
   the lowest step below it that may be switched off for room is switched off to give room at once, and more room is made at the next decisions if needed (see Making room).

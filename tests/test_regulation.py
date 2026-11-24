@@ -592,7 +592,8 @@ async def test_variant_with_own_actions_is_switched_with_them(
     setup_kraftvakt,
 ) -> None:
     """Every switch of variant runs an action of the new variant, and stop
-    turns the appliance off as its current variant does it."""
+    turns the appliance off as its current variant does it. An appliance that
+    is on below one that is on stays on, also within the turn-on margin."""
     config["appliances"][1]["variants"] = [
         {
             "id": "cool",
@@ -616,6 +617,9 @@ async def test_variant_with_own_actions_is_switched_with_them(
     assert actions == ["off light.cool", "on light.a", "on light.cool"]
     actions.clear()
 
+    set_power(hass, "9950")
+    await advance(hass, freezer)
+    actions.clear()
     hass.states.async_set("input_boolean.cool", STATE_OFF)
     await advance(hass, freezer)
     assert actions == ["on light.b"]

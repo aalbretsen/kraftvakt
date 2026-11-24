@@ -103,6 +103,8 @@ The helper texts in the panel tell what each setting does.
   The status page shows the EV charger as **Starting** until the car uses power, and the countdown while the start delay holds back the next step,
   or its own next ampere.
 - **Variants:** an appliance can have variants with another place in the priority list, for example a higher priority in the morning, and their own actions to turn it on or off.
+  An appliance that is on stays on at its new place when the nearest appliance or EV charger above it that takes part is on, and gets the turn-on action of the new variant.
+  Otherwise it is turned off, and comes on again in its turn.
 - **Essential appliance:** kept on also in the safe state and while the regulation is stopped, and turned off only during a penalty. It is at the top of the list, without variants.
 - **Excluded appliance:** turned off, and gets no commands until it is included again.
 - **Penalty:** a safety valve that should never be needed. If the tariff average goes above the power limit plus the penalty threshold,

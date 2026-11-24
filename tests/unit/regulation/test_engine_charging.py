@@ -468,9 +468,9 @@ def test_bypassed_charger_keeps_its_current_when_room_is_made() -> None:
             wait_at_limit_s=0,
         )
     )
-    assert scenario.decide_many(0, 2) == [activate("c"), on("d")]
+    assert scenario.decide(0) == activate("c")
     scenario.set_charger("c", **NO_CAR)
-    assert scenario.decide(0) == []
+    assert scenario.decide(9950) == []
     assert scenario.engine.chargers["c"].bypassed
 
     assert scenario.decide_many(9950, 2, true=("up",)) == [off("d:up"), []]
