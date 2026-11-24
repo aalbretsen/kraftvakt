@@ -30,6 +30,7 @@ The status page holds the regulation card; the power tiles with the meter, and t
 The diagnostics page subscribes to its own feed while it is open, and works out its history in `diagnostics.ts`.
 One page per route under `/kraftvakt/`; `/kraftvakt` itself is the status page, and `?config_entry=` (from the integration's configure button) goes to the Appliances page.
 
+The status page and the diagnostics page use the whole width of the panel, and the configuration pages are centred and kept narrow enough to read on a large screen.
 A page that changes its layout by width uses its own width (`WidthQuery`), not HA's `narrow`, which follows the viewport:
 HA's sidebar is docked on a phone in landscape in the app and leaves the page little room, while a tablet that HA calls narrow has room.
 
@@ -241,7 +242,7 @@ The section header, the description and the footer note are in `section-styles.t
   an appliance without one lets its name take the current column. An essential appliance's row has a light golden background.
   The name takes the room that is left, and the other columns are as wide as their content, so they line up at the right.
   The gaps, the waiting bar and the space at the right end grow with the list's own width (container query units),
-  from tight just above the phone layout to the widest list the panel gets, where the columns after the name take its right half.
+  from tight just above the phone layout to a list about 1000 px wide, where the columns after the name take its right half; on a wider list the name takes the rest.
   The rank keeps a small fixed distance to the name.
   The rank is right aligned with digits of equal width.
   A name too long for its column is cut with an ellipsis and has the whole name as a tooltip; the variant is cut first, down to a few letters.

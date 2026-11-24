@@ -2044,7 +2044,9 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
             `)}
         </ha-tab-group>
       </div>
-      <div class="content" @draft-changed=${this.draftChanged}>${this.renderLoadError()} ${this.renderPage(e)}</div>
+      <div class="content ${Rr.includes(e)?"":"config"}" @draft-changed=${this.draftChanged}>
+        ${this.renderLoadError()} ${this.renderPage(e)}
+      </div>
       <kraftvakt-confirm-dialog
         .open=${void 0!==this.leavingTo}
         .heading=${this.localize("config.leave_title")}
@@ -2133,9 +2135,11 @@ function e(e,t,i,r){var a,n=arguments.length,s=n<3?t:null===r?r=Object.getOwnPro
       display: none;
     }
     .content {
-      max-width: 1040px;
-      margin: 0 auto;
       padding: 16px;
+    }
+    .content.config {
+      max-width: 840px;
+      margin: 0 auto;
     }
     :host([narrow]) .content {
       padding: 8px;

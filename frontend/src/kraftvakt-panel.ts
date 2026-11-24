@@ -144,7 +144,9 @@ export class KraftvaktPanel extends LitElement {
           )}
         </ha-tab-group>
       </div>
-      <div class="content" @draft-changed=${this.draftChanged}>${this.renderLoadError()} ${this.renderPage(page)}</div>
+      <div class="content ${(REGULATION_PAGES as readonly Page[]).includes(page) ? "" : "config"}" @draft-changed=${this.draftChanged}>
+        ${this.renderLoadError()} ${this.renderPage(page)}
+      </div>
       <kraftvakt-confirm-dialog
         .open=${this.leavingTo !== undefined}
         .heading=${this.localize("config.leave_title")}
@@ -437,9 +439,11 @@ export class KraftvaktPanel extends LitElement {
       display: none;
     }
     .content {
-      max-width: 1040px;
-      margin: 0 auto;
       padding: 16px;
+    }
+    .content.config {
+      max-width: 840px;
+      margin: 0 auto;
     }
     :host([narrow]) .content {
       padding: 8px;
