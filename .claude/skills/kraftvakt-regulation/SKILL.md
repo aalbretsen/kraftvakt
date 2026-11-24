@@ -352,6 +352,7 @@ the others have entity category diagnostic.
   or there is none, in either direction. It is sent the turn-on action of the new variant, and nothing else.
   Why: the step above was on together with it, so there was room for both and the fixed order holds,
   and the new variant may turn it on in another way (for example another target temperature).
+  So one moved below a charger that may get more current is off afterwards: the charger has priority and gets the power first.
   Staying on is no switch: it does not count against one step per decision and leaves the repeated turn-on counters of the other steps alone.
   Any other appliance that switches variant is off afterwards at the new place and comes on again the normal way.
   It is sent the turn-off action of the new variant also when it was off, since variants may turn it off in different ways (for example a thermostat in heat or cool mode).
