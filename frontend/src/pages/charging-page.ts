@@ -142,32 +142,16 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   private row(charger: Charger): ListRow {
-    const language = this.hass.language;
     const details = [
-      this.localize("charging.currents", { min: charger.min_current_a, max: charger.max_current_a }),
-      this.localize("charging.min_current_power", { power: formatNumber(language, charger.min_current_power_w, 0) }),
-      charger.charging_window ? this.localize("charging.window", { ...charger.charging_window }) : this.localize("charging.always_allowed"),
+      this.localize("charging.currents", {
+        min: charger.min_current_a,
+        max: charger.max_current_a,
+        power: formatNumber(this.hass.language, charger.min_current_power_w, 0),
+      }),
     ];
-    if (charger.charging_window && charger.charge_until_disconnected) {
-      details.push(this.localize("charging.charges_until_disconnected"));
-    }
-    if (charger.car_connected) {
-      details.push(charger.car_connected.type === "entity" ? this.localize("charging.car_from", { source: charger.car_connected.value }) : this.localize("charging.car_template"));
-    }
-    if (charger.actively_charging?.value) {
-      details.push(
-        charger.actively_charging.type === "template"
-          ? this.localize("charging.charging_template")
-          : this.localize("charging.charging_from", { source: charger.actively_charging.value }),
-      );
-    }
-    if (charger.charging_power?.value) {
-      details.push(
-        charger.charging_power.type === "template" ? this.localize("charging.power_template") : this.localize("charging.power_from", { source: charger.charging_power.value }),
-      );
-    }
-    if (charger.switched_by === "current") {
-      details.push(this.localize("charging.switched_by_current"));
+    if (charger.charging_window) {
+      const window = this.localize("charging.window", { ...charger.charging_window });
+      details.push(charger.charge_until_disconnected ? `${window}, ${this.localize("charging.charges_until_disconnected")}` : window);
     }
     if (charger.deactivate_on_fault) {
       details.push(this.localize("charging.deactivated_on_fault"));

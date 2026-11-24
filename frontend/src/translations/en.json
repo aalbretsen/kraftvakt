@@ -546,19 +546,10 @@
     "delete_group": "Delete group",
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
     "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› charge until car disconnected».",
-    "currents": "{min}–{max} A",
-    "min_current_power": "{power} W at minimum current",
+    "currents": "{min}–{max} A ({power} W at {min} A)",
     "window": "charging window {start}–{end}",
     "charges_until_disconnected": "charges until the car is disconnected",
-    "always_allowed": "always allowed to charge",
-    "car_from": "car connected from {source}",
-    "car_template": "car connected from a custom template",
-    "charging_from": "car charging from {source}",
-    "charging_template": "car charging from a custom template",
-    "power_from": "charging power from {source}",
-    "power_template": "charging power from a custom template",
-    "deactivated_on_fault": "deactivated on fault",
-    "switched_by_current": "turned on and off by the charging current"
+    "deactivated_on_fault": "deactivated on fault"
   },
   "charger": {
     "add_title": "Add EV charger",

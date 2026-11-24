@@ -546,19 +546,10 @@
     "delete_group": "Slett gruppe",
     "delete_group_not_empty": "Flytt eller slett elbilladerne før du sletter gruppen.",
     "switches_info": "Hver elbillader får tre brytere du kan bruke mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› lad til bilen kobles fra».",
-    "currents": "{min}–{max} A",
-    "min_current_power": "{power} W ved minste ladestrøm",
+    "currents": "{min}–{max} A ({power} W ved {min} A)",
     "window": "ladetidsrom {start}–{end}",
     "charges_until_disconnected": "lader til bilen kobles fra",
-    "always_allowed": "kan alltid lade",
-    "car_from": "bil tilkoblet ifølge {source}",
-    "car_template": "bil tilkoblet ifølge en egendefinert mal",
-    "charging_from": "bilen lader ifølge {source}",
-    "charging_template": "bilen lader ifølge en egendefinert mal",
-    "power_from": "ladeeffekt fra {source}",
-    "power_template": "ladeeffekt fra en egendefinert mal",
-    "deactivated_on_fault": "deaktiveres ved feil",
-    "switched_by_current": "slås av og på med ladestrømmen"
+    "deactivated_on_fault": "deaktiveres ved feil"
   },
   "charger": {
     "add_title": "Legg til elbillader",
