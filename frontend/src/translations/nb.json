@@ -556,6 +556,8 @@
     "edit_title": "Rediger elbillader",
     "view_title": "Elbillader",
     "charging_current": "Ladestrøm",
+    "start": "Oppstart",
+    "start_info": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert.",
     "on_off": "Slå lading av og på",
     "on_off_info": "Hvordan Kraftvakt aktiverer og deaktiverer elbilladeren.",
     "switched_by_current_info": "Velg entiteten eller handlingen som setter strømmen, under Ladestrøm. Den må kunne settes til 0 A.",
@@ -614,7 +616,7 @@
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
-        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. {min}–{max} s."
+        "helper": "{min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",

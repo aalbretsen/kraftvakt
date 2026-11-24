@@ -155,7 +155,8 @@ The section header, the description and the footer note are in `section-styles.t
   and a state that is typed is taken too. Choosing another entity clears the states.
 - Each charger group has the setting dynamic charging order under one EV charger at a time.
   Both are disabled, with a line in their helpers that says why, while the group has fewer than two chargers, since they make no difference then, and keep their values.
-- The start delay is the last field of actively charging, since it is about when the car starts to draw power.
+- The start delay is in a group of its own, Charging start, between Turn charging on and off and the charging current group,
+  since it follows activating the EV charger. The group has its own title, so the field keeps the name that errors use.
   Cloud-controlled EV charger is a group with a switch and no fields under it.
 - Deactivate on fault is the last group, with a switch. It shows the fault flag, a condition field of the kind fault, while it is on or the flag has an error,
   and keeps it when it is turned off.

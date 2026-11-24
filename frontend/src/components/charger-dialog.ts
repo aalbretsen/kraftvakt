@@ -35,8 +35,8 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     return html`
       ${this.renderDevice(issues)}
       ${this.renderForm([this.numberField("min_current_power_w", "W", true)], issues, (value) => this.changeDraft({ min_current_power_w: value.min_current_power_w as number }))}
-      ${this.renderOnOff(issues)} ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)} ${this.renderCloudControl()}
-      ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
+      ${this.renderOnOff(issues)} ${this.renderStartDelay(issues)} ${this.renderChargingCurrent(issues)} ${this.renderCarConnected(issues)} ${this.renderActivelyCharging(issues)}
+      ${this.renderCloudControl()} ${this.renderChargingWindow(issues)} ${this.renderDeactivateOnFault(issues)}
     `;
   }
 
@@ -79,6 +79,14 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
       switched_by: switchedBy ?? this.draft.switched_by,
       activate: this.draft.activate ?? empty,
       deactivate: this.draft.deactivate ?? empty,
+    });
+  }
+
+  private renderStartDelay(issues: Issue[]) {
+    return this.renderGroup({
+      title: this.localize("charger.start"),
+      description: this.localize("charger.start_info"),
+      content: this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) => this.changeDraft({ start_delay_s: value.start_delay_s as number })),
     });
   }
 
@@ -137,19 +145,12 @@ export class KraftvaktChargerDialog extends ItemDialog<Charger> {
     });
   }
 
-  /**
-   * The charging power, which every EV charger needs, the optional car charging, which may tell sooner that the car charges,
-   * and the start delay, how long the car may take to charge after the EV charger is activated.
-   */
+  /** The charging power, which every EV charger needs, and the optional car charging, which may tell sooner that the car charges. */
   private renderActivelyCharging(issues: Issue[]) {
     return this.renderGroup({
       title: this.label("actively_charging"),
       description: this.helper("actively_charging"),
-      content: [
-        this.renderCondition("charging_power", "charging_power", issues),
-        this.renderCondition("actively_charging", "actively_charging", issues, true),
-        this.renderForm([this.numberField("start_delay_s", "s", true)], issues, (value) => this.changeDraft({ start_delay_s: value.start_delay_s as number })),
-      ],
+      content: [this.renderCondition("charging_power", "charging_power", issues), this.renderCondition("actively_charging", "actively_charging", issues, true)],
     });
   }
 

@@ -556,6 +556,8 @@
     "edit_title": "Edit EV charger",
     "view_title": "EV charger",
     "charging_current": "Charging current",
+    "start": "Charging start",
+    "start_info": "How long the car may take to start charging after the EV charger is activated.",
     "on_off": "Turn charging on and off",
     "on_off_info": "How Kraftvakt activates and deactivates the EV charger.",
     "switched_by_current_info": "Choose the entity or action that sets the current under Charging current. It must take 0 A.",
@@ -614,7 +616,7 @@
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "How long the car may take to start charging after the EV charger is activated. {min}–{max} s."
+        "helper": "{min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",
