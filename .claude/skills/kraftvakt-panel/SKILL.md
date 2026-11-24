@@ -66,8 +66,11 @@ The section header, the description and the footer note are in `section-styles.t
 - Fields are HA's own components with their own labels, helper texts and spacing, also where HA puts the label above one field and inside another.
   The panel's own text under a field, such as under an action or a condition, is indented as HA indents the helper text of a field.
 - Most users read the helper texts, not the README, so the details of a setting are in its helper text, and the README stays general.
-  A helper text tells the effect of the setting for the user, and when to use it, as briefly as it can, followed by the range and the default;
-  not how the regulation works or why. Users click around to set it up and do not read long texts,
+  A helper text tells what the user decides, or the effect of the setting for the user, and when to use it, as briefly as it can, followed by the range and the default.
+  It leaves out how the regulation works or why, what the regulation does that the user does not decide,
+  such as the units a sensor may report in or how an unavailable entity counts, and what happens when the setting is off or not chosen:
+  one direction is told, and the reader understands the opposite. The same goes for the descriptions of cards and groups.
+  Users click around to set it up and do not read long texts,
   so a helper text is one or two short sentences before the range. A label is worded so the helper text can be short, or left out.
   The more advanced the setting, the more technical the language may be.
 
@@ -148,7 +151,7 @@ The section header, the description and the footer note are in `section-styles.t
   (for example States for connected) or those for false (States for disconnected), and the states.
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
-- Each charger group has the setting dynamic charging order under one EV charger at a time. Its helper keeps its line break, since HA shows a helper as one paragraph.
+- Each charger group has the setting dynamic charging order under one EV charger at a time.
   Both are disabled, with a line in their helpers that says why, while the group has fewer than two chargers, since they make no difference then, and keep their values.
 - The start delay is the last field of actively charging, since it is about when the car starts to draw power.
   Cloud-controlled EV charger is a group with a switch and no fields under it.
@@ -198,7 +201,7 @@ The section header, the description and the footer note are in `section-styles.t
   and a table with one column per turn-on in a row up to the one that reaches the cap, marked as holding for every time after it, with the waiting time and the actual waiting time.
   The first two follow the curve and show the waiting time at the pivot point, which the text says. Dropdowns keep their values as numbers in the draft.
 - Third card, EV chargers: a short text on what it is for, the damping time in seconds, and the waiting time for EV chargers as a dropdown of factors.
-- Fourth card, command repeat: a short text on why commands are repeated and that excluded appliances and chargers are left alone, and the interval in minutes.
+- Fourth card, command repeat: a short text on why commands are repeated, and the interval in minutes.
 - Fifth card, timeouts: a short text on what each timeout guards against, and the action timeout and the power sensor timeout in seconds.
 - On a page at most 760 px wide the tables are left out and the graph is drawn small. Narrower, the tables do not fit with the most columns.
 
@@ -319,3 +322,5 @@ and no `partial-panel-resolver` hacks.
 Panel texts are in `frontend/src/translations/en.json` and `nb.json` (English is the default, Norwegian the first translation), chosen from `hass.language`.
 The keys are type checked, and `nb.json` must have every key in `en.json`.
 Use the same terms as the rest of each translation file, and the same as the integration's own translations.
+Each language is written as it is naturally spoken: the right meaning for the user matters more than a word-for-word translation,
+so Norwegian may use other words and phrasing than English.

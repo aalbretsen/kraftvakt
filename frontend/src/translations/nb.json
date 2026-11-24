@@ -189,7 +189,7 @@
   "warning": {
     "appliances_title": "Ikke slå regulerte apparater av eller på selv",
     "chargers_title": "Ikke slå elbilladere av eller på selv",
-    "text": "Manuell styring og automasjoner forstyrrer reguleringen, kan gå ut over apparater høyere opp i listen og kan utløse straff. Kraftvakt setter dessuten alt tilbake når den gjentar kommandoene sine."
+    "text": "Det forstyrrer reguleringen, og Kraftvakt setter dem tilbake. Slå på bryteren «utenfor regulering» for det du vil styre selv."
   },
   "errors": {
     "required": "Må fylles ut.",
@@ -241,30 +241,30 @@
     "fields": {
       "power_sensor": {
         "label": "Effektsensor",
-        "helper": "Hele husets forbruk akkurat nå, vanligvis fra HAN-porten på strømmåleren. W eller kW."
+        "helper": "Hele husets forbruk, vanligvis fra HAN-porten på strømmåleren."
       },
       "regulation_window_updates": {
         "label": "Reguleringsvindu",
-        "helper": "Effektsensoren rapporterer hvert {interval} s. Hver gang et vindu er fullt, avgjør Kraftvakt hva som skal skje ut fra snittet. Flere oppdateringer jevner ut korte topper, færre gir raskere reaksjon. {min}–{max} s."
+        "helper": "Et lengre vindu jevner ut korte topper, et kortere reagerer raskere. {min}–{max} s."
       },
       "power_sensor_interval_s": {
         "label": "Hvor ofte effektsensoren rapporterer"
       },
       "power_limit_w": {
         "label": "Effektgrense",
-        "helper": "Trinnet i kapasitetsleddet du vil holde deg under. Snittet for den siste timen holdes under denne grensen. {min}–{max} W, standard {default} W."
+        "helper": "Trinnet i kapasitetsleddet du vil holde deg under. {min}–{max} W, standard {default} W."
       },
       "turn_on_margin_w": {
         "label": "Innkoblingsmargin",
-        "helper": "Hvor langt under effektgrensen forbruket må være før noe slås på, så det ikke må slås av igjen med en gang. {min}–{max} W, standard {default} W."
+        "helper": "Hvor langt under effektgrensen forbruket må være før noe slås på. En større margin gir færre av- og påslag. {min}–{max} W, standard {default} W."
       },
       "wait_at_limit_s": {
         "label": "Ventetid ved effektgrensen",
-        "helper": "Hvor lenge et apparat venter før det slås på når det er lite ledig effekt. Jo mer ledig effekt, jo kortere ventetid. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge et apparat venter før det slås på når forbruket er nær effektgrensen. {min}–{max} s, standard {default} s."
       },
       "penalty_threshold_w": {
         "label": "Straffeterskel",
-        "helper": "Hvor mye snittet for den siste timen kan gå over effektgrensen før alt slås av. {min}–{max} W, standard {default} W."
+        "helper": "Hvor langt forbruket den siste timen kan gå over effektgrensen før alt slås av til overforbruket er tatt igjen. {min}–{max} W, standard {default} W."
       },
       "wait_curve_steepness": {
         "label": "Bratthet"
@@ -282,11 +282,11 @@
       },
       "ampere_damping_s": {
         "label": "Dempingstid",
-        "helper": "Lengre gir jevnere forbruk, kortere gir mer ladeeffekt. {min}–{max} s, standard {default} s."
+        "helper": "Hvor lenge en elbillader venter før den får tilbake en ampere den har mistet. Lengre gir jevnere forbruk, kortere gir mer lading. {min}–{max} s, standard {default} s."
       },
       "charger_waiting_factor": {
         "label": "Ventetid for elbilladere",
-        "helper": "Ganger ventetiden for apparater, for en elbillader som aktiveres igjen. {min}×–{max}×, standard {default}×."
+        "helper": "Hvor mange ganger lenger enn et apparat en elbillader venter før den aktiveres igjen. {min}×–{max}×, standard {default}×."
       },
       "command_repeat_interval_min": {
         "label": "Send kommandoen på nytt etter",
@@ -294,14 +294,14 @@
       },
       "action_timeout_s": {
         "label": "Tidsgrense for handlinger",
-        "helper": "En handling som tar lengre tid, avbrytes og regnes som mislykket. {min}–{max} s, standard {default} s."
+        "helper": "En handling som tar lengre tid, avbrytes. {min}–{max} s, standard {default} s."
       },
       "power_sensor_timeout_s": {
         "label": "Tidsgrense for effektsensoren",
-        "helper": "Rapporterer ikke effektsensoren på så lang tid, regnes den som tapt, og alt slås av. En HAN-leser rapporterer vanligvis hvert 10. sekund. {min}–{max} s, standard {default} s."
+        "helper": "Har effektsensoren ikke rapportert på så lenge, slås alt av til den er tilbake. {min}–{max} s, standard {default} s."
       }
     },
-    "penalty_info": "En sikkerhetsventil som ikke skal trenges: Går snittet for den siste timen likevel over effektgrensen, holdes alt av til overforbruket er tatt igjen."
+    "penalty_info": "En sikkerhetsventil som slår til hvis forbruket blir mye høyere enn effektgrensen, for eksempel når noe utenfor Kraftvakt slås på."
   },
   "advanced": {
     "wait_curve": "Ventetidskurve",
@@ -310,14 +310,14 @@
     "waiting_minutes": "Ventetid min:s",
     "actual_waiting_minutes": "Faktisk ventetid min:s",
     "repeated_turn_on": "Ventetid når det samme slås på igjen og igjen",
-    "repeated_turn_on_info": "Slås det samme apparatet på igjen og igjen, uten at noe annet slås av eller på imellom, øker ventetiden fra tredje gang. De to første gangene følger kurven, og tabellen viser dem ved vendepunktet.",
+    "repeated_turn_on_info": "Ventetiden øker når det samme apparatet slås på igjen og igjen. De to første gangene følger kurven, og vises ved vendepunktet.",
     "turn_on_in_a_row": "Innkobling på rad",
     "chargers": "Elbilladere",
-    "chargers_info": "Hindrer at en elbillader går opp og ned mellom de samme to amperene, eller av og på, når forbruket endrer seg i korte øyeblikk. En ampere som tas tilbake, venter dempingstiden før den kommer tilbake, og en elbillader som aktiveres igjen, venter som et apparat, ganget med faktoren.",
+    "chargers_info": "Hindrer at en elbillader går opp og ned, eller av og på, når forbruket svinger et kort øyeblikk.",
     "command_repeat": "Gjentatte kommandoer",
-    "command_repeat_info": "Et apparat eller en elbillader kan skifte tilstand av seg selv, for eksempel etter et strømbrudd. Har det ikke fått noen kommando på så lang tid, får det den siste på nytt. Det som er utenfor regulering, får være i fred.",
+    "command_repeat_info": "Setter apparater og elbilladere tilbake hvis de har endret seg av seg selv, for eksempel etter et strømbrudd.",
     "timeouts": "Tidsgrenser",
-    "timeouts_info": "Beskytter mot en handling som aldri blir ferdig, og mot en effektsensor som slutter å rapportere."
+    "timeouts_info": "Beskytter mot handlinger som aldri blir ferdige, og mot en effektsensor som slutter å rapportere."
   },
   "list": {
     "drag": "Dra for å endre rekkefølgen",
@@ -326,9 +326,9 @@
   },
   "appliances": {
     "priority_title": "Prioritetsliste",
-    "priority_sub": "Slås på ovenfra og av nedenfra. Dra for å endre rekkefølgen.",
+    "priority_sub": "Øverst har høyest prioritet. Dra for å endre rekkefølgen.",
     "add": "Legg til apparat",
-    "empty": "Ingen apparater ennå. Legg til apparatene Kraftvakt kan slå av når forbruket blir for høyt.",
+    "empty": "Ingen apparater ennå. Legg til dem Kraftvakt skal slå av og på.",
     "charger_group_sub": "elbilladere: {count} · settes opp under",
     "power_reserve": "effektreserve {power} W",
     "essential": "Nødvendig",
@@ -344,19 +344,19 @@
     "edit_title": "Rediger apparat",
     "view_title": "Apparat",
     "variants": "Varianter",
-    "variants_info": "Gi apparatet en annen plass i prioritetslisten til bestemte tider eller under bestemte forhold, for eksempel høyere opp for varmtvannsberederen om morgenen. Den øverste varianten som gjelder, bestemmer.",
+    "variants_info": "Gir apparatet en annen plass i prioritetslisten når uttrykket er sant, for eksempel høyere opp for varmtvannsberederen om morgenen. Den øverste varianten som gjelder, brukes.",
     "add_variant": "Legg til variant",
     "display_values": "Visning",
-    "display_values_info": "Valgfritt. Vises bare på statussiden, og brukes ikke av reguleringen.",
+    "display_values_info": "Valgfritt. Vises bare på statussiden.",
     "delete": "Slett apparat",
     "fields": {
       "entity_id": {
         "label": "Bryter eller termostat",
-        "helper": "Det Kraftvakt slår av og på, for eksempel bryteren til varmtvannsberederen. Apparatet får navnet til denne entiteten."
+        "helper": "Det Kraftvakt slår av og på, for eksempel bryteren til varmtvannsberederen."
       },
       "essential": {
         "label": "Nødvendig apparat",
-        "helper": "Til apparater som alltid må være på, som en fryser. Det slås bare av i en straffeperiode. Kan ikke ha varianter."
+        "helper": "For apparater som alltid skal være på, som en fryser. Kan ikke ha varianter."
       },
       "turn_on": {
         "label": "Handling for å slå på",
@@ -368,11 +368,11 @@
       },
       "fixed_load": {
         "label": "Fast last",
-        "helper": "Bare til apparater som alltid bruker like mye når de er på, som en takvifte. Ikke til apparater med termostat eller annen egen styring, for da regulerer Kraftvakt dårligere."
+        "helper": "For apparater som alltid bruker like mye når de er på, som en takvifte. De slås på uten å vente når nok effekt er ledig. Ikke for apparater med termostat eller annen egen styring."
       },
       "power_reserve_w": {
         "label": "Effektreserve",
-        "helper": "Det apparatet bruker når det er på. Første gang slås det på uten å vente så snart så mye effekt er ledig; slås det på igjen, venter det som andre apparater. Gjelder alle variantene."
+        "helper": "Det apparatet bruker når det er på. Gjelder alle variantene."
       },
       "label": {
         "label": "Navn"
@@ -401,7 +401,7 @@
     "view_title": "Variant {name}",
     "condition": "Uttrykk",
     "delete": "Slett variant",
-    "condition_info": "Varianten gjelder når uttrykket er sant, for eksempel mellom kl. 05 og 08. Ellers har apparatet sin vanlige plass."
+    "condition_info": "Varianten gjelder når uttrykket er sant, for eksempel mellom kl. 05 og 08."
   },
   "action": {
     "default": "Standard",
@@ -414,7 +414,7 @@
     },
     "default_runs": "Kjører {service} for entiteten.",
     "entity_runs": "Kjører {service} for den valgte entiteten, med ladestrømmen som verdi.",
-    "no_default": "Denne entitetstypen har ingen standardhandling, så bruk egendefinerte handlinger.",
+    "no_default": "Denne entitetstypen har ingen standardhandling. Bruk egendefinerte handlinger.",
     "choose_entity": "Velg en entitet for å bruke standardhandlingen.",
     "choose_action_entity": "Velg tallentiteten som skal få ladestrømmen.",
     "variables": "Variabler: {variables}.",
@@ -445,18 +445,18 @@
     "template": "Egendefinert mal",
     "entity_label": "Binærsensor eller bryter",
     "template_label": "Egendefinert mal",
-    "entity_helper": "Sann bare når den er på. Utilgjengelig regnes som usann.",
+    "entity_helper": "Sann når den er på.",
     "state": "Statussensor",
     "state_label": "Statussensor",
     "state_helper": "For eksempel en sensor som viser status for elbilladeren.",
     "states_label": "Tilstander",
-    "states_helper": "Velg eller skriv inn tilstandene. Alle andre tilstander regnes som det motsatte, unntatt utilgjengelig, som regnes som usann.",
-    "template_helper": "Sann bare når malen gir sann. Variabler: {variables}.",
+    "states_helper": "Velg eller skriv inn tilstandene.",
+    "template_helper": "Skal gi sann eller usann. Variabler: {variables}.",
     "now": "Nå: {value}",
     "true": "sann",
     "false": "usann",
     "error": "Feil: {message}",
-    "invalid": "Malen gir {value}, som verken er sann eller usann, og regnes derfor som usann."
+    "invalid": "Malen gir {value}, ikke sann eller usann, og regnes som usann."
   },
   "actively_charging": {
     "type_label": "Bilen lader, ifølge",
@@ -464,16 +464,16 @@
     "template": "Egendefinert mal",
     "entity_label": "Binærsensor eller bryter",
     "template_label": "Egendefinert mal",
-    "entity_helper": "På mens bilen lader. Utilgjengelig regnes som at den ikke lader.",
+    "entity_helper": "På når bilen lader.",
     "state": "Statussensor",
     "state_label": "Statussensor",
     "state_helper": "For eksempel en sensor som viser status for elbilladeren.",
     "states_label": "Tilstander",
-    "states_helper": "Velg eller skriv inn tilstandene. Alle andre tilstander regnes som det motsatte, unntatt utilgjengelig, som regnes som at bilen ikke lader.",
-    "template_helper": "Sann betyr at bilen lader, alt annet at den ikke lader. Variabler: {variables}.",
+    "states_helper": "Velg eller skriv inn tilstandene.",
+    "template_helper": "Sann når bilen lader. Variabler: {variables}.",
     "true": "lader",
     "false": "lader ikke",
-    "invalid": "Malen gir {value}, som verken er sann eller usann, og regnes derfor som at bilen ikke lader."
+    "invalid": "Malen gir {value}, ikke sann eller usann, og regnes som at bilen ikke lader."
   },
   "charging_power": {
     "type_label": "Ladeeffekt fra",
@@ -481,11 +481,11 @@
     "template": "Egendefinert mal",
     "power_sensor_label": "Effektsensor",
     "template_label": "Egendefinert mal for ladeeffekt",
-    "power_sensor_helper": "Over 100 W regnes som lading. W eller kW.",
-    "template_helper": "Effekten i W. Over 100 W regnes som lading. Variabler: {variables}.",
+    "power_sensor_helper": "Det bilen lader med nå.",
+    "template_helper": "Effekten i W. Variabler: {variables}.",
     "true": "lader",
     "false": "lader ikke",
-    "invalid": "Malen gir {value}, som ikke er et tall, og regnes derfor som at bilen ikke lader."
+    "invalid": "Malen gir {value}, ikke et tall, og regnes som at bilen ikke lader."
   },
   "display_power": {
     "type_label": "Effekt fra",
@@ -493,10 +493,10 @@
     "template": "Egendefinert mal",
     "power_sensor_label": "Effektsensor",
     "template_label": "Egendefinert mal for effekt",
-    "power_sensor_helper": "En sensor på samme enhet som bryteren eller termostaten. W eller kW.",
+    "power_sensor_helper": "En sensor på samme enhet som bryteren eller termostaten.",
     "template_helper": "Effekten i W, også fra en annen enhet. Variabler: {variables}.",
     "no_value": "ingen verdi",
-    "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
+    "invalid": "Malen gir {value}, ikke et tall, så ingenting vises."
   },
   "display_temperature": {
     "type_label": "Temperatur fra",
@@ -506,37 +506,37 @@
     "target_temperature": "{name}: innstilt temperatur",
     "temperature_sensor_label": "Temperatursensor eller termostat",
     "template_label": "Egendefinert mal for temperatur",
-    "temperature_sensor_helper": "En temperatursensor på samme enhet som bryteren eller termostaten, eller termostatens nåværende eller innstilte temperatur.",
-    "template_helper": "En temperatur i Home Assistants enhet, også fra en annen enhet. Variabler: {variables}.",
+    "temperature_sensor_helper": "Fra samme enhet som bryteren eller termostaten.",
+    "template_helper": "Temperaturen i Home Assistants enhet, også fra en annen enhet. Variabler: {variables}.",
     "no_value": "ingen verdi",
-    "invalid": "Malen gir {value}, som ikke er et tall, så ingenting vises."
+    "invalid": "Malen gir {value}, ikke et tall, så ingenting vises."
   },
   "fault": {
     "entity": "Binærsensor eller bryter",
     "template": "Egendefinert mal",
     "entity_label": "Binærsensor eller bryter",
     "template_label": "Egendefinert mal",
-    "entity_helper": "På betyr feil. Utilgjengelig er ingen feil.",
+    "entity_helper": "På betyr feil.",
     "state": "Statussensor",
     "state_label": "Statussensor",
     "state_helper": "For eksempel en sensor som viser status for elbilladeren.",
     "states_label": "Tilstander",
-    "states_helper": "Velg eller skriv inn tilstandene. Alle andre tilstander regnes som det motsatte, unntatt utilgjengelig, som ikke er en feil.",
-    "template_helper": "Sann betyr feil, alt annet ingen feil. Variabler: {variables}.",
+    "states_helper": "Velg eller skriv inn tilstandene.",
+    "template_helper": "Sann betyr feil. Variabler: {variables}.",
     "true": "feil",
     "false": "ingen feil",
-    "invalid": "Malen gir {value}, som verken er sann eller usann, og regnes derfor som ingen feil."
+    "invalid": "Malen gir {value}, ikke sann eller usann, og regnes som ingen feil."
   },
   "charging": {
     "name": "Navn",
-    "name_sub": "Vises i prioritetslisten, og på statussiden når gruppen har mer enn én elbillader.",
+    "name_sub": "Vises i prioritetslisten og på statussiden.",
     "one_at_a_time": "Én elbillader om gangen",
-    "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen. Mens ingen lader, kan alle biler vente på minste ladestrøm, og den første som begynner å bruke strøm, får tur.",
+    "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen, så den blir fortere full.",
     "dynamic_order": "Dynamisk ladeprioritet",
-    "dynamic_order_sub": "Av: Ladeprioriteten under gjelder alltid, så en bil høyere opp som begynner å lade, tar over fra en lenger ned.\nPå: Elbilladere som lader, får fortsette, og de andre venter på tur.",
-    "needs_two_chargers": "Har betydning med to eller flere elbilladere i gruppen.",
+    "dynamic_order_sub": "Biler som lader, får fortsette, og de andre venter på tur.",
+    "needs_two_chargers": "Krever minst to elbilladere i gruppen.",
     "chargers": "Ladeprioritet",
-    "chargers_sub": "Høyest prioritet øverst. Dra en elbillader til en annen gruppe for å flytte den.",
+    "chargers_sub": "Øverst har høyest prioritet. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",
     "empty": "Ingen elbilladere ennå.",
     "no_groups": "Ingen grupper med elbilladere ennå. Legg til en gruppe, og deretter elbilladerne i den.",
@@ -545,7 +545,7 @@
     "unnamed_group": "Gruppe uten navn",
     "delete_group": "Slett gruppe",
     "delete_group_not_empty": "Flytt eller slett elbilladerne før du sletter gruppen.",
-    "switches_info": "Hver elbillader får tre brytere du kan bruke mens reguleringen kjører: «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› lad til bilen kobles fra».",
+    "switches_info": "Mens reguleringen kjører, kan du styre hver elbillader med bryterne «‹lader› utenfor regulering», «‹lader› overstyr ladetidsrom» og «‹lader› lad til bilen kobles fra».",
     "currents": "{min}–{max} A ({power} W ved {min} A)",
     "window": "ladetidsrom {start}–{end}",
     "charges_until_disconnected": "lader til bilen kobles fra",
@@ -557,8 +557,8 @@
     "view_title": "Elbillader",
     "charging_current": "Ladestrøm",
     "on_off": "Slå lading av og på",
-    "on_off_info": "Hvordan Kraftvakt aktiverer elbilladeren når det er ledig effekt, og deaktiverer den når effekten trengs til noe annet.",
-    "switched_by_current_info": "Elbilladeren aktiveres med minste ladestrøm og deaktiveres med 0 A. Entiteten eller handlingen som setter strømmen, velger du under Ladestrøm.",
+    "on_off_info": "Hvordan Kraftvakt aktiverer og deaktiverer elbilladeren.",
+    "switched_by_current_info": "Velg entiteten eller handlingen som setter strømmen, under Ladestrøm. Den må kunne settes til 0 A.",
     "profile_applied": "Fylt ut fra laderprofilen {profile}. Se over alle feltene før du lagrer.",
     "override_ends": {
       "manual": "Når jeg slår den av",
@@ -569,7 +569,7 @@
     "fields": {
       "device_id": {
         "label": "Enhet",
-        "helper": "Elbilladeren i Home Assistant. Feltene under velger blant enhetens entiteter, og fylles ut av seg selv når Kraftvakt kjenner laderen."
+        "helper": "Elbilladeren i Home Assistant. Kjenner Kraftvakt laderen, fylles feltene under ut."
       },
       "switched_by": {
         "label": ""
@@ -595,37 +595,37 @@
       },
       "min_current_power_w": {
         "label": "Effekt ved minste ladestrøm",
-        "helper": "Det bilen bruker på minste ladestrøm, omtrent 1400 W på én fase. Bilen får begynne å lade først når så mye effekt er ledig. {min}–{max} W, standard {default} W (6 A på tre faser)."
+        "helper": "Det bilen bruker ved minste ladestrøm, omtrent 1 400 W på én fase. {min}–{max} W, standard {default} W (6 A på tre faser)."
       },
       "car_connected": {
         "label": "Bil tilkoblet",
-        "helper": "En elbillader uten bil blir ikke aktivert. Utilgjengelig regnes som ikke tilkoblet."
+        "helper": "Viser om en bil er koblet til elbilladeren."
       },
       "actively_charging": {
         "label": "Lader aktivt",
-        "helper": "Ladeeffekten må fylles ut og viser hvor mye bilen bruker. «Bilen lader» er valgfritt, og kan vise tidligere at bilen har begynt å lade."
+        "helper": "Ladeeffekten viser hvor mye bilen bruker. «Bilen lader» er valgfritt, og kan vise raskere at bilen har begynt å lade."
       },
       "charging_power": {
         "label": "Ladeeffekt"
       },
       "cloud_controlled": {
         "label": "Skystyrt elbillader",
-        "helper": "Til elbilladere som styres via internett. Den får ingen gjentatte kommandoer mens ingen bil er tilkoblet."
+        "helper": "For elbilladere som styres via en skytjeneste. Kraftvakt sender den da færre kommandoer."
       },
       "start_delay_s": {
         "label": "Startforsinkelse",
-        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. Ingenting under elbilladeren slås på så lenge. {min}–{max} s."
+        "helper": "Hvor lang tid bilen kan bruke på å begynne å lade etter at elbilladeren er aktivert. {min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deaktiver ved feil",
-        "helper": "Så lenge feilflagget viser feil, er elbilladeren stoppet, og de andre i gruppen kan lade. Utilgjengelig er ingen feil."
+        "helper": "Stopper elbilladeren så lenge den har feil, så de andre i gruppen kan lade."
       },
       "fault_flag": {
         "label": "Feilflagg"
       },
       "charging_window": {
         "label": "Ladetidsrom",
-        "helper": "Elbilladeren lader bare innenfor dette tidsrommet hver dag, for eksempel om natten. Av: Den kan lade når som helst."
+        "helper": "Elbilladeren lader bare i dette tidsrommet hver dag, for eksempel om natten."
       },
       "start": {
         "label": "Start"
@@ -635,14 +635,14 @@
       },
       "charge_until_disconnected": {
         "label": "Lad til bilen kobles fra",
-        "helper": "En bil som har brukt strøm i ladetidsrommet, kan lade videre etterpå når det er plass, til den kobles fra."
+        "helper": "En bil som har begynt å lade i ladetidsrommet, kan lade videre etter at det er slutt."
       },
       "override_ends": {
         "label": "Avslutt overstyringen",
-        "helper": "Når bryteren «‹lader› overstyr ladetidsrom» skal slå seg av selv. Du kan slå den på før bilen kommer."
+        "helper": "Når bryteren «‹lader› overstyr ladetidsrom» slår seg av igjen."
       }
     },
-    "charging_current_info": "Strømmen økes og senkes én ampere om gangen etter hvor mye effekt som er ledig. Minste ladestrøm er det laveste bilen lader med, vanligvis 6 A. Største ladestrøm er det elbilladeren og sikringen tåler.",
+    "charging_current_info": "Minste ladestrøm er det laveste bilen lader med, vanligvis 6 A. Største ladestrøm er det elbilladeren og sikringen tåler.",
     "state_choices": {
       "car_connected": {
         "true": "Tilstander for tilkoblet",

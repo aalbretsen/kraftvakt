@@ -189,7 +189,7 @@
   "warning": {
     "appliances_title": "Do not turn regulated appliances on or off outside Kraftvakt",
     "chargers_title": "Do not turn EV chargers on or off outside Kraftvakt",
-    "text": "Manual control and automations can disturb the regulation, affect appliances with higher priority and trigger a penalty. Kraftvakt also sets them back when it repeats its commands."
+    "text": "It disturbs the regulation, and Kraftvakt sets them back. Turn on the switch «excluded from regulation» for one you want to control yourself."
   },
   "errors": {
     "required": "Required.",
@@ -241,30 +241,30 @@
     "fields": {
       "power_sensor": {
         "label": "Power sensor",
-        "helper": "The total power of the house now, usually from the HAN port of the electricity meter. W or kW."
+        "helper": "The power the whole house uses, usually from the HAN port of the electricity meter."
       },
       "regulation_window_updates": {
         "label": "Regulation window",
-        "helper": "The power sensor reports every {interval} s. A decision is made each time a window closes, from its average: more updates even out short peaks, fewer react faster. {min}–{max} s."
+        "helper": "A longer window evens out short peaks, a shorter one reacts faster. {min}–{max} s."
       },
       "power_sensor_interval_s": {
         "label": "Update interval of the power sensor"
       },
       "power_limit_w": {
         "label": "Power limit",
-        "helper": "The step in the capacity tariff you want to stay below. The average over the last hour is kept below it. {min}–{max} W, default {default} W."
+        "helper": "The step in the capacity tariff you want to stay below. {min}–{max} W, default {default} W."
       },
       "turn_on_margin_w": {
         "label": "Turn-on margin",
-        "helper": "Appliances are turned on only this far below the power limit, so they are not turned off again at once. {min}–{max} W, default {default} W."
+        "helper": "How far below the power limit consumption must be before anything is turned on. A larger margin means less switching. {min}–{max} W, default {default} W."
       },
       "wait_at_limit_s": {
         "label": "Waiting time at the power limit",
-        "helper": "How long an appliance waits before it is turned on when little power is free. The more power is free, the shorter it waits. {min}–{max} s, default {default} s."
+        "helper": "How long an appliance waits before it is turned on when consumption is close to the power limit. {min}–{max} s, default {default} s."
       },
       "penalty_threshold_w": {
         "label": "Penalty threshold",
-        "helper": "How far the average over the last hour may go above the power limit before everything is turned off. {min}–{max} W, default {default} W."
+        "helper": "How far the consumption over the last hour may go above the power limit before everything is turned off until the overconsumption is paid back. {min}–{max} W, default {default} W."
       },
       "wait_curve_steepness": {
         "label": "Steepness"
@@ -282,11 +282,11 @@
       },
       "ampere_damping_s": {
         "label": "Damping time",
-        "helper": "Longer gives steadier consumption, shorter more charging power. {min}–{max} s, default {default} s."
+        "helper": "How long an EV charger waits before it gets back an ampere it lost. Longer gives steadier consumption, shorter more charging. {min}–{max} s, default {default} s."
       },
       "charger_waiting_factor": {
         "label": "Waiting time for EV chargers",
-        "helper": "Times the waiting time of appliances, for an EV charger activated again. {min}×–{max}×, default {default}×."
+        "helper": "How many times longer than an appliance an EV charger waits before it is activated again. {min}×–{max}×, default {default}×."
       },
       "command_repeat_interval_min": {
         "label": "Repeat the command after",
@@ -294,14 +294,14 @@
       },
       "action_timeout_s": {
         "label": "Action timeout",
-        "helper": "An action that takes longer is stopped and counts as failed. {min}–{max} s, default {default} s."
+        "helper": "An action that takes longer is stopped. {min}–{max} s, default {default} s."
       },
       "power_sensor_timeout_s": {
         "label": "Power sensor timeout",
-        "helper": "A power sensor that reports nothing for this long counts as lost, and everything is turned off. A HAN reader usually reports every 10 seconds. {min}–{max} s, default {default} s."
+        "helper": "When the power sensor has not reported for this long, everything is turned off until it is back. {min}–{max} s, default {default} s."
       }
     },
-    "penalty_info": "A safety valve that should never be needed: if the average over the last hour still goes above the power limit, everything is kept off until the overconsumption is paid back."
+    "penalty_info": "A safety valve for when consumption gets far above the power limit, for example when something outside Kraftvakt is turned on."
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
@@ -310,14 +310,14 @@
     "waiting_minutes": "Waiting time min:s",
     "actual_waiting_minutes": "Actual waiting time min:s",
     "repeated_turn_on": "Waiting time on repeated turn-on",
-    "repeated_turn_on_info": "When the same appliance is turned on again and again with nothing else switched in between, the waiting time grows from the third time. The first two follow the curve; the table shows them at the pivot point.",
+    "repeated_turn_on_info": "The waiting time grows when the same appliance is turned on again and again. The first two times follow the curve, shown at the pivot point.",
     "turn_on_in_a_row": "Turn-on in a row",
     "chargers": "EV chargers",
-    "chargers_info": "Keeps an EV charger from going up and down between the same two amperes, or on and off, when the consumption changes for short moments. An ampere taken back waits the damping time before it comes back, and an EV charger activated again waits as an appliance does, times the factor.",
+    "chargers_info": "Keeps an EV charger from going up and down, or on and off, when consumption changes for a short moment.",
     "command_repeat": "Command repeat",
-    "command_repeat_info": "An appliance or EV charger can change state by itself, for example after a power cut. When it has had no command for this long, it gets the last one again. Excluded ones are left alone.",
+    "command_repeat_info": "Sets appliances and EV chargers back if they have changed by themselves, for example after a power cut.",
     "timeouts": "Timeouts",
-    "timeouts_info": "Guards against an action that never finishes and a power sensor that stops reporting."
+    "timeouts_info": "Guards against actions that never finish and a power sensor that stops reporting."
   },
   "list": {
     "drag": "Drag to change the order",
@@ -326,9 +326,9 @@
   },
   "appliances": {
     "priority_title": "Priority list",
-    "priority_sub": "Turned on from the top, off from the bottom. Drag to change the order.",
+    "priority_sub": "Highest priority at the top. Drag to change the order.",
     "add": "Add appliance",
-    "empty": "No appliances yet. Add the appliances Kraftvakt may turn off when the consumption is too high.",
+    "empty": "No appliances yet. Add the ones Kraftvakt shall turn on and off.",
     "charger_group_sub": "EV chargers: {count} · configured under",
     "power_reserve": "power reserve {power} W",
     "essential": "Essential",
@@ -344,19 +344,19 @@
     "edit_title": "Edit appliance",
     "view_title": "Appliance",
     "variants": "Variants",
-    "variants_info": "Give the appliance another place in the priority list at certain times or conditions, for example a higher place for the water heater in the morning. The top variant that applies wins.",
+    "variants_info": "Gives the appliance another place in the priority list while the expression is true, for example higher up for the water heater in the morning. The top variant that applies is used.",
     "add_variant": "Add variant",
     "display_values": "Display values",
-    "display_values_info": "Optional, and not used by the regulation. Shown on the status page for convenience.",
+    "display_values_info": "Optional. Shown only on the status page.",
     "delete": "Delete appliance",
     "fields": {
       "entity_id": {
         "label": "Switch or thermostat",
-        "helper": "What Kraftvakt turns on and off, for example the switch of the water heater. The appliance gets the name of this entity."
+        "helper": "What Kraftvakt turns on and off, for example the switch of the water heater."
       },
       "essential": {
         "label": "Essential appliance",
-        "helper": "For an appliance that must always run, such as a freezer. It is kept on, and turned off only during a penalty period. Not for an appliance with variants."
+        "helper": "For an appliance that must always run, such as a freezer. Cannot have variants."
       },
       "turn_on": {
         "label": "Action to turn on",
@@ -368,11 +368,11 @@
       },
       "fixed_load": {
         "label": "Fixed load",
-        "helper": "Only for an appliance that always uses the same power while it is on, such as a ceiling fan. Never for one with a thermostat or other control of its own: the regulation then works worse."
+        "helper": "For an appliance that always uses the same power while it is on, such as a ceiling fan. It is turned on without waiting when enough power is free. Not for one with a thermostat or other control of its own."
       },
       "power_reserve_w": {
         "label": "Power reserve",
-        "helper": "What the appliance uses while it is on. The first time, it is turned on without waiting as soon as this much power is free; turned on again, it waits as other appliances do. Applies to every variant."
+        "helper": "What the appliance uses while it is on. Applies to every variant."
       },
       "label": {
         "label": "Label"
@@ -401,7 +401,7 @@
     "view_title": "Variant {name}",
     "condition": "Expression",
     "delete": "Delete variant",
-    "condition_info": "The variant applies while the expression is true, for example between 05 and 08. Otherwise the appliance keeps its usual place."
+    "condition_info": "The variant applies while the expression is true, for example between 05 and 08."
   },
   "action": {
     "default": "Standard",
@@ -414,7 +414,7 @@
     },
     "default_runs": "Runs {service} for the entity.",
     "entity_runs": "Runs {service} for the chosen entity with the current as value.",
-    "no_default": "This type of entity has no standard action, so use custom actions.",
+    "no_default": "This type of entity has no standard action. Use custom actions.",
     "choose_entity": "Choose the entity to use the standard action.",
     "choose_action_entity": "Choose the number entity that gets the charging current.",
     "variables": "Variables: {variables}.",
@@ -445,18 +445,18 @@
     "template": "Custom template",
     "entity_label": "Binary sensor or switch",
     "template_label": "Custom template",
-    "entity_helper": "True only when it is on. Unavailable counts as false.",
+    "entity_helper": "True while it is on.",
     "state": "Status sensor",
     "state_label": "Status sensor",
     "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as false.",
-    "template_helper": "True only when the template gives true. Variables: {variables}.",
+    "states_helper": "Choose or type the states.",
+    "template_helper": "Should give true or false. Variables: {variables}.",
     "now": "Now: {value}",
     "true": "true",
     "false": "false",
     "error": "Error: {message}",
-    "invalid": "The template gives {value}, which is not true or false, so it counts as false."
+    "invalid": "The template gives {value}, not true or false, so it counts as false."
   },
   "actively_charging": {
     "type_label": "Car charging from",
@@ -464,16 +464,16 @@
     "template": "Custom template",
     "entity_label": "Binary sensor or switch",
     "template_label": "Custom template",
-    "entity_helper": "On while the car charges. Unavailable counts as not charging.",
+    "entity_helper": "On while the car charges.",
     "state": "Status sensor",
     "state_label": "Status sensor",
     "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which counts as not charging.",
-    "template_helper": "True means the car charges, anything else that it does not. Variables: {variables}.",
+    "states_helper": "Choose or type the states.",
+    "template_helper": "True while the car charges. Variables: {variables}.",
     "true": "charging",
     "false": "not charging",
-    "invalid": "The template gives {value}, which is not true or false, so it counts as not charging."
+    "invalid": "The template gives {value}, not true or false, so it counts as not charging."
   },
   "charging_power": {
     "type_label": "Charging power from",
@@ -481,11 +481,11 @@
     "template": "Custom template",
     "power_sensor_label": "Power sensor",
     "template_label": "Custom template for charging power",
-    "power_sensor_helper": "Above 100 W counts as charging. W or kW.",
-    "template_helper": "The power in W; above 100 W counts as charging. Variables: {variables}.",
+    "power_sensor_helper": "What the car charges with now.",
+    "template_helper": "The power in W. Variables: {variables}.",
     "true": "charging",
     "false": "not charging",
-    "invalid": "The template gives {value}, which is not a number, so it counts as not charging."
+    "invalid": "The template gives {value}, not a number, so it counts as not charging."
   },
   "display_power": {
     "type_label": "Power from",
@@ -493,10 +493,10 @@
     "template": "Custom template",
     "power_sensor_label": "Power sensor",
     "template_label": "Custom template for power",
-    "power_sensor_helper": "A sensor of the same device as the switch or thermostat. W or kW.",
+    "power_sensor_helper": "A sensor of the same device as the switch or thermostat.",
     "template_helper": "The power in W, also from another device. Variables: {variables}.",
     "no_value": "no value",
-    "invalid": "The template gives {value}, which is not a number, so nothing is shown."
+    "invalid": "The template gives {value}, not a number, so nothing is shown."
   },
   "display_temperature": {
     "type_label": "Temperature from",
@@ -506,37 +506,37 @@
     "target_temperature": "{name}: set temperature",
     "temperature_sensor_label": "Temperature sensor or thermostat",
     "template_label": "Custom template for temperature",
-    "temperature_sensor_helper": "A temperature sensor of the same device as the switch or thermostat, or a thermostat's current or set temperature.",
-    "template_helper": "A temperature in the unit of Home Assistant, also from another device. Variables: {variables}.",
+    "temperature_sensor_helper": "From the same device as the switch or thermostat.",
+    "template_helper": "The temperature in the unit of Home Assistant, also from another device. Variables: {variables}.",
     "no_value": "no value",
-    "invalid": "The template gives {value}, which is not a number, so nothing is shown."
+    "invalid": "The template gives {value}, not a number, so nothing is shown."
   },
   "fault": {
     "entity": "Binary sensor or switch",
     "template": "Custom template",
     "entity_label": "Binary sensor or switch",
     "template_label": "Custom template",
-    "entity_helper": "On means a fault. Unavailable is no fault.",
+    "entity_helper": "On means a fault.",
     "state": "Status sensor",
     "state_label": "Status sensor",
     "state_helper": "For example a sensor that shows the status of the EV charger.",
     "states_label": "States",
-    "states_helper": "Choose or type the states. Every other state counts as the opposite, except unavailable, which is no fault.",
-    "template_helper": "True means a fault, anything else no fault. Variables: {variables}.",
+    "states_helper": "Choose or type the states.",
+    "template_helper": "True means a fault. Variables: {variables}.",
     "true": "fault",
     "false": "no fault",
-    "invalid": "The template gives {value}, which is not true or false, so it counts as no fault."
+    "invalid": "The template gives {value}, not true or false, so it counts as no fault."
   },
   "charging": {
     "name": "Name",
-    "name_sub": "Shown in the priority list, and on the status page while the group has more than one EV charger.",
+    "name_sub": "Shown in the priority list and on the status page.",
     "one_at_a_time": "One EV charger at a time",
-    "one_at_a_time_sub": "Only one car in the group charges at a time. While none charges, every car may wait at the minimum current, and the first that uses power gets the turn.",
+    "one_at_a_time_sub": "Only one car in the group charges at a time, so it is full sooner.",
     "dynamic_order": "Dynamic charging order",
-    "dynamic_order_sub": "Off: the charging priority below always applies, so a car higher up that uses power takes over from one charging below it.\nOn: EV chargers that charge go first, and the others wait their turn.",
-    "needs_two_chargers": "Makes a difference with two or more EV chargers in the group.",
+    "dynamic_order_sub": "Cars that charge keep charging, and the others wait their turn.",
+    "needs_two_chargers": "Needs two or more EV chargers in the group.",
     "chargers": "Charging priority",
-    "chargers_sub": "Highest at the top. Drag an EV charger to another group to move it.",
+    "chargers_sub": "Highest priority at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",
     "empty": "No EV chargers yet.",
     "no_groups": "No groups of EV chargers yet. Add a group, and then its EV chargers.",
@@ -545,7 +545,7 @@
     "unnamed_group": "Group without a name",
     "delete_group": "Delete group",
     "delete_group_not_empty": "Move or delete its EV chargers to delete the group.",
-    "switches_info": "Each EV charger gets three switches you can use while the regulation runs: «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› charge until car disconnected».",
+    "switches_info": "While the regulation runs, you can control each EV charger with the switches «‹charger› excluded from regulation», «‹charger› override charging window» and «‹charger› charge until car disconnected».",
     "currents": "{min}–{max} A ({power} W at {min} A)",
     "window": "charging window {start}–{end}",
     "charges_until_disconnected": "charges until the car is disconnected",
@@ -557,8 +557,8 @@
     "view_title": "EV charger",
     "charging_current": "Charging current",
     "on_off": "Turn charging on and off",
-    "on_off_info": "How Kraftvakt activates the EV charger when power is free, and deactivates it when the power is needed elsewhere.",
-    "switched_by_current_info": "The EV charger is activated with the minimum current and deactivated with 0 A. Choose the entity or action that sets the current under Charging current.",
+    "on_off_info": "How Kraftvakt activates and deactivates the EV charger.",
+    "switched_by_current_info": "Choose the entity or action that sets the current under Charging current. It must take 0 A.",
     "profile_applied": "Filled in from the charger profile {profile}. Check every field before you save.",
     "override_ends": {
       "manual": "When I turn it off",
@@ -569,7 +569,7 @@
     "fields": {
       "device_id": {
         "label": "Device",
-        "helper": "The EV charger in Home Assistant. The fields below choose among its entities, and are filled in when Kraftvakt knows the charger."
+        "helper": "The EV charger in Home Assistant. When Kraftvakt knows the charger, the fields below are filled in."
       },
       "switched_by": {
         "label": ""
@@ -595,37 +595,37 @@
       },
       "min_current_power_w": {
         "label": "Power at minimum current",
-        "helper": "What the car uses at the minimum current, about 1400 W on one phase. The car starts charging only when this much power is free. {min}–{max} W, default {default} W, 6 A on three phases."
+        "helper": "What the car uses at the minimum current, about 1,400 W on one phase. {min}–{max} W, default {default} W, 6 A on three phases."
       },
       "car_connected": {
         "label": "Car connected",
-        "helper": "An EV charger without a car is not activated. Unavailable counts as not connected."
+        "helper": "Tells whether a car is connected to the EV charger."
       },
       "actively_charging": {
         "label": "Actively charging",
-        "helper": "The charging power is required, and tells how much the car uses. «Car charging» is optional, and may tell sooner that the car has started charging."
+        "helper": "The charging power tells how much the car uses. «Car charging» is optional, and may tell sooner that the car has started charging."
       },
       "charging_power": {
         "label": "Charging power"
       },
       "cloud_controlled": {
         "label": "Cloud-controlled EV charger",
-        "helper": "For an EV charger controlled over the internet. It gets no repeated commands while no car is connected."
+        "helper": "For an EV charger controlled through a cloud service. Kraftvakt then sends it fewer commands."
       },
       "start_delay_s": {
         "label": "Start delay",
-        "helper": "How long the car may take to start charging after the EV charger is activated. Nothing below the EV charger is turned on meanwhile. {min}–{max} s."
+        "helper": "How long the car may take to start charging after the EV charger is activated. {min}–{max} s."
       },
       "deactivate_on_fault": {
         "label": "Deactivate on fault",
-        "helper": "While a fault flag shows a fault, the EV charger is stopped and the others in the group may charge. Unavailable is no fault."
+        "helper": "Stops the EV charger while it has a fault, so the others in the group may charge."
       },
       "fault_flag": {
         "label": "Fault flag"
       },
       "charging_window": {
         "label": "Charging window",
-        "helper": "The EV charger charges only within this time each day, for example at night. Off: it may always charge."
+        "helper": "The EV charger charges only within this time each day, for example at night."
       },
       "start": {
         "label": "Start"
@@ -635,14 +635,14 @@
       },
       "charge_until_disconnected": {
         "label": "Charge until the car is disconnected",
-        "helper": "A car that has used power within the charging window may go on charging after it, when there is room, until it is disconnected."
+        "helper": "A car that has started charging within the charging window may go on charging after it ends."
       },
       "override_ends": {
         "label": "End the override",
-        "helper": "When the switch «‹charger› override charging window» turns itself off. It can be turned on before the car arrives."
+        "helper": "When the switch «‹charger› override charging window» turns itself off."
       }
     },
-    "charging_current_info": "The current is raised and lowered one ampere at a time by the free power. The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow.",
+    "charging_current_info": "The minimum is the lowest current the car charges with, usually 6 A, and the maximum what the EV charger and its fuse allow.",
     "state_choices": {
       "car_connected": {
         "true": "States for connected",
