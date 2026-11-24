@@ -251,9 +251,12 @@ The entity ID keeps the name from when the appliance or EV charger was added.
 ### Diagnostics
 
 **Download diagnostics** on the integration's page gives the configuration, the status, everything Kraftvakt holds in memory, the decisions and the last failed actions,
-and the device of each EV charger with its entities and their values, for a bug report.
+the device of each EV charger with its entities and their values, and the history of the last 24 hours from the recorder, for a bug report.
 What it holds in memory includes the measurements of the power sensor over the last hour, and the decisions of the hour before the last decision,
 with the commands of the last start and of the decisions before those.
+The history holds the states of the entities the regulation reads and sets: the power sensor, the entities of the conditions and actions,
+and Kraftvakt's own entities, except the averages, power free and the calculated waiting time, which change at every regulation window.
+An entity in a template counts when the template reads it at the download, and the entities Kraftvakt sets come with their attributes.
 
 The **Diagnostics** page in the panel shows the same as it happens: whether the power sensor and the actions are healthy, when the regulation started,
 when each command is repeated, the consumption over the last hour with the averages and what each appliance and EV charger was set to, and the commands and failed actions.
@@ -376,7 +379,8 @@ Every commit passes it.
 The code is in `custom_components/kraftvakt/`. The regulation is plain Python without Home Assistant in `regulation/`, and `runtime.py` connects it to Home Assistant.
 The charger profiles are in `charger_profiles/`, one module per profile in `charger_profiles/profiles/`.
 The tests are in `tests/`, with unit tests in `tests/unit/`, and the panel's tests in `frontend/test/`. The simulator is in `simulator/`, see [SIMULATOR.md](SIMULATOR.md).
-The tools that read a file from **Download diagnostics**, for example to draft a charger profile from it, are in `diagnostics/`, see [DIAGNOSTICS.md](DIAGNOSTICS.md).
+The tools that read a file from **Download diagnostics**, for example to draft a charger profile from it or to count how often each appliance and EV charger was switched,
+are in `diagnostics/`, see [DIAGNOSTICS.md](DIAGNOSTICS.md).
 
 ### Panel
 

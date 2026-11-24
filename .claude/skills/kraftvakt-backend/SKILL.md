@@ -42,7 +42,16 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
   A type it does not know is an error, so the black box tests of the diagnostics find it before a release.
   The decision records are kept as JSON from the start. Commands carry their kind, since some kinds have the same fields.
   State added to the backend is added to its object's `diagnostics()`.
-- The panel's diagnostics page shows what the diagnostics hold, and nothing is kept for it alone.
+- The diagnostics also hold the recorded history of the last 24 hours of every entity the regulation reads and sets, read from the recorder at the download,
+  so the switching of the appliances and chargers can be analysed without keeping it in memory.
+  Read: the power sensor, the conditions the regulation reads (`regulation_conditions`: the variants', and the fault flag only with deactivate on fault, not the display values),
+  and the entities of a template as it renders at the download.
+  Set: each item's `controlled_entity`, and the entities of its actions (`action_entities`): the target of a default, entity or domain action,
+  and the entities a custom action names outside templates, from HA's `Script.referenced_entities`.
+  Kraftvakt's own entities are there too, except those that change at every window, which the power sensor's history covers.
+  The entities that are set come with their attributes, since an action may set one, such as a thermostat's temperature; the others without, to keep the file small.
+  The recorder gives the state at the start and the significant changes after it, so an attribute change counts only in the domains where the recorder keeps them, such as climate.
+- The panel's diagnostics page shows what the diagnostics hold, but the recorded history, and nothing is kept for it alone.
 
 ## Modules
 
@@ -73,7 +82,8 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, an entity of an appliance or charger no longer exists, and the power sensor no longer reports at the update interval stored with it. |
 | `decision_log.py` | The decisions kept for the diagnostics: those of the hour before the last decision, the same hour as the measurements, and the commands before them, which are the commands of the last start with those of the later decisions that have left the hour, so what each appliance and charger was set to is known from the last start on. |
 | `diagnostics_feed.py` | What the diagnostics page gets, per subscription: the health of the power sensor and the actions, the start, when commands are repeated, the commands before the decisions, and the measurements and the decisions in parts, every one kept in the first and after a reload, then only the new ones. |
-| `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the decisions with the commands before them and the last failed actions, kept in memory by the runtime, and the device of each charger, described so a charger profile can be written from it. The diagnostics tools in `diagnostics/` read `config` and `charger_devices`, see the `kraftvakt-diagnostics` skill. |
+| `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the decisions with the commands before them and the last failed actions, kept in memory by the runtime, the device of each charger, described so a charger profile can be written from it, and the recorded history. The diagnostics tools in `diagnostics/` read `config`, `charger_devices` and `history`, see the `kraftvakt-diagnostics` skill. |
+| `recorded_history.py` | The recorded history of the last 24 hours of the entities the regulation reads and sets, and Kraftvakt's own entities, with what uses each of them, for the diagnostics. |
 | `json_values.py` | `plain`, which turns the state held in memory into JSON for the diagnostics. |
 
 ## Stored configuration

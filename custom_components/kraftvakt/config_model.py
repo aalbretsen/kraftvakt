@@ -307,6 +307,12 @@ class Appliance:
             if condition is not None:
                 yield field_name, condition
 
+    def regulation_conditions(self) -> Iterator[tuple[str, Condition]]:
+        """Return each condition the regulation reads: those of the variants, not the display values."""
+        for field_name, condition in self.conditions():
+            if not field_name.startswith("display_"):
+                yield field_name, condition
+
     def used_entities(self) -> Iterator[str]:
         """Return each entity the appliance names, but those in templates and actions."""
         if self.entity_id is not None:
@@ -419,6 +425,12 @@ class Charger:
         for field_name in ("car_connected", "actively_charging", "charging_power", "fault_flag"):
             condition = getattr(self, field_name)
             if condition is not None:
+                yield field_name, condition
+
+    def regulation_conditions(self) -> Iterator[tuple[str, Condition]]:
+        """Return each condition the regulation reads: the fault flag only with deactivate on fault."""
+        for field_name, condition in self.conditions():
+            if field_name != "fault_flag" or self.deactivate_on_fault:
                 yield field_name, condition
 
     def used_entities(self) -> Iterator[str]:

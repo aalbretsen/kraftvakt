@@ -176,6 +176,7 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     }
     assert measurement["report_interval_check"] == {"change": None, "row": []}
     assert diagnostics["decision_clock"] == {"windows_since_decision": []}
+    assert diagnostics["history"] is None
     assert diagnostics["action_runner"]["queued_commands"] == []
     assert {"owner": "a", "kind": "turn_on"} in diagnostics["action_runner"]["scripts"]
     assert diagnostics["settings"] == {

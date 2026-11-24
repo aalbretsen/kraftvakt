@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import logging
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final
 
@@ -327,6 +327,26 @@ class ActionRunner:
             logger=_LOGGER,
             log_exceptions=False,
         )
+
+
+def action_entities(hass: HomeAssistant, item: Appliance | Charger) -> Iterator[tuple[str, str]]:
+    """Return each entity the actions of the item set, with its field: the entity of a default, entity or domain action, and those a custom action names outside templates."""
+    entity_id = item.entity_id if isinstance(item, Appliance) else None
+    for action_field in item.action_fields():
+        action = action_field.action
+        if action is None or action.is_missing:
+            continue
+        targets: Iterable[object]
+        match action.mode:
+            case ActionMode.CUSTOM:
+                targets = Script(hass, cv.SCRIPT_SCHEMA(list(action.steps)), action_field.field, DOMAIN).referenced_entities
+            case ActionMode.ENTITY:
+                targets = {action.entity_id}
+            case _:
+                targets = {entity_id}
+        # A target given as a template is in the referenced entities as the template.
+        for target in sorted(target for target in targets if isinstance(target, str) and valid_entity_id(target)):
+            yield action_field.field, target
 
 
 def _join(field_name: str, parameter: str | None) -> str:

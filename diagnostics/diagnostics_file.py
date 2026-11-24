@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from custom_components.kraftvakt.config_model import ConfigValidationError, KraftvaktConfig
+from custom_components.kraftvakt.config_reader import read_config
+
 
 class NotADiagnosticsFileError(Exception):
     pass
@@ -21,6 +24,25 @@ class DiagnosticsFile:
     def data(self) -> Mapping[str, Any]:
         data: Mapping[str, Any] = self.content["data"]
         return data
+
+    @property
+    def config(self) -> KraftvaktConfig:
+        """Return Kraftvakt's configuration, read by the integration's own rules."""
+        config_data = self.data.get("config")
+        if not isinstance(config_data, Mapping):
+            raise NotADiagnosticsFileError("The diagnostics have no Kraftvakt configuration")
+        try:
+            return read_config(config_data)
+        except ConfigValidationError as error:
+            raise NotADiagnosticsFileError(f"The Kraftvakt configuration in the diagnostics cannot be read: {error}") from error
+
+    @property
+    def history(self) -> Mapping[str, Any]:
+        """Return the recorded history of the entities the regulation reads and sets."""
+        history: Any = self.data.get("history")
+        if not isinstance(history, Mapping):
+            raise NotADiagnosticsFileError("The diagnostics have no recorded history: the recorder was not loaded, or the file is from a version of Kraftvakt without it")
+        return history
 
     @property
     def wrapper(self) -> Mapping[str, Any]:

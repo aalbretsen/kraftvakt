@@ -32,10 +32,8 @@ from custom_components.kraftvakt.config_model import (
     Charger,
     Condition,
     ConditionType,
-    ConfigValidationError,
     SwitchedBy,
 )
-from custom_components.kraftvakt.config_reader import read_config
 
 from ..diagnostics_file import DiagnosticsFile, NotADiagnosticsFileError
 
@@ -92,13 +90,7 @@ class Drafts:
 
 def draft_profiles(diagnostics: DiagnosticsFile) -> Drafts:
     """Draft one profile for each kind of device among the chargers filled in by hand. A device with a profile already is skipped."""
-    config_data = diagnostics.data.get("config")
-    if not isinstance(config_data, Mapping):
-        raise NotADiagnosticsFileError("The diagnostics have no Kraftvakt configuration")
-    try:
-        chargers = read_config(config_data).chargers
-    except ConfigValidationError as error:
-        raise NotADiagnosticsFileError(f"The Kraftvakt configuration in the diagnostics cannot be read: {error}") from error
+    chargers = diagnostics.config.chargers
     devices = diagnostics.data.get("charger_devices")
     if not isinstance(devices, Mapping):
         raise NotADiagnosticsFileError("The diagnostics describe no devices of the chargers")

@@ -34,6 +34,13 @@ def item_variables(hass: HomeAssistant, item: Appliance | Charger) -> Variables:
     }
 
 
+def condition_entities(hass: HomeAssistant, condition: Condition, variables: Variables) -> set[str]:
+    """Return the entities the condition reads: its entity, or those its template reads when rendered now, which may differ in another branch."""
+    if condition.type is not ConditionType.TEMPLATE:
+        return {condition.value} if condition.value else set()
+    return set(Template(condition.value, hass).async_render_to_info(variables).entities)
+
+
 def evaluate_condition(hass: HomeAssistant, condition: Condition, variables: Variables) -> bool:
     """Return whether there is evidence that the condition is true right now.
 

@@ -7,7 +7,7 @@ and are not part of a release.
 The file is Home Assistant's wrapper, with its own system information, the custom integrations and Kraftvakt's manifest,
 and Kraftvakt's diagnostics under `data`. The tools take the whole file as it is downloaded.
 
-Both tools run in the development environment, see [Development](README.md#development).
+The tools run in the development environment, see [Development](README.md#development).
 
 ## HTML document
 
@@ -57,3 +57,26 @@ What the tool carries over:
 - **Cloud-controlled EV charger**, and the **Start delay** when it differs from the default profile's.
 
 EV chargers with the same kind of device give one draft, from the first of them.
+
+## Switching report
+
+```bash
+uv run python -m diagnostics.switching kraftvakt-diagnostics.json
+```
+
+prints how often each entity in the file's history changed over its 24 hours, to show how hard the regulation works the appliances and EV chargers.
+The file must come from a Home Assistant with the recorder, which is loaded by default.
+
+- A table for the power sensor and the regulation's own entities, then one for each appliance and EV charger, with every entity it sets and reads,
+  and the fields of the configuration that use it. An entity used by several appliances or EV chargers is in each of their tables.
+- **changes:** how often the state changed, leaving out unavailable and unknown. A state that only comes back after one of them is no change.
+- **up**, **down** and **reversals,** for a state that is a number, such as the charging current: a reversal is a change in the other direction than the one before,
+  so many reversals show a current that moves up and down between the same values.
+- **shortest hold:** the shortest time between two changes. **busiest hour:** the clock hour with the most changes, and how many.
+- **lost values:** how often the state became unavailable or unknown.
+- **changes to:** under an entity whose state is not a number, how many changes went to each state, such as `on` and `off`, or each state of an EV charger.
+- **attributes changed:** under an entity Kraftvakt sets, how often each attribute changed, such as the target temperature of a thermostat.
+- **no recorded states:** under an entity the recorder has nothing for, as when it is excluded from the recorder, so its counts tell nothing.
+
+Every start of the regulation turns the appliances off and deactivates the EV chargers, so read the counts together with **Regulation** and the EV charger's state,
+which show the starts and stops. The car's own starts and stops show in car charging and the EV charger's state.

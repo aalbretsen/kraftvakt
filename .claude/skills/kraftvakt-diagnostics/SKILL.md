@@ -31,9 +31,14 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 - **Diagnostics file:** what **Download diagnostics** gives. Home Assistant wraps Kraftvakt's diagnostics under `data`, next to its own sections such as `home_assistant`,
   `custom_components`, `integration_manifest`, `setup_times` and `issues`. The tools take the whole file; `diagnostics_file.py` reads it into a `DiagnosticsFile`
   with `data` and `wrapper`, and refuses a file that is not JSON or has no `data` object.
-- **What a tool may depend on:** the wrapper, and in `data` only `config` and `charger_devices`. The other sections of `data` change as the backend changes,
-  so a tool shows them generically or leaves them alone. A change to `config` or `charger_devices` in `diagnostics.py` must keep the tools working;
-  their tests fail when it does not.
+- **What a tool may depend on:** the wrapper, and in `data` only `config`, `charger_devices` and `history`. The other sections of `data` change as the backend changes,
+  so a tool shows them generically or leaves them alone. A change to `config`, `charger_devices` or `history` in `diagnostics.py` must keep the tools working;
+  their tests fail when it does not. `DiagnosticsFile` reads `config` into the integration's `KraftvaktConfig` with `read_config`, and refuses a file without `config` or `history`
+  when a tool asks for it.
+- **History:** the recorded states of the entities the regulation reads and sets over 24 hours, `null` without the recorder.
+  Each entity has its `uses`, the item and field of the configuration that use it: `item` is `null` for the power sensor and the regulation's own entities,
+  `field` is a translation key for Kraftvakt's entities, and `controlled_entity` for the entity an item turns on and off.
+  Its `states` are the state at the start and every change after it, with `attributes` for the entities that are set.
 - **Filled in by hand:** an EV charger in `config` whose device in `charger_devices` has no `profile`.
 - **Draft:** what the charger profile extractor writes. A developer reviews it before it is committed; the tool never edits `PROFILES` or writes over a file.
 - **Note:** a line the extractor prints under an EV charger, naming the field and what a profile cannot carry over. Every case the tool cannot map gives a note.
@@ -71,6 +76,16 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 - The drafted test registers the device with every entity of the file, named `TEST_DEVICE_NAME`, and expects the fields `DeviceEntities.fields` gives for the entity IDs
   the test harness makes from the device and entity names. The source is not formatted; the developer runs ruff on it.
 
+## Switching report (`switching/`)
+
+- `changes.py` counts the changes of each entity in `history` and groups them under each item in its `uses`, in the order of the configuration,
+  after the power sensor and the regulation's own entities; `report.py` writes the text; `__main__.py` prints it.
+- Unavailable and unknown are lost values, not states, so a state that comes back after one is no change. A number is compared as a number, so `8` and `8.0` are the same.
+- Increases, decreases and reversals are only for an entity whose every state is a number; the changes to each state are only for the others.
+  The attributes are compared only for the entities that have them in the file, the ones Kraftvakt sets.
+- It counts every change, also those of a start or stop of the regulation, since the history does not tell who changed a state.
+  The regulation switch and the charger state sensor are in the report to tell them apart.
+
 ## How to write code for the tools
 
 - The coding rules in `CLAUDE.md` apply. Keep the reading of the file in `diagnostics_file.py`, the logic in plain functions and classes,
@@ -83,6 +98,7 @@ The tools help a developer read a diagnostics file, for example one from a bug r
 
 - `tests/diagnostics/conftest.py` gives `diagnostics_file`: Kraftvakt in the test harness with an EV charger filled in by hand on a registered device,
   downloaded with Home Assistant's wrapper through `_get_diagnostics_for_config_entry`. Black box tests run the tools on it, so a change of the format breaks them in CI.
+  It has no recorder, so `history` is `null`; the switching report's black box test downloads its own file with the recorder, as tests with the recorder need a file of their own.
   It re-exports the `command` fixture of the charger profile tests.
 - The extractor's black box test loads the drafted files as modules of the packages they are drafted for (`drafted.py`), puts the drafted profile in `PROFILES`,
   and runs the drafted test against the real backend.
