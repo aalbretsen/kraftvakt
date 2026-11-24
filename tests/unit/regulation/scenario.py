@@ -66,8 +66,10 @@ class Scenario:
 
     Every charger reads as idle with a car connected until the test changes it
     with `set_charger` or `draw`, and only the appliances in `excluded` are
-    excluded until the test changes it with `exclude`. Whether a charger
-    charged in its window is kept from the decisions, as the runtime does.
+    excluded until the test changes it with `exclude`. A group whose one at a
+    time is an expression reads as false until the test sets it in
+    `one_at_a_time_conditions`. Whether a charger charged in its window is
+    kept from the decisions, as the runtime does.
     """
 
     def __init__(
@@ -86,6 +88,7 @@ class Scenario:
         self.excluded_appliances = frozenset(excluded)
         self.overrides = OverrideChanges()
         self.charged_in_window: set[str] = set()
+        self.one_at_a_time_conditions: dict[str, bool] = {}
         self.start_commands = self.engine.start(self.now, self.excluded_appliances)
 
     def set_charger(self, charger_id: str, **reading: Any) -> None:
@@ -151,6 +154,7 @@ class Scenario:
                 power_sensor_valid=sensor_valid,
                 power_sensor_lost=sensor_lost,
                 variant_conditions=dict.fromkeys(true, True),
+                one_at_a_time_conditions=self.one_at_a_time_conditions,
                 chargers=self._readings(),
                 excluded_appliances=self.excluded_appliances,
                 time_zone=self.time_zone,

@@ -220,6 +220,7 @@ class ChargingState:
     charger ends, while it lasts. `may_charge` has the chargers that may have ampere steps on,
     and `waiting` the queued ones. `measured_power_per_ampere_w` has what each
     charger drew per ampere at the last decision where it was activated and drew power.
+    `one_at_a_time` is whether the group was restricted to one charger at a time at the last decision.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -235,6 +236,7 @@ class ChargingState:
     last_permissions: dict[str, ChargingPermission] = field(default_factory=dict)
     measured_power_per_ampere_w: dict[str, float] = field(default_factory=dict)
     last_decision: datetime | None = None
+    one_at_a_time: bool = False
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -284,7 +286,7 @@ class ChargingState:
             return True
         if group.dynamic_order and self.last_readings[charger_id].car_disconnected:
             return True
-        return group.one_at_a_time and charger_id not in self.may_charge and charger_id not in self.bypassed
+        return self.one_at_a_time and charger_id not in self.may_charge and charger_id not in self.bypassed
 
     def is_allowed(self, charger_id: str) -> bool:
         """Return whether the charger was allowed to charge at the last decision."""
@@ -296,7 +298,7 @@ class ChargingState:
         return charger_id not in self.bypassed and self.last_readings.get(charger_id, ChargerReading()).actively_charging
 
     def shares_by_charging_power(self, group: ChargerGroup) -> bool:
-        return group.dynamic_order and not group.one_at_a_time
+        return group.dynamic_order and not self.one_at_a_time
 
     def evaluate(
         self,
@@ -304,9 +306,11 @@ class ChargingState:
         readings: Mapping[str, ChargerReading],
         permissions: Mapping[str, ChargingPermission],
         now: datetime,
+        one_at_a_time: bool,
     ) -> list[str]:
         """Evaluate the chargers of the group at a decision and return those that are newly bypassed."""
         chargers = group.chargers
+        self.one_at_a_time = one_at_a_time
         previously_charging = self.charging
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
@@ -439,7 +443,7 @@ class ChargingState:
         eligible = [charger_id for charger_id in self.priority if charger_id not in self.bypassed and self.is_allowed(charger_id)]
         self.may_charge = set(eligible)
         self.waiting = set()
-        if not group.one_at_a_time:
+        if not self.one_at_a_time:
             if group.dynamic_order:
                 self.waiting = set(self.queued(group))
             return

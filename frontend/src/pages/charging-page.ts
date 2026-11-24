@@ -1,9 +1,10 @@
 import { mdiDelete, mdiEvStation, mdiPlus } from "@mdi/js";
-import { html, nothing } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import type { Charger, ChargerGroup, Issue } from "../api";
+import type { Charger, ChargerGroup, Condition, Issue } from "../api";
 import "../components/charger-dialog";
+import "../components/condition-field";
 import "../components/manual-control-warning";
 import type { ItemAdded, ListRow } from "../components/sortable-list";
 import { allChargers, moveItem, newId } from "../draft";
@@ -36,11 +37,25 @@ const CHARGER_FIELDS = [
   "fault_flag",
 ] as const;
 
-const GROUP_SCHEMA = [
-  { name: "name", required: true, selector: { text: {} } },
-  { name: "one_at_a_time", selector: { boolean: {} } },
-  { name: "dynamic_order", selector: { boolean: {} } },
-];
+const SHARING_MODES = ["never", "always", "condition"] as const;
+type SharingMode = (typeof SHARING_MODES)[number];
+
+interface GroupForm {
+  name: string;
+  one_at_a_time: SharingMode;
+  dynamic_order: boolean;
+}
+
+const NAME_SCHEMA = [{ name: "name", required: true, selector: { text: {} } }];
+
+const DYNAMIC_ORDER_SCHEMA = [{ name: "dynamic_order", selector: { boolean: {} } }];
+
+/** The setting to restrict to one EV charger at a time is named by its section header, so its field says when it applies. */
+const FIELD_LABELS: Record<keyof GroupForm, TranslationKey> = {
+  name: "charging.name",
+  one_at_a_time: "charging.one_at_a_time_applies",
+  dynamic_order: "charging.dynamic_order",
+};
 
 /** How the chargers of a group share the power makes no difference with fewer than two, so these settings are disabled then, and keep their values. */
 const SHARING_FIELDS = new Set(["one_at_a_time", "dynamic_order"]);
@@ -88,18 +103,11 @@ export class KraftvaktChargingPage extends ConfigPage {
     return this.renderCard({
       title: group.name.trim() || this.localize("charging.unnamed_group"),
       content: html`
-        <ha-form
-          .hass=${this.hass}
-          .data=${group}
-          .schema=${GROUP_SCHEMA.map((field) => (this.sharingDisabled(group, field.name) ? { ...field, disabled: true } : field))}
-          .error=${this.formErrors("charger_groups", group.id)}
-          .disabled=${this.locked}
-          .computeLabel=${(field: { name: string }) => this.localize(`charging.${field.name}` as TranslationKey)}
-          .computeHelper=${(field: { name: string }) => withLineBreaks(this.groupHelper(group, field.name))}
-          .computeError=${(error: string) => error}
-          @value-changed=${(event: CustomEvent<{ value: Partial<ChargerGroup> }>) => this.groupChanged(group, event)}
-        ></ha-form>
+        ${this.renderGroupForm(group, NAME_SCHEMA)} ${renderSectionHeader(this.localize("charging.one_at_a_time"))}
+        ${renderDescription(this.localize("charging.one_at_a_time_sub"))} ${this.renderGroupForm(group, this.sharingSchema())}
+        ${typeof group.one_at_a_time === "object" ? this.renderSharingCondition(group, group.one_at_a_time) : nothing}
         ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))} ${renderDescription(this.localize("charging.chargers_sub"))}
+        ${this.renderGroupForm(group, DYNAMIC_ORDER_SCHEMA)}
       `,
       list: this.renderItemList(list),
       footer: this.renderCardFooter(
@@ -114,13 +122,54 @@ export class KraftvaktChargingPage extends ConfigPage {
     });
   }
 
+  private sharingSchema() {
+    const options = SHARING_MODES.map((mode) => ({ value: mode, label: this.localize(`charging.one_at_a_time_${mode}`) }));
+    return [{ name: "one_at_a_time", required: true, selector: { select: { mode: "dropdown", options } } }];
+  }
+
+  private renderGroupForm(group: ChargerGroup, schema: { name: string }[]) {
+    const { one_at_a_time: _conditionIssue, ...errors } = this.formErrors("charger_groups", group.id);
+    return html`
+      <ha-form
+        .hass=${this.hass}
+        .data=${groupForm(group)}
+        .schema=${schema.map((field) => (this.sharingDisabled(group, field.name) ? { ...field, disabled: true } : field))}
+        .error=${errors}
+        .disabled=${this.locked}
+        .computeLabel=${(field: { name: keyof GroupForm }) => this.localize(FIELD_LABELS[field.name])}
+        .computeHelper=${(field: { name: string }) => withLineBreaks(this.groupHelper(group, field.name))}
+        .computeError=${(error: string) => error}
+        @value-changed=${(event: CustomEvent<{ value: Partial<GroupForm> }>) => this.groupChanged(group, event.detail.value)}
+      ></ha-form>
+    `;
+  }
+
+  /** The template gets the power limit of the draft, as the regulation gives it the power limit at the decision. */
+  private renderSharingCondition(group: ChargerGroup, condition: Condition) {
+    return html`
+      <kraftvakt-condition-field
+        class="sharing-condition"
+        .hass=${this.hass}
+        .localize=${this.localize}
+        .value=${condition}
+        .variables=${{ power_limit: this.config.general.power_limit_w }}
+        kind="one_at_a_time"
+        .error=${this.formErrors("charger_groups", group.id).one_at_a_time}
+        .disabled=${this.locked || this.sharingDisabled(group, "one_at_a_time")}
+        @value-changed=${(event: CustomEvent<{ value: Condition }>) => this.changeGroup({ ...group, one_at_a_time: event.detail.value })}
+      ></kraftvakt-condition-field>
+    `;
+  }
+
   private sharingDisabled(group: ChargerGroup, field: string): boolean {
     return group.chargers.length < 2 && SHARING_FIELDS.has(field);
   }
 
+  /** What restricting to one EV charger at a time does is told under its section header, not under its field. */
   private groupHelper(group: ChargerGroup, field: string): string {
-    const helper = this.localize(`charging.${field}_sub` as TranslationKey);
-    return this.sharingDisabled(group, field) ? `${helper}\n${this.localize("charging.needs_two_chargers")}` : helper;
+    const helper = field === "one_at_a_time" ? "" : this.localize(`charging.${field}_sub` as TranslationKey);
+    const needsTwo = this.sharingDisabled(group, field) ? this.localize("charging.needs_two_chargers") : "";
+    return [helper, needsTwo].filter(Boolean).join("\n");
   }
 
   private renderDialog(charger: Charger, groupId: string, isNew: boolean) {
@@ -172,13 +221,16 @@ export class KraftvaktChargingPage extends ConfigPage {
     return (CHARGER_FIELDS as readonly string[]).includes(field) ? this.localize(`charger.fields.${field}.label` as TranslationKey) : field;
   }
 
-  private groupChanged(group: ChargerGroup, event: CustomEvent<{ value: Partial<ChargerGroup> }>): void {
-    const { name, one_at_a_time, dynamic_order } = event.detail.value;
+  /** A condition chosen anew starts as an empty template, as a new variant does. */
+  private groupChanged(group: ChargerGroup, value: Partial<GroupForm>): void {
+    const mode = value.one_at_a_time ?? groupForm(group).one_at_a_time;
+    const sameMode = mode === groupForm(group).one_at_a_time;
+    const condition: Condition = { type: "template", value: "" };
     this.changeGroup({
       ...group,
-      name: name ?? "",
-      one_at_a_time: one_at_a_time ?? group.one_at_a_time,
-      dynamic_order: dynamic_order ?? group.dynamic_order,
+      name: value.name ?? group.name,
+      one_at_a_time: sameMode ? group.one_at_a_time : mode === "condition" ? condition : mode === "always",
+      dynamic_order: value.dynamic_order ?? group.dynamic_order,
     });
   }
 
@@ -284,7 +336,23 @@ export class KraftvaktChargingPage extends ConfigPage {
     this.changeConfig({ ...this.config, charger_groups: groups });
   }
 
-  static styles = ConfigPage.styles;
+  static styles = [
+    ConfigPage.styles,
+    css`
+      .sharing-condition {
+        margin-bottom: 24px;
+      }
+    `,
+  ];
+}
+
+function groupForm(group: ChargerGroup): GroupForm {
+  const sharing = group.one_at_a_time;
+  return {
+    name: group.name,
+    one_at_a_time: typeof sharing === "object" ? "condition" : sharing ? "always" : "never",
+    dynamic_order: group.dynamic_order,
+  };
 }
 
 /** A helper text keeps its line breaks, since Home Assistant shows it as one paragraph. */

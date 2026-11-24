@@ -124,6 +124,12 @@ def missing_items(config: KraftvaktConfig) -> list[Issue]:
             for variant in appliance.variants
             if not _is_set(variant.condition)
         ]
+    missing += [
+        Issue("missing_condition", "charger_groups", group.id, field_name)
+        for group in config.charger_groups
+        for field_name, condition in group.conditions()
+        if not _is_set(condition)
+    ]
     for charger in config.chargers:
         if charger.device_id is None:
             missing.append(Issue("missing_device", "chargers", charger.id, "device_id"))
@@ -191,6 +197,8 @@ def _charger_group_issues(groups: Iterable[ChargerGroup]) -> list[Issue]:
             issues.append(location.issue("empty_name", "name"))
         elif names[name] > 1:
             issues.append(location.issue("duplicate_name", "name"))
+        for field_name, condition in group.conditions():
+            issues += _condition_issues(location, field_name, condition)
     return issues
 
 
@@ -348,6 +356,9 @@ def _conditions(config: KraftvaktConfig) -> Iterable[tuple[str, str, str, Condit
     for appliance in config.appliances:
         for field_name, condition in appliance.conditions():
             yield "appliances", appliance.id, field_name, condition
+    for group in config.charger_groups:
+        for field_name, condition in group.conditions():
+            yield "charger_groups", group.id, field_name, condition
     for charger in config.chargers:
         for field_name, condition in charger.conditions():
             yield "chargers", charger.id, field_name, condition

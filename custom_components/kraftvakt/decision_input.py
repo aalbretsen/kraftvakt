@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .conditions import charging_evidence, condition_evidence, evaluate_condition, item_variables, power_value_w
+from .conditions import charging_evidence, condition_evidence, evaluate_condition, group_variables, item_variables, power_value_w
 from .config_model import Charger
 from .measurement import WindowAverages
 from .regulation.charging import ChargerReading
@@ -37,6 +37,7 @@ def read_decision_input(
         variant_conditions={
             variant.id: evaluate_condition(hass, variant.condition, item_variables(hass, appliance)) for appliance in config.appliances for variant in appliance.variants
         },
+        one_at_a_time_conditions={group.id: evaluate_condition(hass, condition, group_variables(config)) for group in config.charger_groups for _, condition in group.conditions()},
         chargers={charger.id: _charger_reading(hass, settings, charger) for charger in config.chargers},
         excluded_appliances=excluded_appliances(settings),
         time_zone=dt_util.get_default_time_zone(),

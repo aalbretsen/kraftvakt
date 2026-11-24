@@ -143,6 +143,11 @@ class RegulationEngine:
         return {charger_id: replace(status, state=ChargerState.STOPPED) for charger_id, status in statuses.items()}
 
     @property
+    def one_at_a_time(self) -> Mapping[str, bool]:
+        """Return whether each group was restricted to one charger at a time at the last decision."""
+        return {group.id: self._charging(group.id).one_at_a_time for group in self._groups}
+
+    @property
     def charging_priorities(self) -> Mapping[str, list[str]]:
         """Return the chargers of each group in the order their ampere steps are interleaved, highest first."""
         return {group.id: self._charging(group.id).order(group) for group in self._groups}
@@ -367,7 +372,8 @@ class RegulationEngine:
         commands: list[Command] = []
         for group in self._groups:
             charging = self._charging(group.id)
-            newly_bypassed = charging.evaluate(group, readings, permissions, decision.now)
+            one_at_a_time = group.one_at_a_time if isinstance(group.one_at_a_time, bool) else decision.one_at_a_time_conditions.get(group.id, False)
+            newly_bypassed = charging.evaluate(group, readings, permissions, decision.now, one_at_a_time)
             for charger_id in charging.activated():
                 if charging.must_deactivate(group, charger_id):
                     commands += self._set_ampere_steps_on(charger_id, 0, decision.now)

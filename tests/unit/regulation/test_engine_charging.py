@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from custom_components.kraftvakt.config_model import OverrideEnd, SwitchedBy
+from custom_components.kraftvakt.config_model import Condition, ConditionType, OverrideEnd, SwitchedBy
 from custom_components.kraftvakt.regulation.charging import (
     ChargerState,
     ChargerStatus,
@@ -34,7 +34,7 @@ def one_charger(**settings) -> Scenario:
     return Scenario(make_config(chargers=(charger("c", **settings),), wait_at_limit_s=0))
 
 
-def two_chargers(*, one_at_a_time: bool, max_a: int = 7, dynamic_order: bool = False) -> Scenario:
+def two_chargers(*, one_at_a_time: bool | Condition, max_a: int = 7, dynamic_order: bool = False) -> Scenario:
     """Return a scenario with chargers a and b, in that priority, without waiting."""
     return Scenario(
         make_config(
@@ -609,6 +609,26 @@ def test_one_at_a_time_with_dynamic_order_the_charger_that_draws_keeps_its_turn(
     scenario.draw("b", drawing=False)
     assert scenario.decide(0) == current("b", 6) + activate("a")
     assert scenario.engine.charging_priorities["ev"] == ["a", "b"]
+
+
+def test_one_at_a_time_follows_its_expression_from_the_next_decision() -> None:
+    """While the expression is false the cars charge at once, and when it is true the charger after the one that charges is deactivated at once."""
+    scenario = two_chargers(one_at_a_time=Condition(ConditionType.TEMPLATE, "{{ power_limit < 15000 }}"))
+    scenario.draw("a")
+    scenario.draw("b")
+    scenario.charge("a", 7)
+    scenario.charge("b", 7)
+    assert not scenario.engine.one_at_a_time["ev"]
+
+    scenario.one_at_a_time_conditions["ev"] = True
+
+    assert scenario.decide(0) == deactivate("b")
+    assert scenario.engine.one_at_a_time["ev"]
+    assert scenario.engine.chargers["b"].state is ChargerState.QUEUED
+
+    scenario.one_at_a_time_conditions["ev"] = False
+
+    assert scenario.decide(0) == activate("b")
 
 
 def test_one_at_a_time_charger_higher_up_that_gets_a_car_gets_room_from_the_one_that_charges() -> None:

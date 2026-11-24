@@ -458,6 +458,17 @@
     "error": "Feil: {message}",
     "invalid": "Malen gir {value}, ikke sann eller usann, og regnes som usann."
   },
+  "one_at_a_time": {
+    "entity": "Binærsensor eller bryter",
+    "template": "Egendefinert mal",
+    "entity_label": "Binærsensor eller bryter",
+    "template_label": "Egendefinert mal",
+    "entity_helper": "Én elbillader om gangen når den er på.",
+    "template_helper": "Sann gir én elbillader om gangen, for eksempel {{ power_limit < 15000 }}. Variabler: {variables}.",
+    "true": "én om gangen",
+    "false": "flere samtidig",
+    "invalid": "Malen gir {value}, ikke sann eller usann, så elbilladerne lader flere samtidig."
+  },
   "actively_charging": {
     "type_label": "Bilen lader, ifølge",
     "entity": "Binærsensor eller bryter",
@@ -530,8 +541,12 @@
   "charging": {
     "name": "Navn",
     "name_sub": "Vises i prioritetslisten og på statussiden.",
-    "one_at_a_time": "Én elbillader om gangen",
+    "one_at_a_time": "Begrens til én elbillader om gangen",
     "one_at_a_time_sub": "Bare én bil i gruppen lader om gangen, så den blir fortere full.",
+    "one_at_a_time_always": "Alltid",
+    "one_at_a_time_never": "Aldri",
+    "one_at_a_time_condition": "Når et uttrykk er sant",
+    "one_at_a_time_applies": "Gjelder",
     "dynamic_order": "Dynamisk ladeprioritet",
     "dynamic_order_sub": "Biler som lader, får fortsette, og de andre venter på tur.",
     "needs_two_chargers": "Krever minst to elbilladere i gruppen.",

@@ -75,6 +75,7 @@ def _charger_group_status(hass: HomeAssistant, runtime: KraftvaktRuntime, group:
         "type": PriorityEntryType.CHARGER_GROUP.value,
         "id": group.id,
         "name": group.name,
+        "one_at_a_time": runtime.one_at_a_time.get(group.id, False),
         "chargers": [
             _charger_status(hass, runtime, charger, status) for charger in _in_order(group.chargers, priority) if (status := runtime.chargers.get(charger.id)) is not None
         ],

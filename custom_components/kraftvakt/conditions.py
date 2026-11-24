@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
 
-from .config_model import Appliance, Charger, Condition, ConditionType
+from .config_model import Appliance, Charger, Condition, ConditionType, KraftvaktConfig
 from .measurement import power_w
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +32,11 @@ def item_variables(hass: HomeAssistant, item: Appliance | Charger) -> Variables:
         "entity_id": item.entity_id,
         "entity": None if item.entity_id is None else hass.states.get(item.entity_id),
     }
+
+
+def group_variables(config: KraftvaktConfig) -> Variables:
+    """Return the variables the expression of a charger group gets: the power limit in W, which the user may change while the regulation runs."""
+    return {"power_limit": config.general.power_limit_w}
 
 
 def condition_entities(hass: HomeAssistant, condition: Condition, variables: Variables) -> set[str]:

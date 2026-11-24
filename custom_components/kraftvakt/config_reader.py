@@ -19,9 +19,9 @@ from .config_model import (
     APPLIANCE_ACTION_MODES,
     CHARGER_ACTION_MODES,
     CHARGER_CONDITION_TYPES,
+    EXPRESSION_TYPES,
     POWER_TYPES,
     TEMPERATURE_TYPES,
-    VARIANT_CONDITION_TYPES,
     ActionConfig,
     ActionMode,
     Appliance,
@@ -131,7 +131,7 @@ class ConfigReader:
         return Variant(
             id=variant_id,
             label=self._text(values, "label", location) or "",
-            condition=self._condition(values.get("condition"), "condition", location, VARIANT_CONDITION_TYPES) or Condition(ConditionType.TEMPLATE, ""),
+            condition=self._condition(values.get("condition"), "condition", location, EXPRESSION_TYPES) or Condition(ConditionType.TEMPLATE, ""),
             actions={name: self._action(actions, name, location) for name in APPLIANCE_ACTION_KINDS if name in actions},
         )
 
@@ -159,7 +159,7 @@ class ConfigReader:
         return ChargerGroup(
             id=group_id,
             name=self._text(values, "name", location) or "",
-            one_at_a_time=self._bool(values, "one_at_a_time", defaults.one_at_a_time, location),
+            one_at_a_time=self._bool_or_expression(values, "one_at_a_time", defaults.one_at_a_time, location),
             dynamic_order=self._bool(values, "dynamic_order", defaults.dynamic_order, location),
             chargers=tuple(self._charger(item) for item in self._list(values.get("chargers"), location, "chargers")),
         )
@@ -299,6 +299,15 @@ class ConfigReader:
             self.issues.append(location.issue("invalid_type", key))
             return default
         return value
+
+    def _bool_or_expression(self, values: Mapping[str, Any], key: str, default: bool | Condition, location: IssueLocation) -> bool | Condition:
+        value = values.get(key, default)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, Mapping):
+            return self._condition(value, key, location, EXPRESSION_TYPES) or default
+        self.issues.append(location.issue("invalid_type", key))
+        return default
 
     def _number[T: float | None](self, values: Mapping[str, Any], key: str, default: T, location: IssueLocation) -> float | T:
         value = values.get(key)

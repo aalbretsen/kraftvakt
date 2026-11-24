@@ -160,7 +160,8 @@ export type OverrideEnd = (typeof OVERRIDE_ENDS)[number];
 export interface ChargerGroup {
   id: string;
   name: string;
-  one_at_a_time: boolean;
+  /** Always, never, or while the condition is true at a decision. */
+  one_at_a_time: boolean | Condition;
   /** Whether a charger that charges keeps its place ahead of a car connected later. */
   dynamic_order: boolean;
   /** In the configured charging priority. */
@@ -320,6 +321,8 @@ export interface ChargerGroupStatus {
   type: "charger_group";
   id: string;
   name: string;
+  /** Whether the group was restricted to one EV charger at a time at the last decision. */
+  one_at_a_time: boolean;
   /** In the current charging priority. */
   chargers: ChargerStatus[];
 }

@@ -301,7 +301,7 @@
       "power_reserve_w": null
     },
     "charger_groups": {
-      "one_at_a_time": true,
+      "one_at_a_time": false,
       "dynamic_order": false
     },
     "chargers": {

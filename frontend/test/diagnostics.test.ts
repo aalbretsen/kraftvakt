@@ -73,7 +73,7 @@ function status(appliances: ApplianceStatus[], chargers: ChargerStatus[] = []): 
     power_limit_w: 10000,
     regulation_window_s: 10,
     next_decision_at: null,
-    priority: [...appliances, { type: "charger_group", id: "g", name: "EV chargers", chargers }],
+    priority: [...appliances, { type: "charger_group", id: "g", name: "EV chargers", one_at_a_time: false, chargers }],
   };
 }
 

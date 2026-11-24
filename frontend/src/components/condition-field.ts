@@ -14,10 +14,11 @@ const ACTIVELY_CHARGING_ABOVE_W = 100;
  * What the field gives, also the prefix of its texts. Only evidence counts as true.
  * A display value gives a number to show, not true or false.
  */
-export type ConditionKind = "condition" | "actively_charging" | "charging_power" | "fault" | "display_power" | "display_temperature";
+export type ConditionKind = "condition" | "one_at_a_time" | "actively_charging" | "charging_power" | "fault" | "display_power" | "display_temperature";
 
 const TYPES: Record<ConditionKind, Condition["type"][]> = {
   condition: ["entity", "template"],
+  one_at_a_time: ["entity", "template"],
   actively_charging: ["entity", "template"],
   charging_power: ["power_sensor", "template"],
   fault: ["entity", "template"],

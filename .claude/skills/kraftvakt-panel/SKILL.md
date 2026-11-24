@@ -153,8 +153,13 @@ The section header, the description and the footer note are in `section-styles.t
   (for example States for connected) or those for false (States for disconnected), and the states.
   The states offered are the entity's options, its current state and the states in its history over the last week, each named as HA shows it with the state after it,
   and a state that is typed is taken too. Choosing another entity clears the states.
-- Each charger group has the setting dynamic charging order under one EV charger at a time.
-  Both are disabled, with a line in their helpers that says why, while the group has fewer than two chargers, since they make no difference then, and keep their values.
+- Each charger group's card has, after its name, the section Restrict to one EV charger at a time, whose description tells what it does,
+  with a dropdown of when it applies: never, always, or while an expression is true.
+  The expression is a condition field of the kind one at a time, which starts as an empty template, as a new variant does,
+  and previews its template with the power limit of the draft as `power_limit`. Choosing never or always drops the expression.
+  The section Charging priority has the add button in its header and dynamic charging order before the list of chargers.
+  The dropdown, the expression and dynamic charging order are disabled, with a line in their helpers that says why,
+  while the group has fewer than two chargers, since they make no difference then, and keep their values.
 - The start delay is in a group of its own, Charging start, between Turn charging on and off and the charging current group,
   since it follows activating the EV charger. The group has its own title, so the field keeps the name that errors use.
   Cloud-controlled EV charger is a group with a switch and no fields under it.
@@ -267,6 +272,7 @@ The section header, the description and the footer note are in `section-styles.t
     and the focus ring would look like a selection. Opened from the keyboard, it keeps the focus.
   - A queued charger is shown as Queued, with its own sentence in a group with several at once and dynamic charging order, where it waits for room,
     and while it waits its waiting time, where it is next in turn.
+    Whether the group has several at once is read from the status, since one EV charger at a time may follow an expression.
     An activated charger whose car does not charge tells that it waits at the minimum current.
     A charger held at its minimum current while its car charges shows as charging, without a reason why its current does not rise.
   - A starting charger whose car does not charge yet is shown as starting, and its sentence tells when its start delay ends,

@@ -200,6 +200,13 @@ def test_variant_needs_only_the_actions_it_overrides() -> None:
     assert _missing(data) == [Issue("missing_action", "appliances", "a1", "variants.v1.turn_off")]
 
 
+def test_one_at_a_time_given_as_an_expression_needs_it() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["one_at_a_time"] = {"type": "entity", "value": ""}
+
+    assert _missing(data) == [Issue("missing_condition", "charger_groups", "g1", "one_at_a_time")]
+
+
 def test_variant_needs_a_condition() -> None:
     data = full_config_data()
     data["appliances"][0]["variants"][0]["condition"]["value"] = " "

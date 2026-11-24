@@ -102,8 +102,14 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   if (config.general.regulation_window_updates === null || config.general.power_sensor_interval_s === null) {
     missing.push({ code: "missing_regulation_window", section: "general", field: "regulation_window_updates" });
   }
-  missing.push(...config.appliances.flatMap(missingInAppliance), ...allChargers(config).flatMap(missingInCharger));
+  missing.push(...config.appliances.flatMap(missingInAppliance), ...config.charger_groups.flatMap(missingInGroup), ...allChargers(config).flatMap(missingInCharger));
   return missing;
+}
+
+function missingInGroup(group: ChargerGroup): Issue[] {
+  return typeof group.one_at_a_time === "object" && !isSet(group.one_at_a_time)
+    ? [{ code: "missing_condition", section: "charger_groups", target: group.id, field: "one_at_a_time" }]
+    : [];
 }
 
 export function missingInAppliance(appliance: Appliance): Issue[] {

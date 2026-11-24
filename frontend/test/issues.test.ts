@@ -37,6 +37,11 @@ describe("a missing item", () => {
     expect(missingText({ code: "missing_charging_power", section: "chargers", target: "garage", field: "charging_power" })).toContain("Garage");
   });
 
+  it("names the group of EV chargers, or tells that it has no name", () => {
+    expect(missingText({ code: "missing_condition", section: "charger_groups", target: "garage", field: "one_at_a_time" })).toContain("garage");
+    expect(missingText({ code: "missing_condition", section: "charger_groups", target: "other", field: "one_at_a_time" })).toContain(localize("charging.unnamed_group"));
+  });
+
   it("names an appliance without an entity, and a charger without a device or an on/off entity, by what it is", () => {
     const issue: Issue = { code: "missing_action", section: "appliances", target: "new", field: "turn_off" };
     expect(missingText(issue)).toContain(localize("missing.appliance_without_entity"));

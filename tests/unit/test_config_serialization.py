@@ -67,6 +67,13 @@ def test_empty_data_gives_default_config() -> None:
     assert read_config({}) == KraftvaktConfig()
 
 
+def test_one_at_a_time_round_trips_as_an_expression() -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["one_at_a_time"] = {"type": "template", "value": "{{ power_limit < 15000 }}"}
+
+    assert read_config(data).to_dict() == data
+
+
 def test_default_config_round_trips() -> None:
     data = KraftvaktConfig().to_dict()
 
@@ -256,6 +263,10 @@ def _issues(data: dict[str, Any]) -> list[Issue]:
         ),
         (
             {"charger_groups": [{"id": "g1", "one_at_a_time": "yes"}]},
+            Issue("invalid_type", "charger_groups", "g1", "one_at_a_time"),
+        ),
+        (
+            {"charger_groups": [{"id": "g1", "one_at_a_time": {"type": "state", "value": "sensor.x", "states": ["on"]}}]},
             Issue("invalid_type", "charger_groups", "g1", "one_at_a_time"),
         ),
         (

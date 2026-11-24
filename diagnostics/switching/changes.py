@@ -49,7 +49,10 @@ class HistoryChanges:
 
 
 def history_changes(diagnostics: DiagnosticsFile) -> HistoryChanges:
-    """Return the changes of each entity under each appliance and EV charger that uses it, after the power sensor and the regulation's own entities."""
+    """Return the changes of each entity under each appliance and EV charger that uses it, after the power sensor and the regulation's own entities.
+
+    An EV charger group has a table only when it reads an entity, since most groups read none.
+    """
     config, history = diagnostics.config, diagnostics.history
     labels: dict[str | None, str] = {None: "Power sensor and regulation"}
     for appliance in config.appliances:
@@ -58,6 +61,7 @@ def history_changes(diagnostics: DiagnosticsFile) -> HistoryChanges:
         for charger in group.chargers:
             labels[charger.id] = f"EV charger {charger.controlled_entity or charger.id} in {group.name}"
     rows: dict[str | None, list[EntityChanges]] = {item: [] for item in labels}
+    labels |= {group.id: f"EV charger group {group.name}" for group in config.charger_groups}
     for entity_id, entity in history["entities"].items():
         fields_by_item: dict[str | None, list[str]] = {}
         for use in entity["uses"]:

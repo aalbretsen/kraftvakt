@@ -45,6 +45,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 - The diagnostics also hold the recorded history of the last 24 hours of every entity the regulation reads and sets, read from the recorder at the download,
   so the switching of the appliances and chargers can be analysed without keeping it in memory.
   Read: the power sensor, the conditions the regulation reads (`regulation_conditions`: the variants', and the fault flag only with deactivate on fault, not the display values),
+  the expression of one at a time of a charger group, under the group's id,
   and the entities of a template as it renders at the download.
   Set: each item's `controlled_entity`, and the entities of its actions (`action_entities`): the target of a default, entity or domain action,
   and the entities a custom action names outside templates, from HA's `Script.referenced_entities`.
@@ -79,7 +80,7 @@ What the regulation must do is in the `kraftvakt-regulation` skill. This file is
 | `status.py` | The status snapshot. |
 | `entity.py`, `sensor.py`, `binary_sensor.py`, `number.py`, `switch.py` | The entities. The sensors and the binary sensors of the regulation are entity descriptions with a function of the runtime, updated by the status listener. `entity.py` also names appliances and chargers. |
 | `item_entity.py` | The base of the entities per appliance or charger, and adding and removing them as the configuration changes. |
-| `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, an entity of an appliance or charger no longer exists, and the power sensor no longer reports at the update interval stored with it. |
+| `repairs.py` | Repair issues for problems the user fixes in the configuration: the regulation could not start, an entity of an appliance, charger or charger group no longer exists, and the power sensor no longer reports at the update interval stored with it. |
 | `decision_log.py` | The decisions kept for the diagnostics: those of the hour before the last decision, the same hour as the measurements, and the commands before them, which are the commands of the last start with those of the later decisions that have left the hour, so what each appliance and charger was set to is known from the last start on. |
 | `diagnostics_feed.py` | What the diagnostics page gets, per subscription: the health of the power sensor and the actions, the start, when commands are repeated, the commands before the decisions, and the measurements and the decisions in parts, every one kept in the first and after a reload, then only the new ones. |
 | `diagnostics.py` | The diagnostics: configuration, status, a section for the state of each part of the runtime, the decisions with the commands before them and the last failed actions, kept in memory by the runtime, the device of each charger, described so a charger profile can be written from it, and the recorded history. The diagnostics tools in `diagnostics/` read `config`, `charger_devices` and `history`, see the `kraftvakt-diagnostics` skill. |
@@ -101,7 +102,7 @@ The format is defined by the dataclasses and their serialization in `config_mode
   (`switched_by`: `on_off_entity`, `actions` or `current`), its on/off entity, the activate, deactivate and set-current actions, min and max current,
   power at minimum current (`min_current_power_w`), car connected, car charging (`actively_charging`), the charging power, an optional charging window,
   charge until disconnected, the override end, cloud-controlled, the start delay, deactivate on fault and its fault flag.
-  A group has its name, one at a time and dynamic charging order.
+  A group has its name, one at a time and dynamic charging order. One at a time is a boolean, or an expression: a condition that is an entity or a template.
   A charger is nested in its group, so it cannot be in two.
 - `appliance_switches`: the position of the excluded switch per appliance.
 - `charger_switches`: the positions of the two switches per charger. Charge until disconnected is a field of the charger, not a switch position.
@@ -149,6 +150,7 @@ Missing items and validation errors are both issues with a code, a section, a ta
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
 and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
 A charger without a charging power is `missing_charging_power`; car charging is optional.
+An empty expression of one at a time is `missing_condition` on `one_at_a_time` of the group.
 A charger switched by its on/off entity without one is `missing_on_off_entity`, and an on/off entity of a domain without a default action to turn on and off
 is `unsupported_entity_domain`.
 A charger's power at minimum current is at least 1000 W, since the regulation estimates from it what the charger draws per ampere,
@@ -206,6 +208,8 @@ Every issue code needs a text in the panel's translations.
 - The commands for an appliance carry its current variant, and the action runner runs the variant's action if it overrides it, otherwise the appliance's.
 - All templates and actions of an appliance get `entity_id` and `entity` (the state object of its entity, `none` when missing),
   and those of a charger `device_id`, since a charger has no entity of its own.
+  The expression of a charger group gets `power_limit`, the power limit in W from the stored configuration, so a change from the power limit entity applies at the next decision.
+  The runtime evaluates it in the decision input, and the engine gets a boolean per group, as for the variants.
   The set-current action also gets `current`, `min_current` and `max_current`; `current` is clamped between min and max,
   except 0 A for a charger switched by its current that is deactivated.
 
@@ -294,5 +298,6 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   No car connected comes before the other reasons not to charge, since without a car nothing else matters.
   Charging is true while the charger is activated and was actively charging at the last decision.
   A starting charger also has when its start delay ends, `null` for the others.
+- A charger group tells whether it was restricted to one charger at a time at the last decision, since it may follow an expression; false before the first decision.
 - The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the order of their ampere steps:
   the current charging priority, or with several at once and dynamic charging order the activated ones first, then the queued ones.

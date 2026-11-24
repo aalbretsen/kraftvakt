@@ -143,7 +143,8 @@ An action that does not finish is stopped by the action timeout, and the command
 so only the newest command for each appliance and EV charger is sent.
 Mark an EV charger controlled through a cloud service as a **Cloud-controlled EV charger**, and give it a start delay that covers how long the car takes to start charging.
 
-An entity of an appliance or EV charger that no longer exists in Home Assistant is reported under **Settings → Repairs**, except one named only in a template or an action.
+An entity of an appliance, EV charger or EV charger group that no longer exists in Home Assistant is reported under **Settings → Repairs**,
+except one named only in a template or an action.
 An entity that is only unavailable, for example while its cloud service is down, is not.
 
 ### EV charging
@@ -179,6 +180,11 @@ The settings of the group decide how its cars share the power:
 
 With dynamic charging order, an EV charger that stops charging, for whatever reason, goes to the back of the queue.
 One whose car is disconnected is deactivated, so a car connected again waits for its turn.
+
+**Restrict to one EV charger at a time** applies never, which is the default, always, or while an expression is true:
+a binary sensor or switch, or a template that gets the power limit in W as `power_limit`.
+An EV charger needs about 5,000 W, so with a power limit of 10,000 W one car at a time is full sooner, and with 15,000 W two cars can charge at once.
+The expression is read at each decision, so the EV chargers share the power anew as soon as the power limit is changed.
 
 - **Charging window:** the EV charger charges only within this time each day, in the time zone of Home Assistant.
   With **Charge until the car is disconnected**, a car that has used power within the charging window may go on charging after it,
@@ -271,7 +277,7 @@ Templates use the template language of Home Assistant (Jinja2), and actions are 
 In the action editor you can switch to YAML from the ⋮ menu and paste the examples.
 Every template and action of an appliance gets the variables `entity_id` (the entity of the appliance) and `entity` (its state object,
 for example `entity.state` and `entity.attributes`), so the templates keep working when the entity is replaced.
-Those of an EV charger get `device_id`, the device of the EV charger.
+Those of an EV charger get `device_id`, the device of the EV charger, and the expression of an EV charger group gets `power_limit`, the power limit in W.
 The action for the charging current also gets `current`, `min_current` and `max_current`. `current` is always between the minimum and maximum charging current,
 except 0 for an EV charger whose charging is turned on and off by the charging current.
 
@@ -315,6 +321,12 @@ the EV charger still counts as not charging, but the override does not end.
 
 ```jinja
 {{ is_state('sensor.garage_charger_status', 'error') }}
+```
+
+**Restrict to one EV charger at a time** while the power limit is below 15,000 W:
+
+```jinja
+{{ power_limit < 15000 }}
 ```
 
 **State of an EV charger** in a dashboard, as the label in the language of Home Assistant, the icon, its colour and the colour of a badge behind it:

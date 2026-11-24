@@ -1173,7 +1173,7 @@ async def test_an_entity_that_no_longer_exists_is_a_repair_issue(
     assert issues.async_get_issue(DOMAIN, "missing_entity_light.b")
 
 
-async def test_every_entity_a_charger_or_appliance_names_is_checked(hass: HomeAssistant) -> None:
+async def test_every_entity_an_appliance_charger_or_charger_group_names_is_checked(hass: HomeAssistant) -> None:
     """A charger switched by its current has no on/off entity, a fault flag is used only with deactivate on fault, and a template names no entity that is checked."""
     charger = Charger(
         id="c",
@@ -1185,12 +1185,13 @@ async def test_every_entity_a_charger_or_appliance_names_is_checked(hass: HomeAs
         fault_flag=Condition(ConditionType.ENTITY, "binary_sensor.unused_fault"),
     )
     appliance = Appliance(id="a", entity_id="light.a", display_power=Condition(ConditionType.POWER_SENSOR, "sensor.a_power"))
-    config = KraftvaktConfig(appliances=(appliance,), charger_groups=(ChargerGroup(id="g", chargers=(charger,)),))
+    group = ChargerGroup(id="g", one_at_a_time=Condition(ConditionType.ENTITY, "input_boolean.low_limit"), chargers=(charger,))
+    config = KraftvaktConfig(appliances=(appliance,), charger_groups=(group,))
 
     async_check_entities(hass, config)
 
     issues = sorted(issue_id for domain, issue_id in ir.async_get(hass).issues if domain == DOMAIN)
-    assert issues == [f"missing_entity_{entity_id}" for entity_id in ("binary_sensor.car", "light.a", "number.current", "sensor.a_power")]
+    assert issues == [f"missing_entity_{entity_id}" for entity_id in ("binary_sensor.car", "input_boolean.low_limit", "light.a", "number.current", "sensor.a_power")]
 
 
 async def test_repair_issues_are_removed_with_the_integration(hass: HomeAssistant, setup_kraftvakt) -> None:

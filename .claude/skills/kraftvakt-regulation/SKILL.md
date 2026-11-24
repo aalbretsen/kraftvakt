@@ -393,7 +393,12 @@ the others have entity category diagnostic.
   Every rule in this section applies within a group: a group knows nothing of the chargers of other groups.
   So two groups with one charger at a time may each have a charger charging at once.
 - Every group is regulated. Without groups there is no EV charging; to keep a charger from charging for a while, the user excludes it.
-- One charger at a time: default yes. The chargers of a group are sorted in its configured charging priority.
+- One charger at a time: never (default), always, or while an expression is true, a boolean entity or a template with the power limit in W as `power_limit`.
+  The expression is read at each decision, like a variant's, and counts as false when it is not true, so the chargers charge several at once.
+  A change applies at once, by the rules below: with one charger at a time, the chargers after the one that charges are queued and deactivated at once,
+  and with several at once, the queued chargers are activated as room allows.
+  Why: a charger needs about 5 kW, so below a power limit of about 15 kW one car at a time is full sooner, and above it several cars can charge at once.
+- The chargers of a group are sorted in its configured charging priority.
 - Each charger is split into ampere steps, one per ampere from min to max current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min + number on − 1.
   None on means deactivated. The ampere steps sit at the place of the entry of their group.
 - First ampere step on: set current to min, then activate. Its power reserve is the charger's power at minimum current.

@@ -225,7 +225,7 @@ def evaluate(
         return ChargingPermission.WINDOW if allowed is None or charger_id in allowed else ChargingPermission.OUTSIDE_WINDOW
 
     group = group_of(configured, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order)
-    return state.evaluate(group, readings, {c.id: permission(c.id) for c in configured}, now)
+    return state.evaluate(group, readings, {c.id: permission(c.id) for c in configured}, now, one_at_a_time)
 
 
 def activated(configured: list[Charger], **ampere_steps_on: int) -> ChargingState:

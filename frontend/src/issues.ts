@@ -74,6 +74,10 @@ function actionText(field: string | undefined, localize: Localize): string {
 /** The name of the appliance or charger, followed by the label of the variant the issue is about. */
 function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Localize, hass: HomeAssistant): string {
   const names = config?.entity_names ?? {};
+  if (issue.section === "charger_groups") {
+    const group = config?.config.charger_groups.find((candidate) => candidate.id === issue.target);
+    return group?.name.trim() || localize("charging.unnamed_group");
+  }
   if (issue.section === "chargers") {
     const charger = config && allChargers(config.config).find((candidate) => candidate.id === issue.target);
     return (charger && chargerName(hass, names, charger)) ?? localize("missing.charger_without_device");

@@ -472,6 +472,36 @@ async def test_one_charger_at_a_time_lets_every_car_wait_at_the_minimum_until_on
     assert runtime.chargers["c2"].state is ChargerState.QUEUED
 
 
+async def test_one_charger_at_a_time_follows_an_expression_of_the_power_limit(hass: HomeAssistant, freezer: FrozenDateTimeFactory, actions, config, setup_kraftvakt) -> None:
+    """The expression is read at each decision, with the power limit set from its entity while the regulation runs."""
+    carport = charger_data("c2", "input_boolean.carport") | {
+        "car_connected": {"type": "entity", "value": "binary_sensor.carport_car"},
+        "charging_power": {"type": "power_sensor", "value": "sensor.carport_power"},
+    }
+    expression = {"type": "template", "value": "{{ power_limit < 15000 }}"}
+    config["charger_groups"][0] |= {"one_at_a_time": expression, "chargers": [charger_data(), carport]}
+    hass.states.async_set("input_boolean.carport", STATE_OFF, {ATTR_FRIENDLY_NAME: "Carport"})
+    hass.states.async_set("binary_sensor.carport_car", STATE_ON)
+    set_power(hass, CHARGER_POWER, "4100")
+    set_power(hass, "sensor.carport_power", "4100")
+    entry = await setup_kraftvakt()
+    runtime = entry.runtime_data
+
+    await advance_windows(hass, freezer, 3)
+    assert runtime.chargers["c2"].state is ChargerState.QUEUED
+    assert status_snapshot(hass, runtime)["priority"][0]["one_at_a_time"] is True
+
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": er.async_get(hass).async_get_entity_id("number", DOMAIN, "power_limit"), "value": 15000},
+        blocking=True,
+    )
+    await advance_windows(hass, freezer, 2)
+    assert runtime.chargers["c2"].state is not ChargerState.QUEUED
+    assert status_snapshot(hass, runtime)["priority"][0]["one_at_a_time"] is False
+
+
 async def test_excluded_switch_stops_charging_and_is_saved(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,

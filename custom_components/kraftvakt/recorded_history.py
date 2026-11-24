@@ -13,7 +13,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .actions import action_entities
-from .conditions import condition_entities, item_variables
+from .conditions import condition_entities, group_variables, item_variables
 from .config_model import KraftvaktConfig
 from .const import DOMAIN
 from .item_entity import ChargerEntity, item_entity_key
@@ -29,7 +29,7 @@ EVERY_WINDOW_ENTITY_KEYS: Final = frozenset({"power_regulation_average", "power_
 
 @dataclass(frozen=True, slots=True)
 class EntityUse:
-    """`item` is the id of the appliance or charger, None for the power sensor and the entities of the regulation."""
+    """`item` is the id of the appliance, charger or charger group, None for the power sensor and the entities of the regulation."""
 
     item: str | None
     field: str
@@ -72,6 +72,10 @@ def _read_entities(hass: HomeAssistant, config: KraftvaktConfig) -> EntityUses:
         for field_name, condition in item.regulation_conditions():
             for entity_id in sorted(condition_entities(hass, condition, variables)):
                 _add(uses, entity_id, EntityUse(item.id, field_name))
+    for group in config.charger_groups:
+        for field_name, condition in group.conditions():
+            for entity_id in sorted(condition_entities(hass, condition, group_variables(config))):
+                _add(uses, entity_id, EntityUse(group.id, field_name))
     return uses
 
 

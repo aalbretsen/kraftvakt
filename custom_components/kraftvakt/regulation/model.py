@@ -21,7 +21,9 @@ class DecisionInput:
     `window_start` when it started. `regulation_averages` are those of the
     windows closed since the previous decision. `power_sensor_lost` tells
     whether the power sensor was invalid when each of the last two windows
-    closed. A variant missing from `variant_conditions` counts as false.
+    closed. A variant missing from `variant_conditions` counts as false, and
+    so does a charger group missing from `one_at_a_time_conditions`, which
+    holds the groups whose one at a time is an expression.
     """
 
     now: datetime
@@ -32,6 +34,7 @@ class DecisionInput:
     power_sensor_valid: bool
     power_sensor_lost: bool
     variant_conditions: Mapping[str, bool] = field(default_factory=dict)
+    one_at_a_time_conditions: Mapping[str, bool] = field(default_factory=dict)
     chargers: Mapping[str, ChargerReading] = field(default_factory=dict)
     excluded_appliances: frozenset[str] = frozenset()
     time_zone: tzinfo = UTC

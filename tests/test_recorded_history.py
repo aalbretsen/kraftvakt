@@ -177,6 +177,18 @@ async def test_the_history_of_a_custom_action_holds_the_entities_it_names(hass: 
     assert "input_boolean.x" not in entities
 
 
+async def test_the_history_holds_the_entities_of_one_at_a_time_given_as_an_expression(
+    hass: HomeAssistant, hass_client: ClientSessionGenerator, hass_storage: dict[str, Any]
+) -> None:
+    """The template gets the power limit, so the branch that reads the entity is rendered."""
+    expression = {"type": "template", "value": "{{ power_limit < 15000 and is_state('input_boolean.share', 'off') }}"}
+    store(hass_storage, {"general": {"power_limit_w": 10000}, "charger_groups": [{"id": "g", "name": "Garage", "one_at_a_time": expression}]})
+
+    entities = (await download(hass, hass_client))["history"]["entities"]
+
+    assert entities["input_boolean.share"] == {"uses": [{"item": "g", "field": "one_at_a_time"}], "states": []}
+
+
 async def test_the_history_without_a_configuration_holds_kraftvakts_own_entities(hass: HomeAssistant, hass_client: ClientSessionGenerator) -> None:
     entities = (await download(hass, hass_client))["history"]["entities"]
 

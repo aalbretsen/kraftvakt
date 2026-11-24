@@ -81,7 +81,15 @@ def diagnostics(entities: dict[str, Any]) -> DiagnosticsFile:
 
 
 def test_each_entity_is_under_each_item_that_uses_it() -> None:
-    shared = {"uses": [{"item": "a", "field": "variants.v.condition"}, {"item": "c", "field": "car_connected"}, {"item": "c", "field": "fault_flag"}], "states": []}
+    shared = {
+        "uses": [
+            {"item": "a", "field": "variants.v.condition"},
+            {"item": "g", "field": "one_at_a_time"},
+            {"item": "c", "field": "car_connected"},
+            {"item": "c", "field": "fault_flag"},
+        ],
+        "states": [],
+    }
     removed = {"uses": [{"item": "gone", "field": "controlled_entity"}], "states": []}
 
     history = history_changes(diagnostics({"binary_sensor.shared": shared, "switch.old": removed}))
@@ -91,9 +99,15 @@ def test_each_entity_is_under_each_item_that_uses_it() -> None:
         "Appliance switch.heater",
         "Appliance b",
         "EV charger c in Garage",
+        "EV charger group Garage",
         "Removed item gone",
     ]
-    assert [entity.fields for item in history.items for entity in item.entities] == [("variants.v.condition",), ("car_connected", "fault_flag"), ("controlled_entity",)]
+    assert [entity.fields for item in history.items for entity in item.entities] == [
+        ("variants.v.condition",),
+        ("car_connected", "fault_flag"),
+        ("one_at_a_time",),
+        ("controlled_entity",),
+    ]
     assert history.start == START
 
 

@@ -67,8 +67,8 @@ uv run python -m diagnostics.switching kraftvakt-diagnostics.json
 prints how often each entity in the file's history changed over its 24 hours, to show how hard the regulation works the appliances and EV chargers.
 The file must come from a Home Assistant with the recorder, which is loaded by default.
 
-- A table for the power sensor and the regulation's own entities, then one for each appliance and EV charger, with every entity it sets and reads,
-  and the fields of the configuration that use it. An entity used by several appliances or EV chargers is in each of their tables.
+- A table for the power sensor and the regulation's own entities, then one for each appliance and EV charger, and each EV charger group that reads an entity,
+  with every entity it sets and reads, and the fields of the configuration that use it. An entity used by several appliances or EV chargers is in each of their tables.
 - **changes:** how often the state changed, leaving out unavailable and unknown. A state that only comes back after one of them is no change.
 - **up**, **down** and **reversals,** for a state that is a number, such as the charging current: a reversal is a change in the other direction than the one before,
   so many reversals show a current that moves up and down between the same values.

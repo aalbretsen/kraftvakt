@@ -228,6 +228,10 @@ class KraftvaktRuntime:
     def charging_priorities(self) -> Mapping[str, list[str]]:
         return self._engine.charging_priorities
 
+    @property
+    def one_at_a_time(self) -> Mapping[str, bool]:
+        return self._engine.one_at_a_time
+
     def diagnostics(self) -> dict[str, Any]:
         """Return what the runtime and each of its parts hold in memory, one section per part."""
         return {

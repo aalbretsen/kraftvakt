@@ -410,9 +410,11 @@ export class KraftvaktPriorityList extends LitElement {
     return config ? controlledEntity(config) : null;
   }
 
+  /** Whether the group was restricted to one EV charger at a time is read from the status, since it may follow an expression. */
   private sharesByChargingPower(charger: ChargerStatus): boolean {
     const group = this.config?.config.charger_groups.find((item) => item.chargers.some((other) => other.id === charger.id));
-    return !!group && group.dynamic_order && !group.one_at_a_time;
+    const groupStatus = this.status.priority.find((row): row is ChargerGroupStatus => row.type === "charger_group" && row.id === group?.id);
+    return !!group && !!groupStatus && group.dynamic_order && !groupStatus.one_at_a_time;
   }
 
   static styles = [

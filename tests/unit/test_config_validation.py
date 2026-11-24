@@ -230,6 +230,31 @@ def test_fault_flag_is_checked_also_while_deactivate_on_fault_is_off() -> None:
     assert _issues_after(mutate) == [Issue("invalid_entity_id", "chargers", "c1", "fault_flag")]
 
 
+@pytest.mark.parametrize(
+    ("expression", "code"),
+    [
+        ({"type": "entity", "value": "input_boolean.low_limit"}, None),
+        ({"type": "entity", "value": "low_limit"}, "invalid_entity_id"),
+        ({"type": "template", "value": " "}, None),
+        ({"type": "template", "value": "{{ power_limit < 15000 }}"}, None),
+    ],
+)
+def test_one_at_a_time_expression(expression: dict[str, str], code: str | None) -> None:
+    expected = [] if code is None else [Issue(code, "charger_groups", "g1", "one_at_a_time")]
+
+    assert _issues_after(_set("charger_groups.0.one_at_a_time", expression)) == expected
+
+
+async def test_parse_config_rejects_invalid_one_at_a_time_template(hass: HomeAssistant) -> None:
+    data = full_config_data()
+    data["charger_groups"][0]["one_at_a_time"] = {"type": "template", "value": "{{ power_limit < }}"}
+
+    with pytest.raises(ConfigValidationError) as error:
+        parse_config(data)
+
+    assert error.value.issues == [Issue("invalid_template", "charger_groups", "g1", "one_at_a_time")]
+
+
 def test_empty_variant_condition_is_missing_not_an_error() -> None:
     issues = _issues_after(_set("appliances.0.variants.0.condition", {"type": "entity", "value": ""}))
 

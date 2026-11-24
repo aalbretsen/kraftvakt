@@ -93,7 +93,7 @@ def charger(
 DEFAULT_GROUP = "ev"
 
 
-def charger_group(group_id: str, *chargers: Charger, one_at_a_time: bool = True, dynamic_order: bool = False) -> ChargerGroup:
+def charger_group(group_id: str, *chargers: Charger, one_at_a_time: bool | Condition = True, dynamic_order: bool = False) -> ChargerGroup:
     """Return a group of the chargers, named after its id."""
     return ChargerGroup(id=group_id, name=group_id, one_at_a_time=one_at_a_time, dynamic_order=dynamic_order, chargers=chargers)
 
@@ -116,7 +116,7 @@ def make_config(
     threshold_w: int = 1000,
     appliance_repeat: tuple[float, int] = (0.5, 4),
     chargers: tuple[Charger, ...] = (),
-    one_at_a_time: bool = True,
+    one_at_a_time: bool | Condition = True,
     dynamic_order: bool = False,
     groups: tuple[ChargerGroup, ...] = (),
 ) -> KraftvaktConfig:

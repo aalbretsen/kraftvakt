@@ -106,7 +106,7 @@ class ConditionType(StrEnum):
     TARGET_TEMPERATURE = "target_temperature"
 
 
-VARIANT_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.TEMPLATE)
+EXPRESSION_TYPES: Final = (ConditionType.ENTITY, ConditionType.TEMPLATE)
 CHARGER_CONDITION_TYPES: Final = (ConditionType.ENTITY, ConditionType.STATE, ConditionType.TEMPLATE)
 POWER_TYPES: Final = (ConditionType.POWER_SENSOR, ConditionType.TEMPLATE)
 THERMOSTAT_TEMPERATURE_TYPES: Final = (ConditionType.CURRENT_TEMPERATURE, ConditionType.TARGET_TEMPERATURE)
@@ -457,14 +457,26 @@ class Charger:
 class ChargerGroup:
     """A named group of chargers with its own place in the priority list.
 
-    The chargers are in the configured charging priority.
+    One at a time is always, never, or while an expression is true at a
+    decision. The chargers are in the configured charging priority.
     """
 
     id: str
     name: str = ""
-    one_at_a_time: bool = True
+    one_at_a_time: bool | Condition = False
     dynamic_order: bool = False
     chargers: tuple[Charger, ...] = ()
+
+    def conditions(self) -> Iterator[tuple[str, Condition]]:
+        """Return the expression of one at a time while it is given as one, with the field issues address."""
+        if isinstance(self.one_at_a_time, Condition):
+            yield "one_at_a_time", self.one_at_a_time
+
+    def used_entities(self) -> Iterator[str]:
+        """Return the entity of one at a time, but one in a template."""
+        for _, condition in self.conditions():
+            if condition.type is not ConditionType.TEMPLATE and condition.value:
+                yield condition.value
 
     def to_dict(self) -> dict[str, Any]:
         return _fields_to_dict(self)

@@ -458,6 +458,17 @@
     "error": "Error: {message}",
     "invalid": "The template gives {value}, not true or false, so it counts as false."
   },
+  "one_at_a_time": {
+    "entity": "Binary sensor or switch",
+    "template": "Custom template",
+    "entity_label": "Binary sensor or switch",
+    "template_label": "Custom template",
+    "entity_helper": "One EV charger at a time while it is on.",
+    "template_helper": "True gives one EV charger at a time, for example {{ power_limit < 15000 }}. Variables: {variables}.",
+    "true": "one at a time",
+    "false": "several at once",
+    "invalid": "The template gives {value}, not true or false, so the EV chargers charge several at once."
+  },
   "actively_charging": {
     "type_label": "Car charging from",
     "entity": "Binary sensor or switch",
@@ -530,8 +541,12 @@
   "charging": {
     "name": "Name",
     "name_sub": "Shown in the priority list and on the status page.",
-    "one_at_a_time": "One EV charger at a time",
+    "one_at_a_time": "Restrict to one EV charger at a time",
     "one_at_a_time_sub": "Only one car in the group charges at a time, so it is full sooner.",
+    "one_at_a_time_always": "Always",
+    "one_at_a_time_never": "Never",
+    "one_at_a_time_condition": "While an expression is true",
+    "one_at_a_time_applies": "Applies",
     "dynamic_order": "Dynamic charging order",
     "dynamic_order_sub": "Cars that charge keep charging, and the others wait their turn.",
     "needs_two_chargers": "Needs two or more EV chargers in the group.",
