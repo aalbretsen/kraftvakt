@@ -167,7 +167,8 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   5. EV chargers: allowed, bypassed, charging, held at minimum, current priority, queued.
   6. Forced switch-offs: chargers not allowed to charge, chargers whose car is known to have left with dynamic charging order,
      and with one charger at a time the chargers after the one that charges (all ampere steps off and deactivate),
-     newly bypassed chargers and chargers held at minimum down to one ampere step, excluded appliances, appliances that switch variant and do not stay on (see Variants) or are included again.
+     newly bypassed chargers and chargers held at minimum down to one ampere step, excluded appliances,
+     appliances that switch variant and do not stay on (see Variants) or are included again.
      Essential appliances that are included again are turned on here (see Essential appliances).
   7. Build the ordered steps (current variants, ampere steps in place of the entry of their group).
   8. Above the limit: free the power above the limit (see Freeing power), without waiting, and cancel any waiting.
