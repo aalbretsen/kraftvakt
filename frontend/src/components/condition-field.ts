@@ -107,7 +107,7 @@ export class KraftvaktConditionField extends LitElement {
     const options = this.types().map((value) => ({ value, label: this.text(value) }));
     return html`
       ${this.renderForm([{ name: "type", selector: { select: { mode: "list", options } } }])}
-      <div class="shown">${this.renderForm(this.valueField(type))} ${this.renderPreview()} ${this.error ? html`<div class="error">${this.error}</div>` : nothing}</div>
+      <div class="shown" part="shown">${this.renderForm(this.valueField(type))} ${this.renderPreview()} ${this.error ? html`<div class="error">${this.error}</div>` : nothing}</div>
     `;
   }
 

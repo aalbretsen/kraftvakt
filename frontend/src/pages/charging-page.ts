@@ -1,5 +1,5 @@
 import { mdiDelete, mdiEvStation, mdiPlus } from "@mdi/js";
-import { html, nothing } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Charger, ChargerGroup, Condition, Issue } from "../api";
@@ -338,6 +338,18 @@ export class KraftvaktChargingPage extends ConfigPage {
     const groups = this.config.charger_groups.map((item) => (item.id === group.id ? group : item));
     this.changeConfig({ ...this.config, charger_groups: groups });
   }
+
+  /** The expression is part of its section, which a line would split. */
+  static styles = [
+    ConfigPage.styles,
+    css`
+      kraftvakt-condition-field::part(shown) {
+        margin-inline: 0;
+        padding: 0;
+        border-top: none;
+      }
+    `,
+  ];
 }
 
 function groupForm(group: ChargerGroup): GroupForm {
