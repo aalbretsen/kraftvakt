@@ -12,7 +12,7 @@ from custom_components.kraftvakt.config_reader import (
 from custom_components.kraftvakt.config_validation import (
     missing_items,
 )
-from tests.config_examples import full_config_data
+from tests.config_examples import full_config_data, with_second_charger
 
 
 def _missing(data: dict) -> list[Issue]:
@@ -201,10 +201,18 @@ def test_variant_needs_only_the_actions_it_overrides() -> None:
 
 
 def test_one_at_a_time_given_as_an_expression_needs_it() -> None:
-    data = full_config_data()
+    data = with_second_charger(full_config_data())
     data["charger_groups"][0]["one_at_a_time"] = {"type": "entity", "value": ""}
 
     assert _missing(data) == [Issue("missing_condition", "charger_groups", "g1", "one_at_a_time")]
+
+
+def test_one_at_a_time_of_a_group_with_one_charger_needs_no_expression() -> None:
+    """It does not apply, so it may be empty."""
+    data = full_config_data()
+    data["charger_groups"][0]["one_at_a_time"] = {"type": "entity", "value": ""}
+
+    assert _missing(data) == []
 
 
 def test_variant_needs_a_condition() -> None:

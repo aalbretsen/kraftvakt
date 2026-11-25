@@ -1,6 +1,14 @@
 """Example configurations shared by the tests."""
 
+import json
 from typing import Any
+
+
+def with_second_charger(data: dict[str, Any]) -> dict[str, Any]:
+    """Add a copy of the first EV charger, with its own entities, to its group, so one at a time and dynamic charging order apply."""
+    chargers = data["charger_groups"][0]["chargers"]
+    chargers.append(json.loads(json.dumps(chargers[0]).replace("garage", "carport").replace('"c1"', '"c2"')))
+    return data
 
 
 def full_config_data() -> dict[str, Any]:

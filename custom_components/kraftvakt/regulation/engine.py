@@ -375,7 +375,7 @@ class RegulationEngine:
             one_at_a_time = group.one_at_a_time if isinstance(group.one_at_a_time, bool) else decision.one_at_a_time_conditions.get(group.id, False)
             newly_bypassed = charging.evaluate(group, readings, permissions, decision.now, one_at_a_time)
             for charger_id in charging.activated():
-                if charging.must_deactivate(group, charger_id):
+                if charging.must_deactivate(charger_id):
                     commands += self._set_ampere_steps_on(charger_id, 0, decision.now)
                 elif (charger_id in newly_bypassed or charger_id in charging.held_at_min) and charging.ampere_steps_on[charger_id] > 1:
                     commands += self._set_ampere_steps_on(charger_id, 1, decision.now)
@@ -652,7 +652,7 @@ class RegulationEngine:
         for group in self._groups:
             charging = self._charging(group.id)
             queued = charging.queued(group)
-            if not charging.shares_by_charging_power(group) or charging.starting or not queued:
+            if not charging.shares_by_charging_power() or charging.starting or not queued:
                 continue
             group_places = [index for index, step in enumerate(steps) if step.group_id == group.id]
             if place is not None and place < group_places[0]:

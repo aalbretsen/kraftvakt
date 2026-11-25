@@ -549,7 +549,7 @@
     "one_at_a_time_applies": "Applies",
     "dynamic_order": "Dynamic charging order",
     "dynamic_order_sub": "Cars that charge keep charging, and the others wait their turn.",
-    "needs_two_chargers": "Needs two or more EV chargers in the group.",
+    "needs_two_chargers": "Applies only with two or more EV chargers in the group.",
     "chargers": "Charging priority",
     "chargers_sub": "Highest priority at the top. Drag an EV charger to another group to move it.",
     "add": "Add EV charger",

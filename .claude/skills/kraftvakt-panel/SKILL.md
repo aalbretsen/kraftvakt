@@ -159,7 +159,7 @@ The section header, the description and the footer note are in `section-styles.t
   and previews its template with the power limit of the draft as `power_limit`. Choosing never or always drops the expression.
   The section Charging priority has the add button in its header and dynamic charging order before the list of chargers.
   The dropdown, the expression and dynamic charging order are disabled, with a line in their helpers that says why,
-  while the group has fewer than two chargers, since they make no difference then, and keep their values.
+  while the group has fewer than two chargers, since they do not apply then, and keep their values. An empty expression is not missing then, as in the backend.
 - The start delay is in a group of its own, Charging start, between Turn charging on and off and the charging current group,
   since it follows activating the EV charger. The group has its own title, so the field keeps the name that errors use.
   Cloud-controlled EV charger is a group with a switch and no fields under it.

@@ -150,7 +150,8 @@ Missing items and validation errors are both issues with a code, a section, a ta
 a variant field is addressed through the variant's id, also the variant's own actions (`variants.<id>.turn_on`),
 and with deactivate on fault, a fault flag that is not given or empty is `missing_fault_flag` on `fault_flag`. A state without a chosen state is missing.
 A charger without a charging power is `missing_charging_power`; car charging is optional.
-An empty expression of one at a time is `missing_condition` on `one_at_a_time` of the group.
+An empty expression of one at a time is `missing_condition` on `one_at_a_time` of a group with two chargers or more.
+In a group with one, the expression does not apply (`ChargerGroup.sharing_applies`), so it is not checked, evaluated, recorded or a source of repairs.
 A charger switched by its on/off entity without one is `missing_on_off_entity`, and an on/off entity of a domain without a default action to turn on and off
 is `unsupported_entity_domain`.
 A charger's power at minimum current is at least 1000 W, since the regulation estimates from it what the charger draws per ampere,
@@ -298,6 +299,7 @@ Built in `status.py` and typed in the panel's `api.ts`; keep the two in step. Ru
   No car connected comes before the other reasons not to charge, since without a car nothing else matters.
   Charging is true while the charger is activated and was actively charging at the last decision.
   A starting charger also has when its start delay ends, `null` for the others.
-- A charger group tells whether it was restricted to one charger at a time at the last decision, since it may follow an expression; false before the first decision.
+- A charger group tells whether it was restricted to one charger at a time at the last decision, since it may follow an expression;
+  false before the first decision and in a group with one charger.
 - The priority list has one row per appliance, at the entry of its current variant, and one per charger group, with its chargers in the order of their ampere steps:
   the current charging priority, or with several at once and dynamic charging order the activated ones first, then the queued ones.

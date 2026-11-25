@@ -220,7 +220,8 @@ class ChargingState:
     charger ends, while it lasts. `may_charge` has the chargers that may have ampere steps on,
     and `waiting` the queued ones. `measured_power_per_ampere_w` has what each
     charger drew per ampere at the last decision where it was activated and drew power.
-    `one_at_a_time` is whether the group was restricted to one charger at a time at the last decision.
+    `one_at_a_time` and `dynamic_order` are the settings of the group as they
+    applied at the last decision, both off while they do not apply.
     """
 
     priority: list[str] = field(default_factory=list)
@@ -237,6 +238,7 @@ class ChargingState:
     measured_power_per_ampere_w: dict[str, float] = field(default_factory=dict)
     last_decision: datetime | None = None
     one_at_a_time: bool = False
+    dynamic_order: bool = False
 
     @classmethod
     def for_chargers(cls, chargers: Sequence[Charger]) -> ChargingState:
@@ -274,7 +276,7 @@ class ChargingState:
     def charges(self, charger_id: str, reading: ChargerReading) -> bool:
         return charger_id in self.activated_at and reading.actively_charging
 
-    def must_deactivate(self, group: ChargerGroup, charger_id: str) -> bool:
+    def must_deactivate(self, charger_id: str) -> bool:
         """Return whether an activated charger is deactivated at once.
 
         It is when it is not allowed to charge. With dynamic charging order, it
@@ -284,7 +286,7 @@ class ChargingState:
         """
         if not self.is_allowed(charger_id):
             return True
-        if group.dynamic_order and self.last_readings[charger_id].car_disconnected:
+        if self.dynamic_order and self.last_readings[charger_id].car_disconnected:
             return True
         return self.one_at_a_time and charger_id not in self.may_charge and charger_id not in self.bypassed
 
@@ -297,8 +299,8 @@ class ChargingState:
         """Return whether the ampere steps of the charger may be switched off for room: not those of a car that does not charge, which frees nothing."""
         return charger_id not in self.bypassed and self.last_readings.get(charger_id, ChargerReading()).actively_charging
 
-    def shares_by_charging_power(self, group: ChargerGroup) -> bool:
-        return group.dynamic_order and not self.one_at_a_time
+    def shares_by_charging_power(self) -> bool:
+        return self.dynamic_order and not self.one_at_a_time
 
     def evaluate(
         self,
@@ -310,7 +312,8 @@ class ChargingState:
     ) -> list[str]:
         """Evaluate the chargers of the group at a decision and return those that are newly bypassed."""
         chargers = group.chargers
-        self.one_at_a_time = one_at_a_time
+        self.one_at_a_time = group.sharing_applies and one_at_a_time
+        self.dynamic_order = group.sharing_applies and group.dynamic_order
         previously_charging = self.charging
         self.last_readings = {charger.id: readings.get(charger.id, ChargerReading()) for charger in chargers}
         self.last_permissions = {charger.id: permissions.get(charger.id, ChargingPermission.OUTSIDE_WINDOW) for charger in chargers}
@@ -346,7 +349,7 @@ class ChargingState:
         to the back. Without dynamic charging order, the configured priority
         always applies.
         """
-        if not group.dynamic_order:
+        if not self.dynamic_order:
             self.priority = [charger.id for charger in group.chargers]
             return
         stopped = (previously_charging - self.charging) | set(newly_bypassed)
@@ -372,7 +375,7 @@ class ChargingState:
         sits among those that charge, so room is never made for them from its
         first ampere step.
         """
-        if not self.shares_by_charging_power(group):
+        if not self.shares_by_charging_power():
             return [list(self.priority)]
         configured = [charger.id for charger in group.chargers]
         activated = [charger_id for charger_id in configured if charger_id in self.charging or (self.ampere_steps_on.get(charger_id) and charger_id in self.may_charge)]
@@ -444,7 +447,7 @@ class ChargingState:
         self.may_charge = set(eligible)
         self.waiting = set()
         if not self.one_at_a_time:
-            if group.dynamic_order:
+            if self.dynamic_order:
                 self.waiting = set(self.queued(group))
             return
         charging = next((index for index, charger_id in enumerate(eligible) if charger_id in self.charging), None)

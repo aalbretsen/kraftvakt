@@ -310,15 +310,15 @@ def test_with_dynamic_order_the_activated_chargers_come_first_and_the_others_are
 def test_one_at_a_time_without_dynamic_order_the_chargers_before_the_one_that_charges_may_wait_at_their_minimum() -> None:
     """Those after it are queued and deactivated."""
     configured = chargers("a", "b", "c")
-    group = group_of(configured)
+    group_of(configured)
     state = activated(configured, a=1, b=3, c=1)
 
     evaluate(state, configured, {"a": IDLE, "b": CHARGING, "c": CHARGING})
 
     assert state.may_charge == {"a", "b"}
     assert state.waiting == {"c"}
-    assert not state.must_deactivate(group, "a")
-    assert state.must_deactivate(group, "c")
+    assert not state.must_deactivate("a")
+    assert state.must_deactivate("c")
 
 
 def test_one_at_a_time_every_charger_with_a_car_may_be_activated_while_none_charges() -> None:
@@ -349,24 +349,37 @@ def test_one_at_a_time_with_dynamic_order_the_charger_that_charges_keeps_its_tur
 def test_one_at_a_time_charger_that_may_not_charge_or_has_no_car_does_not_hold_the_others() -> None:
     """Also not when it seems to charge."""
     configured = chargers("a", "b", "c")
-    group = group_of(configured)
+    group_of(configured)
     state = activated(configured, a=1, b=1)
 
     evaluate(state, configured, {"a": replace(CHARGING, car_connected=False), "b": CHARGING, "c": IDLE}, allowed=("a", "c"), dynamic_order=True)
 
     assert state.may_charge == {"c"}
-    assert not state.must_deactivate(group, "a")
-    assert state.must_deactivate(group, "b")
+    assert not state.must_deactivate("a")
+    assert state.must_deactivate("b")
 
 
-def test_with_dynamic_order_a_charger_whose_car_is_disconnected_is_deactivated() -> None:
+@pytest.mark.parametrize("dynamic_order", [False, True])
+def test_with_dynamic_order_a_charger_whose_car_is_disconnected_is_deactivated(dynamic_order: bool) -> None:
+    configured = chargers("a", "b")
+    state = activated(configured, a=1)
+
+    evaluate(state, configured, {"a": ChargerReading(car_disconnected=True), "b": IDLE}, one_at_a_time=False, dynamic_order=dynamic_order)
+
+    assert state.must_deactivate("a") is dynamic_order
+
+
+def test_one_at_a_time_and_dynamic_order_do_not_apply_to_a_group_with_one_charger() -> None:
+    """Its car that is known to be disconnected keeps the charger activated, and the charger is never queued."""
     configured = chargers("a")
     state = activated(configured, a=1)
 
-    evaluate(state, configured, {"a": ChargerReading(car_disconnected=True)}, one_at_a_time=False, dynamic_order=True)
+    evaluate(state, configured, {"a": ChargerReading(car_disconnected=True)}, dynamic_order=True)
 
-    assert state.must_deactivate(group_of(configured, one_at_a_time=False, dynamic_order=True), "a")
-    assert not state.must_deactivate(group_of(configured, one_at_a_time=False), "a")
+    assert not state.one_at_a_time
+    assert not state.dynamic_order
+    assert not state.must_deactivate("a")
+    assert state.waiting == set()
 
 
 def test_status_of_each_charger() -> None:

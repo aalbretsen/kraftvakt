@@ -399,6 +399,9 @@ the others have entity category diagnostic.
   A change applies at once, by the rules below: with one charger at a time, the chargers after the one that charges are queued and deactivated at once,
   and with several at once, the queued chargers are activated as room allows.
   Why: a charger needs about 5 kW, so below a power limit of about 15 kW one car at a time is full sooner, and above it several cars can charge at once.
+- One charger at a time and dynamic charging order apply only in a group with two chargers or more. In a group with one, both are off,
+  whatever is stored, and its expression is neither read nor checked. Why: they make no difference with one charger,
+  except that dynamic charging order would deactivate a charger whose car left, and the user cannot change them in the panel then.
 - The chargers of a group are sorted in its configured charging priority.
 - Each charger is split into ampere steps, one per ampere from min to max current (whole amperes, 1 ≤ min ≤ max, default 6 and 16). Current = min + number on − 1.
   None on means deactivated. The ampere steps sit at the place of the entry of their group.

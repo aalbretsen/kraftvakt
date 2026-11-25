@@ -150,7 +150,7 @@ An entity that is only unavailable, for example while its cloud service is down,
 ### EV charging
 
 EV chargers are put in groups, for example one for the garage and one for the cabin. A group has its own place in the priority list and its own settings.
-A group with one EV charger is shown as that EV charger on the status page, and the settings for how the cars share the power can be changed only with more than one.
+A group with one EV charger is shown as that EV charger on the status page, and the settings for how the cars share the power apply, and can be changed, only with more than one.
 An EV charger is a device in Home Assistant, and its entities belong to that device;
 a value from another device, such as whether the car is connected from the car's own integration, is given as a template.
 When Kraftvakt has a charger profile for the device, choosing it fills in the fields. A profile uses only enabled entities.

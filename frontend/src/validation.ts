@@ -106,8 +106,13 @@ export function missingItems(config: KraftvaktConfig): Issue[] {
   return missing;
 }
 
+/** One at a time and dynamic charging order apply only with two chargers or more, where they make a difference, as in the backend. */
+export function sharingApplies(group: ChargerGroup): boolean {
+  return group.chargers.length > 1;
+}
+
 function missingInGroup(group: ChargerGroup): Issue[] {
-  return typeof group.one_at_a_time === "object" && !isSet(group.one_at_a_time)
+  return sharingApplies(group) && typeof group.one_at_a_time === "object" && !isSet(group.one_at_a_time)
     ? [{ code: "missing_condition", section: "charger_groups", target: group.id, field: "one_at_a_time" }]
     : [];
 }

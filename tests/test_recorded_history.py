@@ -182,7 +182,8 @@ async def test_the_history_holds_the_entities_of_one_at_a_time_given_as_an_expre
 ) -> None:
     """The template gets the power limit, so the branch that reads the entity is rendered."""
     expression = {"type": "template", "value": "{{ power_limit < 15000 and is_state('input_boolean.share', 'off') }}"}
-    store(hass_storage, {"general": {"power_limit_w": 10000}, "charger_groups": [{"id": "g", "name": "Garage", "one_at_a_time": expression}]})
+    group = {"id": "g", "name": "Garage", "one_at_a_time": expression, "chargers": [{"id": "c1"}, {"id": "c2"}]}
+    store(hass_storage, {"general": {"power_limit_w": 10000}, "charger_groups": [group]})
 
     entities = (await download(hass, hass_client))["history"]["entities"]
 

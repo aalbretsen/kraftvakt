@@ -7,6 +7,7 @@ reach the appliances.
 import asyncio
 import logging
 import math
+from dataclasses import replace
 from datetime import timedelta
 from typing import Any
 
@@ -1185,7 +1186,7 @@ async def test_every_entity_an_appliance_charger_or_charger_group_names_is_check
         fault_flag=Condition(ConditionType.ENTITY, "binary_sensor.unused_fault"),
     )
     appliance = Appliance(id="a", entity_id="light.a", display_power=Condition(ConditionType.POWER_SENSOR, "sensor.a_power"))
-    group = ChargerGroup(id="g", one_at_a_time=Condition(ConditionType.ENTITY, "input_boolean.low_limit"), chargers=(charger,))
+    group = ChargerGroup(id="g", one_at_a_time=Condition(ConditionType.ENTITY, "input_boolean.low_limit"), chargers=(charger, replace(charger, id="d")))
     config = KraftvaktConfig(appliances=(appliance,), charger_groups=(group,))
 
     async_check_entities(hass, config)

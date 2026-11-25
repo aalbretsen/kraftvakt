@@ -549,7 +549,7 @@
     "one_at_a_time_applies": "Gjelder",
     "dynamic_order": "Dynamisk ladeprioritet",
     "dynamic_order_sub": "Biler som lader, får fortsette, og de andre venter på tur.",
-    "needs_two_chargers": "Krever minst to elbilladere i gruppen.",
+    "needs_two_chargers": "Gjelder bare med minst to elbilladere i gruppen.",
     "chargers": "Ladeprioritet",
     "chargers_sub": "Øverst har høyest prioritet. Dra en elbillader til en annen gruppe for å flytte den.",
     "add": "Legg til elbillader",

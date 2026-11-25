@@ -511,7 +511,8 @@ def test_car_disconnected_limits_the_charger_at_once() -> None:
 )
 def test_charger_without_a_car_keeps_its_minimum_unless_dynamic_order_knows_the_car_left(dynamic_order: bool, car_disconnected: bool, commands: list) -> None:
     """Without evidence that the car left, as while a cloud service is down, the car may still be charging."""
-    scenario = Scenario(make_config(chargers=(charger("c", max_a=8),), dynamic_order=dynamic_order, wait_at_limit_s=0))
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=8), charger("d")), dynamic_order=dynamic_order, wait_at_limit_s=0))
+    scenario.set_charger("d", **NO_CAR)
     scenario.draw("c")
     scenario.charge("c", 8)
 
@@ -519,6 +520,19 @@ def test_charger_without_a_car_keeps_its_minimum_unless_dynamic_order_knows_the_
     scenario.set_charger("c", car_connected=False, car_disconnected=car_disconnected)
 
     assert scenario.decide(0) == commands
+
+
+def test_a_group_with_one_charger_ignores_one_at_a_time_and_dynamic_order() -> None:
+    """Its car that is known to be disconnected keeps the minimum current, as without dynamic charging order."""
+    scenario = Scenario(make_config(chargers=(charger("c", max_a=8),), one_at_a_time=True, dynamic_order=True, wait_at_limit_s=0))
+    scenario.draw("c")
+    scenario.charge("c", 8)
+
+    scenario.draw("c", drawing=False)
+    scenario.set_charger("c", car_connected=False, car_disconnected=True)
+
+    assert scenario.decide(0) == current("c", 6)
+    assert not scenario.engine.one_at_a_time["ev"]
 
 
 def test_car_connected_again_waits_in_the_queue_with_dynamic_order() -> None:

@@ -19,7 +19,7 @@ from custom_components.kraftvakt.config_validation import (
     parse_config,
     validate_config,
 )
-from tests.config_examples import full_config_data
+from tests.config_examples import full_config_data, with_second_charger
 
 type Mutation = Callable[[dict[str, Any]], None]
 
@@ -242,11 +242,16 @@ def test_fault_flag_is_checked_also_while_deactivate_on_fault_is_off() -> None:
 def test_one_at_a_time_expression(expression: dict[str, str], code: str | None) -> None:
     expected = [] if code is None else [Issue(code, "charger_groups", "g1", "one_at_a_time")]
 
-    assert _issues_after(_set("charger_groups.0.one_at_a_time", expression)) == expected
+    assert _issues_after(lambda data: _set("charger_groups.0.one_at_a_time", expression)(with_second_charger(data))) == expected
+
+
+def test_one_at_a_time_expression_of_a_group_with_one_charger_is_not_checked() -> None:
+    """It does not apply, and its field is disabled in the panel, so the expression cannot stop a save."""
+    assert _issues_after(_set("charger_groups.0.one_at_a_time", {"type": "entity", "value": "low_limit"})) == []
 
 
 async def test_parse_config_rejects_invalid_one_at_a_time_template(hass: HomeAssistant) -> None:
-    data = full_config_data()
+    data = with_second_charger(full_config_data())
     data["charger_groups"][0]["one_at_a_time"] = {"type": "template", "value": "{{ power_limit < }}"}
 
     with pytest.raises(ConfigValidationError) as error:

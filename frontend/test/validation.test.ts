@@ -83,12 +83,14 @@ describe("missing items", () => {
     expect(missing({ charging_power: { type: "power_sensor", value: "" } }, { one_at_a_time: false, dynamic_order: true })).toEqual([issue]);
   });
 
-  it("include the expression of a group that charges one at a time while it is true", () => {
-    const missing = (one_at_a_time: ChargerGroup["one_at_a_time"]) => missingItems(config({ charger_groups: [group("garage", [charger("garage")], { one_at_a_time })] }));
+  it("include the expression of a group that charges one at a time while it is true, when the group has two chargers or more", () => {
+    const missing = (one_at_a_time: ChargerGroup["one_at_a_time"], chargers = [charger("garage"), charger("carport")]) =>
+      missingItems(config({ charger_groups: [group("garage", chargers, { one_at_a_time })] }));
     const issue = { code: "missing_condition", section: "charger_groups", target: "garage", field: "one_at_a_time" };
     expect(missing({ type: "template", value: " " })).toEqual([issue]);
     expect(missing({ type: "template", value: "{{ power_limit < 15000 }}" })).toEqual([]);
     expect(missing(false)).toEqual([]);
+    expect(missing({ type: "template", value: " " }, [charger("garage")])).toEqual([]);
   });
 
   it("include the fault flag only while the charger is deactivated on fault", () => {

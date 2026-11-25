@@ -467,9 +467,14 @@ class ChargerGroup:
     dynamic_order: bool = False
     chargers: tuple[Charger, ...] = ()
 
+    @property
+    def sharing_applies(self) -> bool:
+        """Return whether one at a time and dynamic charging order apply, which they do not with fewer than two chargers, where they make no difference."""
+        return len(self.chargers) > 1
+
     def conditions(self) -> Iterator[tuple[str, Condition]]:
-        """Return the expression of one at a time while it is given as one, with the field issues address."""
-        if isinstance(self.one_at_a_time, Condition):
+        """Return the expression of one at a time while it is given as one and applies, with the field issues address."""
+        if self.sharing_applies and isinstance(self.one_at_a_time, Condition):
             yield "one_at_a_time", self.one_at_a_time
 
     def used_entities(self) -> Iterator[str]:

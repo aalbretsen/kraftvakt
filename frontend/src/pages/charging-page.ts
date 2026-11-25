@@ -12,7 +12,7 @@ import { chargerName } from "../entities";
 import { formatNumber } from "../format";
 import type { TranslationKey } from "../localize";
 import { renderDescription, renderSectionHeader } from "../section-styles";
-import { issuesFor } from "../validation";
+import { issuesFor, sharingApplies } from "../validation";
 import { ConfigPage, type ItemList } from "./config-page";
 
 const CHARGER_FIELDS = [
@@ -57,7 +57,7 @@ const FIELD_LABELS: Record<keyof GroupForm, TranslationKey> = {
   dynamic_order: "charging.dynamic_order",
 };
 
-/** How the chargers of a group share the power makes no difference with fewer than two, so these settings are disabled then, and keep their values. */
+/** The settings that are disabled while they do not apply, and keep their values. */
 const SHARING_FIELDS = new Set(["one_at_a_time", "dynamic_order"]);
 
 /** The groups of EV chargers, each with its settings and its chargers. */
@@ -162,7 +162,7 @@ export class KraftvaktChargingPage extends ConfigPage {
   }
 
   private sharingDisabled(group: ChargerGroup, field: string): boolean {
-    return group.chargers.length < 2 && SHARING_FIELDS.has(field);
+    return !sharingApplies(group) && SHARING_FIELDS.has(field);
   }
 
   /** What restricting to one EV charger at a time does is told under its section header, not under its field. */
