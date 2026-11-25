@@ -55,6 +55,7 @@ The section header, the description and the footer note are in `section-styles.t
 - A page is a stack of cards made by `renderCard` in `ConfigPage`: a header with the title in HA's card header size and an optional control at the right end,
   such as an add button, then the description, the content, a list from edge to edge and a footer.
 - A part of a card has a section header: a smaller title and an optional control at the right end, then its description and its fields.
+  The parts of a card, such as the name and the sections of a charger group, have a line from edge to edge between them.
 - A dialog starts with the fields that concern the whole item, without a frame: the device, the entity and a charger's power at minimum current. The rest is in groups.
   A group is a frame with a section header, a description and its fields, as a card is on a page.
   A group with a switch in its header is about something that can be turned on, and shows its fields only while it is on.

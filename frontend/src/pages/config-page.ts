@@ -30,14 +30,16 @@ export interface ItemList {
 
 /**
  * A card on a configuration page: a header with the title and an optional
- * control at the right end, the description, the content, a list from edge
- * to edge and a footer.
+ * control at the right end, the description, the content or its sections,
+ * a list from edge to edge and a footer.
  */
 export interface Card {
   title: string;
   control?: unknown;
   description?: string;
   content?: unknown;
+  /** Parts of the content, divided by a line from edge to edge, as Home Assistant divides a card. */
+  sections?: unknown[];
   list?: unknown;
   footer?: unknown;
 }
@@ -88,14 +90,15 @@ export class ConfigPage extends LitElement {
   }
 
   protected renderCard(card: Card) {
-    const hasContent = card.description || (card.content !== undefined && card.content !== nothing);
+    const sections = card.sections?.map((section) => html`<div class="section">${section}</div>`) ?? nothing;
+    const hasContent = card.description || card.sections?.length || (card.content !== undefined && card.content !== nothing);
     return html`
       <ha-card>
         <div class="card-header">
           <h2 class="card-title">${card.title}</h2>
           ${card.control ?? nothing}
         </div>
-        ${hasContent ? html`<div class="card-content">${renderDescription(card.description)} ${card.content ?? nothing}</div>` : nothing} ${card.list ?? nothing}
+        ${hasContent ? html`<div class="card-content">${renderDescription(card.description)} ${card.content ?? nothing} ${sections}</div>` : nothing} ${card.list ?? nothing}
         ${card.footer ?? nothing}
       </ha-card>
     `;
@@ -173,6 +176,15 @@ export class ConfigPage extends LitElement {
         display: grid;
         gap: 16px;
         padding: 0 16px 16px;
+      }
+      .section {
+        display: grid;
+        gap: 16px;
+      }
+      .section + .section {
+        margin-inline: -16px;
+        padding: 16px 16px 0;
+        border-top: 1px solid var(--divider-color);
       }
       .card-footer {
         display: flex;

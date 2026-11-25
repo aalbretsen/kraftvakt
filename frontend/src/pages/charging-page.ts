@@ -1,5 +1,5 @@
 import { mdiDelete, mdiEvStation, mdiPlus } from "@mdi/js";
-import { css, html, nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import type { Charger, ChargerGroup, Condition, Issue } from "../api";
@@ -102,13 +102,17 @@ export class KraftvaktChargingPage extends ConfigPage {
     };
     return this.renderCard({
       title: group.name.trim() || this.localize("charging.unnamed_group"),
-      content: html`
-        ${this.renderGroupForm(group, NAME_SCHEMA)} ${renderSectionHeader(this.localize("charging.one_at_a_time"))}
-        ${renderDescription(this.localize("charging.one_at_a_time_sub"))} ${this.renderGroupForm(group, this.sharingSchema())}
-        ${typeof group.one_at_a_time === "object" ? this.renderSharingCondition(group, group.one_at_a_time) : nothing}
-        ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))} ${renderDescription(this.localize("charging.chargers_sub"))}
-        ${this.renderGroupForm(group, DYNAMIC_ORDER_SCHEMA)}
-      `,
+      sections: [
+        this.renderGroupForm(group, NAME_SCHEMA),
+        html`
+          ${renderSectionHeader(this.localize("charging.one_at_a_time"))} ${renderDescription(this.localize("charging.one_at_a_time_sub"))}
+          ${this.renderGroupForm(group, this.sharingSchema())} ${typeof group.one_at_a_time === "object" ? this.renderSharingCondition(group, group.one_at_a_time) : nothing}
+        `,
+        html`
+          ${renderSectionHeader(this.localize("charging.chargers"), this.renderAddButton(list))} ${renderDescription(this.localize("charging.chargers_sub"))}
+          ${this.renderGroupForm(group, DYNAMIC_ORDER_SCHEMA)}
+        `,
+      ],
       list: this.renderItemList(list),
       footer: this.renderCardFooter(
         empty ? "" : this.localize("charging.delete_group_not_empty"),
@@ -148,7 +152,6 @@ export class KraftvaktChargingPage extends ConfigPage {
   private renderSharingCondition(group: ChargerGroup, condition: Condition) {
     return html`
       <kraftvakt-condition-field
-        class="sharing-condition"
         .hass=${this.hass}
         .localize=${this.localize}
         .value=${condition}
@@ -335,15 +338,6 @@ export class KraftvaktChargingPage extends ConfigPage {
     const groups = this.config.charger_groups.map((item) => (item.id === group.id ? group : item));
     this.changeConfig({ ...this.config, charger_groups: groups });
   }
-
-  static styles = [
-    ConfigPage.styles,
-    css`
-      .sharing-condition {
-        margin-bottom: 24px;
-      }
-    `,
-  ];
 }
 
 function groupForm(group: ChargerGroup): GroupForm {
