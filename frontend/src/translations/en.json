@@ -145,7 +145,6 @@
     "deactivate": "Deactivate {name}",
     "set_current": "{name} at {current} A",
     "last_update": "Last report",
-    "reports": "Reports from the power sensor",
     "updates_last_hour": "Reports in the last hour",
     "steady": "steady",
     "uneven": "uneven",
@@ -304,6 +303,8 @@
     "penalty_info": "A safety valve for when consumption gets far above the power limit, for example when something outside Kraftvakt is turned on."
   },
   "reports": {
+    "title": "Reports from the power sensor",
+    "description": "How the power sensor has reported over the last hour, and what that gives with the settings above.",
     "no_power_sensor": "Choose the power sensor to see how it reports.",
     "analysing": "Finding out how the power sensor reports. It can take up to 30 seconds.",
     "not_analysed": "Could not find out how the power sensor reports.",

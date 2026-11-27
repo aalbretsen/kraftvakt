@@ -4,6 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 import { analysePowerSensor, type KraftvaktConfig, type PowerSensorReports } from "../api";
 import { ownEntities } from "../entities";
 import { reportLines, reportText, windowChoices } from "../power-sensor-reports";
+import { renderDescription, renderSectionHeader } from "../section-styles";
 import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
 
 /** The power sensor has no default, the power limit is the tariff step the user has chosen, and the timeout is suggested from the power sensor. */
@@ -78,28 +79,31 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
 
   /** How the power sensor reports, for the regulation window and the timeout in the draft. */
   private renderReports() {
+    return html`
+      ${renderSectionHeader(this.localize("reports.title"))} ${renderDescription(this.localize("reports.description"))}
+      <div class="reports">${this.renderReportLines()}</div>
+    `;
+  }
+
+  private renderReportLines() {
     const sensor = this.config.general.power_sensor;
     if (!sensor) {
-      return html`<p class="description">${this.localize("reports.no_power_sensor")}</p>`;
+      return html`<p>${this.localize("reports.no_power_sensor")}</p>`;
     }
     if (this.analysing === sensor || this.reports?.sensor !== sensor) {
-      return html`<p class="description">${this.localize("reports.analysing")}</p>`;
+      return html`<p>${this.localize("reports.analysing")}</p>`;
     }
     const reports = this.reports.reports;
     if (!reports) {
-      return html`<p class="description">${this.localize("reports.not_analysed")}</p>`;
+      return html`<p>${this.localize("reports.not_analysed")}</p>`;
     }
     const general = this.config.general;
     const choices = windowChoices(this.capabilities.limits.general.regulation_window_s);
     const language = this.hass.language;
-    return html`
-      <div class="reports">
-        ${reportLines(reports, general.regulation_window_s, general.power_sensor_timeout_s, choices).map((line) => {
-          const text = reportText(line, this.localize, language);
-          return line.warning ? html`<ha-alert alert-type="warning">${text}</ha-alert>` : html`<p class="description">${text}</p>`;
-        })}
-      </div>
-    `;
+    return reportLines(reports, general.regulation_window_s, general.power_sensor_timeout_s, choices).map((line) => {
+      const text = reportText(line, this.localize, language);
+      return line.warning ? html`<ha-alert alert-type="warning">${text}</ha-alert>` : html`<p>${text}</p>`;
+    });
   }
 
   private renderSettingsCard(title: CardTitle, schema: FormField[], description?: "general.penalty_info") {
@@ -131,6 +135,9 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
       .reports {
         display: grid;
         gap: 8px;
+      }
+      .reports p {
+        margin: 0;
       }
     `,
   ];

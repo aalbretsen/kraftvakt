@@ -205,7 +205,7 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     ];
     return html`
       <ha-card>
-        <div class="card-header"><span>${this.localize("diagnostics.reports")}</span></div>
+        <div class="card-header"><span>${this.localize("reports.title")}</span></div>
         <div class="reports">
           <dl>
             ${rows.map(

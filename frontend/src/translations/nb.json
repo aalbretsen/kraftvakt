@@ -145,7 +145,6 @@
     "deactivate": "Deaktiver {name}",
     "set_current": "{name} på {current} A",
     "last_update": "Siste rapport",
-    "reports": "Rapporter fra effektsensoren",
     "updates_last_hour": "Rapporter siste time",
     "steady": "jevnt",
     "uneven": "ujevnt",
@@ -304,6 +303,8 @@
     "penalty_info": "En sikkerhetsventil som slår til hvis forbruket blir mye høyere enn effektgrensen, for eksempel når noe utenfor Kraftvakt slås på."
   },
   "reports": {
+    "title": "Rapporter fra effektsensoren",
+    "description": "Hvordan effektsensoren har rapportert den siste timen, og hva det gir med innstillingene over.",
     "no_power_sensor": "Velg effektsensoren for å se hvordan den rapporterer.",
     "analysing": "Finner ut hvordan effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
     "not_analysed": "Fant ikke ut hvordan effektsensoren rapporterer.",
