@@ -236,7 +236,7 @@
     "close": "Close"
   },
   "general": {
-    "measurement": "Measurement",
+    "measurement": "Power measurement",
     "regulation": "Regulation",
     "penalty": "Penalty",
     "window_option": "{seconds} s",

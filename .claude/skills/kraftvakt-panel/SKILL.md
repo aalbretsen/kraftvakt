@@ -182,7 +182,7 @@ The section header, the description and the footer note are in `section-styles.t
   a boolean entity that is on or off shows only its state, which says the same.
   A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
-- The Measurement card has the power sensor, the regulation window as a dropdown of its lengths, and the power sensor timeout,
+- The Power measurement card has the power sensor, the regulation window as a dropdown of its lengths, and the power sensor timeout,
   and under a line the section Timing of the power measurements, the same title as the card on the diagnostics page,
   with a line that says what it covers, and the summary of how the power sensor reports, from `kraftvakt/power_sensor/analysis`:
   of the saved power sensor when the page opens, and of one just chosen, whose timeout is then set to the one suggested.

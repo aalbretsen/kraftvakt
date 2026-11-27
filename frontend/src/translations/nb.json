@@ -236,7 +236,7 @@
     "close": "Lukk"
   },
   "general": {
-    "measurement": "Måling",
+    "measurement": "Effektmåling",
     "regulation": "Regulering",
     "penalty": "Straff",
     "window_option": "{seconds} s",
