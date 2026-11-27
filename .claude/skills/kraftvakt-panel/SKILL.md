@@ -38,7 +38,7 @@ HA's sidebar is docked on a phone in landscape in the app and leaves the page li
 Logic is kept in modules outside the elements, so it is unit tested, see the `kraftvakt-testing` skill. Code that mirrors the backend and must be kept in step with it:
 
 - the waiting times, the curve and the growth on repeated turn-on, the same as in `regulation/waiting.py`,
-- the choices of the regulation window, the same as in `config_model.py`,
+- how many update intervals a regulation window lasts, the same as the window clock in `measurement.py`,
 - a subset of the validation in `config_validation.py`: the limits, what is missing and completing the priority list, for quick feedback; the backend checks everything at save,
 - the checks of default and domain actions against their entities, the same as in `actions.py` and `domain_actions.py`,
 - the name of a charger that is not saved yet, the same rule as the backend,
@@ -95,7 +95,8 @@ The section header, the description and the footer note are in `section-styles.t
   The status page and the lock banner share the start and stop button.
 - General and Advanced end with Restore defaults (HA's own words) in the page footer, shared in `SettingsFormPage`:
   each page passes the settings it restores, and the defaults come from the capabilities.
-  General leaves out the power limit, since it is the tariff step the user has chosen, and the power sensor and the regulation window, which have no default.
+  General leaves out the power limit, since it is the tariff step the user has chosen, the power sensor, which has no default,
+  and the power sensor timeout, which is suggested from the power sensor.
   It only changes the draft, so it asks for no confirmation, and it is disabled while every setting it restores has its default.
 - The warning against controlling regulated appliances outside Kraftvakt is shown only while a list is empty (appliances on the Appliances page, chargers on the EV charging page).
 - Default is offered only for domains with a default action. When an entity is picked and the action is not set, the suggested domain action of its domain is chosen,
@@ -181,10 +182,14 @@ The section header, the description and the footer note are in `section-styles.t
   a boolean entity that is on or off shows only its state, which says the same.
   A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
-- The regulation window is a dropdown of its choices for the update interval, each as «N updates (X s)», disabled until the interval is known.
-  When the power sensor is chosen, or set without an interval, the panel asks the backend for the interval and chooses the window closest to the length it had,
-  10 s at first. Its helper tells the interval, or that the power sensor must be chosen, is being measured, could not be measured or reports too seldom,
-  and it is not marked as missing while it cannot be chosen. Like a setting without a default, it may be saved while it is not set.
+- The Measurement card has the power sensor, the regulation window as a dropdown of its lengths, and the power sensor timeout,
+  and under a line the summary of how the power sensor reports, from `kraftvakt/power_sensor/analysis`:
+  of the saved power sensor when the page opens, and of one just chosen, whose timeout is then set to the one suggested.
+  The summary tells the update interval, that the reports are steady and how many measurements a regulation window holds,
+  or that they are uneven, with the likely reason and the advice to set the reader's maximum report interval.
+  It warns, as an alert with what to change, of steady reports less often than the regulation window, of silences longer than a minute,
+  and of silences of at least half the timeout. It follows the regulation window and the timeout in the draft.
+  The fields have no helper text about intervals: the summary tells what the power sensor gives.
 - The EV charging page has one card per charger group, with its name, its settings and its chargers in charging priority, and Add group under the cards.
   Without groups, a line of text says so, as an empty list does.
   A new group gets the first free name of «EV chargers», «EV chargers 2» and so on, so it has no error at once. A group can be deleted only when it has no chargers.
@@ -195,7 +200,8 @@ The section header, the description and the footer note are in `section-styles.t
 ### Advanced page
 
 - The last page in the menu, with the settings most users never change.
-  Its settings belong to `general` in the stored configuration, so issues for those fields send the user to it. The waiting time at the power limit is on the General page.
+  Its settings belong to `general` in the stored configuration, so issues for those fields send the user to it.
+  The waiting time at the power limit is on the General page, and so is the power sensor timeout, next to how the power sensor reports.
 - Little text: the user reads the curve and the result, not how it is computed.
 - First card, the waiting time curve: one line of text, sliders for steepness and pivot point (no tooltip, the value as plain text beside it, no input box, no helper text),
   a table and a graph that follow the draft while the sliders move. The pivot point is not marked on the graph.
@@ -212,7 +218,7 @@ The section header, the description and the footer note are in `section-styles.t
   The first two follow the curve and show the waiting time at the pivot point, which the text says. Dropdowns keep their values as numbers in the draft.
 - Third card, EV chargers: a short text on what it is for, the damping time in seconds, and the waiting time for EV chargers as a dropdown of factors.
 - Fourth card, command repeat: a short text on why commands are repeated, and the interval in minutes.
-- Fifth card, timeouts: a short text on what each timeout guards against, and the action timeout and the power sensor timeout in seconds.
+- Fifth card, timeouts: a short text on what the action timeout guards against, and the action timeout in seconds.
 - On a page at most 760 px wide the tables are left out and the graph is drawn small. Narrower, the tables do not fit with the most columns.
 
 ### Status page
@@ -224,6 +230,7 @@ The section header, the description and the footer note are in `section-styles.t
   Start and stop are in a footer under a divider, on every screen width; stop is a plain danger button, start a filled one.
 - While the power sensor is valid again but the safe state lasts until the next decision, the safe state banner is an info that the regulation starts again at the next decision,
   not the error that the sensor gives no valid measurement.
+  A power sensor that has gone silent keeps its last value in Home Assistant, so the status tells it, and the banner says it has not reported for the timeout.
 - Clock times and dates follow the user's profile in Home Assistant: the browser's or the server's time zone, and the language's, the system's,
   a 12-hour or a 24-hour clock, from `timeLocale` in `format.ts`.
 - Countdowns are never ticking text. The next decision is a small ring that empties over one regulation window, animated by the browser (Web Animations API) so it needs no clock;
@@ -295,6 +302,10 @@ The section header, the description and the footer note are in `section-styles.t
 - First a row of health tiles: the power sensor, the actions, the regulation and the command repeat, each with a dot in the success, warning or alarm colour, or grey.
   The regulation tile shows how long it has run as whole days, or else hours, or else minutes, rounded down, with the start under it,
   since a date and time is hard to read for a long run.
+  The power sensor tile has the warning colour when the summary of how it reports has a warning.
+- Then the card Reports from the power sensor: how it has reported over the last hour, as the reports, the update interval and whether they are steady,
+  the shortest interval, the longest silence, the lost reports while they are steady, the windows closed at a report and by the clock, and the timeout,
+  with the same summary as on the General page.
 - Then the timeline over the last 15, 30 or 60 minutes, as the user chooses, 60 at first:
   the consumption from the measurements kept, and from the decisions kept the regulation average, the tariff average
   and the power limit, with a lane under it per appliance and EV charger in priority order, sharing the time axis. A dotted line marks the oldest decision kept.

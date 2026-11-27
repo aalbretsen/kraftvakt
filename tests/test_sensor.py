@@ -30,7 +30,7 @@ WINDOW = 6 * INTERVAL
 @pytest.fixture
 def stored_general(hass_storage: dict[str, Any]) -> dict[str, Any]:
     """Store a configuration with a power sensor that reports every 10 seconds and windows of six updates; tests may change it first."""
-    general = {"power_sensor": POWER_SENSOR, "regulation_window_updates": 6, "power_sensor_interval_s": INTERVAL.total_seconds()}
+    general = {"power_sensor": POWER_SENSOR, "regulation_window_s": int(WINDOW.total_seconds())}
     hass_storage[STORAGE_KEY] = {
         "version": STORAGE_VERSION,
         "minor_version": 1,
@@ -76,10 +76,11 @@ async def report(hass: HomeAssistant, freezer: FrozenDateTimeFactory, value: str
 
 
 async def tick(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
-    """Move time on without reports from the power sensor."""
-    freezer.tick(delta)
-    async_fire_time_changed(hass)
-    await hass.async_block_till_done()
+    """Move time on without reports from the power sensor, a second at a time, so the windows close by the clock as they would."""
+    for _ in range(int(delta.total_seconds())):
+        freezer.tick(timedelta(seconds=1))
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
 
 
 def entity_id(hass: HomeAssistant, key: str) -> str:
@@ -169,7 +170,7 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(hass: HomeAssistant,
     await report(hass, freezer, "3000", count=6)
 
     await report(hass, freezer, "unavailable", unit=None)
-    await tick(hass, freezer, WINDOW - INTERVAL)
+    await tick(hass, freezer, WINDOW)
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(3000)
 
     await tick(hass, freezer, WINDOW)
@@ -177,9 +178,9 @@ async def test_sensors_follow_an_outage_of_the_power_sensor(hass: HomeAssistant,
     assert state_of(hass, "power_tariff_average") == STATE_UNAVAILABLE
 
     await tick(hass, freezer, timedelta(seconds=30))
-    await report(hass, freezer, "1500", count=6)
+    await report(hass, freezer, "1500", count=12)
     assert float(state_of(hass, "power_regulation_average")) == pytest.approx(1500)
-    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((3000 * 3510 + 1500 * 90) / 3600)
+    assert float(state_of(hass, "power_tariff_average")) == pytest.approx((3000 * 3520 + 1500 * 80) / 3600)
 
 
 async def test_power_sensor_without_unit_is_read_as_watt(hass: HomeAssistant, freezer: FrozenDateTimeFactory, setup_kraftvakt) -> None:
@@ -212,7 +213,7 @@ async def test_number_of_updates_comes_from_the_configuration(
     stored_general: dict[str, Any],
     setup_kraftvakt,
 ) -> None:
-    stored_general["regulation_window_updates"] = 2
+    stored_general["regulation_window_s"] = 20
     set_power(hass, "1000")
     await setup_kraftvakt()
 
@@ -259,7 +260,7 @@ async def test_power_sensor_that_stops_reporting_makes_the_averages_unknown(
 
     await tick(hass, freezer, timedelta(seconds=90))
     assert state_of(hass, "power_regulation_average") == "2000.0"
-    await tick(hass, freezer, WINDOW)
+    await tick(hass, freezer, 2 * WINDOW)
     assert state_of(hass, "power_regulation_average") == STATE_UNAVAILABLE
 
     await report(hass, freezer, "2000", count=6)

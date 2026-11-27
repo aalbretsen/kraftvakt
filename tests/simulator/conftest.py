@@ -17,7 +17,7 @@ from custom_components.kraftvakt_simulator.devices import async_get_power_board
 
 type AddDevice = Callable[..., Awaitable[MockConfigEntry]]
 
-HAN = {"background_w": 3500, "report_interval_s": "10"}
+HAN = {"background_w": 3500, "report_interval_s": "10", "report_change_w": 0, "max_report_interval_s": 300}
 HEATER = {
     "heater_type": "heating_cable",
     "power_w": 750,

@@ -23,19 +23,8 @@ def test_full_config_is_complete() -> None:
     assert _missing(full_config_data()) == []
 
 
-def test_default_config_misses_power_sensor_and_regulation_window() -> None:
-    assert missing_items(KraftvaktConfig()) == [
-        Issue("missing_power_sensor", "general", None, "power_sensor"),
-        Issue("missing_regulation_window", "general", None, "regulation_window_updates"),
-    ]
-
-
-@pytest.mark.parametrize("field", ["regulation_window_updates", "power_sensor_interval_s"])
-def test_regulation_window_needs_its_updates_and_the_interval_of_the_power_sensor(field: str) -> None:
-    data = full_config_data()
-    del data["general"][field]
-
-    assert _missing(data) == [Issue("missing_regulation_window", "general", None, "regulation_window_updates")]
+def test_default_config_misses_the_power_sensor() -> None:
+    assert missing_items(KraftvaktConfig()) == [Issue("missing_power_sensor", "general", None, "power_sensor")]
 
 
 def test_appliance_needs_entity_and_both_actions() -> None:

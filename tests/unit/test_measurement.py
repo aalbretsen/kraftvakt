@@ -8,18 +8,15 @@ import pytest
 
 from custom_components.kraftvakt.measurement import (
     TARIFF_WINDOW,
-    IntervalChange,
     MissedWindows,
     PowerAverager,
-    ReportIntervalCheck,
     WindowAverages,
+    WindowClock,
     power_w,
-    update_interval_s,
 )
 
 START = datetime(2026, 11, 7, 12, 0, tzinfo=UTC)
 WINDOW = timedelta(seconds=60)
-UPDATES = 6
 
 
 def at(seconds: float) -> datetime:
@@ -66,73 +63,15 @@ def test_power_w_converts_valid_measurements(state: str | None, unit: str | None
 
 def test_window_without_measurement_has_no_averages() -> None:
     """Before the first valid measurement the averages are unknown."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
 
     averages = averager.close_window(at(60))
 
     assert averages == WindowAverages(at(0), at(60), None, None, sensor_valid=False)
 
 
-def test_window_is_complete_at_its_number_of_updates() -> None:
-    """Invalid updates count, the state when the sensor is first followed does not, and the count starts again in the next window."""
-    averager = PowerAverager(3, START)
-    averager.add_measurement(at(0), 2.0, update=False)
-    averager.add_measurement(at(10), 2.0)
-    averager.add_measurement(at(20), None)
-    assert not averager.window_complete
-
-    averager.add_measurement(at(30), 2.0)
-    assert averager.window_complete
-    averager.close_window(at(30))
-    assert not averager.window_complete
-    assert averager.diagnostics()["updates"] == 0
-
-
-def test_window_with_its_updates_at_its_start_is_not_complete() -> None:
-    """A window closed at its start would last no time."""
-    averager = PowerAverager(1, START)
-    averager.add_measurement(at(0), 2.0)
-
-    assert not averager.window_complete
-
-
-def test_new_window_applies_from_the_next_window() -> None:
-    averager = PowerAverager(3, START)
-    averager.change_window(1, timedelta(seconds=20))
-    averager.add_measurement(at(10), 2.0)
-    assert not averager.window_complete
-
-    averager.close_window(at(10))
-    assert averager.update_interval == timedelta(seconds=20)
-    averager.add_measurement(at(20), 2.0)
-    assert not averager.window_complete
-    averager.add_measurement(at(25), 2.0)
-    assert averager.window_complete
-
-
-def test_extra_report_does_not_close_a_window_that_has_just_started() -> None:
-    """A window lasts three quarters of its length at the update interval, as a Kamstrup meter sends its hourly list a few seconds after a report."""
-    averager = PowerAverager(1, START, timedelta(seconds=10))
-    averager.add_measurement(at(5.3), 2.0)
-    assert not averager.window_complete
-    assert averager.updates == 1
-
-    averager.add_measurement(at(10), 2.0)
-    assert averager.window_complete
-
-
-def test_window_needs_all_its_updates_also_after_three_quarters_of_its_length() -> None:
-    averager = PowerAverager(4, START, timedelta(seconds=2.5))
-    for seconds in (2.5, 5, 7.5):
-        averager.add_measurement(at(seconds), 2.0)
-    assert not averager.window_complete
-
-    averager.add_measurement(at(10), 2.0)
-    assert averager.window_complete
-
-
 def test_windows_follow_each_other() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
 
     first = averager.close_window(at(60))
     second = averager.close_window(at(130))
@@ -143,18 +82,17 @@ def test_windows_follow_each_other() -> None:
 
 
 def test_skipped_windows_start_the_next_window() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), None)
 
     assert averager.skip_windows(at(120)) == MissedWindows(at(0), at(120))
     assert averager.window_start == at(120)
     assert averager.diagnostics()["last_missed_windows"] == MissedWindows(at(0), at(120))
-    assert averager.diagnostics()["updates"] == 0
 
 
 def test_skipped_time_counts_with_the_last_valid_measurement() -> None:
     """Nothing is measured while the event loop is paused, as while Home Assistant is down. A late report counts from the window start."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 2.0)
     averager.add_measurement(at(30), None)
 
@@ -169,7 +107,7 @@ def test_skipped_time_counts_with_the_last_valid_measurement() -> None:
 
 def test_first_measurement_fills_both_windows_backwards() -> None:
     """At startup the first measurement replaces the missing ones."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(20), 4.0)
 
     averages = averager.close_window(at(60))
@@ -181,7 +119,7 @@ def test_first_measurement_fills_both_windows_backwards() -> None:
 
 def test_each_measurement_covers_the_time_before_it() -> None:
     """The measurement that closes the window counts in it, and the average is the energy in the window divided by its length."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(15), 2.0)
     averager.add_measurement(at(60), 6.0)
 
@@ -191,7 +129,7 @@ def test_each_measurement_covers_the_time_before_it() -> None:
 
 
 def test_latest_measurement_covers_the_time_after_it_until_the_close() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(30), 2.0)
     averager.add_measurement(at(40), 8.0)
 
@@ -200,7 +138,7 @@ def test_latest_measurement_covers_the_time_after_it_until_the_close() -> None:
 
 def test_regulation_windows_do_not_overlap() -> None:
     """Each regulation average covers its own window only, and a measurement after a close covers the time since it."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(60), 8.0)
     first = averager.close_window(at(60))
     averager.add_measurement(at(90), 2.0)
@@ -213,7 +151,7 @@ def test_regulation_windows_do_not_overlap() -> None:
 
 def test_tariff_average_slides_over_the_last_hour() -> None:
     """The tariff average covers exactly one hour back in time."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(0), 10.0)
 
     assert close_windows_until(averager, at(30 * 60)).tariff_average_w == 10.0
@@ -227,7 +165,7 @@ def test_tariff_average_slides_over_the_last_hour() -> None:
 def test_tariff_window_does_not_depend_on_the_window_length() -> None:
     """The tariff window is one hour also when 3600 s is not a multiple of the regulation window."""
     window = timedelta(seconds=70)
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(0), 6.0)
     close_next(averager, window)
     averager.add_measurement(at(100), 0.0)
@@ -246,11 +184,12 @@ def changing_power(seconds: int) -> float:
 
 def run_with_updates_every(interval_s: int, power_at: Callable[[int], float], updates: int) -> list[WindowAverages]:
     """Feed the power once per interval through two hours, closing a window at every `updates`-th update."""
-    averager = PowerAverager(updates, START)
+    averager = PowerAverager(START)
+    averager.set_update_interval(timedelta(seconds=interval_s))
     results = []
-    for second in range(interval_s, 2 * 3600 + 1, interval_s):
+    for count, second in enumerate(range(interval_s, 2 * 3600 + 1, interval_s), start=1):
         averager.add_measurement(at(second), power_at(second))
-        if averager.window_complete:
+        if count % updates == 0:
             results.append(averager.close_window(at(second)))
     return results
 
@@ -287,7 +226,7 @@ def test_update_rate_does_not_change_the_result() -> None:
 
 def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
     """One window closing without valid measurement is tolerated."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 3.0)
     averager.add_measurement(at(30), None)
 
@@ -300,7 +239,7 @@ def test_one_invalid_close_uses_the_last_valid_measurement() -> None:
 
 def test_validity_is_the_state_when_the_window_closes() -> None:
     """A gap inside the window keeps the last valid measurement, and only the close counts."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 2.0)
     averager.add_measurement(at(20), None)
     averager.add_measurement(at(60), 8.0)
@@ -313,7 +252,7 @@ def test_validity_is_the_state_when_the_window_closes() -> None:
 
 def test_valid_close_between_invalid_ones_keeps_the_history() -> None:
     """Only invalid closes in a row discard the history."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 3.0)
     averager.add_measurement(at(30), None)
     averager.close_window(at(60))
@@ -329,7 +268,7 @@ def test_valid_close_between_invalid_ones_keeps_the_history() -> None:
 
 def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
     """The history is kept, and the last valid measurement fills the gap when a valid measurement comes again."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 9.0)
     averager.add_measurement(at(30), None)
     averager.close_window(at(60))
@@ -348,7 +287,7 @@ def test_two_invalid_closes_in_a_row_make_the_averages_unknown() -> None:
 
 def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
     """A value that lasts one millisecond after the safe state does not fill the whole hour."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(0), 7.0)
     close_windows_until(averager, at(3600))
     averager.add_measurement(at(3610), None)
@@ -362,7 +301,7 @@ def test_short_value_after_the_gap_does_not_fill_the_hour() -> None:
 
 
 def test_without_first_measurement_windows_stay_unknown() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), None)
 
     results = [close_next(averager) for _ in range(3)]
@@ -372,7 +311,7 @@ def test_without_first_measurement_windows_stay_unknown() -> None:
 
 def test_late_measurement_never_changes_a_closed_window() -> None:
     """A measurement older than the latest one counts from the latest time."""
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 2.0)
     averager.close_window(at(60))
     averager.add_measurement(at(30), 8.0)
@@ -384,7 +323,7 @@ def test_late_measurement_never_changes_a_closed_window() -> None:
 
 
 def test_latest_measurement_at_the_same_time_wins() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
     averager.add_measurement(at(10), 2.0)
     averager.add_measurement(at(30), 5.0)
     averager.add_measurement(at(30), 2.0)
@@ -394,10 +333,10 @@ def test_latest_measurement_at_the_same_time_wins() -> None:
 
 def test_long_run_keeps_only_the_last_hour() -> None:
     """Old measurements are forgotten, so memory stays bounded over time."""
-    averager = PowerAverager(60, START)
+    averager = PowerAverager(START)
     for second in range(1, 6 * 3600 + 1):
         averager.add_measurement(at(second), float(second % 2))
-        if averager.window_complete:
+        if second % 60 == 0:
             averages = averager.close_window(at(second))
 
     assert math.isclose(averages.tariff_average_w or 0, 0.5, rel_tol=1e-3)
@@ -407,8 +346,8 @@ def test_long_run_keeps_only_the_last_hour() -> None:
 def test_history_fills_the_hour_before_the_first_measurement() -> None:
     """Each value in the history holds until the next, an invalid one keeps the last valid value,
     history after the start is left out, and the oldest value fills the time before it."""
-    averager = PowerAverager(UPDATES, START)
-    averager.add_measurement(START, 6.0, update=False)
+    averager = PowerAverager(START)
+    averager.add_measurement(START, 6.0)
 
     averager.add_history(
         [
@@ -426,7 +365,7 @@ def test_history_fills_the_hour_before_the_first_measurement() -> None:
 
 
 def test_history_without_a_measurement_since_the_start_holds_its_last_value() -> None:
-    averager = PowerAverager(UPDATES, START)
+    averager = PowerAverager(START)
 
     averager.add_history([(at(-60 * 60), 1.0), (at(-15 * 60), 5.0)])
     averages = averager.close_window(at(60))
@@ -437,97 +376,103 @@ def test_history_without_a_measurement_since_the_start_holds_its_last_value() ->
 
 
 def test_empty_history_keeps_the_first_measurement_filling_backwards() -> None:
-    averager = PowerAverager(UPDATES, START)
-    averager.add_measurement(START, 4.0, update=False)
+    averager = PowerAverager(START)
+    averager.add_measurement(START, 4.0)
 
     averager.add_history([(at(-5 * 60), None)])
 
     assert averager.close_window(at(60)).tariff_average_w == 4.0
 
 
-def reports(*intervals_s: float) -> list[datetime]:
-    return [at(sum(intervals_s[:count])) for count in range(len(intervals_s) + 1)]
+def test_a_measurement_covers_at_most_one_update_interval_back() -> None:
+    """A reader that reports only when the power changes was silent because the value held."""
+    averager = PowerAverager(START)
+    averager.set_update_interval(timedelta(seconds=2.5))
+    averager.add_measurement(at(0), 2.0)
+    averager.add_measurement(at(40), 7.0)
+
+    averages = averager.close_window(at(60))
+
+    assert averages.regulation_average_w == pytest.approx((2.0 * 37.5 + 7.0 * 22.5) / 60)
+
+
+def test_a_lost_update_splits_the_gap_between_the_values_around_it() -> None:
+    averager = PowerAverager(START)
+    averager.set_update_interval(timedelta(seconds=10))
+    averager.add_measurement(at(0), 2.0)
+    averager.close_window(at(0.001))
+    averager.add_measurement(at(10), 2.0)
+    averager.add_measurement(at(30), 6.0)
+
+    assert averager.close_window(at(30)).regulation_average_w == pytest.approx((2.0 * 19.999 + 6.0 * 10) / 29.999)
+
+
+def test_a_measurement_after_a_close_covers_the_time_since_the_close_at_most() -> None:
+    averager = PowerAverager(START)
+    averager.set_update_interval(timedelta(seconds=10))
+    averager.add_measurement(at(0), 2.0)
+    averager.close_window(at(55))
+    averager.add_measurement(at(60), 6.0)
+
+    assert averager.close_window(at(70)).regulation_average_w == pytest.approx(6.0)
+
+
+def clock(length_s: float = 10, interval_s: float | None = 2.5, anchor_s: float = 0) -> WindowClock:
+    window_clock = WindowClock(timedelta(seconds=length_s), at(anchor_s))
+    window_clock.start(at(anchor_s), timedelta(seconds=length_s), None if interval_s is None else timedelta(seconds=interval_s))
+    return window_clock
+
+
+def first_closing_update(window_clock: WindowClock, *updates_s: float) -> float | None:
+    return next((seconds for seconds in updates_s if window_clock.update(at(seconds))), None)
 
 
 @pytest.mark.parametrize(
-    ("times", "fewest", "expected"),
+    ("length_s", "interval_s", "updates_s", "closes_at"),
     [
-        (reports(10, 10.1, 9.9, 10), 2, 10.0),
-        (reports(2.04, 2.0, 2.06), 2, 2.0),
-        (reports(10, 20, 10, 30, 10), 2, 10.0),
-        (reports(10), 2, None),
-        (reports(10, 10, 10), 10, None),
-        (reports(10, 25, 50, 90), 2, None),
-        (reports(0, 0), 2, None),
+        (10, 2.5, (2.5, 5, 7.5, 10), 10),
+        (30, 10, (10, 20, 30), 30),
+        (10, 10, (10,), 10),
+        (10, 3, (3, 6, 9), 9),
+        (10, 4, (4, 8, 12), 12),
+        (10, 10, (5.3, 10), 10),
+        (10, 10, (7.6,), 7.6),
+        (10, 30, (10, 20, 30), 30),
+        (10, None, (5, 9.9, 10), 10),
     ],
 )
-def test_update_interval_is_the_median_of_regular_intervals(times: list[datetime], fewest: int, expected: float | None) -> None:
-    """Repeated values left out of the history make some intervals longer, which the median is not moved by."""
-    assert update_interval_s(times, fewest_intervals=fewest) == expected
+def test_a_window_closes_at_the_update_of_its_whole_update_intervals(length_s: float, interval_s: float | None, updates_s: tuple[float, ...], closes_at: float) -> None:
+    """From a quarter of an update interval before them, so an extra report just after the start, as a Kamstrup's hourly list, does not close it."""
+    assert first_closing_update(clock(length_s, interval_s), *updates_s) == closes_at
 
 
-INTERVAL = timedelta(seconds=10)
+@pytest.mark.parametrize(
+    ("interval_s", "updates_s", "close_at"),
+    [
+        (2.5, (), 11.25),
+        (10, (), 12),
+        (2.5, (2.6, 7.6), 11.35),
+        (None, (), 10),
+    ],
+)
+def test_the_clock_closes_a_window_after_the_update_expected(interval_s: float | None, updates_s: tuple[float, ...], close_at: float) -> None:
+    """Half an update interval, at most 2 s, after the newest update plus whole update intervals."""
+    window_clock = clock(10, interval_s)
+    for seconds in updates_s:
+        assert not window_clock.update(at(seconds))
+
+    assert window_clock.close_at == at(close_at)
 
 
-def check_windows(check: ReportIntervalCheck, *intervals_s: float) -> list[bool]:
-    """Count windows of one update each, lasting the given seconds, and return whether each found or ended a change."""
-    return [check.window_closed(timedelta(seconds=seconds), 1, INTERVAL) for seconds in intervals_s]
+def test_a_window_closed_by_the_clock_keeps_the_cadence_of_the_meter() -> None:
+    """The next window is anchored at the update expected, so it closes at the meter's next update."""
+    window_clock = clock(10, 2.5)
+    window_clock.update(at(7.5))
+    window_clock.start(window_clock.expected_end, timedelta(seconds=10), timedelta(seconds=2.5))
+
+    assert window_clock.expected_end == at(20)
+    assert first_closing_update(window_clock, 17.5, 20) == 20
 
 
-def test_five_windows_off_in_a_row_are_a_changed_update_interval() -> None:
-    check = ReportIntervalCheck()
-
-    assert check_windows(check, 20, 20, 20, 20, 20) == [False, False, False, False, True]
-    assert check.change == IntervalChange(timedelta(seconds=20), INTERVAL)
-
-
-def test_more_updates_than_expected_are_a_changed_update_interval() -> None:
-    """The average interval of the windows in the row is reported."""
-    check = ReportIntervalCheck()
-
-    assert [check.window_closed(timedelta(seconds=seconds), 2, INTERVAL) for seconds in (10, 10, 10, 10, 12)][-1]
-    assert check.change == IntervalChange(timedelta(seconds=5.2), INTERVAL)
-
-
-def test_windows_off_in_either_direction_count_in_the_same_row() -> None:
-    """A power sensor that reports only partly regularly is a change."""
-    check = ReportIntervalCheck()
-
-    assert check_windows(check, 20, 5, 20, 5, 20)[-1]
-    assert check.change is not None
-
-
-def test_a_window_within_a_quarter_of_the_interval_breaks_the_row() -> None:
-    """A single extra report once an hour is no change."""
-    check = ReportIntervalCheck()
-
-    assert not any(check_windows(check, 5, 10, 12.5, 7.5, 20, 20, 20, 20))
-    assert check.change is None
-
-
-def test_five_windows_not_off_in_a_row_end_the_change() -> None:
-    check = ReportIntervalCheck()
-    check_windows(check, 20, 20, 20, 20, 20)
-
-    assert check_windows(check, 10, 10, 10, 10, 20, 10, 10, 10, 10, 10) == [False] * 9 + [True]
-    assert check.change is None
-
-
-def test_a_window_not_closed_by_an_update_breaks_the_row() -> None:
-    check = ReportIntervalCheck()
-    check_windows(check, 20, 20, 20, 20)
-
-    check.break_row()
-
-    assert not any(check_windows(check, 20, 20, 20, 20))
-    assert len(check.diagnostics()["row"]) == 4
-
-
-def test_reset_forgets_the_change() -> None:
-    check = ReportIntervalCheck()
-    check_windows(check, 20, 20, 20, 20, 20)
-
-    check.reset()
-
-    assert check.change is None
-    assert check.diagnostics() == {"change": None, "row": []}
+def test_window_clock_diagnostics_tell_when_it_closes() -> None:
+    assert clock(10, 2.5).diagnostics()["close_at"] == at(11.25)

@@ -33,8 +33,7 @@ async def setup_kraftvakt(hass: HomeAssistant, hass_storage: dict[str, Any]) -> 
         "data": {
             "general": {
                 "power_sensor": POWER_SENSOR,
-                "regulation_window_updates": 1,
-                "power_sensor_interval_s": WINDOW.total_seconds(),
+                "regulation_window_s": int(WINDOW.total_seconds()),
             }
         },
     }
@@ -101,6 +100,7 @@ async def test_update_interval_comes_from_the_recorded_changes(
     await setup_kraftvakt(hass, hass_storage)
     client = await hass_ws_client(hass)
 
-    await client.send_json_auto_id({"type": "kraftvakt/power_sensor/interval", "entity_id": POWER_SENSOR})
+    await client.send_json_auto_id({"type": "kraftvakt/power_sensor/analysis", "entity_id": POWER_SENSOR})
 
-    assert (await client.receive_json())["result"] == {"interval_s": 2.5}
+    result = (await client.receive_json())["result"]
+    assert (result["update_interval_s"], result["steady"], result["suggested_timeout_s"]) == (2.5, True, 300)

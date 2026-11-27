@@ -24,7 +24,7 @@ from .const import (
     DEFAULT_TARGET_TEMPERATURE,
     DOMAIN,
 )
-from .model import HEATING_MODES, ChargerState, DutyCycle, ramp_share, thermostat_heats
+from .model import HEATING_MODES, ChargerState, DutyCycle, HanReporting, ramp_share, thermostat_heats
 
 POWER_BOARD: HassKey[PowerBoard] = HassKey(DOMAIN)
 
@@ -118,12 +118,14 @@ class SimulatedHan(SimulatedDevice):
         consumer_id: str,
         background_w: float,
         report_interval: timedelta,
+        reporting: HanReporting,
         store_setting: StoreSetting,
     ) -> None:
-        """Start with `background_w`, report every `report_interval`, and store every change of the background with the callback."""
+        """Start with `background_w`, read the power every `report_interval` and send it as `reporting` tells, and store every change of the background with the callback."""
         super().__init__(hass, consumer_id)
         self.background_w = background_w
         self.report_interval = report_interval
+        self.reporting = reporting
         self._store_setting = store_setting
 
     @property

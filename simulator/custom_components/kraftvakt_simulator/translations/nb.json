@@ -16,11 +16,15 @@
         "data": {
           "name": "Navn",
           "background_w": "Bakgrunnsforbruk",
-          "report_interval_s": "Rapporteringsintervall"
+          "report_interval_s": "Leseintervall",
+          "report_change_w": "Send ved endring på mer enn",
+          "max_report_interval_s": "Lengste rapportintervall"
         },
         "data_description": {
           "background_w": "Forbruk som ikke kommer fra de simulerte enhetene. Kan endres mens Home Assistant kjører.",
-          "report_interval_s": "Hvor ofte HAN rapporterer, slik en HAN-leser gjør hvert 2. eller 10. sekund avhengig av måleren. En endring i effekt vises ved neste rapport."
+          "report_interval_s": "Hvor ofte HAN-en leser effekten, slik en HAN-leser gjør hvert 2., 2,5. eller 10. sekund avhengig av måleren. En endring i effekt vises ved neste lesing.",
+          "report_change_w": "0 sender hver lesing, også en uendret, slik en HAN-leser på kabel gjør. Over 0 sendes bare en lesing som skiller seg fra den sist sendte med mer enn dette, slik mange lesere på et radionett som Zigbee gjør.",
+          "max_report_interval_s": "Med en endring over 0 sendes en lesing likevel når det har gått så lenge siden den sist sendte."
         }
       },
       "heater": {
@@ -109,6 +113,7 @@
     "report_interval_s": {
       "options": {
         "2": "Hvert 2. sekund",
+        "2.5": "Hvert 2,5 sekund",
         "10": "Hvert 10. sekund"
       }
     }

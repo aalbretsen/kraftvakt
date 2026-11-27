@@ -94,9 +94,9 @@
       "title": "An entity used by Kraftvakt no longer exists",
       "description": "{entity_id}, used by an appliance or an EV charger in Kraftvakt, no longer exists in Home Assistant. Choose another entity in the Kraftvakt panel, or remove the appliance or EV charger."
     },
-    "power_sensor_interval_changed": {
-      "title": "The power sensor no longer reports as when it was chosen",
-      "description": "The power sensor reports about every {reported_interval} s, not every {update_interval} s as when it was chosen, for example because the HAN reader has been set up anew. The regulation goes on, but its regulation window no longer lasts as chosen. Stop the regulation, choose the power sensor again on the General page of the Kraftvakt panel, so its update interval is measured again, choose the regulation window and save."
+    "power_sensor_silence_near_timeout": {
+      "title": "The power sensor is sometimes silent almost as long as its timeout",
+      "description": "The power sensor {power_sensor} has been silent for up to {silence} s in the last hour, and its timeout is {timeout} s. A HAN reader that reports only when the power changes, as many readers on a radio network such as Zigbee do, can be silent that long while the consumption is steady. Silent longer than the timeout, it puts the regulation in the safe state, which turns everything off. Set the maximum report interval of the HAN reader to 10 s or less, or raise the power sensor timeout on the General page of the Kraftvakt panel."
     }
   },
   "exceptions": {

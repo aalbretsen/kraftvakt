@@ -184,6 +184,7 @@ export class KraftvaktPanel extends LitElement {
             .narrow=${this.narrow}
             .status=${this.status}
             .config=${this.config}
+            .capabilities=${this.capabilities}
           ></kraftvakt-diagnostics-page>
         `;
       case "general":

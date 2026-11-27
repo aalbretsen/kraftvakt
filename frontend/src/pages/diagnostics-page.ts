@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import {
   subscribeDiagnostics,
+  type Capabilities,
   type Charger,
   type ConfigResponse,
   type DecisionCommand,
@@ -14,6 +15,7 @@ import {
 import { applianceRows, chargerRows, lanes, logRows, mergePart, repeatsDue, type Lanes, type LogRow, type Segment } from "../diagnostics";
 import { type TimeLocale, formatClockTime, formatDateTime, formatDuration, formatMoment, formatNumber, formatPower, timeLocale } from "../format";
 import type { Localize, TranslationKey } from "../localize";
+import { reportLines, reportText, windowChoices, type ReportLine } from "../power-sensor-reports";
 import { cardHeaderStyles, chipStyles } from "../status-styles";
 import type { HomeAssistant } from "../types";
 
@@ -41,6 +43,8 @@ export class KraftvaktDiagnosticsPage extends LitElement {
   @property({ attribute: false }) status?: StatusSnapshot;
 
   @property({ attribute: false }) config?: ConfigResponse;
+
+  @property({ attribute: false }) capabilities?: Capabilities;
 
   @state() private diagnostics?: DiagnosticsEvent;
 
@@ -117,18 +121,22 @@ export class KraftvaktDiagnosticsPage extends LitElement {
     }
     const now = Date.now();
     const history = lanes(this.decisions, this.diagnostics.commands_before_decisions, this.status, this.diagnostics.started_at, now);
-    return html` <div class="cards">${this.renderHealth(this.diagnostics, this.status, this.config)} ${this.renderTimeline(history, now)} ${this.renderLog()}</div> `;
+    const general = this.config.config.general;
+    const choices = this.capabilities ? windowChoices(this.capabilities.limits.general.regulation_window_s) : [];
+    const lines = reportLines(this.diagnostics.power_sensor.reports, general.regulation_window_s, general.power_sensor_timeout_s, choices);
+    return html`
+      <div class="cards">
+        ${this.renderHealth(this.diagnostics, this.status, this.config, lines)} ${this.renderReports(this.diagnostics, this.config, lines)} ${this.renderTimeline(history, now)}
+        ${this.renderLog()}
+      </div>
+    `;
   }
 
-  private renderHealth(diagnostics: DiagnosticsEvent, status: StatusSnapshot, config: ConfigResponse) {
+  private renderHealth(diagnostics: DiagnosticsEvent, status: StatusSnapshot, config: ConfigResponse, lines: ReportLine[]) {
     const language = this.hass.language;
     const general = config.config.general;
     const sensor = diagnostics.power_sensor;
     const seconds = (value: number | null) => (value === null ? "–" : this.localize("diagnostics.seconds", { seconds: formatNumber(language, value, 0) }));
-    const interval =
-      sensor.reported_interval_s === null
-        ? seconds(sensor.update_interval_s)
-        : this.localize("diagnostics.reports_every", { seconds: formatNumber(language, sensor.reported_interval_s, 1) });
     const missed = sensor.last_missed_windows;
     const failed = diagnostics.failed_actions;
     const repeats = repeatsDue(diagnostics.repeats_due_at);
@@ -137,21 +145,11 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       <div class="tiles">
         ${this.renderTile(
           "diagnostics.power_sensor",
-          !sensor.valid ? "alarm" : sensor.reported_interval_s !== null ? "warning" : "ok",
+          !sensor.valid ? "alarm" : lines.some((line) => line.warning) ? "warning" : "ok",
           this.localize(sensor.valid ? "diagnostics.valid" : "diagnostics.not_valid"),
           [
-            ["diagnostics.update_interval", interval],
-            ["diagnostics.stored_interval", seconds(general.power_sensor_interval_s)],
-            [
-              "diagnostics.regulation_window",
-              general.regulation_window_updates === null || general.power_sensor_interval_s === null
-                ? "–"
-                : this.localize("diagnostics.window_updates", {
-                    seconds: formatNumber(language, status.regulation_window_s, 0),
-                    updates: general.regulation_window_updates,
-                    interval: formatNumber(language, general.power_sensor_interval_s, 0),
-                  }),
-            ],
+            ["diagnostics.last_update", sensor.last_update_at === null ? "–" : formatClockTime(this.timeLocale, sensor.last_update_at)],
+            ["diagnostics.regulation_window", seconds(general.regulation_window_s)],
             [
               "diagnostics.last_missed_windows",
               missed === null ? this.localize("diagnostics.none") : `${formatMoment(this.timeLocale, missed.start)}–${formatClockTime(this.timeLocale, missed.end)}`,
@@ -183,6 +181,45 @@ export class KraftvaktDiagnosticsPage extends LitElement {
           repeats.slice(0, 3).map((repeat) => [this.itemName(repeat.type, repeat.id), formatClockTime(this.timeLocale, repeat.dueAt)]),
         )}
       </div>
+    `;
+  }
+
+  /** How the power sensor has reported over the last hour, and what that gives with the regulation window and the timeout. */
+  private renderReports(diagnostics: DiagnosticsEvent, config: ConfigResponse, lines: ReportLine[]) {
+    const language = this.hass.language;
+    const sensor = diagnostics.power_sensor;
+    const reports = sensor.reports;
+    const seconds = (value: number | null) =>
+      value === null ? "–" : this.localize("diagnostics.seconds", { seconds: formatNumber(language, value, Number.isInteger(value) ? 0 : 1) });
+    const interval =
+      reports.update_interval_s === null ? "–" : `${seconds(reports.update_interval_s)}, ${this.localize(reports.steady ? "diagnostics.steady" : "diagnostics.uneven")}`;
+    const rows: [TranslationKey, string][] = [
+      ["diagnostics.updates_last_hour", String(reports.updates)],
+      ["diagnostics.update_interval", interval],
+      ["diagnostics.shortest_interval", seconds(reports.shortest_s)],
+      ["diagnostics.longest_silence", seconds(reports.longest_silence_s)],
+      ...(reports.steady ? ([["diagnostics.lost_updates", String(reports.lost_updates)]] as [TranslationKey, string][]) : []),
+      ["diagnostics.windows_closed_by_update", String(sensor.windows_closed_by_update)],
+      ["diagnostics.windows_closed_by_clock", String(sensor.windows_closed_by_clock)],
+      ["diagnostics.power_sensor_timeout", seconds(config.config.general.power_sensor_timeout_s)],
+    ];
+    return html`
+      <ha-card>
+        <div class="card-header"><span>${this.localize("diagnostics.reports")}</span></div>
+        <div class="reports">
+          <dl>
+            ${rows.map(
+              ([label, text]) =>
+                html`<dt>${this.localize(label)}</dt>
+                  <dd>${text}</dd>`,
+            )}
+          </dl>
+          ${lines.map((line) => {
+            const text = reportText(line, this.localize, language);
+            return line.warning ? html`<ha-alert alert-type="warning">${text}</ha-alert>` : html`<p class="reports-text">${text}</p>`;
+          })}
+        </div>
+      </ha-card>
     `;
   }
 
@@ -660,6 +697,18 @@ export class KraftvaktDiagnosticsPage extends LitElement {
       .description {
         margin: 0;
         padding: 0 16px 8px;
+        color: var(--secondary-text-color);
+      }
+      .reports {
+        display: grid;
+        gap: 12px;
+        padding: 0 16px 16px;
+      }
+      .reports dl {
+        font-size: inherit;
+      }
+      .reports-text {
+        margin: 0;
         color: var(--secondary-text-color);
       }
       .toggles {

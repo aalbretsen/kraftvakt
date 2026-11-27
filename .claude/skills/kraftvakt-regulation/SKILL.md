@@ -22,9 +22,11 @@ The ranges and defaults below are part of the specification; the code holds them
 |---|---|
 | Power limit | The highest allowed average power, 1000–50 000 W, default 10 000 W. The target the regulation keeps just below. |
 | Power sensor | A sensor from another integration with the house's total momentary power, in W or kW. A sensor without unit is read as W. Other units, non-numbers, `unknown` and `unavailable` are invalid. Negative values count as 0 W. |
-| Update | A report of the power sensor, of a changed or an unchanged value, valid or not. A HAN reader reports at a fixed interval, 2–10 s depending on the meter. |
-| Update interval | How often the power sensor reports, measured when it is chosen: from the recorder's history of its changes when they are regular, else by listening to its updates for up to 30 s. Stored with the configuration. It gives a regulation window its shortest length, and tells when the power sensor no longer reports as when it was chosen (see Measurement). |
-| Regulation window | A number of updates of the power sensor, closed at the update that completes it, once it has lasted three quarters of its length at the update interval. Chosen as the multiples of the fewest updates that last at least 10 s, at most 6 choices, for at most 60 s at the update interval. No default, since it depends on the power sensor. Why: a window that follows the meter holds whole measurements, so with a meter that reports every 10 s the regulation average of a 10 s window is the newest measurement, not a mix of the last two. Why the shortest length: a meter may send an extra report, as a Kamstrup meter sends its hourly list a few seconds after a report, and that must not close a window that has only just started. |
+| Update | A report of the power sensor, of a changed or an unchanged value, valid or not. A HAN reader on a wire reports at a fixed interval, 2–10 s depending on the meter. A reader on a radio network, such as Zigbee, may report only when the power changes, at whole multiples of that interval. |
+| Update interval | The shortest interval the updates repeat at: the median of the intervals within a quarter of the shortest interval that has at least three of them. Learned from the updates of the last hour while Kraftvakt runs, also while the regulation is stopped, and unknown until then. Why learned: it changes when the HAN reader is set up anew, and a reader that reports only when the power changes cannot be measured in a few seconds. |
+| Steady updates | Updates of the last hour where at least 90 % of the intervals are within a quarter of the update interval. Otherwise they vary, as from a reader that reports only when the power changes. |
+| Longest silence | The longest interval between two updates in the last hour. |
+| Regulation window | 10, 20, 30, 40, 50 or 60 s, default 10 s. Kraftvakt keeps the windows by its own clock, in step with the updates, so a window ends at an update and holds whole measurements (see Measurement). |
 | Regulation average | Time-weighted average of the power sensor over one regulation window. Drives all decisions. |
 | Tariff window | One hour back from now, sliding, not configurable. |
 | Tariff average | Time-weighted average of the power sensor over the tariff window. The regulation uses it only for the penalty. Why sliding: the grid company measures each clock hour, and every clock hour is one of the sliding hours; a sliding hour also finds overconsumption early, where a budget per clock hour could be used up in the middle of the hour and leave no power for the rest of it. |
@@ -85,7 +87,7 @@ The ranges and defaults below are part of the specification; the code holds them
 | Charged in window | A charger that was activated and actively charging at a decision inside its charging window, since its car was last disconnected. |
 | Charging until disconnected | A charger charged in window, with charge until disconnected, allowed to charge outside its window until its car is disconnected. |
 
-Resolution of settings: power in whole watts, the waiting time at the limit in whole seconds, the update interval in tenths of a second, currents in whole amperes.
+Resolution of settings: power in whole watts, the waiting time at the limit in whole seconds, currents in whole amperes.
 Power is in W everywhere inside the regulation, the configuration and the entities, energy in Wh; the status page shows kW.
 
 ## Ground rules
@@ -118,13 +120,26 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
 ## Measurement
 
 - The first window starts when the integration starts, and each next window where the one before closed, also while the regulation is stopped.
-  A window closes at the update that completes its number of updates, once it has lasted three quarters of its length at the update interval,
-  so a missing update makes it longer, and an extra report counts in the window without closing it early.
   Each regulation average covers its own window, without overlap. The regulation knows only the averages and the length of each window.
-- While the power sensor is invalid, because its last update was invalid or it has not reported for the power sensor timeout,
-  a window also closes when it has lasted its length at the update interval, so the safe state comes without updates.
+- Kraftvakt keeps the windows by its own clock, in step with the updates. A window lasts its whole number of update intervals:
+  the regulation window divided by the update interval, rounded to whole intervals, at least one.
+  It closes at the first update from a quarter of an update interval before that many intervals have passed since its anchor,
+  or by the clock half an update interval, at most 2 s, after the update expected then, the newest update plus whole update intervals, if none has come.
+  Its anchor is the update that closed the window before, or the update expected when the window before closed by the clock.
+  So with a regulation window of 30 s and a power sensor that reports every 10 s, a decision comes right after every third update,
+  and a lost update, or a reader that is silent because the power did not change, does not move the windows out of step with the meter.
+  Why: the commands go out right after a measurement, and a window holds whole measurements,
+  so with a meter that reports every 10 s the regulation average of a 10 s window is the newest measurement, not a mix of the last two.
+  Why a quarter: a meter may send an extra report, as a Kamstrup meter sends its hourly list a few seconds after a report, and that must not close a window that has just started.
+  Why at most 2 s: a reader that reports only when the power changes is silent because nothing changed, so waiting longer only delays the decision.
+  A power sensor that reports less often than the regulation window gets windows of one update interval.
+- While the update interval is unknown, a window closes by the clock when it has lasted the regulation window, or at an update at that moment.
+  The clock also closes the windows while the power sensor is invalid, so the safe state comes without updates.
 - Averages are energy divided by time, correct for any update rate of the sensor. Each update covers the time since the update before it,
-  or since the last window close if that is later, and the latest also the time after it until the next. So a closed window never changes.
+  at most one update interval back, or since the last window close if that is later; the update before it holds until then.
+  The latest also covers the time after it until the next. So a closed window never changes.
+  Why at most one interval back: a reader that reports only when the power changes is silent because the value held,
+  and a lost update of a steady power sensor splits the gap between the value before it and the value after it.
 - At startup (HA or integration start) the hour before is taken from HA's recorder history of the power sensor,
   read like live values (an invalid value keeps the last valid one in place, and the oldest valid value fills the time before it),
   except that each value holds until the next, since the recorder keeps only changes.
@@ -147,13 +162,12 @@ Power is in W everywhere inside the regulation, the configuration and the entiti
   The time missed counts with the last valid value, like the time HA was down, but not in the overconsumption, which counts closed windows only.
   Waiting times, the start delay and the command repeat count it as time that has passed.
   A warning is logged. Why: closing the missed windows one by one would replay their decisions at once, by the old clock.
-- Changed update interval: a window closed by an update is off when its length divided by its updates is more than a quarter off the update interval,
-  in either direction. Five windows off in a row are reported as a repair issue, with a warning in the log, and the regulation goes on.
-  Five windows in a row that are not off remove it. A window closed by the clock, or skipped, breaks the row.
-  The check starts again when another power sensor, update interval or number of updates is saved, and the issue is removed then and when the integration stops.
-  Why: the windows rely on the update interval, which changes when the HAN reader is set up anew or replaced.
-  A power sensor that reports only partly regularly is reported too, since its windows do not last as chosen.
-- Saving a configuration does not restart the averages. A new power sensor is followed from the save, a new number of updates applies from the next window.
+- Silence close to the timeout: a longest silence of at least half the power sensor timeout is reported as a repair issue, with a warning in the log,
+  and the regulation goes on. It is removed when the longest silence is shorter again, when another power sensor or power sensor timeout is saved,
+  and when the integration stops. Why: a reader that reports only when the power changes can be silent for minutes while the power is steady,
+  and silent longer than the timeout, it puts the regulation in the safe state.
+- Saving a configuration does not restart the averages. A new power sensor is followed from the save, with its update interval learned anew,
+  and a new regulation window applies from the next window.
 
 ## Decisions
 
@@ -333,7 +347,7 @@ the others have entity category diagnostic.
   Meant for a graph of how much the regulation has switched on.
 - Waiting time remaining (s): the time from now to the decision expected to turn on the step that waits, an appliance or an ampere step,
   or to the decision that ends the start delay or the ampere damping holding back the next step,
-  with the windows lasting their length at the update interval, a whole number of window lengths after a decision. 0 when nothing waits.
+  with the windows lasting the regulation window, a whole number of window lengths after a decision. 0 when nothing waits.
   Updated at each window, decision, start and stop, and when missed windows are skipped.
 - Allowed to charge (per charger): on while the charger is allowed to charge (see EV charging), with the switches and charge until disconnected as they are now.
   The charging window follows the clock, so it is right also while the regulation is stopped and changes at the whole minute.

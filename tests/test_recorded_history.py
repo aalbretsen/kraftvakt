@@ -50,7 +50,7 @@ def thermostat_action(temperature: int) -> dict[str, Any]:
 
 
 CONFIG: dict[str, Any] = {
-    "general": {"power_sensor": POWER_SENSOR, "regulation_window_updates": 1, "power_sensor_interval_s": 60},
+    "general": {"power_sensor": POWER_SENSOR, "regulation_window_s": 60},
     "appliances": [
         {
             "id": "a",

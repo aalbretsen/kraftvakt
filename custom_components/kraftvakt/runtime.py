@@ -23,8 +23,8 @@ from .decision_clock import DecisionClock, first_decision_from
 from .decision_input import chargers_without_car, excluded_appliances, excluded_chargers, read_decision_input
 from .decision_log import DecisionLog
 from .json_values import plain
-from .measurement import IntervalChange, MissedWindows, WindowAverages
-from .power_measurement import PowerMeasurement, WindowListener
+from .measurement import MissedWindows, WindowAverages
+from .power_measurement import PowerMeasurement, WindowCloses, WindowListener
 from .regulation.charging import ChargerStatus
 from .regulation.engine import RegulationEngine
 from .regulation.model import Command, DecisionInput, PowerToFree, RepeatsDue, Waiting, command_dict
@@ -34,6 +34,7 @@ from .repairs import (
     async_clear_not_started,
     async_report_not_started,
 )
+from .report_analysis import ReportAnalysis
 from .settings import Settings
 
 _LOGGER = logging.getLogger(__name__)
@@ -102,12 +103,22 @@ class KraftvaktRuntime:
         return self._measurement.sensor_valid
 
     @property
-    def update_interval(self) -> timedelta | None:
-        return self._measurement.update_interval
+    def power_sensor_silent(self) -> bool:
+        return self._measurement.sensor_silent
 
     @property
-    def interval_change(self) -> IntervalChange | None:
-        return self._measurement.interval_change
+    def followed_power_sensor(self) -> str | None:
+        return self._measurement.followed_sensor
+
+    @property
+    def last_power_update_at(self) -> datetime | None:
+        return self._measurement.last_update_at
+
+    def power_report_analysis(self) -> ReportAnalysis:
+        return self._measurement.report_analysis()
+
+    def window_closes(self) -> WindowCloses:
+        return self._measurement.window_closes()
 
     @property
     def last_missed_windows(self) -> MissedWindows | None:

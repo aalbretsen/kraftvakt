@@ -89,8 +89,8 @@ async def test_han_reports_every_10_seconds_also_without_change(hass: HomeAssist
     assert again.last_changed == changed_at
 
 
-@pytest.mark.parametrize("interval_s", [2, 10])
-async def test_han_reports_a_change_only_at_its_interval(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice, interval_s: int) -> None:
+@pytest.mark.parametrize("interval_s", [2, 2.5, 10])
+async def test_han_reports_a_change_only_at_its_interval(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice, interval_s: float) -> None:
     """A real HAN reader reports what the meter measured at a fixed interval, not when a device changes."""
     await add_device(DeviceKind.HAN, "HAN", report_interval_s=str(interval_s))
 
@@ -100,3 +100,24 @@ async def test_han_reports_a_change_only_at_its_interval(hass: HomeAssistant, fr
 
     await advance(hass, freezer, timedelta(seconds=1))
     assert power(hass, HOUSE_POWER) == 6000
+
+
+async def test_han_that_sends_on_change_sends_only_a_changed_reading(hass: HomeAssistant, freezer: FrozenDateTimeFactory, add_device: AddDevice) -> None:
+    """As many Zigbee readers do: a reading is sent when it differs from the last one sent by more than the change, or when the maximum report interval has passed."""
+    await add_device(DeviceKind.HAN, "HAN", report_change_w=100, max_report_interval_s=30)
+    first = hass.states.get(HOUSE_POWER)
+    assert first is not None
+
+    await call(hass, "number", "set_value", BACKGROUND, value=3600)
+    await advance(hass, freezer, timedelta(seconds=10))
+    assert hass.states.get(HOUSE_POWER).last_reported == first.last_reported
+
+    await call(hass, "number", "set_value", BACKGROUND, value=3700)
+    await advance(hass, freezer, timedelta(seconds=10))
+    assert power(hass, HOUSE_POWER) == 3700
+
+    await call(hass, "number", "set_value", BACKGROUND, value=3750)
+    await advance(hass, freezer, timedelta(seconds=20))
+    assert power(hass, HOUSE_POWER) == 3700
+    await advance(hass, freezer, timedelta(seconds=10))
+    assert power(hass, HOUSE_POWER) == 3750

@@ -22,8 +22,9 @@ INTERVAL = timedelta(seconds=10)
 WINDOW = 3 * INTERVAL
 
 
-def config_with(power_sensor: str | None = POWER_SENSOR, updates: int = 3) -> KraftvaktConfig:
-    return KraftvaktConfig(general=GeneralConfig(power_sensor=power_sensor, regulation_window_updates=updates, power_sensor_interval_s=INTERVAL.total_seconds()))
+def config_with(power_sensor: str | None = POWER_SENSOR, window: timedelta = WINDOW, timeout_s: int = 300) -> KraftvaktConfig:
+    general = GeneralConfig(power_sensor=power_sensor, regulation_window_s=int(window.total_seconds()), power_sensor_timeout_s=timeout_s)
+    return KraftvaktConfig(general=general)
 
 
 async def advance(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:
@@ -63,18 +64,24 @@ def start_runtime(hass: HomeAssistant, closed_windows: list[WindowAverages]):
         runtime.async_shutdown()
 
 
-async def test_window_closes_at_the_update_that_completes_it(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    """A missing update makes the window longer, and the next starts where it closed."""
+async def test_windows_close_by_the_clock_in_step_with_the_updates(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
+    """At the update at the end of the window, also before the update interval is known, and by the clock after the update expected when one is lost."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     started = dt_util.utcnow()
     runtime = start_runtime(config_with())
 
-    for after in (INTERVAL, INTERVAL, INTERVAL, INTERVAL, 2 * INTERVAL, INTERVAL):
+    for after in (INTERVAL, INTERVAL, INTERVAL, INTERVAL, 2 * INTERVAL, *[INTERVAL] * 5):
         await report(hass, freezer, "2000", after=after)
+    await advance(hass, freezer, timedelta(seconds=12))
+    for _ in range(3):
+        await report(hass, freezer, "2000", after=INTERVAL if _ else timedelta(seconds=8))
 
-    assert [(window.start, window.end) for window in closed_windows] == [
-        (started, started + WINDOW),
-        (started + WINDOW, started + 2 * WINDOW + INTERVAL),
+    assert [((window.start - started).total_seconds(), (window.end - started).total_seconds()) for window in closed_windows] == [
+        (0, 30),
+        (30, 60),
+        (60, 90),
+        (90, 122),
+        (122, 150),
     ]
     assert runtime.latest_averages == closed_windows[-1]
     assert runtime.window_length == WINDOW
@@ -97,7 +104,7 @@ async def test_each_update_covers_the_time_before_it(hass: HomeAssistant, freeze
 async def test_window_of_one_update_is_the_value_of_that_update(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     """A HAN reader that reports every 10 seconds gives a window of 10 seconds with only the newest measurement."""
     hass.states.async_set(POWER_SENSOR, "1000", {"unit_of_measurement": "W"})
-    start_runtime(config_with(updates=1))
+    start_runtime(config_with(window=INTERVAL))
 
     await report(hass, freezer, "2000")
     await report(hass, freezer, "5000")
@@ -127,26 +134,27 @@ async def test_valid_power_sensor_closes_windows_by_its_updates_again(hass: Home
     start_runtime(config_with())
 
     await advance(hass, freezer, WINDOW)
-    for _ in range(3):
-        await report(hass, freezer, "2000", after=INTERVAL + timedelta(seconds=5))
-    await advance(hass, freezer, WINDOW)
+    for _ in range(2):
+        await report(hass, freezer, "2000", after=timedelta(seconds=15))
 
-    assert [(window.end, window.sensor_valid) for window in closed_windows] == [(started + WINDOW, False), (started + WINDOW + 3 * (INTERVAL + timedelta(seconds=5)), True)]
+    assert [(window.end, window.sensor_valid) for window in closed_windows] == [(started + WINDOW, False), (started + 2 * WINDOW, True)]
 
 
 async def test_silent_power_sensor_is_invalid_after_the_timeout(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
-    """A report of an unchanged value counts, but a sensor that does not report at all is lost."""
+    """A report of an unchanged value counts, but a sensor that does not report at all is lost, and its last value holds until then."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
-    started = dt_util.utcnow()
-    start_runtime(config_with())
+    runtime = start_runtime(config_with())
 
-    await advance(hass, freezer, timedelta(seconds=300))
-    await advance(hass, freezer, WINDOW)
+    for _ in range(12):
+        await advance(hass, freezer, WINDOW)
+    assert runtime.power_sensor_silent
 
-    assert [(window.end, window.regulation_average_w, window.sensor_valid) for window in closed_windows] == [
-        (started + timedelta(seconds=300), 2000, False),
-        (started + timedelta(seconds=300) + WINDOW, None, False),
-    ]
+    first_invalid = next(index for index, window in enumerate(closed_windows) if not window.sensor_valid)
+    assert closed_windows[first_invalid].end == dt_util.utcnow() - 2 * WINDOW
+    assert [(window.regulation_average_w, window.sensor_valid) for window in closed_windows[:first_invalid]] == [(2000, True)] * first_invalid
+    assert [(window.regulation_average_w, window.sensor_valid) for window in closed_windows[first_invalid : first_invalid + 2]] == [(2000, False), (None, False)]
+    await report(hass, freezer, "2000")
+    assert not runtime.power_sensor_silent
 
 
 async def test_power_sensor_silent_for_the_timeout_before_it_is_followed_is_invalid_at_once(
@@ -190,6 +198,21 @@ async def test_missed_clock_windows_are_skipped(hass: HomeAssistant, freezer: Fr
     assert [window.start for window in closed_windows] == [started + 3 * WINDOW]
 
 
+async def test_a_timeout_noticed_late_skips_the_windows_once(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows, caplog: pytest.LogCaptureFixture
+) -> None:
+    """With a timeout shorter than the window, the timeout notices the paused event loop first, and the clock does not skip the windows again."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    start_runtime(config_with(timeout_s=10))
+
+    with caplog.at_level(logging.WARNING):
+        await advance(hass, freezer, 5 * WINDOW)
+        await advance(hass, freezer, timedelta(seconds=1))
+
+    assert closed_windows == []
+    assert caplog.text.count("Skipped the windows") == 1
+
+
 async def test_shutdown_stops_measuring_and_closing_windows(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, closed_windows) -> None:
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     runtime = start_runtime(config_with())
@@ -218,7 +241,7 @@ async def test_extra_report_does_not_close_a_window_that_has_just_started(hass: 
     """A Kamstrup meter sends its hourly list a few seconds after a report, and it counts in the window it comes in."""
     hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
     started = dt_util.utcnow()
-    start_runtime(config_with(updates=1))
+    start_runtime(config_with(window=INTERVAL))
 
     await report(hass, freezer, "2000")
     await report(hass, freezer, "4000", after=timedelta(seconds=5))
@@ -230,53 +253,50 @@ async def test_extra_report_does_not_close_a_window_that_has_just_started(hass: 
     ]
 
 
-def interval_issue(hass: HomeAssistant) -> ir.IssueEntry | None:
-    return ir.async_get(hass).async_get_issue(DOMAIN, "power_sensor_interval_changed")
+def silence_issue(hass: HomeAssistant) -> ir.IssueEntry | None:
+    return ir.async_get(hass).async_get_issue(DOMAIN, "power_sensor_silence_near_timeout")
 
 
-async def test_power_sensor_that_reports_at_another_interval_is_a_repair_issue(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, caplog: pytest.LogCaptureFixture
-) -> None:
-    """Five windows in a row closed after another interval raise the issue, and five at the update interval clear it."""
-    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
-    start_runtime(config_with(updates=1))
-    await report(hass, freezer, "2000")
-
+async def report_steadily_then_be_silent(hass: HomeAssistant, freezer: FrozenDateTimeFactory, silence: timedelta) -> None:
     for _ in range(4):
-        await report(hass, freezer, "2000", after=2 * INTERVAL)
-    assert interval_issue(hass) is None
-    await report(hass, freezer, "2000", after=2 * INTERVAL)
-
-    issue = interval_issue(hass)
-    assert issue is not None
-    assert issue.translation_placeholders == {"reported_interval": "20.0", "update_interval": "10.0"}
-    assert "reports about every 20.0 s, not every 10.0 s" in caplog.text
-
-    for _ in range(5):
         await report(hass, freezer, "2000")
-    assert interval_issue(hass) is None
-
-
-async def test_a_new_update_interval_starts_the_check_again(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime) -> None:
-    """The issue is removed when the power sensor is chosen again with its update interval measured again, and when Kraftvakt stops.
-
-    The window running at the save keeps the old settings, and the windows after it have two of the reports every 10 seconds each.
-    """
-    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
-    runtime = start_runtime(config_with(updates=1))
+    await report(hass, freezer, "2000", after=silence)
     await report(hass, freezer, "2000")
-    for _ in range(5):
-        await report(hass, freezer, "2000", after=2 * INTERVAL)
-    assert interval_issue(hass) is not None
+
+
+async def test_a_silence_of_half_the_timeout_is_a_repair_issue(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime, caplog: pytest.LogCaptureFixture) -> None:
+    """As from a reader that reports only when the power changes, and it is removed when the silence has left the last hour."""
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    start_runtime(config_with(window=INTERVAL, timeout_s=60))
+
+    await report_steadily_then_be_silent(hass, freezer, timedelta(seconds=29))
+    assert silence_issue(hass) is None
+    await report_steadily_then_be_silent(hass, freezer, timedelta(seconds=40))
+
+    issue = silence_issue(hass)
+    assert issue is not None
+    assert issue.translation_placeholders == {"power_sensor": POWER_SENSOR, "silence": "40", "timeout": "60"}
+    assert "silent for up to 40 s, at least half its timeout of 60 s" in caplog.text
+
+    for _ in range(360):
+        await report(hass, freezer, "2000")
+    assert silence_issue(hass) is None
+
+
+async def test_another_timeout_and_a_shutdown_remove_the_silence_issue(hass: HomeAssistant, freezer: FrozenDateTimeFactory, start_runtime) -> None:
+    hass.states.async_set(POWER_SENSOR, "2000", {"unit_of_measurement": "W"})
+    runtime = start_runtime(config_with(window=INTERVAL, timeout_s=60))
+    await report_steadily_then_be_silent(hass, freezer, timedelta(seconds=40))
+    assert silence_issue(hass) is not None
 
     runtime.async_stop_regulation()
-    await runtime.async_save_config(KraftvaktConfig(general=GeneralConfig(power_sensor=POWER_SENSOR, regulation_window_updates=1, power_sensor_interval_s=20.0)))
-    assert interval_issue(hass) is None
+    await runtime.async_save_config(config_with(window=INTERVAL, timeout_s=120))
+    assert silence_issue(hass) is None
+    await report(hass, freezer, "2000")
+    assert silence_issue(hass) is None
 
-    for _ in range(10):
-        await report(hass, freezer, "2000", after=INTERVAL)
-    assert interval_issue(hass) is None
-    await report(hass, freezer, "2000", after=INTERVAL)
-    assert interval_issue(hass) is not None
+    await runtime.async_save_config(config_with(window=INTERVAL, timeout_s=60))
+    await report(hass, freezer, "2000")
+    assert silence_issue(hass) is not None
     runtime.async_shutdown()
-    assert interval_issue(hass) is None
+    assert silence_issue(hass) is None

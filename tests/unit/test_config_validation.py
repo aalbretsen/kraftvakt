@@ -61,14 +61,11 @@ def test_default_config_is_valid() -> None:
         ("power_limit_w", 50_000, None),
         ("power_limit_w", 999, "out_of_range"),
         ("power_limit_w", 50_001, "out_of_range"),
-        ("regulation_window_updates", 5, None),
-        ("regulation_window_updates", 30, None),
-        ("regulation_window_updates", 7, "out_of_range"),
-        ("regulation_window_updates", 35, "out_of_range"),
-        ("regulation_window_updates", 0, "out_of_range"),
-        ("power_sensor_interval_s", 4.0, None),
-        ("power_sensor_interval_s", 0.05, "out_of_range"),
-        ("power_sensor_interval_s", 2.05, "invalid_resolution"),
+        ("regulation_window_s", 10, None),
+        ("regulation_window_s", 60, None),
+        ("regulation_window_s", 0, "out_of_range"),
+        ("regulation_window_s", 70, "out_of_range"),
+        ("regulation_window_s", 15, "invalid_resolution"),
         ("wait_at_limit_s", 0, None),
         ("wait_at_limit_s", 600, None),
         ("wait_at_limit_s", 601, "out_of_range"),
@@ -505,7 +502,7 @@ async def test_parse_config_rejects_wrong_types(hass: HomeAssistant) -> None:
 
 async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) -> None:
     data = full_config_data()
-    data["general"]["regulation_window_updates"] = 10.5
+    data["general"]["regulation_window_s"] = 10.5
     data["general"]["power_limit_w"] = 500
     data["appliances"][1]["entity_id"] = data["appliances"][0]["entity_id"]
 
@@ -513,7 +510,7 @@ async def test_wrong_type_does_not_hide_the_other_issues(hass: HomeAssistant) ->
         parse_config(data)
 
     assert {(issue.code, issue.field) for issue in error.value.issues} == {
-        ("not_integer", "regulation_window_updates"),
+        ("not_integer", "regulation_window_s"),
         ("out_of_range", "power_limit_w"),
         ("duplicate_entity", "entity_id"),
     }

@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 
 from .json_values import plain
+from .power_measurement import report_analysis_dict
 from .runtime import KraftvaktRuntime
 
 
@@ -33,14 +34,16 @@ class DiagnosticsFeed:
         if replace:
             self._runtime = runtime
             self._first_measurement = self._last_measurement = self._last_decision = None
-        change = runtime.interval_change
+        closes = runtime.window_closes()
         return {
             "started_at": plain(runtime.started_at),
             "power_sensor": {
                 "valid": runtime.power_sensor_valid,
-                "update_interval_s": plain(runtime.update_interval),
-                "reported_interval_s": None if change is None else plain(change.reported_interval),
+                "last_update_at": plain(runtime.last_power_update_at),
                 "last_missed_windows": plain(runtime.last_missed_windows),
+                "reports": report_analysis_dict(runtime.power_report_analysis()),
+                "windows_closed_by_update": closes.by_update,
+                "windows_closed_by_clock": closes.by_clock,
             },
             "queued_commands": runtime.queued_commands,
             "repeats_due_at": plain(runtime.repeats_due_at()),

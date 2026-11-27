@@ -28,6 +28,8 @@ class HeaterType(StrEnum):
 CONF_KIND: Final = "kind"
 CONF_BACKGROUND_W: Final = "background_w"
 CONF_REPORT_INTERVAL_S: Final = "report_interval_s"
+CONF_REPORT_CHANGE_W: Final = "report_change_w"
+CONF_MAX_REPORT_INTERVAL_S: Final = "max_report_interval_s"
 CONF_HEATER_TYPE: Final = "heater_type"
 CONF_POWER_W: Final = "power_w"
 CONF_DUTY_CYCLE_PCT: Final = "duty_cycle_pct"

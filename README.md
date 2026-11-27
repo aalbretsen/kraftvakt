@@ -21,7 +21,7 @@ so you avoid a more expensive step in the capacity part of the grid tariff. Ever
 
 - Home Assistant 2026.10 or newer
 - A sensor from another integration that measures the total power of the house, typically from the HAN port of the electricity meter, with the device class power.
-  It may report W or kW. A sensor without a unit is read as W. It should report at a fixed interval, as a HAN reader does every 2 to 10 seconds.
+  It may report W or kW. A sensor without a unit is read as W. It reports best at a fixed interval, as a HAN reader on a wire does every 2 to 10 seconds.
 
 ## Installation
 
@@ -39,7 +39,7 @@ Copy `custom_components/kraftvakt` to `config/custom_components/` in Home Assist
 
 1. Go to **Settings → Devices & services → Add integration**, search for **Kraftvakt** and finish the setup. It has no settings.
 2. Open **Kraftvakt** in the sidebar, or press the cogwheel of the integration, and set the power sensor, the power limit, the appliances and any EV chargers.
-   Kraftvakt measures how often the power sensor reports, and suggests a regulation window of about 10 seconds.
+   Under the power sensor, the panel tells how it reports, and the power sensor timeout is set from it.
 3. Press **Save**, go to **Status** and press **Start regulation**.
 
 ## How it works
@@ -62,15 +62,21 @@ The helper texts in the panel tell what each setting does.
 - Kraftvakt never hands an appliance back. When it is removed, excluded, or the regulation is stopped, it stays as Kraftvakt last set it, often off.
   Turn the water heater on again yourself, or it stays cold.
 - Prefer devices with local control for appliances that use a lot of power. A device controlled through a cloud service may react late, or not at all while the service is down.
+- A HAN reader on a radio network, such as Zigbee, often reports only when the power changes. Kraftvakt handles it,
+  but the regulation is steadier when the maximum report interval of the reader is set to 10 seconds or less.
 
 ## For advanced users
 
 ### The regulation in detail
 
-- **Regulation average:** the average over the regulation window, a number of updates of the power sensor, about 10 seconds.
-  It drives the decisions. The window closes at the update that completes it, and each update covers the time since the one before,
-  so with a HAN reader that reports every 10 seconds, a window of one update is the newest measurement.
-  A window lasts at least three quarters of its length, so an extra report, such as the hourly report of a Kamstrup meter, does not close it early.
+- **Regulation average:** the average over the regulation window, 10 to 60 seconds, 10 seconds by default. It drives the decisions.
+  Kraftvakt keeps the windows by its own clock, in step with the power sensor: a window ends at the report expected when it has lasted its length,
+  so a decision comes right after a measurement, and with a HAN reader that reports every 10 seconds, a window of 10 seconds is the newest measurement.
+  When that report does not come, the window closes by the clock a moment later.
+  An extra report just after a window starts, such as the hourly report of a Kamstrup meter, does not close it.
+- **Update interval:** the shortest interval the reports of the power sensor repeat at, learned from the reports of the last hour.
+  A report covers the time since the one before, at most one update interval back; before that, the value before it holds,
+  so a reader that reports only when the power changes is counted right.
 - **Tariff average:** sliding over the last hour. Every clock hour the grid company measures is one of the sliding hours,
   so keeping it below the power limit keeps every clock hour below it, and overconsumption is found early in the hour.
 - **Decisions:** each time a regulation window closes, at most one appliance is turned on or off. Above the power limit, the lowest-priority appliance that is on is turned off,
@@ -111,9 +117,9 @@ The helper texts in the panel tell what each setting does.
   everything is kept off until the overconsumption since the tariff average went above the power limit is paid back.
 - **Safe state:** while the power sensor gives no valid value, everything but the essential appliances is kept off. A single missing value is tolerated,
   and a sensor that has not reported for the power sensor timeout has no valid value.
-- **Changed report interval:** a power sensor that reports more than a quarter more or less often than when it was chosen, for five regulation windows in a row,
-  is reported under **Settings → Repairs**, for example after the HAN reader has been set up anew. The regulation goes on.
-  Stop it, choose the power sensor again so its update interval is measured again, and save.
+- **Silence close to the timeout:** a power sensor that has been silent for at least half the power sensor timeout in the last hour
+  is reported under **Settings → Repairs**. A reader that reports only when the power changes can be silent for minutes,
+  and silent longer than the timeout, it puts the regulation in the safe state. Set the maximum report interval of the reader lower, or raise the timeout.
 - **Command repeat:** an appliance or EV charger that has had no command for 30 minutes gets the last one again, in case it has changed state by itself.
 - **Failed action:** an action that fails, or does not finish within the action timeout, is logged, and the regulation goes on as if it worked.
   The command repeat sends it again later.
@@ -266,7 +272,8 @@ The history holds the states of the entities the regulation reads and sets: the 
 and Kraftvakt's own entities, except the averages, power free and the calculated waiting time, which change at every regulation window.
 An entity in a template counts when the template reads it at the download, and the entities Kraftvakt sets come with their attributes.
 
-The **Diagnostics** page in the panel shows the same as it happens: whether the power sensor and the actions are healthy, when the regulation started,
+The **Diagnostics** page in the panel shows the same as it happens: whether the power sensor and the actions are healthy, how the power sensor has reported over the last hour,
+when the regulation started,
 when each command is repeated, the consumption over the last hour with the averages and what each appliance and EV charger was set to, and the commands and failed actions.
 What an appliance or EV charger was set to before the last start is not known, since the commands of a stop are not kept,
 so just after a start the hour is mostly not known, and after an hour of regulation all of it is known.
@@ -488,7 +495,7 @@ The panel talks to the integration over its own WebSocket commands. All of them 
 | `kraftvakt/capabilities` | Gives the standard actions per field, the limits and the defaults. |
 | `kraftvakt/charger_profile/get` | Gives the charger profile of a device, if Kraftvakt has one, and the fields of an EV charger it fills. |
 | `kraftvakt/config/get` | Gives the configuration, the names of the entities and what is missing. |
-| `kraftvakt/power_sensor/interval` | Gives how often a sensor reports, from its history or by listening to it for up to 30 seconds. |
+| `kraftvakt/power_sensor/analysis` | Gives how a sensor reports and the power sensor timeout suggested for it: from the reports of the last hour of the power sensor Kraftvakt follows, else from its history or by listening to it for up to 30 seconds. |
 | `kraftvakt/config/save` | Stores the whole configuration. Refused while the regulation runs. An invalid configuration is not stored, and the response gives the errors per field. |
 | `kraftvakt/regulation/set_running` | Starts or stops the regulation, as the **Regulation** switch. |
 | `kraftvakt/status/subscribe` | Sends the status at once and then for every regulation window, every decision, and on start, stop and save, and when missed regulation windows are skipped. |

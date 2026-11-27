@@ -15,6 +15,7 @@ from homeassistant.const import UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.util import dt as dt_util
 
 from . import SimulatorConfigEntry, kind_of
 from .const import DeviceKind
@@ -109,19 +110,24 @@ class ChargerStatusSensor(SimulatorEntity[SimulatedCharger], SensorEntity):
 class HousePowerSensor(SimulatorEntity[SimulatedHan], SensorEntity):
     """The power of the whole house: background plus every simulated device.
 
-    It reports only at its interval, also when the power has not changed, with
-    the power at that moment, as a HAN reader does. So a change shows at the
-    next report, and Kraftvakt's power sensor timeout does not run out.
+    It reads the power only at its interval, as a HAN reader does, so a change
+    shows at the next reading. A reading is sent as the HAN's reporting tells:
+    every one, also of an unchanged value, or only a changed one.
     """
 
     async def async_added_to_hass(self) -> None:
         self._reported_w = async_get_power_board(self.hass).total_w
+        self._reported_at = dt_util.utcnow()
         await super().async_added_to_hass()
         self.async_on_remove(async_track_time_interval(self.hass, self._async_report, self.device.report_interval))
 
     @callback
-    def _async_report(self, _now: datetime) -> None:
-        self._reported_w = async_get_power_board(self.hass).total_w
+    def _async_report(self, now: datetime) -> None:
+        power_w = async_get_power_board(self.hass).total_w
+        if not self.device.reporting.reports(power_w, self._reported_w, now - self._reported_at):
+            return
+        self._reported_w = power_w
+        self._reported_at = now
         self.async_write_ha_state()
 
     @property

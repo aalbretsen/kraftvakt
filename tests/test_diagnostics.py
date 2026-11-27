@@ -27,7 +27,7 @@ DEFAULT = {"mode": "default"}
 @pytest.fixture
 def config(hass_storage: dict[str, Any]) -> dict[str, Any]:
     data: dict[str, Any] = {
-        "general": {"power_sensor": POWER_SENSOR, "regulation_window_updates": 1, "power_sensor_interval_s": 60, "wait_at_limit_s": 0, "penalty_threshold_w": 0},
+        "general": {"power_sensor": POWER_SENSOR, "regulation_window_s": 60, "wait_at_limit_s": 0, "penalty_threshold_w": 0},
         "appliances": [
             {
                 "id": "a",
@@ -153,8 +153,10 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
     assert measurement["power_sensor"] == POWER_SENSOR
     assert measurement["following_power_sensor"]
     assert measurement["silence_timer_set"]
-    assert not measurement["clock_close_scheduled"]
+    assert measurement["clock_close_scheduled"]
     assert not measurement["reading_history"]
+    assert measurement["last_update_at"] == local(now)
+    assert not measurement["silent"]
     assert measurement["latest_averages"] == {
         "start": local(now - WINDOW),
         "end": local(now),
@@ -163,20 +165,26 @@ async def test_the_diagnostics_hold_the_state_of_a_running_regulation(hass: Home
         "sensor_valid": True,
     }
     assert len(measurement["recent_windows"]) == 2
+    assert measurement["window_closes"] == {"by_update": 2, "by_clock": 0}
+    assert measurement["reported_silence"] is None
     assert measurement["averager"] == {
         "window_start": local(now),
-        "updates_per_window": 1,
-        "next_updates_per_window": 1,
-        "update_interval": 60.0,
-        "next_update_interval": 60.0,
-        "updates": 0,
+        "update_interval": None,
         "latest_measurement_at": local(now),
         "sensor_valid": True,
         "consecutive_invalid_closes": 0,
         "last_missed_windows": None,
         "power_steps": [{"start": local(started_at), "power_w": 2000}],
     }
-    assert measurement["report_interval_check"] == {"change": None, "row": []}
+    assert measurement["window_clock"] == {
+        "length": 60,
+        "update_interval": None,
+        "anchor": local(now),
+        "newest_update": local(now),
+        "earliest_close": local(now + WINDOW),
+        "close_at": local(now + WINDOW),
+    }
+    assert measurement["report_log"] == {"updates": 2, "first_update": local(now - WINDOW)}
     assert diagnostics["decision_clock"] == {"windows_since_decision": []}
     assert diagnostics["history"] is None
     assert diagnostics["action_runner"]["queued_commands"] == []

@@ -12,6 +12,23 @@ HEATING_MODES: Final = ("heat", "heat_cool", "auto")
 
 
 @dataclass(frozen=True)
+class HanReporting:
+    """When a HAN reader sends the power it read at an interval of the meter.
+
+    With a change of 0 W it sends every reading, as a reader on a wire does.
+    Otherwise it sends only a reading that differs from the last one sent by
+    more than the change, or when the maximum report interval has passed, as
+    many readers on a radio network such as Zigbee do.
+    """
+
+    change_w: int
+    max_interval: timedelta
+
+    def reports(self, power_w: float, reported_w: float, since_report: timedelta) -> bool:
+        return self.change_w == 0 or abs(power_w - reported_w) > self.change_w or since_report >= self.max_interval
+
+
+@dataclass(frozen=True)
 class DutyCycle:
     """A heating device that heats a share of every period, on part first."""
 

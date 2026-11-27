@@ -2,7 +2,6 @@ import { css, html, nothing, svg } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { formatMinutes, formatNumber, formatPower } from "../format";
-import { windowSeconds } from "../regulation-window";
 import { CURVE_TURN_ONS, repeatedTurnOnWaiting, untilDecision, waitingCurve } from "../waiting";
 import { WidthQuery } from "../width-query";
 import { SettingsFormPage, type GeneralField } from "./settings-form-page";
@@ -19,7 +18,6 @@ const RESTORED_FIELDS: readonly GeneralField[] = [
   "charger_waiting_factor",
   "command_repeat_interval_min",
   "action_timeout_s",
-  "power_sensor_timeout_s",
 ];
 
 /** The waiting time is 0 above 50 % free power, so the graph starts a bit above it. */
@@ -101,7 +99,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     return this.renderCard({
       title: this.localize("advanced.timeouts"),
       description: this.localize("advanced.timeouts_info"),
-      content: this.renderForm([this.numberField("action_timeout_s"), this.numberField("power_sensor_timeout_s")]),
+      content: this.renderForm([this.numberField("action_timeout_s")]),
     });
   }
 
@@ -129,11 +127,11 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const shareAtPivot = waitingCurve(general.wait_curve_steepness, general.wait_curve_pivot)(general.wait_curve_pivot / 100);
     const turnOns = Array.from({ length: steps + CURVE_TURN_ONS + 1 }, (_, index) => index + 1);
     const waiting = (turnOn: number, actual: boolean) => {
-      if (waitAtLimit === null || (actual && decisionInterval === null)) {
+      if (waitAtLimit === null) {
         return "–";
       }
       const value = turnOn <= CURVE_TURN_ONS ? waitAtLimit * shareAtPivot : repeatedTurnOnWaiting(turnOn, waitAtLimit, factor, steps);
-      return formatMinutes(actual ? untilDecision(value, decisionInterval as number) : value);
+      return formatMinutes(actual ? untilDecision(value, decisionInterval) : value);
     };
     return html`
       <table class="curve-table">
@@ -153,9 +151,9 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     `;
   }
 
-  /** Seconds between decisions, one regulation window, or null while it is not set. */
-  private get decisionInterval(): number | null {
-    return windowSeconds(this.config.general);
+  /** Seconds between decisions, one regulation window. */
+  private get decisionInterval(): number {
+    return this.config.general.regulation_window_s;
   }
 
   private renderSlider(name: CurveField) {
@@ -197,7 +195,7 @@ export class KraftvaktAdvancedPage extends SettingsFormPage {
     const waiting = (free: number) => (waitAtLimit === null ? null : waitAtLimit * share(free));
     const actualWaiting = (free: number) => {
       const value = waiting(free);
-      return value === null || decisionInterval === null ? null : untilDecision(value, decisionInterval);
+      return value === null ? null : untilDecision(value, decisionInterval);
     };
     const row = (title: TableRow, cell: (free: number) => unknown) => html`
       <tr>

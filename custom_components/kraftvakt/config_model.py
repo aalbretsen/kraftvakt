@@ -6,11 +6,10 @@ configuration and saving it.
 
 from __future__ import annotations
 
-import math
 import uuid
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field, fields, replace
-from datetime import time, timedelta
+from datetime import time
 from enum import Enum, StrEnum
 from typing import Any, Final
 
@@ -34,16 +33,13 @@ class Range:
 
 POWER_LIMIT_MAX_W: Final = 50_000
 POWER_LIMIT_W = Range(1000, POWER_LIMIT_MAX_W, 1)
-REGULATION_WINDOW_S = Range(10, 60, 1)
-REGULATION_WINDOW_CHOICES: Final = 6
 CHARGING_CURRENT_A = Range(1, None, 1)
 
 SETTING_RANGES: Final[Mapping[str, Mapping[str, Range]]] = {
     "general": {
         "power_limit_w": POWER_LIMIT_W,
         "turn_on_margin_w": Range(1, 1000, 1),
-        "regulation_window_updates": Range(1, None, 1),
-        "power_sensor_interval_s": Range(0.1, REGULATION_WINDOW_S.maximum, 0.1),
+        "regulation_window_s": Range(10, 60, 10),
         "wait_at_limit_s": Range(0, 600, 1),
         "wait_curve_steepness": Range(1.5, 9, 0.5),
         "wait_curve_pivot": Range(50, 99, 1),
@@ -492,8 +488,7 @@ class GeneralConfig:
     power_sensor: str | None = None
     power_limit_w: int = 10_000
     turn_on_margin_w: int = 100
-    regulation_window_updates: int | None = None
-    power_sensor_interval_s: float | None = None
+    regulation_window_s: int = 10
     wait_at_limit_s: int = 300
     wait_curve_steepness: float = 6.0
     wait_curve_pivot: int = 80
@@ -506,26 +501,8 @@ class GeneralConfig:
     action_timeout_s: int = 60
     power_sensor_timeout_s: int = 300
 
-    @property
-    def regulation_window_length(self) -> timedelta | None:
-        """Return how long a regulation window lasts when the power sensor reports at its interval, None while either is not set."""
-        if self.regulation_window_updates is None or self.power_sensor_interval_s is None:
-            return None
-        return timedelta(seconds=self.regulation_window_updates * self.power_sensor_interval_s)
-
     def to_dict(self) -> dict[str, Any]:
         return _fields_to_dict(self)
-
-
-def regulation_window_options(power_sensor_interval_s: float) -> list[int]:
-    """Return the numbers of updates a regulation window may have, for a power sensor that reports at the interval.
-
-    They are multiples of the fewest updates that last the shortest window,
-    as many as the choices allow within the longest window.
-    """
-    fewest = max(1, math.ceil(REGULATION_WINDOW_S.minimum / power_sensor_interval_s - 1e-9))
-    longest = REGULATION_WINDOW_S.maximum or REGULATION_WINDOW_S.minimum
-    return [fewest * multiple for multiple in range(1, REGULATION_WINDOW_CHOICES + 1) if fewest * multiple * power_sensor_interval_s <= longest + 1e-9]
 
 
 @dataclass(frozen=True, slots=True)

@@ -94,9 +94,9 @@
       "title": "En entitet Kraftvakt bruker, finnes ikke lenger",
       "description": "{entity_id}, som et apparat eller en elbillader i Kraftvakt bruker, finnes ikke lenger i Home Assistant. Velg en annen entitet i Kraftvakt-panelet, eller fjern apparatet eller elbilladeren."
     },
-    "power_sensor_interval_changed": {
-      "title": "Effektsensoren rapporterer ikke lenger som da den ble valgt",
-      "description": "Effektsensoren rapporterer omtrent hvert {reported_interval} s, ikke hvert {update_interval} s som da den ble valgt, for eksempel fordi HAN-leseren er satt opp på nytt. Reguleringen fortsetter, men reguleringsvinduet varer ikke lenger som valgt. Stopp reguleringen, velg effektsensoren på nytt på siden Generelt i Kraftvakt-panelet, så oppdateringsintervallet måles på nytt, velg reguleringsvinduet og lagre."
+    "power_sensor_silence_near_timeout": {
+      "title": "Effektsensoren er av og til stille nesten like lenge som tidsgrensen",
+      "description": "Effektsensoren {power_sensor} har vært stille i opptil {silence} s den siste timen, og tidsgrensen er {timeout} s. En HAN-leser som bare rapporterer når effekten endrer seg, slik mange lesere på et radionett som Zigbee gjør, kan være stille så lenge mens forbruket er jevnt. Er den stille lenger enn tidsgrensen, går reguleringen i sikker tilstand og slår av alt. Sett lengste rapportintervall i HAN-leseren til 10 s eller mindre, eller øk tidsgrensen for effektsensoren på siden Generelt i Kraftvakt-panelet."
     }
   },
   "exceptions": {

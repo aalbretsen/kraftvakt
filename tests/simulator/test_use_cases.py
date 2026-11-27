@@ -9,10 +9,13 @@ from datetime import timedelta
 from itertools import pairwise
 from typing import Any
 
+import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.kraftvakt.const import DOMAIN as KRAFTVAKT
@@ -38,8 +41,7 @@ class House:
             "general": {
                 "power_sensor": "sensor.han_power",
                 "power_limit_w": LIMIT_W,
-                "regulation_window_updates": 1,
-                "power_sensor_interval_s": WINDOW.total_seconds(),
+                "regulation_window_s": int(WINDOW.total_seconds()),
                 "penalty_threshold_w": 500,
             },
             "appliances": [],
@@ -365,3 +367,33 @@ async def test_use_case_7_pool_heating_moves_up_above_a_charging_car(
     assert house.on(cable)
     assert current() == 7
     assert house.house_power() <= LIMIT_W
+
+
+async def test_use_case_8_cabin_with_a_han_reader_that_reports_only_on_change(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, hass_storage: dict[str, Any], add_device: AddDevice
+) -> None:
+    """At the cabin, a HAN reader on Zigbee sends the power only when it changes by more than 50 W, and at least every 200 s.
+
+    Kraftvakt decides by its own clock every regulation window also while the reader is silent, keeps the last value between reports,
+    and tells that the reader is silent for at least half the power sensor timeout.
+    """
+    house = House(hass, freezer, hass_storage, add_device)
+    house.config["general"]["regulation_window_s"] = 10
+    await add_device(DeviceKind.HAN, "HAN", background_w=500, report_interval_s="2.5", report_change_w=50, max_report_interval_s=200)
+    cable = await house.heater("Cable", 2000)
+    panel = await house.heater("Panel", 1000)
+    house.appliance("cable", cable)
+    house.appliance("panel", panel)
+    await house.start()
+
+    for _ in range(5 * 60 * 2 // 5):
+        freezer.tick(timedelta(seconds=2.5))
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert house.on(cable)
+    assert house.on(panel)
+    times = [dt_util.parse_datetime(decision["time"], raise_on_error=True) for decision in house.decisions()]
+    assert max(later - earlier for earlier, later in pairwise(times)) <= timedelta(seconds=12)
+    assert float(house.kraftvakt("sensor", "power_regulation_average")) == pytest.approx(3500)
+    assert ir.async_get(hass).async_get_issue(KRAFTVAKT, "power_sensor_silence_near_timeout") is not None

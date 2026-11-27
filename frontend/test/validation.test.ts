@@ -33,18 +33,10 @@ describe("a complete configuration", () => {
   });
 });
 
-describe("a regulation window that is not set", () => {
-  it("is missing, not an error, so the draft can be saved", () => {
-    const draft = config({ general: { ...config().general, regulation_window_updates: null, power_sensor_interval_s: null } });
-    expect(errors(draft)).toEqual([]);
-    expect(missingItems(draft)).toEqual([{ code: "missing_regulation_window", section: "general", field: "regulation_window_updates" }]);
-  });
-});
-
 describe("missing items", () => {
   it("are the power sensor, the entities, the actions and the conditions", () => {
     const draft = config({
-      general: { ...config().general, power_sensor: null, power_sensor_interval_s: null },
+      general: { ...config().general, power_sensor: null },
       appliances: [
         appliance("heater", {
           entity_id: null,
@@ -57,7 +49,6 @@ describe("missing items", () => {
     });
     expect(missingItems(draft)).toEqual([
       { code: "missing_power_sensor", section: "general", field: "power_sensor" },
-      { code: "missing_regulation_window", section: "general", field: "regulation_window_updates" },
       { code: "missing_entity", section: "appliances", target: "heater", field: "entity_id" },
       { code: "missing_action", section: "appliances", target: "heater", field: "turn_on" },
       { code: "missing_action", section: "appliances", target: "heater", field: "turn_off" },

@@ -23,6 +23,7 @@
     "start_refused": "Reguleringen kan ikke starte før konfigurasjonen er ferdig.",
     "safe_state_title": "Sikker tilstand",
     "safe_state_text": "Effektsensoren {sensor} gir ingen gyldig måling, så alle regulerte apparater og elbilladere er slått av. Reguleringen starter av seg selv når sensoren gir gyldige verdier igjen.",
+    "safe_state_silent_text": "Effektsensoren {sensor} har ikke rapportert på {timeout} s, så alle regulerte apparater og elbilladere er slått av. Reguleringen starter av seg selv når sensoren rapporterer igjen.",
     "penalty_title": "Straffeperiode",
     "penalty_text": "Tariffsnittet har vært over effektgrensen. Alle regulerte apparater og elbilladere holdes av til overforbruket er tatt igjen.",
     "overconsumption_left": "Overforbruk igjen: {energy} kWh",
@@ -93,11 +94,8 @@
     "valid": "Gyldig",
     "not_valid": "Ingen gyldig verdi",
     "update_interval": "Oppdateringsintervall",
-    "stored_interval": "Lagret oppdateringsintervall",
-    "reports_every": "Rapporterer hvert {seconds} s",
     "seconds": "{seconds} s",
     "regulation_window": "Reguleringsvindu",
-    "window_updates": "{seconds} s ({updates} × {interval} s)",
     "last_missed_windows": "Sist hoppet over",
     "none": "Ingen",
     "actions": "Handlinger",
@@ -145,11 +143,21 @@
     "turn_off": "Slå av {name}",
     "activate": "Aktiver {name}",
     "deactivate": "Deaktiver {name}",
-    "set_current": "{name} på {current} A"
+    "set_current": "{name} på {current} A",
+    "last_update": "Siste rapport",
+    "reports": "Rapporter fra effektsensoren",
+    "updates_last_hour": "Rapporter siste time",
+    "steady": "jevnt",
+    "uneven": "ujevnt",
+    "shortest_interval": "Korteste intervall",
+    "longest_silence": "Lengste stillhet",
+    "lost_updates": "Tapte rapporter",
+    "windows_closed_by_update": "Vinduer lukket ved en rapport",
+    "windows_closed_by_clock": "Vinduer lukket av klokken",
+    "power_sensor_timeout": "Tidsgrense for effektsensoren"
   },
   "missing": {
     "missing_power_sensor": "Effektsensoren er ikke valgt.",
-    "missing_regulation_window": "Reguleringsvinduet er ikke valgt.",
     "missing_device": "{item}: enheten er ikke valgt.",
     "missing_entity": "{item}: bryteren eller termostaten er ikke valgt.",
     "missing_on_off_entity": "{item}: bryteren som slår lading av og på, er ikke valgt.",
@@ -232,23 +240,19 @@
     "measurement": "Måling",
     "regulation": "Regulering",
     "penalty": "Straff",
-    "window_option_one": "1 oppdatering ({seconds} s)",
-    "window_option": "{count} oppdateringer ({seconds} s)",
-    "window_no_power_sensor": "Velg effektsensoren først.",
-    "window_measuring": "Måler hvor ofte effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
-    "window_not_measured": "Fant ikke ut hvor ofte effektsensoren rapporterer. Velg den på nytt når den rapporterer jevnt.",
-    "window_too_seldom": "Effektsensoren rapporterer hvert {interval} s. Det er for sjelden for et reguleringsvindu på høyst {max} s.",
+    "window_option": "{seconds} s",
     "fields": {
       "power_sensor": {
         "label": "Effektsensor",
         "helper": "Hele husets forbruk, vanligvis fra HAN-porten på strømmåleren."
       },
-      "regulation_window_updates": {
+      "regulation_window_s": {
         "label": "Reguleringsvindu",
-        "helper": "Et lengre vindu jevner ut korte topper, et kortere reagerer raskere. {min}–{max} s."
+        "helper": "Et lengre vindu jevner ut korte topper, et kortere reagerer raskere. Standard {default} s."
       },
-      "power_sensor_interval_s": {
-        "label": "Hvor ofte effektsensoren rapporterer"
+      "power_sensor_timeout_s": {
+        "label": "Tidsgrense for effektsensoren",
+        "helper": "Har effektsensoren ikke rapportert på så lenge, slås alt av til den er tilbake. Fylles ut etter hvordan effektsensoren rapporterer når den velges. {min}–{max} s."
       },
       "power_limit_w": {
         "label": "Effektgrense",
@@ -295,13 +299,24 @@
       "action_timeout_s": {
         "label": "Tidsgrense for handlinger",
         "helper": "En handling som tar lengre tid, avbrytes. {min}–{max} s, standard {default} s."
-      },
-      "power_sensor_timeout_s": {
-        "label": "Tidsgrense for effektsensoren",
-        "helper": "Har effektsensoren ikke rapportert på så lenge, slås alt av til den er tilbake. {min}–{max} s, standard {default} s."
       }
     },
     "penalty_info": "En sikkerhetsventil som slår til hvis forbruket blir mye høyere enn effektgrensen, for eksempel når noe utenfor Kraftvakt slås på."
+  },
+  "reports": {
+    "no_power_sensor": "Velg effektsensoren for å se hvordan den rapporterer.",
+    "analysing": "Finner ut hvordan effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
+    "not_analysed": "Fant ikke ut hvordan effektsensoren rapporterer.",
+    "no_updates": "Effektsensoren har ikke rapportert ennå. Kraftvakt bestemmer etter sin egen klokke til den gjør det.",
+    "not_known": "Effektsensoren har ikke rapportert ofte nok ennå til at det vises hvordan den rapporterer. Kraftvakt bestemmer etter sin egen klokke hvert {window} s så lenge.",
+    "steady_one": "Rapporterer jevnt hvert {interval} s: én måling per reguleringsvindu, med en beslutning rett etter den.",
+    "steady": "Rapporterer jevnt hvert {interval} s: {updates} målinger per reguleringsvindu, med en beslutning rett etter den siste.",
+    "steady_longer": "Rapporterer jevnt hvert {interval} s: {updates} målinger per reguleringsvindu, som da varer {seconds} s, med en beslutning rett etter den siste.",
+    "varies": "Rapporterer ujevnt, med fra {shortest} til {longest} s mellom rapportene. HAN-leseren rapporterer trolig bare når effekten endrer seg, slik lesere på et radionett som Zigbee ofte gjør. Kraftvakt holder på siste verdi mellom rapportene, og bestemmer etter sin egen klokke hvert {window} s.",
+    "steadier": "Sett lengste rapportintervall i HAN-leseren til 10 s eller mindre for en jevnere regulering.",
+    "longer_than_window": "Effektsensoren rapporterer hvert {interval} s, sjeldnere enn reguleringsvinduet, så hvert reguleringsvindu varer {seconds} s, til neste rapport. Velg {choice} s eller lengre.",
+    "seldom": "Opptil {longest} s mellom rapportene. En endring i forbruket kan da vises så sent, og effektgrensen kan overskrides i mellomtiden. Sett lengste rapportintervall i HAN-leseren til 10 s eller mindre.",
+    "near_timeout": "Opptil {longest} s mellom rapportene, nær tidsgrensen for effektsensoren på {timeout} s. Er leseren stille lenger, slås alt av som om den hadde stoppet. Sett lengste rapportintervall i HAN-leseren lavere, eller øk tidsgrensen."
   },
   "advanced": {
     "wait_curve": "Ventetidskurve",
@@ -317,7 +332,7 @@
     "command_repeat": "Gjentatte kommandoer",
     "command_repeat_info": "Setter apparater og elbilladere tilbake hvis de har endret seg av seg selv, for eksempel etter et strømbrudd.",
     "timeouts": "Tidsgrenser",
-    "timeouts_info": "Beskytter mot handlinger som aldri blir ferdige, og mot en effektsensor som slutter å rapportere."
+    "timeouts_info": "Beskytter mot handlinger som aldri blir ferdige."
   },
   "list": {
     "drag": "Dra for å endre rekkefølgen",

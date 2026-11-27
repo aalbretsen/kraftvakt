@@ -64,10 +64,7 @@ export interface GeneralConfig {
   power_sensor: string | null;
   power_limit_w: number;
   turn_on_margin_w: number;
-  /** The number of updates of the power sensor in a regulation window, null until the power sensor is chosen and measured. */
-  regulation_window_updates: number | null;
-  /** How often the power sensor reports, in seconds, as the backend measured it when the sensor was chosen. */
-  power_sensor_interval_s: number | null;
+  regulation_window_s: number;
   wait_at_limit_s: number;
   wait_curve_steepness: number;
   wait_curve_pivot: number;
@@ -228,8 +225,6 @@ export interface Capabilities {
   /** The domain actions of each field of an appliance, by key. */
   domain_actions: { appliances: ApplianceActionFields<Record<string, DomainAction>> };
   limits: Record<"general" | "appliances" | "chargers", Record<string, Range>>;
-  /** The shortest and longest regulation window in seconds, and at most how many lengths to choose from. */
-  regulation_window: { seconds: Range; choices: number };
   defaults: {
     general: GeneralConfig;
     appliances: { power_reserve_w: number | null };
@@ -303,6 +298,8 @@ export interface StatusSnapshot {
   config_version: number;
   missing: Issue[];
   safe_state: boolean;
+  /** Whether the power sensor has not reported for the power sensor timeout. */
+  power_sensor_silent: boolean;
   penalty: {
     active: boolean;
     overconsumption_wh: number;
@@ -359,9 +356,23 @@ export const fetchChargerProfile = (hass: HomeAssistant, deviceId: string) => ha
 
 export const fetchConfig = (hass: HomeAssistant) => hass.callWS<ConfigResponse>({ type: "kraftvakt/config/get" });
 
-/** Measure how often the power sensor reports, which may take up to 30 seconds. */
-export const measurePowerSensorInterval = (hass: HomeAssistant, entityId: string) =>
-  hass.callWS<{ interval_s: number | null }>({ type: "kraftvakt/power_sensor/interval", entity_id: entityId });
+/** How a power sensor reports, over the last hour. Times are in seconds. */
+export interface PowerSensorReports {
+  updates: number;
+  /** The shortest interval the updates repeat at, null until it is known. */
+  update_interval_s: number | null;
+  /** Whether at least 90 % of the intervals are within a quarter of the update interval. */
+  steady: boolean;
+  shortest_s: number | null;
+  longest_silence_s: number | null;
+  /** The updates missing between steady ones. */
+  lost_updates: number;
+  /** The power sensor timeout the backend suggests for how the sensor reports. */
+  suggested_timeout_s: number;
+}
+
+/** Find how a power sensor reports: at once for the one Kraftvakt follows, else from its history, or by listening to it for up to 30 seconds. */
+export const analysePowerSensor = (hass: HomeAssistant, entityId: string) => hass.callWS<PowerSensorReports>({ type: "kraftvakt/power_sensor/analysis", entity_id: entityId });
 
 export const saveConfig = (hass: HomeAssistant, config: KraftvaktConfig) => hass.callWS<SaveResponse>({ type: "kraftvakt/config/save", config });
 
@@ -422,11 +433,12 @@ export interface DiagnosticsEvent {
   started_at: string | null;
   power_sensor: {
     valid: boolean;
-    /** The update interval of the current window. */
-    update_interval_s: number | null;
-    /** How often the power sensor reports, when it no longer reports at its update interval. */
-    reported_interval_s: number | null;
+    last_update_at: string | null;
     last_missed_windows: { start: string; end: string } | null;
+    reports: PowerSensorReports;
+    /** How the windows of the last hour closed. */
+    windows_closed_by_update: number;
+    windows_closed_by_clock: number;
   };
   /** Commands that wait for an action that runs. */
   queued_commands: number;

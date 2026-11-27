@@ -78,10 +78,13 @@ Read those two files before writing an engine test, and extend them rather than 
   For the same reason, mock `input_number.set_value`, not `number.set_value`: Kraftvakt has a number entity.
 - Move time with `freezer.tick()` and `async_fire_time_changed`. Commands run in a background task: use `hass.async_block_till_done(wait_background_tasks=True)`.
   A test with a service that blocks on purpose must not wait for it.
-- A window closes at an update of the power sensor, so a test reports the sensor, also an unchanged value, each time it moves time on, as a HAN reader does.
-  Time that passes without reports closes no window until the power sensor timeout, after which windows close by the clock.
-  A clock close or a timeout noticed a whole window or more late skips windows, as after a paused event loop, with no decisions for them.
-- The status subscription and `kraftvakt/power_sensor/interval` run as tasks the harness waits for, so a test that sends reports while a command waits
+- The windows close by Kraftvakt's own clock in step with the updates of the power sensor, so a test reports the sensor, also an unchanged value,
+  each time it moves time on, as a HAN reader does, and reports before it fires the time changed, so the update closes the window it ends.
+  Time that passes without reports closes the windows by the clock. The update interval is learned from at least four updates,
+  so the first windows close by the clock alone, or at an update at the moment they have lasted their length.
+  Move time without reports in steps shorter than the window: a clock close or a timeout noticed a whole window or more late skips windows,
+  as after a paused event loop, with no decisions for them.
+- The status subscription and `kraftvakt/power_sensor/analysis` run as tasks the harness waits for, so a test that sends reports while a command waits
   lets tasks run with `asyncio.sleep(0)` instead of `async_block_till_done`.
   A test that runs past the command repeat interval also gets the repeated commands.
 - The test `hass` is running, so the regulation starts at setup.

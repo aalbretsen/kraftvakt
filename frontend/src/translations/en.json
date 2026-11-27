@@ -23,6 +23,7 @@
     "start_refused": "The regulation cannot start before the configuration is complete.",
     "safe_state_title": "Safe state",
     "safe_state_text": "The power sensor {sensor} gives no valid measurement. All regulated appliances and EV chargers are turned off. The regulation starts again by itself when the sensor gives a valid value again.",
+    "safe_state_silent_text": "The power sensor {sensor} has not reported for {timeout} s. All regulated appliances and EV chargers are turned off. The regulation starts again by itself when the sensor reports again.",
     "penalty_title": "Penalty period",
     "penalty_text": "The tariff average has been above the power limit. All regulated appliances and EV chargers are kept off until the overconsumption is recovered.",
     "overconsumption_left": "Overconsumption left: {energy} kWh",
@@ -93,11 +94,8 @@
     "valid": "Valid",
     "not_valid": "No valid value",
     "update_interval": "Update interval",
-    "stored_interval": "Stored update interval",
-    "reports_every": "Reports every {seconds} s",
     "seconds": "{seconds} s",
     "regulation_window": "Regulation window",
-    "window_updates": "{seconds} s ({updates} × {interval} s)",
     "last_missed_windows": "Last missed windows",
     "none": "None",
     "actions": "Actions",
@@ -145,11 +143,21 @@
     "turn_off": "Turn off {name}",
     "activate": "Activate {name}",
     "deactivate": "Deactivate {name}",
-    "set_current": "{name} at {current} A"
+    "set_current": "{name} at {current} A",
+    "last_update": "Last report",
+    "reports": "Reports from the power sensor",
+    "updates_last_hour": "Reports in the last hour",
+    "steady": "steady",
+    "uneven": "uneven",
+    "shortest_interval": "Shortest interval",
+    "longest_silence": "Longest silence",
+    "lost_updates": "Lost reports",
+    "windows_closed_by_update": "Windows closed at a report",
+    "windows_closed_by_clock": "Windows closed by the clock",
+    "power_sensor_timeout": "Power sensor timeout"
   },
   "missing": {
     "missing_power_sensor": "The power sensor is not chosen.",
-    "missing_regulation_window": "The regulation window is not set.",
     "missing_device": "{item}: the device is not chosen.",
     "missing_entity": "{item}: the switch or thermostat is not chosen.",
     "missing_on_off_entity": "{item}: the switch that turns charging on and off is not chosen.",
@@ -232,23 +240,19 @@
     "measurement": "Measurement",
     "regulation": "Regulation",
     "penalty": "Penalty",
-    "window_option_one": "1 update ({seconds} s)",
-    "window_option": "{count} updates ({seconds} s)",
-    "window_no_power_sensor": "Choose the power sensor first.",
-    "window_measuring": "Measuring how often the power sensor reports. It can take up to 30 seconds.",
-    "window_not_measured": "Could not find how often the power sensor reports. Choose it again when it reports regularly.",
-    "window_too_seldom": "The power sensor reports every {interval} s, too seldom for a regulation window of at most {max} s.",
+    "window_option": "{seconds} s",
     "fields": {
       "power_sensor": {
         "label": "Power sensor",
         "helper": "The power the whole house uses, usually from the HAN port of the electricity meter."
       },
-      "regulation_window_updates": {
+      "regulation_window_s": {
         "label": "Regulation window",
-        "helper": "A longer window evens out short peaks, a shorter one reacts faster. {min}–{max} s."
+        "helper": "A longer window evens out short peaks, a shorter one reacts faster. Default {default} s."
       },
-      "power_sensor_interval_s": {
-        "label": "Update interval of the power sensor"
+      "power_sensor_timeout_s": {
+        "label": "Power sensor timeout",
+        "helper": "When the power sensor has not reported for this long, everything is turned off until it is back. Filled in from how the power sensor reports when it is chosen. {min}–{max} s."
       },
       "power_limit_w": {
         "label": "Power limit",
@@ -295,13 +299,24 @@
       "action_timeout_s": {
         "label": "Action timeout",
         "helper": "An action that takes longer is stopped. {min}–{max} s, default {default} s."
-      },
-      "power_sensor_timeout_s": {
-        "label": "Power sensor timeout",
-        "helper": "When the power sensor has not reported for this long, everything is turned off until it is back. {min}–{max} s, default {default} s."
       }
     },
     "penalty_info": "A safety valve for when consumption gets far above the power limit, for example when something outside Kraftvakt is turned on."
+  },
+  "reports": {
+    "no_power_sensor": "Choose the power sensor to see how it reports.",
+    "analysing": "Finding out how the power sensor reports. It can take up to 30 seconds.",
+    "not_analysed": "Could not find out how the power sensor reports.",
+    "no_updates": "The power sensor has not reported yet. Kraftvakt decides by its own clock until it does.",
+    "not_known": "The power sensor has not reported often enough yet to tell how it reports. Kraftvakt decides by its own clock every {window} s meanwhile.",
+    "steady_one": "Reports every {interval} s, steadily: one measurement per regulation window, with a decision right after it.",
+    "steady": "Reports every {interval} s, steadily: {updates} measurements per regulation window, with a decision right after the last.",
+    "steady_longer": "Reports every {interval} s, steadily: {updates} measurements per regulation window, which then lasts {seconds} s, with a decision right after the last.",
+    "varies": "Reports at uneven intervals, from {shortest} to {longest} s. The HAN reader probably reports only when the power changes, as readers on a radio network such as Zigbee often do. Kraftvakt keeps the last value between reports, and decides by its own clock every {window} s.",
+    "steadier": "For a steadier regulation, set the maximum report interval of the HAN reader to 10 s or less.",
+    "longer_than_window": "The power sensor reports every {interval} s, less often than the regulation window, so each regulation window lasts {seconds} s, until the next report. Choose {choice} s or longer.",
+    "seldom": "Up to {longest} s between reports. A change in consumption can then be seen that late, and the power limit may be exceeded meanwhile. Set the maximum report interval of the HAN reader to 10 s or less.",
+    "near_timeout": "Up to {longest} s between reports, close to the power sensor timeout of {timeout} s. If the reader is silent longer, everything is turned off as if it had stopped. Set the maximum report interval of the HAN reader lower, or raise the timeout."
   },
   "advanced": {
     "wait_curve": "Waiting time curve",
@@ -317,7 +332,7 @@
     "command_repeat": "Command repeat",
     "command_repeat_info": "Sets appliances and EV chargers back if they have changed by themselves, for example after a power cut.",
     "timeouts": "Timeouts",
-    "timeouts_info": "Guards against actions that never finish and a power sensor that stops reporting."
+    "timeouts_info": "Guards against actions that never finish."
   },
   "list": {
     "drag": "Drag to change the order",

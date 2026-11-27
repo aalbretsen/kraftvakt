@@ -91,7 +91,7 @@ export class KraftvaktStatusPage extends LitElement {
     const powerSensor = this.config?.config.general.power_sensor ?? null;
     const powerNow = measuredPowerW(this.hass, powerSensor ?? "");
     return html`
-      ${status.safe_state ? this.renderSafeState(powerNow !== null) : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
+      ${status.safe_state ? this.renderSafeState(status.power_sensor_silent, powerNow !== null) : nothing} ${status.penalty.active ? this.renderPenalty(status) : nothing}
       <kraftvakt-power-overview
         .hass=${this.hass}
         .localize=${this.localize}
@@ -117,14 +117,18 @@ export class KraftvaktStatusPage extends LitElement {
 
   /**
    * The safe state lasts until the next decision, also after the sensor gives
-   * a valid value again.
+   * a valid value again. A silent sensor keeps its last value in Home Assistant,
+   * so the backend tells whether it is silent.
    */
-  private renderSafeState(sensorBack: boolean) {
-    const sensor = this.config?.config.general.power_sensor ?? "";
+  private renderSafeState(silent: boolean, sensorValue: boolean) {
+    const general = this.config?.config.general;
+    const sensor = general?.power_sensor ?? "";
     const name = this.hass.states[sensor]?.attributes.friendly_name ?? sensor;
+    const sensorBack = sensorValue && !silent;
+    const text = silent ? "status.safe_state_silent_text" : sensorBack ? "status.safe_state_back_text" : "status.safe_state_text";
     return html`
       <ha-alert alert-type=${sensorBack ? "info" : "error"} .title=${this.localize("status.safe_state_title")}>
-        ${this.localize(sensorBack ? "status.safe_state_back_text" : "status.safe_state_text", { sensor: name })}
+        ${this.localize(text, { sensor: name, timeout: general?.power_sensor_timeout_s ?? "" })}
       </ha-alert>
     `;
   }

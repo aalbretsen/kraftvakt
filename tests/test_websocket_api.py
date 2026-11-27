@@ -43,8 +43,7 @@ def config_data() -> dict[str, Any]:
         "general": {
             "power_sensor": POWER_SENSOR,
             "power_limit_w": 10000,
-            "regulation_window_updates": 1,
-            "power_sensor_interval_s": 60,
+            "regulation_window_s": 60,
             "wait_at_limit_s": 0,
             "penalty_threshold_w": 1000,
         },
@@ -122,7 +121,7 @@ def set_power(hass: HomeAssistant, watt: str) -> None:
     [
         {"type": "kraftvakt/capabilities"},
         {"type": "kraftvakt/charger_profile/get", "device_id": "device"},
-        {"type": "kraftvakt/power_sensor/interval", "entity_id": "sensor.han_power"},
+        {"type": "kraftvakt/power_sensor/analysis", "entity_id": "sensor.han_power"},
         {"type": "kraftvakt/config/get"},
         {"type": "kraftvakt/config/save", "config": {}},
         {"type": "kraftvakt/regulation/set_running", "running": False},
@@ -194,7 +193,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
         "max": 1,
         "resolution": 0.25,
     }
-    assert result["regulation_window"] == {"seconds": {"min": 10, "max": 60, "resolution": 1}, "choices": 6}
+    assert result["limits"]["general"]["regulation_window_s"] == {"min": 10, "max": 60, "resolution": 10}
     assert result["limits"]["appliances"]["power_reserve_w"]["max"] is None
     assert result["limits"]["chargers"]["min_current_power_w"]["max"] == 5000
     assert result["defaults"] == {
@@ -202,8 +201,7 @@ async def test_capabilities_give_default_actions_limits_and_defaults(hass: HomeA
             "power_sensor": None,
             "power_limit_w": 10000,
             "turn_on_margin_w": 100,
-            "regulation_window_updates": None,
-            "power_sensor_interval_s": None,
+            "regulation_window_s": 10,
             "wait_at_limit_s": 300,
             "wait_curve_steepness": 6.0,
             "wait_curve_pivot": 80,
@@ -533,42 +531,71 @@ async def test_new_configuration_is_used_from_the_next_start(
     assert lights == ["off light.c", "off light.a", "on light.c", "on light.a"]
 
 
-async def test_update_interval_is_listened_for_without_recorded_history(
+def analysis(updates: int, interval_s: float | None = None, *, steady: bool = True, shortest_s: float | None = None, longest_s: float | None = None) -> dict[str, Any]:
+    return {
+        "updates": updates,
+        "update_interval_s": interval_s,
+        "steady": steady and interval_s is not None,
+        "shortest_s": shortest_s if shortest_s is not None else interval_s,
+        "longest_silence_s": longest_s if longest_s is not None else interval_s,
+        "lost_updates": 0,
+        "suggested_timeout_s": 300,
+    }
+
+
+async def test_a_power_sensor_is_listened_to_without_recorded_history(
     hass: HomeAssistant,
     entry: MockConfigEntry,
     freezer: FrozenDateTimeFactory,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """Reports of an unchanged value count, and the last report before the command is the first time."""
-    set_power(hass, "2000")
+    """Reports of an unchanged value count, and the last report before the command is the first."""
+    hass.states.async_set("sensor.other", "2000", {ATTR_UNIT_OF_MEASUREMENT: "W"})
     client = await hass_ws_client(hass)
 
-    await client.send_json_auto_id({"type": "kraftvakt/power_sensor/interval", "entity_id": POWER_SENSOR})
+    await client.send_json_auto_id({"type": "kraftvakt/power_sensor/analysis", "entity_id": "sensor.other"})
     await run_pending_tasks()
     for _ in range(4):
         freezer.tick(timedelta(seconds=2))
-        set_power(hass, "2000")
+        hass.states.async_set("sensor.other", "2000", {ATTR_UNIT_OF_MEASUREMENT: "W"})
         await run_pending_tasks()
 
-    assert (await client.receive_json())["result"] == {"interval_s": 2.0}
+    assert (await client.receive_json())["result"] == analysis(5, 2.0)
 
 
-async def test_update_interval_is_unknown_when_the_sensor_does_not_report(
+async def test_nothing_is_known_of_a_power_sensor_that_does_not_report(
     hass: HomeAssistant,
     entry: MockConfigEntry,
     freezer: FrozenDateTimeFactory,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
     """Listening ends after 30 seconds, and a sensor that does not exist gives nothing either."""
-    set_power(hass, "2000")
+    hass.states.async_set("sensor.other", "2000", {ATTR_UNIT_OF_MEASUREMENT: "W"})
     client = await hass_ws_client(hass)
 
-    for entity_id in (POWER_SENSOR, "sensor.missing"):
-        await client.send_json_auto_id({"type": "kraftvakt/power_sensor/interval", "entity_id": entity_id})
+    for entity_id, updates in (("sensor.other", 1), ("sensor.missing", 0)):
+        await client.send_json_auto_id({"type": "kraftvakt/power_sensor/analysis", "entity_id": entity_id})
         await run_pending_tasks()
         freezer.tick(timedelta(seconds=30))
         async_fire_time_changed(hass)
-        assert (await client.receive_json())["result"] == {"interval_s": None}
+        assert (await client.receive_json())["result"] == analysis(updates)
+
+
+async def test_the_power_sensor_kraftvakt_follows_is_analysed_from_its_updates(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    """Its updates of the last hour, at once."""
+    set_power(hass, "2000")
+    for _ in range(4):
+        await advance(hass, freezer)
+    client = await hass_ws_client(hass)
+
+    result = await send(client, "kraftvakt/power_sensor/analysis", entity_id=POWER_SENSOR)
+
+    assert result["result"] == analysis(5, WINDOW.total_seconds())
 
 
 async def test_saved_power_sensor_and_window_are_measured(
@@ -577,13 +604,13 @@ async def test_saved_power_sensor_and_window_are_measured(
     freezer: FrozenDateTimeFactory,
     hass_ws_client: WebSocketGenerator,
 ) -> None:
-    """The new sensor from now, the new number of updates from the next window."""
+    """The new sensor from now, the new regulation window from the next window."""
     set_power(hass, "1000")
     await switch_regulation(hass, "turn_off")
     hass.states.async_set("sensor.other", "4", {ATTR_UNIT_OF_MEASUREMENT: "kW"})
     client = await hass_ws_client(hass)
     changed = config_data()
-    changed["general"].update(power_sensor="sensor.other", power_sensor_interval_s=30, regulation_window_updates=2)
+    changed["general"].update(power_sensor="sensor.other", regulation_window_s=30)
     await send(client, "kraftvakt/config/save", config=changed)
 
     async def report_other() -> None:
@@ -593,13 +620,13 @@ async def test_saved_power_sensor_and_window_are_measured(
         await hass.async_block_till_done(wait_background_tasks=True)
 
     await report_other()
-    closed_at_first_report = entry.runtime_data.latest_averages
-    await report_other()
-    assert entry.runtime_data.latest_averages == closed_at_first_report
+    first = entry.runtime_data.latest_averages
+    assert entry.runtime_data.window_length == timedelta(seconds=30)
     await report_other()
 
     averages = entry.runtime_data.latest_averages
-    assert averages.end - averages.start == 2 * WINDOW
+    assert first.regulation_average_w == pytest.approx(4000)
+    assert averages.end - averages.start == WINDOW
     assert averages.regulation_average_w == pytest.approx(4000)
 
 
@@ -848,6 +875,7 @@ async def test_status_is_sent_at_once_and_at_each_window(
         "config_version": 0,
         "missing": [],
         "safe_state": False,
+        "power_sensor_silent": False,
         "penalty": {
             "active": False,
             "overconsumption_wh": 0,
@@ -1227,7 +1255,7 @@ SHORT_WINDOW = timedelta(seconds=10)
 
 def with_short_window(config: dict[str, Any]) -> None:
     """Report every 10 seconds, since the heartbeat of the WebSocket closes a connection when time moves on by a minute twice."""
-    config["general"]["power_sensor_interval_s"] = 10
+    config["general"]["regulation_window_s"] = 10
 
 
 async def subscribe_diagnostics(client) -> dict[str, Any]:
@@ -1256,9 +1284,11 @@ async def test_diagnostics_are_sent_at_once_and_then_only_what_is_new(
         "started_at": local(started),
         "power_sensor": {
             "valid": True,
-            "update_interval_s": 10,
-            "reported_interval_s": None,
+            "last_update_at": None,
             "last_missed_windows": None,
+            "reports": analysis(0),
+            "windows_closed_by_update": 0,
+            "windows_closed_by_clock": 0,
         },
         "queued_commands": 0,
         "repeats_due_at": {

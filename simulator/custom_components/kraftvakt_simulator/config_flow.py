@@ -36,10 +36,12 @@ from .const import (
     CONF_HVAC_MODES,
     CONF_KIND,
     CONF_MAX_CURRENT_A,
+    CONF_MAX_REPORT_INTERVAL_S,
     CONF_MIN_CURRENT_A,
     CONF_PERIOD_MIN,
     CONF_POWER_W,
     CONF_RAMP_UP_S,
+    CONF_REPORT_CHANGE_W,
     CONF_REPORT_INTERVAL_S,
     CONF_ROOM_TEMPERATURE,
     CONF_START_DELAY_S,
@@ -94,8 +96,10 @@ SCHEMAS = {
             vol.Required(CONF_NAME, default="HAN"): TextSelector(),
             vol.Required(CONF_BACKGROUND_W, default=3500): whole_number(0, MAX_BACKGROUND_W, UnitOfPower.WATT, step=100),
             vol.Required(CONF_REPORT_INTERVAL_S, default="10"): SelectSelector(
-                SelectSelectorConfig(options=["2", "10"], translation_key=CONF_REPORT_INTERVAL_S, mode=SelectSelectorMode.DROPDOWN)
+                SelectSelectorConfig(options=["2", "2.5", "10"], translation_key=CONF_REPORT_INTERVAL_S, mode=SelectSelectorMode.DROPDOWN)
             ),
+            vol.Required(CONF_REPORT_CHANGE_W, default=0): whole_number(0, 1000, UnitOfPower.WATT),
+            vol.Required(CONF_MAX_REPORT_INTERVAL_S, default=300): whole_number(10, 3600, UnitOfTime.SECONDS),
         }
     ),
     DeviceKind.HEATER: vol.Schema(

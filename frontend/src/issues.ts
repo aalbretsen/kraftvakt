@@ -7,7 +7,6 @@ import type { HomeAssistant } from "./types";
 
 const ISSUE_TEXTS: Record<string, TranslationKey> = {
   missing_power_sensor: "missing.missing_power_sensor",
-  missing_regulation_window: "missing.missing_regulation_window",
   missing_device: "missing.missing_device",
   missing_entity: "missing.missing_entity",
   missing_on_off_entity: "missing.missing_on_off_entity",
@@ -44,7 +43,6 @@ const ADVANCED_FIELDS = new Set([
   "charger_waiting_factor",
   "command_repeat_interval_min",
   "action_timeout_s",
-  "power_sensor_timeout_s",
 ]);
 
 /** Return the page where the issue is fixed. */
@@ -92,7 +90,6 @@ function itemName(issue: Issue, config: ConfigResponse | undefined, localize: Lo
 const ERROR_TEXTS: Record<string, TranslationKey> = {
   required: "errors.required",
   missing_power_sensor: "errors.required",
-  missing_regulation_window: "errors.required",
   missing_device: "errors.required",
   missing_entity: "errors.required",
   missing_on_off_entity: "errors.required",

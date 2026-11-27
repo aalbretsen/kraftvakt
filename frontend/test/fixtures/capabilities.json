@@ -174,15 +174,10 @@
         "max": 1000,
         "resolution": 1
       },
-      "regulation_window_updates": {
-        "min": 1,
-        "max": null,
-        "resolution": 1
-      },
-      "power_sensor_interval_s": {
-        "min": 0.1,
+      "regulation_window_s": {
+        "min": 10,
         "max": 60,
-        "resolution": 0.1
+        "resolution": 10
       },
       "wait_at_limit_s": {
         "min": 0,
@@ -270,21 +265,12 @@
       }
     }
   },
-  "regulation_window": {
-    "seconds": {
-      "min": 10,
-      "max": 60,
-      "resolution": 1
-    },
-    "choices": 6
-  },
   "defaults": {
     "general": {
       "power_sensor": null,
       "power_limit_w": 10000,
       "turn_on_margin_w": 100,
-      "regulation_window_updates": null,
-      "power_sensor_interval_s": null,
+      "regulation_window_s": 10,
       "wait_at_limit_s": 300,
       "wait_curve_steepness": 6.0,
       "wait_curve_pivot": 80,

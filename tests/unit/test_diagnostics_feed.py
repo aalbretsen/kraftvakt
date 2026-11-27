@@ -7,7 +7,9 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 
 from custom_components.kraftvakt.diagnostics_feed import DiagnosticsFeed
+from custom_components.kraftvakt.power_measurement import WindowCloses
 from custom_components.kraftvakt.regulation.model import RepeatsDue
+from custom_components.kraftvakt.report_analysis import ReportAnalysis
 
 START = datetime(2026, 1, 5, 12, tzinfo=UTC)
 
@@ -15,10 +17,11 @@ START = datetime(2026, 1, 5, 12, tzinfo=UTC)
 def runtime(measurements: list[tuple[datetime, float]]) -> Any:
     return SimpleNamespace(
         started_at=START,
-        interval_change=None,
         power_sensor_valid=True,
-        update_interval=timedelta(seconds=10),
+        last_power_update_at=START,
         last_missed_windows=None,
+        power_report_analysis=lambda: ReportAnalysis(2, None, False, timedelta(seconds=10), timedelta(seconds=10), 0),
+        window_closes=lambda: WindowCloses(1, 0),
         queued_commands=0,
         repeats_due_at=lambda: RepeatsDue({}, {}),
         power_measurements=measurements,

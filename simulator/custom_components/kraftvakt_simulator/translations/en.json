@@ -16,11 +16,15 @@
         "data": {
           "name": "Name",
           "background_w": "Background power",
-          "report_interval_s": "Report interval"
+          "report_interval_s": "Reading interval",
+          "report_change_w": "Send on a change of more than",
+          "max_report_interval_s": "Maximum report interval"
         },
         "data_description": {
           "background_w": "Consumption not covered by the simulated devices. It can be changed while Home Assistant runs.",
-          "report_interval_s": "How often the HAN reports, as a HAN reader does every 2 or 10 seconds depending on the meter. A change of power shows at the next report."
+          "report_interval_s": "How often the HAN reads the power, as a HAN reader does every 2, 2.5 or 10 seconds depending on the meter. A change of power shows at the next reading.",
+          "report_change_w": "0 sends every reading, also an unchanged one, as a HAN reader on a wire does. Above 0, only a reading that differs from the last one sent by more than this is sent, as many readers on a radio network such as Zigbee do.",
+          "max_report_interval_s": "With a change above 0, a reading is sent anyway when this long has passed since the last one sent."
         }
       },
       "heater": {
@@ -109,6 +113,7 @@
     "report_interval_s": {
       "options": {
         "2": "Every 2 seconds",
+        "2.5": "Every 2.5 seconds",
         "10": "Every 10 seconds"
       }
     }

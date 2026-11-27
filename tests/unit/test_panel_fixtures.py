@@ -13,7 +13,6 @@ from typing import Any
 
 import pytest
 
-from custom_components.kraftvakt.config_model import regulation_window_options
 from custom_components.kraftvakt.regulation.charging import ChargerState
 from custom_components.kraftvakt.regulation.waiting import RepeatedTurnOnGrowth, WaitingCurve, repeated_turn_on_waiting_time
 from custom_components.kraftvakt.sensor import CHARGER_STATE_ICONS
@@ -44,10 +43,6 @@ def waiting() -> dict[str, Any]:
     }
 
 
-def regulation_window() -> dict[str, Any]:
-    return {"options": [[interval_s, regulation_window_options(interval_s)] for interval_s in [1, 2, 2.5, 3, 3.3, 10, 15, 60, 130]]}
-
-
 def charger_states() -> dict[str, Any]:
     return {state.value: CHARGER_STATE_ICONS[state]._asdict() for state in ChargerState}
 
@@ -56,7 +51,6 @@ def panel_fixtures() -> dict[str, Any]:
     return {
         "capabilities.json": capabilities(),
         "waiting.json": waiting(),
-        "regulation_window.json": regulation_window(),
         "charger_states.json": charger_states(),
     }
 

@@ -1,79 +1,105 @@
-import { html, type PropertyValues } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { measurePowerSensorInterval, type Issue, type KraftvaktConfig } from "../api";
+import { analysePowerSensor, type KraftvaktConfig, type PowerSensorReports } from "../api";
 import { ownEntities } from "../entities";
-import { closestWindowUpdates, regulationWindowOptions, windowSeconds } from "../regulation-window";
+import { reportLines, reportText, windowChoices } from "../power-sensor-reports";
 import { SettingsFormPage, type FormField, type GeneralField } from "./settings-form-page";
 
-/**
- * The power sensor has no default, the power limit is the tariff step the user has chosen,
- * and the regulation window depends on the power sensor.
- */
-const RESTORED_FIELDS: readonly GeneralField[] = ["turn_on_margin_w", "wait_at_limit_s", "penalty_threshold_w"];
+/** The power sensor has no default, the power limit is the tariff step the user has chosen, and the timeout is suggested from the power sensor. */
+const RESTORED_FIELDS: readonly GeneralField[] = ["regulation_window_s", "turn_on_margin_w", "wait_at_limit_s", "penalty_threshold_w"];
 
-type CardTitle = "general.measurement" | "general.regulation" | "general.penalty";
+type CardTitle = "general.regulation" | "general.penalty";
 
-/** The power sensor and the settings of the regulation and the penalty. */
+/** The power sensor, how it reports, and the settings of the regulation and the penalty. */
 @customElement("kraftvakt-general-page")
 export class KraftvaktGeneralPage extends SettingsFormPage {
-  /** The power sensor whose interval is being measured. */
-  @state() private measuring?: string;
+  /** The power sensor being analysed. */
+  @state() private analysing?: string;
 
-  /** The power sensor whose interval could not be found, so it is not measured again until it is chosen again. */
-  @state() private notMeasured?: string;
+  /** How the power sensor reports, from the last analysis. */
+  @state() private reports?: { sensor: string; reports: PowerSensorReports | null };
 
-  /** The length of the regulation window before another power sensor was chosen, kept as near as its updates allow. */
-  private secondsBeforeNewSensor?: number;
+  /** A power sensor the user has just chosen, whose timeout is set to the one suggested when its analysis comes. */
+  private suggestTimeoutFor?: string;
 
   protected render() {
     return html`
-      ${this.renderSettingsCard("general.measurement", [this.entityField("power_sensor"), this.windowField()])}
+      ${this.renderMeasurementCard()}
       ${this.renderSettingsCard("general.regulation", [this.numberField("power_limit_w"), this.numberField("turn_on_margin_w"), this.numberField("wait_at_limit_s")])}
       ${this.renderSettingsCard("general.penalty", [this.numberField("penalty_threshold_w")], "general.penalty_info")} ${this.renderRestoreDefaults(RESTORED_FIELDS)}
     `;
   }
 
-  /** Measure the interval of a power sensor that has none, such as one just chosen. */
+  /** Analyse a power sensor that has not been analysed, such as the saved one when the page opens, or one just chosen. */
   protected willUpdate(changed: PropertyValues<this>): void {
     super.willUpdate(changed);
-    const { power_sensor: sensor, power_sensor_interval_s: interval } = this.config.general;
-    if (sensor && interval === null && !this.locked && this.measuring !== sensor && this.notMeasured !== sensor) {
-      void this.measureInterval(sensor);
+    const sensor = this.config.general.power_sensor;
+    if (sensor && this.analysing !== sensor && this.reports?.sensor !== sensor) {
+      void this.analyse(sensor);
     }
   }
 
-  /** Another power sensor reports at its own interval, which is measured again. */
   protected changeConfig(config: KraftvaktConfig): void {
-    const general = config.general;
-    if (general.power_sensor !== this.config.general.power_sensor) {
-      this.secondsBeforeNewSensor = windowSeconds(this.config.general) ?? this.secondsBeforeNewSensor;
-      this.notMeasured = undefined;
-      config = { ...config, general: { ...general, power_sensor_interval_s: null, regulation_window_updates: null } };
+    if (config.general.power_sensor !== this.config.general.power_sensor) {
+      this.suggestTimeoutFor = config.general.power_sensor ?? undefined;
     }
     super.changeConfig(config);
   }
 
-  private async measureInterval(sensor: string): Promise<void> {
-    this.measuring = sensor;
-    let interval: number | null = null;
+  private async analyse(sensor: string): Promise<void> {
+    this.analysing = sensor;
+    let reports: PowerSensorReports | null;
     try {
-      interval = (await measurePowerSensorInterval(this.hass, sensor)).interval_s;
+      reports = await analysePowerSensor(this.hass, sensor);
     } catch {
-      interval = null;
+      reports = null;
     }
-    this.measuring = undefined;
+    if (this.analysing === sensor) {
+      this.analysing = undefined;
+    }
     const general = this.config.general;
-    if (general.power_sensor !== sensor || this.locked) {
+    if (general.power_sensor !== sensor) {
       return;
     }
-    if (interval === null) {
-      this.notMeasured = sensor;
-      return;
+    this.reports = { sensor, reports };
+    if (reports && this.suggestTimeoutFor === sensor && !this.locked) {
+      super.changeConfig({ ...this.config, general: { ...general, power_sensor_timeout_s: reports.suggested_timeout_s } });
     }
-    const limits = this.capabilities.regulation_window;
-    const updates = closestWindowUpdates(this.secondsBeforeNewSensor ?? limits.seconds.min ?? 0, interval, limits);
-    super.changeConfig({ ...this.config, general: { ...general, power_sensor_interval_s: interval, regulation_window_updates: updates } });
+    this.suggestTimeoutFor = undefined;
+  }
+
+  private renderMeasurementCard() {
+    return this.renderCard({
+      title: this.localize("general.measurement"),
+      sections: [this.renderForm([this.entityField("power_sensor"), this.windowField(), this.numberField("power_sensor_timeout_s")]), this.renderReports()],
+    });
+  }
+
+  /** How the power sensor reports, for the regulation window and the timeout in the draft. */
+  private renderReports() {
+    const sensor = this.config.general.power_sensor;
+    if (!sensor) {
+      return html`<p class="description">${this.localize("reports.no_power_sensor")}</p>`;
+    }
+    if (this.analysing === sensor || this.reports?.sensor !== sensor) {
+      return html`<p class="description">${this.localize("reports.analysing")}</p>`;
+    }
+    const reports = this.reports.reports;
+    if (!reports) {
+      return html`<p class="description">${this.localize("reports.not_analysed")}</p>`;
+    }
+    const general = this.config.general;
+    const choices = windowChoices(this.capabilities.limits.general.regulation_window_s);
+    const language = this.hass.language;
+    return html`
+      <div class="reports">
+        ${reportLines(reports, general.regulation_window_s, general.power_sensor_timeout_s, choices).map((line) => {
+          const text = reportText(line, this.localize, language);
+          return line.warning ? html`<ha-alert alert-type="warning">${text}</ha-alert>` : html`<p class="description">${text}</p>`;
+        })}
+      </div>
+    `;
   }
 
   private renderSettingsCard(title: CardTitle, schema: FormField[], description?: "general.penalty_info") {
@@ -95,52 +121,19 @@ export class KraftvaktGeneralPage extends SettingsFormPage {
     };
   }
 
-  /** A number of updates of the power sensor, each shown with how long the window lasts at its interval. */
   private windowField(): FormField {
-    const interval = this.config.general.power_sensor_interval_s;
-    const options = this.windowOptions().map((count) => ({
-      value: String(count),
-      label: this.localize(count === 1 ? "general.window_option_one" : "general.window_option", { count, seconds: this.formatNumber(count * (interval ?? 0)) }),
-    }));
-    return { name: "regulation_window_updates", required: true, disabled: options.length === 0, selector: { select: { mode: "dropdown", options } } };
+    return this.selectField("regulation_window_s", (seconds) => this.localize("general.window_option", { seconds: this.formatNumber(seconds) }));
   }
 
-  private windowOptions(): number[] {
-    const interval = this.config.general.power_sensor_interval_s;
-    return interval === null ? [] : regulationWindowOptions(interval, this.capabilities.regulation_window);
-  }
-
-  /** A regulation window that cannot be chosen yet is not marked as missing, since its helper tells why. */
-  protected formErrors(section: Issue["section"], target?: string, prefix = ""): Record<string, string> {
-    const errors = super.formErrors(section, target, prefix);
-    if (section === "general" && this.windowOptions().length === 0) {
-      delete errors.regulation_window_updates;
-    }
-    return errors;
-  }
-
-  /** The regulation window tells how often the power sensor reports, or why it cannot be chosen yet. */
-  protected helperText(field: FormField): string {
-    if (field.name !== "regulation_window_updates") {
-      return super.helperText(field);
-    }
-    const { power_sensor: sensor, power_sensor_interval_s: interval } = this.config.general;
-    const seconds = this.capabilities.regulation_window.seconds;
-    const params = { interval: this.formatNumber(interval), min: this.formatNumber(seconds.min), max: this.formatNumber(seconds.max) };
-    if (!sensor) {
-      return this.localize("general.window_no_power_sensor");
-    }
-    if (this.measuring === sensor) {
-      return this.localize("general.window_measuring");
-    }
-    if (interval === null) {
-      return this.localize("general.window_not_measured");
-    }
-    if (this.windowOptions().length === 0) {
-      return this.localize("general.window_too_seldom", params);
-    }
-    return this.localize("general.fields.regulation_window_updates.helper", params);
-  }
+  static styles = [
+    SettingsFormPage.styles,
+    css`
+      .reports {
+        display: grid;
+        gap: 8px;
+      }
+    `,
+  ];
 }
 
 declare global {

@@ -34,6 +34,7 @@ def status_snapshot(hass: HomeAssistant, runtime: KraftvaktRuntime) -> dict[str,
         "config_version": runtime.config_version,
         "missing": [issue.to_dict() for issue in runtime.missing],
         "safe_state": runtime.safe_state,
+        "power_sensor_silent": runtime.power_sensor_silent,
         "penalty": {
             "active": penalty.active,
             "overconsumption_wh": penalty.overconsumption_wh,

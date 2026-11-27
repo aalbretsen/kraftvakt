@@ -8,6 +8,7 @@ from custom_components.kraftvakt_simulator.model import (
     ChargerState,
     ChargerStatus,
     DutyCycle,
+    HanReporting,
     ramp_share,
     thermostat_heats,
     three_phase_power_w,
@@ -146,3 +147,20 @@ def test_the_charger_reports_its_status(allowed: bool, connected: bool, fully_ch
 )
 def test_thermostat_heats_in_a_heating_mode_below_the_target(hvac_mode: str, target: float, room: float, heats: bool) -> None:
     assert thermostat_heats(hvac_mode, target, room) is heats
+
+
+@pytest.mark.parametrize(
+    ("change_w", "power_w", "since_report_s", "expected"),
+    [
+        (0, 2000, 2, True),
+        (100, 2100, 2, False),
+        (100, 2101, 2, True),
+        (100, 1899, 2, True),
+        (100, 2000, 299, False),
+        (100, 2000, 300, True),
+    ],
+)
+def test_han_reporting_sends_every_reading_or_only_a_changed_one(change_w: int, power_w: float, since_report_s: float, expected: bool) -> None:
+    reporting = HanReporting(change_w, timedelta(seconds=300))
+
+    assert reporting.reports(power_w, 2000, timedelta(seconds=since_report_s)) is expected

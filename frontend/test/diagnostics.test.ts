@@ -67,6 +67,7 @@ function status(appliances: ApplianceStatus[], chargers: ChargerStatus[] = []): 
     config_version: 0,
     missing: [],
     safe_state: false,
+    power_sensor_silent: false,
     penalty: { active: false, overconsumption_wh: 0, recovery_started: false },
     regulation_average_w: null,
     tariff_average_w: null,

@@ -26,12 +26,7 @@ const UNITS: Partial<Record<GeneralField, string>> = {
 };
 
 /** Fields chosen from a list, which works with text values. */
-const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set([
-  "regulation_window_updates",
-  "appliance_repeat_increment_factor",
-  "appliance_repeat_increments",
-  "charger_waiting_factor",
-]);
+const SELECT_FIELDS: ReadonlySet<GeneralField> = new Set(["regulation_window_s", "appliance_repeat_increment_factor", "appliance_repeat_increments", "charger_waiting_factor"]);
 
 /**
  * A configuration page with fields from the general settings. The settings

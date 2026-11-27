@@ -25,10 +25,13 @@ It is only for development: it runs in a local Home Assistant next to Kraftvakt 
 ## How the devices behave
 
 - One integration. Adding a device shows a menu: HAN, heating device, thermostat or EV charger. Each device is its own config entry and device.
-- Only one HAN. It reports the background power plus the power of every simulated device, also devices set up after it,
-  only at its report interval, 2 or 10 s, a setting in the config entry data: also an unchanged value, and the power at that moment.
-  Why: a real HAN reader reports what the meter measured at the meter's fixed interval, and Kraftvakt closes its regulation windows at the reports,
-  so a report on every change would close windows right after each command. Reporting an unchanged value keeps Kraftvakt's power sensor timeout from running out.
+- Only one HAN. It reads the background power plus the power of every simulated device, also devices set up after it,
+  only at its reading interval, 2, 2.5 or 10 s, a setting in the config entry data, as the power at that moment.
+  Why: a real HAN reader reads what the meter measured at the meter's fixed interval, and Kraftvakt keeps its regulation windows in step with the reports,
+  so a report on every change of a device would not be like a meter.
+  It sends every reading, also of an unchanged value, as a reader on a wire does, or, with a change above 0 W, only a reading that differs from the last one sent
+  by more than the change, or when its maximum report interval has passed, as many readers on Zigbee do. Both are settings in the config entry data.
+  Why: Kraftvakt must handle both kinds of reader, also the silences of the second.
 - Heating device types (heating cable, water heater, panel heater) behave the same; the type only gives the switch its icon.
 - A heating device has power (W), duty cycle (0–100 %) and period (whole minutes). It heats in a fixed cycle, the on part first. Its switch cuts the power: off consumes nothing.
   **The cycle restarts in its on part every time the switch is turned on**, and so also after a restart with a restored switch.
