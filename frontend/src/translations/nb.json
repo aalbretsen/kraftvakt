@@ -304,7 +304,7 @@
   },
   "reports": {
     "title": "Takten i målingene",
-    "description": "Hvordan effektsensoren har rapportert den siste timen, og hva det gir med innstillingene over.",
+    "description": "Hvor ofte og hvor jevnt målingene har kommet den siste timen, og hva det gir med innstillingene over.",
     "no_power_sensor": "Velg effektsensoren for å se hvordan den rapporterer.",
     "analysing": "Finner ut hvordan effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
     "not_analysed": "Fant ikke ut hvordan effektsensoren rapporterer.",

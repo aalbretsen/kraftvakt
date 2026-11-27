@@ -304,7 +304,7 @@
   },
   "reports": {
     "title": "Timing of the measurements",
-    "description": "How the power sensor has reported over the last hour, and what that gives with the settings above.",
+    "description": "How often and how evenly the measurements have come over the last hour, and what that gives with the settings above.",
     "no_power_sensor": "Choose the power sensor to see how it reports.",
     "analysing": "Finding out how the power sensor reports. It can take up to 30 seconds.",
     "not_analysed": "Could not find out how the power sensor reports.",
