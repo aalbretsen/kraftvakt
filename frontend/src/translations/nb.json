@@ -303,7 +303,7 @@
     "penalty_info": "En sikkerhetsventil som slår til hvis forbruket blir mye høyere enn effektgrensen, for eksempel når noe utenfor Kraftvakt slås på."
   },
   "reports": {
-    "title": "Rapporter fra effektsensoren",
+    "title": "Takten i målingene",
     "description": "Hvordan effektsensoren har rapportert den siste timen, og hva det gir med innstillingene over.",
     "no_power_sensor": "Velg effektsensoren for å se hvordan den rapporterer.",
     "analysing": "Finner ut hvordan effektsensoren rapporterer. Det kan ta opptil 30 sekunder.",
