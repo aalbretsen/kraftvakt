@@ -84,6 +84,6 @@ describe("report lines", () => {
 describe("report text", () => {
   it("shows whole numbers without decimals and the others with one, in the user's language", () => {
     const [line] = reportLines(reports(), 10, 300, CHOICES);
-    expect(reportText(line, localizer("nb"), "nb")).toBe("Rapporterer jevnt hvert 2,5 s: 4 målinger per reguleringsvindu, med en beslutning rett etter den siste.");
+    expect(reportText(line, localizer("nb"), "nb")).toBe("Rapporterer jevnt hvert 2,5 s: 4 målinger per reguleringsvindu, med en beslutning rett etter den siste målingen.");
   });
 });
