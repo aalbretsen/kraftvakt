@@ -183,7 +183,7 @@ The section header, the description and the footer note are in `section-styles.t
   A new charger gets the override end from the defaults in the capabilities.
 - The power sensor picker offers sensors with device class power, without Kraftvakt's own sensors.
 - The Measurement card has the power sensor, the regulation window as a dropdown of its lengths, and the power sensor timeout,
-  and under a line the section Timing of the measurements, the same title as the card on the diagnostics page,
+  and under a line the section Timing of the power measurements, the same title as the card on the diagnostics page,
   with a line that says what it covers, and the summary of how the power sensor reports, from `kraftvakt/power_sensor/analysis`:
   of the saved power sensor when the page opens, and of one just chosen, whose timeout is then set to the one suggested.
   The summary tells the update interval, that the reports are steady and how many measurements a regulation window holds,
@@ -304,7 +304,7 @@ The section header, the description and the footer note are in `section-styles.t
   The regulation tile shows how long it has run as whole days, or else hours, or else minutes, rounded down, with the start under it,
   since a date and time is hard to read for a long run.
   The power sensor tile has the warning colour when the summary of how it reports has a warning.
-- Then the card Timing of the measurements: how the power sensor has reported over the last hour, as the reports, the update interval and whether they are steady,
+- Then the card Timing of the power measurements: how the power sensor has reported over the last hour, as the reports, the update interval and whether they are steady,
   the shortest interval, the longest silence, the lost reports while they are steady, the windows closed at a report and by the clock, and the timeout,
   with the same summary as on the General page.
 - Then the timeline over the last 15, 30 or 60 minutes, as the user chooses, 60 at first:
